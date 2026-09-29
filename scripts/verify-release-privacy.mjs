@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { lstat, readFile, readdir, readlink } from 'node:fs/promises';
-import { basename, join } from 'node:path';
+import { basename, join, sep } from 'node:path';
 
 const roots = process.argv.slice(2);
 
@@ -41,7 +41,7 @@ const symlinks = [];
 
 function isExpectedEmbeddedProfile(path) {
   return /\.app\/Contents\/(?:PlugIns\/[^/]+\.appex\/Contents\/)?embedded\.provisionprofile$/.test(
-    path,
+    path.split(sep).join('/'),
   );
 }
 

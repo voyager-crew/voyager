@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const tempRoots: string[] = [];
@@ -26,7 +26,11 @@ describe('release privacy verification', () => {
     mkdirSync(externalDirectory);
     writeFileSync(join(artifact, 'safe.txt'), 'safe release content');
     writeFileSync(join(externalDirectory, 'private.txt'), '/Users/private-owner/secret');
-    symlinkSync(externalDirectory, join(artifact, 'Applications'));
+    symlinkSync(
+      externalDirectory,
+      join(artifact, 'Applications'),
+      process.platform === 'win32' ? 'junction' : 'dir',
+    );
 
     const result = runScanner(artifact);
 
@@ -53,4 +57,52 @@ describe('release privacy verification', () => {
     expect(unexpectedProfileResult.status).toBe(1);
     expect(unexpectedProfileResult.stderr).toContain('forbidden release filename');
   });
+
+  it.each([
+    'embedded.provisionprofile',
+    'Voyager/Contents/embedded.provisionprofile',
+    'Voyager.app/Contents/Resources/embedded.provisionprofile',
+    'Voyager.app/Contents/PlugIns/Voyager Extension/Contents/embedded.provisionprofile',
+  ])('rejects provisioning profiles outside signed bundle locations: %s', (relativePath) => {
+    const tempRoot = mkdtempSync(join(tmpdir(), 'voyager-release-privacy-'));
+    tempRoots.push(tempRoot);
+    const profile = resolve(tempRoot, relativePath);
+    mkdirSync(dirname(profile), { recursive: true });
+    writeFileSync(profile, 'unexpected profile content');
+
+    const result = runScanner(tempRoot);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('forbidden release filename');
+  });
+
+  it('still scans allowed embedded profiles for private content', () => {
+    const tempRoot = mkdtempSync(join(tmpdir(), 'voyager-release-privacy-'));
+    tempRoots.push(tempRoot);
+    const contents = join(tempRoot, 'Voyager.app', 'Contents');
+    mkdirSync(contents, { recursive: true });
+    writeFileSync(join(contents, 'embedded.provisionprofile'), '/Users/private-owner/secret');
+
+    const result = runScanner(tempRoot);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('contains local macOS path');
+  });
+
+  it.skipIf(process.platform === 'win32')(
+    'does not treat literal backslashes in POSIX filenames as bundle directories',
+    () => {
+      const tempRoot = mkdtempSync(join(tmpdir(), 'voyager-release-privacy-'));
+      tempRoots.push(tempRoot);
+      writeFileSync(
+        join(tempRoot, 'Voyager.app\\Contents\\embedded.provisionprofile'),
+        'unexpected profile content',
+      );
+
+      const result = runScanner(tempRoot);
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('forbidden release filename');
+    },
+  );
 });

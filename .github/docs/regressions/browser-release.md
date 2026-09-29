@@ -3,6 +3,17 @@
 Read this file when changing browser support, extension permissions or messaging, Safari native
 behavior, or bundled public assets.
 
+## Embedded provisioning profile paths must use native separators
+
+- **Trap:** The release privacy scanner rejected valid app and extension profiles on Windows
+  because its signed-bundle allowlist matched only `/`, while filesystem traversal produced `\`.
+- **Rule:** Normalize only the host platform's path separator before matching signed bundle
+  locations. Literal backslashes in POSIX filenames are not directory boundaries. Keep rejecting
+  profiles elsewhere and scan allowed profiles for private content. Directory-link fixtures use
+  junctions on Windows so the checks do not require symlink privileges.
+- **Guard:** `scripts/__tests__/verify-release-privacy.test.ts` covers allowed bundle locations,
+  misplaced profiles, private content, link traversal and POSIX filenames containing backslashes.
+
 ## Safari support must not be inferred from historical guards
 
 - **Trap:** Safari users with Voyager watermark removal still enabled never saw the one-time notice
