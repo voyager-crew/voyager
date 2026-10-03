@@ -32,6 +32,10 @@ const TOP_RIGHT_AVOIDANCE_SELECTORS = [
   '[data-testid="share-chat-button"]',
   '[data-testid="conversation-options-button"]',
 ].join(',');
+const INTERACTIVE_SELECTOR = 'button, a[href], [role="button"]';
+const ROW_PROBE_STEP_PX = 8;
+const MAX_ROW_SHIFTS = 4;
+const ROW_AVOIDANCE_PLATFORMS = new Set(['chatgpt']);
 
 type OwnedToolbarRoot = HTMLDivElement & { _gvOwner?: symbol };
 type ToolbarButton = HTMLButtonElement & { _gvOnClick?: () => void };
@@ -55,7 +59,43 @@ function isVisibleTopRightElement(
   return rect.left >= window.innerWidth * TOP_RIGHT_MIN_LEFT_RATIO;
 }
 
+// Host markup changes without notice, so also hit-test the toolbar's own row
+// for controls the selector list does not know about.
+function findControlUnderToolbar(toolbarRoot: HTMLElement, right: number): HTMLElement | null {
+  if (typeof document.elementsFromPoint !== 'function') return null;
+  const rect = toolbarRoot.getBoundingClientRect();
+  const y = rect.top + rect.height / 2;
+  const end = window.innerWidth - right;
+  for (let x = end - 1; x > end - rect.width; x -= ROW_PROBE_STEP_PX) {
+    const topmost = document
+      .elementsFromPoint(x, y)
+      .find((element) => !toolbarRoot.contains(element));
+    const control = topmost?.closest<HTMLElement>(INTERACTIVE_SELECTOR);
+    if (control) return control;
+  }
+  return null;
+}
+
+function avoidControlsInRow(toolbarRoot: HTMLElement, initialRight: number): number {
+  let right = initialRight;
+  for (let i = 0; i < MAX_ROW_SHIFTS; i++) {
+    const control = findControlUnderToolbar(toolbarRoot, right);
+    if (!control) break;
+    const left = control.getBoundingClientRect().left;
+    if (left < window.innerWidth * TOP_RIGHT_MIN_LEFT_RATIO) break;
+    right = Math.ceil(window.innerWidth - left + TOP_RIGHT_GAP_PX);
+  }
+  return right;
+}
+
 function calculateRightOffset(toolbarRoot: HTMLElement): number {
+  const right = calculateSelectorRightOffset(toolbarRoot);
+  return ROW_AVOIDANCE_PLATFORMS.has(toolbarRoot.dataset.gvPlatform ?? '')
+    ? avoidControlsInRow(toolbarRoot, right)
+    : right;
+}
+
+function calculateSelectorRightOffset(toolbarRoot: HTMLElement): number {
   const candidates = Array.from(document.querySelectorAll(TOP_RIGHT_AVOIDANCE_SELECTORS)).filter(
     (element): element is HTMLElement => isVisibleTopRightElement(element, toolbarRoot),
   );
@@ -83,7 +123,10 @@ function installToolbarAvoidance(root: HTMLDivElement): void {
       activeAvoidanceCleanup?.();
       return;
     }
-    root.style.setProperty('--gv-persistent-export-right', `${calculateRightOffset(root)}px`);
+    const next = `${calculateRightOffset(root)}px`;
+    if (root.style.getPropertyValue('--gv-persistent-export-right') !== next) {
+      root.style.setProperty('--gv-persistent-export-right', next);
+    }
   };
   const scheduleUpdate = () => {
     if (frameId !== null) return;

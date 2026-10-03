@@ -172,11 +172,17 @@ while an active plugin has domOps`).
 
 - **Trap:** The ChatGPT persistent export button sat at `top: 50px` / `right: 84px` and covered
   Share, the more menu, or the conversation title. Avoidance only knew Gemini top-bar selectors, so
-  ChatGPT header actions never pushed the toolbar left.
+  ChatGPT header actions never pushed the toolbar left. ChatGPT later rendered header controls
+  without those ids and test ids, so the list matched nothing and the button fell back to
+  `right: 84px` over Share again (#1044); open canvas panels add header controls the list never
+  named.
 - **Rule:** Keep the ChatGPT toolbar on the header row and include `#conversation-header-actions`
-  plus Share / conversation-options in the top-right avoidance list.
+  plus Share / conversation-options in the top-right avoidance list. On ChatGPT the toolbar also
+  hit-tests its own row and moves left of any button, link or `role="button"` rendered there, so
+  it does not depend on host markup.
 - **Guard:** `src/pages/content/export/__tests__/persistentExportToolbar.test.ts`
-  (`moves left to avoid ChatGPT header share actions`).
+  (`moves left to avoid ChatGPT header share actions`,
+  `moves left of unlabeled header controls rendered under the ChatGPT toolbar`).
 
 ## ChatGPT export UI must belong to the active plugin lifecycle
 
