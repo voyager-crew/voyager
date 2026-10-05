@@ -3,6 +3,11 @@ import browser from 'webextension-polyfill';
 
 import { StorageKeys } from '@/core/types/common';
 import { rulerWaveTick } from '@/features/timeline/denseMarkerLayout';
+import {
+  TIMELINE_STYLE_PREVIEW_ACTIVE_INDEX,
+  type TimelineStylePreview,
+  mountTimelineStylePreview,
+} from '@/features/timeline/timelineStylePreview';
 import { getTranslationSync, initI18n } from '@/utils/i18n';
 import type { TranslationKey } from '@/utils/translations';
 
@@ -12,11 +17,6 @@ import {
   type CoachmarkSequenceStep,
   showCoachmark,
 } from '../coachmark';
-import {
-  TIMELINE_STYLE_PREVIEW_ACTIVE_INDEX,
-  type TimelineStylePreview,
-  mountTimelineStylePreview,
-} from './timelineStylePreview';
 
 export const RULER_TIMELINE_COACHMARK_ID = 'timeline-ruler-style-intro-v1';
 export const RULER_TIMELINE_COACHMARK_DEBUG_EVENT = 'gv:debug:rulerTimelineCoachmark';

@@ -7,15 +7,15 @@
 import browser from 'webextension-polyfill';
 
 import { StorageKeys } from '@/core/types/common';
-import { getTranslationSync, initI18n } from '@/utils/i18n';
-import type { TranslationKey } from '@/utils/translations';
-
 import {
   type CoachmarkProgress,
   type CoachmarkResult,
   type CoachmarkSequenceStep,
   showCoachmark,
-} from '../coachmark';
+} from '@/pages/content/coachmark';
+import { getTranslationSync, initI18n } from '@/utils/i18n';
+import type { TranslationKey } from '@/utils/translations';
+
 import { type TimelineStylePreview, mountTimelineStylePreview } from './timelineStylePreview';
 
 export const TIMELINE_STYLE_COACHMARK_ID = 'timeline-compact-style-intro-v2';

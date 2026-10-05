@@ -1,18 +1,15 @@
 import { buildScopedStorageKey } from '@/core/services/AccountIsolationService';
 import { filterTimelineHierarchyByRouteScope } from '@/pages/content/timeline/hierarchyStorage';
+
+import type { TimelineHydration } from './TimelineHydration';
+import type { TimelineStoragePolicy } from './TimelineStoragePolicy';
 import {
   type TimelineHierarchyConversationData,
   type TimelineHierarchyData,
   normalizeTimelineHierarchyData,
-} from '@/pages/content/timeline/hierarchyTypes';
-import {
-  safeLocalStorageGet,
-  safeLocalStorageSet,
-} from '@/pages/content/timeline/timelineLocalStorage';
-
-import type { TimelineHydration } from './TimelineHydration';
-import type { TimelineStoragePolicy } from './TimelineStoragePolicy';
+} from './hierarchyTypes';
 import { type OutlineChange, type SettledOutline, outlineSaveQueue } from './outlineSaveQueue';
+import { safeLocalStorageGet, safeLocalStorageSet } from './timelineLocalStorage';
 import type { MarkerLevel } from './types';
 
 type OutlineEntry = TimelineHierarchyConversationData | null;
@@ -161,7 +158,9 @@ export class TimelineHierarchy {
     return this.policy.url;
   }
   private get isCurrent(): boolean {
-    return !this.destroyed && this.policy.isCurrent();
+    return (
+      !this.destroyed && this.policy.isCurrent() && (this.policy.hierarchy.isCurrent?.() ?? true)
+    );
   }
   private get unscopedKey(): string {
     return this.policy.hierarchy.extensionKey;

@@ -70,7 +70,7 @@ vi.mock('@/features/savedLibrary/StarredMessagesService', async (importOriginal)
 vi.mock('@/features/plugins/storage/pluginState', () => ({
   setPluginSetting: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock('@/pages/content/timeline/timelineStyleCoachmark', () => ({
+vi.mock('@/features/timeline/timelineStyleCoachmark', () => ({
   showTimelineStyleCoachmark: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -381,6 +381,21 @@ describe('ChatGPT timeline', () => {
       ),
     );
     expect(starred('chatgpt:conv:first')).toEqual(['Second question']);
+  });
+
+  it('a starred prompt keeps the id stars saved by earlier versions carry', async () => {
+    exchange('First question');
+    exchange('Second question');
+    await mount();
+
+    await longPress(dots()[1]);
+
+    // Literal on purpose: this id is the stored key of every existing ChatGPT star.
+    await vi.waitFor(() =>
+      expect(starStore.get('chatgpt:conv:first')?.map((message) => message.turnId)).toEqual([
+        'c-wxhcs3',
+      ]),
+    );
   });
 
   it('scrolls the conversation container, not the window, when a dot is clicked', async () => {

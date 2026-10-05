@@ -23,6 +23,8 @@ export interface TimelineStoragePolicy {
     readonly resolveAccountScope: () => Promise<
       Pick<AccountScope, 'accountKey' | 'routeUserId'> | null | 'unknown'
     >;
+    /** Narrows `isCurrent` for outline work, when star presses may finish on a captured route. */
+    readonly isCurrent?: () => boolean;
   };
   /** Full-history aliases belong to stored records, never to DOM-window positions. */
   readonly resolveMountedTurnId: (id: string) => string | null;

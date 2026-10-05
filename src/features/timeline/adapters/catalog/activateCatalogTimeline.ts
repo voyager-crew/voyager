@@ -2,7 +2,7 @@ import { type Dispose, PluginScope } from '@/features/plugins/runtime/pluginScop
 import { requestPluginSetting } from '@/features/plugins/storage/pluginSettingRequest';
 import type { PluginSettings } from '@/features/plugins/types';
 import type { PrimitiveHandle } from '@/features/plugins/verbs/types';
-import { showTimelineStyleCoachmark } from '@/pages/content/timeline/timelineStyleCoachmark';
+import { showTimelineStyleCoachmark } from '@/features/timeline/timelineStyleCoachmark';
 import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 
 import { TimelineEngine } from '../../TimelineEngine';

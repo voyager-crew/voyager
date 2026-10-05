@@ -42,10 +42,7 @@ function handleUrlChange(): void {
   currentUrl = location.href;
 
   // Only reinitialize if pathname or search changed, not just hash
-  if (!pathChanged) {
-    console.log('[Timeline] Only hash changed, keeping existing timeline');
-    return;
-  }
+  if (!pathChanged) return;
 
   currentPathAndSearch = newPathAndSearch;
 
@@ -57,14 +54,11 @@ function handleUrlChange(): void {
 
   if (isGeminiConversationRoute()) {
     // Add delay to allow DOM to update after SPA navigation
-    console.log('[Timeline] URL changed to conversation route, scheduling initialization');
     urlChangeTimer = window.setTimeout(() => {
-      console.log('[Timeline] Initializing timeline after URL change');
       initializeTimeline(previousUrl);
       urlChangeTimer = null;
     }, 500); // Wait for DOM to settle
   } else {
-    console.log('[Timeline] URL changed to non-conversation route, cleaning up');
     if (timelineManagerInstance) {
       try {
         timelineManagerInstance.destroy();

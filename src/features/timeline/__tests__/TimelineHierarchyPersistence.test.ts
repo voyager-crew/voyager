@@ -8,10 +8,10 @@ import {
   settle,
 } from '@/features/plugins/builtin/chatgptFolders/__tests__/memoryStorage';
 import { createGeminiTimelineStoragePolicy } from '@/pages/content/timeline/GeminiTimelineStorage';
-import type { TimelineHierarchyData } from '@/pages/content/timeline/hierarchyTypes';
 
 import { TimelineState } from '../TimelineState';
 import type { TimelineStoragePolicy } from '../TimelineStoragePolicy';
+import type { TimelineHierarchyData } from '../hierarchyTypes';
 
 const KEY = 'gvCatalogTimelineHierarchy:claude';
 const TURN = 'c-turn';

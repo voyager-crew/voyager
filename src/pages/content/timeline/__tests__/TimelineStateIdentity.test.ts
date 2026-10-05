@@ -4,13 +4,12 @@ import { StorageKeys } from '@/core/types/common';
 import { StarredMessagesService } from '@/features/savedLibrary/StarredMessagesService';
 import { TimelineHierarchyGeometry } from '@/features/timeline/TimelineHierarchyGeometry';
 import { TimelineState } from '@/features/timeline/TimelineState';
-import type { MarkerLevel } from '@/features/timeline/types';
-import { createGeminiTimelineStoragePolicy } from '@/pages/content/timeline/GeminiTimelineStorage';
-
 import {
   getLegacyTimelineCollapsedStorageKey,
   getLegacyTimelineLevelsStorageKey,
-} from '../hierarchyTypes';
+} from '@/features/timeline/hierarchyTypes';
+import type { MarkerLevel } from '@/features/timeline/types';
+import { createGeminiTimelineStoragePolicy } from '@/pages/content/timeline/GeminiTimelineStorage';
 
 const PARENT_ID = 's-6060606060606060';
 const CHILD_ID = 's-6161616161616161';

@@ -8,6 +8,10 @@ import {
   extractConversationIdFromUrl,
 } from '@/core/utils/conversationIdentity';
 import type { TimelineStoragePolicy } from '@/features/timeline/TimelineStoragePolicy';
+import {
+  getLegacyTimelineCollapsedStorageKey,
+  getLegacyTimelineLevelsStorageKey,
+} from '@/features/timeline/hierarchyTypes';
 import type { TimelineMarker } from '@/features/timeline/types';
 
 import { getLegacyTurnIndex } from '../fork/turnId';
@@ -15,10 +19,6 @@ import {
   type HistoryTimestampStore,
   historyTimestampStore as sharedHistoryTimestampStore,
 } from '../timestamp/historyTimestamps';
-import {
-  getLegacyTimelineCollapsedStorageKey,
-  getLegacyTimelineLevelsStorageKey,
-} from './hierarchyTypes';
 
 export function createGeminiTimelineStoragePolicy(
   url = window.location.href,
@@ -29,6 +29,7 @@ export function createGeminiTimelineStoragePolicy(
 ): TimelineStoragePolicy {
   const conversationId = buildConversationIdFromUrl(url);
   const nativeConversationId = extractConversationIdFromUrl(url);
+  const { pathname, search } = new URL(url);
   const resolveAccountScope = async () => {
     // Gemini may render or update its account header after the adapter mounts.
     const context = detectAccountContextFromDocument(url, document);
@@ -56,6 +57,8 @@ export function createGeminiTimelineStoragePolicy(
       adoptUnscopedHierarchy: true,
       accountAttributes: [],
       resolveAccountScope,
+      // The old rail rescans the next chat's turns until the route debounce rebuilds it (index.ts).
+      isCurrent: () => location.pathname + location.search === pathname + search,
     },
     // A mounted u-N is an unverified window position even when stored u-N has a history alias.
     resolveMountedTurnId: (id) => (getLegacyTurnIndex(id) === null ? id : null),
@@ -73,6 +76,7 @@ export function createGeminiTimelineStoragePolicy(
       return aliases.length > 0 ? aliases : [id];
     },
     canEdit: (_marker, id) => getLegacyTurnIndex(id) === null,
+    // A star press finishes on the conversation that owned its marker, even after navigation.
     isCurrent: () => true,
     getConversationTitle: (markers) => getConversationTitle(url, markers),
   };

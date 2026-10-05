@@ -1,12 +1,12 @@
 import { StarredMessagesService } from '@/features/savedLibrary/StarredMessagesService';
 import type { StarredMessage, StarredMessagesData } from '@/features/savedLibrary/starTypes';
 import { findMatchingStarredMessages } from '@/pages/content/timeline/starredLookup';
-import { resolveStarredDisplay } from '@/pages/content/timeline/starredResolution';
 
 import { TimelineHierarchy } from './TimelineHierarchy';
 import { TimelineHydration } from './TimelineHydration';
 import { TimelineStarText } from './TimelineStarText';
 import type { TimelineStoragePolicy } from './TimelineStoragePolicy';
+import { resolveStarredDisplay } from './starredResolution';
 import type { TimelineMarker } from './types';
 
 /** Conversation-scoped stars, hierarchy and mounted-text enrichment. */

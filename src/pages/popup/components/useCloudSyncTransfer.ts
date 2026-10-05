@@ -22,13 +22,13 @@ import {
 import { createRuntimePromptLibraryClient } from '@/features/prompt/library/promptLibraryMessages';
 import { isPromptItemArray } from '@/features/prompt/library/promptLibraryOwner';
 import { StarredMessagesService } from '@/features/savedLibrary/StarredMessagesService';
+import type { TimelineHierarchyData } from '@/features/timeline/hierarchyTypes';
 import { ForkNodesService } from '@/pages/content/fork/ForkNodesService';
 import {
   getTimelineHierarchyStorageKey,
   getTimelineHierarchyStorageKeysToRead,
   resolveTimelineHierarchyDataForStorageScope,
 } from '@/pages/content/timeline/hierarchyStorage';
-import type { TimelineHierarchyData } from '@/pages/content/timeline/hierarchyTypes';
 
 import { mergeFolderData, mergeTimelineHierarchy } from '../../../utils/merge';
 import { applyCloudRestore, CloudRestoreError, type CloudRestoreMode } from './cloudRestore';

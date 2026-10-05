@@ -26,7 +26,7 @@ vi.mock('@/utils/i18n', () => ({
   initI18n: mocks.initI18n,
 }));
 
-vi.mock('../../coachmark', () => ({
+vi.mock('@/pages/content/coachmark', () => ({
   showCoachmark: mocks.showCoachmark,
 }));
 

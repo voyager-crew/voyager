@@ -46,7 +46,7 @@ vi.mock('@/features/savedLibrary/StarredMessagesService', async (importOriginal)
 
 vi.mock('@/features/plugins/storage/pluginSettingRequest', () => ({ requestPluginSetting }));
 
-vi.mock('@/pages/content/timeline/timelineStyleCoachmark', () => ({
+vi.mock('@/features/timeline/timelineStyleCoachmark', () => ({
   showTimelineStyleCoachmark,
 }));
 
@@ -381,6 +381,21 @@ describe('Claude timeline', () => {
     );
     expect(dot.classList.contains('starred')).toBe(true);
     expect(dot.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('a starred prompt keeps the id stars saved by earlier versions carry', async () => {
+    addTurn('remember this');
+    startClaudeTimeline();
+    await flush();
+
+    queryDots()[0].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    vi.advanceTimersByTime(550);
+    await flush();
+
+    // Literal on purpose: this id is the stored key of every existing Claude star.
+    expect(addStarredMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ conversationId: 'claude:conv:claude-123', turnId: 'c-o01tou' }),
+    );
   });
 
   describe("with Claude's conversation id on the thread", () => {

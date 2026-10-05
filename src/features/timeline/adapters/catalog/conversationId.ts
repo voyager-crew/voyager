@@ -4,6 +4,7 @@
  */
 import { hashString } from '@/core/utils/hash';
 import { MAX_REGEX_INPUT_LENGTH } from '@/features/plugins/sites/safeRegex';
+import type { SiteAdapter } from '@/features/plugins/types';
 
 interface ConversationIdConfig {
   readonly siteId: string;
@@ -12,6 +13,20 @@ interface ConversationIdConfig {
   readonly conversationIdAttribute?: string;
   /** Element wrapping one exchange, searched when no ancestor of the turn carries the id. */
   readonly turnItemSelector?: string;
+}
+
+/**
+ * A site's star namespace, the one source for the timeline and the export's starred filter:
+ * site.json's id and route pattern. A plugin's pattern only fills in where site.json has none.
+ */
+export function siteConversationConfig(
+  adapter: Pick<SiteAdapter, 'id' | 'conversationIdPattern'>,
+  fallbackPattern?: string,
+): Pick<ConversationIdConfig, 'siteId' | 'conversationIdPattern'> {
+  return {
+    siteId: adapter.id,
+    conversationIdPattern: adapter.conversationIdPattern ?? fallbackPattern,
+  };
 }
 
 /** Site prefixes isolate stars while preserving historical `claude:conv:<id>` keys. */
