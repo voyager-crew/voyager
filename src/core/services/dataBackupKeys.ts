@@ -7,6 +7,11 @@ export function dataBackupKey(namespace: string, slot: DataBackupSlot): string {
   return `${BACKUP_PREFIX}${namespace}_${slot}`;
 }
 
+/** The prefix every slot of `namespace` shares. */
+export function dataBackupKeyPrefix(namespace: string): string {
+  return `${BACKUP_PREFIX}${namespace}_`;
+}
+
 /** The final slot delimiter leaves underscored namespaces intact. */
 export function parseDataBackupKey(
   key: string,

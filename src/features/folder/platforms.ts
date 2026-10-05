@@ -30,8 +30,18 @@ export interface FolderPlatformDefinition {
       | { ok: false; reason: 'invalid' | 'wrong-site'; message?: string };
   } | null;
   driveFoldersFileName: string;
-  lastUploadTimeField: 'lastUploadTime' | 'lastUploadTimeAIStudio' | 'lastUploadTimeChatGPT';
-  lastSyncTimeField: 'lastSyncTime' | 'lastSyncTimeAIStudio' | 'lastSyncTimeChatGPT';
+  /**
+   * Whether this platform's sync also carries its conversation extras: stars, forks, timeline
+   * hierarchy and highlights in their account-scoped Drive files.
+   */
+  syncsConversationExtras: boolean;
+  /** `DataBackupService` namespace of the page-side folder backups (`gvBackup_<namespace>_*`). */
+  backupNamespace: string;
+  /** `SyncState` field and its `chrome.storage.local` key; both are persisted spellings. */
+  lastUploadTimeField: string;
+  lastUploadTimeStorageKey: string;
+  lastSyncTimeField: string;
+  lastSyncTimeStorageKey: string;
 }
 
 export const FOLDER_PLATFORMS = {
@@ -42,8 +52,12 @@ export const FOLDER_PLATFORMS = {
     syncsSharedData: true,
     folderExport: null,
     driveFoldersFileName: 'gemini-voyager-folders.json',
+    syncsConversationExtras: true,
+    backupNamespace: 'gemini-folders',
     lastUploadTimeField: 'lastUploadTime',
+    lastUploadTimeStorageKey: 'gvLastUploadTime',
     lastSyncTimeField: 'lastSyncTime',
+    lastSyncTimeStorageKey: 'gvLastSyncTime',
   },
   aistudio: {
     hosts: ['aistudio.google.com', 'aistudio.google.cn'],
@@ -52,8 +66,12 @@ export const FOLDER_PLATFORMS = {
     syncsSharedData: true,
     folderExport: null,
     driveFoldersFileName: 'gemini-voyager-aistudio-folders.json',
+    syncsConversationExtras: false,
+    backupNamespace: 'aistudio-folders',
     lastUploadTimeField: 'lastUploadTimeAIStudio',
+    lastUploadTimeStorageKey: 'gvLastUploadTimeAIStudio',
     lastSyncTimeField: 'lastSyncTimeAIStudio',
+    lastSyncTimeStorageKey: 'gvLastSyncTimeAIStudio',
   },
   chatgpt: {
     // The canonical host only: `chat.openai.com` redirects here, is not in the optional
@@ -64,10 +82,19 @@ export const FOLDER_PLATFORMS = {
     syncsSharedData: false,
     folderExport: { platform: 'chatgpt', read: readChatGptFolderExport },
     driveFoldersFileName: 'gemini-voyager-chatgpt-folders.json',
+    syncsConversationExtras: false,
+    backupNamespace: 'chatgpt-folders',
     lastUploadTimeField: 'lastUploadTimeChatGPT',
+    lastUploadTimeStorageKey: 'gvLastUploadTimeChatGPT',
     lastSyncTimeField: 'lastSyncTimeChatGPT',
+    lastSyncTimeStorageKey: 'gvLastSyncTimeChatGPT',
   },
 } as const satisfies Readonly<Record<FolderPlatform, FolderPlatformDefinition>>;
+
+/** The per-platform `SyncState` transfer-time fields, as the registry spells them. */
+export type SyncTimeField = (typeof FOLDER_PLATFORMS)[FolderPlatform][
+  | 'lastUploadTimeField'
+  | 'lastSyncTimeField'];
 
 export type AccountScopedFolderPlatform = {
   [P in FolderPlatform]: (typeof FOLDER_PLATFORMS)[P]['accountIsolationStorageKey'] extends null

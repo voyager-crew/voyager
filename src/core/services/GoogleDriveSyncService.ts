@@ -14,7 +14,11 @@ import type {
   TimelineHierarchyDataSync,
 } from '@/core/types/sync';
 import { DEFAULT_SYNC_STATE } from '@/core/types/sync';
-import { FOLDER_PLATFORMS } from '@/features/folder/platforms';
+import {
+  FOLDER_PLATFORMS,
+  FOLDER_PLATFORM_IDS,
+  type SyncTimeField,
+} from '@/features/folder/platforms';
 import type { PluginStateMap } from '@/features/plugins/storage/pluginState';
 import type { StarStore } from '@/features/savedLibrary/starStore';
 
@@ -30,6 +34,15 @@ import {
 import { logger } from './LoggerService';
 import { StarDriveSyncCoordinator } from './StarDriveSyncCoordinator';
 import { createStarTransferSession } from './StarTransferSession';
+
+/** Every platform's transfer times with their persisted keys, in registry order. */
+const SYNC_TIME_STORAGE = FOLDER_PLATFORM_IDS.flatMap((platform) => {
+  const definition = FOLDER_PLATFORMS[platform];
+  return [
+    { field: definition.lastSyncTimeField, storageKey: definition.lastSyncTimeStorageKey },
+    { field: definition.lastUploadTimeField, storageKey: definition.lastUploadTimeStorageKey },
+  ] satisfies { field: SyncTimeField; storageKey: string }[];
+});
 
 function getStringValue(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
@@ -177,7 +190,8 @@ export class GoogleDriveSyncService {
       }
 
       const { payloads, port } = this.starSession(token, capturedScope, session, provider);
-      if (platform === 'gemini' && starred && !starStore)
+      const { syncsConversationExtras } = FOLDER_PLATFORMS[platform];
+      if (syncsConversationExtras && starred && !starStore)
         throw new Error('Star uploads require the queued store');
       const fileCount = await payloads.upload(token, {
         folders,
@@ -192,7 +206,7 @@ export class GoogleDriveSyncService {
         plugins,
       });
 
-      if (platform === 'gemini' && starStore) {
+      if (syncsConversationExtras && starStore) {
         await this.starCoordinator.push(starStore, port, capturedScope);
       }
       port.assertActive();
@@ -204,7 +218,7 @@ export class GoogleDriveSyncService {
       await this.saveState();
 
       logger.info(
-        `[GoogleDriveSyncService] Upload successful - ${fileCount + (platform === 'gemini' && starStore ? 2 : 0)} file(s) for ${platform}`,
+        `[GoogleDriveSyncService] Upload successful - ${fileCount + (syncsConversationExtras && starStore ? 2 : 0)} file(s) for ${platform}`,
       );
       return true;
     } catch (error) {
@@ -445,24 +459,20 @@ export class GoogleDriveSyncService {
       const result = await chrome.storage.local.get([
         'gvSyncMode',
         'gvSyncProvider',
-        'gvLastSyncTime',
-        'gvLastUploadTime',
-        'gvLastSyncTimeAIStudio',
-        'gvLastUploadTimeAIStudio',
-        'gvLastSyncTimeChatGPT',
-        'gvLastUploadTimeChatGPT',
+        ...SYNC_TIME_STORAGE.map(({ storageKey }) => storageKey),
         'gvSyncError',
       ]);
+      const times = Object.fromEntries(
+        SYNC_TIME_STORAGE.map(({ field, storageKey }) => [
+          field,
+          getNumberValue(result[storageKey]),
+        ]),
+      ) as Record<SyncTimeField, number | null>;
       this.state = {
         provider:
           result.gvSyncProvider === 'icloud' && isSafariRuntime() ? 'icloud' : 'googleDrive',
         mode: (result.gvSyncMode as SyncMode) || 'disabled',
-        lastSyncTime: getNumberValue(result.gvLastSyncTime),
-        lastUploadTime: getNumberValue(result.gvLastUploadTime),
-        lastSyncTimeAIStudio: getNumberValue(result.gvLastSyncTimeAIStudio),
-        lastUploadTimeAIStudio: getNumberValue(result.gvLastUploadTimeAIStudio),
-        lastSyncTimeChatGPT: getNumberValue(result.gvLastSyncTimeChatGPT),
-        lastUploadTimeChatGPT: getNumberValue(result.gvLastUploadTimeChatGPT),
+        ...times,
         error: getStringValue(result.gvSyncError),
         isSyncing: false,
         isAuthenticated: false,
@@ -481,12 +491,9 @@ export class GoogleDriveSyncService {
       await chrome.storage.local.set({
         gvSyncMode: this.state.mode,
         gvSyncProvider: this.state.provider,
-        gvLastSyncTime: this.state.lastSyncTime,
-        gvLastUploadTime: this.state.lastUploadTime,
-        gvLastSyncTimeAIStudio: this.state.lastSyncTimeAIStudio,
-        gvLastUploadTimeAIStudio: this.state.lastUploadTimeAIStudio,
-        gvLastSyncTimeChatGPT: this.state.lastSyncTimeChatGPT,
-        gvLastUploadTimeChatGPT: this.state.lastUploadTimeChatGPT,
+        ...Object.fromEntries(
+          SYNC_TIME_STORAGE.map(({ field, storageKey }) => [storageKey, this.state[field]]),
+        ),
         gvSyncError: this.state.error,
       });
     } catch (error) {

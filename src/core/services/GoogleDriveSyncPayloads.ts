@@ -147,10 +147,11 @@ export class GoogleDriveSyncPayloads {
       await this.files.upload(token, pluginsFileId, pluginsPayload);
     }
 
-    if (platform === 'gemini' && forks) {
+    const extras = definition.syncsConversationExtras;
+    if (extras && forks) {
       await this.uploadForks(token, forks, accountScope, now);
     }
-    if (platform === 'gemini' && timelineHierarchy) {
+    if (extras && timelineHierarchy) {
       await this.uploadHierarchy(
         token,
         timelineHierarchy,
@@ -164,8 +165,8 @@ export class GoogleDriveSyncPayloads {
       (prompts.length > 0 ? 1 : 0) +
       (settingsPayload ? 1 : 0) +
       (pluginsPayload ? 1 : 0) +
-      (platform === 'gemini' && forks ? 1 : 0) +
-      (platform === 'gemini' && timelineHierarchy ? 1 : 0);
+      (extras && forks ? 1 : 0) +
+      (extras && timelineHierarchy ? 1 : 0);
     return fileCount;
   }
 
@@ -211,14 +212,15 @@ export class GoogleDriveSyncPayloads {
     const plugins = await this.readFile<PluginStateExportPayload>(token, PLUGINS_FILE_NAME, null);
     let starred: StarredExportPayload | null = null;
     let starredAccountHash: string | undefined;
-    if (platform === 'gemini') {
+    const extras = definition.syncsConversationExtras;
+    if (extras) {
       const source = await this.readStarred(token, accountScope);
       starred = source.v1;
       starredAccountHash = source.v1AccountHash;
     }
-    const stars = platform === 'gemini' ? await this.downloadStarsV2(token, accountScope) : null;
+    const stars = extras ? await this.downloadStarsV2(token, accountScope) : null;
     let forks: ForkExportPayload | null = null;
-    if (platform === 'gemini') {
+    if (extras) {
       forks = await this.readFile<ForkExportPayload>(
         token,
         FORKS_FILE_NAME,
@@ -227,7 +229,7 @@ export class GoogleDriveSyncPayloads {
       );
     }
     let timelineHierarchy: TimelineHierarchyExportPayload | null = null;
-    if (platform === 'gemini') {
+    if (extras) {
       timelineHierarchy = await this.readFile<TimelineHierarchyExportPayload>(
         token,
         TIMELINE_HIERARCHY_FILE_NAME,

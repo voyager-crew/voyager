@@ -16,11 +16,11 @@ import {
 } from '@/features/plugins/runtime/messages';
 
 import {
-  canSenderPageUseSyncPlatform,
   getSenderPageUrl,
   isAllowedSyncContentSender,
   isHandledBackgroundRuntimeMessage,
   isTrustedExtensionPageSender,
+  isTrustedSharedDataSyncSender,
   isTrustedSyncMessageSender,
   parseSyncPlatform,
 } from '../runtimeMessageRouting';
@@ -128,8 +128,8 @@ describe('background runtime message routing', () => {
     ]) {
       for (const platform of ['gemini', 'aistudio'] as const) {
         expect(isTrustedSyncMessageSender(contentSender(url), platform), url).toBe(false);
-        expect(canSenderPageUseSyncPlatform(url, platform), url).toBe(false);
       }
+      expect(isTrustedSharedDataSyncSender(contentSender(url)), url).toBe(false);
     }
   });
 
@@ -166,7 +166,6 @@ describe('background runtime message routing', () => {
     expect(isTrustedSyncMessageSender(contentSender('https://chatgpt.com/c/1'), 'chatgpt')).toBe(
       true,
     );
-    expect(canSenderPageUseSyncPlatform('https://chatgpt.com/c/1', 'chatgpt')).toBe(true);
     expect(
       isTrustedSyncMessageSender(contentSender('https://gemini.google.com/app'), 'gemini'),
     ).toBe(true);
@@ -180,19 +179,25 @@ describe('background runtime message routing', () => {
       ),
     ).toBe(false);
 
-    expect(canSenderPageUseSyncPlatform(undefined, 'aistudio')).toBe(true);
     // Options-page fallback runs the popup inside an extension tab.
-    expect(
-      canSenderPageUseSyncPlatform(
-        `chrome-extension://${EXTENSION_ID}/src/pages/options/index.html?sourceTabId=4`,
-        'aistudio',
-      ),
-    ).toBe(true);
-    expect(canSenderPageUseSyncPlatform('https://gemini.google.com/u/1/app', 'gemini')).toBe(true);
-    expect(canSenderPageUseSyncPlatform('https://aistudio.google.cn/prompts', 'aistudio')).toBe(
+    const options = `chrome-extension://${EXTENSION_ID}/src/pages/options/index.html?sourceTabId=4`;
+    const optionsTab = { id: EXTENSION_ID, url: options, tab: { id: 4, url: options } };
+    expect(isTrustedSyncMessageSender(optionsTab as chrome.runtime.MessageSender, 'aistudio')).toBe(
       true,
     );
-    expect(canSenderPageUseSyncPlatform('https://gemini.google.com/app', 'aistudio')).toBe(false);
+    expect(isTrustedSharedDataSyncSender(popup)).toBe(true);
+    expect(
+      isTrustedSyncMessageSender(contentSender('https://gemini.google.com/u/1/app'), 'gemini'),
+    ).toBe(true);
+    expect(
+      isTrustedSyncMessageSender(contentSender('https://aistudio.google.cn/prompts'), 'aistudio'),
+    ).toBe(true);
+    expect(isTrustedSharedDataSyncSender(contentSender('https://aistudio.google.cn/prompts'))).toBe(
+      true,
+    );
+    expect(
+      isTrustedSyncMessageSender(contentSender('https://gemini.google.com/app'), 'aistudio'),
+    ).toBe(false);
   });
 
   it('accepts a Safari folder upload from a content script whose tab URL is omitted', () => {
@@ -218,10 +223,15 @@ describe('background runtime message routing', () => {
   });
 
   it('checks the frame URL when the browser omits the tab URL', () => {
-    const chatgpt = getSenderPageUrl({ tab: {}, url: 'https://chatgpt.com/c/abc' });
-    expect(canSenderPageUseSyncPlatform(chatgpt, 'gemini')).toBe(false);
-    const popup = getSenderPageUrl({ url: `chrome-extension://${EXTENSION_ID}/popup.html` });
-    expect(canSenderPageUseSyncPlatform(popup, 'gemini')).toBe(true);
+    const chatgpt = {
+      id: EXTENSION_ID,
+      tab: {} as chrome.tabs.Tab,
+      url: 'https://chatgpt.com/c/abc',
+    };
+    expect(getSenderPageUrl(chatgpt)).toBe('https://chatgpt.com/c/abc');
+    expect(isTrustedSyncMessageSender(chatgpt, 'gemini')).toBe(false);
+    const popup = { id: EXTENSION_ID, url: `chrome-extension://${EXTENSION_ID}/popup.html` };
+    expect(isTrustedSyncMessageSender(popup, 'gemini')).toBe(true);
     expect(getSenderPageUrl({ tab: { url: 'https://gemini.google.com/app' }, url: 'x' })).toBe(
       'https://gemini.google.com/app',
     );

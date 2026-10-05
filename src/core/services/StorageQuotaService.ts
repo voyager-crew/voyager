@@ -1,8 +1,10 @@
 import { StorageKeys } from '@/core/types/common';
+import { FOLDER_PLATFORMS, FOLDER_PLATFORM_IDS } from '@/features/folder/platforms';
 
 import { StorageQuotaApi } from './StorageQuotaApi';
 import { StorageQuotaPolicy } from './StorageQuotaPolicy';
 import type { StorageAreaLike, StorageQuotaBrowserOptions } from './StorageQuotaTypes';
+import { dataBackupKeyPrefix } from './dataBackupKeys';
 
 const MEBIBYTE = 1024 * 1024;
 
@@ -117,11 +119,21 @@ interface CategoryDefinition {
 
 const PROMPT_KEYS = new Set<string>([StorageKeys.PROMPT_ITEMS, StorageKeys.PROMPT_HISTORY_ITEMS]);
 
-const FOLDER_KEYS = new Set<string>([
-  StorageKeys.FOLDER_DATA,
-  StorageKeys.FOLDER_DATA_AISTUDIO,
-  StorageKeys.FOLDER_DATA_CHATGPT,
-]);
+const FOLDER_PLATFORM_DEFINITIONS = FOLDER_PLATFORM_IDS.map(
+  (platform) => FOLDER_PLATFORMS[platform],
+);
+const FOLDER_KEYS = new Set<string>(
+  FOLDER_PLATFORM_DEFINITIONS.map((definition) => definition.folderStorageKey),
+);
+// Account-scoped buckets, then the page-side recovery copies of every folder platform.
+const FOLDER_PREFIXES = [
+  ...FOLDER_PLATFORM_DEFINITIONS.flatMap((definition) =>
+    definition.accountIsolationStorageKey === null ? [] : [`${definition.folderStorageKey}:acct:`],
+  ),
+  ...FOLDER_PLATFORM_DEFINITIONS.map((definition) =>
+    dataBackupKeyPrefix(definition.backupNamespace),
+  ),
+];
 
 const TIMELINE_KEYS = new Set<string>([
   StorageKeys.TIMELINE_STARRED_MESSAGES,
@@ -174,13 +186,7 @@ const CATEGORY_DEFINITIONS: readonly CategoryDefinition[] = [
   {
     id: 'folders',
     exactKeys: FOLDER_KEYS,
-    prefixes: [
-      `${StorageKeys.FOLDER_DATA}:acct:`,
-      `${StorageKeys.FOLDER_DATA_AISTUDIO}:acct:`,
-      'gvBackup_gemini-folders_',
-      'gvBackup_aistudio-folders_',
-      'gvBackup_chatgpt-folders_',
-    ],
+    prefixes: FOLDER_PREFIXES,
     clearable: false,
   },
   {

@@ -178,12 +178,12 @@ async function resolveCloudSyncContext(
   getTargetTab: TargetTab,
 ): Promise<CloudSyncContext> {
   const accountScope = await resolvePageScope(platform, true, getTargetTab);
-  const timelineHierarchyAccountScope =
-    platform === 'gemini' ? await resolvePageScope(platform, false, getTargetTab) : null;
+  const extras = FOLDER_PLATFORMS[platform].syncsConversationExtras;
+  const timelineHierarchyAccountScope = extras
+    ? await resolvePageScope(platform, false, getTargetTab)
+    : null;
   const highlightAccountScope =
-    platform === 'gemini' && includeHighlights
-      ? await resolvePageScope(platform, false, getTargetTab)
-      : null;
+    extras && includeHighlights ? await resolvePageScope(platform, false, getTargetTab) : null;
   const baseFolderStorageKey = FOLDER_PLATFORMS[platform].folderStorageKey;
   return {
     payload: {
@@ -191,15 +191,14 @@ async function resolveCloudSyncContext(
       accountScope,
       timelineHierarchyAccountScope,
       highlightAccountScope,
-      includeHighlights: platform === 'gemini' && includeHighlights,
+      includeHighlights: extras && includeHighlights,
     },
     folderStorageKey: accountScope
       ? buildScopedStorageKey(baseFolderStorageKey, accountScope.accountKey)
       : baseFolderStorageKey,
-    timelineHierarchyStorageKey:
-      platform === 'gemini'
-        ? getTimelineHierarchyStorageKey(timelineHierarchyAccountScope?.accountKey)
-        : StorageKeys.TIMELINE_HIERARCHY,
+    timelineHierarchyStorageKey: extras
+      ? getTimelineHierarchyStorageKey(timelineHierarchyAccountScope?.accountKey)
+      : StorageKeys.TIMELINE_HIERARCHY,
   };
 }
 
@@ -243,7 +242,7 @@ async function readLocalSyncData(
       folderStorageKey,
       // A restore leaves prompts to their owner, which reads them in its own turn.
       ...(definition.syncsSharedData && purpose === 'upload' ? [StorageKeys.PROMPT_ITEMS] : []),
-      ...(definition.syncsSharedData && purpose === 'restore'
+      ...(definition.syncsConversationExtras && purpose === 'restore'
         ? getTimelineHierarchyStorageKeysToRead(timelineHierarchyAccountScope?.accountKey)
         : []),
     ]);
@@ -252,7 +251,7 @@ async function readLocalSyncData(
     if (!hasLiveFolderSnapshot && storedFolders) folders = storedFolders;
     const storedPrompts = storageResult[StorageKeys.PROMPT_ITEMS];
     if (definition.syncsSharedData && isPromptItemArray(storedPrompts)) prompts = storedPrompts;
-    if (platform === 'gemini' && purpose === 'restore') {
+    if (definition.syncsConversationExtras && purpose === 'restore') {
       const resolvedHierarchy = resolveTimelineHierarchyDataForStorageScope(
         storageResult as Record<string, unknown>,
         timelineHierarchyAccountScope?.accountKey,
@@ -301,7 +300,7 @@ async function restoreCloudDownload(
     ? cloudHierarchy
     : mergeTimelineHierarchy(local.timelineHierarchy, cloudHierarchy);
   const storageUpdate: Record<string, unknown> = { [local.folderStorageKey]: nextFolders };
-  if (context.payload.platform === 'gemini') {
+  if (definition.syncsConversationExtras) {
     storageUpdate[context.timelineHierarchyStorageKey] = nextHierarchy;
   }
   let nameConflicts = 0;
@@ -330,7 +329,7 @@ async function restoreCloudDownload(
     foldersMissing: !hasCloudFolderData,
     // Both restore modes merge stars so this tab cannot erase other sites or accounts.
     mergeStarred:
-      context.payload.platform === 'gemini' &&
+      definition.syncsConversationExtras &&
       [data.starred, data.stars].some((value) => value !== null && typeof value === 'object')
         ? async () =>
             (
@@ -342,7 +341,7 @@ async function restoreCloudDownload(
         : undefined,
     // Forks only add, like stars, so a restore never drops forks made on this device.
     mergeForks:
-      context.payload.platform === 'gemini' && data.forks && typeof data.forks === 'object'
+      definition.syncsConversationExtras && data.forks && typeof data.forks === 'object'
         ? async () => (await ForkNodesService.mergeCloud(data.forks)) === 'merged'
         : undefined,
   });
