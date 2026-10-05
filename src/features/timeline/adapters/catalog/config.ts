@@ -1,3 +1,5 @@
+import type { SendSite } from '@/features/plugins/sends/trackUserSends';
+
 export interface CatalogTimelineConfig {
   readonly siteId: string;
   readonly siteLabel: string;
@@ -12,6 +14,8 @@ export interface CatalogTimelineConfig {
   readonly position: 'left' | 'right';
   readonly pluginId: string;
   readonly coachmarkId: string;
+  /** The site's send inputs; without them the timeline shows no message times. */
+  readonly sendSite?: SendSite | null;
 }
 
 /** Keep the existing once-per-user guide identity across every catalog site. */

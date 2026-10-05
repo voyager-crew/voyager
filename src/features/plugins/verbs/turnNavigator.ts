@@ -12,6 +12,7 @@ import {
 import { siteConversationConfig } from '@/features/timeline/adapters/catalog/conversationId';
 
 import type { ManifestIssue } from '../manifest/validate';
+import { sendSiteOf } from '../sends/trackUserSends';
 import { isSafeRegexSource } from '../sites/safeRegex';
 import { getPrimitiveContract } from './contracts';
 import type { Primitive } from './types';
@@ -155,6 +156,7 @@ export const turnNavigatorPrimitive: Primitive<TurnNavigatorParams> = {
       position: params.position ?? 'right',
       pluginId: context.pluginId,
       coachmarkId: TIMELINE_STYLE_COACHMARK_ID,
+      sendSite: sendSiteOf(adapter),
     };
     return activateCatalogTimeline(scope, config, context.settings);
   },

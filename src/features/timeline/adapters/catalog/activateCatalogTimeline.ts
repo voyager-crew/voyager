@@ -11,6 +11,7 @@ import { CatalogTurnOwnership } from './CatalogTurnOwnership';
 import { publishStarNamespace } from './activeStarNamespace';
 import { type CatalogTimelineConfig } from './config';
 import { starConversationId, turnConversationId } from './conversationId';
+import { CatalogSendTimestamps } from './sendTimestamps';
 
 /** The primitive scope owns route lifetime; viewport remounts stay inside one engine. */
 export function activateCatalogTimeline(
@@ -25,6 +26,8 @@ export function activateCatalogTimeline(
     turnConversation: (element) => turnConversationId(config, element),
   });
   ownership.begin();
+  // Page lifetime: a send is stamped even while a route change rebuilds the engine.
+  const sendTimes = config.sendSite ? new CatalogSendTimestamps(scope, config.sendSite) : null;
   // ChatGPT export's starred filter must read the ids this rail writes.
   scope.effect(
     () =>
@@ -45,7 +48,7 @@ export function activateCatalogTimeline(
     followHash: true,
     createEngine: () => {
       const engine = new TimelineEngine(
-        new CatalogTimelineAdapter(config, ownership),
+        new CatalogTimelineAdapter(config, ownership, sendTimes),
         scope.signal,
       );
       // Settings belong to the mounted plugin version; route changes keep them.
