@@ -1,5 +1,4 @@
 import {
-  type AccountScope,
   accountIsolationService,
   buildScopedStorageKey,
   extractRouteUserIdFromUrl,
@@ -19,6 +18,7 @@ import type {
   SyncProvider,
 } from '@/core/types/sync';
 import { getPromptNameConflictIds } from '@/core/utils/promptName';
+import { toSyncAccountScope } from '@/core/utils/syncAccountScope';
 import { FOLDER_PLATFORMS, supportsAccountIsolation } from '@/features/folder/platforms';
 import { loadPluginState } from '@/features/plugins/storage/pluginState';
 import type { StarStore } from '@/features/savedLibrary/starStore';
@@ -49,14 +49,6 @@ function isSyncAccountScope(value: unknown): value is SyncAccountScope {
     Number.isFinite(scope.accountId) &&
     (typeof scope.routeUserId === 'string' || scope.routeUserId === null)
   );
-}
-
-function toSyncAccountScope(scope: AccountScope): SyncAccountScope {
-  return {
-    accountKey: scope.accountKey,
-    accountId: scope.accountId,
-    routeUserId: scope.routeUserId,
-  };
 }
 
 async function resolveAccountScopeForMessage(

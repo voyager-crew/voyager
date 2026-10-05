@@ -3,6 +3,7 @@ import { FolderRepository } from '@/pages/content/folder/FolderRepository';
 import { getFolderRecoveryNotice } from '@/pages/content/folder/folderRecoveryNotice';
 import { AIStudioFolderStorageAdapter } from '@/pages/content/folder/storage/AIStudioFolderStorageAdapter';
 import type { IFolderStorageAdapter } from '@/pages/content/folder/storage/FolderStorageAdapter';
+import { createSyncMessageListener } from '@/pages/content/folder/syncMessageListener';
 import type { ConversationReference, FolderData } from '@/pages/content/folder/types';
 import { getTranslationSync } from '@/utils/i18n';
 
@@ -30,16 +31,11 @@ export type ChatGptFolderNotify = (message: string, tone: 'warning' | 'error') =
 export class ChatGptFolderStore {
   private readonly repository: FolderRepository;
   private readonly listeners = new Set<(change: ChatGptFolderChange) => void>();
-  private readonly syncMessageListener = (
-    message: unknown,
-    _sender: chrome.runtime.MessageSender,
-    sendResponse: (response: unknown) => void,
-  ): true | undefined => {
-    if ((message as { type?: unknown } | null)?.type !== 'gv.sync.requestData') return undefined;
-    // Failed saves leave memory newer than disk; cloud merges must include those edits.
-    sendResponse(this.ready ? { ok: true, data: this.data } : { ok: false });
-    return true;
-  };
+  // Failed saves leave memory newer than disk; cloud merges must include those edits.
+  private readonly syncMessageListener = createSyncMessageListener({
+    canEdit: () => this.ready,
+    data: () => this.data,
+  });
 
   constructor(
     storage: IFolderStorageAdapter = new AIStudioFolderStorageAdapter(),

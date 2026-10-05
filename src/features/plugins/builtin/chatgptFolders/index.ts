@@ -15,6 +15,11 @@ import { FolderImportExportService } from '@/features/folder/services/FolderImpo
 import type { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import type { PluginSettings, SiteAdapter } from '@/features/plugins/types';
 import { FolderSelection } from '@/pages/content/folder/FolderSelection';
+import {
+  type CloudSyncSite,
+  syncSiteFolders,
+  uploadSiteFolders,
+} from '@/pages/content/folder/cloudSyncClient';
 import { createCommandTreeActions } from '@/pages/content/folder/commandTreeActions';
 import { mountFloatingFab, unmountFloatingFab } from '@/pages/content/folder/floatingModeFab';
 import { type FloatingPanelHandle, mountFloatingPanel } from '@/pages/content/folder/floatingPanel';
@@ -37,11 +42,6 @@ import { getTranslationSyncUnsafe as t, initI18n } from '@/utils/i18n';
 
 import { isTemporaryChat } from '../chatgptTemporaryHandoff/handoff';
 import { type ChatGptFolderChange, ChatGptFolderStore } from './ChatGptFolderStore';
-import {
-  type ChatGptCloudSyncHost,
-  syncChatGptFolders,
-  uploadChatGptFolders,
-} from './chatgptCloudSync';
 import { ChatGptFolderGuide } from './chatgptFolderGuide';
 import { type FolderPickerHandle, openFolderPicker } from './chatgptFolderPicker';
 import { ChatGptFolderSection, sectionToolbarIcon } from './chatgptFolderSection';
@@ -193,8 +193,8 @@ class ChatGptFoldersView {
           export: () => this.exportFolders(),
         },
         cloud: {
-          upload: () => void uploadChatGptFolders(this.cloudHost),
-          sync: () => void syncChatGptFolders(this.cloudHost),
+          upload: () => void uploadSiteFolders(this.cloudSite),
+          sync: () => void syncSiteFolders(this.cloudSite),
         },
       });
       section.setDataReady(this.store.ready);
@@ -330,13 +330,23 @@ class ChatGptFoldersView {
       });
   }
 
-  /** What a cloud upload or sync reads and writes; the background picks Drive or iCloud. */
-  private readonly cloudHost: ChatGptCloudSyncHost = {
-    data: () => this.store.data,
-    ready: () => this.store.ready,
-    replaceData: (data) => this.store.replaceData(data),
+  /**
+   * What a cloud upload or sync reads and writes; the background picks Drive or
+   * iCloud. A failed save is reported by the store.
+   */
+  private readonly cloudSite: CloudSyncSite = {
+    platform: 'chatgpt',
+    t,
     notify: (message, tone) => this.notify(message, tone),
-    isDisposed: () => this.scope.isDisposed,
+    begin: () => {
+      if (!this.store.ready) return null;
+      return {
+        current: () => !this.scope.isDisposed,
+        folders: this.store.data,
+        data: () => this.store.data,
+        save: async (folders) => this.store.ready && this.store.replaceData(folders),
+      };
+    },
   };
 
   private notify(message: string, tone: ToastTone): void {
@@ -368,8 +378,8 @@ class ChatGptFoldersView {
       cloudActions: true,
       dataReady: store.ready,
       hintKeys: HINT_KEYS,
-      onCloudUpload: () => void uploadChatGptFolders(this.cloudHost),
-      onCloudSync: () => void syncChatGptFolders(this.cloudHost),
+      onCloudUpload: () => void uploadSiteFolders(this.cloudSite),
+      onCloudSync: () => void syncSiteFolders(this.cloudSite),
       getCloudUploadTooltip: () => readSyncTooltip('chatgpt', 'upload'),
       getCloudSyncTooltip: () => readSyncTooltip('chatgpt', 'sync'),
       headerActions: [
