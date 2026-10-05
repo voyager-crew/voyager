@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadChatGptStarHashes } from '@/features/savedLibrary/exportStars';
 import type { StarredMessage } from '@/features/savedLibrary/starTypes';
 import { extractTurnHash } from '@/features/timeline/adapters/catalog/turnHash';
+import { buildTurnId } from '@/features/timeline/adapters/catalog/turnMerge';
 
 import { requireBundledSiteAdapter } from '../catalog/sites';
 import { PluginScope } from '../runtime/pluginScope';
@@ -103,6 +104,31 @@ describe('turnNavigator star namespace', () => {
     const exported = await loadChatGptStarHashes(location.href);
 
     expect(exported).toContain(extractTurnHash(star.turnId));
+  });
+
+  it('a star saved under a manifest id pattern is still there after upgrade', async () => {
+    history.replaceState({}, '', '/c/abc123');
+    document.body.innerHTML = '<div data-user-message-bubble>Keep this prompt</div>';
+    // Earlier versions filed this star under the id the manifest's own pattern captured.
+    const saved: StarredMessage = {
+      turnId: buildTurnId('Keep this prompt'),
+      content: 'Keep this prompt',
+      conversationId: 'chatgpt:conv:c/abc123',
+      conversationUrl: location.href,
+      conversationTitle: 'Saved',
+      starredAt: 1,
+    };
+    library.set(saved.conversationId, [saved]);
+
+    turnNavigatorPrimitive.activate(
+      scope,
+      { conversationIdPattern: '^/(c/[^/?#]+)' },
+      context(requireBundledSiteAdapter('chatgpt')),
+    );
+    await settle();
+
+    expect(document.querySelector('.timeline-dot')?.getAttribute('aria-pressed')).toBe('true');
+    expect(await loadChatGptStarHashes(location.href)).toContain(extractTurnHash(saved.turnId));
   });
 
   it('a timeline on a site without an adapter stars nothing rather than share a namespace', async () => {
