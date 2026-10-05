@@ -2,11 +2,11 @@ import type { PromptItem } from '@/core/types/sync';
 import { getPromptNameConflictIds } from '@/core/utils/promptName';
 import { isNewerPromptCopy } from '@/core/utils/promptRevision';
 import { setBucket } from '@/features/folder/model/folderData';
-import type { ForkNode, ForkNodesData } from '@/pages/content/fork/forkTypes';
 import type {
   TimelineHierarchyConversationData,
   TimelineHierarchyData,
-} from '@/pages/content/timeline/hierarchyTypes';
+} from '@/features/timeline/hierarchyTypes';
+import type { ForkNode, ForkNodesData } from '@/pages/content/fork/forkTypes';
 
 type MergeableFolder = {
   readonly id: string;

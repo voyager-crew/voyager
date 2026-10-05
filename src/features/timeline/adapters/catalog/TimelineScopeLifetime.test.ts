@@ -10,13 +10,13 @@ import { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import type { PluginSettings } from '@/features/plugins/types';
 import { turnNavigatorPrimitive } from '@/features/plugins/verbs/turnNavigator';
 import type { PrimitiveHandle } from '@/features/plugins/verbs/types';
-import { showTimelineStyleCoachmark } from '@/pages/content/timeline/timelineStyleCoachmark';
+import { showTimelineStyleCoachmark } from '@/features/timeline/timelineStyleCoachmark';
 
 vi.mock('@/utils/i18n', () => ({
   initI18n: vi.fn().mockResolvedValue(undefined),
   getTranslationSync: (key: string) => key,
 }));
-vi.mock('@/pages/content/timeline/timelineStyleCoachmark', () => ({
+vi.mock('@/features/timeline/timelineStyleCoachmark', () => ({
   showTimelineStyleCoachmark: vi.fn().mockResolvedValue(undefined),
 }));
 

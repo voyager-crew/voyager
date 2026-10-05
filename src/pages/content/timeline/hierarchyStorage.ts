@@ -3,8 +3,10 @@ import {
   extractRouteUserIdFromUrl,
 } from '@/core/services/AccountIsolationService';
 import { StorageKeys } from '@/core/types/common';
-
-import { type TimelineHierarchyData, normalizeTimelineHierarchyData } from './hierarchyTypes';
+import {
+  type TimelineHierarchyData,
+  normalizeTimelineHierarchyData,
+} from '@/features/timeline/hierarchyTypes';
 
 export function getTimelineHierarchyStorageKey(accountKey?: string | null): string {
   return accountKey

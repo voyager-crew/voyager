@@ -13,7 +13,7 @@ import {
   EMPTY_TIMELINE_HIERARCHY_DATA,
   type TimelineHierarchyData,
   normalizeTimelineHierarchyData,
-} from '@/pages/content/timeline/hierarchyTypes';
+} from '@/features/timeline/hierarchyTypes';
 import { mergeTimelineHierarchy } from '@/utils/merge';
 
 import type {

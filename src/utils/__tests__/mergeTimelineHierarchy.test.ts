@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type {
   TimelineHierarchyConversationData,
   TimelineHierarchyData,
-} from '@/pages/content/timeline/hierarchyTypes';
+} from '@/features/timeline/hierarchyTypes';
 
 import { mergeTimelineHierarchy } from '../merge';
 

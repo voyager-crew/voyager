@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildScopedStorageKey } from '@/core/services/AccountIsolationService';
 import { StorageKeys } from '@/core/types/common';
 import { createGeminiTimelineStoragePolicy } from '@/pages/content/timeline/GeminiTimelineStorage';
-import type { TimelineHierarchyData } from '@/pages/content/timeline/hierarchyTypes';
 
 import { TimelineState } from '../TimelineState';
+import type { TimelineHierarchyData } from '../hierarchyTypes';
 
 const OLD = 's-1111111111111111';
 const NEW = 's-2222222222222222';

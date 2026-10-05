@@ -1,18 +1,15 @@
 import { buildScopedStorageKey } from '@/core/services/AccountIsolationService';
 import { filterTimelineHierarchyByRouteScope } from '@/pages/content/timeline/hierarchyStorage';
+
+import type { TimelineHydration } from './TimelineHydration';
+import type { TimelineStoragePolicy } from './TimelineStoragePolicy';
 import {
   type TimelineHierarchyConversationData,
   type TimelineHierarchyData,
   normalizeTimelineHierarchyData,
-} from '@/pages/content/timeline/hierarchyTypes';
-import {
-  safeLocalStorageGet,
-  safeLocalStorageSet,
-} from '@/pages/content/timeline/timelineLocalStorage';
-
-import type { TimelineHydration } from './TimelineHydration';
-import type { TimelineStoragePolicy } from './TimelineStoragePolicy';
+} from './hierarchyTypes';
 import { type OutlineChange, type SettledOutline, outlineSaveQueue } from './outlineSaveQueue';
+import { safeLocalStorageGet, safeLocalStorageSet } from './timelineLocalStorage';
 import type { MarkerLevel } from './types';
 
 type OutlineEntry = TimelineHierarchyConversationData | null;

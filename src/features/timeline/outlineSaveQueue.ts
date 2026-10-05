@@ -1,4 +1,4 @@
-import type { TimelineHierarchyConversationData } from '@/pages/content/timeline/hierarchyTypes';
+import type { TimelineHierarchyConversationData } from './hierarchyTypes';
 
 type OutlineEntry = TimelineHierarchyConversationData | null;
 

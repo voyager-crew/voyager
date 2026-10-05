@@ -144,7 +144,7 @@ export type {
 export type {
   TimelineHierarchyConversationData as TimelineHierarchyConversationDataSync,
   TimelineHierarchyData as TimelineHierarchyDataSync,
-} from '@/pages/content/timeline/hierarchyTypes';
+} from '@/features/timeline/hierarchyTypes';
 
 /**
  * Fork nodes export payload format
@@ -163,7 +163,7 @@ export interface TimelineHierarchyExportPayload {
   format: 'gemini-voyager.timeline-hierarchy.v1';
   exportedAt: string;
   version?: string;
-  data: import('@/pages/content/timeline/hierarchyTypes').TimelineHierarchyData;
+  data: import('@/features/timeline/hierarchyTypes').TimelineHierarchyData;
 }
 
 /**

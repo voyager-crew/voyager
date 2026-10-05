@@ -8,6 +8,10 @@ import {
   extractConversationIdFromUrl,
 } from '@/core/utils/conversationIdentity';
 import type { TimelineStoragePolicy } from '@/features/timeline/TimelineStoragePolicy';
+import {
+  getLegacyTimelineCollapsedStorageKey,
+  getLegacyTimelineLevelsStorageKey,
+} from '@/features/timeline/hierarchyTypes';
 import type { TimelineMarker } from '@/features/timeline/types';
 
 import { getLegacyTurnIndex } from '../fork/turnId';
@@ -15,10 +19,6 @@ import {
   type HistoryTimestampStore,
   historyTimestampStore as sharedHistoryTimestampStore,
 } from '../timestamp/historyTimestamps';
-import {
-  getLegacyTimelineCollapsedStorageKey,
-  getLegacyTimelineLevelsStorageKey,
-} from './hierarchyTypes';
 
 export function createGeminiTimelineStoragePolicy(
   url = window.location.href,
