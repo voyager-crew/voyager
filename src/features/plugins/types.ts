@@ -73,6 +73,13 @@ export interface SiteAdapter {
    * navigation primitives; absent for sites without per-conversation routes.
    */
   readonly conversationIdPattern?: string;
+  /**
+   * Attributes that keep one user message's identity across re-renders and
+   * remounts, read from the `userTurn` element or its nearest ancestor carrying
+   * one (the first present wins). Send tracking needs them to tell the message
+   * a send produced from older ones mounting; omit them where the site has none.
+   */
+  readonly turnKeyAttributes?: readonly string[];
 }
 
 // ---------------------------------------------------------------------------

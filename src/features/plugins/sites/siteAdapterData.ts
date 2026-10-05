@@ -31,6 +31,7 @@ export interface SiteAdapterData {
   readonly brandColor?: string;
   readonly capabilities: readonly SiteCapability[];
   readonly conversationIdPattern?: string;
+  readonly turnKeyAttributes?: readonly string[];
 }
 
 const SITE_CAPABILITIES = ['chat', 'sidebar', 'composer', 'darkMode'] as const;
@@ -39,6 +40,9 @@ const MAX_LABEL_LENGTH = 60;
 const MAX_MATCHES = 20;
 const MAX_SELECTOR_LENGTH = 2_000;
 const MAX_PATTERN_LENGTH = 500;
+/** A plain lower-case attribute name: it is interpolated into `[name]`. */
+const ATTRIBUTE_NAME = /^[a-z][a-z0-9-]{0,63}$/;
+const MAX_TURN_KEY_ATTRIBUTES = 8;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -221,6 +225,21 @@ export function validateSiteAdapterData(input: unknown): Result<SiteAdapter, Man
     }
   }
 
+  if (
+    input.turnKeyAttributes !== undefined &&
+    (!Array.isArray(input.turnKeyAttributes) ||
+      input.turnKeyAttributes.length === 0 ||
+      input.turnKeyAttributes.length > MAX_TURN_KEY_ATTRIBUTES ||
+      !input.turnKeyAttributes.every(
+        (name) => typeof name === 'string' && ATTRIBUTE_NAME.test(name),
+      ))
+  ) {
+    issues.push({
+      path: 'turnKeyAttributes',
+      message: `must be 1-${MAX_TURN_KEY_ATTRIBUTES} lower-case attribute names`,
+    });
+  }
+
   if (issues.length > 0 || !theme) return { success: false, error: issues };
 
   return {
@@ -238,6 +257,9 @@ export function validateSiteAdapterData(input: unknown): Result<SiteAdapter, Man
       capabilities,
       ...(typeof input.conversationIdPattern === 'string'
         ? { conversationIdPattern: input.conversationIdPattern }
+        : {}),
+      ...(Array.isArray(input.turnKeyAttributes)
+        ? { turnKeyAttributes: (input.turnKeyAttributes as string[]).slice() }
         : {}),
     },
   };
@@ -257,5 +279,6 @@ export function siteAdapterToData(adapter: SiteAdapter): SiteAdapterData {
     ...(adapter.conversationIdPattern
       ? { conversationIdPattern: adapter.conversationIdPattern }
       : {}),
+    ...(adapter.turnKeyAttributes ? { turnKeyAttributes: [...adapter.turnKeyAttributes] } : {}),
   };
 }

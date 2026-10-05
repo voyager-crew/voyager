@@ -13,6 +13,7 @@ import type { EditOutcome, FolderCommands } from '@/features/folder/commands/fol
 import { type AddVia, FOLDER_SITE_POLICIES } from '@/features/folder/owner/folderOwnerPolicy';
 import { FolderImportExportService } from '@/features/folder/services/FolderImportExportService';
 import type { PluginScope } from '@/features/plugins/runtime/pluginScope';
+import { sendSiteOf, trackUserSends } from '@/features/plugins/sends/trackUserSends';
 import type { PluginSettings, SiteAdapter } from '@/features/plugins/types';
 import { FolderSelection } from '@/pages/content/folder/FolderSelection';
 import type { SiteFolderChange } from '@/pages/content/folder/SiteFolderStore';
@@ -48,7 +49,6 @@ import { type FolderPickerHandle, openFolderPicker } from './chatgptFolderPicker
 import { ChatGptFolderSection, sectionToolbarIcon } from './chatgptFolderSection';
 import { ChatGptHideFiled, HIDE_FILED_SETTING } from './chatgptHideFiled';
 import { bareConversationId, readChatGptConversation } from './chatgptIdentity';
-import { type ChatGptTurnSelectors, trackChatGptLastTurn } from './chatgptLastTurn';
 import { ChatGptMoveMenu, MOVE_ENTRY_ATTR } from './chatgptMoveMenu';
 import { openNativeRename } from './chatgptNativeRename';
 import { openChatGptConversation, readCurrentConversation } from './chatgptPage';
@@ -504,13 +504,6 @@ function importNotice(outcome: EditOutcome): Notice | null {
   }
 }
 
-/** The page's selectors for a user message and the prompt, when its adapter names both. */
-function turnSelectorsOf(adapter: SiteAdapter | null): ChatGptTurnSelectors | null {
-  const userTurn = adapter?.selectors.userTurn;
-  const composer = adapter?.selectors.composer;
-  return userTurn && composer ? { userTurn, composer } : null;
-}
-
 export async function activateChatGptFolders(
   scope: PluginScope,
   settings: PluginSettings = {},
@@ -544,9 +537,9 @@ export async function activateChatGptFolders(
   view = new ChatGptFoldersView(scope, store, commands, prefs, (c) => {
     void renameNative(c);
   });
-  const turnSelectors = turnSelectorsOf(adapter);
-  view.start(sectionPrefs, turnSelectors !== null);
-  if (turnSelectors) {
+  const sendSite = sendSiteOf(adapter);
+  view.start(sectionPrefs, sendSite !== null);
+  if (sendSite) {
     // A send seen while the stored folders still load waits for them; the store
     // refuses edits until then, and the tracker has already let the send go.
     const waiting = new Map<string, number>();
@@ -567,8 +560,9 @@ export async function activateChatGptFolders(
         waiting.clear();
       };
     }, 'chatgpt-folders:activity-wait');
-    trackChatGptLastTurn(scope, turnSelectors, (conversationId, lastTurnAt) => {
-      waiting.set(conversationId, Math.max(lastTurnAt, waiting.get(conversationId) ?? 0));
+    // A chat's Activity time is when the user last sent a message in it.
+    trackUserSends(scope, sendSite, ({ conversationKey, at }) => {
+      waiting.set(conversationKey, Math.max(at, waiting.get(conversationKey) ?? 0));
       flush();
     });
   }

@@ -125,8 +125,12 @@ An official plugin is authored as files under its platform's directory:
 1. Pick the site it belongs to. If that site has no `catalog/sites/<site>/`
    directory yet, write its `site.json` first (`id` equal to the directory name,
    `label`, `matches`, `selectors` keyed by the semantic vocabulary, `theme`,
-   `brandColor`, `capabilities`, optional `conversationIdPattern`). Nothing
-   registers it: the registry picks it up from the file.
+   `brandColor`, `capabilities`, optional `conversationIdPattern` and
+   `turnKeyAttributes`). Nothing registers it: the registry picks it up from the
+   file. `turnKeyAttributes` names the attributes that keep a user message's
+   identity across remounts; send tracking (`sends/trackUserSends.ts`, behind
+   folder Activity and catalog timeline timestamps) runs only on a site that
+   names them, its `composer` and `userTurn`, and a `conversationIdPattern`.
 2. Create `catalog/sites/<site>/plugins/<id>/` with `plugin.json`, `style.css`
    and a short `README.md`.
 3. Keep the plugin's `matches` inside the site's `matches` (D18).

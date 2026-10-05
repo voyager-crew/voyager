@@ -4,7 +4,9 @@ Read this for the selected path; shared constraints and PR evidence remain in [S
 
 **(b) Site adapter change.** `catalog/sites/<site>/site.json`: `matches`, the
 semantic `selectors`, `theme`, `brandColor`, `capabilities`,
-`conversationIdPattern`. Pick this when the site redesigned and every plugin on
+`conversationIdPattern`, `turnKeyAttributes` (attributes that keep a user
+message's identity across remounts; leave them out unless the host has them).
+Pick this when the site redesigned and every plugin on
 it now misses, or when a key the vocabulary already names is absent. A fix to an
 existing site reaches users through the per-host catalog. A **new** site does
 not: host permission and content-script registration ship inside the package, so
