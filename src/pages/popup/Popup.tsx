@@ -361,8 +361,10 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
           />,
         )}
 
-        {/* Keyboard Shortcuts */}
-        {wrapSection('keyboardShortcuts', <KeyboardShortcutSettings />)}
+        {/* Keyboard Shortcuts: global, so catalog timeline rails listen to them too. */}
+        {wrapSection('keyboardShortcuts', <KeyboardShortcutSettings />, {
+          allowPluginSite: siteHasCatalogTimeline,
+        })}
 
         {wrapSection(
           'inputCollapse',

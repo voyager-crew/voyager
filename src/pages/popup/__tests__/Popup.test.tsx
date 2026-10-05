@@ -292,6 +292,19 @@ describe('Popup settings integration', () => {
     expect(starredHistoryEntry()).toBeUndefined();
   });
 
+  it('a timeline plugin site lets the user switch off the shortcuts its rail responds to', async () => {
+    extensionApi.tabs.query.mockResolvedValue([{ id: 10, url: 'https://chatgpt.com/c/abc' }]);
+    await mount();
+    const toggle = container.querySelector<HTMLInputElement>('#shortcuts-enabled');
+    expect(toggle && !toggle.closest('[hidden]')).toBeTruthy();
+
+    await act(async () => toggle!.click());
+
+    expect(sync[StorageKeys.TIMELINE_SHORTCUTS]).toEqual(
+      expect.objectContaining({ enabled: false }),
+    );
+  });
+
   it('shows ChatGPT Cloud Sync while keeping Gemini folders and isolation off the tab', async () => {
     extensionApi.tabs.query.mockResolvedValue([{ id: 10, url: 'https://chatgpt.com/c/abc' }]);
     local[StorageKeys.FOLDER_DATA] = { folders: [], folderContents: {} };
