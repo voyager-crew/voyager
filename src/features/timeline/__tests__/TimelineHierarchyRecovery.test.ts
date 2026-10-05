@@ -27,6 +27,8 @@ function outline(url: string): TimelineHierarchyData {
 }
 
 function createState(url: string): TimelineState {
+  // The page is on the conversation whose outline the state edits.
+  history.replaceState({}, '', new URL(url).pathname);
   const state = new TimelineState(() => {}, createGeminiTimelineStoragePolicy(url));
   states.push(state);
   state.replaceMarkers(

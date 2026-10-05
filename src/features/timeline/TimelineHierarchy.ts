@@ -161,7 +161,9 @@ export class TimelineHierarchy {
     return this.policy.url;
   }
   private get isCurrent(): boolean {
-    return !this.destroyed && this.policy.isCurrent();
+    return (
+      !this.destroyed && this.policy.isCurrent() && (this.policy.hierarchy.isCurrent?.() ?? true)
+    );
   }
   private get unscopedKey(): string {
     return this.policy.hierarchy.extensionKey;

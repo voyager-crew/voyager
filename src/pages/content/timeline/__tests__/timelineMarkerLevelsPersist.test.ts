@@ -173,6 +173,32 @@ describe('timeline marker levels', () => {
   });
 });
 
+describe('timeline marker levels across a route change', () => {
+  const ext = useTimelinePage();
+
+  it('a level edit during a route change stays with its conversation', async () => {
+    ext().seed('sync', { geminiTimelineMarkerLevel: true });
+    const page = new GeminiPage(TURNS);
+    await startTimelineOnPage();
+
+    // Gemini switches chats and renders the next one before the timeline's route debounce rebuilds it.
+    const next: GeminiTurn[] = [
+      { prompt: 'Other chat opener', serverId: 'eeeeeeeeeeeeeeee' },
+      { prompt: 'Other chat detail', serverId: 'ffffffffffffffff' },
+    ];
+    history.pushState(null, '', '/app/def456');
+    page.viewport.replaceChildren();
+    next.forEach((turn) => page.append(turn));
+    await settle(450);
+    chooseFromLevelMenu(next[1].prompt, 'level-2');
+    await settle(2000);
+
+    const stored = ext().read<Hierarchy>('local', UNSCOPED_KEY)?.conversations ?? {};
+    expect(stored[CONVERSATION_ID]?.levels ?? {}).not.toHaveProperty(turnIdOf(next[1].serverId!));
+    expect(localStorage.getItem(LEGACY_LEVELS_KEY)).toBeNull();
+  });
+});
+
 describe('timeline marker levels outside the dots style', () => {
   const ext = useTimelinePage();
 
