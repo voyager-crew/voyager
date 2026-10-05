@@ -5,7 +5,37 @@ import { readChatGptConversation } from './chatgptIdentity';
 /** ChatGPT's own sidebar; its conversation links are router links. */
 const SIDEBAR_SELECTOR = 'nav[aria-label], #stage-slideover-sidebar';
 const ACTIVE_LINK_SELECTOR = `:is(${SIDEBAR_SELECTOR}) a[aria-current="page"]`;
-const PLACEHOLDER_TITLES = new Set(['ChatGPT', 'New chat']);
+/**
+ * What ChatGPT shows before it names a conversation. The sidebar label follows
+ * ChatGPT's UI language, so an English-only list would store "新聊天" as a title.
+ */
+const PLACEHOLDER_TITLES = new Set([
+  'ChatGPT',
+  'New chat', // en
+  '新聊天', // zh-CN, zh-TW
+  '新对话', // zh-CN
+  '新對話', // zh-TW
+  '新しいチャット', // ja
+  '새 채팅', // ko
+  'Nuevo chat', // es
+  'Nouveau chat', // fr
+  'Nouvelle discussion', // fr
+  'Neuer Chat', // de
+  'Novo chat', // pt
+  'Nova conversa', // pt
+  'Nuova chat', // it
+  'Nieuwe chat', // nl
+  'Nowy czat', // pl
+  'Yeni sohbet', // tr
+  'Новый чат', // ru
+  'Новий чат', // uk
+  'محادثة جديدة', // ar
+  'دردشة جديدة', // ar
+  'नई चैट', // hi
+  'Obrolan baru', // id
+  'Đoạn chat mới', // vi
+  'แชทใหม่', // th
+]);
 
 /** A title ChatGPT shows before it names a conversation. */
 export function isPlaceholderTitle(title: string): boolean {

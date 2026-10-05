@@ -15,9 +15,11 @@ import {
 import { FOLDER_SITE_POLICIES } from '@/features/folder/owner/folderOwnerPolicy';
 import { FolderRepository } from '@/pages/content/folder/FolderRepository';
 import { applyNativeTitle } from '@/pages/content/folder/conversationTitleSync';
+import { getFolderRecoveryNotice } from '@/pages/content/folder/folderRecoveryNotice';
 import { AIStudioFolderStorageAdapter } from '@/pages/content/folder/storage/AIStudioFolderStorageAdapter';
 import type { IFolderStorageAdapter } from '@/pages/content/folder/storage/FolderStorageAdapter';
 import type { ConversationReference, Folder, FolderData } from '@/pages/content/folder/types';
+import { getTranslationSync } from '@/utils/i18n';
 
 import { bareConversationId } from './chatgptIdentity';
 import { CHATGPT_FOLDER_CONFIG } from './config';
@@ -33,6 +35,9 @@ export type MoveOutcome = 'moved' | 'unchanged' | 'missing' | 'closed';
  * sent to, which the Activity view reads. Nothing else in the data moved.
  */
 export type ChatGptFolderChange = 'data' | 'opened' | 'activity';
+
+/** Shows a storage notice: a recovered, kept, lost or unreadable load, or a failed save. */
+export type ChatGptFolderNotify = (message: string, tone: 'warning' | 'error') => void;
 
 /**
  * ChatGPT folder commands over the shared FolderRepository, which owns load,
@@ -53,17 +58,26 @@ export class ChatGptFolderStore {
     return true;
   };
 
-  constructor(storage: IFolderStorageAdapter = new AIStudioFolderStorageAdapter()) {
+  constructor(
+    storage: IFolderStorageAdapter = new AIStudioFolderStorageAdapter(),
+    notify: ChatGptFolderNotify = () => {},
+  ) {
     this.repository = new FolderRepository(CHATGPT_FOLDER_CONFIG, storage, {
       // Each edit here emits as it commits. Its save's echo would announce an
       // open's stamp as a data change, which lays the tree out again.
       onChange: (reason) => {
         if (reason !== 'saved') this.emit('data');
       },
-      onRecovery: () => this.emit('data'),
+      // A lost or unreadable bucket must not look like an empty one.
+      onRecovery: (result) => {
+        const notice = getFolderRecoveryNotice(result);
+        notify(notice.message, notice.tone);
+        this.emit('data');
+      },
       onExternalChange: () => void this.repository.loadData(),
       onAccountReleased: () => {},
       isEnabled: () => true,
+      onSaveFailed: () => notify(getTranslationSync('folder_save_error'), 'error'),
     });
   }
 
