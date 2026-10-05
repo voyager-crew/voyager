@@ -7,9 +7,10 @@ import type { PromptItem } from '@/core/types/sync';
 import { FolderRepository } from '../FolderRepository';
 import { AIStudioFolderManager } from '../aistudio';
 import { applyHideArchivedRows } from '../aistudioLibraryTable';
-import { AIStudioTransfer, createSyncMessageListener } from '../aistudioTransfer';
+import { AIStudioTransfer } from '../aistudioTransfer';
 import { AISTUDIO_FOLDER_CONFIG } from '../platformFolderConfig';
 import { AIStudioFolderStorageAdapter } from '../storage/AIStudioFolderStorageAdapter';
+import { createSyncMessageListener } from '../syncMessageListener';
 import type { FolderData } from '../types';
 
 vi.mock('webextension-polyfill', () => ({

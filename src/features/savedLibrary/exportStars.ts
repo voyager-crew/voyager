@@ -19,6 +19,7 @@ export async function loadChatGptStarHashes(url: string): Promise<ReadonlySet<st
   // Read the ids the mounted timeline files under; with none mounted, site.json's.
   const namespace =
     activeStarNamespace(chatgptAdapter.id) ?? siteConversationConfig(chatgptAdapter);
+  // The rail's own derivation, so a namespace without a route pattern reads its URL-hash ids too.
   const conversationId = starConversationId(namespace, url);
   // An unnamed temporary/new chat has no timeline star namespace to read.
   if (!conversationId) return new Set();

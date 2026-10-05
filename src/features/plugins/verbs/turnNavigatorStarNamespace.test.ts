@@ -106,6 +106,25 @@ describe('turnNavigator star namespace', () => {
     expect(exported).toContain(extractTurnHash(star.turnId));
   });
 
+  it('starred-only export finds stars saved under a URL-hash conversation id', async () => {
+    history.replaceState({}, '', '/c/abc123');
+    document.body.innerHTML = '<div data-user-message-bubble>Keep this prompt</div>';
+    // A site override without a route pattern: the timeline files stars under a hash of the URL.
+    const adapter = { ...requireBundledSiteAdapter('chatgpt'), conversationIdPattern: undefined };
+    turnNavigatorPrimitive.activate(scope, {}, context(adapter));
+    await settle();
+    document
+      .querySelector('.timeline-dot')!
+      .dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    await settle();
+    const [star] = addStarredMessage.mock.calls.map(([message]) => message);
+    expect(star?.conversationId).not.toContain(':conv:');
+
+    const exported = await loadChatGptStarHashes(location.href);
+
+    expect(exported).toContain(extractTurnHash(star.turnId));
+  });
+
   it('a star saved under a manifest id pattern is still there after upgrade', async () => {
     history.replaceState({}, '', '/c/abc123');
     document.body.innerHTML = '<div data-user-message-bubble>Keep this prompt</div>';

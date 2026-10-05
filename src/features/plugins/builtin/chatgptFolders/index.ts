@@ -2,7 +2,7 @@
  * ChatGPT folders on the shared folder core: a folder section in ChatGPT's
  * sidebar (introduced once by a guide), the shared floating panel, and "Move to
  * folder" in a row's menu, or a row dragged onto a folder. The store is the
- * shared FolderRepository with ChatGPT's own bucket. Everything this plugin
+ * shared site folder store with ChatGPT's own bucket. Everything this plugin
  * creates is registered on its PluginScope, so turning it off leaves nothing behind.
  */
 import { DOWNLOAD_PATH, UPLOAD_PATH } from '@/core/icons/transferPaths';
@@ -15,6 +15,12 @@ import { FolderImportExportService } from '@/features/folder/services/FolderImpo
 import type { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import type { PluginSettings, SiteAdapter } from '@/features/plugins/types';
 import { FolderSelection } from '@/pages/content/folder/FolderSelection';
+import type { SiteFolderChange } from '@/pages/content/folder/SiteFolderStore';
+import {
+  type CloudSyncSite,
+  syncSiteFolders,
+  uploadSiteFolders,
+} from '@/pages/content/folder/cloudSyncClient';
 import { createCommandTreeActions } from '@/pages/content/folder/commandTreeActions';
 import { mountFloatingFab, unmountFloatingFab } from '@/pages/content/folder/floatingModeFab';
 import { type FloatingPanelHandle, mountFloatingPanel } from '@/pages/content/folder/floatingPanel';
@@ -36,12 +42,7 @@ import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 import { getTranslationSyncUnsafe as t, initI18n } from '@/utils/i18n';
 
 import { isTemporaryChat } from '../chatgptTemporaryHandoff/handoff';
-import { type ChatGptFolderChange, ChatGptFolderStore } from './ChatGptFolderStore';
-import {
-  type ChatGptCloudSyncHost,
-  syncChatGptFolders,
-  uploadChatGptFolders,
-} from './chatgptCloudSync';
+import { ChatGptFolderStore } from './ChatGptFolderStore';
 import { ChatGptFolderGuide } from './chatgptFolderGuide';
 import { type FolderPickerHandle, openFolderPicker } from './chatgptFolderPicker';
 import { ChatGptFolderSection, sectionToolbarIcon } from './chatgptFolderSection';
@@ -193,8 +194,8 @@ class ChatGptFoldersView {
           export: () => this.exportFolders(),
         },
         cloud: {
-          upload: () => void uploadChatGptFolders(this.cloudHost),
-          sync: () => void syncChatGptFolders(this.cloudHost),
+          upload: () => void uploadSiteFolders(this.cloudSite),
+          sync: () => void syncSiteFolders(this.cloudSite),
         },
       });
       section.setDataReady(this.store.ready);
@@ -221,7 +222,7 @@ class ChatGptFoldersView {
     );
   }
 
-  refresh(change: ChatGptFolderChange = 'data'): void {
+  refresh(change: SiteFolderChange = 'data'): void {
     const { data, ready } = this.store;
     // The panel keeps the manual order, which an open does not change.
     this.panel?.update(data);
@@ -330,13 +331,23 @@ class ChatGptFoldersView {
       });
   }
 
-  /** What a cloud upload or sync reads and writes; the background picks Drive or iCloud. */
-  private readonly cloudHost: ChatGptCloudSyncHost = {
-    data: () => this.store.data,
-    ready: () => this.store.ready,
-    replaceData: (data) => this.store.replaceData(data),
+  /**
+   * What a cloud upload or sync reads and writes; the background picks Drive or
+   * iCloud. A failed save is reported by the store.
+   */
+  private readonly cloudSite: CloudSyncSite = {
+    platform: 'chatgpt',
+    t,
     notify: (message, tone) => this.notify(message, tone),
-    isDisposed: () => this.scope.isDisposed,
+    begin: () => {
+      if (!this.store.ready) return null;
+      return {
+        current: () => !this.scope.isDisposed,
+        folders: this.store.data,
+        data: () => this.store.data,
+        save: async (folders) => this.store.ready && this.store.replaceData(folders),
+      };
+    },
   };
 
   private notify(message: string, tone: ToastTone): void {
@@ -364,12 +375,12 @@ class ChatGptFoldersView {
     const store = this.store;
     this.panel = mountFloatingPanel({
       data: store.data,
-      rootBucketId: CHATGPT_FOLDER_CONFIG.rootBucketId,
-      conversationIdentity: FOLDER_SITE_POLICIES.chatgpt,
+      policy: FOLDER_SITE_POLICIES.chatgpt,
+      cloudActions: true,
       dataReady: store.ready,
       hintKeys: HINT_KEYS,
-      onCloudUpload: () => void uploadChatGptFolders(this.cloudHost),
-      onCloudSync: () => void syncChatGptFolders(this.cloudHost),
+      onCloudUpload: () => void uploadSiteFolders(this.cloudSite),
+      onCloudSync: () => void syncSiteFolders(this.cloudSite),
       getCloudUploadTooltip: () => readSyncTooltip('chatgpt', 'upload'),
       getCloudSyncTooltip: () => readSyncTooltip('chatgpt', 'sync'),
       headerActions: [

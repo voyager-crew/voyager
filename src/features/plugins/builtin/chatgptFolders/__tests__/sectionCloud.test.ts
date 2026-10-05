@@ -187,6 +187,28 @@ describe('ChatGPT folder section: cloud', () => {
     ]);
   });
 
+  it('a cloud merge that cannot be saved says so once and keeps the local folders', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const local = memory.api.local as unknown as {
+      set: (items: Record<string, unknown>) => Promise<void>;
+    };
+    const set = local.set;
+    vi.spyOn(local, 'set').mockImplementation((items) =>
+      StorageKeys.FOLDER_DATA_CHATGPT in items ? Promise.reject(new Error('quota')) : set(items),
+    );
+    sendMessage.mockResolvedValue({ ok: true, data: { folders: exportChatGptFolders(CLOUD) } });
+
+    await choose(t('folder_cloud_sync'));
+
+    expect(memory.values.local.get(StorageKeys.FOLDER_DATA_CHATGPT)).toEqual(LOCAL);
+    const saveErrors = toastDriver
+      .messages()
+      .filter((message) => message === t('folder_save_error'));
+    expect(saveErrors).toHaveLength(1);
+    expect(toastDriver.messages()).not.toContain(t('downloadMergeSuccess'));
+  });
+
   it('says so when the cloud has no ChatGPT folders yet', async () => {
     sendMessage.mockResolvedValue({ ok: true, data: null });
 
