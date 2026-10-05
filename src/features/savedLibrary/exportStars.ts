@@ -1,8 +1,10 @@
 import { hashString } from '@/core/utils/hash';
 import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
-import { parseSiteConversation } from '@/features/plugins/sites/siteConversation';
 import { activeStarNamespace } from '@/features/timeline/adapters/catalog/activeStarNamespace';
-import { siteConversationConfig } from '@/features/timeline/adapters/catalog/conversationId';
+import {
+  siteConversationConfig,
+  starConversationId,
+} from '@/features/timeline/adapters/catalog/conversationId';
 import { extractTurnHash, turnSummary } from '@/features/timeline/adapters/catalog/turnHash';
 
 import { StarredMessagesService } from './StarredMessagesService';
@@ -17,9 +19,10 @@ export async function loadChatGptStarHashes(url: string): Promise<ReadonlySet<st
   // Read the ids the mounted timeline files under; with none mounted, site.json's.
   const namespace =
     activeStarNamespace(chatgptAdapter.id) ?? siteConversationConfig(chatgptAdapter);
-  const conversation = parseSiteConversation(namespace, url);
+  // The rail's own derivation, so a namespace without a route pattern reads its URL-hash ids too.
+  const conversationId = starConversationId(namespace, url);
   // An unnamed temporary/new chat has no timeline star namespace to read.
-  if (!conversation) return new Set();
-  const messages = await StarredMessagesService.getStarredMessagesForConversation(conversation.key);
+  if (!conversationId) return new Set();
+  const messages = await StarredMessagesService.getStarredMessagesForConversation(conversationId);
   return new Set(messages.map((message) => extractTurnHash(message.turnId)));
 }
