@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import type { FolderEditBody } from '@/features/folder/commands/folderCommands';
 import { ROOT_CONVERSATIONS_ID } from '@/features/folder/constants';
 import type { FolderData } from '@/pages/content/folder/types';
 
 import { ChatGptFolderStore } from '../ChatGptFolderStore';
 import { CHATGPT_FOLDER_CONFIG } from '../config';
+import { createLegacyChatGptCommands } from '../legacyChatGptCommands';
 import { exportChatGptFolders, importChatGptFolders } from '../transfer';
 import { type MemoryStorage, createMemoryStorage, settle } from './memoryStorage';
 
@@ -57,6 +59,16 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+function add(target: string, id: string, title = id): FolderEditBody {
+  const { conversationId, url } = conversation(id);
+  return {
+    kind: 'addConversations',
+    target,
+    seeds: [{ conversationId, title, url }],
+    via: 'picker',
+  };
+}
+
 async function ready(): Promise<ChatGptFolderStore> {
   store = new ChatGptFolderStore();
   await store.init();
@@ -69,17 +81,24 @@ describe('ChatGptFolderStore', () => {
     const migrate = vi.spyOn(CHATGPT_FOLDER_CONFIG, 'migrateLegacyData');
     const pageWrites = vi.spyOn(localStorage, 'setItem');
     const s = await ready();
+    const c = createLegacyChatGptCommands(s);
 
-    s.createFolder('Work', null);
+    await c.run({ kind: 'createFolder', folderId: 'x', name: 'Work', parentId: null });
     const folderId = s.data.folders[0].id;
-    s.addConversation(folderId, conversation('a'), 'top');
-    s.addConversation(ROOT_CONVERSATIONS_ID, conversation('b'), 'top');
-    s.renameFolder(folderId, 'Projects');
-    s.setFolderColor(folderId, 'blue');
-    s.toggleFolderPinned(folderId);
-    s.toggleFolderExpanded(folderId);
-    s.moveConversation('chatgpt:conv:b', ROOT_CONVERSATIONS_ID, folderId);
-    s.removeConversation(folderId, 'chatgpt:conv:a');
+    await c.run(add(folderId, 'a'));
+    await c.run(add(ROOT_CONVERSATIONS_ID, 'b'));
+    await c.run({ kind: 'renameFolder', folderId, name: 'Projects' });
+    await c.run({ kind: 'setFolderColor', folderId, color: 'blue' });
+    await c.run({ kind: 'setFolderPinned', folderId, pinned: true });
+    await c.run({ kind: 'setFolderExpanded', folderId, expanded: false });
+    await c.run({
+      kind: 'moveConversations',
+      ids: ['chatgpt:conv:b'],
+      from: ROOT_CONVERSATIONS_ID,
+      target: folderId,
+      via: 'panel-menu',
+    });
+    await c.run({ kind: 'removeConversations', folderId, ids: ['chatgpt:conv:a'] });
     await settle();
     const imported = await importChatGptFolders(
       exportChatGptFolders({
@@ -120,10 +139,15 @@ describe('ChatGptFolderStore', () => {
 
   it('files edits in the stored bucket', async () => {
     const s = await ready();
-    s.createFolder('Work', null);
+    const c = createLegacyChatGptCommands(s);
+    await c.run({ kind: 'createFolder', folderId: 'x', name: 'Work', parentId: null });
     const folderId = s.data.folders[0].id;
-    expect(s.addConversation(folderId, conversation('a', 'Trip plan'), 'top')).toBe('added');
-    expect(s.addConversation(folderId, conversation('a', 'Again'), 'top')).toBe('present');
+    expect(folderId).toMatch(/^folder_\d+_[0-9a-z]+$/);
+    expect(await c.run(add(folderId, 'a', 'Trip plan'))).toEqual({ kind: 'unconfirmed' });
+    expect(await c.run(add(folderId, 'a', 'Again'))).toMatchObject({
+      kind: 'unchanged',
+      reason: 'present',
+    });
     await settle();
 
     const stored = memory.values.local.get(StorageKeys.FOLDER_DATA_CHATGPT) as FolderData;
@@ -133,17 +157,26 @@ describe('ChatGptFolderStore', () => {
 
   it('files nothing into a folder that no longer exists', async () => {
     const s = await ready();
-    s.createFolder('Work', null);
-    s.createFolder('Gone', null);
+    const c = createLegacyChatGptCommands(s);
+    await c.run({ kind: 'createFolder', folderId: 'x', name: 'Work', parentId: null });
+    await c.run({ kind: 'createFolder', folderId: 'y', name: 'Gone', parentId: null });
     const [work, gone] = s.data.folders.map((folder) => folder.id);
-    s.addConversation(work, conversation('a'), 'top');
-    s.removeFolder(gone);
+    await c.run(add(work, 'a'));
+    await c.run({ kind: 'removeFolder', folderId: gone });
     await settle();
     const writes = memory.writes.length;
 
-    expect(s.addConversation(gone, conversation('b'), 'top')).toBe('missing');
-    s.moveConversation('chatgpt:conv:a', work, gone);
-    expect(s.addConversation(ROOT_CONVERSATIONS_ID, conversation('c'), 'top')).toBe('added');
+    expect(await c.run(add(gone, 'b'))).toMatchObject({ reason: 'target_missing' });
+    expect(
+      await c.run({
+        kind: 'moveConversations',
+        ids: ['chatgpt:conv:a'],
+        from: work,
+        target: gone,
+        via: 'panel-menu',
+      }),
+    ).toMatchObject({ reason: 'target_missing' });
+    expect(await c.run(add(ROOT_CONVERSATIONS_ID, 'c'))).toEqual({ kind: 'unconfirmed' });
     await settle();
 
     const stored = memory.values.local.get(StorageKeys.FOLDER_DATA_CHATGPT) as FolderData;
@@ -210,9 +243,15 @@ describe('ChatGptFolderStore', () => {
     expect(seen).toHaveBeenCalled();
   });
 
-  it('ignores edits until its bucket has loaded', () => {
+  it('ignores edits until its bucket has loaded', async () => {
     store = new ChatGptFolderStore();
-    store.createFolder('Too early', null);
+    const outcome = await createLegacyChatGptCommands(store).run({
+      kind: 'createFolder',
+      folderId: 'x',
+      name: 'Too early',
+      parentId: null,
+    });
+    expect(outcome).toMatchObject({ kind: 'failed', reason: 'read_only' });
     expect(store.data.folders).toEqual([]);
     expect(memory.writes).toEqual([]);
   });
