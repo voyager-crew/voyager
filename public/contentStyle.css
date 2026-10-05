@@ -3266,6 +3266,11 @@ html[data-gv-scheme='light'] {
   /* emerald-400 - vibrant accent */
   --folder-selected-glow: rgba(16, 185, 129, 0.12);
   /* emerald-500 at 12% opacity */
+  /* Reset here too: a dark OS would otherwise keep the dark emerald gradient. */
+  --folder-selected-bg-start: #f0fdf4;
+  /* green-50 */
+  --folder-selected-bg-end: #dcfce7;
+  /* green-100 */
 }
 
 /* Folder Container */
