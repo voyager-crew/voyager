@@ -278,9 +278,8 @@ describe('Popup settings integration', () => {
     extensionApi.tabs.query.mockResolvedValue([{ id: 10, url: 'https://chatgpt.com/c/abc' }]);
     await mount();
     expect(shown(starredHistoryEntry())).toBe(true);
-    // Catalog timelines do not read the Gemini keys these controls write.
+    // The ChatGPT timeline plugin declares no container setting, so the card does not offer one.
     expect(shown(container.querySelector('#hide-container'))).toBe(false);
-    expect(shown(button(TRANSLATIONS.en.resetTimelinePosition))).toBe(false);
     await act(async () => starredHistoryEntry()!.click());
     expect(container.textContent).not.toContain(TRANSLATIONS.en.timelineOptions);
 
@@ -290,6 +289,61 @@ describe('Popup settings integration', () => {
 
     await remount('https://example.com/');
     expect(starredHistoryEntry()).toBeUndefined();
+  });
+
+  describe('the timeline card on a ChatGPT tab', () => {
+    const PLUGIN_ID = 'voyager.chatgpt-timeline';
+    const shownButton = (label: string) =>
+      [...container.querySelectorAll('button')].find(
+        (candidate) => candidate.textContent === label && !candidate.closest('[hidden]'),
+      );
+    const chatGptTimelineSettings = () =>
+      (
+        local[StorageKeys.PLUGINS_STATE] as Record<string, { settings?: Record<string, unknown> }>
+      )?.[PLUGIN_ID]?.settings;
+
+    beforeEach(() => {
+      extensionApi.tabs.query.mockResolvedValue([{ id: 10, url: 'https://chatgpt.com/c/abc' }]);
+    });
+
+    it('changing the timeline style changes the ChatGPT rail, not Gemini’s', async () => {
+      await mount();
+
+      await act(async () => shownButton(TRANSLATIONS.en.timelineStyleCompact)!.click());
+
+      expect(chatGptTimelineSettings()).toEqual(
+        expect.objectContaining({ timelineStyle: 'compact' }),
+      );
+      expect(sync).not.toHaveProperty(StorageKeys.TIMELINE_STYLE);
+    });
+
+    it('turning on node levels puts the ChatGPT rail back on dots', async () => {
+      local[StorageKeys.PLUGINS_STATE] = {
+        [PLUGIN_ID]: { enabled: true, installedAt: 1, settings: { timelineStyle: 'compact' } },
+      };
+      await mount();
+      const levels = container.querySelector<HTMLInputElement>('#marker-level-enabled')!;
+      expect(levels.closest('[hidden]')).toBeNull();
+      expect(levels.checked).toBe(false);
+
+      await act(async () => levels.click());
+
+      expect(levels.checked).toBe(true);
+      expect(chatGptTimelineSettings()).toEqual({ timelineStyle: 'dots', markerLevel: true });
+      expect(sync).not.toHaveProperty('geminiTimelineMarkerLevel');
+    });
+
+    it('resetting the position moves the ChatGPT rail home and leaves Gemini’s where it is', async () => {
+      const placed = { version: 2, topPercent: 30, leftPercent: 80 };
+      sync['gvTimeline:chatgpt:Position'] = placed;
+      sync[StorageKeys.TIMELINE_POSITION] = placed;
+      await mount();
+
+      await act(async () => shownButton(TRANSLATIONS.en.resetTimelinePosition)!.click());
+
+      expect(sync['gvTimeline:chatgpt:Position']).toBeNull();
+      expect(sync[StorageKeys.TIMELINE_POSITION]).toEqual(placed);
+    });
   });
 
   it('a timeline plugin site lets the user switch off the shortcuts its rail responds to', async () => {

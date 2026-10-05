@@ -41,6 +41,7 @@ import { ToolbarPinHint } from './components/ToolbarPinHint';
 import { VisualEffectPicker } from './components/VisualEffectPicker';
 import { WatermarkSettingsCard } from './components/WatermarkSettingsCard';
 import { useActivePopupTab } from './hooks/useActivePopupTab';
+import { useCatalogTimelineSettings } from './hooks/useCatalogTimelineSettings';
 import { useFolderPopupSettings } from './hooks/useFolderPopupSettings';
 import { useFolderStructureCopy } from './hooks/useFolderStructureCopy';
 import { useFormulaCopyPopupSettings } from './hooks/useFormulaCopyPopupSettings';
@@ -91,11 +92,6 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
       return '';
     }
   }, [tab.activeUrl]);
-  // Catalog timelines read per-site keys and their plugin's own settings, not the Gemini keys the
-  // timeline card writes; only its cross-site Saved Library entry applies to them.
-  const siteHasCatalogTimeline = plugins.siteScopedManifests.some((plugin) =>
-    plugin.requires?.handlers?.includes('turnNavigator'),
-  );
   const theme = usePopupBrandTheme({
     activeUrl: tab.activeUrl,
     pluginManifests: plugins.pluginManifests,
@@ -105,6 +101,15 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
 
   // These owners remain mounted while search hides cards or an auxiliary view opens.
   const timeline = useTimelinePopupSettings(writePopupSyncStorage);
+  // A catalog rail runs on its timeline plugin's settings and its own placement keys, so the
+  // timeline card edits those on such a site instead of Gemini's.
+  const catalogTimeline = useCatalogTimelineSettings({
+    activeUrl: tab.activeUrl,
+    siteOverride: plugins.pluginSiteOverride,
+    manifests: plugins.siteScopedManifests,
+    pluginState: plugins.pluginState,
+    writeSyncStorage: writePopupSyncStorage,
+  });
   const folder = useFolderPopupSettings({
     activeAccountPlatform: tab.activeAccountPlatform,
     writeSyncStorage: writePopupSyncStorage,
@@ -299,18 +304,24 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
         {wrapSection(
           'timeline',
           <TimelineSettingsCard
-            values={timeline.values}
-            onChange={timeline.onChange}
-            onResetPosition={timeline.resetPosition}
+            {...(isPluginSite && catalogTimeline
+              ? {
+                  values: catalogTimeline.values,
+                  onChange: catalogTimeline.onChange,
+                  onResetPosition: catalogTimeline.resetPosition,
+                  isVisible: catalogTimeline.offers,
+                }
+              : {
+                  values: timeline.values,
+                  onChange: timeline.onChange,
+                  onResetPosition: timeline.resetPosition,
+                  isVisible: (settingId: string) =>
+                    !isPluginSite && sections.shouldShowSetting('timeline', settingId),
+                })}
             onViewStarredHistory={() => setShowStarredHistory(true)}
-            isVisible={(settingId) =>
-              isPluginSite
-                ? settingId === 'viewStarredHistory'
-                : sections.shouldShowSetting('timeline', settingId)
-            }
             t={t}
           />,
-          { allowPluginSite: siteHasCatalogTimeline },
+          { allowPluginSite: catalogTimeline !== null },
         )}
         {/* Folder Options */}
         {wrapSection(
@@ -363,7 +374,7 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
 
         {/* Keyboard Shortcuts: global, so catalog timeline rails listen to them too. */}
         {wrapSection('keyboardShortcuts', <KeyboardShortcutSettings />, {
-          allowPluginSite: siteHasCatalogTimeline,
+          allowPluginSite: catalogTimeline !== null,
         })}
 
         {wrapSection(
