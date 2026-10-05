@@ -12,6 +12,7 @@ import {
   getLegacyTimelineCollapsedStorageKey,
   getLegacyTimelineLevelsStorageKey,
 } from '@/features/timeline/hierarchyTypes';
+import { timelineSettingsPrefix } from '@/features/timeline/timelineSettings';
 import type { TimelineMarker } from '@/features/timeline/types';
 
 import { getLegacyTurnIndex } from '../fork/turnId';
@@ -43,7 +44,7 @@ export function createGeminiTimelineStoragePolicy(
   return {
     conversationId,
     url,
-    settingsPrefix: 'geminiTimeline',
+    settingsPrefix: timelineSettingsPrefix('gemini'),
     stars: {
       matchLegacyConversations: true,
       resolveAccount: async () => (await resolveAccountScope())?.accountKey,

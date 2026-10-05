@@ -2,6 +2,7 @@ import { StorageKeys } from '@/core/types/common';
 import { hashValue } from '@/core/utils/canonicalHash';
 
 import type { TimelineStoragePolicy } from '../../TimelineStoragePolicy';
+import { timelineSettingsPrefix } from '../../timelineSettings';
 import { CatalogTurnOwnership } from './CatalogTurnOwnership';
 import type { CatalogTimelineConfig } from './config';
 import { buildConversationId, starConversationId } from './conversationId';
@@ -28,7 +29,7 @@ export function createCatalogTimelineStoragePolicy(
   return {
     conversationId: conversationId ?? '',
     url,
-    settingsPrefix: `gvTimeline:${config.siteId}:`,
+    settingsPrefix: timelineSettingsPrefix(config.siteId),
     stars: {
       matchLegacyConversations: false,
       resolveAccount: () => resolveCatalogAccountKey(config),
