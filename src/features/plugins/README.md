@@ -324,11 +324,11 @@ Vim, Claude-timeline and ChatGPT-timeline builtins are now manifests that invoke
 the shared timeline engine lives in `../timeline/TimelineEngine.ts`. Its catalog adapter
 (`../timeline/adapters/catalog/`) accumulates markers across virtualized windows (`turnMerge.ts`)
 and keeps stars and hierarchy in per-site local keys, while stars remain available in Saved Library. Star ids come from the URL at
-each read or write (`conversationId.ts`) through the site adapter's `conversationIdPattern`, which a
-manifest's pattern only fills in where the adapter has none, so ChatGPT export's starred filter
-reads the same ids; a site with a `conversationIdPattern` cannot star a route that does not match
-it. Without a site adapter the timeline stays inert: its stars, outline and placement are keyed by
-the site id. A star is written only for a turn proven to be the current conversation's:
+each read or write (`conversationId.ts`); a manifest's `conversationIdPattern` wins over the site
+adapter's. A mounted timeline publishes that namespace (`activeStarNamespace.ts`) so ChatGPT
+export's starred filter reads the same ids. A site with a `conversationIdPattern` cannot star a
+route that does not match it. Without a site adapter the timeline stays inert: its stars, outline
+and placement are keyed by the site id. A star is written only for a turn proven to be the current conversation's:
 the host's own id for it where the site names one (`conversationIdAttribute` on an ancestor, as
 Claude's `data-conv-id`, or inside the turn's `turnItem`; a turn without it is unstarrable), else
 the URL when the turn entered the page (`turnOwnership.ts`).

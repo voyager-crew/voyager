@@ -16,16 +16,16 @@ interface ConversationIdConfig {
 }
 
 /**
- * A site's star namespace, the one source for the timeline and the export's starred filter:
- * site.json's id and route pattern. A plugin's pattern only fills in where site.json has none.
+ * A site's star namespace: its site.json id, and a manifest's route pattern over site.json's.
+ * Stars already stored under a manifest pattern's ids depend on that order.
  */
 export function siteConversationConfig(
   adapter: Pick<SiteAdapter, 'id' | 'conversationIdPattern'>,
-  fallbackPattern?: string,
+  manifestPattern?: string,
 ): Pick<ConversationIdConfig, 'siteId' | 'conversationIdPattern'> {
   return {
     siteId: adapter.id,
-    conversationIdPattern: adapter.conversationIdPattern ?? fallbackPattern,
+    conversationIdPattern: manifestPattern ?? adapter.conversationIdPattern,
   };
 }
 

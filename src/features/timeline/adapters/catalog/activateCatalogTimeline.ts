@@ -8,6 +8,7 @@ import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 import { TimelineEngine } from '../../TimelineEngine';
 import { CatalogTimelineAdapter } from './CatalogTimelineAdapter';
 import { CatalogTurnOwnership } from './CatalogTurnOwnership';
+import { publishStarNamespace } from './activeStarNamespace';
 import { type CatalogTimelineConfig } from './config';
 import { starConversationId, turnConversationId } from './conversationId';
 
@@ -27,6 +28,15 @@ export function activateCatalogTimeline(
     turnConversation: (element) => turnConversationId(config, element),
   });
   ownership.begin();
+  // ChatGPT export's starred filter must read the ids this rail writes.
+  scope.effect(
+    () =>
+      publishStarNamespace({
+        siteId: config.siteId,
+        conversationIdPattern: config.conversationIdPattern,
+      }),
+    'star-namespace',
+  );
   if (document.body)
     scope.observe(document.body, { childList: true, subtree: true }, (records) =>
       ownership.recordInsertions(records),

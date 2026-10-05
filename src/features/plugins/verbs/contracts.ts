@@ -100,7 +100,7 @@ export const PRIMITIVE_CONTRACTS: readonly PrimitiveContract[] = [
         type: 'string',
         required: false,
         description:
-          "Path regular expression whose first group is the conversation id, used only where the site adapter defines no conversationIdPattern: the adapter's pattern keys stars everywhere they are read.",
+          "Path regular expression whose first group is the conversation id; defaults to the site adapter's conversationIdPattern.",
       },
       scrollContainer: {
         type: 'selector',
