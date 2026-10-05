@@ -57,20 +57,6 @@ export function exportTimestamp(date = new Date()): string {
   return `${day}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 }
 
-/** "5 minutes ago" and the like; older than yesterday shows the date. */
-export function formatRelativeTime(t: (key: string) => string, timestamp: number | null): string {
-  if (!timestamp) return '';
-  const diffMs = Date.now() - timestamp;
-  const minutes = Math.floor(diffMs / 60000);
-  const hours = Math.floor(diffMs / 3600000);
-  const days = Math.floor(diffMs / 86400000);
-  if (minutes < 1) return t('justNow');
-  if (minutes < 60) return `${minutes} ${t('minutesAgo')}`;
-  if (hours < 24) return `${hours} ${t('hoursAgo')}`;
-  if (days === 1) return t('yesterday');
-  return new Date(timestamp).toLocaleDateString();
-}
-
 export type SyncMessageHost = {
   canEdit: () => boolean;
   data: () => FolderData;
@@ -231,24 +217,6 @@ export class AIStudioTransfer {
     downloadJSON(payload, `gemini-voyager-folders-${exportTimestamp()}.json`);
   }
 
-  async uploadTooltip(): Promise<string> {
-    const base = this.host.t('folder_cloud_upload');
-    const time = await this.syncStateTime('lastUploadTime');
-    if (time === undefined) return base;
-    return time
-      ? `${base}\n${this.host.t('lastUploaded').replace('{time}', formatRelativeTime(this.host.t, time))}`
-      : `${base}\n${this.host.t('neverUploaded')}`;
-  }
-
-  async syncTooltip(): Promise<string> {
-    const base = this.host.t('folder_cloud_sync');
-    const time = await this.syncStateTime('lastSyncTime');
-    if (time === undefined) return base;
-    return time
-      ? `${base}\n${this.host.t('lastSynced').replace('{time}', formatRelativeTime(this.host.t, time))}`
-      : `${base}\n${this.host.t('neverSynced')}`;
-  }
-
   /** The session an operation starts in, and a check that it is still the live one. */
   private begin(): { session: FolderDataSession; current: () => boolean } | null {
     const session = this.host.session();
@@ -286,21 +254,6 @@ export class AIStudioTransfer {
         'error',
       );
     }
-  }
-
-  /** The sync state's timestamp: `null` when never, `undefined` when the state is unavailable. */
-  private async syncStateTime(
-    field: 'lastUploadTime' | 'lastSyncTime',
-  ): Promise<number | null | undefined> {
-    try {
-      const response = (await browser.runtime.sendMessage({ type: 'gv.sync.getState' })) as
-        | { ok?: boolean; state?: Partial<Record<typeof field, number | null>> }
-        | undefined;
-      if (response?.ok && response.state) return response.state[field] ?? null;
-    } catch (error) {
-      console.warn('[AIStudioFolderManager] Failed to get sync state for tooltip:', error);
-    }
-    return undefined;
   }
 
   private report(message: string, tone: ToastTone): void {

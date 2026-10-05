@@ -20,7 +20,10 @@ vi.mock('webextension-polyfill', () => ({
     get storage() {
       return globalThis.chrome.storage;
     },
-    runtime: { id: 'test-extension-id' },
+    runtime: {
+      id: 'test-extension-id',
+      sendMessage: (message: unknown) => globalThis.chrome.runtime.sendMessage(message),
+    },
     i18n: { getUILanguage: () => 'en' },
   },
 }));
@@ -281,6 +284,30 @@ describe('ChatGPT folders plugin', () => {
     expect(text).toContain('Proto');
     expect(text).toContain('Ctor');
     expect(errors).not.toHaveBeenCalled();
+  });
+
+  it("shows ChatGPT's own last upload and sync times in the cloud tooltips", async () => {
+    const now = Date.now();
+    vi.mocked(chrome.runtime.sendMessage).mockResolvedValue({
+      ok: true,
+      state: {
+        lastUploadTime: now - 3 * 3_600_000,
+        lastSyncTime: now - 3 * 3_600_000,
+        lastUploadTimeChatGPT: now - 5 * 60_000,
+        lastSyncTimeChatGPT: null,
+      },
+    } as never);
+    memory.values.local.set(StorageKeys.CHATGPT_FOLDER_PANEL, { open: true });
+    await activate();
+    const upload = shadow().querySelector<HTMLButtonElement>('[class*="--cloud-upload"]')!;
+    const sync = shadow().querySelector<HTMLButtonElement>('[class*="--cloud-sync"]')!;
+
+    upload.dispatchEvent(new MouseEvent('mouseenter'));
+    sync.dispatchEvent(new MouseEvent('mouseenter'));
+    await settle(5);
+
+    expect(upload.title).toBe('Upload to Cloud\nUploaded: 5 minutes ago');
+    expect(sync.title).toBe('Sync from Cloud\nNever synced');
   });
 
   it('reopens the panel the user left open', async () => {

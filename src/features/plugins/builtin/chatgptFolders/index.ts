@@ -31,6 +31,7 @@ import {
   bindRootDropZone,
   dropOnSidebar,
 } from '@/pages/content/folder/sidebarDrops';
+import { readSyncTooltip } from '@/pages/content/folder/syncTooltip';
 import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 import { getTranslationSyncUnsafe as t, initI18n } from '@/utils/i18n';
 
@@ -362,6 +363,8 @@ class ChatGptFoldersView {
       hintKeys: HINT_KEYS,
       onCloudUpload: () => void uploadChatGptFolders(this.cloudHost),
       onCloudSync: () => void syncChatGptFolders(this.cloudHost),
+      getCloudUploadTooltip: () => readSyncTooltip('chatgpt', 'upload'),
+      getCloudSyncTooltip: () => readSyncTooltip('chatgpt', 'sync'),
       headerActions: [
         {
           modifier: 'import',
