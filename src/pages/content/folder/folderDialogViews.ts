@@ -172,14 +172,26 @@ function createMoveItem(
   return item;
 }
 
+/**
+ * `returnFocus` is where focus goes on close when the element that opened the
+ * dialog is gone: a native menu item is removed as its menu closes, so the
+ * caller passes the menu's persistent trigger.
+ */
 export function openMoveDialog(
   own: OwnDialogView,
   folders: readonly Folder[],
   onSelect: (folderId: string) => void,
+  returnFocus?: HTMLElement | null,
 ): void {
   const previousFocus = document.activeElement;
   const restoreFocus = () => {
-    if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
+    const target =
+      previousFocus instanceof HTMLElement &&
+      previousFocus !== document.body &&
+      previousFocus.isConnected
+        ? previousFocus
+        : returnFocus;
+    if (target?.isConnected) target.focus();
   };
   const overlay = document.createElement('div');
   overlay.className = 'gv-folder-dialog-overlay';

@@ -133,11 +133,15 @@ export class FolderManager {
       accountIsolationEnabled: this.store.accountIsolationEnabled,
       isDestroyed: this.isDestroyed,
     }),
-    onMoveToFolder: ({ id, title, url }) => {
+    onMoveToFolder: ({ id, title, url }, trigger) => {
       if (!this.store.canEdit) return;
-      this.dialogs.openMove(this.store.data.folders, (folderId) => {
-        this.addConversationToFolderFromNative(folderId, id, title, url);
-      });
+      this.dialogs.openMove(
+        this.store.data.folders,
+        (folderId) => {
+          this.addConversationToFolderFromNative(folderId, id, title, url);
+        },
+        trigger,
+      );
     },
     onConfirmedDelete: (id) => {
       void this.commands.run({ kind: 'removeConversationEverywhere', conversationId: id });
