@@ -333,6 +333,58 @@ describe('Popup settings integration', () => {
       expect(sync).not.toHaveProperty('geminiTimelineMarkerLevel');
     });
 
+    it('the timeline card edits the timeline that is actually running on the page', async () => {
+      const IMPORTED_ID = 'local.me.chatgpt-rail';
+      local[StorageKeys.PLUGIN_LOCAL_MANIFESTS] = {
+        [IMPORTED_ID]: {
+          importedAt: 1,
+          updatedAt: 1,
+          manifest: {
+            id: IMPORTED_ID,
+            name: 'My ChatGPT rail',
+            version: '1.0.0',
+            description: 'A timeline for ChatGPT',
+            author: 'Me',
+            category: 'productivity',
+            license: 'MIT',
+            engine: '>=1.6.0',
+            tier: 'declarative',
+            matches: ['https://chatgpt.com/*'],
+            contributes: {
+              settings: {
+                timelineStyle: {
+                  type: 'select',
+                  label: 'Timeline style',
+                  default: 'dots',
+                  options: [
+                    { value: 'dots', label: 'Nodes' },
+                    { value: 'compact', label: 'Compact' },
+                  ],
+                },
+              },
+              domOps: [{ op: 'native', target: 'body', handler: 'turnNavigator', params: {} }],
+            },
+          },
+        },
+      };
+      local[StorageKeys.PLUGINS_STATE] = {
+        [PLUGIN_ID]: { enabled: false, installedAt: 1 },
+        [IMPORTED_ID]: { enabled: true, installedAt: 1 },
+      };
+      await mount();
+
+      await act(async () => shownButton(TRANSLATIONS.en.timelineStyleCompact)!.click());
+
+      const state = local[StorageKeys.PLUGINS_STATE] as Record<
+        string,
+        { settings?: Record<string, unknown> }
+      >;
+      expect(state[IMPORTED_ID]?.settings).toEqual(
+        expect.objectContaining({ timelineStyle: 'compact' }),
+      );
+      expect(state[PLUGIN_ID]?.settings).toBeUndefined();
+    });
+
     it('resetting the position moves the ChatGPT rail home and leaves Gemini’s where it is', async () => {
       const placed = { version: 2, topPercent: 30, leftPercent: 80 };
       sync['gvTimeline:chatgpt:Position'] = placed;

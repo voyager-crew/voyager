@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { resolveSiteAdapterForUrl } from '@/features/plugins/remote/siteOverride';
 import { resolvePluginSettings } from '@/features/plugins/runtime/resolvePluginSettings';
 import { SiteRegistry } from '@/features/plugins/sites/registry';
+import { isPluginEnabled } from '@/features/plugins/storage/pluginDefaults';
 import { type PluginStateMap, setPluginSettings } from '@/features/plugins/storage/pluginState';
 import type {
   PluginManifest,
@@ -25,10 +26,19 @@ const CATALOG_RAIL_ENTRIES: ReadonlySet<string> = new Set([
   'viewStarredHistory',
 ]);
 
+function isTimelinePlugin(plugin: PluginManifest): boolean {
+  return (
+    plugin.requires?.handlers?.includes('turnNavigator') === true ||
+    (plugin.contributes.domOps ?? []).some(
+      (op) => op.op === 'native' && op.handler === 'turnNavigator',
+    )
+  );
+}
+
 export interface CatalogTimelineSettingsInput {
   readonly activeUrl: string;
   readonly siteOverride: SiteAdapter | null;
-  /** Plugins whose matches cover the active tab. */
+  /** Plugins whose matches cover the active tab, in source order. */
   readonly manifests: readonly PluginManifest[];
   readonly pluginState: PluginStateMap;
   readonly writeSyncStorage: (payload: Record<string, unknown>) => Promise<void>;
@@ -54,10 +64,15 @@ export function useCatalogTimelineSettings({
   pluginState,
   writeSyncStorage,
 }: CatalogTimelineSettingsInput): CatalogTimelineSettings | null {
-  const manifest = useMemo(
-    () => manifests.find((plugin) => plugin.requires?.handlers?.includes('turnNavigator')) ?? null,
-    [manifests],
-  );
+  // The page runs the first enabled timeline in source order, so a disabled builtin ahead of an
+  // imported rail must not take the card's edits. With none enabled, the first one is what the
+  // user would turn on.
+  const manifest = useMemo(() => {
+    const timelines = manifests.filter(isTimelinePlugin);
+    return (
+      timelines.find((plugin) => isPluginEnabled(pluginState, plugin.id)) ?? timelines[0] ?? null
+    );
+  }, [manifests, pluginState]);
   const siteId = useMemo(
     () => resolveSiteAdapterForUrl(activeUrl, SiteRegistry.createDefault(), siteOverride)?.id,
     [activeUrl, siteOverride],
