@@ -5,8 +5,9 @@
  * or inside a GPT at `/g/g-<gpt>/c/<id>`. The id alone is the identity, namespaced
  * as `chatgpt:conv:<id>` like the timeline's ids, so a conversation that moves in or
  * out of a Project is still the same folder entry. The stored URL keeps the full
- * path it was filed under. Do not use site.json's `conversationIdPattern`
- * (`^/c/...`): it misses Project and GPT conversations.
+ * path it was filed under. site.json's `conversationIdPattern` also accepts the
+ * `/g/` and `/u/` prefixes, but this module keeps its own stricter id match and
+ * adds the stored namespace.
  */
 
 export const CHATGPT_CONVERSATION_ID_PREFIX = 'chatgpt:conv:';

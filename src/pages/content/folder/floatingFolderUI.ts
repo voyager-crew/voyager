@@ -9,7 +9,6 @@ import type { FolderNavigation } from './FolderNavigation';
 import type { FolderStore } from './FolderStore';
 import type { FolderTransferController } from './FolderTransferController';
 import { type FloatingFabPos, mountFloatingFab, unmountFloatingFab } from './floatingModeFab';
-import { unmountFloatingModeNudge } from './floatingModeNudge';
 import {
   type FloatingPanelHandle,
   type FloatingPanelPos,
@@ -67,7 +66,6 @@ export class FloatingFolderUI {
    * floating mode was never entered.
    */
   close(): void {
-    unmountFloatingModeNudge();
     unmountFloatingFab();
     if (this.handle) {
       this.handle.destroy();
@@ -113,7 +111,6 @@ export class FloatingFolderUI {
 
   async openPanel(): Promise<void> {
     if (!this.options.isActive() || this.handle) return;
-    unmountFloatingModeNudge();
     // Only one entry point visible at a time — FAB hides when the panel is up.
     unmountFloatingFab();
 

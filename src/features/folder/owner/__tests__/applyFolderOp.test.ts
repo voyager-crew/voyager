@@ -173,6 +173,66 @@ describe('applyFolderOp', () => {
     expect(add('gemini').outcome).toMatchObject({ kind: 'rejected', reason: 'target_missing' });
   });
 
+  it.each<FolderSite>(['gemini', 'chatgpt'])(
+    'filing a chat starred in another folder keeps it starred on %s',
+    (site) => {
+      const policy = FOLDER_SITE_POLICIES[site];
+      const starredElsewhere = conversation('c', { starred: true });
+      const data = folderData([folder('F1'), folder('F2')], { F1: [starredElsewhere] });
+      const seed = { conversationId: 'c', title: 'c', url: starredElsewhere.url };
+
+      const added = applyFolderOp(
+        data,
+        { kind: 'addConversations', target: 'F2', seeds: [seed], via: 'picker' },
+        policy,
+        NOW,
+      );
+      const dropped = applyFolderOp(
+        data,
+        {
+          kind: 'reorderConversations',
+          ids: ['c'],
+          from: null,
+          target: 'F2',
+          index: 0,
+          sortMode: 'manual',
+          ensure: [seed],
+        },
+        policy,
+        NOW,
+      );
+
+      expect(added.data.folderContents.F2).toEqual([expect.objectContaining({ starred: true })]);
+      expect(dropped.data.folderContents.F2).toEqual([expect.objectContaining({ starred: true })]);
+      // Removing the starred copy later must not unstar the chat.
+      const removed = applyFolderOp(
+        added.data,
+        { kind: 'removeConversations', folderId: 'F1', ids: ['c'] },
+        policy,
+        NOW,
+      );
+      expect(removed.data.folderContents.F2[0].starred).toBe(true);
+    },
+  );
+
+  it('filing an unstarred chat adds no star field', () => {
+    const data = folderData([folder('F1'), folder('F2')], { F1: [conversation('c')] });
+
+    const result = applyFolderOp(
+      data,
+      {
+        kind: 'addConversations',
+        target: 'F2',
+        seeds: [{ conversationId: 'c', title: 'c', url: '' }],
+        via: 'picker',
+      },
+      gemini,
+      NOW,
+    );
+
+    expect(result.data.folderContents.F2[0]).not.toHaveProperty('starred');
+  });
+
   it('T6i: an outside drop at an index files and orders the conversations in one op', () => {
     const data = folderData([folder('F')], {
       F: [conversation('a', { sortIndex: 0 }), conversation('b', { sortIndex: 1 })],

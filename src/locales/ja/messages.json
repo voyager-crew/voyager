@@ -962,22 +962,6 @@
     "message": "拡張機能ポップアップ → フォルダ設定でいつでも切り替えできます。",
     "description": "Footnote explaining where to toggle the setting later"
   },
-  "floatingModeNudgeTitle": {
-    "message": "サイドバーが見つかりません — フォルダをフローティングウィンドウで開きますか？",
-    "description": "Title of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeBody": {
-    "message": "Voyager は Gemini のサイドバーを見つけられませんでした。レイアウトが変更された可能性があります。フローティングウィンドウでフォルダを引き続きご利用いただけます。",
-    "description": "Body copy of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeEnable": {
-    "message": "フローティングウィンドウを開く",
-    "description": "Primary button that opens the floating folder panel"
-  },
-  "floatingModeNudgeDismiss": {
-    "message": "あとで",
-    "description": "Secondary button that dismisses the floating-mode nudge"
-  },
   "floatingPanelTitle": {
     "message": "フォルダ",
     "description": "Title shown in the floating folder panel header"

@@ -155,6 +155,20 @@ describe('ChatGPT sidebar title sync', () => {
     expect(stored()[0].title).toBe(FILED.title);
   });
 
+  it('keeps a title when the sidebar shows a localized "New chat" placeholder', async () => {
+    store([reference(FILED)]);
+    await activate();
+    const before = folderWrites();
+
+    for (const placeholder of ['新聊天', 'Nouvelle discussion', 'Neuer Chat', '새 채팅']) {
+      sidebar.rename(FILED.id, placeholder);
+      await nextPass();
+    }
+
+    expect(stored()[0].title).toBe(FILED.title);
+    expect(folderWrites()).toBe(before);
+  });
+
   it("keeps the user's own title", async () => {
     store([reference(FILED, { title: 'Mine', customTitle: true })]);
     await activate();

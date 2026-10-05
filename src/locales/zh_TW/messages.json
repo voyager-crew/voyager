@@ -922,22 +922,6 @@
     "message": "可在擴充功能彈窗 → 資料夾選項中關閉此功能。",
     "description": "Footnote explaining where to toggle the setting later"
   },
-  "floatingModeNudgeTitle": {
-    "message": "側邊欄無法使用 — 在浮動視窗中開啟資料夾？",
-    "description": "Title of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeBody": {
-    "message": "Voyager 找不到 Gemini 側邊欄，可能是頁面版面已變更。你仍然可以在浮動視窗中瀏覽資料夾。",
-    "description": "Body copy of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeEnable": {
-    "message": "開啟浮動視窗",
-    "description": "Primary button that opens the floating folder panel"
-  },
-  "floatingModeNudgeDismiss": {
-    "message": "暫時不用",
-    "description": "Secondary button that dismisses the floating-mode nudge"
-  },
   "floatingPanelTitle": {
     "message": "資料夾",
     "description": "Title shown in the floating folder panel header"

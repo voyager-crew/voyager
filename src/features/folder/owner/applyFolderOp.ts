@@ -99,13 +99,17 @@ function editRecords(
     : { ...unchanged(data), matched };
 }
 
-/** The record a seed files: AI Studio moves the stored record if any bucket holds it. */
+/**
+ * The record a seed files: AI Studio moves the stored record if any bucket holds it.
+ * A new record takes the conversation's star from its other copies (`starred`).
+ */
 function recordForSeed(
   data: FolderData,
   seed: ConversationSeed,
   via: AddVia,
   policy: FolderSitePolicy,
   now: number,
+  starred: (conversation: ConversationReference) => boolean,
 ): ConversationReference {
   if (policy.singleBucket) {
     for (const bucketId of Object.keys(data.folderContents)) {
@@ -116,7 +120,7 @@ function recordForSeed(
     }
   }
   const opened = via === 'native-menu' || via === 'project';
-  return {
+  const record: ConversationReference = {
     conversationId: seed.conversationId,
     title: seed.title,
     url: seed.url,
@@ -126,6 +130,9 @@ function recordForSeed(
     ...(seed.isGem !== undefined ? { isGem: seed.isGem } : {}),
     ...(seed.gemId !== undefined ? { gemId: seed.gemId } : {}),
   };
+  // A star is the conversation's: a copy filed unstarred would lose it once the
+  // starred copy is removed.
+  return starred(record) ? { ...record, starred: true } : record;
 }
 
 function placeSeeds(
@@ -136,7 +143,8 @@ function placeSeeds(
   policy: FolderSitePolicy,
   now: number,
 ): FolderData {
-  const records = seeds.map((seed) => recordForSeed(data, seed, via, policy, now));
+  const starred = readConversationStars(data, policy);
+  const records = seeds.map((seed) => recordForSeed(data, seed, via, policy, now, starred));
   return placeConversations(
     data,
     records,

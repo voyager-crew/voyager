@@ -49,6 +49,7 @@ import { getFolderRecoveryNotice } from './folderRecoveryNotice';
 import { createLegacyAIStudioCommands } from './legacyAIStudioCommands';
 import { AISTUDIO_FOLDER_CONFIG } from './platformFolderConfig';
 import { AIStudioFolderStorageAdapter } from './storage/AIStudioFolderStorageAdapter';
+import { readSyncTooltip } from './syncTooltip';
 import type { FolderData } from './types';
 
 const VALID_PATH = /^\/(prompts|library)(\/|$)/;
@@ -299,8 +300,8 @@ export class AIStudioFolderManager {
         t: this.translate,
         onCloudUpload: () => void this.transfer.upload(),
         onCloudSync: () => void this.transfer.sync(),
-        uploadTooltip: () => this.transfer.uploadTooltip(),
-        syncTooltip: () => this.transfer.syncTooltip(),
+        uploadTooltip: () => readSyncTooltip('aistudio', 'upload'),
+        syncTooltip: () => readSyncTooltip('aistudio', 'sync'),
         onCreateFolder: () => {
           if (this.canEdit) this.tree?.startCreateFolder();
         },

@@ -7,7 +7,7 @@ import { isVoyagerLayerEvent } from '@/core/ui/layer';
 import type { ToastTone, Toaster } from '@/core/ui/toast/types';
 
 import { LibraryBatchDeleter } from './aistudioLibraryBatchDelete';
-import { getLibraryPromptRows, libraryPromptData } from './aistudioLibraryTable';
+import { getLibraryPromptRows, isLibraryPath, libraryPromptData } from './aistudioLibraryTable';
 
 const LONG_PRESS_MS = 500;
 const MAX_BATCH_DELETE_COUNT = 50;
@@ -36,6 +36,9 @@ export class LibrarySelection {
   private outsideClick: ((event: MouseEvent) => void) | null = null;
   /** Aborted when the selection ends, which answers its open confirm with null. */
   private session = new AbortController();
+  /** Bumped by destroy(); the manager reuses this selection when re-enabled. */
+  private lifetime = 0;
+  private refreshTimer: number | null = null;
   private readonly deleter: LibraryBatchDeleter;
 
   constructor(
@@ -123,6 +126,9 @@ export class LibrarySelection {
   }
 
   destroy(): void {
+    this.lifetime++;
+    if (this.refreshTimer !== null) clearTimeout(this.refreshTimer);
+    this.refreshTimer = null;
     if (this.active) this.exit();
     this.removeOutsideClick();
     this.host?.remove();
@@ -235,6 +241,7 @@ export class LibrarySelection {
   private async deleteSelected(anchor: HTMLElement): Promise<void> {
     if (this.deleting || this.selected.size === 0) return;
     const ids = Array.from(this.selected);
+    const lifetime = this.lifetime;
     const answer = await askConfirm({
       message: this.t('batch_delete_confirm').replace('{count}', String(ids.length)),
       anchor,
@@ -261,6 +268,19 @@ export class LibrarySelection {
     }
     this.exit();
     // AI Studio's table does not drop deleted rows on its own.
-    if (successCount > 0) setTimeout(() => location.reload(), PAGE_REFRESH_DELAY_MS);
+    if (successCount > 0 && this.isCurrent(lifetime)) this.scheduleRefresh(lifetime);
+  }
+
+  /** Still mounted and on /library: a reload anywhere else would discard an open prompt. */
+  private isCurrent(lifetime: number): boolean {
+    return this.lifetime === lifetime && isLibraryPath();
+  }
+
+  private scheduleRefresh(lifetime: number): void {
+    if (this.refreshTimer !== null) clearTimeout(this.refreshTimer);
+    this.refreshTimer = window.setTimeout(() => {
+      this.refreshTimer = null;
+      if (this.isCurrent(lifetime)) location.reload();
+    }, PAGE_REFRESH_DELAY_MS);
   }
 }

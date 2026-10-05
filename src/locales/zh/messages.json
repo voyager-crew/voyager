@@ -962,22 +962,6 @@
     "message": "可在扩展弹窗 → 文件夹选项中关闭此功能。",
     "description": "Footnote explaining where to toggle the setting later"
   },
-  "floatingModeNudgeTitle": {
-    "message": "侧边栏不可用 — 在悬浮窗中打开文件夹？",
-    "description": "Title of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeBody": {
-    "message": "Voyager 未找到 Gemini 侧边栏，可能是页面布局发生了变化。你仍可以在悬浮窗中浏览文件夹。",
-    "description": "Body copy of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeEnable": {
-    "message": "打开悬浮窗",
-    "description": "Primary button that opens the floating folder panel"
-  },
-  "floatingModeNudgeDismiss": {
-    "message": "暂不",
-    "description": "Secondary button that dismisses the floating-mode nudge"
-  },
   "floatingPanelTitle": {
     "message": "文件夹",
     "description": "Title shown in the floating folder panel header"

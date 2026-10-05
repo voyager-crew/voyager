@@ -31,6 +31,7 @@ import {
   bindRootDropZone,
   dropOnSidebar,
 } from '@/pages/content/folder/sidebarDrops';
+import { readSyncTooltip } from '@/pages/content/folder/syncTooltip';
 import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 import { getTranslationSyncUnsafe as t, initI18n } from '@/utils/i18n';
 
@@ -65,6 +66,8 @@ const HINT_KEYS = ['chatgptFoldersHint', 'floatingPanelGestureHint'];
 const NOTICE_MS = 4000;
 /** Like that status line, each outcome replaces the one before. */
 const NOTICE_CHANNEL = 'chatgpt-folders';
+/** Load and save problems, as long as AI Studio's error notices. */
+const STORAGE_NOTICE_MS = 5000;
 
 type Notice = { message: string; tone: ToastTone };
 
@@ -340,6 +343,11 @@ class ChatGptFoldersView {
     this.toaster.show({ message, tone, durationMs: NOTICE_MS, channel: NOTICE_CHANNEL });
   }
 
+  /** A load or save problem stays on its own, so the next outcome does not replace it. */
+  notifyStorage(message: string, tone: ToastTone): void {
+    if (!this.scope.isDisposed) this.toaster.show({ message, tone, durationMs: STORAGE_NOTICE_MS });
+  }
+
   private setOpen(open: boolean): void {
     if (open) this.mountPanel();
     else this.unmountPanel();
@@ -362,6 +370,8 @@ class ChatGptFoldersView {
       hintKeys: HINT_KEYS,
       onCloudUpload: () => void uploadChatGptFolders(this.cloudHost),
       onCloudSync: () => void syncChatGptFolders(this.cloudHost),
+      getCloudUploadTooltip: () => readSyncTooltip('chatgpt', 'upload'),
+      getCloudSyncTooltip: () => readSyncTooltip('chatgpt', 'sync'),
       headerActions: [
         {
           modifier: 'import',
@@ -497,7 +507,11 @@ export async function activateChatGptFolders(
 ): Promise<void> {
   await initI18n();
   if (scope.isDisposed) return;
-  const store = new ChatGptFolderStore();
+  // Created below, before the store first loads, so a load's notice has somewhere to show.
+  let view: ChatGptFoldersView | null = null;
+  const store = new ChatGptFolderStore(undefined, (message, tone) =>
+    view?.notifyStorage(message, tone),
+  );
   scope.child(store, 'chatgpt-folders:store');
   const [prefs, sectionPrefs] = await Promise.all([loadPanelPrefs(), loadSectionPrefs()]);
   if (scope.isDisposed) return;
@@ -516,7 +530,7 @@ export async function activateChatGptFolders(
       nativeTitle,
     });
   };
-  const view = new ChatGptFoldersView(scope, store, commands, prefs, (c) => {
+  view = new ChatGptFoldersView(scope, store, commands, prefs, (c) => {
     void renameNative(c);
   });
   const turnSelectors = turnSelectorsOf(adapter);

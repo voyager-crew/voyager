@@ -9,7 +9,7 @@ import {
 import type { ConversationPlacement } from '@/features/folder/model/placeConversations';
 import { FOLDER_PLATFORMS } from '@/features/folder/platforms';
 
-/** Every site whose folder bucket the owner may write. ChatGPT folders are a plugin, not a `FolderPlatform`. */
+/** Every site whose folder bucket the owner may write; the same ids as `FolderPlatform`. */
 export type FolderSite = 'gemini' | 'aistudio' | 'chatgpt';
 
 export type AddVia = 'native-menu' | 'project' | 'picker' | 'outside-drop';

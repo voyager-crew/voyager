@@ -20,7 +20,10 @@ vi.mock('webextension-polyfill', () => ({
     get storage() {
       return globalThis.chrome.storage;
     },
-    runtime: { id: 'test-extension-id' },
+    runtime: {
+      id: 'test-extension-id',
+      sendMessage: (message: unknown) => globalThis.chrome.runtime.sendMessage(message),
+    },
     i18n: { getUILanguage: () => 'en' },
   },
 }));
@@ -87,6 +90,12 @@ function trackPageListeners(): { live: () => string[]; restore: () => void } {
     },
   };
 }
+
+/** The in-memory storage area, typed loosely enough to wrap its calls. */
+type LooseArea = {
+  get: (keys: unknown) => Promise<Record<string, unknown>>;
+  set: (items: Record<string, unknown>) => Promise<void>;
+};
 
 let memory: MemoryStorage;
 let originalStorage: typeof chrome.storage;
@@ -281,6 +290,76 @@ describe('ChatGPT folders plugin', () => {
     expect(text).toContain('Proto');
     expect(text).toContain('Ctor');
     expect(errors).not.toHaveBeenCalled();
+  });
+
+  it("shows ChatGPT's own last upload and sync times in the cloud tooltips", async () => {
+    const now = Date.now();
+    vi.mocked(chrome.runtime.sendMessage).mockResolvedValue({
+      ok: true,
+      state: {
+        lastUploadTime: now - 3 * 3_600_000,
+        lastSyncTime: now - 3 * 3_600_000,
+        lastUploadTimeChatGPT: now - 5 * 60_000,
+        lastSyncTimeChatGPT: null,
+      },
+    } as never);
+    memory.values.local.set(StorageKeys.CHATGPT_FOLDER_PANEL, { open: true });
+    await activate();
+    const upload = shadow().querySelector<HTMLButtonElement>('[class*="--cloud-upload"]')!;
+    const sync = shadow().querySelector<HTMLButtonElement>('[class*="--cloud-sync"]')!;
+
+    upload.dispatchEvent(new MouseEvent('mouseenter'));
+    sync.dispatchEvent(new MouseEvent('mouseenter'));
+    await settle(5);
+
+    expect(upload.title).toBe('Upload to Cloud\nUploaded: 5 minutes ago');
+    expect(sync.title).toBe('Sync from Cloud\nNever synced');
+  });
+
+  it('warns when the stored folders are unreadable and no backup restores them', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    memory.values.local.set(StorageKeys.FOLDER_DATA_CHATGPT, { folders: 'garbage' });
+    await activate();
+
+    expect(toastDriver.all()).toMatchObject([
+      { message: expect.stringContaining('Failed to load folder data'), tone: 'error' },
+    ]);
+  });
+
+  it('says the folders are read-only when storage cannot be read', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const local = memory.api.local as unknown as LooseArea;
+    const get = local.get;
+    vi.spyOn(local, 'get').mockImplementation((keys) =>
+      keys === StorageKeys.FOLDER_DATA_CHATGPT
+        ? Promise.reject(new Error('read failed'))
+        : get(keys),
+    );
+    await activate();
+
+    expect(toastDriver.all()).toMatchObject([
+      { message: 'Could not load folder data. Folders are read-only for now.', tone: 'error' },
+    ]);
+  });
+
+  it('tells the user when a folder change cannot be saved', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    memory.values.local.set(StorageKeys.FOLDER_DATA_CHATGPT, structuredClone(TRIPS));
+    memory.values.local.set(StorageKeys.CHATGPT_FOLDER_PANEL, { open: true });
+    await activate();
+    const local = memory.api.local as unknown as LooseArea;
+    const set = local.set;
+    vi.spyOn(local, 'set').mockImplementation((items) =>
+      StorageKeys.FOLDER_DATA_CHATGPT in items ? Promise.reject(new Error('quota')) : set(items),
+    );
+
+    addCurrentHere('trips');
+    await settle(40);
+
+    expect(toastDriver.messages()).toContain('Could not save folder changes. Please try again.');
   });
 
   it('reopens the panel the user left open', async () => {
