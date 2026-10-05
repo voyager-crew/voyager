@@ -29,7 +29,7 @@ export type FloatingPanelHeaderAction = {
 
 export type MountArgs = TreeActions & {
   data: FolderData;
-  /** Gemini's Drive buttons; a site without Drive sync passes `false`. Defaults to on, off in Safari. */
+  /** Gemini's Drive buttons; a site without Drive sync passes `false`. Defaults to on. */
   cloudActions?: boolean;
   headerActions?: readonly FloatingPanelHeaderAction[];
   /** Hint rows under the header; defaults to Gemini's move and gesture hints. */

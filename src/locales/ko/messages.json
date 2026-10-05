@@ -962,22 +962,6 @@
     "message": "확장 프로그램 팝업 → 폴더 옵션에서 언제든 변경할 수 있습니다.",
     "description": "Footnote explaining where to toggle the setting later"
   },
-  "floatingModeNudgeTitle": {
-    "message": "사이드바를 찾을 수 없음 — 폴더를 플로팅 창으로 열까요?",
-    "description": "Title of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeBody": {
-    "message": "Voyager가 Gemini 사이드바를 찾지 못했습니다. 페이지 레이아웃이 변경되었을 수 있습니다. 플로팅 창에서 폴더를 계속 탐색할 수 있습니다.",
-    "description": "Body copy of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeEnable": {
-    "message": "플로팅 창 열기",
-    "description": "Primary button that opens the floating folder panel"
-  },
-  "floatingModeNudgeDismiss": {
-    "message": "나중에",
-    "description": "Secondary button that dismisses the floating-mode nudge"
-  },
   "floatingPanelTitle": {
     "message": "폴더",
     "description": "Title shown in the floating folder panel header"

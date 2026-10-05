@@ -23,8 +23,9 @@ export type ChatGptFolderNotify = (message: string, tone: 'warning' | 'error') =
  * ChatGPT's folder data over the shared FolderRepository, which owns load,
  * recovery, serialized saves and cross-tab reloads. Edits are shared owner ops
  * that `createLegacyChatGptCommands` computes and commits through `apply`. The
- * adapter writes only `chrome.storage.local` (despite its name), never
- * chatgpt.com's localStorage.
+ * adapter writes the folder data only to `chrome.storage.local` (despite its
+ * name). The repository's recovery backups do go to chatgpt.com's localStorage,
+ * under the `chatgpt-folders` backup namespace.
  */
 export class ChatGptFolderStore {
   private readonly repository: FolderRepository;

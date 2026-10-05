@@ -30,7 +30,6 @@ export interface FolderPlatformDefinition {
       | { ok: false; reason: 'invalid' | 'wrong-site'; message?: string };
   } | null;
   driveFoldersFileName: string;
-  driveFoldersFileType: 'folders' | 'aistudio-folders' | 'chatgpt-folders';
   lastUploadTimeField: 'lastUploadTime' | 'lastUploadTimeAIStudio' | 'lastUploadTimeChatGPT';
   lastSyncTimeField: 'lastSyncTime' | 'lastSyncTimeAIStudio' | 'lastSyncTimeChatGPT';
 }
@@ -43,7 +42,6 @@ export const FOLDER_PLATFORMS = {
     syncsSharedData: true,
     folderExport: null,
     driveFoldersFileName: 'gemini-voyager-folders.json',
-    driveFoldersFileType: 'folders',
     lastUploadTimeField: 'lastUploadTime',
     lastSyncTimeField: 'lastSyncTime',
   },
@@ -54,7 +52,6 @@ export const FOLDER_PLATFORMS = {
     syncsSharedData: true,
     folderExport: null,
     driveFoldersFileName: 'gemini-voyager-aistudio-folders.json',
-    driveFoldersFileType: 'aistudio-folders',
     lastUploadTimeField: 'lastUploadTimeAIStudio',
     lastSyncTimeField: 'lastSyncTimeAIStudio',
   },
@@ -65,7 +62,6 @@ export const FOLDER_PLATFORMS = {
     syncsSharedData: false,
     folderExport: { platform: 'chatgpt', read: readChatGptFolderExport },
     driveFoldersFileName: 'gemini-voyager-chatgpt-folders.json',
-    driveFoldersFileType: 'chatgpt-folders',
     lastUploadTimeField: 'lastUploadTimeChatGPT',
     lastSyncTimeField: 'lastSyncTimeChatGPT',
   },

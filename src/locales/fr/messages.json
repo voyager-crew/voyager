@@ -962,22 +962,6 @@
     "message": "Modifiable à tout moment dans la popup de l'extension → Options de dossiers.",
     "description": "Footnote explaining where to toggle the setting later"
   },
-  "floatingModeNudgeTitle": {
-    "message": "Barre latérale indisponible — ouvrir les dossiers dans une fenêtre flottante ?",
-    "description": "Title of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeBody": {
-    "message": "Voyager n'a pas trouvé la barre latérale Gemini, sans doute suite à un changement de mise en page. Vous pouvez toujours parcourir vos dossiers dans une fenêtre flottante.",
-    "description": "Body copy of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeEnable": {
-    "message": "Ouvrir la fenêtre flottante",
-    "description": "Primary button that opens the floating folder panel"
-  },
-  "floatingModeNudgeDismiss": {
-    "message": "Plus tard",
-    "description": "Secondary button that dismisses the floating-mode nudge"
-  },
   "floatingPanelTitle": {
     "message": "Dossiers",
     "description": "Title shown in the floating folder panel header"

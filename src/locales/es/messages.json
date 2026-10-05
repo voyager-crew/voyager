@@ -962,22 +962,6 @@
     "message": "Puedes cambiarlo en cualquier momento desde el popup de la extensión → Opciones de carpetas.",
     "description": "Footnote explaining where to toggle the setting later"
   },
-  "floatingModeNudgeTitle": {
-    "message": "Barra lateral no disponible: ¿abrir las carpetas en una ventana flotante?",
-    "description": "Title of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeBody": {
-    "message": "Voyager no pudo encontrar la barra lateral de Gemini, probablemente porque cambió el diseño de la página. Aún puedes explorar tus carpetas en una ventana flotante.",
-    "description": "Body copy of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeEnable": {
-    "message": "Abrir ventana flotante",
-    "description": "Primary button that opens the floating folder panel"
-  },
-  "floatingModeNudgeDismiss": {
-    "message": "Ahora no",
-    "description": "Secondary button that dismisses the floating-mode nudge"
-  },
   "floatingPanelTitle": {
     "message": "Carpetas",
     "description": "Title shown in the floating folder panel header"

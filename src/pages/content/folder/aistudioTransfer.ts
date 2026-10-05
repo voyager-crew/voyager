@@ -1,7 +1,7 @@
 /**
  * Moves AI Studio folders in and out: Drive upload and download-merge through
- * the background, plus JSON file import and export. AI Studio has its own Drive
- * folder file but shares prompts with Gemini.
+ * the background, plus JSON file import. AI Studio has its own Drive folder file
+ * but shares prompts with Gemini.
  *
  * Every operation captures the account session and activation it started in,
  * and drops its result (and its feedback) once either has changed.
@@ -48,13 +48,6 @@ export function toSyncAccountScope(scope: AccountScope | null): SyncAccountScope
     accountId: scope.accountId,
     routeUserId: scope.routeUserId,
   };
-}
-
-/** `YYYYMMDD-HHMMSS` in local time, for export file names. */
-export function exportTimestamp(date = new Date()): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const day = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}`;
-  return `${day}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 }
 
 export type SyncMessageHost = {
@@ -110,22 +103,6 @@ async function readLocalPrompts(purpose: string): Promise<PromptItem[]> {
     console.warn(`[AIStudioFolderManager] Could not get prompts for ${purpose}:`, error);
     return [];
   }
-}
-
-function downloadJSON(data: unknown, filename: string): void {
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: 'application/json;charset=utf-8',
-  });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  setTimeout(() => {
-    link.remove();
-    URL.revokeObjectURL(url);
-  }, 0);
 }
 
 export class AIStudioTransfer {
@@ -205,16 +182,6 @@ export class AIStudioTransfer {
       once: true,
     });
     input.click();
-  }
-
-  /** Downloads this account's folders as JSON. Not offered in AI Studio's UI yet. */
-  exportFile(): void {
-    const payload = {
-      format: 'gemini-voyager.folders.v1',
-      exportedAt: new Date().toISOString(),
-      data: this.host.data(),
-    };
-    downloadJSON(payload, `gemini-voyager-folders-${exportTimestamp()}.json`);
   }
 
   /** The session an operation starts in, and a check that it is still the live one. */

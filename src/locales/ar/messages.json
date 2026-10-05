@@ -962,22 +962,6 @@
     "message": "يمكنك تغيير ذلك في أي وقت من نافذة الإضافة ← خيارات المجلدات.",
     "description": "Footnote explaining where to toggle the setting later"
   },
-  "floatingModeNudgeTitle": {
-    "message": "الشريط الجانبي غير متاح — هل تريد فتح المجلدات في نافذة عائمة؟",
-    "description": "Title of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeBody": {
-    "message": "تعذّر على Voyager العثور على الشريط الجانبي في Gemini، ربما بسبب تغيير في تخطيط الصفحة. لا يزال بإمكانك تصفح مجلداتك في نافذة عائمة.",
-    "description": "Body copy of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeEnable": {
-    "message": "فتح نافذة عائمة",
-    "description": "Primary button that opens the floating folder panel"
-  },
-  "floatingModeNudgeDismiss": {
-    "message": "ليس الآن",
-    "description": "Secondary button that dismisses the floating-mode nudge"
-  },
   "floatingPanelTitle": {
     "message": "المجلدات",
     "description": "Title shown in the floating folder panel header"
