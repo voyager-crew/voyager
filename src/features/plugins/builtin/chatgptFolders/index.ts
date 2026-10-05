@@ -2,7 +2,7 @@
  * ChatGPT folders on the shared folder core: a folder section in ChatGPT's
  * sidebar (introduced once by a guide), the shared floating panel, and "Move to
  * folder" in a row's menu, or a row dragged onto a folder. The store is the
- * shared FolderRepository with ChatGPT's own bucket. Everything this plugin
+ * shared site folder store with ChatGPT's own bucket. Everything this plugin
  * creates is registered on its PluginScope, so turning it off leaves nothing behind.
  */
 import { DOWNLOAD_PATH, UPLOAD_PATH } from '@/core/icons/transferPaths';
@@ -15,6 +15,7 @@ import { FolderImportExportService } from '@/features/folder/services/FolderImpo
 import type { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import type { PluginSettings, SiteAdapter } from '@/features/plugins/types';
 import { FolderSelection } from '@/pages/content/folder/FolderSelection';
+import type { SiteFolderChange } from '@/pages/content/folder/SiteFolderStore';
 import {
   type CloudSyncSite,
   syncSiteFolders,
@@ -41,7 +42,7 @@ import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 import { getTranslationSyncUnsafe as t, initI18n } from '@/utils/i18n';
 
 import { isTemporaryChat } from '../chatgptTemporaryHandoff/handoff';
-import { type ChatGptFolderChange, ChatGptFolderStore } from './ChatGptFolderStore';
+import { ChatGptFolderStore } from './ChatGptFolderStore';
 import { ChatGptFolderGuide } from './chatgptFolderGuide';
 import { type FolderPickerHandle, openFolderPicker } from './chatgptFolderPicker';
 import { ChatGptFolderSection, sectionToolbarIcon } from './chatgptFolderSection';
@@ -221,7 +222,7 @@ class ChatGptFoldersView {
     );
   }
 
-  refresh(change: ChatGptFolderChange = 'data'): void {
+  refresh(change: SiteFolderChange = 'data'): void {
     const { data, ready } = this.store;
     // The panel keeps the manual order, which an open does not change.
     this.panel?.update(data);
