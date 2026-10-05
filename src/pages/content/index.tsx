@@ -58,7 +58,6 @@ import { slashPromptCoachmarkStep } from './prompt/slashPromptCoachmark';
 import { startQuoteReply } from './quoteReply/index';
 import { startSidebarAutoHide } from './sidebarAutoHide';
 import { startSidebarWidthAdjuster } from './sidebarWidth';
-import { startTimeline } from './timeline/index';
 import { rulerTimelineCoachmarkStep } from './timeline/rulerTimelineCoachmark';
 import { usageCoachmarkStep } from './usageStatus/usageCoachmark';
 import { startUserLatex } from './userLatex/index';
@@ -218,7 +217,7 @@ async function initializeFeatures(): Promise<void> {
       // Owners below report anchor health to it, so it listens before they start.
       await mountNativeFeature(cleanupManager, NATIVE_FEATURES.nativeHealth);
       // Timeline is most resource-intensive, start it first
-      startTimeline();
+      await mountNativeFeature(cleanupManager, NATIVE_FEATURES.timeline);
       await delay(HEAVY_FEATURE_INIT_DELAY);
 
       const folderManager = await startFolderManager();

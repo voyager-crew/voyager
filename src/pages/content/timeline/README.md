@@ -1,6 +1,8 @@
 # Timeline ownership
 
-Start with the owner of the behavior being changed. `manager.ts` creates a Gemini adapter for the
+Start with the owner of the behavior being changed. `index.ts` is the `timeline` native feature: it
+runs the shared route lifecycle (`runRouteTimeline`) and returns the stop the content script calls on
+teardown. `manager.ts` creates a Gemini adapter for the
 [shared timeline engine and view](../../../features/timeline/README.md). `GeminiTimelineAdapter.ts`
 owns selector discovery, turn collection, scroll viewport discovery and native health reporting.
 

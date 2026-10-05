@@ -21,6 +21,7 @@ import { startResearchPackReceiver } from './researchPack/receiver';
 import { startResponseCompleteNotification } from './responseNotification/index';
 import { startSendBehavior } from './sendBehavior/index';
 import { startStorageQuotaWarningToast } from './storageQuotaWarning';
+import { startTimeline } from './timeline/index';
 import { startUsageStatus } from './usageStatus/index';
 
 /**
@@ -118,6 +119,11 @@ export const NATIVE_FEATURES = {
     id: 'gems-hider',
     position: CleanupPositions.CleanupGemsHider,
     start: startGemsHider,
+  },
+  timeline: {
+    id: 'timeline',
+    position: CleanupPositions.CleanupTimeline,
+    start: startTimeline,
   },
   nativeHealth: {
     id: 'native-health',

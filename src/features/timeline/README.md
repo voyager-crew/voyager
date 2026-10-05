@@ -57,7 +57,9 @@ single write owner. Every edit requires evidence that the turn belongs to the cu
 Old page star arrays are neither read, imported, written nor purged.
 
 Viewport replacement rebinds scroll and intersection observation while retaining conversation state.
-Path/query replacement destroys the engine and creates a fresh conversation adapter. Gemini's shared
+Path/query replacement destroys the engine and creates a fresh conversation adapter; `runRouteTimeline`
+owns that route lifetime for every site (Gemini adds its conversation-route filter and 500 ms settle
+delay, catalog sites forward `hashchange`). Gemini's shared
 history timestamp store has page lifetime: conversation teardown unsubscribes without stopping it.
 Plugin scope abort immediately destroys the engine before pending startup settles, so an old cleanup
 cannot remove a newly enabled rail.
