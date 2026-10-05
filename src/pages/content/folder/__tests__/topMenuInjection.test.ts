@@ -261,6 +261,29 @@ describe('native move menu → folder command', () => {
     expect(document.querySelector('.gv-folder-dialog-overlay')).toBeNull();
   });
 
+  it('returns focus to the row menu button after the move dialog closes', async () => {
+    const row = document.createElement('div');
+    row.setAttribute('data-test-id', 'conversation');
+    row.setAttribute('jslog', '["c_bbbbbbbbbbbbbbbb"]');
+    row.innerHTML =
+      '<a href="/u/1/app/bbbbbbbbbbbbbbbb"><span class="title-text">Sidebar conversation</span></a>';
+    sidebar.appendChild(row);
+    const move = await openMenu(row);
+    const trigger = row.querySelector<HTMLElement>('[data-test-id="actions-menu-button"]')!;
+
+    move.focus();
+    move.click();
+    await vi.advanceTimersByTimeAsync(0);
+    // Picking the item closes the native menu, which takes the item with it.
+    expect(move.isConnected).toBe(false);
+    document.activeElement!.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+
+    expect(document.querySelector('.gv-folder-dialog-overlay')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
   it('moves the current page conversation from its top menu', async () => {
     const move = await openMenu(document.body);
 

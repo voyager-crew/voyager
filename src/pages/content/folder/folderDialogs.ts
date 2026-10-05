@@ -31,7 +31,12 @@ export type FolderDialogs = {
     onSelect: (color: string) => void,
     allowToggle?: boolean,
   ) => void;
-  openMove: (folders: readonly Folder[], onSelect: (folderId: string) => void) => void;
+  /** `returnFocus` takes focus on close if the opener is gone (a closed native menu's item). */
+  openMove: (
+    folders: readonly Folder[],
+    onSelect: (folderId: string) => void,
+    returnFocus?: HTMLElement | null,
+  ) => void;
   openInstructions: (
     instructions: string | undefined,
     onSave: (instructions: string | undefined) => Promise<boolean>,
@@ -147,7 +152,8 @@ export function createFolderDialogs(): FolderDialogs {
       activeColor = { view, folderId };
     },
 
-    openMove: (folders, onSelect) => openMoveDialog(own, folders, onSelect),
+    openMove: (folders, onSelect, returnFocus) =>
+      openMoveDialog(own, folders, onSelect, returnFocus),
 
     openInstructions: (instructions, onSave) => openInstructionsDialog(own, instructions, onSave),
 
