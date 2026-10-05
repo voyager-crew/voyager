@@ -78,6 +78,9 @@ export class KeyboardShortcutService {
     | ((changes: Record<string, chrome.storage.StorageChange>, areaName: string) => void)
     | null = null;
 
+  /** Bumped by destroy() so an init() that was loading its config does not attach afterwards. */
+  private generation = 0;
+
   // Key sequence tracking (for gg → first, GG → last)
   private lastSequenceSignature: string | null = null;
   private lastSequenceTime: number = 0;
@@ -100,7 +103,11 @@ export class KeyboardShortcutService {
    * Initialize service: load config and attach listeners
    */
   async init(): Promise<void> {
+    const generation = this.generation;
     await this.loadConfig();
+    // destroy() ran while the config loaded (the page tore its timeline down): attaching now would
+    // leave a keydown handler swallowing shortcut keys with nothing left to remove it.
+    if (generation !== this.generation) return;
     this.attachKeyboardListener();
     this.attachStorageListener();
   }
@@ -535,6 +542,7 @@ export class KeyboardShortcutService {
    * Cleanup service
    */
   destroy(): void {
+    this.generation += 1;
     if (this.keydownHandler) {
       window.removeEventListener('keydown', this.keydownHandler, { capture: true });
       this.keydownHandler = null;
