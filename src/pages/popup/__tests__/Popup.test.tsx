@@ -317,6 +317,15 @@ describe('Popup settings integration', () => {
       expect(sync).not.toHaveProperty(StorageKeys.TIMELINE_STYLE);
     });
 
+    it('choosing compact in the popup also compacts a page still running the older timeline manifest', async () => {
+      await mount();
+
+      await act(async () => shownButton(TRANSLATIONS.en.timelineStyleCompact)!.click());
+
+      // The older manifest's rail reads `compactView`, not `timelineStyle`, until the page reloads.
+      expect(chatGptTimelineSettings()).toEqual(expect.objectContaining({ compactView: true }));
+    });
+
     it('turning on node levels puts the ChatGPT rail back on dots', async () => {
       local[StorageKeys.PLUGINS_STATE] = {
         [PLUGIN_ID]: { enabled: true, installedAt: 1, settings: { timelineStyle: 'compact' } },
@@ -329,7 +338,9 @@ describe('Popup settings integration', () => {
       await act(async () => levels.click());
 
       expect(levels.checked).toBe(true);
-      expect(chatGptTimelineSettings()).toEqual({ timelineStyle: 'dots', markerLevel: true });
+      expect(chatGptTimelineSettings()).toEqual(
+        expect.objectContaining({ timelineStyle: 'dots', markerLevel: true }),
+      );
       expect(sync).not.toHaveProperty('geminiTimelineMarkerLevel');
     });
 

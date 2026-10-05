@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { resolveSiteAdapterForUrl } from '@/features/plugins/remote/siteOverride';
-import { resolvePluginSettings } from '@/features/plugins/runtime/resolvePluginSettings';
+import {
+  type PluginSettingWrite,
+  compatibleSettingWrite,
+  resolvePluginSettings,
+} from '@/features/plugins/runtime/resolvePluginSettings';
 import { SiteRegistry } from '@/features/plugins/sites/registry';
 import { isPluginEnabled } from '@/features/plugins/storage/pluginDefaults';
 import { type PluginStateMap, setPluginSettings } from '@/features/plugins/storage/pluginState';
@@ -98,17 +102,19 @@ export function useCatalogTimelineSettings({
   const onChange = useCallback(
     (patch: Partial<TimelineSettingsValues>) => {
       if (!manifest) return;
-      const values: Record<string, PluginSettingValue> = {};
-      if (patch.timelineStyle) values.timelineStyle = patch.timelineStyle;
+      const writes: PluginSettingWrite[] = [];
+      if (patch.timelineStyle) writes.push({ key: 'timelineStyle', value: patch.timelineStyle });
       if (typeof patch.markerLevelEnabled === 'boolean') {
-        values.markerLevel = patch.markerLevelEnabled;
-        // Levels have a shape only on the dots rail, so turning them on leaves compact or ruler.
-        if (patch.markerLevelEnabled) values.timelineStyle = 'dots';
+        writes.push({ key: 'markerLevel', value: patch.markerLevelEnabled });
       }
       const fields = manifest.contributes.settings ?? {};
-      const accepted = Object.fromEntries(
-        Object.entries(values).filter(([key]) => Object.hasOwn(fields, key)),
-      );
+      // Same translation as the plugin's own settings: a page still running an older manifest
+      // reads the keys it knew, and a choice another setting requires is written with it.
+      const accepted: Record<string, PluginSettingValue> = {};
+      for (const write of writes) {
+        if (!Object.hasOwn(fields, write.key)) continue;
+        Object.assign(accepted, compatibleSettingWrite(manifest, write).stored);
+      }
       if (Object.keys(accepted).length === 0) return;
       setPending((current) => ({ ...current, ...accepted }));
       void setPluginSettings(manifest.id, accepted);
