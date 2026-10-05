@@ -1,18 +1,8 @@
 import { type PluginManifest, hasNativeOps } from '../types';
+import { timelineManifest } from './timelineManifest';
 
 /** ChatGPT stamps the owning conversation id on each rendered reply. */
 export const CHATGPT_CONVERSATION_ID_ATTRIBUTE = 'data-chatgpt-selection-conversation-id';
-
-/** Same experimental, default-off switch, wording and dots-only rule as Gemini's native timeline setting. */
-const MARKER_LEVEL_SETTING = {
-  type: 'boolean',
-  label: 'Enable node levels',
-  default: false,
-  experimental: true,
-  messageKeys: { label: 'enableMarkerLevel', hint: 'enableMarkerLevelHint' },
-  // Levels have a shape only on the dots rail.
-  requiresChoice: { setting: 'timelineStyle', value: 'dots' },
-} as const;
 
 /**
  * Built-in (bundled-in-the-extension) plugins — first-party data, NOT from the
@@ -146,282 +136,35 @@ export const BUILTIN_PLUGINS: readonly PluginManifest[] = [
     requires: { handlers: ['vimInput'], semantic: ['composer'] },
     contributes: { domOps: [{ op: 'native', handler: 'vimInput', params: {} }] },
   },
-  {
+  timelineManifest({
     id: 'voyager.claude-timeline',
-    name: 'Claude · Timeline',
+    siteLabel: 'Claude',
     version: '1.2.0',
-    description: 'Adds a compact conversation timeline to Claude with starred messages and search.',
-    i18n: {
-      zh: {
-        name: 'Claude · 时间线',
-        description: '为 Claude 添加紧凑的对话时间线，支持星标消息和搜索。',
-        settings: {
-          timelineStyle: {
-            label: '时间线样式',
-            options: { dots: '节点', compact: '紧凑索引', ruler: '刻度' },
-          },
-        },
-      },
-      zh_TW: {
-        name: 'Claude · 時間線',
-        description: '為 Claude 加入緊湊的對話時間線，支援星標訊息與搜尋。',
-        settings: {
-          timelineStyle: {
-            label: '時間軸樣式',
-            options: { dots: '節點', compact: '精簡索引', ruler: '刻度' },
-          },
-        },
-      },
-      ja: {
-        name: 'Claude · タイムライン',
-        description:
-          'Claude にコンパクトな会話タイムラインを追加し、スター付きメッセージと検索に対応します。',
-        settings: {
-          timelineStyle: {
-            label: 'タイムライン表示',
-            options: { dots: 'ノード', compact: 'コンパクト', ruler: '目盛り' },
-          },
-        },
-      },
-      ko: {
-        name: 'Claude · 타임라인',
-        description: 'Claude에 별표 메시지와 검색을 지원하는 간단한 대화 타임라인을 추가합니다.',
-        settings: {
-          timelineStyle: {
-            label: '타임라인 스타일',
-            options: { dots: '노드', compact: '컴팩트', ruler: '눈금' },
-          },
-        },
-      },
-      fr: {
-        name: 'Claude · Timeline',
-        description: 'Ajoute une timeline compacte à Claude avec messages favoris et recherche.',
-        settings: {
-          timelineStyle: {
-            label: 'Style de la chronologie',
-            options: { dots: 'Nœuds', compact: 'Compact', ruler: 'Graduations' },
-          },
-        },
-      },
-      es: {
-        name: 'Claude · Línea de tiempo',
-        description:
-          'Añade a Claude una línea de tiempo compacta con mensajes destacados y búsqueda.',
-        settings: {
-          timelineStyle: {
-            label: 'Estilo de cronología',
-            options: { dots: 'Nodos', compact: 'Compacto', ruler: 'Escala' },
-          },
-        },
-      },
-      pt: {
-        name: 'Claude · Linha do tempo',
-        description:
-          'Adiciona ao Claude uma linha do tempo compacta com mensagens favoritas e busca.',
-        settings: {
-          timelineStyle: {
-            label: 'Estilo da linha do tempo',
-            options: { dots: 'Nós', compact: 'Compacto', ruler: 'Régua' },
-          },
-        },
-      },
-      ru: {
-        name: 'Claude · Таймлайн',
-        description: 'Добавляет в Claude компактную шкалу диалога со звёздами и поиском.',
-        settings: {
-          timelineStyle: {
-            label: 'Стиль временной шкалы',
-            options: { dots: 'Узлы', compact: 'Компактный', ruler: 'Шкала' },
-          },
-        },
-      },
-      ar: {
-        name: 'Claude · المخطط الزمني',
-        description: 'يضيف إلى Claude مخططًا زمنيًا موجزًا مع الرسائل المميزة والبحث.',
-        settings: {
-          timelineStyle: {
-            label: 'نمط الخط الزمني',
-            options: { dots: 'العُقد', compact: 'مضغوط', ruler: 'تدريج' },
-          },
-        },
-      },
-    },
-    author: 'voyager-official',
-    category: 'productivity',
-    license: 'GPL-3.0-or-later',
-    engine: '>=1.6.0',
-    tier: 'declarative',
     matches: ['https://claude.ai/*'],
-    requires: { handlers: ['turnNavigator'], semantic: ['userTurn'] },
-    contributes: {
-      settings: {
-        timelineStyle: {
-          type: 'select',
-          label: 'Timeline style',
-          default: 'dots',
-          options: [
-            { value: 'dots', label: 'Nodes' },
-            { value: 'compact', label: 'Compact' },
-            { value: 'ruler', label: 'Ruler' },
-          ],
-        },
-        markerLevel: MARKER_LEVEL_SETTING,
-      },
-      domOps: [
-        {
-          op: 'native',
-          handler: 'turnNavigator',
-          params: {
-            // Never open the onboarding guide over an active artifact frame.
-            yieldWhen: 'iframe[src*="claudeusercontent.com"]',
-            // Claude's thread container names its conversation and changes it
-            // in the render that swaps the turns: it decides star writes.
-            conversationIdAttribute: 'data-conv-id',
-          },
-        },
-      ],
+    params: {
+      // Never open the onboarding guide over an active artifact frame.
+      yieldWhen: 'iframe[src*="claudeusercontent.com"]',
+      // Claude's thread container names its conversation and changes it
+      // in the render that swaps the turns: it decides star writes.
+      conversationIdAttribute: 'data-conv-id',
     },
-  },
-  {
+  }),
+  timelineManifest({
     id: 'voyager.chatgpt-timeline',
-    name: 'ChatGPT · Timeline',
+    siteLabel: 'ChatGPT',
     version: '1.1.0',
-    description:
-      'Adds a compact conversation timeline to ChatGPT with starred messages and search.',
-    i18n: {
-      zh: {
-        name: 'ChatGPT · 时间线',
-        description: '为 ChatGPT 添加紧凑的对话时间线，支持星标消息和搜索。',
-        settings: {
-          timelineStyle: {
-            label: '时间线样式',
-            options: { dots: '节点', compact: '紧凑索引', ruler: '刻度' },
-          },
-        },
-      },
-      zh_TW: {
-        name: 'ChatGPT · 時間線',
-        description: '為 ChatGPT 加入緊湊的對話時間線，支援星標訊息與搜尋。',
-        settings: {
-          timelineStyle: {
-            label: '時間軸樣式',
-            options: { dots: '節點', compact: '精簡索引', ruler: '刻度' },
-          },
-        },
-      },
-      ja: {
-        name: 'ChatGPT · タイムライン',
-        description:
-          'ChatGPT にコンパクトな会話タイムラインを追加し、スター付きメッセージと検索に対応します。',
-        settings: {
-          timelineStyle: {
-            label: 'タイムライン表示',
-            options: { dots: 'ノード', compact: 'コンパクト', ruler: '目盛り' },
-          },
-        },
-      },
-      ko: {
-        name: 'ChatGPT · 타임라인',
-        description: 'ChatGPT에 별표 메시지와 검색을 지원하는 간단한 대화 타임라인을 추가합니다.',
-        settings: {
-          timelineStyle: {
-            label: '타임라인 스타일',
-            options: { dots: '노드', compact: '컴팩트', ruler: '눈금' },
-          },
-        },
-      },
-      fr: {
-        name: 'ChatGPT · Timeline',
-        description: 'Ajoute une timeline compacte à ChatGPT avec messages favoris et recherche.',
-        settings: {
-          timelineStyle: {
-            label: 'Style de la chronologie',
-            options: { dots: 'Nœuds', compact: 'Compact', ruler: 'Graduations' },
-          },
-        },
-      },
-      es: {
-        name: 'ChatGPT · Línea de tiempo',
-        description:
-          'Añade a ChatGPT una línea de tiempo compacta con mensajes destacados y búsqueda.',
-        settings: {
-          timelineStyle: {
-            label: 'Estilo de cronología',
-            options: { dots: 'Nodos', compact: 'Compacto', ruler: 'Escala' },
-          },
-        },
-      },
-      pt: {
-        name: 'ChatGPT · Linha do tempo',
-        description:
-          'Adiciona ao ChatGPT uma linha do tempo compacta com mensagens favoritas e busca.',
-        settings: {
-          timelineStyle: {
-            label: 'Estilo da linha do tempo',
-            options: { dots: 'Nós', compact: 'Compacto', ruler: 'Régua' },
-          },
-        },
-      },
-      ru: {
-        name: 'ChatGPT · Таймлайн',
-        description: 'Добавляет в ChatGPT компактную шкалу диалога со звёздами и поиском.',
-        settings: {
-          timelineStyle: {
-            label: 'Стиль временной шкалы',
-            options: { dots: 'Узлы', compact: 'Компактный', ruler: 'Шкала' },
-          },
-        },
-      },
-      ar: {
-        name: 'ChatGPT · المخطط الزمني',
-        description: 'يضيف إلى ChatGPT مخططًا زمنيًا موجزًا مع الرسائل المميزة والبحث.',
-        settings: {
-          timelineStyle: {
-            label: 'نمط الخط الزمني',
-            options: { dots: 'العُقد', compact: 'مضغوط', ruler: 'تدريج' },
-          },
-        },
-      },
-    },
-    author: 'voyager-official',
-    category: 'productivity',
-    license: 'GPL-3.0-or-later',
-    engine: '>=1.6.0',
-    tier: 'declarative',
     matches: ['https://chatgpt.com/*', 'https://chat.openai.com/*'],
-    requires: { handlers: ['turnNavigator'], semantic: ['userTurn'] },
-    contributes: {
-      settings: {
-        timelineStyle: {
-          type: 'select',
-          label: 'Timeline style',
-          default: 'dots',
-          options: [
-            { value: 'dots', label: 'Nodes' },
-            { value: 'compact', label: 'Compact' },
-            { value: 'ruler', label: 'Ruler' },
-          ],
-        },
-        markerLevel: MARKER_LEVEL_SETTING,
-      },
-      domOps: [
-        {
-          op: 'native',
-          handler: 'turnNavigator',
-          // Selectors and the URL's conversation id come from the ChatGPT
-          // adapter, so fixes travel with site.json. ChatGPT unmounts whole
-          // exchange items off-screen, so the rail accumulates them. A star is
-          // written only for a turn whose reply, inside its item, names the
-          // conversation the URL is on.
-          params: {
-            turnItem: '[data-turn-key]',
-            conversationIdAttribute: CHATGPT_CONVERSATION_ID_ATTRIBUTE,
-            accountIdAttributes: ['data-theme-user-id', 'data-theme-account-id'],
-          },
-        },
-      ],
+    // Selectors and the URL's conversation id come from the ChatGPT
+    // adapter, so fixes travel with site.json. ChatGPT unmounts whole
+    // exchange items off-screen, so the rail accumulates them. A star is
+    // written only for a turn whose reply, inside its item, names the
+    // conversation the URL is on.
+    params: {
+      turnItem: '[data-turn-key]',
+      conversationIdAttribute: CHATGPT_CONVERSATION_ID_ATTRIBUTE,
+      accountIdAttributes: ['data-theme-user-id', 'data-theme-account-id'],
     },
-  },
+  }),
   {
     id: 'voyager.chatgpt-export',
     name: 'ChatGPT · Conversation Export',
