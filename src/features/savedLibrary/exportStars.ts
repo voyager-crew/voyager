@@ -1,10 +1,8 @@
 import { hashString } from '@/core/utils/hash';
 import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
+import { parseSiteConversation } from '@/features/plugins/sites/siteConversation';
 import { activeStarNamespace } from '@/features/timeline/adapters/catalog/activeStarNamespace';
-import {
-  siteConversationConfig,
-  starConversationId,
-} from '@/features/timeline/adapters/catalog/conversationId';
+import { siteConversationConfig } from '@/features/timeline/adapters/catalog/conversationId';
 import { extractTurnHash, turnSummary } from '@/features/timeline/adapters/catalog/turnHash';
 
 import { StarredMessagesService } from './StarredMessagesService';
@@ -19,9 +17,9 @@ export async function loadChatGptStarHashes(url: string): Promise<ReadonlySet<st
   // Read the ids the mounted timeline files under; with none mounted, site.json's.
   const namespace =
     activeStarNamespace(chatgptAdapter.id) ?? siteConversationConfig(chatgptAdapter);
-  const conversationId = starConversationId(namespace, url);
+  const conversation = parseSiteConversation(namespace, url);
   // An unnamed temporary/new chat has no timeline star namespace to read.
-  if (!conversationId) return new Set();
-  const messages = await StarredMessagesService.getStarredMessagesForConversation(conversationId);
+  if (!conversation) return new Set();
+  const messages = await StarredMessagesService.getStarredMessagesForConversation(conversation.key);
   return new Set(messages.map((message) => extractTurnHash(message.turnId)));
 }

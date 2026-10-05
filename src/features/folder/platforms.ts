@@ -11,7 +11,7 @@ import { readChatGptFolderExport } from '@/features/plugins/builtin/chatgptFolde
 export type FolderPlatform = 'gemini' | 'aistudio' | 'chatgpt';
 
 export interface FolderPlatformDefinition {
-  /** Page hosts whose content scripts own this bucket. */
+  /** Page hosts whose content scripts own this bucket; the owner and sync trust only these. */
   hosts: readonly string[];
   /** `chrome.storage.local` base key; account isolation appends `:acct:<hash>`. */
   folderStorageKey: string;
@@ -56,6 +56,8 @@ export const FOLDER_PLATFORMS = {
     lastSyncTimeField: 'lastSyncTimeAIStudio',
   },
   chatgpt: {
+    // The canonical host only: `chat.openai.com` redirects here, is not in the optional
+    // host permissions, and must not write or sync this bucket. Links read from it still open.
     hosts: ['chatgpt.com'],
     folderStorageKey: StorageKeys.FOLDER_DATA_CHATGPT,
     accountIsolationStorageKey: null,

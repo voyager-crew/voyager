@@ -14,6 +14,7 @@ import { ChatGptFolderSection } from '@/features/plugins/builtin/chatgptFolders/
 import { DEFAULT_SECTION_PREFS } from '@/features/plugins/builtin/chatgptFolders/sectionPrefs';
 import { getTranslationSyncUnsafe } from '@/utils/i18n';
 
+import { GEMINI_PANEL } from '../../__tests__/floatingPanelHarness';
 import { mountAIStudioTree } from '../../aistudioTree';
 import { mountFloatingPanel } from '../../floatingPanel';
 import type { FolderData } from '../../types';
@@ -55,7 +56,7 @@ function clickCreateButton(root: ShadowRoot): void {
 }
 
 function mountPanel(data: FolderData, actions: TreeActions): MountedTree {
-  const handle = mountFloatingPanel({ data, cloudActions: false, ...actions });
+  const handle = mountFloatingPanel({ ...GEMINI_PANEL, data, cloudActions: false, ...actions });
   const root = handle.element.shadowRoot;
   if (!root) throw new Error('the floating panel has no shadow root');
   return {

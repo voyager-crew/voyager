@@ -364,8 +364,8 @@ class ChatGptFoldersView {
     const store = this.store;
     this.panel = mountFloatingPanel({
       data: store.data,
-      rootBucketId: CHATGPT_FOLDER_CONFIG.rootBucketId,
-      conversationIdentity: FOLDER_SITE_POLICIES.chatgpt,
+      policy: FOLDER_SITE_POLICIES.chatgpt,
+      cloudActions: true,
       dataReady: store.ready,
       hintKeys: HINT_KEYS,
       onCloudUpload: () => void uploadChatGptFolders(this.cloudHost),

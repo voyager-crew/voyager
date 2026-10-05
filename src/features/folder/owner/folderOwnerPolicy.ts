@@ -1,4 +1,3 @@
-import { StorageKeys } from '@/core/types/common';
 import type { ConversationReference } from '@/core/types/folder';
 import { AISTUDIO_ROOT_BUCKET_ID, ROOT_CONVERSATIONS_ID } from '@/features/folder/constants';
 import { EXACT_CONVERSATION_IDENTITY } from '@/features/folder/model/conversationStars';
@@ -7,10 +6,15 @@ import {
   normalizeConversationId,
 } from '@/features/folder/model/folderConversationIdentity';
 import type { ConversationPlacement } from '@/features/folder/model/placeConversations';
-import { FOLDER_PLATFORMS } from '@/features/folder/platforms';
+import {
+  FOLDER_PLATFORMS,
+  FOLDER_PLATFORM_IDS,
+  type FolderPlatform,
+  supportsAccountIsolation,
+} from '@/features/folder/platforms';
 
-/** Every site whose folder bucket the owner may write; the same ids as `FolderPlatform`. */
-export type FolderSite = 'gemini' | 'aistudio' | 'chatgpt';
+/** Every site whose folder bucket the owner may write. */
+export type FolderSite = FolderPlatform;
 
 export type AddVia = 'native-menu' | 'project' | 'picker' | 'outside-drop';
 
@@ -59,7 +63,7 @@ export const FOLDER_SITE_POLICIES: Readonly<Record<FolderSite, FolderSitePolicy>
   },
   chatgpt: {
     site: 'chatgpt',
-    hosts: ['chatgpt.com'],
+    hosts: FOLDER_PLATFORMS.chatgpt.hosts,
     rootBucketId: ROOT_CONVERSATIONS_ID,
     keysOf: EXACT_CONVERSATION_IDENTITY.keysOf,
     idKey: EXACT_CONVERSATION_IDENTITY.idKey,
@@ -72,16 +76,20 @@ export const FOLDER_SITE_POLICIES: Readonly<Record<FolderSite, FolderSitePolicy>
 const ACCOUNT_SUFFIX = /^:acct:[0-9a-z]{1,7}$/;
 
 /**
- * The site whose folder key family `key` belongs to: the base key, or for
- * Gemini and AI Studio `base:acct:<hash>`. Matching is exact, never by prefix,
- * so sidecars such as `gvFolderDataAIStudio:legacySyncImported` name no site.
+ * The site whose folder key family `key` belongs to: the base key, or for a
+ * site with account isolation `base:acct:<hash>`. Matching is exact, never by
+ * prefix, so sidecars such as `gvFolderDataAIStudio:legacySyncImported` name no site.
  */
 export function siteOfFolderKey(key: string): FolderSite | null {
-  if (key === StorageKeys.FOLDER_DATA_CHATGPT) return 'chatgpt';
-  for (const site of ['gemini', 'aistudio'] as const) {
+  for (const site of FOLDER_PLATFORM_IDS) {
     const base = FOLDER_PLATFORMS[site].folderStorageKey;
     if (key === base) return site;
-    if (key.startsWith(base) && ACCOUNT_SUFFIX.test(key.slice(base.length))) return site;
+    if (
+      supportsAccountIsolation(site) &&
+      key.startsWith(base) &&
+      ACCOUNT_SUFFIX.test(key.slice(base.length))
+    )
+      return site;
   }
   return null;
 }
