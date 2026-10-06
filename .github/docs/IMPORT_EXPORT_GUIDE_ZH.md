@@ -17,7 +17,7 @@
 1. 点击文件夹区域的**上传图标按钮**（向上箭头 ⬆️）
 2. 选择导入策略：
    - **合并模式**：保留现有文件夹，只添加新的（推荐）
-   - **覆盖模式**：完全替换现有配置（会创建备份）
+   - **覆盖模式**：完全替换现有配置
 3. 选择之前导出的 JSON 文件
 4. 点击"导入"按钮确认
 
@@ -34,40 +34,39 @@
 
 - ⚠️ 删除所有现有文件夹
 - ✅ 完全使用导入的配置
-- 🔒 自动创建备份（存储在 sessionStorage）
+- 🔒 为当前标签页保留被替换文件夹的副本（见下文）
 - 💡 适合：完全同步到新设备
 
 ## 🔄 备份与恢复
 
 ### 备份说明
 
-- **自动备份**：覆盖导入时自动创建
+- **自动备份**：在 Gemini 上每次导入文件夹前，先保存即将被改动的文件夹
 - **存储位置**：浏览器 sessionStorage（临时存储）
-- **有效期**：当前标签页关闭前有效
+- **有效期**：当前标签页关闭前有效；同一标签页的下一次导入会替换它
 - **大小限制**：通常为 5-10MB
 
-### 如何恢复备份（控制台操作）
+### 如何恢复备份
 
-如果导入后发现问题，可以在当前标签页未关闭的情况下恢复备份：
+如果导入后发现问题，可以在当前标签页未关闭的情况下，在导入时所用的同一 Google 账号（`/u/<index>/`）下恢复备份：
 
-```javascript
-// 1. 打开浏览器控制台 (F12)
+1. 在该 Gemini 标签页打开浏览器控制台 (F12)，运行：
 
-// 2. 检查是否有备份
-const hasBackup = sessionStorage.getItem('gvFolderBackup');
-console.log('备份存在：', hasBackup !== null);
+   ```javascript
+   console.log('备份时间：', sessionStorage.getItem('gvFolderBackupTimestamp'));
+   copy(
+     JSON.stringify({
+       format: 'gemini-voyager.folders.v1',
+       data: JSON.parse(sessionStorage.getItem('gvFolderBackup')),
+     }),
+   );
+   ```
 
-// 3. 查看备份时间
-const backupTime = sessionStorage.getItem('gvFolderBackupTimestamp');
-console.log('备份时间：', backupTime);
+   如果这里报错，说明该标签页没有备份。
 
-// 4. 恢复备份
-const backup = JSON.parse(sessionStorage.getItem('gvFolderBackup'));
-localStorage.setItem('gvFolderData', JSON.stringify(backup));
+2. 打开文件夹的**导入**对话框，选择**覆盖**，粘贴刚复制的文本并确认。
 
-// 5. 刷新页面
-location.reload();
-```
+恢复本身也是一次导入，因此它会把被替换的文件夹存为新的备份。
 
 ### 清除备份
 
@@ -112,7 +111,7 @@ sessionStorage.removeItem('gvFolderBackupTimestamp');
 
 - ✅ **本地存储**：所有数据仅存储在本地，不上传到任何服务器
 - ✅ **格式验证**：导入时严格验证数据格式，防止损坏
-- ✅ **自动备份**：覆盖操作前自动备份
+- ✅ **自动备份**：每次导入前自动备份
 - ✅ **版本控制**：文件包含版本号，便于未来兼容
 
 ## 常见问题
@@ -131,7 +130,7 @@ A: 目前需要手动导出/导入。自动同步需要云服务支持，暂不�
 
 ### Q: 导入后发现配置不对怎么办？
 
-A: 如果标签页未关闭，可以通过控制台恢复备份（参见上方说明）。
+A: 如果标签页未关闭，可以通过导入对话框把备份粘贴回去（参见上方说明）。
 
 ### Q: 支持跨浏览器同步吗？
 

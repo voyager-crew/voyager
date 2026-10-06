@@ -31,6 +31,8 @@ vi.mock('@/utils/i18n', () => ({
 }));
 
 const emptyData = (): FolderData => ({ folders: [], folderContents: {} });
+/** The pre-import snapshot an import keeps for this tab (`.github/docs/IMPORT_EXPORT_GUIDE.md`). */
+const preImportSnapshot = () => sessionStorage.getItem('gvFolderBackup');
 const importedData = (): FolderData => ({
   folders: [
     {
@@ -172,10 +174,25 @@ describe('folder transfer commands', () => {
       expect(local.folders).toHaveLength(1);
       expect(h.applyData).toHaveBeenCalledOnce();
       expect(h.refresh).toHaveBeenCalledOnce();
-      const restored = FolderImportExportService.restoreFromBackup();
-      expect(restored).toEqual({ success: true, data: local });
+      expect(JSON.parse(preImportSnapshot()!)).toEqual(local);
     },
   );
+
+  it('undoes an overwrite when its pre-import snapshot is pasted back, as the import guide shows', async () => {
+    const h = harness(importedData());
+    const replacement = JSON.stringify(FolderImportExportService.exportToPayload(emptyData()));
+    expect(await overwrite(h, { text: replacement })).toBe(true);
+    expect(h.session.data).toEqual(emptyData());
+
+    // The guide's console step: wrap the snapshot as a folder file and paste it with Overwrite.
+    const text = JSON.stringify({
+      format: 'gemini-voyager.folders.v1',
+      data: JSON.parse(preImportSnapshot()!),
+    });
+    expect(await overwrite(h, { text })).toBe(true);
+
+    expect(h.session.data).toEqual(importedData());
+  });
 
   it.each(['merge', 'overwrite'] as const)(
     'refuses to %s a folder file ChatGPT exported',
@@ -204,7 +221,7 @@ describe('folder transfer commands', () => {
       expect(h.notify).toHaveBeenCalledWith('folder_import_wrong_site', 'error');
       expect(h.session.data).toEqual(importedData());
       expect(h.applyData).not.toHaveBeenCalled();
-      expect(FolderImportExportService.hasBackup()).toBe(false);
+      expect(preImportSnapshot()).toBeNull();
     },
   );
 
@@ -294,7 +311,7 @@ describe('folder transfer commands', () => {
     expect(await overwrite(h, { text }, 'pm_cancel')).toBe(false);
     expect(h.session.data).toEqual(importedData());
     expect(h.applyData).not.toHaveBeenCalled();
-    expect(FolderImportExportService.hasBackup()).toBe(false);
+    expect(preImportSnapshot()).toBeNull();
   });
 
   it('asks beside the Import button before an overwrite, and keeps the dialog open on Cancel', async () => {
@@ -328,7 +345,7 @@ describe('folder transfer commands', () => {
 
     expect(await run).toBe(false);
     expect(h.applyData).not.toHaveBeenCalled();
-    expect(FolderImportExportService.hasBackup()).toBe(false);
+    expect(preImportSnapshot()).toBeNull();
   });
 
   it('submits pasted JSON from the import dialog and closes its overlay', async () => {

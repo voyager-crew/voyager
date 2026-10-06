@@ -3,8 +3,8 @@
  *
  * H3: merge imports used to mutate the caller's live FolderData in place
  * (shared array references behind a shallow copy), which also poisoned the
- * "pre-import" sessionStorage backup — restoreFromBackup rolled back to
- * post-import data. These tests pin the fixed behavior.
+ * "pre-import" sessionStorage backup, which then held post-import data.
+ * These tests pin the fixed behavior.
  *
  * L10: validatePayload used to accept arbitrarily-shaped folderContents
  * entries; now malformed conversation entries are skipped leniently.
@@ -154,13 +154,6 @@ describe('FolderImportExportService.importFromPayload backup (H3)', () => {
     // The backup must equal the data as it was BEFORE the import — not the
     // merged result.
     expect(JSON.parse(backupRaw as string)).toEqual(preImportSnapshot);
-
-    // restoreFromBackup round-trips the same pre-import data.
-    const restored = FolderImportExportService.restoreFromBackup();
-    expect(restored.success).toBe(true);
-    if (restored.success) {
-      expect(restored.data).toEqual(preImportSnapshot);
-    }
   });
 
   it('leaves the caller-provided current data untouched by a merge import', async () => {

@@ -372,9 +372,10 @@ export class FolderImportExportService {
 
       // Create backup if requested — a deep snapshot taken BEFORE any merge
       // work. A shallow copy would share array references with the live data,
-      // and any later mutation would silently rewrite the "pre-import" backup,
-      // breaking restoreFromBackup. JSON round-trip is safe here: FolderData is
-      // JSON-serializable (it is stringified into sessionStorage below anyway).
+      // and any later mutation would silently rewrite the "pre-import" backup.
+      // It is the only copy of the folders an import replaced (the repository's
+      // primary backup is rewritten right after the save); the import guide
+      // restores it by pasting it back into the import dialog.
       let backupData: FolderData | null = null;
       if (createBackup) {
         backupData = JSON.parse(JSON.stringify(currentData)) as FolderData;
@@ -548,68 +549,6 @@ export class FolderImportExportService {
           originalError: error,
         }),
       };
-    }
-  }
-
-  /**
-   * Restore from backup stored in sessionStorage
-   */
-  static restoreFromBackup(): Result<FolderData> {
-    try {
-      const backupStr = sessionStorage.getItem(SESSION_BACKUP_KEY);
-      if (!backupStr) {
-        return {
-          success: false,
-          error: new AppError(ErrorCode.STORAGE_READ_FAILED, 'No backup found'),
-        };
-      }
-
-      const backup = JSON.parse(backupStr) as FolderData;
-      return {
-        success: true,
-        data: backup,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: new AppError(ErrorCode.UNKNOWN_ERROR, 'Failed to restore backup', {
-          originalError: error,
-        }),
-      };
-    }
-  }
-
-  /**
-   * Clear backup from sessionStorage
-   */
-  static clearBackup(): void {
-    try {
-      sessionStorage.removeItem(SESSION_BACKUP_KEY);
-      sessionStorage.removeItem(SESSION_BACKUP_TIMESTAMP_KEY);
-    } catch {
-      /* ignore */
-    }
-  }
-
-  /**
-   * Check if backup exists
-   */
-  static hasBackup(): boolean {
-    try {
-      return sessionStorage.getItem(SESSION_BACKUP_KEY) !== null;
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Get backup timestamp
-   */
-  static getBackupTimestamp(): string | null {
-    try {
-      return sessionStorage.getItem(SESSION_BACKUP_TIMESTAMP_KEY);
-    } catch {
-      return null;
     }
   }
 }
