@@ -582,6 +582,50 @@ describe('PluginHost site override (plan §3)', () => {
     document.body.innerHTML = '';
   });
 
+  it('a catalog update that changes only the turn key rebuilds the send tracker', async () => {
+    mockState({ 'voyager.semantic': { enabled: true, installedAt: 1 } });
+    let turnKeyAttributes = ['data-turn-key'];
+    const source: PluginSource = {
+      id: 'host-catalog',
+      kind: 'remote',
+      async list() {
+        return [semanticPlugin];
+      },
+      async isAuthoritative() {
+        return true;
+      },
+      async siteOverride() {
+        return { ...overrideAdapter('.turn'), turnKeyAttributes };
+      },
+    };
+    const host = new PluginHost({
+      url: 'https://claude.ai/chat/1',
+      sources: [source],
+      doc: document,
+      requestCatalogRefresh: () => {},
+      isTopFrame: true,
+    });
+    await host.start();
+    expect(host.activeAdapter?.turnKeyAttributes).toEqual(['data-turn-key']);
+
+    turnKeyAttributes = ['data-message-id'];
+    for (const [listener] of (chrome.storage.onChanged.addListener as unknown as Mock).mock.calls) {
+      listener(
+        {
+          'gvPluginHostCatalog:claude.ai': {
+            oldValue: { status: 'ok', extensionVersion: 'x', manifests: [] },
+            newValue: { status: 'ok', extensionVersion: 'x', manifests: [], site: { id: 'v2' } },
+          },
+        },
+        'local',
+      );
+    }
+    await flush();
+    // Native plugins read the send tracker's turn key from the adapter the rebuilt engine hands them.
+    expect(host.activeAdapter?.turnKeyAttributes).toEqual(['data-message-id']);
+    host.stop();
+  });
+
   it('applies a site override written while the initial adapter read is in flight', async () => {
     document.body.innerHTML = '<div class="first-turn"></div><div class="second-turn"></div>';
     mockState({ 'voyager.semantic': { enabled: true, installedAt: 1 } });
