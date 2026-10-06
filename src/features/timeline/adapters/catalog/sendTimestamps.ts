@@ -2,13 +2,13 @@
  * Send-time timestamps for a catalog timeline. A virtualized host mounts old
  * turns whenever the user scrolls, so first-seen stamping would date history
  * "now"; only a send `trackUserSends` reports is stamped, under the host's own
- * key for the turn it produced. Times live in the store Gemini's timeline uses
- * (`TimestampService`, `gvMessageTimestamps`), under `<site>:conv:<id>`, so no
- * Gemini conversation is touched. Recording and display follow the same
- * "message timestamps" setting as Gemini; the time shows in the dot's tooltip.
+ * key for the turn it produced. Times live in per-conversation keys
+ * (`sendTimesStore`), never in Gemini's store. Recording and display follow
+ * the same "message timestamps" setting as Gemini; the time shows in the
+ * dot's tooltip.
  */
 import { StorageFactory } from '@/core/services/StorageService';
-import { StorageKeys, type TurnId } from '@/core/types/common';
+import { StorageKeys } from '@/core/types/common';
 import type { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import {
   type SendSite,
@@ -21,12 +21,28 @@ import { TimestampService } from '@/pages/content/timestamp/TimestampService';
 
 import type { TimelineTimestampOwner } from '../../TimelineAdapter';
 import type { ExtGlobal, SyncSettingsListener } from '../../types';
+import {
+  type TurnTimes,
+  addToSiteIndex,
+  catalogSendConversationCap,
+  pruneSite,
+  readConversationTimes,
+  readLegacySendTimes,
+  readSiteIndex,
+  turnKeyHash,
+  writeConversationTimes,
+} from './sendTimesStore';
 
 /** Page-lifetime send times for one catalog site; each route's engine reads them through `ownerFor`. */
 export class CatalogSendTimestamps {
   private enabled = false;
-  /** The latest read of the store; replaced by every record, which reads it afresh. */
-  private times = new TimestampService();
+  /** Conversations read so far, as last read or written by this page. */
+  private readonly times = new Map<string, TurnTimes>();
+  /** This site's times an earlier build kept in Gemini's store, by unhashed turn key: shown, never rewritten. */
+  private legacy = new Map<string, Map<string, number>>();
+  /** The site index as this page knows it; read on the first send. */
+  private indexed: Set<string> | null = null;
+  private readonly formatter = new TimestampService();
   private readonly ready: Promise<void>;
   /** One record at a time, so each reads the one before it and none is overwritten. */
   private recording: Promise<void> = Promise.resolve();
@@ -50,10 +66,11 @@ export class CatalogSendTimestamps {
       return () => onChanged.removeListener?.(listener);
     }, 'catalog-timeline:timestamp-setting');
     this.ready = (async () => {
-      const [setting] = await Promise.all([
+      const [setting, legacy] = await Promise.all([
         StorageFactory.create('sync').get<boolean>(StorageKeys.GV_SHOW_MESSAGE_TIMESTAMPS),
-        this.times.initialize(),
+        readLegacySendTimes(site.siteId),
       ]);
+      this.legacy = legacy;
       // A live change can arrive while the first read is pending.
       if (!settingChanged) this.enabled = setting.success && setting.data === true;
     })().catch(() => {});
@@ -65,20 +82,46 @@ export class CatalogSendTimestamps {
   private async record({ conversationKey, turnKey, at }: UserSend): Promise<void> {
     await this.ready;
     if (this.scope.isDisposed || !this.enabled) return;
-    // Read afresh: another tab may have written since this page loaded.
-    const times = new TimestampService();
-    await times.initialize();
+    if (this.legacy.get(conversationKey)?.has(turnKey)) return;
+    // Read afresh: another tab in this conversation may have written since.
+    const times = await readConversationTimes(conversationKey);
     if (this.scope.isDisposed || !this.enabled) return;
-    if (times.getTimestamp(conversationKey, turnKey as TurnId) !== null) return;
-    const write = times.recordTimestamp(conversationKey, turnKey as TurnId, at);
+    const hashed = turnKeyHash(turnKey);
+    if (times.has(hashed)) {
+      this.times.set(conversationKey, times);
+      return;
+    }
+    // Whole seconds, as stored, so the time reads the same before and after a reload.
+    times.set(hashed, Math.floor(at / 1000) * 1000);
     // Shown at once; persisting finishes on its own.
-    this.times = times;
-    await write.catch(() => {});
+    this.times.set(conversationKey, times);
+    await writeConversationTimes(conversationKey, times);
+    await this.keepIndexed(conversationKey);
+  }
+
+  /** Lists the conversation in the site index, and prunes the site once per page. */
+  private async keepIndexed(conversationKey: string): Promise<void> {
+    const firstSend = this.indexed === null;
+    this.indexed ??= await readSiteIndex(this.site.siteId);
+    if (!this.indexed.has(conversationKey)) {
+      await addToSiteIndex(this.site.siteId, conversationKey);
+      this.indexed.add(conversationKey);
+    }
+    if (firstSend) await pruneSite(this.site.siteId, catalogSendConversationCap());
+  }
+
+  private load(conversationKey: string): void {
+    if (this.times.has(conversationKey)) return;
+    void readConversationTimes(conversationKey).then((times) => {
+      // A send recorded meanwhile already holds the fresher read.
+      if (!this.times.has(conversationKey)) this.times.set(conversationKey, times);
+    });
   }
 
   /** The tooltip times for the conversation at `url`. */
   ownerFor(url: string): TimelineTimestampOwner {
     const conversationKey = sendConversationKey(this.site, url);
+    if (conversationKey) this.load(conversationKey);
     const keyByMarker = new Map<string, string>();
     return {
       // The rail never waits for stored times; a tooltip shows whatever has loaded.
@@ -95,8 +138,10 @@ export class CatalogSendTimestamps {
       formatTooltipTimestamp: (id) => {
         const key = keyByMarker.get(id);
         if (!this.enabled || !conversationKey || key === undefined) return null;
-        const time = this.times.getTimestamp(conversationKey, key as TurnId);
-        return time === null ? null : this.times.formatAbsoluteTime(time);
+        const time =
+          this.times.get(conversationKey)?.get(turnKeyHash(key)) ??
+          this.legacy.get(conversationKey)?.get(key);
+        return time === undefined ? null : this.formatter.formatAbsoluteTime(time);
       },
       destroy: () => keyByMarker.clear(),
     };

@@ -412,6 +412,12 @@ export const NON_SETTINGS_BACKUP_POLICIES = {
     disposition: 'local-data',
     reason: 'Message timestamp history is local data, not a setting.',
   },
+  [StorageKeys.CATALOG_MESSAGE_TIMESTAMPS_PREFIX]: {
+    storage: 'local',
+    disposition: 'local-data',
+    reason:
+      'Catalog-site message send times (one key per conversation) are local data, like Gemini message timestamps.',
+  },
   [StorageKeys.GV_TURN_IDENTITY_CACHE]: {
     storage: 'local',
     disposition: 'cache',

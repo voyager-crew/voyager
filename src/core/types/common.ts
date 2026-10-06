@@ -313,6 +313,11 @@ export const StorageKeys = {
   // Message timestamps
   GV_SHOW_MESSAGE_TIMESTAMPS: 'gvShowMessageTimestamps',
   GV_MESSAGE_TIMESTAMPS: 'gvMessageTimestamps',
+  /**
+   * Catalog-site (ChatGPT, …) send times, apart from Gemini's blob above:
+   * `<prefix><site>:conv:<id>` per conversation, plus a `<prefix><site>:index` list per site.
+   */
+  CATALOG_MESSAGE_TIMESTAMPS_PREFIX: 'gvMessageTimestamps:',
   // Local-only cache of Gemini's complete ordered response-id list per
   // conversation. It lets legacy positional turn ids resolve safely after a
   // full reload without persisting message text or response bodies.

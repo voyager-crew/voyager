@@ -82,10 +82,15 @@ highlight marker DOM contract. New DOM ownership metadata is `gv-` prefixed.
 
 Catalog message times come only from sends. A site whose `site.json` names `turnKeyAttributes`
 (ChatGPT today) gets a page-lifetime [send ledger](adapters/catalog/sendTimestamps.ts) that subscribes
-to [`trackUserSends`](../plugins/sends/trackUserSends.ts) and records the produced turn's host key in
-Gemini's `TimestampService` store under `<site>:conv:<id>`, gated by the same message-timestamps
-setting. Turns mounted from history are never stamped, and the time shows in the dot's tooltip only:
-nothing is inserted into the host's transcript. Claude and DeepSeek name no turn key and show none.
+to [`trackUserSends`](../plugins/sends/trackUserSends.ts) and records the produced turn's host key,
+gated by the same message-timestamps setting. [Times](adapters/catalog/sendTimesStore.ts) live in one
+`gvMessageTimestamps:<site>:conv:<id>` key per conversation, never in Gemini's `gvMessageTimestamps`
+blob, which saves whole snapshots and would drop other tabs' entries. Each key is columnar (hashed
+turn keys, seconds after a base; about 15 bytes a turn). A `gvMessageTimestamps:<site>:index` list
+lets the first send of a page prune the oldest conversations past the site cap (5000 with required
+`unlimitedStorage`, else 2000). Turns mounted from history are never stamped, and the time
+shows in the dot's tooltip only: nothing is inserted into the host's transcript. Claude and DeepSeek
+name no turn key and show none.
 
 The packaged `turnNavigator` primitive remains the compatibility entry point for old remote catalogs.
 Its name, parameter validator and engine floor are unchanged; both bundled and cached remote manifests
