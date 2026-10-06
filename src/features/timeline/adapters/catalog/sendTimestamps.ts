@@ -35,7 +35,7 @@ import {
 /** Page-lifetime send times for one catalog site; each route's engine reads them through `ownerFor`. */
 export class CatalogSendTimestamps {
   private enabled = false;
-  /** Conversations read so far, as last read or written by this page. */
+  /** Conversations read so far: every time this page has read, been sent or seen saved. */
   private readonly times = new Map<string, TurnTimes>();
   /** This site's times an earlier build kept in Gemini's store, by unhashed turn key: shown, never rewritten. */
   private legacy = new Map<string, Map<string, number>>();
@@ -56,7 +56,7 @@ export class CatalogSendTimestamps {
         if (area === 'local') {
           for (const conversationKey of this.times.keys()) {
             const shard = changes[conversationTimesKey(conversationKey)];
-            if (shard) this.times.set(conversationKey, parseConversationTimes(shard.newValue));
+            if (shard) this.merge(conversationKey, parseConversationTimes(shard.newValue));
           }
         }
         const change = changes[StorageKeys.GV_SHOW_MESSAGE_TIMESTAMPS];
@@ -92,15 +92,28 @@ export class CatalogSendTimestamps {
       turnKey,
       sentAt: at,
     });
-    if (times && !this.scope.isDisposed) this.times.set(conversationKey, times);
+    if (times && !this.scope.isDisposed) this.merge(conversationKey, times);
+  }
+
+  /**
+   * Adds `times` to what this page holds for the conversation. A stored turn's
+   * time never changes, so a union is never wrong, while replacing would let a
+   * reply or read taken before another tab's save hide that tab's time.
+   */
+  private merge(conversationKey: string, times: TurnTimes): void {
+    const held = this.times.get(conversationKey);
+    if (!held) {
+      this.times.set(conversationKey, new Map(times));
+      return;
+    }
+    for (const [turn, time] of times) if (!held.has(turn)) held.set(turn, time);
   }
 
   private load(conversationKey: string): void {
     if (this.times.has(conversationKey)) return;
-    void readConversationTimes(conversationKey).then((times) => {
-      // A send recorded meanwhile already holds the fresher read.
-      if (!this.times.has(conversationKey)) this.times.set(conversationKey, times);
-    });
+    // Held from the start, so a storage change that lands while the read is pending is kept.
+    this.times.set(conversationKey, new Map());
+    void readConversationTimes(conversationKey).then((times) => this.merge(conversationKey, times));
   }
 
   /** The tooltip times for the conversation at `url`. */

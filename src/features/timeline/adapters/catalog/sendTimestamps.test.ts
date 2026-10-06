@@ -16,6 +16,7 @@ import {
 import { requireBundledSiteAdapter } from '@/features/plugins/catalog/sites';
 import { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import { turnNavigatorPrimitive } from '@/features/plugins/verbs/turnNavigator';
+import { SEND_TIME_RECORD_MESSAGE } from '@/features/timeline/adapters/catalog/sendTimesMessages';
 import {
   CATALOG_SEND_CONVERSATIONS_LIMITED,
   CATALOG_SEND_CONVERSATIONS_UNLIMITED,
@@ -41,6 +42,20 @@ let storage: MemoryStorage;
 let scope: PluginScope;
 let thread: HTMLElement;
 let composer: HTMLElement;
+let background: ReturnType<typeof createSendTimeMessageHandler>;
+/** The background's replies reach this page once it resolves. */
+let replyGate: Promise<void>;
+
+/** A top-frame content script of ours on `url`. */
+function tabOn(url: string): chrome.runtime.MessageSender {
+  return { id: chrome.runtime.id, tab: { url } as chrome.tabs.Tab, frameId: 0 };
+}
+
+/** Another ChatGPT tab on chat one saves a send through the background. */
+async function saveFromAnotherTab(turnKey: string, sentAt: number): Promise<void> {
+  const payload = { site: 'chatgpt', conversationId: 'one', turnKey, sentAt };
+  await background({ type: SEND_TIME_RECORD_MESSAGE, payload }, tabOn('https://chatgpt.com/c/one'));
+}
 
 async function flush(): Promise<void> {
   for (let i = 0; i < 30; i++) await Promise.resolve();
@@ -124,14 +139,15 @@ beforeEach(async () => {
   storage.values.sync.set(StorageKeys.GV_SHOW_MESSAGE_TIMESTAMPS, true);
   vi.stubGlobal('chrome', { ...chrome, storage: storage.api });
   // The background owns writes; each test gets a fresh worker.
-  const background = createSendTimeMessageHandler();
+  background = createSendTimeMessageHandler();
+  replyGate = Promise.resolve();
   vi.mocked(chrome.runtime.sendMessage).mockImplementation(((
     request: { type: string },
     callback: (value: unknown) => void,
   ) => {
     if (request.type === 'gv.starred.getForConversation') callback({ ok: true, messages: [] });
-    const sender = { id: chrome.runtime.id, tab: { url: location.href }, frameId: 0 };
-    void background(request, sender as chrome.runtime.MessageSender)?.then(callback);
+    const reply = background(request, tabOn(location.href));
+    void reply?.then((value) => replyGate.then(() => callback(value)));
   }) as typeof chrome.runtime.sendMessage);
   await openTimeline();
 });
@@ -280,6 +296,63 @@ describe('catalog timeline message times', () => {
     history.replaceState({}, '', '/c/one');
     await openTimeline();
     await vi.waitFor(async () => expect(await tooltipOf('New question')).toContain(SENT_LABEL));
+  });
+
+  describe('a late reply never hides a send time another tab just saved', () => {
+    const OTHER_AT = SENT_AT + 60_000;
+    const OTHER_LABEL = new TimestampService().formatAbsoluteTime(OTHER_AT);
+    const OTHER_PROMPT = 'Question from another tab';
+
+    /** The other tab's turn, once this page shows it. */
+    async function showOtherTabsTurn(): Promise<void> {
+      thread.append(exchange('turn-3', OTHER_PROMPT));
+      await vi.waitFor(() => dotFor(OTHER_PROMPT));
+    }
+
+    it("when this tab's own send replies after the other tab's save", async () => {
+      let deliver!: () => void;
+      replyGate = new Promise((resolve) => (deliver = resolve));
+      await send('New question', 'turn-2');
+      await vi.waitFor(() => expect(storage.values.local.has(ONE_KEY)).toBe(true));
+      await saveFromAnotherTab('turn-3', OTHER_AT);
+      await showOtherTabsTurn();
+      await macrotask();
+
+      // The reply holds only this tab's send.
+      deliver();
+      await macrotask();
+
+      expect(await tooltipOf(OTHER_PROMPT)).toContain(OTHER_LABEL);
+      expect(await tooltipOf('New question')).toContain(SENT_LABEL);
+    });
+
+    it("when the chat's first read returns after the other tab's save", async () => {
+      // The reopened page's first read of chat one sees storage before the save, then stalls.
+      const local = storage.api.local as unknown as Record<string, (...args: unknown[]) => unknown>;
+      const get = local.get;
+      let stalled = false;
+      let resume!: () => void;
+      const resumed = new Promise<void>((resolve) => (resume = resolve));
+      local.get = async (keys: unknown, ...rest: unknown[]) => {
+        const result = await get(keys, ...rest);
+        if (!stalled && Array.isArray(keys) && keys.length === 1 && keys[0] === ONE_KEY) {
+          stalled = true;
+          await resumed;
+        }
+        return result;
+      };
+      await scope.dispose();
+      await openTimeline();
+      await vi.waitFor(() => expect(stalled).toBe(true));
+
+      await saveFromAnotherTab('turn-3', OTHER_AT);
+      await macrotask();
+      resume();
+      await macrotask();
+      await showOtherTabsTurn();
+
+      expect(await tooltipOf(OTHER_PROMPT)).toContain(OTHER_LABEL);
+    });
   });
 
   it('a send time an earlier build kept in Gemini’s store still shows, and is left there', async () => {

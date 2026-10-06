@@ -8,6 +8,7 @@ import {
   type MemoryStorage,
   createMemoryStorage,
 } from '@/features/plugins/builtin/chatgptFolders/__tests__/memoryStorage';
+import { parseSiteConversation } from '@/features/plugins/sites/siteConversation';
 import {
   SEND_TIME_RECORD_MESSAGE,
   type SendTimeRecordRequest,
@@ -171,6 +172,20 @@ describe('catalog send times in the background', () => {
     // Claude's own page may.
     const fromClaude = await sendFrom(tabOn('https://claude.ai/chat/abc'), request);
     expect(fromClaude).toMatchObject({ ok: true });
+  });
+
+  it('a site whose ids contain a slash still records send times', async () => {
+    // A site override may capture the route's prefix along with the id.
+    const url = 'https://chatgpt.com/c/abc123';
+    const conversation = parseSiteConversation(
+      { siteId: 'chatgpt', conversationIdPattern: '^/(c/[^/?#]+)' },
+      url,
+    )!;
+
+    const response = await sendFrom(tabOn(url), { conversationId: conversation.id });
+
+    expect(response).toMatchObject({ ok: true });
+    expect(sendTimeOf(await readConversationTimes(conversation.key), 'turn-a')).toBe(AT);
   });
 
   it('two turns whose keys share a 32-bit hash keep separate times', async () => {
