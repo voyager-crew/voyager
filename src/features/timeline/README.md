@@ -85,10 +85,12 @@ Catalog message times come only from sends. A site whose `site.json` names `turn
 to [`trackUserSends`](../plugins/sends/trackUserSends.ts) and records the produced turn's host key,
 gated by the same message-timestamps setting. [Times](adapters/catalog/sendTimesStore.ts) live in one
 `gvMessageTimestamps:<site>:conv:<id>` key per conversation, never in Gemini's `gvMessageTimestamps`
-blob, which saves whole snapshots and would drop other tabs' entries. Each key is columnar (hashed
-turn keys, seconds after a base; about 15 bytes a turn). A `gvMessageTimestamps:<site>:index` list
-lets the first send of a page prune the oldest conversations past the site cap (5000 with required
-`unlimitedStorage`, else 2000). Turns mounted from history are never stamped, and the time
+blob, which saves whole snapshots and would drop other tabs' entries. Each key is columnar (53-bit
+hashed turn keys, seconds after a base; about 20 bytes a turn). A `gvMessageTimestamps:<site>:index`
+list lets the first send of a page prune the oldest conversations past the site cap (5000 with
+required `unlimitedStorage`, else 2000). Writes and prunes hold the site's Web Lock
+(`gv-send-times:<site>`), shared by its tabs, and a failed read never leads to a write. Turns
+mounted from history are never stamped, and the time
 shows in the dot's tooltip only: nothing is inserted into the host's transcript. Claude and DeepSeek
 name no turn key and show none.
 
