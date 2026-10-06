@@ -3,12 +3,14 @@ import { filterTimelineHierarchyByRouteScope } from '@/pages/content/timeline/hi
 
 import type { TimelineHydration } from './TimelineHydration';
 import type { TimelineStoragePolicy } from './TimelineStoragePolicy';
-import { catalogHierarchySiteOf, outlineDeletionsAfterWrite } from './catalogHierarchySync';
+import { catalogHierarchySiteOf } from './catalogHierarchySync';
+import { requestCatalogOutlineEdit } from './catalogOutlineMessages';
 import {
   type TimelineHierarchyConversationData,
   type TimelineHierarchyData,
   normalizeTimelineHierarchyData,
 } from './hierarchyTypes';
+import { type OutlineEdit, applyOutlineEdit } from './outlineEdits';
 import { type OutlineChange, type SettledOutline, outlineSaveQueue } from './outlineSaveQueue';
 import { safeLocalStorageGet, safeLocalStorageSet } from './timelineLocalStorage';
 import type { MarkerLevel } from './types';
@@ -65,20 +67,11 @@ async function writeChange(
   apply: OutlineChange,
 ): Promise<SettledOutline | null> {
   try {
-    const values = (await chrome.storage.local.get(keysToRead(bucket))) as Record<string, unknown>;
-    const conversations = { ...readBucket(bucket, values).conversations };
-    const previous = conversations[conversationId] ?? null;
-    const next = apply(previous);
+    const conversations = { ...(await readConversations(bucket)) };
+    const next = apply(conversations[conversationId] ?? null);
     if (next) conversations[conversationId] = next;
     else delete conversations[conversationId];
-    // A catalog bucket remembers a cleared outline, or a cloud merge would bring it back.
-    const deleted = catalogHierarchySiteOf(bucket.key)
-      ? outlineDeletionsAfterWrite(values[bucket.key], conversationId, previous, next, Date.now())
-      : {};
-    await chrome.storage.local.set({
-      [bucket.key]:
-        Object.keys(deleted).length > 0 ? { conversations, deleted } : { conversations },
-    });
+    await chrome.storage.local.set({ [bucket.key]: { conversations } });
     const order = outlineSaveQueue.claimSnapshotOrder();
     return { stored: (await readConversations(bucket))[conversationId] ?? null, order };
   } catch (error) {
@@ -87,43 +80,23 @@ async function writeChange(
   }
 }
 
-function outlineEntry(
-  levels: Record<string, MarkerLevel>,
-  collapsed: string[],
-  conversationUrl: string,
-  updatedAt: number,
-): OutlineEntry {
-  if (Object.keys(levels).length === 0 && collapsed.length === 0) return null;
-  return { conversationUrl, levels, collapsed, updatedAt };
-}
-
-function setLevelChange(
-  turnId: string,
-  aliases: readonly string[],
-  level: MarkerLevel,
-  url: string,
-): OutlineChange {
-  const updatedAt = Date.now();
-  return (entry) => {
-    const levels = { ...entry?.levels };
-    aliases.forEach((alias) => delete levels[alias]);
-    if (level !== 1) levels[turnId] = level;
-    return outlineEntry(levels, entry?.collapsed ?? [], url, updatedAt);
-  };
-}
-
-function setCollapsedChange(
-  turnId: string,
-  aliases: readonly string[],
-  collapsed: boolean,
-  url: string,
-): OutlineChange {
-  const updatedAt = Date.now();
-  return (entry) => {
-    const ids = (entry?.collapsed ?? []).filter((id) => !aliases.includes(id));
-    if (collapsed) ids.push(turnId);
-    return outlineEntry({ ...entry?.levels }, ids, url, updatedAt);
-  };
+/**
+ * A catalog site's edit is written by the background, the one writer of its outlines; this page
+ * then reads the bucket back like a write of its own.
+ */
+async function writeCatalogEdit(
+  bucket: HierarchyBucket,
+  conversationId: string,
+  edit: OutlineEdit,
+): Promise<SettledOutline | null> {
+  if (!(await requestCatalogOutlineEdit({ key: bucket.key, conversationId, edit }))) return null;
+  try {
+    const order = outlineSaveQueue.claimSnapshotOrder();
+    return { stored: (await readConversations(bucket))[conversationId] ?? null, order };
+  } catch (error) {
+    console.warn('[Timeline] Failed to read a saved timeline outline:', error);
+    return null;
+  }
 }
 
 function accountAttributesChanged(records: readonly MutationRecord[]): boolean {
@@ -336,12 +309,18 @@ export class TimelineHierarchy {
   // ===== Persistence =====
 
   /** Captures destination and change now; the write completes even if this timeline is torn down. */
-  private enqueue(change: OutlineChange): Promise<void> {
+  private enqueue(edit: OutlineEdit): Promise<void> {
     const bucket = this.bucket;
     const key = this.queueKey;
     if (!bucket || !key) return Promise.resolve();
     const conversationId = this.conversationId;
-    return outlineSaveQueue.enqueue(key, change, () => writeChange(bucket, conversationId, change));
+    const updatedAt = Date.now();
+    const change: OutlineChange = (entry) => applyOutlineEdit(edit, entry, updatedAt);
+    return outlineSaveQueue.enqueue(key, change, () =>
+      catalogHierarchySiteOf(bucket.key)
+        ? writeCatalogEdit(bucket, conversationId, edit)
+        : writeChange(bucket, conversationId, change),
+    );
   }
   /** Moves a legacy outline into extension storage; a failure changes nothing and retries next mount. */
   private migrateLegacy(legacy: TimelineHierarchyConversationData): Promise<void> {
@@ -380,7 +359,7 @@ export class TimelineHierarchy {
 
   // ===== Edits =====
 
-  private edit(turnId: string, change: (aliases: string[]) => OutlineChange): void | Promise<void> {
+  private edit(turnId: string, change: (aliases: string[]) => OutlineEdit): void | Promise<void> {
     if (!this.isCurrent || !this.canEdit(turnId)) return;
     if (this.accountChangedSinceObserved()) return this.rebind();
     return this.hydration.edit(
@@ -401,9 +380,13 @@ export class TimelineHierarchy {
       .some((alias) => this.collapsedMarkers.has(alias));
   }
   toggleCollapse(turnId: string): void | Promise<void> {
-    return this.edit(turnId, (aliases) =>
-      setCollapsedChange(turnId, aliases, !this.isMarkerCollapsed(turnId), this.url),
-    );
+    return this.edit(turnId, (aliases) => ({
+      kind: 'collapse',
+      turnId,
+      aliases,
+      collapsed: !this.isMarkerCollapsed(turnId),
+      url: this.url,
+    }));
   }
   getMarkerLevel(turnId: string): MarkerLevel {
     for (const alias of this.policy.getStoredTurnIdAliases(turnId)) {
@@ -414,7 +397,13 @@ export class TimelineHierarchy {
   }
   setMarkerLevel(turnId: string, level: MarkerLevel): void | Promise<void> {
     // Converge verified legacy aliases only after a complete outline is available.
-    return this.edit(turnId, (aliases) => setLevelChange(turnId, aliases, level, this.url));
+    return this.edit(turnId, (aliases) => ({
+      kind: 'level',
+      turnId,
+      aliases,
+      level,
+      url: this.url,
+    }));
   }
 
   // ===== Lifecycle =====

@@ -6,6 +6,7 @@ import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
 import { ROOT_CONVERSATIONS_ID } from '@/features/folder/constants';
 import { PluginScope } from '@/features/plugins/runtime/pluginScope';
+import { routeCatalogOutlineWrites } from '@/features/timeline/__tests__/catalogOutlineBackground';
 import { toastDriver } from '@/tests/toastDriver';
 import { initI18n, getTranslationSyncUnsafe as t } from '@/utils/i18n';
 
@@ -217,10 +218,12 @@ describe('ChatGPT folder section: cloud', () => {
       collapsed: [],
       updatedAt: 10,
     };
-    sendMessage.mockImplementation(async (message: { type: string }) =>
-      message.type === 'gv.sync.catalogTimeline.pull'
-        ? { ok: true, buckets: { [key]: { conversations: { one: outline } } }, stars: {} }
-        : { ok: true, data: null },
+    sendMessage.mockImplementation(
+      routeCatalogOutlineWrites(async (message: { type: string }) =>
+        message.type === 'gv.sync.catalogTimeline.pull'
+          ? { ok: true, buckets: { [key]: { conversations: { one: outline } } }, stars: {} }
+          : { ok: true, data: null },
+      ),
     );
 
     await choose(t('folder_cloud_sync'));

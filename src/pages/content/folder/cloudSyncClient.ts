@@ -86,7 +86,7 @@ function errorText(error: unknown): string {
 /** Merges this sender's cloud catalog outlines and stars; true when anything was restored. */
 async function restoreCatalogTimeline(): Promise<boolean> {
   const pulled = await pullCatalogTimeline(sendRuntimeMessage);
-  return pulled ? restorePulledCatalogTimeline(pulled) : false;
+  return pulled ? restorePulledCatalogTimeline(sendRuntimeMessage, pulled) : false;
 }
 
 function notifySyncError(site: CloudSyncSite, message: string): void {

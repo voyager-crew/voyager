@@ -281,9 +281,11 @@ async function restoreCloudDownload(
   // Pulled before the local read, so the folder merge is not computed from an older read, and
   // before any write, so a failed pull is reported with the other unrestored parts.
   let restoreOutlines: (() => Promise<boolean>) | undefined;
+  const send = (message: { type: string; payload?: unknown }) =>
+    chrome.runtime.sendMessage(message);
   try {
-    const pulled = await pullCatalogTimeline((message) => chrome.runtime.sendMessage(message));
-    if (pulled) restoreOutlines = () => restorePulledCatalogTimeline(pulled);
+    const pulled = await pullCatalogTimeline(send);
+    if (pulled) restoreOutlines = () => restorePulledCatalogTimeline(send, pulled);
   } catch (error) {
     restoreOutlines = () => Promise.reject(error);
   }
@@ -394,8 +396,10 @@ export function useCloudSyncTransfer(
         restoreCloudDownload(context, getTargetTab, data, mode, highlightsRestored),
       /** Restores only the catalog outlines and stars, for a cloud without this site's files. */
       restoreCatalogTimeline: async () => {
-        const pulled = await pullCatalogTimeline((message) => chrome.runtime.sendMessage(message));
-        return pulled ? restorePulledCatalogTimeline(pulled) : false;
+        const send = (message: { type: string; payload?: unknown }) =>
+          chrome.runtime.sendMessage(message);
+        const pulled = await pullCatalogTimeline(send);
+        return pulled ? restorePulledCatalogTimeline(send, pulled) : false;
       },
     };
   }, [platform, includeHighlights, getTargetTab]);

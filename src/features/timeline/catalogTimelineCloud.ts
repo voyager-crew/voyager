@@ -1,8 +1,8 @@
 /**
  * The page and popup side of catalog timeline sync: each catalog site's outlines and stars. The
  * background reads, merges and uploads the local data; a pull returns the cloud copies, which the
- * caller merges in: outlines through `restoreCatalogTimelineBuckets`, so its own page's outline
- * queue orders the writes, and stars through the background star store.
+ * caller merges in: outlines through the background's single outline writer, which orders them
+ * with every page edit, and stars through the background star store.
  */
 import { StarredMessagesService } from '@/features/savedLibrary/StarredMessagesService';
 
@@ -11,7 +11,7 @@ import {
   CATALOG_TIMELINE_PUSH_MESSAGE,
   type CatalogTimelineBuckets,
 } from './catalogHierarchySync';
-import { restoreCatalogTimelineBuckets } from './restoreHierarchyBucket';
+import { restoreCatalogTimelineBuckets } from './catalogOutlineMessages';
 
 type SendMessage = (message: { type: string; payload?: unknown }) => Promise<unknown>;
 
@@ -80,9 +80,10 @@ export async function pullCatalogTimeline(
  * merge, even for an overwrite restore: they span sites and accounts this restore did not choose.
  */
 export async function restorePulledCatalogTimeline(
+  send: SendMessage,
   pulled: PulledCatalogTimeline,
 ): Promise<boolean> {
-  const { restored, failed } = await restoreCatalogTimelineBuckets(pulled.outlines);
+  const { restored, failed } = await restoreCatalogTimelineBuckets(send, pulled.outlines);
   let merged = false;
   for (const payload of Object.values(pulled.stars)) {
     // A catalog star file has no account scope; its stars carry their own account annotation.

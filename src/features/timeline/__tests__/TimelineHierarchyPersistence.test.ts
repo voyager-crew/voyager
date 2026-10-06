@@ -12,6 +12,7 @@ import { createGeminiTimelineStoragePolicy } from '@/pages/content/timeline/Gemi
 import { TimelineState } from '../TimelineState';
 import type { TimelineStoragePolicy } from '../TimelineStoragePolicy';
 import type { TimelineHierarchyData } from '../hierarchyTypes';
+import { routeCatalogOutlineWrites } from './catalogOutlineBackground';
 
 const KEY = 'gvCatalogTimelineHierarchy:claude';
 const TURN = 'c-turn';
@@ -118,8 +119,9 @@ beforeEach(() => {
     ...chrome,
     runtime: {
       ...chrome.runtime,
-      sendMessage: (_request: unknown, respond: (response: unknown) => void) =>
+      sendMessage: routeCatalogOutlineWrites((_request, respond) =>
         respond({ ok: true, messages: [] }),
+      ),
     },
     storage: { ...chrome.storage, local, onChanged: storage.api.onChanged },
   });

@@ -39,8 +39,8 @@ account; the hierarchy watches those attributes, rehydrates from the new account
 and while the account is unknown shows no outline and refuses edits. Other sites stay unscoped, and
 only Gemini's migration reads an unscoped blob behind a missing scoped one. Each accepted edit
 is a per-turn change (one turn's level or collapse) captured with its bucket and conversation. The
-page-wide `outlineSaveQueue` applies it to the entry freshly read from storage, so it never writes a
-remembered entry, and the save completes even if the timeline is torn down. The displayed outline is
+page-wide `outlineSaveQueue` orders it, and its write (the background's, on a catalog site) applies
+it to the entry freshly read from storage, so it never writes a remembered entry, and the save completes even if the timeline is torn down. The displayed outline is
 the latest storage snapshot, always accepted, with the page's unwritten changes for that bucket and
 conversation overlaid; a remounted timeline therefore sees an earlier session's pending edits. Each
 successful write reads the bucket back and publishes that read as the snapshot, which retires the
@@ -52,9 +52,13 @@ absence is a deletion that also clears the legacy keys, which only mirror extens
 site's buckets, keyed by storage key, in its own Drive file
 (`gemini-voyager-timeline-hierarchy.site-<siteId>.json`, see
 [catalogHierarchySync](catalogHierarchySync.ts)); uploads merge into that file, and a restore always
-merges into the local buckets through `outlineSaveQueue` ([restoreHierarchyBucket](restoreHierarchyBucket.ts)).
-Clearing a catalog outline leaves a deletion marker in its bucket (`deleted[conversationId]`), so a
-merge keeps it cleared unless an edit is newer; markers expire after 180 days.
+merges into the local buckets. The background is the single writer of catalog buckets
+([catalogOutlineMessages](../../pages/background/catalogOutlineMessages.ts)): page edits from every
+tab and restores from the popup or a page run one at a time per site, each step re-reading storage
+([catalogOutlineWriter](catalogOutlineWriter.ts)); a page still reads its outline from storage and
+refreshes on its change events. Gemini outlines keep their page-side write. Clearing a catalog
+outline leaves a deletion marker in its bucket (`deleted[conversationId]`), so a merge keeps it
+cleared unless an edit is newer; markers expire after 180 days.
 The popup syncs every catalog site; a site's own page syncs only that site.
 ChatGPT stars carry the same hashed account annotation. Stars for every site come from the Saved
 Library through its

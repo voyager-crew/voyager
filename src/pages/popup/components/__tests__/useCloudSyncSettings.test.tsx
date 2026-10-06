@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 import { DEFAULT_SYNC_STATE } from '@/core/types/sync';
+import { routeCatalogOutlineWrites } from '@/features/timeline/__tests__/catalogOutlineBackground';
 
 import { useCloudSyncSettings } from '../useCloudSyncSettings';
 
@@ -40,7 +41,11 @@ describe('cloud sync popup state owner', () => {
     );
     localSet.mockResolvedValue(undefined);
     vi.stubGlobal('chrome', {
-      runtime: { id: 'test', sendMessage },
+      runtime: {
+        id: 'test',
+        sendMessage,
+        getURL: (path: string) => `chrome-extension://test/${path}`,
+      },
       tabs: {
         get: vi.fn().mockRejectedValue(new Error('source tab closed')),
         query: vi.fn().mockResolvedValue([{ url: 'https://gemini.google.com/app' }]),
@@ -121,12 +126,17 @@ describe('cloud sync popup state owner', () => {
       collapsed: [],
       updatedAt: 10,
     };
-    sendMessage.mockImplementation(async (message) =>
-      message.type === 'gv.sync.download'
-        ? { ok: true, data: null, highlights: { synced: false } }
-        : message.type === 'gv.sync.catalogTimeline.pull'
-          ? { ok: true, buckets: { [key]: { conversations: { one: outline } } }, stars: {} }
-          : { ok: true, state },
+    const popup = { id: 'test', url: 'chrome-extension://test/src/pages/popup/index.html' };
+    sendMessage.mockImplementation(
+      routeCatalogOutlineWrites(
+        async (message: { type: string }) =>
+          message.type === 'gv.sync.download'
+            ? { ok: true, data: null, highlights: { synced: false } }
+            : message.type === 'gv.sync.catalogTimeline.pull'
+              ? { ok: true, buckets: { [key]: { conversations: { one: outline } } }, stars: {} }
+              : { ok: true, state },
+        popup,
+      ) as (message: { type: string }) => Promise<unknown>,
     );
     await act(async () => settings.handleDownloadFromDrive());
 

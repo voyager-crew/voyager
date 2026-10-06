@@ -19,6 +19,7 @@ import {
   CATALOG_TIMELINE_PULL_MESSAGE,
   CATALOG_TIMELINE_PUSH_MESSAGE,
 } from '@/features/timeline/catalogHierarchySync';
+import { CATALOG_OUTLINE_WRITE_MESSAGE } from '@/features/timeline/catalogOutlineMessages';
 
 function parseHttpsUrl(rawUrl: string | undefined): URL | null {
   if (!rawUrl) return null;
@@ -111,6 +112,7 @@ const HANDLED_BACKGROUND_MESSAGE_TYPES = new Set([
   CHATGPT_HANDOFF_CANCEL_EXPIRY_MESSAGE,
   CHATGPT_HANDOFF_GET_TAB_ID_MESSAGE,
   'gv.account.resolve',
+  CATALOG_OUTLINE_WRITE_MESSAGE,
   'gv.responseComplete.notify',
   'gv.responseComplete.requestNativePermission',
   'gv.clipboard.copyImagePng',

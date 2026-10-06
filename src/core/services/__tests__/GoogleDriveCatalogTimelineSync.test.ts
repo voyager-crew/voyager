@@ -126,6 +126,8 @@ async function device(initial: Record<string, unknown> = {}) {
   });
   const { createCloudSyncMessageHandler } = await import('@/pages/background/cloudSyncMessages');
   const { createStarredMessagesHandler } = await import('@/pages/background/starredMessages');
+  const { createCatalogOutlineMessageHandler } =
+    await import('@/pages/background/catalogOutlineMessages');
   const { createStarStore } = await import('@/features/savedLibrary/starStore');
   const { googleDriveSyncService: service } = await import('../GoogleDriveSyncService');
   const cloud = await import('@/features/timeline/catalogTimelineCloud');
@@ -141,8 +143,10 @@ async function device(initial: Record<string, unknown> = {}) {
     sendMessage: (message: unknown, respond: (response: unknown) => void) =>
       void starred(message, popup)?.then(respond),
   });
+  // Outline writes go to the background's single outline writer, everything else to cloud sync.
+  const outlines = createCatalogOutlineMessageHandler();
   const sendAs = (sender: chrome.runtime.MessageSender) => (message: { type: string }) =>
-    handler(message, sender) as Promise<unknown>;
+    (outlines(message, sender) ?? handler(message, sender)) as Promise<unknown>;
   /** A Gemini sync of the store's stars, as the Gemini folder upload runs it. */
   const syncGemini = (accountScope: SyncAccountScope | null) =>
     service.upload(
@@ -194,7 +198,12 @@ it('a ChatGPT outline survives a Drive round trip', async () => {
     fresh.sendAs(page('https://chatgpt.com/c/one')),
   );
   expect(pulled).not.toBeNull();
-  await expect(fresh.cloud.restorePulledCatalogTimeline(pulled!)).resolves.toBe(true);
+  await expect(
+    fresh.cloud.restorePulledCatalogTimeline(
+      fresh.sendAs(page('https://chatgpt.com/c/one')),
+      pulled!,
+    ),
+  ).resolves.toBe(true);
 
   expect(fresh.values[CHATGPT_KEY]).toEqual({ conversations: { one: outline('one', 10) } });
 });
@@ -241,7 +250,9 @@ it('a restore keeps a newer local outline and leaves an unreadable bucket untouc
     [CLAUDE_KEY]: 'not a bucket',
   });
   const pulled = await other.cloud.pullCatalogTimeline(other.sendAs(popup));
-  await expect(other.cloud.restorePulledCatalogTimeline(pulled!)).rejects.toThrow();
+  await expect(
+    other.cloud.restorePulledCatalogTimeline(other.sendAs(popup), pulled!),
+  ).rejects.toThrow();
 
   expect(other.values[CHATGPT_KEY]).toEqual({
     conversations: { one: outline('one', 99, 3), two: outline('two', 10) },
@@ -266,7 +277,7 @@ it('an outline cleared on one device stays cleared on every device after a sync'
 
   const other = await device(holding);
   const pulled = await other.cloud.pullCatalogTimeline(other.sendAs(popup));
-  await other.cloud.restorePulledCatalogTimeline(pulled!);
+  await other.cloud.restorePulledCatalogTimeline(other.sendAs(popup), pulled!);
   expect(other.values[CHATGPT_KEY]).toEqual({ conversations: {}, deleted: { one: CLEARED } });
 
   // An upload that still holds the older outline doesn't bring it back either.
@@ -274,7 +285,7 @@ it('an outline cleared on one device stays cleared on every device after a sync'
   await stale.cloud.pushCatalogTimeline(stale.sendAs(popup));
   const fresh = await device();
   const restored = await fresh.cloud.pullCatalogTimeline(fresh.sendAs(popup));
-  await fresh.cloud.restorePulledCatalogTimeline(restored!);
+  await fresh.cloud.restorePulledCatalogTimeline(fresh.sendAs(popup), restored!);
   expect(fresh.values[CHATGPT_KEY]).toEqual({ conversations: {}, deleted: { one: CLEARED } });
 });
 
@@ -289,7 +300,7 @@ it('an outline edited after another device cleared it is kept', async () => {
 
   const later = await device(cleared);
   const pulled = await later.cloud.pullCatalogTimeline(later.sendAs(popup));
-  await later.cloud.restorePulledCatalogTimeline(pulled!);
+  await later.cloud.restorePulledCatalogTimeline(later.sendAs(popup), pulled!);
   expect(later.values[CHATGPT_KEY]).toEqual({ conversations: { one: outline('one', REEDITED) } });
 });
 
@@ -320,8 +331,9 @@ it('a ChatGPT star survives a Drive round trip through its own site file', async
   expect(turns(starFile(CHATGPT_STARS))).toEqual([chatgptStar.turnId]);
 
   const fresh = await device();
-  const pulled = await fresh.cloud.pullCatalogTimeline(fresh.sendAs(page('https://chatgpt.com/')));
-  await expect(fresh.cloud.restorePulledCatalogTimeline(pulled!)).resolves.toBe(true);
+  const chatgpt = fresh.sendAs(page('https://chatgpt.com/'));
+  const pulled = await fresh.cloud.pullCatalogTimeline(chatgpt);
+  await expect(fresh.cloud.restorePulledCatalogTimeline(chatgpt, pulled!)).resolves.toBe(true);
 
   expect((await fresh.store.getAll()).messages[chatgptStar.conversationId]).toEqual([
     expect.objectContaining({ turnId: chatgptStar.turnId, account: chatgptStar.account }),

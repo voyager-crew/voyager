@@ -9,6 +9,7 @@ import { StarredMessagesService } from '@/features/savedLibrary/StarredMessagesS
 import type { StarredMessage } from '@/features/savedLibrary/starTypes';
 
 import { TimelineState } from '../../TimelineState';
+import { routeCatalogOutlineWrites } from '../../__tests__/catalogOutlineBackground';
 import { createCatalogTimelineStoragePolicy } from './CatalogTimelineStorage';
 import { CatalogTurnOwnership } from './CatalogTurnOwnership';
 import type { CatalogTimelineConfig } from './config';
@@ -79,6 +80,7 @@ beforeEach(() => {
   storage = createMemoryStorage();
   vi.stubGlobal('chrome', {
     ...chrome,
+    runtime: { ...chrome.runtime, sendMessage: routeCatalogOutlineWrites() },
     storage: { ...chrome.storage, local: storage.api.local, onChanged: storage.api.onChanged },
   });
   history.replaceState({}, '', '/c/one');
@@ -225,7 +227,7 @@ describe.each(['chatgpt', 'claude', 'deepseek'])('%s shared timeline storage pol
     const conversationId = `${siteId}:conv:one`;
     state.hierarchy.setMarkerLevel('c-turn', 2);
     state.hierarchy.toggleCollapse('c-turn');
-    await settle();
+    await settle(30);
     expect(localStorage.length).toBe(0);
     expect(storedOutline(`gvCatalogTimelineHierarchy:${siteId}`, conversationId)).toMatchObject({
       conversationUrl: `${location.origin}/c/one`,
@@ -241,7 +243,7 @@ describe.each(['chatgpt', 'claude', 'deepseek'])('%s shared timeline storage pol
 
     reopened.hierarchy.setMarkerLevel('c-turn', 1);
     reopened.hierarchy.toggleCollapse('c-turn');
-    await settle();
+    await settle(30);
     expect(storedOutline(`gvCatalogTimelineHierarchy:${siteId}`, conversationId)).toBeUndefined();
 
     await reopened.toggleStar('c-turn');
