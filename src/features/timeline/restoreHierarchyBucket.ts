@@ -2,6 +2,11 @@
  * Merges cloud outlines into hierarchy buckets through the page-wide `outlineSaveQueue`, so a
  * restore in a page with an open timeline is serialized with that page's own outline edits. An
  * open timeline then picks the merged bucket up from its storage event.
+ *
+ * The queue is per page: the popup and every other tab have their own, and `chrome.storage` has no
+ * conditional write. So a restore reads back, from its own write's change event, the value that
+ * write replaced. When another context saved in between, that value is merged in and written again;
+ * each entry keeps its newest version, so the other context's edit is kept.
  */
 import {
   type OutlineDeletions,
@@ -20,16 +25,33 @@ function sameDeletions(a: OutlineDeletions, b: OutlineDeletions): boolean {
   return keys.length === Object.keys(b).length && keys.every((id) => a[id] === b[id]);
 }
 
+/** How long a restore waits for its own write's change event before trusting the write. */
+const CHANGE_EVENT_TIMEOUT_MS = 1_000;
+/** Writes a restore repeats when other contexts keep saving between its read and its write. */
+const MAX_WRITES = 3;
+
+/** JSON with sorted keys, so two reads of one stored value compare equal. */
+function canonical(value: unknown): string {
+  return JSON.stringify(value, (_key, inner: unknown) =>
+    isRecord(inner)
+      ? Object.fromEntries(Object.entries(inner).sort(([a], [b]) => a.localeCompare(b)))
+      : inner,
+  );
+}
+
 /**
- * The stored bucket with the cloud bucket merged in per conversation (see `mergeCatalogBucket`),
- * or null when nothing changes. Entries this merge does not change are kept exactly as stored.
+ * The stored bucket with every source merged in per conversation (see `mergeCatalogBucket`), or
+ * null when nothing changes. Entries the merge does not change are kept exactly as stored.
  */
 function mergedBucket(
   stored: Record<string, unknown> | undefined,
-  cloud: unknown,
+  sources: readonly unknown[],
 ): Record<string, unknown> | null {
   const local = readCatalogBucket(stored);
-  const merged = mergeCatalogBucket(local, readCatalogBucket(cloud));
+  const merged = sources.reduce<ReturnType<typeof readCatalogBucket>>(
+    (bucket, source) => mergeCatalogBucket(bucket, readCatalogBucket(source)),
+    local,
+  );
   const conversations = { ...(stored?.conversations as Record<string, unknown> | undefined) };
   let changed = false;
   const ids = new Set([...Object.keys(local.conversations), ...Object.keys(merged.conversations)]);
@@ -50,6 +72,41 @@ function mergedBucket(
 }
 
 /**
+ * Writes `next` and resolves the value that write replaced, read from its own change event, or
+ * `unknown` when this context gets no change events or none arrives in time.
+ */
+async function writeAndReadReplaced(
+  key: string,
+  next: Record<string, unknown>,
+): Promise<{ replaced: unknown } | 'unknown'> {
+  const events = chrome.storage.onChanged;
+  if (!events?.addListener) {
+    await chrome.storage.local.set({ [key]: next });
+    return 'unknown';
+  }
+  const written = canonical(next);
+  let listener: Parameters<typeof events.addListener>[0] = () => {};
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const replaced = new Promise<{ replaced: unknown } | 'unknown'>((resolve) => {
+    listener = (changes, area) => {
+      const change = changes[key];
+      if (area === 'local' && change && canonical(change.newValue) === written) {
+        resolve({ replaced: change.oldValue });
+      }
+    };
+    events.addListener(listener);
+    timer = setTimeout(() => resolve('unknown'), CHANGE_EVENT_TIMEOUT_MS);
+  });
+  try {
+    await chrome.storage.local.set({ [key]: next });
+    return await replaced;
+  } finally {
+    clearTimeout(timer);
+    events.removeListener(listener);
+  }
+}
+
+/**
  * Merges a cloud bucket into the stored one: a cloud conversation that is missing locally or newer
  * than the local entry is added (local wins a tie), and a cloud deletion marker newer than the
  * local entry clears it. Resolves true when the bucket holds the cloud state afterwards, false when
@@ -59,11 +116,18 @@ export async function restoreHierarchyBucket(key: string, cloud: unknown): Promi
   let restored = false;
   await outlineSaveQueue.enqueue(key, null, async () => {
     try {
-      const stored: unknown = (await chrome.storage.local.get(key))[key];
-      // Never replace a stored value this restore cannot read as a bucket.
-      if (stored != null && !(isRecord(stored) && isRecord(stored.conversations))) return null;
-      const next = mergedBucket(stored ?? undefined, cloud);
-      if (next) await chrome.storage.local.set({ [key]: next });
+      // Values other contexts saved between a read and the write that replaced them.
+      const overwritten: unknown[] = [];
+      for (let write = 0; write < MAX_WRITES; write += 1) {
+        const stored: unknown = (await chrome.storage.local.get(key))[key];
+        // Never replace a stored value this restore cannot read as a bucket.
+        if (stored != null && !(isRecord(stored) && isRecord(stored.conversations))) return null;
+        const next = mergedBucket(stored ?? undefined, [cloud, ...overwritten]);
+        if (!next) break;
+        const result = await writeAndReadReplaced(key, next);
+        if (result === 'unknown' || canonical(result.replaced) === canonical(stored)) break;
+        overwritten.push(result.replaced);
+      }
       restored = true;
     } catch (error) {
       console.warn('[Timeline] Failed to restore timeline outlines:', error);
