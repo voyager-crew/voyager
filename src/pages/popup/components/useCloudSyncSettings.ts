@@ -6,6 +6,7 @@ import { DEFAULT_SYNC_STATE } from '@/core/types/sync';
 import { getVoyagerBuildTarget, isSafari } from '@/core/utils/browser';
 import { deleteSafariICloudBackup } from '@/core/utils/safariICloudSync';
 import { FOLDER_PLATFORMS, getFolderPlatformForHost } from '@/features/folder/platforms';
+import { pushCatalogTimeline } from '@/features/timeline/catalogTimelineCloud';
 import type { TranslationKey } from '@/utils/translations';
 
 import { useLanguage } from '../../../contexts/LanguageContext';
@@ -216,6 +217,7 @@ export function useCloudSyncSettings(sourceTabId?: number) {
       }
 
       if (response?.ok) {
+        await pushCatalogTimeline((message) => chrome.runtime.sendMessage(message));
         setStatusMessage({
           text: t(response.highlights?.skipped ? 'syncSuccessHighlightsSkipped' : 'syncSuccess'),
           kind: response.highlights?.skipped ? 'warn' : 'ok',

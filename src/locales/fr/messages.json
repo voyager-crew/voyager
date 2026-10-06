@@ -1438,6 +1438,10 @@
     "message": "Forks de conversation",
     "description": "Drive restore part: conversation fork links"
   },
+  "syncRestoreTimelineOutlines": {
+    "message": "Niveaux de la chronologie sur les autres sites",
+    "description": "Drive restore part: timeline node levels saved on catalog sites such as ChatGPT and Claude"
+  },
   "syncRestoreListSeparator": {
     "message": ", ",
     "description": "Separator between restored or failed part names in the partial-restore message"

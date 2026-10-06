@@ -22,6 +22,10 @@ import {
 import { createRuntimePromptLibraryClient } from '@/features/prompt/library/promptLibraryMessages';
 import { isPromptItemArray } from '@/features/prompt/library/promptLibraryOwner';
 import { StarredMessagesService } from '@/features/savedLibrary/StarredMessagesService';
+import {
+  pullCatalogTimeline,
+  restorePulledCatalogTimeline,
+} from '@/features/timeline/catalogTimelineCloud';
 import type { TimelineHierarchyData } from '@/features/timeline/hierarchyTypes';
 import { ForkNodesService } from '@/pages/content/fork/ForkNodesService';
 import {
@@ -274,6 +278,15 @@ async function restoreCloudDownload(
   highlightsRestored: boolean,
 ): Promise<{ foldersMissing: boolean; nameConflicts: number }> {
   const definition = FOLDER_PLATFORMS[context.payload.platform];
+  // Pulled before the local read, so the folder merge is not computed from an older read, and
+  // before any write, so a failed pull is reported with the other unrestored parts.
+  let restoreOutlines: (() => Promise<boolean>) | undefined;
+  try {
+    const outlines = await pullCatalogTimeline((message) => chrome.runtime.sendMessage(message));
+    if (outlines) restoreOutlines = () => restorePulledCatalogTimeline(outlines);
+  } catch (error) {
+    restoreOutlines = () => Promise.reject(error);
+  }
   const local = await readLocalSyncData(context, getTargetTab, 'restore');
   let rawFolders = data.folders?.data;
   if (definition.folderExport && data.folders) {
@@ -344,6 +357,7 @@ async function restoreCloudDownload(
       definition.syncsConversationExtras && data.forks && typeof data.forks === 'object'
         ? async () => (await ForkNodesService.mergeCloud(data.forks)) === 'merged'
         : undefined,
+    restoreOutlines,
   });
   try {
     const tab = await getTargetTab();

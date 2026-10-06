@@ -14,6 +14,11 @@ import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
 import type { PromptItem, SyncAccountScope } from '@/core/types/sync';
 import { FOLDER_PLATFORMS, type FolderPlatform } from '@/features/folder/platforms';
+import {
+  pullCatalogTimeline,
+  pushCatalogTimeline,
+  restorePulledCatalogTimeline,
+} from '@/features/timeline/catalogTimelineCloud';
 import { mergeFolderData, mergePrompts } from '@/utils/merge';
 
 /** A downloaded cloud copy: the site's folder file, the shared prompts, and site-specific parts. */
@@ -71,6 +76,9 @@ export interface CloudSyncSite {
 
 const EMPTY_FOLDERS: FolderData = { folders: [], folderContents: {} };
 
+const sendRuntimeMessage = (message: { type: string; payload?: unknown }) =>
+  browser.runtime.sendMessage(message);
+
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : 'Unknown error';
 }
@@ -115,7 +123,10 @@ function readCloudFolders(
   };
 }
 
-/** Uploads the site's folders, and on a site that shares them the local prompts. */
+/**
+ * Uploads the site's folders, and on a site that shares them the local prompts, then this
+ * catalog site's timeline outlines (the background syncs none for Gemini or AI Studio pages).
+ */
 export async function uploadSiteFolders(site: CloudSyncSite): Promise<void> {
   const run = site.begin();
   if (!run) return;
@@ -131,8 +142,13 @@ export async function uploadSiteFolders(site: CloudSyncSite): Promise<void> {
       payload: { folders: run.folders, prompts, platform: site.platform, ...scopes },
     })) as SyncResponse;
     if (!run.current()) return;
-    if (response?.ok) site.notify(site.t('uploadSuccess'), 'success');
-    else notifySyncError(site, response?.error || 'Unknown error');
+    if (!response?.ok) {
+      notifySyncError(site, response?.error || 'Unknown error');
+      return;
+    }
+    await pushCatalogTimeline(sendRuntimeMessage);
+    if (!run.current()) return;
+    site.notify(site.t('uploadSuccess'), 'success');
   } catch (error) {
     if (!run.current()) return;
     console.error('[FolderCloudSync] Cloud upload failed:', error);
@@ -140,7 +156,10 @@ export async function uploadSiteFolders(site: CloudSyncSite): Promise<void> {
   }
 }
 
-/** Downloads the cloud copy and merges it into the site's folders (and shared prompts). */
+/**
+ * Downloads the cloud copy and merges it into the site's folders (and shared prompts), then
+ * merges this catalog site's cloud timeline outlines through the page's outline queue.
+ */
 export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
   const run = site.begin();
   if (!run) return;
@@ -178,6 +197,9 @@ export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
     const saved = await run.save(mergeFolderData(run.data(), cloud.data), prompts);
     if (!run.current() || !saved) return;
     if (run.afterSave && !(await run.afterSave(download, prompts, scopes))) return;
+    if (!run.current()) return;
+    const outlines = await pullCatalogTimeline(sendRuntimeMessage);
+    if (outlines) await restorePulledCatalogTimeline(outlines);
     if (!run.current()) return;
     site.notify(site.t('downloadMergeSuccess'), 'success');
   } catch (error) {

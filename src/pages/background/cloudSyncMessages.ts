@@ -30,6 +30,10 @@ import {
   resolveTimelineHierarchyDataForStorageScope,
 } from '@/pages/content/timeline/hierarchyStorage';
 
+import {
+  handleCatalogTimelineSyncMessage,
+  isCatalogTimelineSyncMessage,
+} from './catalogTimelineSyncMessages';
 import { isHighlightCloudSyncRequested, notifyHighlightChanged } from './highlightMessages';
 import { mergeCloudPrompts, mergeCloudPromptsForUpload } from './promptDriveMerge';
 import { promptLibraryOwner } from './queueOwners';
@@ -247,6 +251,9 @@ export function createCloudSyncMessageHandler(readers: {
     sender: chrome.runtime.MessageSender,
   ): Promise<unknown> {
     const payload = message.payload as SyncPayload | undefined;
+    if (isCatalogTimelineSyncMessage(message.type)) {
+      return handleCatalogTimelineSyncMessage(message.type, payload, sender);
+    }
     switch (message.type) {
       case 'gv.sync.authenticate': {
         const interactive = payload?.interactive !== false;

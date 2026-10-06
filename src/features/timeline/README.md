@@ -48,8 +48,12 @@ change without relying on its own storage event. Every snapshot (read, event or 
 page-wide order when it starts, and an owner ignores one older than the last it took. A Gemini
 localStorage outline with no extension-storage entry is the snapshot until extension storage has
 held the conversation; a failed migration changes nothing, and once extension storage held it, its
-absence is a deletion that also clears the legacy keys, which only mirror extension-storage outlines. Local backups export catalog buckets in
-`catalog-timeline-hierarchy.json`, keyed by storage key; catalog hierarchy has no Drive file yet.
+absence is a deletion that also clears the legacy keys, which only mirror extension-storage outlines. Cloud sync keeps each catalog
+site's buckets, keyed by storage key, in its own Drive file
+(`gemini-voyager-timeline-hierarchy.site-<siteId>.json`, see
+[catalogHierarchySync](catalogHierarchySync.ts)); uploads merge into that file, and a restore always
+merges into the local buckets through `outlineSaveQueue` ([restoreHierarchyBucket](restoreHierarchyBucket.ts)).
+The popup syncs every catalog site; a site's own page syncs only that site.
 ChatGPT stars carry the same hashed account annotation. Stars for every site come from the Saved
 Library through its
 [client](../savedLibrary/StarredMessagesService.ts), whose requests use the background store as the

@@ -15,6 +15,10 @@ import {
   PLUGIN_CONTENT_SCRIPT_SYNC_MESSAGE,
 } from '@/features/plugins/runtime/messages';
 import { LIBRARY_OPEN_MESSAGE } from '@/features/savedLibrary/openLibraryPage';
+import {
+  CATALOG_TIMELINE_PULL_MESSAGE,
+  CATALOG_TIMELINE_PUSH_MESSAGE,
+} from '@/features/timeline/catalogHierarchySync';
 
 function parseHttpsUrl(rawUrl: string | undefined): URL | null {
   if (!rawUrl) return null;
@@ -145,6 +149,8 @@ const HANDLED_BACKGROUND_MESSAGE_TYPES = new Set([
   'gv.sync.download',
   'gv.sync.pullPromptsMerge',
   'gv.sync.pushPromptsMerge',
+  CATALOG_TIMELINE_PUSH_MESSAGE,
+  CATALOG_TIMELINE_PULL_MESSAGE,
   'gv.sync.getState',
   'gv.sync.setMode',
   'gv.sync.setProvider',

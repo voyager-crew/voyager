@@ -14,7 +14,10 @@ import {
 } from '@/core/services/AccountIsolationService';
 import { StorageKeys } from '@/core/types/common';
 import type { PromptItem } from '@/core/types/sync';
-import { handlePromptLibraryApplyMessage } from '@/features/prompt/library/promptLibraryMessages';
+import {
+  handlePromptLibraryApplyMessage,
+  isPromptLibraryApplyMessage,
+} from '@/features/prompt/library/promptLibraryMessages';
 import { createPromptLibraryOwner } from '@/features/prompt/library/promptLibraryOwner';
 import { useCloudSyncTransfer } from '@/pages/popup/components/useCloudSyncTransfer';
 import { toastDriver } from '@/tests/toastDriver';
@@ -459,8 +462,11 @@ describe('AI Studio folder sync across contexts', () => {
           set: (items) => mockBrowser.storage.local.set(items),
         },
       });
+      // No other background owner answers here (the catalog outline pull goes unhandled).
       vi.spyOn(chrome.runtime, 'sendMessage').mockImplementation(((message: unknown) =>
-        handlePromptLibraryApplyMessage(message, prompts)) as typeof chrome.runtime.sendMessage);
+        isPromptLibraryApplyMessage(message)
+          ? handlePromptLibraryApplyMessage(message, prompts)
+          : Promise.resolve(undefined)) as typeof chrome.runtime.sendMessage);
       let transfer!: ReturnType<typeof useCloudSyncTransfer>;
       function Harness() {
         const current = useCloudSyncTransfer(

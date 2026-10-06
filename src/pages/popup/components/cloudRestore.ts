@@ -1,7 +1,7 @@
 /**
  * The popup's writes for a Drive restore, in order: plugin state, synced
  * settings, folders (plus the timeline hierarchy on Gemini), then the
- * background-owned prompt, star and fork merges. There is no transaction across
+ * background-owned prompt, star and fork merges, then catalog-site outlines. There is no transaction across
  * them, and the background has already restored highlights by the time they
  * run, so a failure partway reports which parts were restored and which were
  * not instead of a bare "sync failed".
@@ -20,7 +20,8 @@ export type CloudRestorePart =
   | 'folders'
   | 'prompts'
   | 'starred'
-  | 'forks';
+  | 'forks'
+  | 'outlines';
 export type CloudRestoreMode = 'merge' | 'overwrite';
 
 const PART_LABELS: Readonly<Record<CloudRestorePart, TranslationKey>> = {
@@ -31,6 +32,7 @@ const PART_LABELS: Readonly<Record<CloudRestorePart, TranslationKey>> = {
   prompts: 'promptDataMigration',
   starred: 'savedLibraryStars',
   forks: 'syncRestoreForks',
+  outlines: 'syncRestoreTimelineOutlines',
 };
 
 /**
@@ -64,6 +66,8 @@ export interface CloudRestoreInput {
   readonly mergeStarred?: () => Promise<boolean>;
   /** Resolves true when a present cloud fork payload merged successfully. */
   readonly mergeForks?: () => Promise<boolean>;
+  /** Merges pulled catalog-site outlines; absent when the cloud has none. */
+  readonly restoreOutlines?: () => Promise<boolean>;
   /** The backup has no folder data; an overwrite then writes nothing. */
   readonly foldersMissing: boolean;
 }
@@ -112,6 +116,9 @@ export async function applyCloudRestore(input: CloudRestoreInput): Promise<void>
   }
   if (input.mergeForks) {
     steps.push({ parts: ['forks'], run: input.mergeForks });
+  }
+  if (input.restoreOutlines) {
+    steps.push({ parts: ['outlines'], run: input.restoreOutlines });
   }
 
   const restored: CloudRestorePart[] = input.highlightsRestored ? ['highlights'] : [];

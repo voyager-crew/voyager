@@ -21,9 +21,11 @@ import {
 } from '@/features/folder/platforms';
 import type { PluginStateMap } from '@/features/plugins/storage/pluginState';
 import type { StarStore } from '@/features/savedLibrary/starStore';
+import type { CatalogTimelineBuckets } from '@/features/timeline/catalogHierarchySync';
 
 import { GoogleDriveAuth, isSafariRuntime } from './GoogleDriveAuth';
 import { GoogleDriveBackupFolder } from './GoogleDriveBackupFolder';
+import { GoogleDriveCatalogTimeline } from './GoogleDriveCatalogTimeline';
 import { GoogleDriveFiles } from './GoogleDriveFiles';
 import {
   BACKUP_FOLDER_RECOVERY_FILE_NAMES,
@@ -69,6 +71,7 @@ export class GoogleDriveSyncService {
   );
 
   private readonly payloads = new GoogleDriveSyncPayloads(this.files);
+  private readonly catalogTimeline = new GoogleDriveCatalogTimeline(this.files);
 
   constructor() {
     this.stateLoadPromise = this.loadState();
@@ -425,6 +428,77 @@ export class GoogleDriveSyncService {
       this.updateState({ isSyncing: false, error: errorMessage });
       return null;
     }
+  }
+
+  /**
+   * Merge-upload catalog-site timeline outlines, one Drive file per site (`bySite` maps a site id
+   * to its local buckets). Never touches the folder, star or Gemini hierarchy files.
+   */
+  async uploadCatalogTimeline(
+    bySite: Record<string, CatalogTimelineBuckets>,
+    interactive: boolean = true,
+  ): Promise<boolean> {
+    try {
+      this.updateState({ isSyncing: true, error: null });
+      await this.stateLoadPromise;
+      const assertActive = this.sessionGuard();
+      const token = await this.auth.getToken(interactive);
+      if (!token) {
+        if (!interactive) {
+          this.updateState({ isSyncing: false, isAuthenticated: false });
+          return false;
+        }
+        throw new Error('Not authenticated');
+      }
+      await this.catalogTimeline.upload(token, bySite, assertActive);
+      this.updateState({ isSyncing: false, error: null });
+      return true;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      console.error('[GoogleDriveSyncService] Timeline outline upload failed:', error);
+      this.updateState({ isSyncing: false, error: errorMessage });
+      return false;
+    }
+  }
+
+  /** The cloud timeline outlines of the listed catalog sites, or null when the download failed. */
+  async downloadCatalogTimeline(
+    sites: readonly string[],
+    interactive: boolean = true,
+  ): Promise<CatalogTimelineBuckets | null> {
+    try {
+      this.updateState({ isSyncing: true, error: null });
+      await this.stateLoadPromise;
+      const assertActive = this.sessionGuard();
+      const token = await this.auth.getToken(interactive);
+      if (!token) {
+        if (!interactive) {
+          this.updateState({ isSyncing: false, isAuthenticated: false });
+          return null;
+        }
+        throw new Error('Not authenticated');
+      }
+      const buckets = await this.catalogTimeline.download(token, sites);
+      assertActive();
+      this.updateState({ isSyncing: false, error: null });
+      return buckets;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Download failed';
+      console.error('[GoogleDriveSyncService] Timeline outline download failed:', error);
+      this.updateState({ isSyncing: false, error: errorMessage });
+      return null;
+    }
+  }
+
+  /** Throws once the provider or session this transfer started in has changed. */
+  private sessionGuard(): () => void {
+    const revision = this.sessionRevision;
+    const provider = this.state.provider;
+    return () => {
+      if (revision !== this.sessionRevision || provider !== this.state.provider) {
+        throw new Error('Cloud session changed during transfer');
+      }
+    };
   }
 
   private starSession(
