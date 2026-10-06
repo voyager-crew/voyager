@@ -159,7 +159,7 @@ async function device(initial: Record<string, unknown> = {}) {
       null,
       store,
     );
-  return { values, cloud, sendAs, store, syncGemini };
+  return { values, cloud, sendAs, service, store, syncGemini };
 }
 
 function starFile(name: string) {
@@ -209,6 +209,23 @@ it('an upload keeps the outlines another device already put in the site file', a
 
   expect(driveFile(CHATGPT_FILE).data[CHATGPT_KEY]).toEqual({
     conversations: { one: outline('one', 10), two: outline('two', 20) },
+  });
+});
+
+it('two uploads at once on one device keep both outlines in the site file', async () => {
+  const d = await device();
+  const bucket = (id: string) => ({
+    chatgpt: { [CHATGPT_KEY]: { conversations: { [id]: outline(id, 10) } } },
+  });
+  await expect(
+    Promise.all([
+      d.service.uploadCatalogTimeline(bucket('one')),
+      d.service.uploadCatalogTimeline(bucket('two')),
+    ]),
+  ).resolves.toEqual([true, true]);
+
+  expect(driveFile(CHATGPT_FILE).data[CHATGPT_KEY]).toEqual({
+    conversations: { one: outline('one', 10), two: outline('two', 10) },
   });
 });
 
