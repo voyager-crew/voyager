@@ -31,13 +31,17 @@ function setAccount(userId: string | null, accountId: string | null) {
   }
 }
 
-async function fixture(siteId: string, accountIdAttributes?: readonly string[]) {
+async function fixture(
+  siteId: string,
+  accountIdAttributes?: readonly string[],
+  conversationIdPattern: string | undefined = '^/c/([^/?#]+)',
+) {
   const config: CatalogTimelineConfig = {
     siteId,
     siteLabel: siteId,
     accountIdAttributes,
     turnSelector: '.turn',
-    conversationIdPattern: '^/c/([^/?#]+)',
+    conversationIdPattern,
     position: 'right',
     pluginId: `${siteId}.timeline`,
     coachmarkId: 'timeline-style',
@@ -445,5 +449,23 @@ describe('catalog hierarchy storage boundaries', () => {
     await settle();
     await state.hierarchy.init();
     expect(state.hierarchy.getMarkerLevel('c-turn')).toBe(1);
+  });
+});
+
+describe('catalog sites without a conversation id pattern', () => {
+  it('an outline on a site without a conversation id pattern still saves', async () => {
+    const state = await fixture('chatgpt', undefined, '');
+    state.hierarchy.setMarkerLevel('c-turn', 2);
+    await settle(30);
+
+    expect(state.hierarchy.getMarkerLevel('c-turn')).toBe(2);
+    const bucket = storage.values.local.get('gvCatalogTimelineHierarchy:chatgpt') as
+      | { conversations: Record<string, unknown> }
+      | undefined;
+    const [id, ...others] = Object.keys(bucket?.conversations ?? {});
+    // A site without a route pattern names its conversations by a hash of the page path.
+    expect(id).toMatch(/^chatgpt:(?!conv:)\w+$/);
+    expect(others).toEqual([]);
+    expect(bucket?.conversations[id]).toMatchObject({ levels: { 'c-turn': 2 } });
   });
 });
