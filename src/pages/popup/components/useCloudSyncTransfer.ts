@@ -282,8 +282,8 @@ async function restoreCloudDownload(
   // before any write, so a failed pull is reported with the other unrestored parts.
   let restoreOutlines: (() => Promise<boolean>) | undefined;
   try {
-    const outlines = await pullCatalogTimeline((message) => chrome.runtime.sendMessage(message));
-    if (outlines) restoreOutlines = () => restorePulledCatalogTimeline(outlines);
+    const pulled = await pullCatalogTimeline((message) => chrome.runtime.sendMessage(message));
+    if (pulled) restoreOutlines = () => restorePulledCatalogTimeline(pulled);
   } catch (error) {
     restoreOutlines = () => Promise.reject(error);
   }

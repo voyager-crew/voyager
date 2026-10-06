@@ -16,7 +16,10 @@ export interface StarTransferPort {
   assertActive(): void;
   read(): Promise<StarSyncSources>;
   writeV2(payload: unknown): Promise<void>;
-  writeV1(payload: unknown): Promise<void>;
+  /** The legacy v1 twin; absent for a file older versions never read. */
+  writeV1?(payload: unknown): Promise<void>;
+  /** The part of the local stars this file holds, given what the file held when read. */
+  select?(local: StarState, remote: StarState): StarState;
 }
 
 function fingerprint(state: StarState): string {
@@ -56,12 +59,14 @@ export class StarDriveSyncCoordinator {
       port.assertActive();
       await store.mergeSync(remote, scope);
       port.assertActive();
-      const snapshot = await store.getSyncSnapshot(scope);
+      const held = decodeStarSyncSources(remote, scope);
+      const select = (local: StarState) => (port.select ? port.select(local, held) : local);
+      const snapshot = select(await store.getSyncSnapshot(scope));
       port.assertActive();
       try {
         await port.writeV2(buildStarsV2(snapshot, scope, EXTENSION_VERSION));
         port.assertActive();
-        await port.writeV1({
+        await port.writeV1?.({
           format: 'gemini-voyager.starred.v1',
           exportedAt: new Date().toISOString(),
           version: EXTENSION_VERSION,
@@ -80,7 +85,7 @@ export class StarDriveSyncCoordinator {
       const verified = decodeStarSyncSources(readback, scope);
       await store.mergeSync(readback, scope);
       port.assertActive();
-      const latest = await store.getSyncSnapshot(scope);
+      const latest = select(await store.getSyncSnapshot(scope));
       port.assertActive();
       // Verify the latest queued edits too: a deletion made during upload must reach both files.
       const covered = mergeStarState(
@@ -96,9 +101,8 @@ export class StarDriveSyncCoordinator {
       const projection = { data: legacyStarredExport(latest.data), tombstones: [] };
       if (
         readback.v2 &&
-        readback.v1 &&
         fingerprint(actualV2) === fingerprint(covered) &&
-        fingerprint(actualV1) === fingerprint(projection)
+        (!port.writeV1 || (readback.v1 && fingerprint(actualV1) === fingerprint(projection)))
       )
         return;
     }

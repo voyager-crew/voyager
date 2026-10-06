@@ -1438,9 +1438,9 @@
     "message": "会話の分岐",
     "description": "Drive restore part: conversation fork links"
   },
-  "syncRestoreTimelineOutlines": {
-    "message": "他のサイトのタイムライン階層",
-    "description": "Drive restore part: timeline node levels saved on catalog sites such as ChatGPT and Claude"
+  "syncRestoreCatalogTimeline": {
+    "message": "他のサイトのタイムラインのスターと階層",
+    "description": "Drive restore part: timeline stars and node levels saved on catalog sites such as ChatGPT and Claude"
   },
   "syncRestoreListSeparator": {
     "message": "、",

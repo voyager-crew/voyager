@@ -125,7 +125,8 @@ function readCloudFolders(
 
 /**
  * Uploads the site's folders, and on a site that shares them the local prompts, then this
- * catalog site's timeline outlines (the background syncs none for Gemini or AI Studio pages).
+ * catalog site's timeline outlines and stars (the background syncs none for Gemini or AI Studio
+ * pages; a Gemini upload carries the catalog star files itself).
  */
 export async function uploadSiteFolders(site: CloudSyncSite): Promise<void> {
   const run = site.begin();
@@ -146,7 +147,9 @@ export async function uploadSiteFolders(site: CloudSyncSite): Promise<void> {
       notifySyncError(site, response?.error || 'Unknown error');
       return;
     }
-    await pushCatalogTimeline(sendRuntimeMessage);
+    await pushCatalogTimeline(sendRuntimeMessage, {
+      stars: !FOLDER_PLATFORMS[site.platform].syncsConversationExtras,
+    });
     if (!run.current()) return;
     site.notify(site.t('uploadSuccess'), 'success');
   } catch (error) {
@@ -158,7 +161,7 @@ export async function uploadSiteFolders(site: CloudSyncSite): Promise<void> {
 
 /**
  * Downloads the cloud copy and merges it into the site's folders (and shared prompts), then
- * merges this catalog site's cloud timeline outlines through the page's outline queue.
+ * merges this catalog site's cloud timeline outlines (through the page's outline queue) and stars.
  */
 export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
   const run = site.begin();
@@ -198,8 +201,8 @@ export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
     if (!run.current() || !saved) return;
     if (run.afterSave && !(await run.afterSave(download, prompts, scopes))) return;
     if (!run.current()) return;
-    const outlines = await pullCatalogTimeline(sendRuntimeMessage);
-    if (outlines) await restorePulledCatalogTimeline(outlines);
+    const pulled = await pullCatalogTimeline(sendRuntimeMessage);
+    if (pulled) await restorePulledCatalogTimeline(pulled);
     if (!run.current()) return;
     site.notify(site.t('downloadMergeSuccess'), 'success');
   } catch (error) {

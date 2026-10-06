@@ -1,10 +1,11 @@
 /**
  * The popup's writes for a Drive restore, in order: plugin state, synced
  * settings, folders (plus the timeline hierarchy on Gemini), then the
- * background-owned prompt, star and fork merges, then catalog-site outlines. There is no transaction across
- * them, and the background has already restored highlights by the time they
- * run, so a failure partway reports which parts were restored and which were
- * not instead of a bare "sync failed".
+ * background-owned prompt, star and fork merges, then catalog-site outlines
+ * and stars. There is no transaction across them, and the background has
+ * already restored highlights by the time they run, so a failure partway
+ * reports which parts were restored and which were not instead of a bare
+ * "sync failed".
  */
 import { restoreBackupableSyncSettings } from '@/core/services/SettingsBackupService';
 import {
@@ -32,7 +33,7 @@ const PART_LABELS: Readonly<Record<CloudRestorePart, TranslationKey>> = {
   prompts: 'promptDataMigration',
   starred: 'savedLibraryStars',
   forks: 'syncRestoreForks',
-  outlines: 'syncRestoreTimelineOutlines',
+  outlines: 'syncRestoreCatalogTimeline',
 };
 
 /**
@@ -66,7 +67,7 @@ export interface CloudRestoreInput {
   readonly mergeStarred?: () => Promise<boolean>;
   /** Resolves true when a present cloud fork payload merged successfully. */
   readonly mergeForks?: () => Promise<boolean>;
-  /** Merges pulled catalog-site outlines; absent when the cloud has none. */
+  /** Merges pulled catalog-site outlines and stars; absent when the cloud has none. */
   readonly restoreOutlines?: () => Promise<boolean>;
   /** The backup has no folder data; an overwrite then writes nothing. */
   readonly foldersMissing: boolean;

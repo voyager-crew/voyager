@@ -20,6 +20,7 @@ import { hashString } from '@/core/utils/hash';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 import { FOLDER_PLATFORMS, FOLDER_PLATFORM_IDS } from '@/features/folder/platforms';
 import type { PluginStateMap } from '@/features/plugins/storage/pluginState';
+import { catalogStarsFileName } from '@/features/savedLibrary/starSitePolicy';
 import {
   decodeStarsV2,
   type StarsExportPayloadV2,
@@ -387,6 +388,42 @@ export class GoogleDriveSyncPayloads {
     const name = this.getFileNameForScope(v2 ? STARS_FILE_NAME : STARRED_FILE_NAME, scope);
     const id = await this.files.ensure(token, name);
     await this.files.upload(token, id, payload);
+  }
+
+  /** A catalog site's own star file, which has no account scope and no legacy v1 twin. */
+  async readCatalogStars(token: string, site: string): Promise<StarSyncSources> {
+    await this.files.prepareDownload(token);
+    return { v2: await this.downloadCatalogStarsV2(token, site) };
+  }
+
+  async writeCatalogStars(token: string, site: string, payload: unknown): Promise<void> {
+    const id = await this.files.ensure(token, catalogStarsFileName(site));
+    await this.files.upload(token, id, payload);
+  }
+
+  /** The star files of the listed catalog sites that exist, by site. */
+  async downloadCatalogStars(
+    token: string,
+    sites: readonly string[],
+  ): Promise<Record<string, StarsExportPayloadV2>> {
+    await this.files.prepareDownload(token);
+    const bySite: Record<string, StarsExportPayloadV2> = {};
+    for (const site of sites) {
+      const payload = await this.downloadCatalogStarsV2(token, site);
+      if (payload) bySite[site] = payload;
+    }
+    return bySite;
+  }
+
+  private async downloadCatalogStarsV2(
+    token: string,
+    site: string,
+  ): Promise<StarsExportPayloadV2 | null> {
+    const id = await this.files.find(token, catalogStarsFileName(site));
+    if (!id) return null;
+    const payload = await this.files.download<StarsExportPayloadV2>(token, id);
+    if (payload !== null) decodeStarsV2(payload, null);
+    return payload;
   }
 
   private async downloadStarsV2(

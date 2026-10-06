@@ -252,7 +252,7 @@ export function createCloudSyncMessageHandler(readers: {
   ): Promise<unknown> {
     const payload = message.payload as SyncPayload | undefined;
     if (isCatalogTimelineSyncMessage(message.type)) {
-      return handleCatalogTimelineSyncMessage(message.type, payload, sender);
+      return handleCatalogTimelineSyncMessage(message.type, payload, sender, readers.starStore);
     }
     switch (message.type) {
       case 'gv.sync.authenticate': {

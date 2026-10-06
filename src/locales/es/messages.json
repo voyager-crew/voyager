@@ -1438,9 +1438,9 @@
     "message": "Bifurcaciones de conversación",
     "description": "Drive restore part: conversation fork links"
   },
-  "syncRestoreTimelineOutlines": {
-    "message": "Niveles de la línea de tiempo en otros sitios",
-    "description": "Drive restore part: timeline node levels saved on catalog sites such as ChatGPT and Claude"
+  "syncRestoreCatalogTimeline": {
+    "message": "Destacados y niveles de la línea de tiempo en otros sitios",
+    "description": "Drive restore part: timeline stars and node levels saved on catalog sites such as ChatGPT and Claude"
   },
   "syncRestoreListSeparator": {
     "message": ", ",

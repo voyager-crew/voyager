@@ -57,7 +57,11 @@ The popup syncs every catalog site; a site's own page syncs only that site.
 ChatGPT stars carry the same hashed account annotation. Stars for every site come from the Saved
 Library through its
 [client](../savedLibrary/StarredMessagesService.ts), whose requests use the background store as the
-single write owner. Every edit requires evidence that the turn belongs to the current conversation.
+single write owner. In the cloud a catalog site's stars have their own file too
+(`gemini-voyager-stars.site-<siteId>.json`, see [starSitePolicy](../savedLibrary/starSitePolicy.ts)),
+synced by the same catalog messages and by every Gemini star sync. A Gemini account file keeps the
+catalog stars older versions put there but gains no new ones; the shared Gemini file, used without
+account isolation, still carries them for older versions. Every edit requires evidence that the turn belongs to the current conversation.
 Old page star arrays are neither read, imported, written nor purged.
 
 Viewport replacement rebinds scroll and intersection observation while retaining conversation state.

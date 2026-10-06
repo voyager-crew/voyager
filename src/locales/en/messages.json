@@ -1438,9 +1438,9 @@
     "message": "Conversation forks",
     "description": "Drive restore part: conversation fork links"
   },
-  "syncRestoreTimelineOutlines": {
-    "message": "Timeline levels on other sites",
-    "description": "Drive restore part: timeline node levels saved on catalog sites such as ChatGPT and Claude"
+  "syncRestoreCatalogTimeline": {
+    "message": "Timeline stars and levels on other sites",
+    "description": "Drive restore part: timeline stars and node levels saved on catalog sites such as ChatGPT and Claude"
   },
   "syncRestoreListSeparator": {
     "message": ", ",

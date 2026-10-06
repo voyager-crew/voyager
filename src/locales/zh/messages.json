@@ -1438,9 +1438,9 @@
     "message": "对话分叉",
     "description": "Drive restore part: conversation fork links"
   },
-  "syncRestoreTimelineOutlines": {
-    "message": "其他网站的时间线层级",
-    "description": "Drive restore part: timeline node levels saved on catalog sites such as ChatGPT and Claude"
+  "syncRestoreCatalogTimeline": {
+    "message": "其他网站的时间线星标与层级",
+    "description": "Drive restore part: timeline stars and node levels saved on catalog sites such as ChatGPT and Claude"
   },
   "syncRestoreListSeparator": {
     "message": "、",

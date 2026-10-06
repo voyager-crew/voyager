@@ -217,7 +217,10 @@ export function useCloudSyncSettings(sourceTabId?: number) {
       }
 
       if (response?.ok) {
-        await pushCatalogTimeline((message) => chrome.runtime.sendMessage(message));
+        // A Gemini upload has synced the catalog star files along with its own stars.
+        await pushCatalogTimeline((message) => chrome.runtime.sendMessage(message), {
+          stars: !FOLDER_PLATFORMS[payload.platform].syncsConversationExtras,
+        });
         setStatusMessage({
           text: t(response.highlights?.skipped ? 'syncSuccessHighlightsSkipped' : 'syncSuccess'),
           kind: response.highlights?.skipped ? 'warn' : 'ok',

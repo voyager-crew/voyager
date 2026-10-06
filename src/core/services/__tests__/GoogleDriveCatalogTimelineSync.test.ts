@@ -1,12 +1,35 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import type { SyncAccountScope } from '@/core/types/sync';
+import { hashString } from '@/core/utils/hash';
+import { buildStarsV2 } from '@/features/savedLibrary/starSyncPayload';
+import type { StarredMessage } from '@/features/savedLibrary/starTypes';
 
 const EXTENSION_ID = 'test-extension';
 const CHATGPT_FILE = 'gemini-voyager-timeline-hierarchy.site-chatgpt.json';
 const CLAUDE_FILE = 'gemini-voyager-timeline-hierarchy.site-claude.json';
 const CHATGPT_KEY = `${StorageKeys.CATALOG_TIMELINE_HIERARCHY_PREFIX}chatgpt:acct:1abc`;
 const CLAUDE_KEY = `${StorageKeys.CATALOG_TIMELINE_HIERARCHY_PREFIX}claude`;
+const CHATGPT_STARS = 'gemini-voyager-stars.site-chatgpt.json';
+const scope: SyncAccountScope = { accountKey: 'person', accountId: 2, routeUserId: '2' };
+const scoped = (base: string) => `${base}.acct-${hashString(scope.accountKey)}.json`;
+
+const geminiStar: StarredMessage = {
+  conversationId: 'gemini:conv:abc',
+  conversationUrl: 'https://gemini.google.com/u/2/app/abc',
+  turnId: 'g-one',
+  content: 'gemini prompt',
+  starredAt: 10,
+};
+const chatgptStar: StarredMessage = {
+  conversationId: 'chatgpt:conv:c1',
+  conversationUrl: 'https://chatgpt.com/c/c1',
+  turnId: 'c-one',
+  content: 'chatgpt prompt',
+  account: 'chatgpt:abc',
+  starredAt: 20,
+};
 
 const outline = (id: string, updatedAt: number, level: 2 | 3 = 2) => ({
   conversationUrl: `https://chatgpt.com/c/${id}`,
@@ -102,15 +125,50 @@ async function device(initial: Record<string, unknown> = {}) {
     },
   });
   const { createCloudSyncMessageHandler } = await import('@/pages/background/cloudSyncMessages');
+  const { createStarredMessagesHandler } = await import('@/pages/background/starredMessages');
+  const { createStarStore } = await import('@/features/savedLibrary/starStore');
+  const { googleDriveSyncService: service } = await import('../GoogleDriveSyncService');
   const cloud = await import('@/features/timeline/catalogTimelineCloud');
+  const store = createStarStore(chrome.storage.local as never);
   const handler = createCloudSyncMessageHandler({
-    getAllStarredMessages: async () => ({ messages: {} }),
+    getAllStarredMessages: store.getAll,
     getAllForkNodes: async () => ({ nodes: {}, groups: {} }),
+    starStore: store,
+  });
+  // Star restores go through the background star owner, as `StarredMessagesService` sends them.
+  const starred = createStarredMessagesHandler(store);
+  Object.assign(chrome.runtime, {
+    sendMessage: (message: unknown, respond: (response: unknown) => void) =>
+      void starred(message, popup)?.then(respond),
   });
   const sendAs = (sender: chrome.runtime.MessageSender) => (message: { type: string }) =>
     handler(message, sender) as Promise<unknown>;
-  return { values, cloud, sendAs };
+  /** A Gemini sync of the store's stars, as the Gemini folder upload runs it. */
+  const syncGemini = (accountScope: SyncAccountScope | null) =>
+    service.upload(
+      { folders: [], folderContents: {} },
+      [],
+      { messages: {} },
+      true,
+      'gemini',
+      null,
+      null,
+      accountScope,
+      null,
+      null,
+      null,
+      store,
+    );
+  return { values, cloud, sendAs, store, syncGemini };
 }
+
+function starFile(name: string) {
+  return JSON.parse(drive.get(name)!) as {
+    items: StarredMessage[];
+    tombstones: { conversationId: string; turnId: string }[];
+  };
+}
+const turns = (file: { items: StarredMessage[] }) => file.items.map((item) => item.turnId).sort();
 
 function driveFile(name: string) {
   return JSON.parse(drive.get(name)!) as { site: string; data: Record<string, unknown> };
@@ -186,9 +244,85 @@ it('a ChatGPT page neither uploads nor restores another site’s outlines', asyn
 
   const fresh = await device();
   const pulled = await fresh.cloud.pullCatalogTimeline(fresh.sendAs(page('https://chatgpt.com/')));
-  expect(Object.keys(pulled ?? {})).toEqual([CHATGPT_KEY]);
+  expect(Object.keys(pulled?.outlines ?? {})).toEqual([CHATGPT_KEY]);
   const gemini = await fresh.cloud.pullCatalogTimeline(
     fresh.sendAs(page('https://gemini.google.com/app')),
   );
   expect(gemini).toBeNull();
+});
+
+it('a ChatGPT star survives a Drive round trip through its own site file', async () => {
+  const first = await device();
+  await first.store.add(chatgptStar);
+  await first.cloud.pushCatalogTimeline(first.sendAs(page('https://chatgpt.com/c/c1')));
+  expect(uploadedNames).toEqual([CHATGPT_STARS]);
+  expect(turns(starFile(CHATGPT_STARS))).toEqual([chatgptStar.turnId]);
+
+  const fresh = await device();
+  const pulled = await fresh.cloud.pullCatalogTimeline(fresh.sendAs(page('https://chatgpt.com/')));
+  await expect(fresh.cloud.restorePulledCatalogTimeline(pulled!)).resolves.toBe(true);
+
+  expect((await fresh.store.getAll()).messages[chatgptStar.conversationId]).toEqual([
+    expect.objectContaining({ turnId: chatgptStar.turnId, account: chatgptStar.account }),
+  ]);
+});
+
+it('a Gemini account sync no longer copies a new ChatGPT star into that account’s files', async () => {
+  const d = await device();
+  await d.store.add(geminiStar);
+  await d.store.add(chatgptStar);
+  await expect(d.syncGemini(scope)).resolves.toBe(true);
+
+  expect(turns(starFile(scoped('gemini-voyager-stars')))).toEqual([geminiStar.turnId]);
+  const legacy = JSON.parse(drive.get(scoped('gemini-voyager-starred'))!) as {
+    data: { messages: Record<string, unknown> };
+  };
+  expect(Object.keys(legacy.data.messages)).toEqual([geminiStar.conversationId]);
+  expect(turns(starFile(CHATGPT_STARS))).toEqual([chatgptStar.turnId]);
+});
+
+it('ChatGPT stars an older version left in a Gemini account file are restored and kept', async () => {
+  const older = buildStarsV2(
+    { data: { messages: { [chatgptStar.conversationId]: [chatgptStar] } }, tombstones: [] },
+    scope,
+    'old',
+  );
+  drive.set(scoped('gemini-voyager-stars'), JSON.stringify(older));
+  const d = await device();
+  await d.store.add(geminiStar);
+  await expect(d.syncGemini(scope)).resolves.toBe(true);
+
+  expect((await d.store.getAll()).messages[chatgptStar.conversationId]).toHaveLength(1);
+  expect(turns(starFile(scoped('gemini-voyager-stars')))).toEqual([
+    chatgptStar.turnId,
+    geminiStar.turnId,
+  ]);
+  expect(turns(starFile(CHATGPT_STARS))).toEqual([chatgptStar.turnId]);
+});
+
+it('removing a ChatGPT star reaches the Gemini account file older versions read it from', async () => {
+  const older = buildStarsV2(
+    { data: { messages: { [chatgptStar.conversationId]: [chatgptStar] } }, tombstones: [] },
+    scope,
+    'old',
+  );
+  drive.set(scoped('gemini-voyager-stars'), JSON.stringify(older));
+  const d = await device();
+  await d.store.add(chatgptStar);
+  await d.store.remove(chatgptStar.conversationId, chatgptStar.turnId);
+  await expect(d.syncGemini(scope)).resolves.toBe(true);
+
+  const file = starFile(scoped('gemini-voyager-stars'));
+  expect(file.items).toEqual([]);
+  expect(file.tombstones).toEqual([expect.objectContaining({ turnId: chatgptStar.turnId })]);
+});
+
+it('a Gemini sync without account isolation still writes catalog stars to the shared file', async () => {
+  const d = await device();
+  await d.store.add(chatgptStar);
+  await expect(d.syncGemini(null)).resolves.toBe(true);
+
+  // Older versions read catalog stars from the one shared file; it is not another account's copy.
+  expect(turns(starFile('gemini-voyager-stars.json'))).toEqual([chatgptStar.turnId]);
+  expect(turns(starFile(CHATGPT_STARS))).toEqual([chatgptStar.turnId]);
 });

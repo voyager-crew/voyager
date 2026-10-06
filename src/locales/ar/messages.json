@@ -1438,9 +1438,9 @@
     "message": "تفريعات المحادثات",
     "description": "Drive restore part: conversation fork links"
   },
-  "syncRestoreTimelineOutlines": {
-    "message": "مستويات الجدول الزمني في المواقع الأخرى",
-    "description": "Drive restore part: timeline node levels saved on catalog sites such as ChatGPT and Claude"
+  "syncRestoreCatalogTimeline": {
+    "message": "المفضلة ومستويات الجدول الزمني في المواقع الأخرى",
+    "description": "Drive restore part: timeline stars and node levels saved on catalog sites such as ChatGPT and Claude"
   },
   "syncRestoreListSeparator": {
     "message": "، ",
