@@ -17,10 +17,27 @@ export type CatalogOutlineWriteResponse =
   | { ok: true; restored?: number; failed?: number }
   | { ok: false; error: string };
 
-const MAX_CONVERSATION_ID_LENGTH = 1024;
+const MAX_CONVERSATION_ID_LENGTH = 2048;
+// oxlint-disable-next-line no-control-regex -- rejecting control characters is the point
+const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+/**
+ * Any id the timeline's id builder makes for `site`: `<site>:conv:<route id>` where the site has a
+ * route pattern, `<site>:<path hash>` where it has none. The site prefix keeps one site's page from
+ * writing another site's conversations.
+ */
+function isSiteConversationId(value: unknown, site: string): value is string {
+  return (
+    typeof value === 'string' &&
+    value.length > site.length + 1 &&
+    value.length <= MAX_CONVERSATION_ID_LENGTH &&
+    value.startsWith(`${site}:`) &&
+    !CONTROL_CHARACTER.test(value)
+  );
 }
 
 /** A request whose keys are catalog bucket keys and whose edit belongs to that key's site. */
@@ -38,13 +55,7 @@ export function parseCatalogOutlineWriteRequest(
   const { key, conversationId } = payload;
   const site = typeof key === 'string' ? catalogHierarchySiteOf(key) : null;
   if (!site || typeof key !== 'string') return null;
-  if (
-    typeof conversationId !== 'string' ||
-    conversationId.length > MAX_CONVERSATION_ID_LENGTH ||
-    !conversationId.startsWith(`${site}:conv:`)
-  ) {
-    return null;
-  }
+  if (!isSiteConversationId(conversationId, site)) return null;
   const edit = parseOutlineEdit(payload.edit);
   return edit ? { kind: 'edit', key, conversationId, edit } : null;
 }
