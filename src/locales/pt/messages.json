@@ -1438,6 +1438,10 @@
     "message": "Ramificações de conversa",
     "description": "Drive restore part: conversation fork links"
   },
+  "syncRestoreCatalogTimeline": {
+    "message": "Favoritos e níveis da linha do tempo em outros sites",
+    "description": "Drive restore part: timeline stars and node levels saved on catalog sites such as ChatGPT and Claude"
+  },
   "syncRestoreListSeparator": {
     "message": ", ",
     "description": "Separator between restored or failed part names in the partial-restore message"

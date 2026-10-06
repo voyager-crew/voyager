@@ -8,6 +8,7 @@ import {
 
 import { TimelineHierarchyGeometry } from '../../TimelineHierarchyGeometry';
 import { TimelineState } from '../../TimelineState';
+import { routeCatalogOutlineWrites } from '../../__tests__/catalogOutlineBackground';
 import { CatalogTimelineAdapter } from './CatalogTimelineAdapter';
 import { CatalogTurnOwnership } from './CatalogTurnOwnership';
 import type { CatalogTimelineConfig } from './config';
@@ -54,6 +55,7 @@ beforeEach(() => {
   storage = createMemoryStorage();
   vi.stubGlobal('chrome', {
     ...chrome,
+    runtime: { ...chrome.runtime, sendMessage: routeCatalogOutlineWrites() },
     storage: { ...chrome.storage, local: storage.api.local, onChanged: storage.api.onChanged },
   });
 });

@@ -7,6 +7,7 @@ import {
 } from '@/features/plugins/builtin/chatgptTemporaryHandoff/background';
 import { CHATGPT_HANDOFF_GET_TAB_ID_MESSAGE } from '@/features/plugins/builtin/chatgptTemporaryHandoff/storage';
 
+import { createCatalogOutlineMessageHandler } from './catalogOutlineMessages';
 import { handleHighlightRuntimeMessage } from './highlightMessages';
 import { handlePageRuntimeMessage } from './pageRuntimeMessages';
 import { handleRuntimeImageMessage, isRuntimeImageMessage } from './runtimeImageMessages';
@@ -39,6 +40,7 @@ export function registerBackgroundRuntimeMessages(owners: {
   };
 }): void {
   const handleSendTimeMessage = createSendTimeMessageHandler();
+  const handleCatalogOutlineMessage = createCatalogOutlineMessageHandler();
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!isHandledBackgroundRuntimeMessage(message)) return undefined;
 
@@ -82,6 +84,11 @@ export function registerBackgroundRuntimeMessages(owners: {
         const sendTimeResponse = handleSendTimeMessage(message, sender);
         if (sendTimeResponse) {
           sendResponse(await sendTimeResponse);
+          return;
+        }
+        const outlineResponse = handleCatalogOutlineMessage(message, sender);
+        if (outlineResponse) {
+          sendResponse(await outlineResponse);
           return;
         }
         const pageResponse = handlePageRuntimeMessage(message, sender);

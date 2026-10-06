@@ -39,8 +39,8 @@ account; the hierarchy watches those attributes, rehydrates from the new account
 and while the account is unknown shows no outline and refuses edits. Other sites stay unscoped, and
 only Gemini's migration reads an unscoped blob behind a missing scoped one. Each accepted edit
 is a per-turn change (one turn's level or collapse) captured with its bucket and conversation. The
-page-wide `outlineSaveQueue` applies it to the entry freshly read from storage, so it never writes a
-remembered entry, and the save completes even if the timeline is torn down. The displayed outline is
+page-wide `outlineSaveQueue` orders it, and its write (the background's, on a catalog site) applies
+it to the entry freshly read from storage, so it never writes a remembered entry, and the save completes even if the timeline is torn down. The displayed outline is
 the latest storage snapshot, always accepted, with the page's unwritten changes for that bucket and
 conversation overlaid; a remounted timeline therefore sees an earlier session's pending edits. Each
 successful write reads the bucket back and publishes that read as the snapshot, which retires the
@@ -48,12 +48,27 @@ change without relying on its own storage event. Every snapshot (read, event or 
 page-wide order when it starts, and an owner ignores one older than the last it took. A Gemini
 localStorage outline with no extension-storage entry is the snapshot until extension storage has
 held the conversation; a failed migration changes nothing, and once extension storage held it, its
-absence is a deletion that also clears the legacy keys, which only mirror extension-storage outlines. Local backups export catalog buckets in
-`catalog-timeline-hierarchy.json`, keyed by storage key; catalog hierarchy has no Drive file yet.
+absence is a deletion that also clears the legacy keys, which only mirror extension-storage outlines. Cloud sync keeps each catalog
+site's buckets, keyed by storage key, in its own Drive file
+(`gemini-voyager-timeline-hierarchy.site-<siteId>.json`, see
+[catalogHierarchySync](catalogHierarchySync.ts)); uploads merge into that file, and a restore always
+merges into the local buckets. The background is the single writer of catalog buckets
+([catalogOutlineMessages](../../pages/background/catalogOutlineMessages.ts)): page edits from every
+tab and restores from the popup or a page run one at a time per site, each step re-reading storage
+([catalogOutlineWriter](catalogOutlineWriter.ts)); a page still reads its outline from storage and
+refreshes on its change events. Gemini outlines keep their page-side write. Clearing a catalog
+outline leaves a deletion marker in its bucket (`deleted[conversationId]`), so a merge keeps it
+cleared unless an edit is newer, and an edit is dated after the entry or marker it replaces even
+when another device's clock dated that ahead; markers expire after 180 days.
+The popup syncs every catalog site; a site's own page syncs only that site.
 ChatGPT stars carry the same hashed account annotation. Stars for every site come from the Saved
 Library through its
 [client](../savedLibrary/StarredMessagesService.ts), whose requests use the background store as the
-single write owner. Every edit requires evidence that the turn belongs to the current conversation.
+single write owner. In the cloud a catalog site's stars have their own file too
+(`gemini-voyager-stars.site-<siteId>.json`, see [starSitePolicy](../savedLibrary/starSitePolicy.ts)),
+synced by the same catalog messages and by every Gemini star sync. A Gemini account file keeps the
+catalog stars older versions put there but gains no new ones; the shared Gemini file, used without
+account isolation, still carries them for older versions. Every edit requires evidence that the turn belongs to the current conversation.
 Old page star arrays are neither read, imported, written nor purged.
 
 Viewport replacement rebinds scroll and intersection observation while retaining conversation state.

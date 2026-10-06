@@ -12,6 +12,7 @@ import { createGeminiTimelineStoragePolicy } from '@/pages/content/timeline/Gemi
 import { TimelineState } from '../TimelineState';
 import type { TimelineStoragePolicy } from '../TimelineStoragePolicy';
 import type { TimelineHierarchyData } from '../hierarchyTypes';
+import { routeCatalogOutlineWrites } from './catalogOutlineBackground';
 
 const KEY = 'gvCatalogTimelineHierarchy:claude';
 const TURN = 'c-turn';
@@ -118,8 +119,9 @@ beforeEach(() => {
     ...chrome,
     runtime: {
       ...chrome.runtime,
-      sendMessage: (_request: unknown, respond: (response: unknown) => void) =>
+      sendMessage: routeCatalogOutlineWrites((_request, respond) =>
         respond({ ok: true, messages: [] }),
+      ),
     },
     storage: { ...chrome.storage, local, onChanged: storage.api.onChanged },
   });
@@ -148,6 +150,20 @@ describe('timeline outline persistence', () => {
     await settle(30);
     expect(state.hierarchy.isMarkerCollapsed(TURN)).toBe(true);
     expect(stored('a')).toMatchObject({ levels: { [TURN]: 2 }, collapsed: [TURN] });
+  });
+
+  it('clearing the last level of a site outline leaves a marker so a cloud copy can’t bring it back', async () => {
+    storage.values.local.set(KEY, { conversations: { 'claude:conv:a': outline('a', 2) } });
+    const state = await open('a');
+    state.hierarchy.setMarkerLevel(TURN, 1);
+    await settle(30);
+
+    expect(storage.values.local.get(KEY)).toEqual({
+      conversations: {},
+      deleted: { 'claude:conv:a': expect.any(Number) },
+    });
+    const { deleted } = storage.values.local.get(KEY) as { deleted: Record<string, number> };
+    expect(deleted['claude:conv:a']).toBeGreaterThan(outline('a', 2).updatedAt);
   });
 
   it('two conversations edited in one page both keep their outline', async () => {

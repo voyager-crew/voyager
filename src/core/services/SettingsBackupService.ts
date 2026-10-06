@@ -233,9 +233,8 @@ export const NON_SETTINGS_BACKUP_POLICIES = {
   },
   [StorageKeys.CATALOG_TIMELINE_HIERARCHY_PREFIX]: {
     storage: 'local',
-    disposition: 'local-data',
-    reason:
-      'Catalog-site timeline outlines are user data, kept locally until they get a Drive file.',
+    disposition: 'separate-file',
+    reason: 'Catalog-site timeline outlines have their own per-site Drive file.',
   },
   [StorageKeys.HIGHLIGHT_CLOUD_SYNC_ENABLED]: {
     storage: 'local',

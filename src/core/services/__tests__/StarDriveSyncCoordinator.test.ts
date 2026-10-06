@@ -44,17 +44,17 @@ function local() {
 }
 function remote() {
   const files: { v1: unknown; v2: unknown } = { v1: null, v2: null };
-  const port: StarTransferPort = {
+  const port = {
     identity: 'drive:person',
     assertActive: vi.fn(),
     read: vi.fn(async () => structuredClone(files)),
     writeV2: vi.fn(async (payload) => {
       files.v2 = structuredClone(payload);
     }),
-    writeV1: vi.fn(async (payload) => {
+    writeV1: vi.fn(async (payload: unknown) => {
       files.v1 = structuredClone(payload);
     }),
-  };
+  } satisfies StarTransferPort;
   return { files, port };
 }
 const push = (store: ReturnType<typeof local>['store'], port: StarTransferPort) =>
@@ -217,9 +217,9 @@ it('a changed session during a read prevents retargeting or applying the read', 
   const { store, area } = local();
   const { port } = remote();
   let active = true;
-  port.assertActive = () => {
+  port.assertActive.mockImplementation(() => {
     if (!active) throw new Error('session changed');
-  };
+  });
   vi.mocked(port.read).mockImplementation(async () => {
     active = false;
     return { v1: v1(), v2: null };

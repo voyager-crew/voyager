@@ -1,8 +1,6 @@
 /**
- * Types for auto-backup functionality
- * Follows enterprise best practices with comprehensive type safety
+ * Prompt import/export types
  */
-import type { Result } from '@/core/types/common';
 
 /**
  * Prompt item structure (matches prompt manager schema)
@@ -15,8 +13,8 @@ export interface PromptItem {
   updatedAt?: number;
   /**
    * Optional user-authored label used as the compact-mode headline. Kept in
-   * sync with the content-script PromptItem so auto-backup and import/export
-   * preserve the field on round-trip.
+   * sync with the content-script PromptItem so import/export preserves the
+   * field on round-trip.
    */
   name?: string;
   /** Pin timestamp, or `null` once unpinned; kept in sync with the content-script PromptItem. */
@@ -32,110 +30,3 @@ export interface PromptExportPayload {
   version?: string;
   items: PromptItem[];
 }
-
-/**
- * Backup configuration stored in chrome.storage
- */
-export interface BackupConfig {
-  /** Enable auto-backup feature */
-  enabled: boolean;
-  /** Auto-backup interval in hours (0 = manual only) */
-  intervalHours: number;
-  /** Last backup timestamp (ISO 8601) */
-  lastBackupAt?: string;
-  /** Whether to include prompts in backup */
-  includePrompts: boolean;
-  /** Whether to include folders in backup */
-  includeFolders: boolean;
-}
-
-/**
- * Backup metadata stored in backup folder
- */
-export interface BackupMetadata {
-  version: string;
-  timestamp: string;
-  includesSettings?: boolean;
-  includesPrompts: boolean;
-  includesFolders: boolean;
-  settingsCount?: number;
-  promptCount?: number;
-  folderCount?: number;
-  conversationCount?: number;
-  timelineHierarchyConversationCount?: number;
-}
-
-/**
- * Result of backup operation
- * Note: Wrapped in Result<T> type, so no need for success/error fields here
- */
-export interface BackupResult {
-  /** Timestamp of backup (ISO 8601) */
-  timestamp: string;
-  /** Number of settings backed up */
-  settingsCount?: number;
-  /** Number of prompts backed up */
-  promptCount: number;
-  /** Number of folders backed up */
-  folderCount: number;
-  /** Number of conversations backed up */
-  conversationCount: number;
-  /** Number of conversations with timeline hierarchy data */
-  timelineHierarchyConversationCount?: number;
-}
-
-/**
- * File handle with name and content
- */
-export interface BackupFile {
-  name: string;
-  content: string;
-}
-
-/**
- * Backup service interface
- */
-export interface IBackupService {
-  /**
-   * Create a backup with timestamp-based folder
-   * @param directoryHandle - File System Access API directory handle
-   * @param config - Backup configuration
-   * @returns Result with backup statistics
-   */
-  createBackup(
-    directoryHandle: FileSystemDirectoryHandle,
-    config: BackupConfig,
-  ): Promise<Result<BackupResult>>;
-
-  /**
-   * Generate backup files without writing to filesystem
-   * Useful for testing or preview
-   * @param config - Backup configuration
-   * @returns Array of backup files
-   */
-  generateBackupFiles(config: BackupConfig): Promise<Result<BackupFile[]>>;
-
-  /**
-   * Check if backup is needed based on config
-   * @param config - Backup configuration
-   * @returns true if backup should be performed
-   */
-  shouldBackup(config: BackupConfig): boolean;
-}
-
-/**
- * Storage keys for backup configuration
- */
-export const BACKUP_STORAGE_KEYS = {
-  CONFIG: 'gvBackupConfig',
-} as const;
-
-/**
- * Default backup configuration
- */
-export const DEFAULT_BACKUP_CONFIG: BackupConfig = {
-  enabled: false,
-  intervalHours: 24, // Daily by default
-  includePrompts: true,
-  includeFolders: true,
-};

@@ -14,6 +14,11 @@ import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
 import type { PromptItem, SyncAccountScope } from '@/core/types/sync';
 import { FOLDER_PLATFORMS, type FolderPlatform } from '@/features/folder/platforms';
+import {
+  pullCatalogTimeline,
+  pushCatalogTimeline,
+  restorePulledCatalogTimeline,
+} from '@/features/timeline/catalogTimelineCloud';
 import { mergeFolderData, mergePrompts } from '@/utils/merge';
 
 /** A downloaded cloud copy: the site's folder file, the shared prompts, and site-specific parts. */
@@ -71,8 +76,17 @@ export interface CloudSyncSite {
 
 const EMPTY_FOLDERS: FolderData = { folders: [], folderContents: {} };
 
+const sendRuntimeMessage = (message: { type: string; payload?: unknown }) =>
+  browser.runtime.sendMessage(message);
+
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : 'Unknown error';
+}
+
+/** Merges this sender's cloud catalog outlines and stars; true when anything was restored. */
+async function restoreCatalogTimeline(): Promise<boolean> {
+  const pulled = await pullCatalogTimeline(sendRuntimeMessage);
+  return pulled ? restorePulledCatalogTimeline(sendRuntimeMessage, pulled) : false;
 }
 
 function notifySyncError(site: CloudSyncSite, message: string): void {
@@ -115,7 +129,11 @@ function readCloudFolders(
   };
 }
 
-/** Uploads the site's folders, and on a site that shares them the local prompts. */
+/**
+ * Uploads the site's folders, and on a site that shares them the local prompts, then this
+ * catalog site's timeline outlines and stars (the background syncs none for Gemini or AI Studio
+ * pages; a Gemini upload carries the catalog star files itself).
+ */
 export async function uploadSiteFolders(site: CloudSyncSite): Promise<void> {
   const run = site.begin();
   if (!run) return;
@@ -131,8 +149,15 @@ export async function uploadSiteFolders(site: CloudSyncSite): Promise<void> {
       payload: { folders: run.folders, prompts, platform: site.platform, ...scopes },
     })) as SyncResponse;
     if (!run.current()) return;
-    if (response?.ok) site.notify(site.t('uploadSuccess'), 'success');
-    else notifySyncError(site, response?.error || 'Unknown error');
+    if (!response?.ok) {
+      notifySyncError(site, response?.error || 'Unknown error');
+      return;
+    }
+    await pushCatalogTimeline(sendRuntimeMessage, {
+      stars: !FOLDER_PLATFORMS[site.platform].syncsConversationExtras,
+    });
+    if (!run.current()) return;
+    site.notify(site.t('uploadSuccess'), 'success');
   } catch (error) {
     if (!run.current()) return;
     console.error('[FolderCloudSync] Cloud upload failed:', error);
@@ -140,7 +165,10 @@ export async function uploadSiteFolders(site: CloudSyncSite): Promise<void> {
   }
 }
 
-/** Downloads the cloud copy and merges it into the site's folders (and shared prompts). */
+/**
+ * Downloads the cloud copy and merges it into the site's folders (and shared prompts), then
+ * merges this catalog site's cloud timeline outlines (through the page's outline queue) and stars.
+ */
 export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
   const run = site.begin();
   if (!run) return;
@@ -159,15 +187,18 @@ export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
       return;
     }
     const download = response.data;
-    if (!download) {
-      // Highlights may sync on their own when there is no folder copy yet.
-      if (response.highlights?.synced) site.notify(site.t('syncSuccess'), 'success');
-      else site.notify(site.t('syncNoData') || 'No data in cloud', 'info');
+    const cloud = download ? readCloudFolders(site.platform, download.folders) : null;
+    if (cloud && !cloud.ok && cloud.key !== 'syncNoData') {
+      site.notify(site.t(cloud.key), cloud.tone);
       return;
     }
-    const cloud = readCloudFolders(site.platform, download.folders);
-    if (!cloud.ok) {
-      site.notify(site.t(cloud.key), cloud.tone);
+    if (!download || !cloud?.ok) {
+      // Outlines and stars have files of their own, so a site without a folder copy has them too.
+      const restored = await restoreCatalogTimeline();
+      if (!run.current()) return;
+      // Highlights may sync on their own when there is no folder copy yet.
+      if (restored || response.highlights?.synced) site.notify(site.t('syncSuccess'), 'success');
+      else site.notify(site.t('syncNoData') || 'No data in cloud', 'info');
       return;
     }
     const prompts = syncsSharedData
@@ -178,6 +209,8 @@ export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
     const saved = await run.save(mergeFolderData(run.data(), cloud.data), prompts);
     if (!run.current() || !saved) return;
     if (run.afterSave && !(await run.afterSave(download, prompts, scopes))) return;
+    if (!run.current()) return;
+    await restoreCatalogTimeline();
     if (!run.current()) return;
     site.notify(site.t('downloadMergeSuccess'), 'success');
   } catch (error) {

@@ -6,6 +6,7 @@ import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
 import { ROOT_CONVERSATIONS_ID } from '@/features/folder/constants';
 import { PluginScope } from '@/features/plugins/runtime/pluginScope';
+import { routeCatalogOutlineWrites } from '@/features/timeline/__tests__/catalogOutlineBackground';
 import { toastDriver } from '@/tests/toastDriver';
 import { initI18n, getTranslationSyncUnsafe as t } from '@/utils/i18n';
 
@@ -207,6 +208,29 @@ describe('ChatGPT folder section: cloud', () => {
       .filter((message) => message === t('folder_save_error'));
     expect(saveErrors).toHaveLength(1);
     expect(toastDriver.messages()).not.toContain(t('downloadMergeSuccess'));
+  });
+
+  it('restores ChatGPT outlines from the cloud when no ChatGPT folder file is there', async () => {
+    const key = `${StorageKeys.CATALOG_TIMELINE_HIERARCHY_PREFIX}chatgpt`;
+    const outline = {
+      conversationUrl: 'https://chatgpt.com/c/one',
+      levels: { 'turn-one': 2 },
+      collapsed: [],
+      updatedAt: 10,
+    };
+    sendMessage.mockImplementation(
+      routeCatalogOutlineWrites(async (message: { type: string }) =>
+        message.type === 'gv.sync.catalogTimeline.pull'
+          ? { ok: true, buckets: { [key]: { conversations: { one: outline } } }, stars: {} }
+          : { ok: true, data: null },
+      ),
+    );
+
+    await choose(t('folder_cloud_sync'));
+
+    expect(memory.values.local.get(key)).toEqual({ conversations: { one: outline } });
+    expect(memory.values.local.get(StorageKeys.FOLDER_DATA_CHATGPT)).toEqual(LOCAL);
+    expect(toastDriver.all()).toMatchObject([{ message: t('syncSuccess'), tone: 'success' }]);
   });
 
   it('says so when the cloud has no ChatGPT folders yet', async () => {

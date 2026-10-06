@@ -20,6 +20,7 @@ import { hashString } from '@/core/utils/hash';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 import { FOLDER_PLATFORMS, FOLDER_PLATFORM_IDS } from '@/features/folder/platforms';
 import type { PluginStateMap } from '@/features/plugins/storage/pluginState';
+import { catalogStarsFileName } from '@/features/savedLibrary/starSitePolicy';
 import {
   decodeStarsV2,
   type StarsExportPayloadV2,
@@ -147,10 +148,11 @@ export class GoogleDriveSyncPayloads {
       await this.files.upload(token, pluginsFileId, pluginsPayload);
     }
 
-    if (platform === 'gemini' && forks) {
+    const extras = definition.syncsConversationExtras;
+    if (extras && forks) {
       await this.uploadForks(token, forks, accountScope, now);
     }
-    if (platform === 'gemini' && timelineHierarchy) {
+    if (extras && timelineHierarchy) {
       await this.uploadHierarchy(
         token,
         timelineHierarchy,
@@ -164,8 +166,8 @@ export class GoogleDriveSyncPayloads {
       (prompts.length > 0 ? 1 : 0) +
       (settingsPayload ? 1 : 0) +
       (pluginsPayload ? 1 : 0) +
-      (platform === 'gemini' && forks ? 1 : 0) +
-      (platform === 'gemini' && timelineHierarchy ? 1 : 0);
+      (extras && forks ? 1 : 0) +
+      (extras && timelineHierarchy ? 1 : 0);
     return fileCount;
   }
 
@@ -211,14 +213,15 @@ export class GoogleDriveSyncPayloads {
     const plugins = await this.readFile<PluginStateExportPayload>(token, PLUGINS_FILE_NAME, null);
     let starred: StarredExportPayload | null = null;
     let starredAccountHash: string | undefined;
-    if (platform === 'gemini') {
+    const extras = definition.syncsConversationExtras;
+    if (extras) {
       const source = await this.readStarred(token, accountScope);
       starred = source.v1;
       starredAccountHash = source.v1AccountHash;
     }
-    const stars = platform === 'gemini' ? await this.downloadStarsV2(token, accountScope) : null;
+    const stars = extras ? await this.downloadStarsV2(token, accountScope) : null;
     let forks: ForkExportPayload | null = null;
-    if (platform === 'gemini') {
+    if (extras) {
       forks = await this.readFile<ForkExportPayload>(
         token,
         FORKS_FILE_NAME,
@@ -227,7 +230,7 @@ export class GoogleDriveSyncPayloads {
       );
     }
     let timelineHierarchy: TimelineHierarchyExportPayload | null = null;
-    if (platform === 'gemini') {
+    if (extras) {
       timelineHierarchy = await this.readFile<TimelineHierarchyExportPayload>(
         token,
         TIMELINE_HIERARCHY_FILE_NAME,
@@ -385,6 +388,42 @@ export class GoogleDriveSyncPayloads {
     const name = this.getFileNameForScope(v2 ? STARS_FILE_NAME : STARRED_FILE_NAME, scope);
     const id = await this.files.ensure(token, name);
     await this.files.upload(token, id, payload);
+  }
+
+  /** A catalog site's own star file, which has no account scope and no legacy v1 twin. */
+  async readCatalogStars(token: string, site: string): Promise<StarSyncSources> {
+    await this.files.prepareDownload(token);
+    return { v2: await this.downloadCatalogStarsV2(token, site) };
+  }
+
+  async writeCatalogStars(token: string, site: string, payload: unknown): Promise<void> {
+    const id = await this.files.ensure(token, catalogStarsFileName(site));
+    await this.files.upload(token, id, payload);
+  }
+
+  /** The star files of the listed catalog sites that exist, by site. */
+  async downloadCatalogStars(
+    token: string,
+    sites: readonly string[],
+  ): Promise<Record<string, StarsExportPayloadV2>> {
+    await this.files.prepareDownload(token);
+    const bySite: Record<string, StarsExportPayloadV2> = {};
+    for (const site of sites) {
+      const payload = await this.downloadCatalogStarsV2(token, site);
+      if (payload) bySite[site] = payload;
+    }
+    return bySite;
+  }
+
+  private async downloadCatalogStarsV2(
+    token: string,
+    site: string,
+  ): Promise<StarsExportPayloadV2 | null> {
+    const id = await this.files.find(token, catalogStarsFileName(site));
+    if (!id) return null;
+    const payload = await this.files.download<StarsExportPayloadV2>(token, id);
+    if (payload !== null) decodeStarsV2(payload, null);
+    return payload;
   }
 
   private async downloadStarsV2(

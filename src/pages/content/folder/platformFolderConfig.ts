@@ -130,7 +130,7 @@ export function filterLegacyFolderDataByCurrentAccount(
 export const GEMINI_FOLDER_CONFIG: PlatformFolderConfig = {
   platform: 'gemini',
   storageKey: FOLDER_PLATFORMS.gemini.folderStorageKey,
-  backupNamespace: 'gemini-folders',
+  backupNamespace: FOLDER_PLATFORMS.gemini.backupNamespace,
   rootBucketId: ROOT_CONVERSATIONS_ID,
   isolationSettingKeys: [
     StorageKeys.GV_ACCOUNT_ISOLATION_ENABLED,
@@ -159,7 +159,7 @@ function copyLegacyFolderData(data: FolderData): FolderData {
 export const AISTUDIO_FOLDER_CONFIG: PlatformFolderConfig = {
   platform: 'aistudio',
   storageKey: FOLDER_PLATFORMS.aistudio.folderStorageKey,
-  backupNamespace: 'aistudio-folders',
+  backupNamespace: FOLDER_PLATFORMS.aistudio.backupNamespace,
   rootBucketId: AISTUDIO_ROOT_BUCKET_ID,
   // AIStudioFolderManager's own sync listener handles these switches.
   isolationSettingKeys: [],

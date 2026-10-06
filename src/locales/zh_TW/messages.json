@@ -1398,6 +1398,10 @@
     "message": "對話分叉",
     "description": "Drive restore part: conversation fork links"
   },
+  "syncRestoreCatalogTimeline": {
+    "message": "其他網站的時間軸星號與層級",
+    "description": "Drive restore part: timeline stars and node levels saved on catalog sites such as ChatGPT and Claude"
+  },
   "syncRestoreListSeparator": {
     "message": "、",
     "description": "Separator between restored or failed part names in the partial-restore message"

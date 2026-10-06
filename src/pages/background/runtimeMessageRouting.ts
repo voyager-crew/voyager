@@ -1,7 +1,7 @@
 import type { SyncPlatform } from '@/core/types/sync';
 import {
   FOLDER_PLATFORMS,
-  getFolderPlatformForHost,
+  FOLDER_PLATFORM_IDS,
   isFolderPlatform,
 } from '@/features/folder/platforms';
 import {
@@ -16,6 +16,11 @@ import {
 } from '@/features/plugins/runtime/messages';
 import { LIBRARY_OPEN_MESSAGE } from '@/features/savedLibrary/openLibraryPage';
 import { SEND_TIME_RECORD_MESSAGE } from '@/features/timeline/adapters/catalog/sendTimesMessages';
+import {
+  CATALOG_TIMELINE_PULL_MESSAGE,
+  CATALOG_TIMELINE_PUSH_MESSAGE,
+} from '@/features/timeline/catalogHierarchySync';
+import { CATALOG_OUTLINE_WRITE_MESSAGE } from '@/features/timeline/catalogOutlineMessages';
 
 function parseHttpsUrl(rawUrl: string | undefined): URL | null {
   if (!rawUrl) return null;
@@ -85,23 +90,14 @@ export function getSenderPageUrl(sender: {
 }
 
 /**
- * A web page may only sync the folder platform it belongs to, so a ChatGPT/Claude/DeepSeek tab can
- * never read Gemini or AI Studio folders through the background. Extension pages (popup, options
- * fallback) have no web page URL and keep their access; their tab is checked by the popup.
+ * A trusted sender (see `isTrustedSyncMessageSender`) of any platform that syncs the shared prompt
+ * library, settings and plugins, so a ChatGPT/Claude/DeepSeek tab can never pull or push them.
  */
-export function canSenderPageUseSyncPlatform(
-  senderPageUrl: string | undefined,
-  platform: SyncPlatform,
-): boolean {
-  if (!senderPageUrl) return true;
-  let parsed: URL;
-  try {
-    parsed = new URL(senderPageUrl);
-  } catch {
-    return false;
-  }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return true;
-  return getFolderPlatformForHost(parsed.hostname) === platform;
+export function isTrustedSharedDataSyncSender(sender: chrome.runtime.MessageSender): boolean {
+  return FOLDER_PLATFORM_IDS.some(
+    (platform) =>
+      FOLDER_PLATFORMS[platform].syncsSharedData && isTrustedSyncMessageSender(sender, platform),
+  );
 }
 
 const HANDLED_BACKGROUND_MESSAGE_TYPES = new Set([
@@ -118,6 +114,7 @@ const HANDLED_BACKGROUND_MESSAGE_TYPES = new Set([
   CHATGPT_HANDOFF_GET_TAB_ID_MESSAGE,
   'gv.account.resolve',
   SEND_TIME_RECORD_MESSAGE,
+  CATALOG_OUTLINE_WRITE_MESSAGE,
   'gv.responseComplete.notify',
   'gv.responseComplete.requestNativePermission',
   'gv.clipboard.copyImagePng',
@@ -156,6 +153,8 @@ const HANDLED_BACKGROUND_MESSAGE_TYPES = new Set([
   'gv.sync.download',
   'gv.sync.pullPromptsMerge',
   'gv.sync.pushPromptsMerge',
+  CATALOG_TIMELINE_PUSH_MESSAGE,
+  CATALOG_TIMELINE_PULL_MESSAGE,
   'gv.sync.getState',
   'gv.sync.setMode',
   'gv.sync.setProvider',
