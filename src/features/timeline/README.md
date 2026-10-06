@@ -53,6 +53,8 @@ site's buckets, keyed by storage key, in its own Drive file
 (`gemini-voyager-timeline-hierarchy.site-<siteId>.json`, see
 [catalogHierarchySync](catalogHierarchySync.ts)); uploads merge into that file, and a restore always
 merges into the local buckets through `outlineSaveQueue` ([restoreHierarchyBucket](restoreHierarchyBucket.ts)).
+Clearing a catalog outline leaves a deletion marker in its bucket (`deleted[conversationId]`), so a
+merge keeps it cleared unless an edit is newer; markers expire after 180 days.
 The popup syncs every catalog site; a site's own page syncs only that site.
 ChatGPT stars carry the same hashed account annotation. Stars for every site come from the Saved
 Library through its

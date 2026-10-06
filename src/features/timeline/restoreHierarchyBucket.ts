@@ -3,42 +3,67 @@
  * restore in a page with an open timeline is serialized with that page's own outline edits. An
  * open timeline then picks the merged bucket up from its storage event.
  */
-import { catalogHierarchySiteOf } from './catalogHierarchySync';
 import {
-  type TimelineHierarchyConversationData,
-  normalizeTimelineHierarchyData,
-} from './hierarchyTypes';
+  type OutlineDeletions,
+  catalogHierarchySiteOf,
+  mergeCatalogBucket,
+  readCatalogBucket,
+} from './catalogHierarchySync';
 import { outlineSaveQueue } from './outlineSaveQueue';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
+function sameDeletions(a: OutlineDeletions, b: OutlineDeletions): boolean {
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((id) => a[id] === b[id]);
+}
+
 /**
- * Adds each cloud conversation that is missing locally or newer than the local entry (local wins
- * a tie), and leaves every other stored entry as it is. Resolves true when the bucket holds the
- * cloud outlines afterwards, false when the write failed or the stored value is not a bucket.
+ * The stored bucket with the cloud bucket merged in per conversation (see `mergeCatalogBucket`),
+ * or null when nothing changes. Entries this merge does not change are kept exactly as stored.
+ */
+function mergedBucket(
+  stored: Record<string, unknown> | undefined,
+  cloud: unknown,
+): Record<string, unknown> | null {
+  const local = readCatalogBucket(stored);
+  const merged = mergeCatalogBucket(local, readCatalogBucket(cloud));
+  const conversations = { ...(stored?.conversations as Record<string, unknown> | undefined) };
+  let changed = false;
+  const ids = new Set([...Object.keys(local.conversations), ...Object.keys(merged.conversations)]);
+  for (const id of ids) {
+    const after = merged.conversations[id];
+    // The merge returns the stored entry itself when it is kept.
+    if (local.conversations[id] === after) continue;
+    changed = true;
+    if (after) conversations[id] = after;
+    else delete conversations[id];
+  }
+  const deleted = merged.deleted ?? {};
+  if (!changed && sameDeletions(deleted, local.deleted ?? {})) return null;
+  const { deleted: _previous, ...rest } = stored ?? {};
+  return Object.keys(deleted).length > 0
+    ? { ...rest, conversations, deleted }
+    : { ...rest, conversations };
+}
+
+/**
+ * Merges a cloud bucket into the stored one: a cloud conversation that is missing locally or newer
+ * than the local entry is added (local wins a tie), and a cloud deletion marker newer than the
+ * local entry clears it. Resolves true when the bucket holds the cloud state afterwards, false when
+ * the write failed or the stored value is not a bucket.
  */
 export async function restoreHierarchyBucket(key: string, cloud: unknown): Promise<boolean> {
-  const incoming = normalizeTimelineHierarchyData(cloud).conversations;
   let restored = false;
   await outlineSaveQueue.enqueue(key, null, async () => {
     try {
-      const stored = (await chrome.storage.local.get(key))[key];
+      const stored: unknown = (await chrome.storage.local.get(key))[key];
       // Never replace a stored value this restore cannot read as a bucket.
       if (stored != null && !(isRecord(stored) && isRecord(stored.conversations))) return null;
-      const current = stored?.conversations ?? {};
-      const local = normalizeTimelineHierarchyData(stored).conversations;
-      const additions: Record<string, TimelineHierarchyConversationData> = {};
-      for (const [id, entry] of Object.entries(incoming)) {
-        const mine = local[id];
-        if (!mine || mine.updatedAt < entry.updatedAt) additions[id] = entry;
-      }
-      if (Object.keys(additions).length > 0) {
-        await chrome.storage.local.set({
-          [key]: { ...stored, conversations: { ...current, ...additions } },
-        });
-      }
+      const next = mergedBucket(stored ?? undefined, cloud);
+      if (next) await chrome.storage.local.set({ [key]: next });
       restored = true;
     } catch (error) {
       console.warn('[Timeline] Failed to restore timeline outlines:', error);

@@ -249,6 +249,50 @@ it('a restore keeps a newer local outline and leaves an unreadable bucket untouc
   expect(other.values[CLAUDE_KEY]).toBe('not a bucket');
 });
 
+/** Recent times: deletion markers older than their retention are dropped. */
+const EDITED = Date.now() - 2_000;
+const CLEARED = EDITED + 1_000;
+const REEDITED = CLEARED + 1_000;
+
+it('an outline cleared on one device stays cleared on every device after a sync', async () => {
+  const holding = { [CHATGPT_KEY]: { conversations: { one: outline('one', EDITED) } } };
+  const first = await device(holding);
+  await first.cloud.pushCatalogTimeline(first.sendAs(popup));
+  // The page leaves this marker when the last level of `one` is cleared.
+  const clearing = await device({
+    [CHATGPT_KEY]: { conversations: {}, deleted: { one: CLEARED } },
+  });
+  await clearing.cloud.pushCatalogTimeline(clearing.sendAs(popup));
+
+  const other = await device(holding);
+  const pulled = await other.cloud.pullCatalogTimeline(other.sendAs(popup));
+  await other.cloud.restorePulledCatalogTimeline(pulled!);
+  expect(other.values[CHATGPT_KEY]).toEqual({ conversations: {}, deleted: { one: CLEARED } });
+
+  // An upload that still holds the older outline doesn't bring it back either.
+  const stale = await device(holding);
+  await stale.cloud.pushCatalogTimeline(stale.sendAs(popup));
+  const fresh = await device();
+  const restored = await fresh.cloud.pullCatalogTimeline(fresh.sendAs(popup));
+  await fresh.cloud.restorePulledCatalogTimeline(restored!);
+  expect(fresh.values[CHATGPT_KEY]).toEqual({ conversations: {}, deleted: { one: CLEARED } });
+});
+
+it('an outline edited after another device cleared it is kept', async () => {
+  const cleared = { [CHATGPT_KEY]: { conversations: {}, deleted: { one: CLEARED } } };
+  const clearing = await device(cleared);
+  await clearing.cloud.pushCatalogTimeline(clearing.sendAs(popup));
+  const editing = await device({
+    [CHATGPT_KEY]: { conversations: { one: outline('one', REEDITED) } },
+  });
+  await editing.cloud.pushCatalogTimeline(editing.sendAs(popup));
+
+  const later = await device(cleared);
+  const pulled = await later.cloud.pullCatalogTimeline(later.sendAs(popup));
+  await later.cloud.restorePulledCatalogTimeline(pulled!);
+  expect(later.values[CHATGPT_KEY]).toEqual({ conversations: { one: outline('one', REEDITED) } });
+});
+
 it('a ChatGPT page neither uploads nor restores another site’s outlines', async () => {
   const first = await device({
     [CHATGPT_KEY]: { conversations: { one: outline('one', 10) } },

@@ -150,6 +150,20 @@ describe('timeline outline persistence', () => {
     expect(stored('a')).toMatchObject({ levels: { [TURN]: 2 }, collapsed: [TURN] });
   });
 
+  it('clearing the last level of a site outline leaves a marker so a cloud copy can’t bring it back', async () => {
+    storage.values.local.set(KEY, { conversations: { 'claude:conv:a': outline('a', 2) } });
+    const state = await open('a');
+    state.hierarchy.setMarkerLevel(TURN, 1);
+    await settle(30);
+
+    expect(storage.values.local.get(KEY)).toEqual({
+      conversations: {},
+      deleted: { 'claude:conv:a': expect.any(Number) },
+    });
+    const { deleted } = storage.values.local.get(KEY) as { deleted: Record<string, number> };
+    expect(deleted['claude:conv:a']).toBeGreaterThan(outline('a', 2).updatedAt);
+  });
+
   it('two conversations edited in one page both keep their outline', async () => {
     storage.values.local.set(KEY, {
       conversations: { 'claude:conv:a': outline('a', 2), 'claude:conv:b': outline('b', 2) },

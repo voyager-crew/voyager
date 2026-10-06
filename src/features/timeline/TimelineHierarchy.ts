@@ -3,6 +3,7 @@ import { filterTimelineHierarchyByRouteScope } from '@/pages/content/timeline/hi
 
 import type { TimelineHydration } from './TimelineHydration';
 import type { TimelineStoragePolicy } from './TimelineStoragePolicy';
+import { catalogHierarchySiteOf, outlineDeletionsAfterWrite } from './catalogHierarchySync';
 import {
   type TimelineHierarchyConversationData,
   type TimelineHierarchyData,
@@ -64,11 +65,20 @@ async function writeChange(
   apply: OutlineChange,
 ): Promise<SettledOutline | null> {
   try {
-    const conversations = { ...(await readConversations(bucket)) };
-    const next = apply(conversations[conversationId] ?? null);
+    const values = (await chrome.storage.local.get(keysToRead(bucket))) as Record<string, unknown>;
+    const conversations = { ...readBucket(bucket, values).conversations };
+    const previous = conversations[conversationId] ?? null;
+    const next = apply(previous);
     if (next) conversations[conversationId] = next;
     else delete conversations[conversationId];
-    await chrome.storage.local.set({ [bucket.key]: { conversations } });
+    // A catalog bucket remembers a cleared outline, or a cloud merge would bring it back.
+    const deleted = catalogHierarchySiteOf(bucket.key)
+      ? outlineDeletionsAfterWrite(values[bucket.key], conversationId, previous, next, Date.now())
+      : {};
+    await chrome.storage.local.set({
+      [bucket.key]:
+        Object.keys(deleted).length > 0 ? { conversations, deleted } : { conversations },
+    });
     const order = outlineSaveQueue.claimSnapshotOrder();
     return { stored: (await readConversations(bucket))[conversationId] ?? null, order };
   } catch (error) {
