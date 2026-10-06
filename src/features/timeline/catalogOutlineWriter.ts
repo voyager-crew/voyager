@@ -24,7 +24,11 @@ async function readStored(key: string): Promise<unknown> {
   return ((await chrome.storage.local.get(key)) as Record<string, unknown>)[key];
 }
 
-/** Applies one page edit to the conversation's stored entry; false when storage failed. */
+/**
+ * Applies one page edit to the conversation's stored entry. The edit is dated later than the entry
+ * or deletion marker it replaces, even one another device's clock dated ahead of this one, so the
+ * next cloud merge keeps it. False when storage could not be read or written.
+ */
 export async function writeCatalogOutlineEdit(
   key: string,
   conversationId: string,
@@ -35,7 +39,9 @@ export async function writeCatalogOutlineEdit(
     const stored = await readStored(key);
     const bucket = readCatalogBucket(stored);
     const previous = bucket.conversations[conversationId] ?? null;
-    const next = applyOutlineEdit(edit, previous, now);
+    const marker = bucket.deleted?.[conversationId];
+    const updatedAt = Math.max(now, (previous?.updatedAt ?? 0) + 1, (marker ?? 0) + 1);
+    const next = applyOutlineEdit(edit, previous, updatedAt);
     const conversations = { ...bucket.conversations };
     if (next) conversations[conversationId] = next;
     else delete conversations[conversationId];

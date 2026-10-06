@@ -58,7 +58,8 @@ tab and restores from the popup or a page run one at a time per site, each step 
 ([catalogOutlineWriter](catalogOutlineWriter.ts)); a page still reads its outline from storage and
 refreshes on its change events. Gemini outlines keep their page-side write. Clearing a catalog
 outline leaves a deletion marker in its bucket (`deleted[conversationId]`), so a merge keeps it
-cleared unless an edit is newer; markers expire after 180 days.
+cleared unless an edit is newer, and an edit is dated after the entry or marker it replaces even
+when another device's clock dated that ahead; markers expire after 180 days.
 The popup syncs every catalog site; a site's own page syncs only that site.
 ChatGPT stars carry the same hashed account annotation. Stars for every site come from the Saved
 Library through its

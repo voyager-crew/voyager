@@ -5,6 +5,7 @@ import type { SyncAccountScope } from '@/core/types/sync';
 import { hashString } from '@/core/utils/hash';
 import { buildStarsV2 } from '@/features/savedLibrary/starSyncPayload';
 import type { StarredMessage } from '@/features/savedLibrary/starTypes';
+import { CATALOG_OUTLINE_WRITE_MESSAGE } from '@/features/timeline/catalogOutlineMessages';
 
 const EXTENSION_ID = 'test-extension';
 const CHATGPT_FILE = 'gemini-voyager-timeline-hierarchy.site-chatgpt.json';
@@ -302,6 +303,47 @@ it('an outline edited after another device cleared it is kept', async () => {
   const pulled = await later.cloud.pullCatalogTimeline(later.sendAs(popup));
   await later.cloud.restorePulledCatalogTimeline(later.sendAs(popup), pulled!);
   expect(later.values[CHATGPT_KEY]).toEqual({ conversations: { one: outline('one', REEDITED) } });
+});
+
+it('an outline re-edited after clearing a future-dated copy survives the next sync', async () => {
+  const id = 'chatgpt:conv:one';
+  // Another device's clock runs an hour ahead, so the copy this device restores is dated ahead too.
+  const ahead = await device({
+    [CHATGPT_KEY]: { conversations: { [id]: outline('one', Date.now() + 3_600_000) } },
+  });
+  await ahead.cloud.pushCatalogTimeline(ahead.sendAs(popup));
+
+  const d = await device();
+  const tab = d.sendAs(page('https://chatgpt.com/c/one'));
+  const sync = async () => {
+    await d.cloud.pushCatalogTimeline(tab);
+    await d.cloud.restorePulledCatalogTimeline(tab, (await d.cloud.pullCatalogTimeline(tab))!);
+  };
+  const setLevel = (level: 1 | 2 | 3) =>
+    tab({
+      type: CATALOG_OUTLINE_WRITE_MESSAGE,
+      payload: {
+        kind: 'edit',
+        key: CHATGPT_KEY,
+        conversationId: id,
+        edit: {
+          kind: 'level',
+          turnId: 'turn-one',
+          aliases: [],
+          level,
+          url: 'https://chatgpt.com/c/one',
+        },
+      },
+    } as { type: string });
+  await sync();
+  await expect(setLevel(1)).resolves.toEqual({ ok: true });
+  await sync();
+  await expect(setLevel(3)).resolves.toEqual({ ok: true });
+
+  await sync();
+  expect(d.values[CHATGPT_KEY]).toMatchObject({
+    conversations: { [id]: { levels: { 'turn-one': 3 } } },
+  });
 });
 
 it('a ChatGPT page neither uploads nor restores another site’s outlines', async () => {
