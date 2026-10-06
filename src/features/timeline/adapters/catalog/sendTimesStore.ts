@@ -15,12 +15,11 @@
  * conversations, so the oldest can be dropped past the cap without reading all
  * of storage.
  *
- * Every read-modify-write and every prune holds the site's Web Lock. All of a
- * site's tabs share its origin, so the lock serializes them: two tabs sending
- * in one chat keep both times, and a prune never deletes a chat another tab
- * is writing. Without Web Locks the writes run unserialized and pruning
- * re-reads its victims before removing them. A failed or unrecognised read
- * never leads to a write: it would replace the chat's saved times.
+ * Only the background writes these keys, one queued step at a time
+ * (`pages/background/sendTimeMessages.ts`), so a read-modify-write or a prune
+ * never interleaves with another; pages only read them. A failed or
+ * unrecognised read never leads to a write: it would replace the chat's saved
+ * times.
  */
 import { StorageKeys } from '@/core/types/common';
 import { hasLegacySafariStorageLimit } from '@/core/utils/browser';
@@ -81,7 +80,7 @@ function isStoredConversation(value: unknown): value is StoredConversation {
 }
 
 /** The turn times stored under one conversation's key; empty for anything else. */
-function parseConversationTimes(value: unknown): TurnTimes {
+export function parseConversationTimes(value: unknown): TurnTimes {
   const times: TurnTimes = new Map();
   if (!isStoredConversation(value)) return times;
   value.k.forEach((key, i) => {
@@ -139,14 +138,6 @@ async function writeIndex(siteId: string, conversations: Set<string>): Promise<v
   await chrome.storage.local.set({ [indexKey(siteId)]: stored });
 }
 
-/** Runs `task` holding the site's Web Lock, or unserialized where Web Locks are unavailable. */
-function withSiteLock<T>(siteId: string, task: () => Promise<T>): Promise<T> {
-  const locks = (globalThis.navigator as Navigator | undefined)?.locks;
-  if (typeof locks?.request !== 'function') return task();
-  // The lock is held until `task` settles; `then` unwraps its result.
-  return locks.request(`gv-send-times:${siteId}`, task).then((result) => result);
-}
-
 /** For display: a failed read shows no times. */
 export async function readConversationTimes(conversationKey: string): Promise<TurnTimes> {
   const key = conversationTimesKey(conversationKey);
@@ -159,36 +150,33 @@ export function sendTimeOf(times: TurnTimes, turnKey: string): number | null {
 
 /**
  * Adds one send to its conversation's key and lists the conversation in the
- * site index. Returns the conversation's times, or null when nothing was
- * written because a read failed or `canWrite` said no.
+ * site index, from a fresh read. Returns the conversation's times, or null
+ * when nothing was written because a read failed. Callers serialize it.
  */
-export function recordSendTime(
+export async function recordSendTime(
   siteId: string,
   conversationKey: string,
   turnKey: string,
   at: number,
-  canWrite: () => boolean = () => true,
 ): Promise<TurnTimes | null> {
-  return withSiteLock(siteId, async () => {
-    const key = conversationTimesKey(conversationKey);
-    const values = await readLocal([key, indexKey(siteId)]);
-    if (values === null || !canWrite()) return null;
-    const stored = values[key];
-    if (stored !== undefined && !isStoredConversation(stored)) return null;
-    const times = parseConversationTimes(stored);
-    const hashed = turnKeyHash(turnKey);
-    if (!times.has(hashed)) {
-      // Whole seconds, as stored, so the time reads the same before and after a reload.
-      times.set(hashed, Math.floor(at / 1000) * 1000);
-      await chrome.storage.local.set({ [key]: toStoredConversation(times) });
-    }
-    const index = parseIndex(values[indexKey(siteId)]);
-    if (index && !index.has(conversationKey)) {
-      index.add(conversationKey);
-      await writeIndex(siteId, index);
-    }
-    return times;
-  });
+  const key = conversationTimesKey(conversationKey);
+  const values = await readLocal([key, indexKey(siteId)]);
+  if (values === null) return null;
+  const stored = values[key];
+  if (stored !== undefined && !isStoredConversation(stored)) return null;
+  const times = parseConversationTimes(stored);
+  const hashed = turnKeyHash(turnKey);
+  if (!times.has(hashed)) {
+    // Whole seconds, as stored, so the time reads the same before and after a reload.
+    times.set(hashed, Math.floor(at / 1000) * 1000);
+    await chrome.storage.local.set({ [key]: toStoredConversation(times) });
+  }
+  const index = parseIndex(values[indexKey(siteId)]);
+  if (index && !index.has(conversationKey)) {
+    index.add(conversationKey);
+    await writeIndex(siteId, index);
+  }
+  return times;
 }
 
 /**
@@ -230,38 +218,29 @@ export function catalogSendConversationCap(): number {
     : CATALOG_SEND_CONVERSATIONS_LIMITED;
 }
 
-/** Removes the site's conversations whose latest send is oldest, beyond `cap`. */
-export function pruneSite(siteId: string, cap: number): Promise<void> {
-  return withSiteLock(siteId, async () => {
-    const index = await readIndex(siteId);
-    if (!index || index.size <= cap) return;
-    const conversations = [...index];
-    const snapshot = await readLocal(conversations.map(conversationTimesKey));
-    if (snapshot === null) return;
-    const lastAt = new Map<string, number>();
-    for (const conversation of conversations) {
-      const last = lastSendOf(snapshot[conversationTimesKey(conversation)]);
-      // A value this build cannot read is never removed.
-      if (last !== null) lastAt.set(conversation, last);
-    }
-    // One already gone sorts first, so the index forgets it.
-    const victims = [...lastAt]
-      .sort(([, a], [, b]) => (a === b ? 0 : a < b ? -1 : 1))
-      .slice(0, Math.max(0, index.size - cap))
-      .map(([conversation]) => conversation);
-    // Without Web Locks another tab may have sent in a victim since the snapshot.
-    const fresh = await readLocal(victims.map(conversationTimesKey));
-    if (fresh === null) return;
-    const dropped = victims.filter((conversation) => {
-      const last = lastSendOf(fresh[conversationTimesKey(conversation)]);
-      return last !== null && last <= (lastAt.get(conversation) ?? -Infinity);
-    });
-    if (dropped.length === 0) return;
-    await chrome.storage.local.remove(dropped.map(conversationTimesKey));
-    // Re-read so another unserialized tab's additions survive.
-    const latest = await readIndex(siteId);
-    if (!latest) return;
-    dropped.forEach((conversation) => latest.delete(conversation));
-    await writeIndex(siteId, latest);
-  });
+/**
+ * Removes the site's conversations whose latest send is oldest, beyond `cap`,
+ * from a fresh read; any failed read skips the prune. Callers serialize it.
+ */
+export async function pruneSite(siteId: string, cap: number): Promise<void> {
+  const index = await readIndex(siteId);
+  if (!index || index.size <= cap) return;
+  const conversations = [...index];
+  const snapshot = await readLocal(conversations.map(conversationTimesKey));
+  if (snapshot === null) return;
+  const lastAt: Array<[string, number]> = [];
+  for (const conversation of conversations) {
+    const last = lastSendOf(snapshot[conversationTimesKey(conversation)]);
+    // A value this build cannot read is never removed.
+    if (last !== null) lastAt.push([conversation, last]);
+  }
+  // One already gone sorts first, so the index forgets it.
+  const dropped = lastAt
+    .sort(([, a], [, b]) => (a === b ? 0 : a < b ? -1 : 1))
+    .slice(0, Math.max(0, index.size - cap))
+    .map(([conversation]) => conversation);
+  if (dropped.length === 0) return;
+  await chrome.storage.local.remove(dropped.map(conversationTimesKey));
+  dropped.forEach((conversation) => index.delete(conversation));
+  await writeIndex(siteId, index);
 }

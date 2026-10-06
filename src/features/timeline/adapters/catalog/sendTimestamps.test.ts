@@ -20,6 +20,7 @@ import {
   CATALOG_SEND_CONVERSATIONS_LIMITED,
   CATALOG_SEND_CONVERSATIONS_UNLIMITED,
 } from '@/features/timeline/adapters/catalog/sendTimesStore';
+import { createSendTimeMessageHandler } from '@/pages/background/sendTimeMessages';
 import {
   MAX_TIMESTAMP_CONVERSATIONS,
   TimestampService,
@@ -122,11 +123,15 @@ beforeEach(async () => {
   storage = createMemoryStorage();
   storage.values.sync.set(StorageKeys.GV_SHOW_MESSAGE_TIMESTAMPS, true);
   vi.stubGlobal('chrome', { ...chrome, storage: storage.api });
+  // The background owns writes; each test gets a fresh worker.
+  const background = createSendTimeMessageHandler();
   vi.mocked(chrome.runtime.sendMessage).mockImplementation(((
     request: { type: string },
     callback: (value: unknown) => void,
   ) => {
     if (request.type === 'gv.starred.getForConversation') callback({ ok: true, messages: [] });
+    const sender = { id: chrome.runtime.id, tab: { url: location.href }, frameId: 0 };
+    void background(request, sender as chrome.runtime.MessageSender)?.then(callback);
   }) as typeof chrome.runtime.sendMessage);
   await openTimeline();
 });
@@ -239,7 +244,7 @@ describe('catalog timeline message times', () => {
   });
 
   it('two ChatGPT tabs stamping different chats keep both times', async () => {
-    // Hold this tab's first time write until another tab has stamped its own chat.
+    // Hold this tab's first time write until another tab has sent in its own chat.
     const local = storage.api.local as unknown as Record<string, (...args: unknown[]) => unknown>;
     const set = local.set;
     let release: (() => void) | null = null;
@@ -260,12 +265,11 @@ describe('catalog timeline message times', () => {
     history.replaceState({}, '', '/c/two');
     await openTimeline();
     await send('Question in chat two', 'turn-3');
+    await macrotask();
+    release!();
     await vi.waitFor(async () =>
       expect(await tooltipOf('Question in chat two')).toContain(SENT_LABEL),
     );
-    await macrotask();
-    release!();
-    await macrotask();
 
     await scope.dispose();
     await openTimeline();

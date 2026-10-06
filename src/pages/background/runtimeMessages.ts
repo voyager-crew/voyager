@@ -11,6 +11,7 @@ import { handleHighlightRuntimeMessage } from './highlightMessages';
 import { handlePageRuntimeMessage } from './pageRuntimeMessages';
 import { handleRuntimeImageMessage, isRuntimeImageMessage } from './runtimeImageMessages';
 import { isHandledBackgroundRuntimeMessage } from './runtimeMessageRouting';
+import { createSendTimeMessageHandler } from './sendTimeMessages';
 
 type BackgroundRuntimeMessage = {
   type: string;
@@ -37,6 +38,7 @@ export function registerBackgroundRuntimeMessages(owners: {
     acknowledgeAnnouncement(id: string): Promise<void>;
   };
 }): void {
+  const handleSendTimeMessage = createSendTimeMessageHandler();
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!isHandledBackgroundRuntimeMessage(message)) return undefined;
 
@@ -75,6 +77,11 @@ export function registerBackgroundRuntimeMessages(owners: {
         const captureResponse = owners.handleGeneratedUiMessage(message, sender);
         if (captureResponse) {
           sendResponse(await captureResponse);
+          return;
+        }
+        const sendTimeResponse = handleSendTimeMessage(message, sender);
+        if (sendTimeResponse) {
+          sendResponse(await sendTimeResponse);
           return;
         }
         const pageResponse = handlePageRuntimeMessage(message, sender);

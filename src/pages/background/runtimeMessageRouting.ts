@@ -15,6 +15,7 @@ import {
   PLUGIN_CONTENT_SCRIPT_SYNC_MESSAGE,
 } from '@/features/plugins/runtime/messages';
 import { LIBRARY_OPEN_MESSAGE } from '@/features/savedLibrary/openLibraryPage';
+import { SEND_TIME_RECORD_MESSAGE } from '@/features/timeline/adapters/catalog/sendTimesMessages';
 
 function parseHttpsUrl(rawUrl: string | undefined): URL | null {
   if (!rawUrl) return null;
@@ -116,6 +117,7 @@ const HANDLED_BACKGROUND_MESSAGE_TYPES = new Set([
   CHATGPT_HANDOFF_CANCEL_EXPIRY_MESSAGE,
   CHATGPT_HANDOFF_GET_TAB_ID_MESSAGE,
   'gv.account.resolve',
+  SEND_TIME_RECORD_MESSAGE,
   'gv.responseComplete.notify',
   'gv.responseComplete.requestNativePermission',
   'gv.clipboard.copyImagePng',

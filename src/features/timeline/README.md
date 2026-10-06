@@ -86,11 +86,13 @@ to [`trackUserSends`](../plugins/sends/trackUserSends.ts) and records the produc
 gated by the same message-timestamps setting. [Times](adapters/catalog/sendTimesStore.ts) live in one
 `gvMessageTimestamps:<site>:conv:<id>` key per conversation, never in Gemini's `gvMessageTimestamps`
 blob, which saves whole snapshots and would drop other tabs' entries. Each key is columnar (53-bit
-hashed turn keys, seconds after a base; about 20 bytes a turn). A `gvMessageTimestamps:<site>:index`
-list lets the first send of a page prune the oldest conversations past the site cap (5000 with
-required `unlimitedStorage`, else 2000). Writes and prunes hold the site's Web Lock
-(`gv-send-times:<site>`), shared by its tabs, and a failed read never leads to a write. Turns
-mounted from history are never stamped, and the time
+hashed turn keys, seconds after a base; about 20 bytes a turn). The page asks the background to store
+a send ([`gv.sendTimes.record`](../../pages/background/sendTimeMessages.ts)); the background is the
+only writer, accepts a site's sends only from that site's own pages, and runs each site's writes in
+one serial queue, every step reading storage afresh. A `gvMessageTimestamps:<site>:index` list lets
+the first send of a worker's lifetime prune the oldest conversations past the site cap (5000 with
+required `unlimitedStorage`, else 2000), and a failed read never leads to a write. Pages read the
+keys themselves and refresh on storage changes. Turns mounted from history are never stamped, and the time
 shows in the dot's tooltip only: nothing is inserted into the host's transcript. Claude and DeepSeek
 name no turn key and show none.
 
