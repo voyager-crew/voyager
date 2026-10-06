@@ -334,6 +334,32 @@ it('removing a ChatGPT star reaches the Gemini account file older versions read 
   expect(file.tombstones).toEqual([expect.objectContaining({ turnId: chatgptStar.turnId })]);
 });
 
+it('a ChatGPT star removed on another device leaves the Gemini account file in the same sync', async () => {
+  const older = buildStarsV2(
+    { data: { messages: { [chatgptStar.conversationId]: [chatgptStar] } }, tombstones: [] },
+    scope,
+    'old',
+  );
+  drive.set(scoped('gemini-voyager-stars'), JSON.stringify(older));
+  const remover = await device();
+  await remover.store.add(chatgptStar);
+  await remover.store.remove(chatgptStar.conversationId, chatgptStar.turnId);
+  await remover.cloud.pushCatalogTimeline(remover.sendAs(page('https://chatgpt.com/c/c1')));
+
+  const d = await device();
+  await d.store.add(chatgptStar);
+  await expect(d.syncGemini(scope)).resolves.toBe(true);
+
+  // Older versions read this file: one Gemini sync must not leave the removed star there.
+  const file = starFile(scoped('gemini-voyager-stars'));
+  expect(file.items).toEqual([]);
+  expect(file.tombstones).toEqual([expect.objectContaining({ turnId: chatgptStar.turnId })]);
+  const legacy = JSON.parse(drive.get(scoped('gemini-voyager-starred'))!) as {
+    data: { messages: Record<string, unknown> };
+  };
+  expect(Object.keys(legacy.data.messages)).toEqual([]);
+});
+
 it('a Gemini sync without account isolation still writes catalog stars to the shared file', async () => {
   const d = await device();
   await d.store.add(chatgptStar);

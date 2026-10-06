@@ -224,10 +224,21 @@ export class GoogleDriveSyncService {
 
       if (syncsConversationExtras && starStore) {
         await this.starCoordinator.push(starStore, port, capturedScope);
+        const pushed = JSON.stringify(await starStore.getSyncSnapshot(capturedScope));
         // Catalog-site stars ride along with every star sync, in their own per-site files.
-        for (const site of await this.localCatalogStarSites(starStore)) {
+        const sites = await this.localCatalogStarSites(starStore);
+        for (const site of sites) {
           port.assertActive();
           await this.starCoordinator.push(starStore, catalogPort(site), null);
+        }
+        // A site file can carry a removal of a star the Gemini file still holds for older
+        // versions; write the Gemini file again so they drop it in this same sync.
+        if (
+          sites.length > 0 &&
+          JSON.stringify(await starStore.getSyncSnapshot(capturedScope)) !== pushed
+        ) {
+          port.assertActive();
+          await this.starCoordinator.push(starStore, port, capturedScope);
         }
       }
       port.assertActive();
