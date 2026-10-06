@@ -113,6 +113,27 @@ describe('cloud sync popup state owner', () => {
     },
   );
 
+  it('restores ChatGPT outlines from the cloud when no folder file is there', async () => {
+    const key = `${StorageKeys.CATALOG_TIMELINE_HIERARCHY_PREFIX}chatgpt`;
+    const outline = {
+      conversationUrl: 'https://chatgpt.com/c/one',
+      levels: { 'turn-one': 2 },
+      collapsed: [],
+      updatedAt: 10,
+    };
+    sendMessage.mockImplementation(async (message) =>
+      message.type === 'gv.sync.download'
+        ? { ok: true, data: null, highlights: { synced: false } }
+        : message.type === 'gv.sync.catalogTimeline.pull'
+          ? { ok: true, buckets: { [key]: { conversations: { one: outline } } }, stars: {} }
+          : { ok: true, state },
+    );
+    await act(async () => settings.handleDownloadFromDrive());
+
+    expect(localSet).toHaveBeenCalledWith({ [key]: { conversations: { one: outline } } });
+    expect(settings.statusMessage).toEqual({ text: 'syncSuccess', kind: 'ok' });
+  });
+
   it('expires status after three seconds and cancels pending expiry on unmount', async () => {
     vi.useFakeTimers();
     await act(async () => settings.handleSyncNow());

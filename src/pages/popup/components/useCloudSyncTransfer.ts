@@ -392,6 +392,11 @@ export function useCloudSyncTransfer(
       payload: context.payload,
       restore: (data: CloudDownloadData, mode: CloudRestoreMode, highlightsRestored: boolean) =>
         restoreCloudDownload(context, getTargetTab, data, mode, highlightsRestored),
+      /** Restores only the catalog outlines and stars, for a cloud without this site's files. */
+      restoreCatalogTimeline: async () => {
+        const pulled = await pullCatalogTimeline((message) => chrome.runtime.sendMessage(message));
+        return pulled ? restorePulledCatalogTimeline(pulled) : false;
+      },
     };
   }, [platform, includeHighlights, getTargetTab]);
 

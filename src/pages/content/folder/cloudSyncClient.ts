@@ -83,6 +83,12 @@ function errorText(error: unknown): string {
   return error instanceof Error ? error.message : 'Unknown error';
 }
 
+/** Merges this sender's cloud catalog outlines and stars; true when anything was restored. */
+async function restoreCatalogTimeline(): Promise<boolean> {
+  const pulled = await pullCatalogTimeline(sendRuntimeMessage);
+  return pulled ? restorePulledCatalogTimeline(pulled) : false;
+}
+
 function notifySyncError(site: CloudSyncSite, message: string): void {
   site.notify(
     site.t('syncError').replace('{error}', () => message),
@@ -181,15 +187,18 @@ export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
       return;
     }
     const download = response.data;
-    if (!download) {
-      // Highlights may sync on their own when there is no folder copy yet.
-      if (response.highlights?.synced) site.notify(site.t('syncSuccess'), 'success');
-      else site.notify(site.t('syncNoData') || 'No data in cloud', 'info');
+    const cloud = download ? readCloudFolders(site.platform, download.folders) : null;
+    if (cloud && !cloud.ok && cloud.key !== 'syncNoData') {
+      site.notify(site.t(cloud.key), cloud.tone);
       return;
     }
-    const cloud = readCloudFolders(site.platform, download.folders);
-    if (!cloud.ok) {
-      site.notify(site.t(cloud.key), cloud.tone);
+    if (!download || !cloud?.ok) {
+      // Outlines and stars have files of their own, so a site without a folder copy has them too.
+      const restored = await restoreCatalogTimeline();
+      if (!run.current()) return;
+      // Highlights may sync on their own when there is no folder copy yet.
+      if (restored || response.highlights?.synced) site.notify(site.t('syncSuccess'), 'success');
+      else site.notify(site.t('syncNoData') || 'No data in cloud', 'info');
       return;
     }
     const prompts = syncsSharedData
@@ -201,8 +210,7 @@ export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
     if (!run.current() || !saved) return;
     if (run.afterSave && !(await run.afterSave(download, prompts, scopes))) return;
     if (!run.current()) return;
-    const pulled = await pullCatalogTimeline(sendRuntimeMessage);
-    if (pulled) await restorePulledCatalogTimeline(pulled);
+    await restoreCatalogTimeline();
     if (!run.current()) return;
     site.notify(site.t('downloadMergeSuccess'), 'success');
   } catch (error) {

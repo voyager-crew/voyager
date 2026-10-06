@@ -278,7 +278,9 @@ export function useCloudSyncSettings(sourceTabId?: number) {
         }
 
         if (!response.data) {
-          if (response.highlights?.synced) {
+          // Catalog outlines and stars have files of their own; restore them without folders too.
+          const restored = await download.restoreCatalogTimeline();
+          if (restored || response.highlights?.synced) {
             setStatusMessage({ text: t('syncSuccess'), kind: 'ok' });
             return;
           }
