@@ -6,7 +6,7 @@
  * (`sendTimesStore`), never in Gemini's store; the background writes them and
  * this page reads them, refreshing on storage changes. Recording and display follow
  * the same "message timestamps" setting as Gemini; the time shows in the
- * dot's tooltip.
+ * dot's tooltip and above the user's message in the thread (`InlineSendTimes`).
  */
 import { StorageFactory } from '@/core/services/StorageService';
 import { StorageKeys } from '@/core/types/common';
@@ -22,6 +22,7 @@ import { TimestampService } from '@/pages/content/timestamp/TimestampService';
 
 import type { TimelineTimestampOwner } from '../../TimelineAdapter';
 import type { ExtGlobal, SyncSettingsListener } from '../../types';
+import { InlineSendTimes } from './inlineSendTimes';
 import { requestSendTimeRecord } from './sendTimesMessages';
 import {
   type TurnTimes,
@@ -41,6 +42,8 @@ export class CatalogSendTimestamps {
   private legacy = new Map<string, Map<string, number>>();
   private readonly formatter = new TimestampService();
   private readonly ready: Promise<void>;
+  /** The in-thread labels of each live route, redrawn when a time or the setting changes. */
+  private readonly inline = new Set<InlineSendTimes>();
 
   constructor(
     private readonly scope: PluginScope,
@@ -63,6 +66,7 @@ export class CatalogSendTimestamps {
         if (!change || (area !== 'sync' && area !== 'local')) return;
         settingChanged = true;
         this.enabled = change.newValue === true;
+        this.renderInline();
       };
       onChanged.addListener(listener);
       return () => onChanged.removeListener?.(listener);
@@ -75,6 +79,7 @@ export class CatalogSendTimestamps {
       this.legacy = legacy;
       // A live change can arrive while the first read is pending.
       if (!settingChanged) this.enabled = setting.success && setting.data === true;
+      this.renderInline();
     })().catch(() => {});
     trackUserSends(scope, site, (send) => void this.record(send).catch(() => {}));
   }
@@ -102,11 +107,23 @@ export class CatalogSendTimestamps {
    */
   private merge(conversationKey: string, times: TurnTimes): void {
     const held = this.times.get(conversationKey);
-    if (!held) {
-      this.times.set(conversationKey, new Map(times));
-      return;
-    }
-    for (const [turn, time] of times) if (!held.has(turn)) held.set(turn, time);
+    if (!held) this.times.set(conversationKey, new Map(times));
+    else for (const [turn, time] of times) if (!held.has(turn)) held.set(turn, time);
+    this.renderInline();
+  }
+
+  private renderInline(): void {
+    for (const labels of this.inline) labels.render();
+  }
+
+  /** The formatted send time of `turnKey`, or `null` while the setting is off or none is held. */
+  private label(conversationKey: string | null, turnKey: string): string | null {
+    if (!this.enabled || !conversationKey) return null;
+    const stored = this.times.get(conversationKey);
+    const time =
+      (stored ? sendTimeOf(stored, turnKey) : null) ??
+      this.legacy.get(conversationKey)?.get(turnKey);
+    return time == null ? null : this.formatter.formatAbsoluteTime(time);
   }
 
   private load(conversationKey: string): void {
@@ -116,11 +133,15 @@ export class CatalogSendTimestamps {
     void readConversationTimes(conversationKey).then((times) => this.merge(conversationKey, times));
   }
 
-  /** The tooltip times for the conversation at `url`. */
+  /** The tooltip and in-thread times for the conversation at `url`. */
   ownerFor(url: string): TimelineTimestampOwner {
     const conversationKey = sendConversationKey(this.site, url);
-    if (conversationKey) this.load(conversationKey);
     const keyByMarker = new Map<string, string>();
+    const inline = new InlineSendTimes(this.site.turnKeyAttributes, (key) =>
+      this.label(conversationKey, key),
+    );
+    this.inline.add(inline);
+    if (conversationKey) this.load(conversationKey);
     return {
       // The rail never waits for stored times; a tooltip shows whatever has loaded.
       init: () => Promise.resolve(),
@@ -132,16 +153,18 @@ export class CatalogSendTimestamps {
           if (key === null) keyByMarker.delete(marker.id);
           else keyByMarker.set(marker.id, key);
         }
+        inline.update(next);
       },
       formatTooltipTimestamp: (id) => {
         const key = keyByMarker.get(id);
-        if (!this.enabled || !conversationKey || key === undefined) return null;
-        const stored = this.times.get(conversationKey);
-        const time =
-          (stored ? sendTimeOf(stored, key) : null) ?? this.legacy.get(conversationKey)?.get(key);
-        return time == null ? null : this.formatter.formatAbsoluteTime(time);
+        return key === undefined ? null : this.label(conversationKey, key);
       },
-      destroy: () => keyByMarker.clear(),
+      // The engine is destroyed when the timeline stops or the route changes.
+      destroy: () => {
+        keyByMarker.clear();
+        this.inline.delete(inline);
+        inline.destroy();
+      },
     };
   }
 }
