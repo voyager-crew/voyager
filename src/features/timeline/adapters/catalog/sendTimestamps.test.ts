@@ -72,13 +72,46 @@ function storedTimeKeys(): string[] {
 /** Lets timer-scheduled storage writes land. */
 const macrotask = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
 
-/** One exchange as ChatGPT renders it: an item keyed by `data-turn-key`, the prompt in its bubble. */
-function exchange(key: string, prompt: string): HTMLElement {
+/**
+ * One exchange as ChatGPT renders it (see `chatgptThreadFixture`): an item keyed
+ * by `data-turn-key`, the prompt in its bubble, then the reply, if any.
+ */
+function exchange(key: string, prompt: string, reply?: string): HTMLElement {
   const item = document.createElement('div');
   item.setAttribute('data-turn-key', key);
-  item.innerHTML = '<div data-user-message-bubble="true"></div>';
-  item.firstElementChild!.textContent = prompt;
+  item.innerHTML = `<h4 class="sr-only">You said:</h4>
+    <div data-chatgpt-search-unit-key="${key}-u" data-chatgpt-search-message-ids="${key}">
+      <div class="group/user-message flex flex-col items-end">
+        <div data-user-message-bubble="true"><div dir="auto"></div></div>
+        <div><span data-state="closed"><button aria-label="Copy message">Copy</button></span></div>
+      </div>
+    </div>`;
+  item.querySelector('[dir="auto"]')!.textContent = prompt;
+  if (reply !== undefined) {
+    item.insertAdjacentHTML(
+      'beforeend',
+      `<div data-chatgpt-search-unit-key="${key}-a" data-chatgpt-search-message-ids="${key}-a">
+         <h4 data-conversation-role="assistant">ChatGPT said:</h4>
+         <div data-chatgpt-selection-conversation-id="one" data-chatgpt-selection-message-id="${key}-a">
+           <div data-markdown-text-style="assistant-message" dir="auto"><p></p></div>
+         </div>
+       </div>`,
+    );
+    item.querySelector('p')!.textContent = reply;
+  }
   return item;
+}
+
+function itemOf(key: string): HTMLElement {
+  const item = document.querySelector<HTMLElement>(`[data-turn-key="${key}"]`);
+  if (!item) throw new Error(`no turn "${key}"`);
+  return item;
+}
+
+/** The send times shown in the thread, inside turn `key` or anywhere. */
+function inlineTimes(key?: string): string[] {
+  const root = key === undefined ? document : itemOf(key);
+  return Array.from(root.querySelectorAll('.gv-timestamp'), (label) => label.textContent ?? '');
 }
 
 function dotFor(prompt: string): HTMLElement {
@@ -116,13 +149,13 @@ async function openTimeline(): Promise<void> {
 }
 
 /** The user sends `prompt` at `at` and ChatGPT renders it as turn `key`. */
-async function send(prompt: string, key: string, at = SENT_AT): Promise<void> {
+async function send(prompt: string, key: string, at = SENT_AT, reply?: string): Promise<void> {
   composer.textContent = prompt;
   vi.setSystemTime(at);
   composer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
   composer.textContent = '';
   vi.setSystemTime(at + 5_000);
-  thread.append(exchange(key, prompt));
+  thread.append(exchange(key, prompt, reply));
   await vi.waitFor(() => dotFor(prompt));
 }
 
@@ -402,5 +435,77 @@ describe('catalog timeline message times', () => {
     expect(index.conversations).not.toContain('chatgpt:conv:old-0');
     expect(storage.values.local.has('gvMessageTimestamps:chatgpt:conv:old-1')).toBe(true);
     expect(storage.values.local.has(ONE_KEY)).toBe(true);
+  });
+});
+
+describe('message times in the ChatGPT thread', () => {
+  const bubbleOf = (key: string): HTMLElement =>
+    itemOf(key).querySelector<HTMLElement>('[data-user-message-bubble]')!;
+
+  it('a ChatGPT user message shows its send time when message times are on', async () => {
+    await send('New question', 'turn-2');
+
+    await vi.waitFor(() => expect(inlineTimes('turn-2')).toEqual([SENT_LABEL]));
+    // Above the bubble, inside the prompt's right-aligned block, never inside the message.
+    const label = itemOf('turn-2').querySelector('.gv-timestamp')!;
+    expect(label.nextElementSibling).toBe(bubbleOf('turn-2'));
+    expect(bubbleOf('turn-2').textContent).toBe('New question');
+    // History with no stored time shows none.
+    expect(inlineTimes('turn-1')).toEqual([]);
+  });
+
+  it('turning message times off removes the inline times', async () => {
+    await send('New question', 'turn-2');
+    await vi.waitFor(() => expect(inlineTimes()).toEqual([SENT_LABEL]));
+
+    storage.external('sync', StorageKeys.GV_SHOW_MESSAGE_TIMESTAMPS, false);
+    await vi.waitFor(() => expect(inlineTimes()).toEqual([]));
+
+    storage.external('sync', StorageKeys.GV_SHOW_MESSAGE_TIMESTAMPS, true);
+    await vi.waitFor(() => expect(inlineTimes('turn-2')).toEqual([SENT_LABEL]));
+  });
+
+  it('a re-rendered ChatGPT turn shows its time once', async () => {
+    await send('New question', 'turn-2');
+    await vi.waitFor(() => expect(inlineTimes()).toEqual([SENT_LABEL]));
+
+    // ChatGPT remounts the whole item, as scrolling it out and back does.
+    itemOf('turn-2').replaceWith(exchange('turn-2', 'New question'));
+    await vi.waitFor(() => expect(inlineTimes('turn-2')).toEqual([SENT_LABEL]));
+    expect(inlineTimes()).toEqual([SENT_LABEL]);
+
+    // ChatGPT re-renders only the bubble, leaving the label beside it.
+    const bubble = bubbleOf('turn-2');
+    const fresh = bubble.cloneNode(true) as HTMLElement;
+    bubble.replaceWith(fresh);
+    await vi.waitFor(() =>
+      expect(itemOf('turn-2').querySelector('.gv-timestamp')?.nextElementSibling).toBe(fresh),
+    );
+    expect(inlineTimes()).toEqual([SENT_LABEL]);
+  });
+
+  it('an assistant message gets no inline time', async () => {
+    await send('New question', 'turn-2', SENT_AT, 'An answer');
+    await vi.waitFor(() => expect(inlineTimes('turn-2')).toEqual([SENT_LABEL]));
+
+    const reply = itemOf('turn-2').querySelector('[data-chatgpt-search-unit-key="turn-2-a"]')!;
+    expect(reply.querySelector('.gv-timestamp')).toBeNull();
+    expect(reply.previousElementSibling?.querySelector('.gv-timestamp')).not.toBeNull();
+  });
+
+  it('leaving the chat or closing the timeline removes the inline times', async () => {
+    await send('New question', 'turn-2');
+    await vi.waitFor(() => expect(inlineTimes()).toEqual([SENT_LABEL]));
+
+    // The host routes to another chat before it swaps the thread.
+    history.pushState({}, '', '/c/two');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    await vi.waitFor(() => expect(inlineTimes()).toEqual([]));
+
+    history.replaceState({}, '', '/c/one');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    await vi.waitFor(() => expect(inlineTimes()).toEqual([SENT_LABEL]));
+    await scope.dispose();
+    expect(inlineTimes()).toEqual([]);
   });
 });
