@@ -109,6 +109,10 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
     manifests: plugins.siteScopedManifests,
     pluginState: plugins.pluginState,
     writeSyncStorage: writePopupSyncStorage,
+    messageTimestamps: {
+      enabled: timeline.values.showMessageTimestamps,
+      set: (enabled) => timeline.onChange({ showMessageTimestamps: enabled }),
+    },
   });
   const folder = useFolderPopupSettings({
     activeAccountPlatform: tab.activeAccountPlatform,

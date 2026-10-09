@@ -24,17 +24,10 @@ import type { SiteAdapter } from '@/features/plugins/types';
 import { isSendActionButton } from '@/pages/content/sendBehavior/sendButton';
 import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 
-/** What a site must name for its sends to be told apart; all of it comes from site.json. */
-export interface SendSite {
-  readonly siteId: string;
-  readonly matches: readonly string[];
-  readonly conversationIdPattern: string;
-  /** A user message. */
-  readonly userTurn: string;
-  /** The prompt field. */
-  readonly composer: string;
-  /** Attributes, on the turn or its nearest ancestor holding one, that keep a message's identity. */
-  readonly turnKeyAttributes: readonly string[];
+import { type SendInputs, sendInputsOf } from './sendInputs';
+
+/** A site's send inputs (`sendInputsOf`), plus how to tell a chat the host keeps nowhere. */
+export interface SendSite extends SendInputs {
   /** Whether the open chat is one the host keeps nowhere. */
   readonly isEphemeral?: () => boolean;
 }
@@ -51,25 +44,10 @@ export interface UserSend {
 /** Chats a site keeps nowhere, by site id; a send there is never reported. */
 const EPHEMERAL_CHECKS: Readonly<Record<string, () => boolean>> = { chatgpt: isTemporaryChat };
 
-/**
- * The send inputs `adapter` provides, or `null` when it lacks any of them: such
- * a site has no send tracking, rather than tracking that could stamp the wrong turn.
- */
+/** `adapter`'s send inputs, or `null` when it lacks any (see `sendInputsOf`). */
 export function sendSiteOf(adapter: SiteAdapter | null): SendSite | null {
-  const userTurn = adapter?.selectors.userTurn;
-  const composer = adapter?.selectors.composer;
-  const pattern = adapter?.conversationIdPattern;
-  const turnKeyAttributes = adapter?.turnKeyAttributes;
-  if (!adapter || !userTurn || !composer || !pattern || !turnKeyAttributes?.length) return null;
-  return {
-    siteId: adapter.id,
-    matches: adapter.matches,
-    conversationIdPattern: pattern,
-    userTurn,
-    composer,
-    turnKeyAttributes,
-    isEphemeral: EPHEMERAL_CHECKS[adapter.id],
-  };
+  const inputs = sendInputsOf(adapter);
+  return inputs && { ...inputs, isEphemeral: EPHEMERAL_CHECKS[inputs.siteId] };
 }
 
 /** The key `attributes` give the user turn `turn`, from it or its nearest ancestor holding one. */

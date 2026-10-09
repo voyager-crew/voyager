@@ -6,6 +6,7 @@ import {
   compatibleSettingWrite,
   resolvePluginSettings,
 } from '@/features/plugins/runtime/resolvePluginSettings';
+import { sendInputsOf } from '@/features/plugins/sends/sendInputs';
 import { SiteRegistry } from '@/features/plugins/sites/registry';
 import { isPluginEnabled } from '@/features/plugins/storage/pluginDefaults';
 import { type PluginStateMap, setPluginSettings } from '@/features/plugins/storage/pluginState';
@@ -46,6 +47,8 @@ export interface CatalogTimelineSettingsInput {
   readonly manifests: readonly PluginManifest[];
   readonly pluginState: PluginStateMap;
   readonly writeSyncStorage: (payload: Record<string, unknown>) => Promise<void>;
+  /** The message-timestamps setting every timeline shares, and how to change it. */
+  readonly messageTimestamps: { readonly enabled: boolean; set(enabled: boolean): void };
 }
 
 export interface CatalogTimelineSettings {
@@ -67,6 +70,7 @@ export function useCatalogTimelineSettings({
   manifests,
   pluginState,
   writeSyncStorage,
+  messageTimestamps,
 }: CatalogTimelineSettingsInput): CatalogTimelineSettings | null {
   // The page runs the first enabled timeline in source order, so a disabled builtin ahead of an
   // imported rail must not take the card's edits. With none enabled, the first one is what the
@@ -77,10 +81,13 @@ export function useCatalogTimelineSettings({
       timelines.find((plugin) => isPluginEnabled(pluginState, plugin.id)) ?? timelines[0] ?? null
     );
   }, [manifests, pluginState]);
-  const siteId = useMemo(
-    () => resolveSiteAdapterForUrl(activeUrl, SiteRegistry.createDefault(), siteOverride)?.id,
+  const adapter = useMemo(
+    () => resolveSiteAdapterForUrl(activeUrl, SiteRegistry.createDefault(), siteOverride),
     [activeUrl, siteOverride],
   );
+  const siteId = adapter?.id;
+  // Send times are recorded only while it is on; without this row a ChatGPT tab cannot turn it on.
+  const recordsSends = sendInputsOf(adapter) !== null;
   const stored = manifest ? pluginState[manifest.id]?.settings : undefined;
   // Shown until the storage subscription delivers the write; another writer's change replaces it.
   const [pending, setPending] = useState<PluginSettings>({});
@@ -102,6 +109,9 @@ export function useCatalogTimelineSettings({
   const onChange = useCallback(
     (patch: Partial<TimelineSettingsValues>) => {
       if (!manifest) return;
+      if (typeof patch.showMessageTimestamps === 'boolean' && recordsSends) {
+        messageTimestamps.set(patch.showMessageTimestamps);
+      }
       const writes: PluginSettingWrite[] = [];
       if (patch.timelineStyle) writes.push({ key: 'timelineStyle', value: patch.timelineStyle });
       if (typeof patch.markerLevelEnabled === 'boolean') {
@@ -119,7 +129,7 @@ export function useCatalogTimelineSettings({
       setPending((current) => ({ ...current, ...accepted }));
       void setPluginSettings(manifest.id, accepted);
     },
-    [manifest],
+    [manifest, recordsSends, messageTimestamps],
   );
 
   const resetPosition = useCallback(() => {
@@ -135,12 +145,13 @@ export function useCatalogTimelineSettings({
       draggableTimeline: settings.draggable,
       timelinePreviewPinned: settings.previewPinned,
       markerLevelEnabled: settings.markerLevel,
-      // Gemini-only features; their rows are never offered here.
+      // A Gemini-only feature; its row is never offered here.
       preventAutoScrollEnabled: false,
-      showMessageTimestamps: false,
+      showMessageTimestamps: recordsSends && messageTimestamps.enabled,
     },
     offers: (settingId) =>
       CATALOG_RAIL_ENTRIES.has(settingId) ||
+      (settingId === 'showMessageTimestamps' && recordsSends) ||
       (Object.hasOwn(PLUGIN_SETTING_FOR_CARD, settingId) &&
         Object.hasOwn(declared, PLUGIN_SETTING_FOR_CARD[settingId])),
     onChange,

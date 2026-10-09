@@ -344,6 +344,27 @@ describe('Popup settings integration', () => {
       expect(sync).not.toHaveProperty('geminiTimelineMarkerLevel');
     });
 
+    it('a ChatGPT send can show its time: the card offers the message-times switch on ChatGPT', async () => {
+      await mount();
+      const times = container.querySelector<HTMLInputElement>('#show-message-timestamps')!;
+      expect(times.closest('[hidden]')).toBeNull();
+      expect(times.checked).toBe(false);
+
+      await act(async () => times.click());
+
+      expect(times.checked).toBe(true);
+      // The rail records and shows send times only while this shared setting is on.
+      expect(sync[StorageKeys.GV_SHOW_MESSAGE_TIMESTAMPS]).toBe(true);
+    });
+
+    it('a timeline site that cannot record sends does not offer the message-times switch', async () => {
+      extensionApi.tabs.query.mockResolvedValue([{ id: 10, url: 'https://claude.ai/chat/abc' }]);
+      await mount();
+
+      const times = container.querySelector<HTMLInputElement>('#show-message-timestamps');
+      expect(!times || !!times.closest('[hidden]')).toBe(true);
+    });
+
     it('the timeline card edits the timeline that is actually running on the page', async () => {
       const IMPORTED_ID = 'local.me.chatgpt-rail';
       local[StorageKeys.PLUGIN_LOCAL_MANIFESTS] = {
