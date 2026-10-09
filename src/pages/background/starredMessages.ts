@@ -1,4 +1,5 @@
 import type { SyncAccountScope } from '@/core/types/sync';
+import { FOLDER_PLATFORM_IDS } from '@/features/folder/platforms';
 import type { StarStore } from '@/features/savedLibrary/starStore';
 import type { StarSyncSources } from '@/features/savedLibrary/starSyncPayload';
 import type { StarredMessage } from '@/features/savedLibrary/starTypes';
@@ -85,9 +86,7 @@ export function createStarredMessagesHandler(store: StarStore) {
       case 'gv.starred.mergeCloud':
         if (
           !sender ||
-          !(['gemini', 'aistudio', 'chatgpt'] as const).some((platform) =>
-            isTrustedSyncMessageSender(sender, platform),
-          )
+          !FOLDER_PLATFORM_IDS.some((platform) => isTrustedSyncMessageSender(sender, platform))
         ) {
           return Promise.reject(new Error('Untrusted starred messages restore sender'));
         }

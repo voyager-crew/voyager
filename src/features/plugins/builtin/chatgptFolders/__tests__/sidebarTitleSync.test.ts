@@ -88,6 +88,7 @@ afterEach(async () => {
   sidebar.destroy();
   document.body.replaceChildren();
   globalThis.chrome.storage = originalStorage;
+  document.documentElement.lang = '';
   vi.restoreAllMocks();
 });
 
@@ -153,6 +154,42 @@ describe('ChatGPT sidebar title sync', () => {
     await nextPass();
 
     expect(stored()[0].title).toBe(FILED.title);
+  });
+
+  it('keeps a title when the sidebar shows a localized "New chat" placeholder', async () => {
+    store([reference(FILED)]);
+    await activate();
+    const before = folderWrites();
+
+    const placeholders = [
+      ['zh-CN', '新聊天'],
+      ['fr-FR', 'Nouvelle discussion'],
+      ['de', 'Neuer Chat'],
+      ['ko-KR', '새 채팅'],
+      ['', 'New chat'],
+    ];
+    for (const [lang, placeholder] of placeholders) {
+      document.documentElement.lang = lang;
+      sidebar.rename(FILED.id, placeholder);
+      await nextPass();
+    }
+
+    expect(stored()[0].title).toBe(FILED.title);
+    expect(folderWrites()).toBe(before);
+  });
+
+  it("a chat renamed to another language's 'New chat' keeps that title", async () => {
+    document.documentElement.lang = 'en-US';
+    store([reference(FILED)]);
+    await activate();
+
+    sidebar.rename(FILED.id, '新聊天');
+    await nextPass();
+    expect(stored()[0].title).toBe('新聊天');
+
+    sidebar.rename(FILED.id, 'Nuevo chat');
+    await nextPass();
+    expect(stored()[0].title).toBe('Nuevo chat');
   });
 
   it("keeps the user's own title", async () => {

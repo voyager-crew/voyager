@@ -1,5 +1,6 @@
 import type {
   TimelineAdapter,
+  TimelineTimestampOwner,
   TimelineTurnSource,
   TimelineTurnSnapshot,
 } from '../../TimelineAdapter';
@@ -7,6 +8,7 @@ import type { TimelineMarker } from '../../types';
 import { createCatalogTimelineStoragePolicy } from './CatalogTimelineStorage';
 import { CatalogTurnOwnership } from './CatalogTurnOwnership';
 import type { CatalogTimelineConfig } from './config';
+import type { CatalogSendTimestamps } from './sendTimestamps';
 import { turnSummary } from './turnHash';
 import { type Marker, type MountedTurn, mergeMountedTurns, rememberedMarkers } from './turnMerge';
 import { mountedOwnershipTurns } from './turnOwnership';
@@ -18,7 +20,11 @@ export class CatalogTimelineAdapter implements TimelineAdapter {
   readonly mount: { anchor: () => HTMLElement; position: 'left' | 'right' };
   readonly storage;
   readonly turns: CatalogTimelineTurnSource;
-  constructor(config: CatalogTimelineConfig, ownership: CatalogTurnOwnership) {
+  constructor(
+    config: CatalogTimelineConfig,
+    ownership: CatalogTurnOwnership,
+    private readonly sendTimes: CatalogSendTimestamps | null = null,
+  ) {
     this.route = { siteId: config.siteId, url: location.href.split('#')[0] };
     this.mount = { anchor: () => document.body, position: config.position };
     this.storage = createCatalogTimelineStoragePolicy(config, ownership, this.route.url);
@@ -27,8 +33,8 @@ export class CatalogTimelineAdapter implements TimelineAdapter {
   viewport(element: HTMLElement): HTMLElement {
     return this.turns.viewport(element);
   }
-  timestamps(): null {
-    return null;
+  timestamps(): TimelineTimestampOwner | null {
+    return this.sendTimes?.ownerFor(this.route.url) ?? null;
   }
 }
 

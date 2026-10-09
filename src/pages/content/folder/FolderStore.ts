@@ -17,6 +17,7 @@ import {
   setBucket,
 } from '@/features/folder/model/folderData';
 import { placeConversations } from '@/features/folder/model/placeConversations';
+import { applyFolderOp } from '@/features/folder/owner/applyFolderOp';
 import { FOLDER_SITE_POLICIES } from '@/features/folder/owner/folderOwnerPolicy';
 
 import { TimestampService } from '../timestamp/TimestampService';
@@ -34,6 +35,7 @@ import {
   conversationKeys,
   isSameConversation,
   normalizeConversationId,
+  resolveConversationRouteId,
 } from './folderConversationIdentity';
 import {
   extractConversationIdFromElement,
@@ -802,80 +804,65 @@ export class FolderStore {
     const nativeConversationId = normalizeConversationId(conversationId);
     if (!nativeConversationId) return undefined;
 
-    const serverTimestamp =
-      historyTimestampStore.getLatestTurnTimestamp(nativeConversationId) ?? undefined;
+    // An imported record may keep a synthetic id; Gemini's history reports its route id.
+    const routeId = resolveConversationRouteId(url, conversationId);
+    const serverTimestamp = Math.max(
+      ...[nativeConversationId, routeId].map((id) =>
+        id ? (historyTimestampStore.getLatestTurnTimestamp(id) ?? 0) : 0,
+      ),
+    );
     const stableConversationId = buildConversationIdFromUrl(
       url || `https://gemini.google.com/app/${nativeConversationId}`,
     );
     const storedTimestamp =
       this.activityTimestampService?.getLatestTimestampForConversation(stableConversationId) ??
       undefined;
-    const latest = Math.max(serverTimestamp ?? 0, storedTimestamp ?? 0);
+    const latest = Math.max(serverTimestamp, storedTimestamp ?? 0);
     return latest > 0 ? latest : undefined;
   }
 
   backfillKnownConversationActivity(): void {
-    if (!this.canEdit) return;
-    let changed = false;
-    Object.values(this.data.folderContents).forEach((conversations) => {
-      conversations.forEach((conversation) => {
-        const timestamp = this.getKnownConversationLastTurnAt(
-          conversation.conversationId,
-          conversation.url,
-        );
-        if (!timestamp || timestamp <= (conversation.lastTurnAt ?? 0)) return;
-        conversation.lastTurnAt = timestamp;
-        changed = true;
-      });
-    });
-
-    if (!changed) return;
-    this.scheduleSaveData();
-    this.options.onChange('activity');
+    this.applyConversationActivity(
+      Object.values(this.data.folderContents)
+        .flat()
+        .map(({ conversationId, url }) => ({
+          conversationId,
+          lastTurnAt: this.getKnownConversationLastTurnAt(conversationId, url) ?? 0,
+        })),
+    );
   }
 
   applyHistoryActivityTimestamps(cids: string[]): void {
-    if (!this.canEdit) return;
-    const latestByConversationId = new Map<string, number>();
-    cids.forEach((cid) => {
-      const nativeConversationId = normalizeConversationId(cid);
-      if (!nativeConversationId) return;
-      const latest = historyTimestampStore.getLatestTurnTimestamp(nativeConversationId);
-      if (latest) latestByConversationId.set(nativeConversationId, latest);
-    });
-    if (latestByConversationId.size === 0) return;
-
-    let changed = false;
-    Object.values(this.data.folderContents).forEach((conversations) => {
-      conversations.forEach((conversation) => {
-        const nativeConversationId = normalizeConversationId(conversation.conversationId);
-        const latest = nativeConversationId
-          ? latestByConversationId.get(nativeConversationId)
-          : undefined;
-        if (!latest || latest <= (conversation.lastTurnAt ?? 0)) return;
-        conversation.lastTurnAt = latest;
-        changed = true;
-      });
-    });
-
-    if (!changed) return;
-    this.scheduleSaveData();
-    this.options.onChange('activity');
+    this.applyConversationActivity(
+      cids.map((cid) => {
+        const conversationId = normalizeConversationId(cid) ?? '';
+        const lastTurnAt = conversationId
+          ? historyTimestampStore.getLatestTurnTimestamp(conversationId)
+          : null;
+        return { conversationId, lastTurnAt: lastTurnAt ?? 0 };
+      }),
+    );
   }
 
   markConversationLastTurnAt(conversationId: string, timestamp: number): void {
-    if (!this.canEdit) return;
-    let changed = false;
-    Object.values(this.data.folderContents).forEach((conversations) => {
-      conversations.forEach((conversation) => {
-        if (!isSameConversation(conversationId, conversation)) return;
-        if (timestamp <= (conversation.lastTurnAt ?? 0)) return;
-        conversation.lastTurnAt = timestamp;
-        changed = true;
-      });
-    });
+    this.applyConversationActivity([{ conversationId, lastTurnAt: timestamp }]);
+  }
 
-    if (!changed) return;
+  /** Raises `lastTurnAt` on every record each entry's id or saved route names, as the op does. */
+  private applyConversationActivity(
+    entries: Array<{ conversationId: string; lastTurnAt: number }>,
+  ): void {
+    if (!this.canEdit) return;
+    const known = entries.filter((entry) => entry.conversationId && entry.lastTurnAt > 0);
+    if (known.length === 0) return;
+    const { data, outcome } = applyFolderOp(
+      this.data,
+      { kind: 'setConversationActivity', entries: known },
+      FOLDER_SITE_POLICIES.gemini,
+      Date.now(),
+    );
+    if (outcome.kind !== 'saved') return;
+    this.data = data;
     this.scheduleSaveData();
     this.options.onChange('activity');
   }

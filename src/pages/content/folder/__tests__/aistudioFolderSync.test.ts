@@ -14,7 +14,10 @@ import {
 } from '@/core/services/AccountIsolationService';
 import { StorageKeys } from '@/core/types/common';
 import type { PromptItem } from '@/core/types/sync';
-import { handlePromptLibraryApplyMessage } from '@/features/prompt/library/promptLibraryMessages';
+import {
+  handlePromptLibraryApplyMessage,
+  isPromptLibraryApplyMessage,
+} from '@/features/prompt/library/promptLibraryMessages';
 import { createPromptLibraryOwner } from '@/features/prompt/library/promptLibraryOwner';
 import { useCloudSyncTransfer } from '@/pages/popup/components/useCloudSyncTransfer';
 import { toastDriver } from '@/tests/toastDriver';
@@ -229,6 +232,34 @@ describe('AI Studio folder sync across contexts', () => {
     expect(toastDriver.messages()[0]).toContain('offline');
   });
 
+  it("shows AI Studio's own last upload and sync times in the cloud tooltips, not Gemini's", async () => {
+    local[GLOBAL_KEY] = folderData('Mine');
+    await mount();
+    const now = Date.now();
+    mockBrowser.runtime.sendMessage.mockResolvedValue({
+      ok: true,
+      state: {
+        lastUploadTime: now - 3 * 3_600_000,
+        lastSyncTime: now - 3 * 3_600_000,
+        lastUploadTimeAIStudio: now - 5 * 60_000,
+        lastSyncTimeAIStudio: null,
+      },
+    });
+    const button = (title: string) =>
+      [...document.querySelectorAll<HTMLButtonElement>('.gv-aistudio .gv-folder-action-btn')].find(
+        (candidate) => candidate.title.startsWith(title),
+      )!;
+    const upload = button('Upload to Cloud');
+    const sync = button('Sync from Cloud');
+
+    upload.dispatchEvent(new MouseEvent('mouseenter'));
+    sync.dispatchEvent(new MouseEvent('mouseenter'));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(upload.title).toBe('Upload to Cloud\nUploaded: 5 minutes ago');
+    expect(sync.title).toBe('Sync from Cloud\nNever synced');
+  });
+
   it('reloads another tab write that follows an unchanged save', async () => {
     local[GLOBAL_KEY] = folderData('Mine');
     const manager = await mount();
@@ -431,8 +462,11 @@ describe('AI Studio folder sync across contexts', () => {
           set: (items) => mockBrowser.storage.local.set(items),
         },
       });
+      // No other background owner answers here (the catalog outline pull goes unhandled).
       vi.spyOn(chrome.runtime, 'sendMessage').mockImplementation(((message: unknown) =>
-        handlePromptLibraryApplyMessage(message, prompts)) as typeof chrome.runtime.sendMessage);
+        isPromptLibraryApplyMessage(message)
+          ? handlePromptLibraryApplyMessage(message, prompts)
+          : Promise.resolve(undefined)) as typeof chrome.runtime.sendMessage);
       let transfer!: ReturnType<typeof useCloudSyncTransfer>;
       function Harness() {
         const current = useCloudSyncTransfer(

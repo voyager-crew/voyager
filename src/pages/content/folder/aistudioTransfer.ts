@@ -1,21 +1,19 @@
 /**
  * Moves AI Studio folders in and out: Drive upload and download-merge through
- * the background, plus JSON file import and export. AI Studio has its own Drive
- * folder file but shares prompts with Gemini.
+ * the background, plus JSON file import. AI Studio has its own Drive folder file
+ * but shares prompts with Gemini.
  *
  * Every operation captures the account session and activation it started in,
  * and drops its result (and its feedback) once either has changed.
  */
-import browser, { type Runtime } from 'webextension-polyfill';
-
-import type { AccountScope } from '@/core/services/AccountIsolationService';
-import type { PromptItem, SyncAccountScope } from '@/core/types/sync';
+import type { PromptItem } from '@/core/types/sync';
 import type { ToastTone } from '@/core/ui/toast/types';
+import { toSyncAccountScope } from '@/core/utils/syncAccountScope';
 import { cloneFolderData } from '@/features/folder/model/folderData';
-import { mergeFolderData, mergePrompts } from '@/utils/merge';
 
 import type { FolderDataSession } from './FolderDataSession';
 import { mergeAIStudioImport, readAIStudioImportFile } from './aistudioImport';
+import { type CloudSyncSite, syncSiteFolders, uploadSiteFolders } from './cloudSyncClient';
 import type { FolderData } from './types';
 
 export type AIStudioTransferHost = {
@@ -33,179 +31,20 @@ export type AIStudioTransferHost = {
 /** One transfer notice at a time: a result replaces its "in progress" notice. */
 const TRANSFER_CHANNEL = 'transfer';
 
-type DownloadResponse =
-  | {
-      ok?: boolean;
-      error?: string;
-      data?: { folders?: { data?: FolderData }; prompts?: { items?: PromptItem[] } };
-    }
-  | undefined;
-
-export function toSyncAccountScope(scope: AccountScope | null): SyncAccountScope | undefined {
-  if (!scope) return undefined;
-  return {
-    accountKey: scope.accountKey,
-    accountId: scope.accountId,
-    routeUserId: scope.routeUserId,
-  };
-}
-
-/** `YYYYMMDD-HHMMSS` in local time, for export file names. */
-export function exportTimestamp(date = new Date()): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const day = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}`;
-  return `${day}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
-}
-
-/** "5 minutes ago" and the like; older than yesterday shows the date. */
-export function formatRelativeTime(t: (key: string) => string, timestamp: number | null): string {
-  if (!timestamp) return '';
-  const diffMs = Date.now() - timestamp;
-  const minutes = Math.floor(diffMs / 60000);
-  const hours = Math.floor(diffMs / 3600000);
-  const days = Math.floor(diffMs / 86400000);
-  if (minutes < 1) return t('justNow');
-  if (minutes < 60) return `${minutes} ${t('minutesAgo')}`;
-  if (hours < 24) return `${hours} ${t('hoursAgo')}`;
-  if (days === 1) return t('yesterday');
-  return new Date(timestamp).toLocaleDateString();
-}
-
-export type SyncMessageHost = {
-  canEdit: () => boolean;
-  data: () => FolderData;
-  accountScope: () => AccountScope | null;
-  /** Reloads folder data from storage and shows it. */
-  reload: () => Promise<void>;
-};
-
-/**
- * Serves the popup's cloud sync: `gv.sync.requestData` (before an upload)
- * answers with this account's folders, `gv.folders.reload` (after a
- * download) reloads them.
- */
-export function createSyncMessageListener(
-  host: SyncMessageHost,
-): Runtime.OnMessageListenerCallback {
-  const listener = (
-    message: unknown,
-    _sender: Runtime.MessageSender,
-    sendResponse: (response: unknown) => void,
-  ): true | undefined => {
-    const type = (message as { type?: unknown } | null)?.type;
-    if (type === 'gv.sync.requestData') {
-      // An unresolved or unreadable session's empty data must not replace the popup's storage fallback.
-      if (!host.canEdit()) {
-        sendResponse({ ok: false });
-        return true;
-      }
-      const accountScope = toSyncAccountScope(host.accountScope());
-      sendResponse({ ok: true, data: host.data(), accountScope });
-      return true;
-    }
-    if (type === 'gv.folders.reload') {
-      void host.reload();
-      sendResponse({ ok: true });
-      return true;
-    }
-    // An unknown message must settle the sender's promise now: `true` would
-    // promise a response that never comes and leave broadcasts hanging.
-    return undefined;
-  };
-  // The polyfill's typing cannot express "respond to some messages, ignore the rest".
-  return listener as Runtime.OnMessageListenerCallback;
-}
-
-async function readLocalPrompts(purpose: string): Promise<PromptItem[]> {
-  try {
-    const result = await chrome.storage.local.get(['gvPromptItems']);
-    return (result.gvPromptItems as PromptItem[] | undefined) || [];
-  } catch (error) {
-    console.warn(`[AIStudioFolderManager] Could not get prompts for ${purpose}:`, error);
-    return [];
-  }
-}
-
-function downloadJSON(data: unknown, filename: string): void {
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: 'application/json;charset=utf-8',
-  });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  setTimeout(() => {
-    link.remove();
-    URL.revokeObjectURL(url);
-  }, 0);
-}
-
 export class AIStudioTransfer {
   constructor(private readonly host: AIStudioTransferHost) {}
 
   /** Uploads this account's folders and the shared prompts to Drive. */
-  async upload(): Promise<void> {
-    const started = this.begin();
-    if (!started) return;
-    const { session, current } = started;
-    try {
-      this.report(this.host.t('uploadInProgress'), 'info');
-      const folders = cloneFolderData(session.data);
-      const prompts = await readLocalPrompts('upload');
-      if (!current()) return;
-      const response = (await browser.runtime.sendMessage({
-        type: 'gv.sync.upload',
-        payload: {
-          folders,
-          prompts,
-          platform: 'aistudio',
-          accountScope: toSyncAccountScope(session.accountScope),
-        },
-      })) as { ok?: boolean; error?: string } | undefined;
-      if (!current()) return;
-      if (response?.ok) this.report(this.host.t('uploadSuccess'), 'success');
-      else this.notifySyncError(response?.error || 'Unknown error');
-    } catch (error) {
-      if (!current()) return;
-      console.error('[AIStudioFolderManager] Cloud upload failed:', error);
-      this.notifySyncError(error instanceof Error ? error.message : 'Unknown error');
-    }
+  upload(): Promise<void> {
+    return uploadSiteFolders(this.cloudSite);
   }
 
-  /** Downloads Drive's copy and merges it into this account's folders and the shared prompts. */
-  async sync(): Promise<void> {
-    const started = this.begin();
-    if (!started) return;
-    const { session, current } = started;
-    try {
-      this.report(this.host.t('downloadInProgress'), 'info');
-      const response = (await browser.runtime.sendMessage({
-        type: 'gv.sync.download',
-        payload: { platform: 'aistudio', accountScope: toSyncAccountScope(session.accountScope) },
-      })) as DownloadResponse;
-      if (!current()) return;
-      if (!response?.ok) return this.notifySyncError(response?.error || 'Download failed');
-      if (!response.data) {
-        this.report(this.host.t('syncNoData') || 'No data in cloud', 'info');
-        return;
-      }
-      const cloudFolders = response.data.folders?.data || { folders: [], folderContents: {} };
-      const cloudPrompts = response.data.prompts?.items || [];
-      const localPrompts = await readLocalPrompts('merge');
-      if (!current()) return;
-      const saved = await this.host.replaceData(
-        mergeFolderData(this.host.data(), cloudFolders),
-        mergePrompts(localPrompts, cloudPrompts),
-      );
-      if (!current() || !saved) return;
-      this.report(this.host.t('downloadMergeSuccess'), 'success');
-    } catch (error) {
-      if (!current()) return;
-      console.error('[AIStudioFolderManager] Cloud sync failed:', error);
-      this.notifySyncError(error instanceof Error ? error.message : 'Unknown error');
-    }
+  /**
+   * Downloads Drive's copy and merges it into this account's folders and the
+   * shared prompts. A failed save is reported by the repository.
+   */
+  sync(): Promise<void> {
+    return syncSiteFolders(this.cloudSite);
   }
 
   /** Opens a file picker and merges the chosen folder file. Not offered in AI Studio's UI yet. */
@@ -221,33 +60,24 @@ export class AIStudioTransfer {
     input.click();
   }
 
-  /** Downloads this account's folders as JSON. Not offered in AI Studio's UI yet. */
-  exportFile(): void {
-    const payload = {
-      format: 'gemini-voyager.folders.v1',
-      exportedAt: new Date().toISOString(),
-      data: this.host.data(),
-    };
-    downloadJSON(payload, `gemini-voyager-folders-${exportTimestamp()}.json`);
-  }
-
-  async uploadTooltip(): Promise<string> {
-    const base = this.host.t('folder_cloud_upload');
-    const time = await this.syncStateTime('lastUploadTime');
-    if (time === undefined) return base;
-    return time
-      ? `${base}\n${this.host.t('lastUploaded').replace('{time}', formatRelativeTime(this.host.t, time))}`
-      : `${base}\n${this.host.t('neverUploaded')}`;
-  }
-
-  async syncTooltip(): Promise<string> {
-    const base = this.host.t('folder_cloud_sync');
-    const time = await this.syncStateTime('lastSyncTime');
-    if (time === undefined) return base;
-    return time
-      ? `${base}\n${this.host.t('lastSynced').replace('{time}', formatRelativeTime(this.host.t, time))}`
-      : `${base}\n${this.host.t('neverSynced')}`;
-  }
+  private readonly cloudSite: CloudSyncSite = {
+    platform: 'aistudio',
+    t: (key) => this.host.t(key),
+    notify: (message, tone) => this.report(message, tone),
+    begin: () => {
+      const started = this.begin();
+      if (!started) return null;
+      const { session, current } = started;
+      const accountScope = toSyncAccountScope(session.accountScope);
+      return {
+        current,
+        folders: cloneFolderData(session.data),
+        data: () => this.host.data(),
+        scopes: async () => ({ accountScope }),
+        save: (folders, prompts) => this.host.replaceData(folders, prompts),
+      };
+    },
+  };
 
   /** The session an operation starts in, and a check that it is still the live one. */
   private begin(): { session: FolderDataSession; current: () => boolean } | null {
@@ -288,29 +118,7 @@ export class AIStudioTransfer {
     }
   }
 
-  /** The sync state's timestamp: `null` when never, `undefined` when the state is unavailable. */
-  private async syncStateTime(
-    field: 'lastUploadTime' | 'lastSyncTime',
-  ): Promise<number | null | undefined> {
-    try {
-      const response = (await browser.runtime.sendMessage({ type: 'gv.sync.getState' })) as
-        | { ok?: boolean; state?: Partial<Record<typeof field, number | null>> }
-        | undefined;
-      if (response?.ok && response.state) return response.state[field] ?? null;
-    } catch (error) {
-      console.warn('[AIStudioFolderManager] Failed to get sync state for tooltip:', error);
-    }
-    return undefined;
-  }
-
   private report(message: string, tone: ToastTone): void {
     this.host.notify(message, tone, TRANSFER_CHANNEL);
-  }
-
-  private notifySyncError(message: string): void {
-    this.report(
-      this.host.t('syncError').replace('{error}', () => message),
-      'error',
-    );
   }
 }

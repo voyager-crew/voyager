@@ -102,6 +102,14 @@
       "format": "regex",
       "description": "Regular expression over `location.pathname` whose first capture group is the conversation id. Not a selector. Omit for sites without per-conversation routes.",
       "examples": ["^/chat/([^/?#]+)"]
+    },
+    "turnKeyAttributes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+      "description": "Attributes that keep one user message's identity across re-renders and remounts, read from the `userTurn` element or its nearest ancestor carrying one; the first present wins. Send tracking (folder Activity, timeline timestamps) needs them to tell the message a send produced from older ones mounting. Omit where the site has none: those features then stay off there.",
+      "examples": [["data-turn-key", "data-message-id"]]
     }
   }
 }

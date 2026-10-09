@@ -154,6 +154,7 @@ describe('willCleanUp tests module', () => {
       'CleanupUsageStatus',
       'CleanupWatermarkNativeNotice',
       'CleanupGemsHider',
+      'CleanupTimeline',
       'CleanupNativeHealth',
       'CleanupResearchPack',
       'CleanupResearchPackReceiver',

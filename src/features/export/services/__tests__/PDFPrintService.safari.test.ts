@@ -1,4 +1,3 @@
-import { JSDOM } from 'jsdom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveExportAdapter } from '@/pages/content/export/adapter/platformAdapters';
@@ -6,11 +5,6 @@ import { resolveExportAdapter } from '@/pages/content/export/adapter/platformAda
 import type { ChatTurn, ConversationMetadata } from '../../types/export';
 import { createContentExtractor, extractTurnContent } from '../DOMContentExtractor';
 import { PDFPrintService } from '../PDFPrintService';
-
-const dom = new JSDOM('<!DOCTYPE html><html><head></head><body></body></html>');
-globalThis.document = dom.window.document;
-globalThis.window = dom.window as unknown as Window & typeof globalThis;
-globalThis.navigator = dom.window.navigator;
 
 const extractor = createContentExtractor(resolveExportAdapter());
 const extracted = (turns: ChatTurn[]): ChatTurn[] =>

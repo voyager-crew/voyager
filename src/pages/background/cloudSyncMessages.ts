@@ -1,5 +1,4 @@
 import {
-  type AccountScope,
   accountIsolationService,
   buildScopedStorageKey,
   extractRouteUserIdFromUrl,
@@ -19,6 +18,7 @@ import type {
   SyncProvider,
 } from '@/core/types/sync';
 import { getPromptNameConflictIds } from '@/core/utils/promptName';
+import { toSyncAccountScope } from '@/core/utils/syncAccountScope';
 import { FOLDER_PLATFORMS, supportsAccountIsolation } from '@/features/folder/platforms';
 import { loadPluginState } from '@/features/plugins/storage/pluginState';
 import type { StarStore } from '@/features/savedLibrary/starStore';
@@ -30,12 +30,15 @@ import {
   resolveTimelineHierarchyDataForStorageScope,
 } from '@/pages/content/timeline/hierarchyStorage';
 
+import {
+  handleCatalogTimelineSyncMessage,
+  isCatalogTimelineSyncMessage,
+} from './catalogTimelineSyncMessages';
 import { isHighlightCloudSyncRequested, notifyHighlightChanged } from './highlightMessages';
 import { mergeCloudPrompts, mergeCloudPromptsForUpload } from './promptDriveMerge';
 import { promptLibraryOwner } from './queueOwners';
 import {
-  canSenderPageUseSyncPlatform,
-  getSenderPageUrl,
+  isTrustedSharedDataSyncSender,
   isTrustedSyncMessageSender,
   parseSyncPlatform,
 } from './runtimeMessageRouting';
@@ -49,14 +52,6 @@ function isSyncAccountScope(value: unknown): value is SyncAccountScope {
     Number.isFinite(scope.accountId) &&
     (typeof scope.routeUserId === 'string' || scope.routeUserId === null)
   );
-}
-
-function toSyncAccountScope(scope: AccountScope): SyncAccountScope {
-  return {
-    accountKey: scope.accountKey,
-    accountId: scope.accountId,
-    routeUserId: scope.routeUserId,
-  };
 }
 
 async function resolveAccountScopeForMessage(
@@ -256,6 +251,9 @@ export function createCloudSyncMessageHandler(readers: {
     sender: chrome.runtime.MessageSender,
   ): Promise<unknown> {
     const payload = message.payload as SyncPayload | undefined;
+    if (isCatalogTimelineSyncMessage(message.type)) {
+      return handleCatalogTimelineSyncMessage(message.type, payload, sender, readers.starStore);
+    }
     switch (message.type) {
       case 'gv.sync.authenticate': {
         const interactive = payload?.interactive !== false;
@@ -286,8 +284,9 @@ export function createCloudSyncMessageHandler(readers: {
         if (!platform || !isTrustedSyncMessageSender(sender, platform)) {
           return { ok: false, error: 'untrusted_sender' };
         }
+        const { syncsSharedData, syncsConversationExtras } = FOLDER_PLATFORMS[platform];
         const syncHighlights =
-          FOLDER_PLATFORMS[platform].syncsSharedData &&
+          syncsSharedData &&
           (await isHighlightCloudSyncRequested(platform, includeHighlights === true));
         const accountScope = await resolveAccountScopeForMessage(
           sender,
@@ -296,23 +295,24 @@ export function createCloudSyncMessageHandler(readers: {
         );
         const { folders, prompts } = await loadAuthoritativeSyncPayload(platform, accountScope);
         const timelineHierarchyAccountScope =
-          platform === 'gemini' && isSyncAccountScope(rawTimelineHierarchyScope)
+          syncsConversationExtras && isSyncAccountScope(rawTimelineHierarchyScope)
             ? rawTimelineHierarchyScope
             : null;
         const highlightAccountScope =
-          platform === 'gemini' && isSyncAccountScope(rawHighlightScope)
+          syncsConversationExtras && isSyncAccountScope(rawHighlightScope)
             ? rawHighlightScope
             : (timelineHierarchyAccountScope ?? (isSyncAccountScope(rawScope) ? rawScope : null));
         const shouldSyncHighlights = syncHighlights && highlightAccountScope !== null;
-        // Also get Gemini-only timeline data from local storage
-        const starredDataRaw = platform === 'gemini' ? await readers.getAllStarredMessages() : null;
-        const forksDataRaw = platform === 'gemini' ? await readers.getAllForkNodes() : null;
-        const timelineHierarchyRaw =
-          platform === 'gemini'
-            ? await chrome.storage.local.get(
-                getTimelineHierarchyStorageKeysToRead(timelineHierarchyAccountScope?.accountKey),
-              )
-            : null;
+        // Also get the conversation extras (stars, forks, timeline hierarchy) from local storage
+        const starredDataRaw = syncsConversationExtras
+          ? await readers.getAllStarredMessages()
+          : null;
+        const forksDataRaw = syncsConversationExtras ? await readers.getAllForkNodes() : null;
+        const timelineHierarchyRaw = syncsConversationExtras
+          ? await chrome.storage.local.get(
+              getTimelineHierarchyStorageKeysToRead(timelineHierarchyAccountScope?.accountKey),
+            )
+          : null;
         const starredData =
           starredDataRaw && accountScope
             ? filterStarredByRouteScope(starredDataRaw, accountScope.routeUserId)
@@ -322,7 +322,7 @@ export function createCloudSyncMessageHandler(readers: {
             ? filterForkNodesByRouteScope(forksDataRaw, accountScope.routeUserId)
             : forksDataRaw;
         const timelineHierarchyDataRaw =
-          platform === 'gemini' && timelineHierarchyRaw
+          syncsConversationExtras && timelineHierarchyRaw
             ? resolveTimelineHierarchyDataForStorageScope(
                 timelineHierarchyRaw as Record<string, unknown>,
                 timelineHierarchyAccountScope?.accountKey,
@@ -336,12 +336,8 @@ export function createCloudSyncMessageHandler(readers: {
                 timelineHierarchyAccountScope.routeUserId,
               )
             : timelineHierarchyDataRaw;
-        const settingsPayload = FOLDER_PLATFORMS[platform].syncsSharedData
-          ? await exportBackupableSyncSettings()
-          : null;
-        const pluginState = FOLDER_PLATFORMS[platform].syncsSharedData
-          ? await loadPluginState()
-          : null;
+        const settingsPayload = syncsSharedData ? await exportBackupableSyncSettings() : null;
+        const pluginState = syncsSharedData ? await loadPluginState() : null;
         const success = await googleDriveSyncService.upload(
           folders,
           prompts,
@@ -388,11 +384,13 @@ export function createCloudSyncMessageHandler(readers: {
       case 'gv.sync.download': {
         const interactive = payload?.interactive !== false;
         const platform = parseSyncPlatform(payload?.platform);
-        if (!platform || !canSenderPageUseSyncPlatform(getSenderPageUrl(sender), platform)) {
+        // Downloads hand cloud data back to the sender, so they need the same sender as uploads.
+        if (!platform || !isTrustedSyncMessageSender(sender, platform)) {
           return { ok: false, error: 'unsupported_sync_platform' };
         }
+        const { syncsSharedData, syncsConversationExtras } = FOLDER_PLATFORMS[platform];
         const syncHighlights =
-          FOLDER_PLATFORMS[platform].syncsSharedData &&
+          syncsSharedData &&
           (await isHighlightCloudSyncRequested(platform, payload?.includeHighlights === true));
         const rawScope = payload?.accountScope;
         const rawTimelineHierarchyScope = payload?.timelineHierarchyAccountScope;
@@ -403,11 +401,11 @@ export function createCloudSyncMessageHandler(readers: {
           isSyncAccountScope(rawScope) ? rawScope : undefined,
         );
         const timelineHierarchyAccountScope =
-          platform === 'gemini' && isSyncAccountScope(rawTimelineHierarchyScope)
+          syncsConversationExtras && isSyncAccountScope(rawTimelineHierarchyScope)
             ? rawTimelineHierarchyScope
             : null;
         const highlightAccountScope =
-          platform === 'gemini' && isSyncAccountScope(rawHighlightScope)
+          syncsConversationExtras && isSyncAccountScope(rawHighlightScope)
             ? rawHighlightScope
             : (timelineHierarchyAccountScope ?? (isSyncAccountScope(rawScope) ? rawScope : null));
         const shouldSyncHighlights = syncHighlights && highlightAccountScope !== null;
@@ -474,6 +472,7 @@ export function createCloudSyncMessageHandler(readers: {
       // popup meant a first-time account selection abandoned the merge and
       // the user had to click again.
       case 'gv.sync.pullPromptsMerge': {
+        if (!isTrustedSharedDataSyncSender(sender)) return { ok: false, error: 'untrusted_sender' };
         const { interactive, accountScope: rawScope } = (payload ?? {}) as {
           interactive?: boolean;
           accountScope?: unknown;
@@ -491,6 +490,7 @@ export function createCloudSyncMessageHandler(readers: {
         return { ...outcome, state: await googleDriveSyncService.getState() };
       }
       case 'gv.sync.pushPromptsMerge': {
+        if (!isTrustedSharedDataSyncSender(sender)) return { ok: false, error: 'untrusted_sender' };
         const { interactive, accountScope: rawScope } = (payload ?? {}) as {
           interactive?: boolean;
           accountScope?: unknown;

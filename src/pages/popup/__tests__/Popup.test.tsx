@@ -278,9 +278,8 @@ describe('Popup settings integration', () => {
     extensionApi.tabs.query.mockResolvedValue([{ id: 10, url: 'https://chatgpt.com/c/abc' }]);
     await mount();
     expect(shown(starredHistoryEntry())).toBe(true);
-    // Catalog timelines do not read the Gemini keys these controls write.
+    // The ChatGPT timeline plugin declares no container setting, so the card does not offer one.
     expect(shown(container.querySelector('#hide-container'))).toBe(false);
-    expect(shown(button(TRANSLATIONS.en.resetTimelinePosition))).toBe(false);
     await act(async () => starredHistoryEntry()!.click());
     expect(container.textContent).not.toContain(TRANSLATIONS.en.timelineOptions);
 
@@ -290,6 +289,158 @@ describe('Popup settings integration', () => {
 
     await remount('https://example.com/');
     expect(starredHistoryEntry()).toBeUndefined();
+  });
+
+  describe('the timeline card on a ChatGPT tab', () => {
+    const PLUGIN_ID = 'voyager.chatgpt-timeline';
+    const shownButton = (label: string) =>
+      [...container.querySelectorAll('button')].find(
+        (candidate) => candidate.textContent === label && !candidate.closest('[hidden]'),
+      );
+    const chatGptTimelineSettings = () =>
+      (
+        local[StorageKeys.PLUGINS_STATE] as Record<string, { settings?: Record<string, unknown> }>
+      )?.[PLUGIN_ID]?.settings;
+
+    beforeEach(() => {
+      extensionApi.tabs.query.mockResolvedValue([{ id: 10, url: 'https://chatgpt.com/c/abc' }]);
+    });
+
+    it('changing the timeline style changes the ChatGPT rail, not Gemini’s', async () => {
+      await mount();
+
+      await act(async () => shownButton(TRANSLATIONS.en.timelineStyleCompact)!.click());
+
+      expect(chatGptTimelineSettings()).toEqual(
+        expect.objectContaining({ timelineStyle: 'compact' }),
+      );
+      expect(sync).not.toHaveProperty(StorageKeys.TIMELINE_STYLE);
+    });
+
+    it('choosing compact in the popup also compacts a page still running the older timeline manifest', async () => {
+      await mount();
+
+      await act(async () => shownButton(TRANSLATIONS.en.timelineStyleCompact)!.click());
+
+      // The older manifest's rail reads `compactView`, not `timelineStyle`, until the page reloads.
+      expect(chatGptTimelineSettings()).toEqual(expect.objectContaining({ compactView: true }));
+    });
+
+    it('turning on node levels puts the ChatGPT rail back on dots', async () => {
+      local[StorageKeys.PLUGINS_STATE] = {
+        [PLUGIN_ID]: { enabled: true, installedAt: 1, settings: { timelineStyle: 'compact' } },
+      };
+      await mount();
+      const levels = container.querySelector<HTMLInputElement>('#marker-level-enabled')!;
+      expect(levels.closest('[hidden]')).toBeNull();
+      expect(levels.checked).toBe(false);
+
+      await act(async () => levels.click());
+
+      expect(levels.checked).toBe(true);
+      expect(chatGptTimelineSettings()).toEqual(
+        expect.objectContaining({ timelineStyle: 'dots', markerLevel: true }),
+      );
+      expect(sync).not.toHaveProperty('geminiTimelineMarkerLevel');
+    });
+
+    it('a ChatGPT send can show its time: the card offers the message-times switch on ChatGPT', async () => {
+      await mount();
+      const times = container.querySelector<HTMLInputElement>('#show-message-timestamps')!;
+      expect(times.closest('[hidden]')).toBeNull();
+      expect(times.checked).toBe(false);
+
+      await act(async () => times.click());
+
+      expect(times.checked).toBe(true);
+      // The rail records and shows send times only while this shared setting is on.
+      expect(sync[StorageKeys.GV_SHOW_MESSAGE_TIMESTAMPS]).toBe(true);
+    });
+
+    it('a timeline site that cannot record sends does not offer the message-times switch', async () => {
+      extensionApi.tabs.query.mockResolvedValue([{ id: 10, url: 'https://claude.ai/chat/abc' }]);
+      await mount();
+
+      const times = container.querySelector<HTMLInputElement>('#show-message-timestamps');
+      expect(!times || !!times.closest('[hidden]')).toBe(true);
+    });
+
+    it('the timeline card edits the timeline that is actually running on the page', async () => {
+      const IMPORTED_ID = 'local.me.chatgpt-rail';
+      local[StorageKeys.PLUGIN_LOCAL_MANIFESTS] = {
+        [IMPORTED_ID]: {
+          importedAt: 1,
+          updatedAt: 1,
+          manifest: {
+            id: IMPORTED_ID,
+            name: 'My ChatGPT rail',
+            version: '1.0.0',
+            description: 'A timeline for ChatGPT',
+            author: 'Me',
+            category: 'productivity',
+            license: 'MIT',
+            engine: '>=1.6.0',
+            tier: 'declarative',
+            matches: ['https://chatgpt.com/*'],
+            contributes: {
+              settings: {
+                timelineStyle: {
+                  type: 'select',
+                  label: 'Timeline style',
+                  default: 'dots',
+                  options: [
+                    { value: 'dots', label: 'Nodes' },
+                    { value: 'compact', label: 'Compact' },
+                  ],
+                },
+              },
+              domOps: [{ op: 'native', target: 'body', handler: 'turnNavigator', params: {} }],
+            },
+          },
+        },
+      };
+      local[StorageKeys.PLUGINS_STATE] = {
+        [PLUGIN_ID]: { enabled: false, installedAt: 1 },
+        [IMPORTED_ID]: { enabled: true, installedAt: 1 },
+      };
+      await mount();
+
+      await act(async () => shownButton(TRANSLATIONS.en.timelineStyleCompact)!.click());
+
+      const state = local[StorageKeys.PLUGINS_STATE] as Record<
+        string,
+        { settings?: Record<string, unknown> }
+      >;
+      expect(state[IMPORTED_ID]?.settings).toEqual(
+        expect.objectContaining({ timelineStyle: 'compact' }),
+      );
+      expect(state[PLUGIN_ID]?.settings).toBeUndefined();
+    });
+
+    it('resetting the position moves the ChatGPT rail home and leaves Gemini’s where it is', async () => {
+      const placed = { version: 2, topPercent: 30, leftPercent: 80 };
+      sync['gvTimeline:chatgpt:Position'] = placed;
+      sync[StorageKeys.TIMELINE_POSITION] = placed;
+      await mount();
+
+      await act(async () => shownButton(TRANSLATIONS.en.resetTimelinePosition)!.click());
+
+      expect(sync['gvTimeline:chatgpt:Position']).toBeNull();
+      expect(sync[StorageKeys.TIMELINE_POSITION]).toEqual(placed);
+    });
+  });
+
+  it('a timeline plugin site lets the user switch off the shortcuts its rail responds to', async () => {
+    extensionApi.tabs.query.mockResolvedValue([{ id: 10, url: 'https://chatgpt.com/c/abc' }]);
+    await mount();
+    const toggle = container.querySelector<HTMLInputElement>('#shortcuts-enabled');
+    expect(toggle && !toggle.closest('[hidden]')).toBeTruthy();
+
+    await act(async () => toggle!.click());
+
+    expect(sync[StorageKeys.TIMELINE_SHORTCUTS]).toEqual(
+      expect.objectContaining({ enabled: false }),
+    );
   });
 
   it('shows ChatGPT Cloud Sync while keeping Gemini folders and isolation off the tab', async () => {

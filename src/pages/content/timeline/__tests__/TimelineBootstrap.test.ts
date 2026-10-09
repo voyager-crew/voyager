@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('Timeline bootstrap', () => {
+  let stop: (() => void) | null = null;
+
   beforeEach(async () => {
     vi.resetModules();
     vi.restoreAllMocks();
@@ -11,7 +13,8 @@ describe('Timeline bootstrap', () => {
   });
 
   afterEach(() => {
-    window.dispatchEvent(new Event('beforeunload'));
+    stop?.();
+    stop = null;
   });
 
   it('startTimeline initializes only once when body already exists', async () => {
@@ -21,7 +24,7 @@ describe('Timeline bootstrap', () => {
       .mockResolvedValue(undefined);
     const { startTimeline } = await import('../index');
 
-    startTimeline();
+    stop = startTimeline();
     expect(initSpy).toHaveBeenCalledTimes(1);
 
     // Trigger DOM mutations; should not re-initialize
@@ -38,10 +41,10 @@ describe('Timeline bootstrap', () => {
     const stopSpy = vi.spyOn(historyModule.historyTimestampStore, 'stop');
     const { startTimeline } = await import('../index');
 
-    startTimeline();
+    stop = startTimeline();
     expect(stopSpy).not.toHaveBeenCalled();
 
-    window.dispatchEvent(new Event('beforeunload'));
+    stop();
     expect(stopSpy).toHaveBeenCalledOnce();
   });
 });

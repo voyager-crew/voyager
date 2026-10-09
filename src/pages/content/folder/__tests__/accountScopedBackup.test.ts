@@ -20,6 +20,7 @@ import { menuItem } from '../floatingTree/__tests__/treeDriver';
 import { FolderManager } from '../manager';
 import * as storageAdapters from '../storage/FolderStorageAdapter';
 import type { FolderData } from '../types';
+import { GEMINI_PANEL } from './floatingPanelHarness';
 import { sidebarTree } from './sidebarTreeDriver';
 
 const { mockBrowser } = vi.hoisted(() => ({
@@ -886,7 +887,7 @@ it('Gemini resets a focused floating draft on account switch and renders the loa
   extensionLocal[aKeys.live] = privateData('a');
   extensionLocal[bKeys.live] = privateData('b');
   const harness = await makeHarness('gemini', 'a');
-  const panel = mountFloatingPanel({ data: harness.data });
+  const panel = mountFloatingPanel({ ...GEMINI_PANEL, data: harness.data });
   (
     harness.manager as unknown as { floatingUI: { handle: FloatingPanelHandle | null } }
   ).floatingUI.handle = panel;

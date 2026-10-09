@@ -24,6 +24,7 @@ function fixture(
   track.appendChild(content);
   bar.appendChild(track);
   document.body.appendChild(bar);
+  history.replaceState({}, '', '/app/dot-layer');
   const state = new TimelineState(
     () => {},
     createGeminiTimelineStoragePolicy('https://gemini.google.com/app/dot-layer'),

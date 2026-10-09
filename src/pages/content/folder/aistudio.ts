@@ -7,7 +7,7 @@
  * state; a nav rebuild re-injects the panel; `destroy` (feature off) removes all
  * but the storage and message listeners, so a re-enable rebuilds from scratch.
  */
-import browser from 'webextension-polyfill';
+import browser, { type Runtime } from 'webextension-polyfill';
 
 import type { AccountScope } from '@/core/services/AccountIsolationService';
 import { StorageKeys } from '@/core/types/common';
@@ -41,7 +41,7 @@ import {
 } from './aistudioPromptHistory';
 import { currentPromptId, readPromptDragData } from './aistudioPromptLinks';
 import { SIDEBAR_WIDTH_KEY, SidebarWidth } from './aistudioSidebarWidth';
-import { AIStudioTransfer, createSyncMessageListener } from './aistudioTransfer';
+import { AIStudioTransfer } from './aistudioTransfer';
 import { type AIStudioTree, aistudioTreeActions, mountAIStudioTree } from './aistudioTree';
 import type { TreeActions } from './floatingTree/shared';
 import { createFolderDialogs } from './folderDialogs';
@@ -49,6 +49,8 @@ import { getFolderRecoveryNotice } from './folderRecoveryNotice';
 import { createLegacyAIStudioCommands } from './legacyAIStudioCommands';
 import { AISTUDIO_FOLDER_CONFIG } from './platformFolderConfig';
 import { AIStudioFolderStorageAdapter } from './storage/AIStudioFolderStorageAdapter';
+import { createSyncMessageListener } from './syncMessageListener';
+import { readSyncTooltip } from './syncTooltip';
 import type { FolderData } from './types';
 
 const VALID_PATH = /^\/(prompts|library)(\/|$)/;
@@ -190,15 +192,15 @@ export class AIStudioFolderManager {
     this.setupStorageListener();
     this.repository.watchStorage(); // Else a stale tab's next save overwrites other writers.
     this.startAccountPolling();
-    browser.runtime.onMessage.addListener(
-      createSyncMessageListener({
-        // Disabled managers stop reloading, so their retained snapshot may be older than storage.
-        canEdit: () => this.folderEnabled && this.canEdit,
-        data: () => this.data,
-        accountScope: () => this.accountScope,
-        reload: () => this.load().then(() => this.render()),
-      }),
-    );
+    const syncListener = createSyncMessageListener({
+      // Disabled managers stop reloading, so their retained snapshot may be older than storage.
+      canEdit: () => this.folderEnabled && this.canEdit,
+      data: () => this.data,
+      accountScope: () => this.accountScope,
+      reload: () => this.load().then(() => this.render()),
+    });
+    // The polyfill's typing cannot express "respond to some messages, ignore the rest".
+    browser.runtime.onMessage.addListener(syncListener as Runtime.OnMessageListenerCallback);
     if (this.folderEnabled) await this.initializeFolderUI();
   }
 
@@ -299,8 +301,8 @@ export class AIStudioFolderManager {
         t: this.translate,
         onCloudUpload: () => void this.transfer.upload(),
         onCloudSync: () => void this.transfer.sync(),
-        uploadTooltip: () => this.transfer.uploadTooltip(),
-        syncTooltip: () => this.transfer.syncTooltip(),
+        uploadTooltip: () => readSyncTooltip('aistudio', 'upload'),
+        syncTooltip: () => readSyncTooltip('aistudio', 'sync'),
         onCreateFolder: () => {
           if (this.canEdit) this.tree?.startCreateFolder();
         },

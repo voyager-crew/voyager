@@ -7,9 +7,10 @@ import type { PromptItem } from '@/core/types/sync';
 import { FolderRepository } from '../FolderRepository';
 import { AIStudioFolderManager } from '../aistudio';
 import { applyHideArchivedRows } from '../aistudioLibraryTable';
-import { AIStudioTransfer, createSyncMessageListener, exportTimestamp } from '../aistudioTransfer';
+import { AIStudioTransfer } from '../aistudioTransfer';
 import { AISTUDIO_FOLDER_CONFIG } from '../platformFolderConfig';
 import { AIStudioFolderStorageAdapter } from '../storage/AIStudioFolderStorageAdapter';
+import { createSyncMessageListener } from '../syncMessageListener';
 import type { FolderData } from '../types';
 
 vi.mock('webextension-polyfill', () => ({
@@ -134,12 +135,6 @@ afterEach(() => {
   document.body.innerHTML = '';
   document.documentElement.className = '';
   window.history.pushState({}, '', '/');
-});
-
-describe('M12 — export timestamp string integrity', () => {
-  it('produces an export timestamp without embedded spaces', () => {
-    expect(exportTimestamp()).toMatch(/^\d{8}-\d{6}$/);
-  });
 });
 
 describe('H1 — runtime message listener response contract', () => {

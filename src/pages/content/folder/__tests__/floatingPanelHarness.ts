@@ -4,6 +4,8 @@
  * or a shadow root) touches this helper only.
  */
 
+import { FOLDER_SITE_POLICIES } from '@/features/folder/owner/folderOwnerPolicy';
+
 import {
   FLOATING_PANEL_CLASS,
   type FloatingPanelHandle,
@@ -15,6 +17,13 @@ import type { ConversationReference, Folder, FolderData } from '../types';
 export { FLOATING_PANEL_CLASS };
 
 const mountedHandles: FloatingPanelHandle[] = [];
+
+/** What Gemini's floating panel is mounted with. */
+export const GEMINI_PANEL = {
+  policy: FOLDER_SITE_POLICIES.gemini,
+  cloudActions: true,
+  hintKeys: ['floatingPanelMoveHint', 'floatingPanelGestureHint'],
+} as const;
 
 export function createFolder(
   id: string,
@@ -63,7 +72,7 @@ export function createData(): FolderData {
 }
 
 export function mountPanel(args: Partial<FloatingPanelMountArgs> = {}): FloatingPanelHandle {
-  const handle = mountFloatingPanel({ ...args, data: args.data ?? createData() });
+  const handle = mountFloatingPanel({ ...GEMINI_PANEL, ...args, data: args.data ?? createData() });
   mountedHandles.push(handle);
   return handle;
 }

@@ -9,6 +9,7 @@ import { StarredMessagesService } from '@/features/savedLibrary/StarredMessagesS
 import type { StarredMessage } from '@/features/savedLibrary/starTypes';
 
 import { TimelineState } from '../../TimelineState';
+import { routeCatalogOutlineWrites } from '../../__tests__/catalogOutlineBackground';
 import { createCatalogTimelineStoragePolicy } from './CatalogTimelineStorage';
 import { CatalogTurnOwnership } from './CatalogTurnOwnership';
 import type { CatalogTimelineConfig } from './config';
@@ -30,13 +31,17 @@ function setAccount(userId: string | null, accountId: string | null) {
   }
 }
 
-async function fixture(siteId: string, accountIdAttributes?: readonly string[]) {
+async function fixture(
+  siteId: string,
+  accountIdAttributes?: readonly string[],
+  conversationIdPattern: string | undefined = '^/c/([^/?#]+)',
+) {
   const config: CatalogTimelineConfig = {
     siteId,
     siteLabel: siteId,
     accountIdAttributes,
     turnSelector: '.turn',
-    conversationIdPattern: '^/c/([^/?#]+)',
+    conversationIdPattern,
     position: 'right',
     pluginId: `${siteId}.timeline`,
     coachmarkId: 'timeline-style',
@@ -79,6 +84,7 @@ beforeEach(() => {
   storage = createMemoryStorage();
   vi.stubGlobal('chrome', {
     ...chrome,
+    runtime: { ...chrome.runtime, sendMessage: routeCatalogOutlineWrites() },
     storage: { ...chrome.storage, local: storage.api.local, onChanged: storage.api.onChanged },
   });
   history.replaceState({}, '', '/c/one');
@@ -225,7 +231,7 @@ describe.each(['chatgpt', 'claude', 'deepseek'])('%s shared timeline storage pol
     const conversationId = `${siteId}:conv:one`;
     state.hierarchy.setMarkerLevel('c-turn', 2);
     state.hierarchy.toggleCollapse('c-turn');
-    await settle();
+    await settle(30);
     expect(localStorage.length).toBe(0);
     expect(storedOutline(`gvCatalogTimelineHierarchy:${siteId}`, conversationId)).toMatchObject({
       conversationUrl: `${location.origin}/c/one`,
@@ -241,7 +247,7 @@ describe.each(['chatgpt', 'claude', 'deepseek'])('%s shared timeline storage pol
 
     reopened.hierarchy.setMarkerLevel('c-turn', 1);
     reopened.hierarchy.toggleCollapse('c-turn');
-    await settle();
+    await settle(30);
     expect(storedOutline(`gvCatalogTimelineHierarchy:${siteId}`, conversationId)).toBeUndefined();
 
     await reopened.toggleStar('c-turn');
@@ -443,5 +449,23 @@ describe('catalog hierarchy storage boundaries', () => {
     await settle();
     await state.hierarchy.init();
     expect(state.hierarchy.getMarkerLevel('c-turn')).toBe(1);
+  });
+});
+
+describe('catalog sites without a conversation id pattern', () => {
+  it('an outline on a site without a conversation id pattern still saves', async () => {
+    const state = await fixture('chatgpt', undefined, '');
+    state.hierarchy.setMarkerLevel('c-turn', 2);
+    await settle(30);
+
+    expect(state.hierarchy.getMarkerLevel('c-turn')).toBe(2);
+    const bucket = storage.values.local.get('gvCatalogTimelineHierarchy:chatgpt') as
+      | { conversations: Record<string, unknown> }
+      | undefined;
+    const [id, ...others] = Object.keys(bucket?.conversations ?? {});
+    // A site without a route pattern names its conversations by a hash of the page path.
+    expect(id).toMatch(/^chatgpt:(?!conv:)\w+$/);
+    expect(others).toEqual([]);
+    expect(bucket?.conversations[id]).toMatchObject({ levels: { 'c-turn': 2 } });
   });
 });

@@ -4,7 +4,7 @@
  * in-tree menu: same actions, outside click and Escape close it, and it goes
  * away with the tree.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 
 import { POPOVER_LAYER_HOST_CLASS } from '../floatingTree/popoverLayer';
 import { type TreeActions, cls } from '../floatingTree/shared';
@@ -25,6 +25,10 @@ afterEach(() => {
   document.body.classList.remove('gv-rtl');
   vi.restoreAllMocks();
 });
+
+// Preact schedules a 100ms requestAnimationFrame fallback after each render; under a loaded full run it
+// fired after jsdom teardown and threw "cancelAnimationFrame is not defined", failing verify:pr.
+afterAll(() => new Promise((resolve) => setTimeout(resolve, 150)));
 
 const data: FolderData = {
   folders: [

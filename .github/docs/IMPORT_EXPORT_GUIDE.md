@@ -17,7 +17,7 @@ The folder configuration import/export feature allows you to sync folder configu
 1. Click the **upload icon button** (upward arrow ⬆️) in the folder area
 2. Choose an import strategy:
    - **Merge Mode**: Keep existing folders, only add new ones (recommended)
-   - **Overwrite Mode**: Completely replace existing configuration (creates backup)
+   - **Overwrite Mode**: Completely replace existing configuration
 3. Select a previously exported JSON file
 4. Click "Import" to confirm
 
@@ -34,40 +34,39 @@ The folder configuration import/export feature allows you to sync folder configu
 
 - ⚠️ Deletes all existing folders
 - ✅ Completely uses imported configuration
-- 🔒 Automatically creates backup (stored in sessionStorage)
+- 🔒 Keeps a copy of the replaced folders for this tab (see below)
 - 💡 Best for: Full sync to a new device
 
 ## 🔄 Backup & Recovery
 
 ### Backup Information
 
-- **Auto Backup**: Automatically created during overwrite import
+- **Auto Backup**: Every folder import on Gemini first saves the folders it is about to change
 - **Storage Location**: Browser sessionStorage (temporary storage)
-- **Validity**: Valid until current tab is closed
+- **Validity**: Valid until current tab is closed; the next import in the tab replaces it
 - **Size Limit**: Usually 5-10MB
 
-### How to Restore Backup (Console Operation)
+### How to Restore Backup
 
-If you encounter issues after import, you can restore the backup while the tab is still open:
+If you encounter issues after import, you can restore the backup while the tab is still open, on the same Google account (`/u/<index>/`) you imported into:
 
-```javascript
-// 1. Open browser console (F12)
+1. Open the browser console (F12) on that Gemini tab and run:
 
-// 2. Check if backup exists
-const hasBackup = sessionStorage.getItem('gvFolderBackup');
-console.log('Backup exists:', hasBackup !== null);
+   ```javascript
+   console.log('Backup time:', sessionStorage.getItem('gvFolderBackupTimestamp'));
+   copy(
+     JSON.stringify({
+       format: 'gemini-voyager.folders.v1',
+       data: JSON.parse(sessionStorage.getItem('gvFolderBackup')),
+     }),
+   );
+   ```
 
-// 3. View backup time
-const backupTime = sessionStorage.getItem('gvFolderBackupTimestamp');
-console.log('Backup time:', backupTime);
+   An error here means this tab has no backup.
 
-// 4. Restore backup
-const backup = JSON.parse(sessionStorage.getItem('gvFolderBackup'));
-localStorage.setItem('gvFolderData', JSON.stringify(backup));
+2. Open the folder **Import** dialog, choose **Overwrite**, paste the copied text and confirm.
 
-// 5. Refresh page
-location.reload();
-```
+The restore is itself an import, so it saves the folders it replaces as the new backup.
 
 ### Clear Backup
 
@@ -112,7 +111,7 @@ sessionStorage.removeItem('gvFolderBackupTimestamp');
 
 - ✅ **Local Storage**: All data is stored locally only, not uploaded to any server
 - ✅ **Format Validation**: Strict data format validation during import to prevent corruption
-- ✅ **Auto Backup**: Automatic backup before overwrite operations
+- ✅ **Auto Backup**: Automatic backup before every import
 - ✅ **Version Control**: Files include version numbers for future compatibility
 
 ## FAQ
@@ -131,7 +130,7 @@ A: Currently requires manual export/import. Automatic sync would require cloud s
 
 ### Q: What if the configuration is wrong after import?
 
-A: If the tab is still open, you can restore the backup through the console (see instructions above).
+A: If the tab is still open, you can paste the backup back through the Import dialog (see instructions above).
 
 ### Q: Does it support cross-browser sync?
 

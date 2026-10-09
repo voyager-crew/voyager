@@ -4,12 +4,12 @@ import { StorageKeys } from '@/core/types/common';
 import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContext';
 import type { FolderCommands } from '@/features/folder/commands/folderCommands';
 import type { ConversationSortMode } from '@/features/folder/model/folderData';
+import { FOLDER_SITE_POLICIES } from '@/features/folder/owner/folderOwnerPolicy';
 
 import type { FolderNavigation } from './FolderNavigation';
 import type { FolderStore } from './FolderStore';
 import type { FolderTransferController } from './FolderTransferController';
 import { type FloatingFabPos, mountFloatingFab, unmountFloatingFab } from './floatingModeFab';
-import { unmountFloatingModeNudge } from './floatingModeNudge';
 import {
   type FloatingPanelHandle,
   type FloatingPanelPos,
@@ -34,6 +34,9 @@ type FloatingFolderUIOptions = {
   /** Drops the selection toolbar host the floating panel shares. */
   removeFloatingHost(): void;
 };
+
+/** Gemini's hint rows under the panel header: moving the panel, and its gestures. */
+const HINT_KEYS = ['floatingPanelMoveHint', 'floatingPanelGestureHint'];
 
 type StoredGeometry = { storedPos: FloatingPanelPos | null; storedSize: FloatingPanelSize | null };
 
@@ -67,7 +70,6 @@ export class FloatingFolderUI {
    * floating mode was never entered.
    */
   close(): void {
-    unmountFloatingModeNudge();
     unmountFloatingFab();
     if (this.handle) {
       this.handle.destroy();
@@ -113,7 +115,6 @@ export class FloatingFolderUI {
 
   async openPanel(): Promise<void> {
     if (!this.options.isActive() || this.handle) return;
-    unmountFloatingModeNudge();
     // Only one entry point visible at a time — FAB hides when the panel is up.
     unmountFloatingFab();
 
@@ -148,6 +149,9 @@ export class FloatingFolderUI {
     const { store, dialogs, navigation } = this.options;
     return mountFloatingPanel({
       data: store.data,
+      policy: FOLDER_SITE_POLICIES.gemini,
+      cloudActions: true,
+      hintKeys: HINT_KEYS,
       dataReady: store.canEdit,
       conversationSortMode: this.options.getSortMode(),
       ...geometry,

@@ -6,6 +6,8 @@ import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
 import { ROOT_CONVERSATIONS_ID } from '@/features/folder/constants';
 import { PluginScope } from '@/features/plugins/runtime/pluginScope';
+import { routeCatalogOutlineWrites } from '@/features/timeline/__tests__/catalogOutlineBackground';
+import { formatRelativeTime } from '@/pages/content/folder/syncTooltip';
 import { toastDriver } from '@/tests/toastDriver';
 import { initI18n, getTranslationSyncUnsafe as t } from '@/utils/i18n';
 
@@ -115,6 +117,38 @@ describe('ChatGPT folder section: cloud', () => {
     ]);
   });
 
+  it('hovering the cloud button shows when the ChatGPT folders were last uploaded and synced', async () => {
+    const uploadedAt = Date.now() - 5 * 60_000;
+    const syncedAt = Date.now() - 2 * 3_600_000;
+    sendMessage.mockImplementation(async (message: { type: string }) =>
+      message.type === 'gv.sync.getState'
+        ? {
+            ok: true,
+            // Gemini's own times must not stand in for ChatGPT's.
+            state: {
+              lastUploadTime: 1,
+              lastSyncTime: 1,
+              lastUploadTimeChatGPT: uploadedAt,
+              lastSyncTimeChatGPT: syncedAt,
+            },
+          }
+        : undefined,
+    );
+    const cloud = headerButton(t('folder_cloud'));
+
+    cloud.dispatchEvent(new MouseEvent('mouseenter'));
+    await settle(10);
+
+    expect(cloud.title).toBe(
+      [
+        t('folder_cloud'),
+        t('lastUploaded').replace('{time}', formatRelativeTime(uploadedAt)),
+        t('lastSynced').replace('{time}', formatRelativeTime(syncedAt)),
+      ].join('\n'),
+    );
+    expect(cloud.getAttribute('aria-label')).toBe(t('folder_cloud'));
+  });
+
   it('pressing the cloud button again closes its menu instead of reopening it', () => {
     const cloud = headerButton(t('folder_cloud'));
     cloud.click();
@@ -185,6 +219,51 @@ describe('ChatGPT folder section: cloud', () => {
     expect(toastDriver.all()).toMatchObject([
       { message: t('syncError').replace('{error}', 'iCloud unavailable'), tone: 'error' },
     ]);
+  });
+
+  it('a cloud merge that cannot be saved says so once and keeps the local folders', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const local = memory.api.local as unknown as {
+      set: (items: Record<string, unknown>) => Promise<void>;
+    };
+    const set = local.set;
+    vi.spyOn(local, 'set').mockImplementation((items) =>
+      StorageKeys.FOLDER_DATA_CHATGPT in items ? Promise.reject(new Error('quota')) : set(items),
+    );
+    sendMessage.mockResolvedValue({ ok: true, data: { folders: exportChatGptFolders(CLOUD) } });
+
+    await choose(t('folder_cloud_sync'));
+
+    expect(memory.values.local.get(StorageKeys.FOLDER_DATA_CHATGPT)).toEqual(LOCAL);
+    const saveErrors = toastDriver
+      .messages()
+      .filter((message) => message === t('folder_save_error'));
+    expect(saveErrors).toHaveLength(1);
+    expect(toastDriver.messages()).not.toContain(t('downloadMergeSuccess'));
+  });
+
+  it('restores ChatGPT outlines from the cloud when no ChatGPT folder file is there', async () => {
+    const key = `${StorageKeys.CATALOG_TIMELINE_HIERARCHY_PREFIX}chatgpt`;
+    const outline = {
+      conversationUrl: 'https://chatgpt.com/c/one',
+      levels: { 'turn-one': 2 },
+      collapsed: [],
+      updatedAt: 10,
+    };
+    sendMessage.mockImplementation(
+      routeCatalogOutlineWrites(async (message: { type: string }) =>
+        message.type === 'gv.sync.catalogTimeline.pull'
+          ? { ok: true, buckets: { [key]: { conversations: { one: outline } } }, stars: {} }
+          : { ok: true, data: null },
+      ),
+    );
+
+    await choose(t('folder_cloud_sync'));
+
+    expect(memory.values.local.get(key)).toEqual({ conversations: { one: outline } });
+    expect(memory.values.local.get(StorageKeys.FOLDER_DATA_CHATGPT)).toEqual(LOCAL);
+    expect(toastDriver.all()).toMatchObject([{ message: t('syncSuccess'), tone: 'success' }]);
   });
 
   it('says so when the cloud has no ChatGPT folders yet', async () => {

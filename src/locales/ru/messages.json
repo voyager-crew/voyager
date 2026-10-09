@@ -962,22 +962,6 @@
     "message": "Изменить можно в любое время во всплывающем окне расширения → Параметры папок.",
     "description": "Footnote explaining where to toggle the setting later"
   },
-  "floatingModeNudgeTitle": {
-    "message": "Боковая панель недоступна — открыть папки в плавающем окне?",
-    "description": "Title of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeBody": {
-    "message": "Voyager не смог найти боковую панель Gemini, возможно, из-за изменения макета страницы. Папки по-прежнему доступны в плавающем окне.",
-    "description": "Body copy of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeEnable": {
-    "message": "Открыть плавающее окно",
-    "description": "Primary button that opens the floating folder panel"
-  },
-  "floatingModeNudgeDismiss": {
-    "message": "Не сейчас",
-    "description": "Secondary button that dismisses the floating-mode nudge"
-  },
   "floatingPanelTitle": {
     "message": "Папки",
     "description": "Title shown in the floating folder panel header"
@@ -1453,6 +1437,10 @@
   "syncRestoreForks": {
     "message": "Ветки диалогов",
     "description": "Drive restore part: conversation fork links"
+  },
+  "syncRestoreCatalogTimeline": {
+    "message": "Избранное и уровни таймлайна на других сайтах",
+    "description": "Drive restore part: timeline stars and node levels saved on catalog sites such as ChatGPT and Claude"
   },
   "syncRestoreListSeparator": {
     "message": ", ",

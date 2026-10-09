@@ -4,6 +4,7 @@ import browser from 'webextension-polyfill';
 import { accountIsolationService } from '@/core/services/AccountIsolationService';
 import { StorageKeys } from '@/core/types/common';
 
+import { historyTimestampStore } from '../../timestamp/historyTimestamps';
 import { ACTIVITY_PRIORITY_WINDOW_MS } from '../activityView';
 import type { FolderData } from '../types';
 import { createFolderViewHarness, resetFolderViewBrowserMocks } from './folderViewHarness';
@@ -268,6 +269,35 @@ describe('folder Activity view', () => {
       .flat()
       .filter((conversation) => conversation.conversationId.replace(/^c_/, '') === 'active');
     expect(savedCopies.every((conversation) => conversation.lastTurnAt === nextTurnAt)).toBe(true);
+  });
+
+  it('an imported chat kept under a synthetic id gets its Gemini server activity time', async () => {
+    const data = activityData();
+    data.folderContents.copy.push({
+      conversationId: 'imported-7f3a',
+      title: 'Imported chat',
+      url: 'https://gemini.google.com/app/realroute',
+      addedAt: 1,
+      lastTurnAt: 5,
+    });
+    harness = await createFolderViewHarness(data);
+    const serverTurnAt = Date.now() - 30_000;
+    vi.spyOn(historyTimestampStore, 'getLatestTurnTimestamp').mockImplementation((id) =>
+      id === 'realroute' ? serverTurnAt : null,
+    );
+    const imported = () =>
+      harness.store.data.folderContents.copy.find((c) => c.conversationId === 'imported-7f3a');
+
+    // Gemini's history load reports the conversation by its route id.
+    harness.store.applyHistoryActivityTimestamps(['c_realroute']);
+    expect(imported()?.lastTurnAt).toBe(serverTurnAt);
+
+    // A reload of the stored folders reads it back from the server times too.
+    harness.store.data.folderContents.copy = harness.store.data.folderContents.copy.map((c) =>
+      c.conversationId === 'imported-7f3a' ? { ...c, lastTurnAt: 5 } : c,
+    );
+    harness.store.backfillKnownConversationActivity();
+    expect(imported()?.lastTurnAt).toBe(serverTurnAt);
   });
 
   it('the activity bell stays beside the create button while other header actions are hidden', async () => {

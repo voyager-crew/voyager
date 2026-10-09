@@ -24,6 +24,7 @@ import {
   starredDotLabels,
   timelineBar,
   trackPageListeners,
+  unloadPage,
   useTimelinePage,
 } from './geminiTimelineHarness';
 
@@ -205,6 +206,40 @@ describe('leaving conversations tears the timeline down', () => {
     }
 
     expect(pageListeners()).toBe(afterFirstVisit);
+  });
+
+  it('stopping the Gemini timeline while it is still starting leaves no shortcut listeners', async () => {
+    const pageListeners = trackPageListeners();
+    new GeminiPage(KYOTO);
+    // A completed start and stop sets the baseline: page-lifetime caches may keep their listeners.
+    await startTimelineOnPage();
+    unloadPage();
+    await settle();
+    const storageAfterStop = ext().listeners.size;
+    // Hold the shortcut config read so the page tears the next timeline down mid-startup.
+    let releaseShortcuts: () => void = () => {};
+    let shortcutsRequested = false;
+    const sync = globalThis.chrome.storage.sync;
+    const read = sync.get.bind(sync) as (...args: unknown[]) => Promise<Record<string, unknown>>;
+    vi.spyOn(sync, 'get').mockImplementation(((...args: unknown[]) => {
+      if (args[0] !== 'geminiTimelineShortcuts') return read(...args);
+      shortcutsRequested = true;
+      return new Promise<Record<string, unknown>>((resolve) => {
+        releaseShortcuts = () => resolve({});
+      });
+    }) as unknown as typeof sync.get);
+    await startTimelineOnPage();
+    expect(shortcutsRequested).toBe(true);
+
+    unloadPage();
+    releaseShortcuts();
+    await settle();
+
+    const press = new KeyboardEvent('keydown', { key: 'j', bubbles: true, cancelable: true });
+    window.dispatchEvent(press);
+    expect(press.defaultPrevented).toBe(false);
+    expect(pageListeners()).toBe(0);
+    expect(ext().listeners.size).toBe(storageAfterStop);
   });
 
   it('coming back to a conversation after leaving shows its rail again', async () => {

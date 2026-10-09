@@ -10,13 +10,15 @@ import { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import type { PluginSettings } from '@/features/plugins/types';
 import { turnNavigatorPrimitive } from '@/features/plugins/verbs/turnNavigator';
 import type { PrimitiveHandle } from '@/features/plugins/verbs/types';
-import { showTimelineStyleCoachmark } from '@/pages/content/timeline/timelineStyleCoachmark';
+import { showTimelineStyleCoachmark } from '@/features/timeline/timelineStyleCoachmark';
+
+import { routeCatalogOutlineWrites } from '../../__tests__/catalogOutlineBackground';
 
 vi.mock('@/utils/i18n', () => ({
   initI18n: vi.fn().mockResolvedValue(undefined),
   getTranslationSync: (key: string) => key,
 }));
-vi.mock('@/pages/content/timeline/timelineStyleCoachmark', () => ({
+vi.mock('@/features/timeline/timelineStyleCoachmark', () => ({
   showTimelineStyleCoachmark: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -39,18 +41,17 @@ beforeEach(() => {
     storage: { ...chrome.storage, local: storage.api.local, onChanged: storage.api.onChanged },
   });
   let firstRead = true;
-  vi.mocked(chrome.runtime.sendMessage).mockImplementation(((
-    request: { type: string },
-    callback: (value: unknown) => void,
-  ) => {
-    if (request.type === 'gv.starred.getForConversation') {
-      const respond = () => callback({ ok: true, messages: [] });
-      if (firstRead) {
-        firstRead = false;
-        releaseRead = respond;
-      } else respond();
-    }
-  }) as typeof chrome.runtime.sendMessage);
+  vi.mocked(chrome.runtime.sendMessage).mockImplementation(
+    routeCatalogOutlineWrites((request: { type: string }, callback) => {
+      if (request.type === 'gv.starred.getForConversation') {
+        const respond = () => callback({ ok: true, messages: [] });
+        if (firstRead) {
+          firstRead = false;
+          releaseRead = respond;
+        } else respond();
+      }
+    }) as typeof chrome.runtime.sendMessage,
+  );
 });
 
 afterEach(async () => {

@@ -35,7 +35,7 @@ vi.mock('@/features/savedLibrary/StarredMessagesService', async (importOriginal)
 vi.mock('@/features/plugins/storage/pluginSettingRequest', () => ({
   requestPluginSetting: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock('@/pages/content/timeline/timelineStyleCoachmark', () => ({
+vi.mock('@/features/timeline/timelineStyleCoachmark', () => ({
   showTimelineStyleCoachmark,
 }));
 

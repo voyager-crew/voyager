@@ -2,14 +2,16 @@ import { type Dispose, PluginScope } from '@/features/plugins/runtime/pluginScop
 import { requestPluginSetting } from '@/features/plugins/storage/pluginSettingRequest';
 import type { PluginSettings } from '@/features/plugins/types';
 import type { PrimitiveHandle } from '@/features/plugins/verbs/types';
-import { showTimelineStyleCoachmark } from '@/pages/content/timeline/timelineStyleCoachmark';
-import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
+import { showTimelineStyleCoachmark } from '@/features/timeline/timelineStyleCoachmark';
 
 import { TimelineEngine } from '../../TimelineEngine';
+import { runRouteTimeline } from '../../runRouteTimeline';
 import { CatalogTimelineAdapter } from './CatalogTimelineAdapter';
 import { CatalogTurnOwnership } from './CatalogTurnOwnership';
+import { publishStarNamespace } from './activeStarNamespace';
 import { type CatalogTimelineConfig } from './config';
 import { starConversationId, turnConversationId } from './conversationId';
+import { CatalogSendTimestamps } from './sendTimestamps';
 
 /** The primitive scope owns route lifetime; viewport remounts stay inside one engine. */
 export function activateCatalogTimeline(
@@ -17,56 +19,56 @@ export function activateCatalogTimeline(
   config: CatalogTimelineConfig,
   settings: PluginSettings = {},
 ): PrimitiveHandle {
-  let engine: TimelineEngine | null = null;
-  let stopStart: Dispose | null = null;
   let currentSettings = settings;
-  let route = location.href.split('#')[0];
   const ownership = new CatalogTurnOwnership({
     routeId: () => location.href.split('#')[0],
     starId: () => starConversationId(config),
     turnConversation: (element) => turnConversationId(config, element),
   });
   ownership.begin();
+  // Page lifetime: a send is stamped even while a route change rebuilds the engine.
+  const sendTimes = config.sendSite ? new CatalogSendTimestamps(scope, config.sendSite) : null;
+  // ChatGPT export's starred filter must read the ids this rail writes.
+  scope.effect(
+    () =>
+      publishStarNamespace({
+        siteId: config.siteId,
+        conversationIdPattern: config.conversationIdPattern,
+      }),
+    'star-namespace',
+  );
   if (document.body)
     scope.observe(document.body, { childList: true, subtree: true }, (records) =>
       ownership.recordInsertions(records),
     );
-  const start = (): void => {
-    if (scope.isDisposed) return;
-    engine?.destroy();
-    void stopStart?.();
-    engine = new TimelineEngine(new CatalogTimelineAdapter(config, ownership), scope.signal);
-    // Settings belong to the mounted plugin version; route changes keep them.
-    engine.updateSettings(currentSettings);
-    const captured = engine;
-    stopStart = scope.effect(
-      () =>
-        captured.init().then(() => {
-          if (!scope.isDisposed && engine === captured) captured.updateSettings(currentSettings);
-          return () => captured.destroy();
-        }),
-      'catalog-timeline-start',
-    );
-  };
-  scope.effect(
-    () => () => {
-      engine?.destroy();
-      engine = null;
+  // Each route's startup is a scope effect, so disposal awaits a pending init before it settles.
+  let stopStart: Dispose | null = null;
+  const timeline = runRouteTimeline({
+    signal: scope.signal,
+    followHash: true,
+    createEngine: () => {
+      const engine = new TimelineEngine(
+        new CatalogTimelineAdapter(config, ownership, sendTimes),
+        scope.signal,
+      );
+      // Settings belong to the mounted plugin version; route changes keep them.
+      engine.updateSettings(currentSettings);
+      return engine;
     },
-    'catalog-timeline',
-  );
-  scope.effect(
-    () =>
-      watchRouteChanges(() => {
-        const next = location.href.split('#')[0];
-        if (next === route) return;
-        route = next;
-        start();
-      }),
-    'catalog-timeline-route',
-  );
-  scope.on(window, 'hashchange', () => engine?.handleHash());
-  start();
+    start: (engine) => {
+      void stopStart?.();
+      stopStart = scope.effect(
+        () =>
+          engine.init().then(() => {
+            if (!scope.isDisposed && timeline.engine === engine)
+              engine.updateSettings(currentSettings);
+            return () => engine.destroy();
+          }),
+        'catalog-timeline-start',
+      );
+    },
+  });
+  scope.effect(() => timeline.stop, 'catalog-timeline');
   let yieldGuide = false;
   try {
     yieldGuide = !!config.yieldWhenSelector && !!document.querySelector(config.yieldWhenSelector);
@@ -90,7 +92,7 @@ export function activateCatalogTimeline(
         const key = currentSettings.timelineStyle === undefined ? 'compactView' : 'timelineStyle';
         const value = key === 'compactView' ? compact : compact ? 'compact' : 'dots';
         currentSettings = { ...currentSettings, [key]: value };
-        engine?.updateSettings(currentSettings);
+        timeline.engine?.updateSettings(currentSettings);
         await requestPluginSetting(config.pluginId, key, value);
       },
     });
@@ -98,7 +100,7 @@ export function activateCatalogTimeline(
   return {
     updateSettings(next) {
       currentSettings = next;
-      engine?.updateSettings(next);
+      timeline.engine?.updateSettings(next);
     },
   };
 }

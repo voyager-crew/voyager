@@ -5,11 +5,42 @@ import { readChatGptConversation } from './chatgptIdentity';
 /** ChatGPT's own sidebar; its conversation links are router links. */
 const SIDEBAR_SELECTOR = 'nav[aria-label], #stage-slideover-sidebar';
 const ACTIVE_LINK_SELECTOR = `:is(${SIDEBAR_SELECTOR}) a[aria-current="page"]`;
-const PLACEHOLDER_TITLES = new Set(['ChatGPT', 'New chat']);
+/**
+ * What ChatGPT names a conversation before it has a title, by the primary
+ * subtag of the page's UI language. Only the page's own language counts: a chat
+ * on English ChatGPT may really be titled "新聊天", and must keep that title.
+ */
+const PLACEHOLDERS_BY_LANGUAGE: Readonly<Record<string, readonly string[]>> = {
+  en: ['New chat'],
+  zh: ['新聊天', '新对话', '新對話'],
+  ja: ['新しいチャット'],
+  ko: ['새 채팅'],
+  es: ['Nuevo chat'],
+  fr: ['Nouveau chat', 'Nouvelle discussion'],
+  de: ['Neuer Chat'],
+  pt: ['Novo chat', 'Nova conversa'],
+  it: ['Nuova chat'],
+  nl: ['Nieuwe chat'],
+  pl: ['Nowy czat'],
+  tr: ['Yeni sohbet'],
+  ru: ['Новый чат'],
+  uk: ['Новий чат'],
+  ar: ['محادثة جديدة', 'دردشة جديدة'],
+  hi: ['नई चैट'],
+  id: ['Obrolan baru'],
+  vi: ['Đoạn chat mới'],
+  th: ['แชทใหม่'],
+};
 
-/** A title ChatGPT shows before it names a conversation. */
-export function isPlaceholderTitle(title: string): boolean {
-  return PLACEHOLDER_TITLES.has(title);
+/** The placeholders for the page's language; English when it is unset or unlisted. */
+function placeholderTitles(doc: Document): readonly string[] {
+  const language = doc.documentElement.lang.trim().toLowerCase().split(/[-_]/)[0];
+  return PLACEHOLDERS_BY_LANGUAGE[language] ?? PLACEHOLDERS_BY_LANGUAGE.en;
+}
+
+/** A title ChatGPT shows before it names a conversation, in `doc`'s UI language. */
+export function isPlaceholderTitle(title: string, doc: Document = document): boolean {
+  return title === 'ChatGPT' || placeholderTitles(doc).includes(title);
 }
 
 function isTemporaryChatUrl(href: string): boolean {
@@ -22,7 +53,7 @@ function isTemporaryChatUrl(href: string): boolean {
 
 function readTitle(doc: Document): string | null {
   const title = doc.title.trim();
-  if (title && !PLACEHOLDER_TITLES.has(title)) return title;
+  if (title && !isPlaceholderTitle(title, doc)) return title;
   return doc.querySelector(ACTIVE_LINK_SELECTOR)?.textContent?.trim() || null;
 }
 

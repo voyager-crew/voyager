@@ -962,22 +962,6 @@
     "message": "You can change this anytime in the extension popup → Folder options.",
     "description": "Footnote explaining where to toggle the setting later"
   },
-  "floatingModeNudgeTitle": {
-    "message": "Sidebar unavailable — open folders in a floating window?",
-    "description": "Title of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeBody": {
-    "message": "Voyager couldn't find the Gemini sidebar, likely because the page layout changed. You can still browse your folders in a floating window.",
-    "description": "Body copy of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeEnable": {
-    "message": "Open floating window",
-    "description": "Primary button that opens the floating folder panel"
-  },
-  "floatingModeNudgeDismiss": {
-    "message": "Not now",
-    "description": "Secondary button that dismisses the floating-mode nudge"
-  },
   "floatingPanelTitle": {
     "message": "Folders",
     "description": "Title shown in the floating folder panel header"
@@ -1453,6 +1437,10 @@
   "syncRestoreForks": {
     "message": "Conversation forks",
     "description": "Drive restore part: conversation fork links"
+  },
+  "syncRestoreCatalogTimeline": {
+    "message": "Timeline stars and levels on other sites",
+    "description": "Drive restore part: timeline stars and node levels saved on catalog sites such as ChatGPT and Claude"
   },
   "syncRestoreListSeparator": {
     "message": ", ",

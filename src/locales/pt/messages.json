@@ -962,22 +962,6 @@
     "message": "Você pode alterar isso a qualquer momento no popup da extensão → Opções de pastas.",
     "description": "Footnote explaining where to toggle the setting later"
   },
-  "floatingModeNudgeTitle": {
-    "message": "Barra lateral indisponível — abrir as pastas em uma janela flutuante?",
-    "description": "Title of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeBody": {
-    "message": "O Voyager não encontrou a barra lateral do Gemini, provavelmente devido a uma mudança no layout da página. Você ainda pode navegar pelas pastas em uma janela flutuante.",
-    "description": "Body copy of the floating-mode fallback nudge"
-  },
-  "floatingModeNudgeEnable": {
-    "message": "Abrir janela flutuante",
-    "description": "Primary button that opens the floating folder panel"
-  },
-  "floatingModeNudgeDismiss": {
-    "message": "Agora não",
-    "description": "Secondary button that dismisses the floating-mode nudge"
-  },
   "floatingPanelTitle": {
     "message": "Pastas",
     "description": "Title shown in the floating folder panel header"
@@ -1453,6 +1437,10 @@
   "syncRestoreForks": {
     "message": "Ramificações de conversa",
     "description": "Drive restore part: conversation fork links"
+  },
+  "syncRestoreCatalogTimeline": {
+    "message": "Favoritos e níveis da linha do tempo em outros sites",
+    "description": "Drive restore part: timeline stars and node levels saved on catalog sites such as ChatGPT and Claude"
   },
   "syncRestoreListSeparator": {
     "message": ", ",

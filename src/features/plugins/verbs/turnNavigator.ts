@@ -9,8 +9,10 @@ import {
   TIMELINE_STYLE_COACHMARK_ID,
   type CatalogTimelineConfig,
 } from '@/features/timeline/adapters/catalog/config';
+import { siteConversationConfig } from '@/features/timeline/adapters/catalog/conversationId';
 
 import type { ManifestIssue } from '../manifest/validate';
+import { sendSiteOf } from '../sends/trackUserSends';
 import { isSafeRegexSource } from '../sites/safeRegex';
 import { getPrimitiveContract } from './contracts';
 import type { Primitive } from './types';
@@ -119,7 +121,14 @@ export const turnNavigatorPrimitive: Primitive<TurnNavigatorParams> = {
 
   activate(scope, params, context) {
     const adapter = context.adapter;
-    const turnSelector = params.turn ?? adapter?.selectors.userTurn;
+    if (!adapter) {
+      // Stars, outlines and placement are keyed by the site id; without one, every such
+      // site would share a single namespace, so stay inert instead.
+      logger.warn('turnNavigator: no site adapter for this page', { id: context.pluginId });
+      context.setTargetCounter(() => 0);
+      return;
+    }
+    const turnSelector = params.turn ?? adapter.selectors.userTurn;
     if (!turnSelector) {
       // The status machine reports needs-semantic before this can happen;
       // stay inert rather than index nothing.
@@ -135,19 +144,19 @@ export const turnNavigatorPrimitive: Primitive<TurnNavigatorParams> = {
       }
     });
     const config: CatalogTimelineConfig = {
-      siteId: adapter?.id ?? 'site',
-      siteLabel: adapter?.label ?? 'Conversation',
+      ...siteConversationConfig(adapter, params.conversationIdPattern),
+      siteLabel: adapter.label,
       turnSelector,
-      assistantTurnSelector: adapter?.selectors.assistantTurn,
+      assistantTurnSelector: adapter.selectors.assistantTurn,
       conversationIdAttribute: params.conversationIdAttribute,
       accountIdAttributes: params.accountIdAttributes,
       turnItemSelector: params.turnItem,
-      conversationIdPattern: params.conversationIdPattern ?? adapter?.conversationIdPattern,
-      scrollContainerSelector: params.scrollContainer ?? adapter?.selectors.scrollContainer,
+      scrollContainerSelector: params.scrollContainer ?? adapter.selectors.scrollContainer,
       yieldWhenSelector: params.yieldWhen,
       position: params.position ?? 'right',
       pluginId: context.pluginId,
       coachmarkId: TIMELINE_STYLE_COACHMARK_ID,
+      sendSite: sendSiteOf(adapter),
     };
     return activateCatalogTimeline(scope, config, context.settings);
   },

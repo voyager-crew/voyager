@@ -1,5 +1,5 @@
 import type { Folder } from '@/core/types/folder';
-import { sortFolders } from '@/features/folder/model/folderData';
+import { buildFolderIndex } from '@/features/folder/model/folderIndex';
 import { getTranslationSyncUnsafe as t } from '@/utils/i18n';
 
 import { FOLDER_COLORS, getFolderColor, isDarkMode } from './folderColors';
@@ -115,22 +115,25 @@ export function openColorPicker(
 
 type MoveOption = { folder: Folder; level: number; path: string };
 
+/**
+ * The folders the sidebar tree shows, under the parents it shows them. Reads the
+ * shared layout, so a folder whose parent is gone is listed at the root rather
+ * than left out of the picker.
+ */
 function collectMoveOptions(folders: readonly Folder[]): MoveOption[] {
+  const { roots, children } = buildFolderIndex({
+    folders: [...folders],
+    folderContents: {},
+  }).layout();
   const options: MoveOption[] = [];
-  const collect = (
-    parentId: string | null,
-    level = 0,
-    parentPath = '',
-    ancestors = new Set<string>(),
-  ) => {
-    for (const folder of sortFolders(folders.filter((item) => item.parentId === parentId))) {
-      if (ancestors.has(folder.id)) continue;
+  const collect = (siblings: readonly Folder[], level: number, parentPath: string) => {
+    for (const folder of siblings) {
       const path = parentPath ? `${parentPath} / ${folder.name}` : folder.name;
       options.push({ folder, level, path });
-      collect(folder.id, level + 1, path, new Set([...ancestors, folder.id]));
+      collect(children.get(folder.id) ?? [], level + 1, path);
     }
   };
-  collect(null);
+  collect(roots, 0, '');
   return options;
 }
 
@@ -169,18 +172,38 @@ function createMoveItem(
   return item;
 }
 
+/**
+ * `returnFocus` is where focus goes on close when the element that opened the
+ * dialog is gone: a native menu item is removed as its menu closes, so the
+ * caller passes the menu's persistent trigger.
+ */
 export function openMoveDialog(
   own: OwnDialogView,
   folders: readonly Folder[],
   onSelect: (folderId: string) => void,
+  returnFocus?: HTMLElement | null,
 ): void {
+  const previousFocus = document.activeElement;
+  const restoreFocus = () => {
+    const target =
+      previousFocus instanceof HTMLElement &&
+      previousFocus !== document.body &&
+      previousFocus.isConnected
+        ? previousFocus
+        : returnFocus;
+    if (target?.isConnected) target.focus();
+  };
   const overlay = document.createElement('div');
   overlay.className = 'gv-folder-dialog-overlay';
-  const view = own(overlay, false, undefined, true);
+  const view = own(overlay, false, restoreFocus, true);
   const dialog = document.createElement('div');
   dialog.className = 'gv-folder-dialog';
+  dialog.setAttribute('role', 'dialog');
+  dialog.setAttribute('aria-modal', 'true');
+  dialog.setAttribute('aria-labelledby', 'gv-folder-move-dialog-title');
   const title = document.createElement('div');
   title.className = 'gv-folder-dialog-title';
+  title.id = 'gv-folder-move-dialog-title';
   title.textContent = t('conversation_move_to_folder_title');
   const search = document.createElement('input');
   search.type = 'search';
@@ -216,6 +239,15 @@ export function openMoveDialog(
     },
     { signal: view.signal },
   );
+  overlay.addEventListener(
+    'keydown',
+    (event) => {
+      if (event.key === 'Escape') view.close();
+    },
+    { signal: view.signal },
+  );
+  // After the native menu that opened it has closed and taken its focus along.
+  view.defer(() => search.focus(), 0);
 }
 
 export function openInstructionsDialog(

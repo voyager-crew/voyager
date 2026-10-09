@@ -1,14 +1,17 @@
 // @vitest-environment jsdom
 // @vitest-environment-options { "url": "https://chatgpt.com/" }
 /**
- * The send tracker's pending send on its own, with fake timers: a send ChatGPT
- * never shows is forgotten, and turning the folders off forgets it too.
+ * The send tracker's pending send on its own, with fake timers and ChatGPT's
+ * site.json: a send ChatGPT never shows is forgotten, and turning the
+ * subscriber off forgets it too. Folder Activity's end-to-end cases live in
+ * `chatgptFolders/__tests__/activityView.test.ts`.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { requireBundledSiteAdapter } from '@/features/plugins/catalog/sites';
 import { PluginScope } from '@/features/plugins/runtime/pluginScope';
 
-import { trackChatGptLastTurn } from '../chatgptLastTurn';
+import { sendSiteOf, trackUserSends } from '../trackUserSends';
 
 const WORK = 'chatgpt:conv:work';
 const PROMPT = 'A prompt';
@@ -45,10 +48,12 @@ beforeEach(() => {
   composer = document.querySelector('#prompt-textarea')!;
   scope = new PluginScope();
   record = vi.fn();
-  trackChatGptLastTurn(
+  const site = sendSiteOf(requireBundledSiteAdapter('chatgpt'));
+  if (!site) throw new Error("ChatGPT's site.json must name its send inputs");
+  trackUserSends(
     scope,
-    { userTurn: '[data-user-message-bubble]', composer: '#prompt-textarea' },
-    record,
+    { ...site, userTurn: '[data-user-message-bubble]', composer: '#prompt-textarea' },
+    ({ conversationKey, at }) => record(conversationKey, at),
   );
 });
 

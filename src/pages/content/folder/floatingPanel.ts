@@ -1,8 +1,6 @@
 import { CLOUD_SYNC_PATH, CLOUD_UPLOAD_PATH } from '@/core/icons/cloudSyncPaths';
-import { ROOT_CONVERSATIONS_ID } from '@/features/folder/constants';
-import type { ConversationIdentity } from '@/features/folder/model/conversationStars';
 import type { ConversationSortMode } from '@/features/folder/model/folderData';
-import { FOLDER_SITE_POLICIES } from '@/features/folder/owner/folderOwnerPolicy';
+import type { FolderSitePolicy } from '@/features/folder/owner/folderOwnerPolicy';
 
 import { clearOfPromptTrigger } from '../prompt/triggerClearance';
 import panelCss from './floatingPanel.css?raw';
@@ -29,15 +27,13 @@ export type FloatingPanelHeaderAction = {
 
 export type MountArgs = TreeActions & {
   data: FolderData;
-  /** Gemini's Drive buttons; a site without Drive sync passes `false`. Defaults to on, off in Safari. */
-  cloudActions?: boolean;
+  /** The site's root bucket, and which rows are one conversation sharing one star. */
+  policy: Pick<FolderSitePolicy, 'rootBucketId' | 'keysOf' | 'idKey'>;
+  /** The cloud upload and sync buttons, for a site whose folders sync. */
+  cloudActions: boolean;
   headerActions?: readonly FloatingPanelHeaderAction[];
-  /** Hint rows under the header; defaults to Gemini's move and gesture hints. */
-  hintKeys?: readonly string[];
-  /** Defaults to Gemini's root bucket. */
-  rootBucketId?: string;
-  /** Which rows are one conversation, sharing one star; defaults to Gemini's. */
-  conversationIdentity?: ConversationIdentity;
+  /** Hint rows under the header. */
+  hintKeys: readonly string[];
   dataReady?: boolean;
   conversationSortMode?: ConversationSortMode;
   storedPos?: FloatingPanelPos | null;
@@ -72,7 +68,6 @@ const MIN_PANEL_HEIGHT = 320;
 const MAX_PANEL_WIDTH = 640;
 const VIEWPORT_SIZE_MARGIN = 32;
 const SIZE_CHANGE_DEBOUNCE_MS = 300;
-const DEFAULT_HINT_KEYS = ['floatingPanelMoveHint', 'floatingPanelGestureHint'];
 const HINT_ICONS = ['i', '?'];
 
 function clampPos(pos: FloatingPanelPos, width: number, height: number): FloatingPanelPos {
@@ -196,13 +191,12 @@ function createHintStack(keys: readonly string[]): HTMLElement {
 
 export function mountFloatingPanel({
   data,
-  cloudActions = true,
+  policy,
+  cloudActions,
   headerActions: siteActions = [],
-  hintKeys = DEFAULT_HINT_KEYS,
+  hintKeys,
   dataReady = true,
   conversationSortMode = 'manual',
-  rootBucketId = ROOT_CONVERSATIONS_ID,
-  conversationIdentity = FOLDER_SITE_POLICIES.gemini,
   storedPos,
   storedSize,
   onPosChange,
@@ -422,10 +416,10 @@ export function mountFloatingPanel({
     boundary: panel,
     focusRoot: surface.root,
     data,
-    rootBucketId,
+    rootBucketId: policy.rootBucketId,
     conversationSortMode,
     actions,
-    site: { conversationIdentity },
+    site: { conversationIdentity: policy },
   });
 
   const onResize = () => {

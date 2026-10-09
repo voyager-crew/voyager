@@ -90,4 +90,55 @@ describe('move to folder dialog', () => {
     expect(onSelect).toHaveBeenCalledExactlyOnceWith('software-misc');
     expect(document.querySelector('.gv-folder-dialog-overlay')).toBeNull();
   });
+
+  const folder = (id: string, name: string, parentId: string | null): Folder => ({
+    id,
+    name,
+    parentId,
+    isExpanded: true,
+    createdAt: 1,
+    updatedAt: 1,
+  });
+
+  it('lists a folder whose parent is gone, as the sidebar tree shows it at the root', () => {
+    dialogs = createFolderDialogs();
+    dialogs.openMove(
+      [folder('kept', 'Kept', null), folder('orphan', 'Orphaned', 'deleted-parent')],
+      vi.fn(),
+    );
+
+    const items = [...document.querySelectorAll<HTMLButtonElement>('.gv-folder-dialog-item')];
+    expect(items.map((item) => item.dataset.folderPath)).toEqual(['Kept', 'Orphaned']);
+  });
+
+  it('is a labelled dialog that takes focus, closes on Escape and hands focus back', () => {
+    vi.useFakeTimers();
+    try {
+      const opener = document.createElement('button');
+      document.body.appendChild(opener);
+      opener.focus();
+      dialogs = createFolderDialogs();
+      const onSelect = vi.fn();
+      dialogs.openMove([folder('a', 'A', null)], onSelect);
+      vi.runAllTimers();
+
+      const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
+      expect(dialog?.getAttribute('aria-modal')).toBe('true');
+      const labelledBy = dialog?.getAttribute('aria-labelledby');
+      expect(labelledBy && document.getElementById(labelledBy)?.textContent).toBe(
+        'conversation_move_to_folder_title',
+      );
+      expect(document.activeElement).toBe(document.querySelector('.gv-folder-dialog-search'));
+
+      document.activeElement!.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+      );
+
+      expect(document.querySelector('.gv-folder-dialog-overlay')).toBeNull();
+      expect(onSelect).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(opener);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -11,6 +11,7 @@ import { ROOT_CONVERSATIONS_ID } from '@/features/folder/constants';
 
 import { mountFloatingPanel } from '../floatingPanel';
 import {
+  GEMINI_PANEL,
   FLOATING_PANEL_CLASS,
   click,
   contextMenu,
@@ -376,7 +377,7 @@ describe('floating panel shell', () => {
 
   it('replaces a panel that is already mounted', () => {
     const first = mountPanel();
-    const second = mountFloatingPanel({ data: createData() });
+    const second = mountFloatingPanel({ ...GEMINI_PANEL, data: createData() });
     expect(first.element.isConnected).toBe(false);
     expect(document.querySelectorAll(`.${FLOATING_PANEL_CLASS}`)).toHaveLength(1);
     second.destroy();

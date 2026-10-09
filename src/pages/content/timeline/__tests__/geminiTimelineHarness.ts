@@ -1,7 +1,7 @@
 /**
  * A Gemini conversation page plus the extension boundaries the timeline talks to, for
- * characterization tests that drive the timeline only through `startTimeline()`, the DOM and
- * storage. Faked here, and nothing else:
+ * characterization tests that drive the timeline only through `startTimeline()` and its stop, the
+ * DOM and storage. Faked here, and nothing else:
  * - `chrome.storage` (local, sync, onChanged), in memory, with promise and callback forms;
  * - the background page behind `chrome.runtime.sendMessage`, using the real starred-message owner;
  * - layout that jsdom does not compute (box heights, turn offsets, bounding rects);
@@ -417,10 +417,12 @@ export async function settle(ms = 1000): Promise<void> {
   await vi.advanceTimersByTimeAsync(ms);
 }
 
+let stopTimeline: (() => void) | null = null;
+
 /** Boots the timeline the way the content script does, on the current URL. */
 export async function startTimelineOnPage(): Promise<void> {
   const { startTimeline } = await import('../index');
-  startTimeline();
+  stopTimeline = startTimeline();
   await settle();
 }
 
@@ -436,9 +438,11 @@ export async function navigateTo(path: string): Promise<void> {
   await settle(2000);
 }
 
-/** Page unload: the timeline's page-lifetime cleanup runs. */
+/** Page unload: the content script's cleanup runs the stop `startTimeline()` returned. */
 export function unloadPage(): void {
-  window.dispatchEvent(new Event('beforeunload'));
+  const stop = stopTimeline;
+  stopTimeline = null;
+  stop?.();
 }
 
 export function longPress(target: HTMLElement): Promise<void> {

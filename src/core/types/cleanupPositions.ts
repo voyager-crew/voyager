@@ -26,6 +26,7 @@ export enum CleanupPositions {
   CleanupUsageStatus,
   CleanupWatermarkNativeNotice,
   CleanupGemsHider,
+  CleanupTimeline,
   CleanupNativeHealth,
   CleanupResearchPack,
   CleanupResearchPackReceiver,

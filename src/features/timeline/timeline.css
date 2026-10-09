@@ -571,6 +571,15 @@ html[data-gv-scheme] .gemini-timeline-bar:not(.timeline-no-container)::before {
   white-space: normal;
 }
 
+.gv-timeline-ruler-time {
+  margin-bottom: 3px;
+  color: var(--timeline-tooltip-text);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
+  opacity: 0.55;
+}
+
 .gv-timeline-ruler-prompt {
   overflow: hidden;
   color: var(--timeline-tooltip-text);

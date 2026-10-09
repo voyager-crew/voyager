@@ -14,12 +14,20 @@ import type {
   TimelineHierarchyDataSync,
 } from '@/core/types/sync';
 import { DEFAULT_SYNC_STATE } from '@/core/types/sync';
-import { FOLDER_PLATFORMS } from '@/features/folder/platforms';
+import {
+  FOLDER_PLATFORMS,
+  FOLDER_PLATFORM_IDS,
+  type SyncTimeField,
+} from '@/features/folder/platforms';
 import type { PluginStateMap } from '@/features/plugins/storage/pluginState';
+import { catalogStarSites } from '@/features/savedLibrary/starSitePolicy';
 import type { StarStore } from '@/features/savedLibrary/starStore';
+import type { StarsExportPayloadV2 } from '@/features/savedLibrary/starSyncPayload';
+import type { CatalogTimelineBuckets } from '@/features/timeline/catalogHierarchySync';
 
 import { GoogleDriveAuth, isSafariRuntime } from './GoogleDriveAuth';
 import { GoogleDriveBackupFolder } from './GoogleDriveBackupFolder';
+import { GoogleDriveCatalogTimeline } from './GoogleDriveCatalogTimeline';
 import { GoogleDriveFiles } from './GoogleDriveFiles';
 import {
   BACKUP_FOLDER_RECOVERY_FILE_NAMES,
@@ -30,6 +38,21 @@ import {
 import { logger } from './LoggerService';
 import { StarDriveSyncCoordinator } from './StarDriveSyncCoordinator';
 import { createStarTransferSession } from './StarTransferSession';
+
+/** Every platform's transfer times with their persisted keys, in registry order. */
+const SYNC_TIME_STORAGE = FOLDER_PLATFORM_IDS.flatMap((platform) => {
+  const definition = FOLDER_PLATFORMS[platform];
+  return [
+    { field: definition.lastSyncTimeField, storageKey: definition.lastSyncTimeStorageKey },
+    { field: definition.lastUploadTimeField, storageKey: definition.lastUploadTimeStorageKey },
+  ] satisfies { field: SyncTimeField; storageKey: string }[];
+});
+
+interface CatalogSession {
+  revision: number;
+  provider: SyncProvider;
+  assertActive(): void;
+}
 
 function getStringValue(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
@@ -56,6 +79,7 @@ export class GoogleDriveSyncService {
   );
 
   private readonly payloads = new GoogleDriveSyncPayloads(this.files);
+  private readonly catalogTimeline = new GoogleDriveCatalogTimeline(this.files);
 
   constructor() {
     this.stateLoadPromise = this.loadState();
@@ -176,8 +200,14 @@ export class GoogleDriveSyncService {
         throw new Error('Not authenticated');
       }
 
-      const { payloads, port } = this.starSession(token, capturedScope, session, provider);
-      if (platform === 'gemini' && starred && !starStore)
+      const { payloads, port, catalogPort } = this.starSession(
+        token,
+        capturedScope,
+        session,
+        provider,
+      );
+      const { syncsConversationExtras } = FOLDER_PLATFORMS[platform];
+      if (syncsConversationExtras && starred && !starStore)
         throw new Error('Star uploads require the queued store');
       const fileCount = await payloads.upload(token, {
         folders,
@@ -192,8 +222,24 @@ export class GoogleDriveSyncService {
         plugins,
       });
 
-      if (platform === 'gemini' && starStore) {
+      if (syncsConversationExtras && starStore) {
         await this.starCoordinator.push(starStore, port, capturedScope);
+        const pushed = JSON.stringify(await starStore.getSyncSnapshot(capturedScope));
+        // Catalog-site stars ride along with every star sync, in their own per-site files.
+        const sites = await this.localCatalogStarSites(starStore);
+        for (const site of sites) {
+          port.assertActive();
+          await this.starCoordinator.push(starStore, catalogPort(site), null);
+        }
+        // A site file can carry a removal of a star the Gemini file still holds for older
+        // versions; write the Gemini file again so they drop it in this same sync.
+        if (
+          sites.length > 0 &&
+          JSON.stringify(await starStore.getSyncSnapshot(capturedScope)) !== pushed
+        ) {
+          port.assertActive();
+          await this.starCoordinator.push(starStore, port, capturedScope);
+        }
       }
       port.assertActive();
       const uploadTime = Date.now();
@@ -204,7 +250,7 @@ export class GoogleDriveSyncService {
       await this.saveState();
 
       logger.info(
-        `[GoogleDriveSyncService] Upload successful - ${fileCount + (platform === 'gemini' && starStore ? 2 : 0)} file(s) for ${platform}`,
+        `[GoogleDriveSyncService] Upload successful - ${fileCount + (syncsConversationExtras && starStore ? 2 : 0)} file(s) for ${platform}`,
       );
       return true;
     } catch (error) {
@@ -413,6 +459,127 @@ export class GoogleDriveSyncService {
     }
   }
 
+  /**
+   * Merge-upload catalog-site timeline outlines, one Drive file per site (`bySite` maps a site id
+   * to its local buckets). Never touches the folder, star or Gemini hierarchy files.
+   */
+  async uploadCatalogTimeline(
+    bySite: Record<string, CatalogTimelineBuckets>,
+    interactive: boolean = true,
+  ): Promise<boolean> {
+    return this.catalogTransfer(
+      'Timeline outline upload',
+      interactive,
+      false,
+      async (token, session) => {
+        await this.catalogTimeline.upload(token, bySite, session.assertActive);
+        return true;
+      },
+    );
+  }
+
+  /** The cloud timeline outlines of the listed catalog sites, or null when the download failed. */
+  async downloadCatalogTimeline(
+    sites: readonly string[],
+    interactive: boolean = true,
+  ): Promise<CatalogTimelineBuckets | null> {
+    return this.catalogTransfer(
+      'Timeline outline download',
+      interactive,
+      null,
+      async (token, session) => {
+        const buckets = await this.catalogTimeline.download(token, sites);
+        session.assertActive();
+        return buckets;
+      },
+    );
+  }
+
+  /**
+   * Two-way sync of the listed catalog sites' star files, like a Gemini star upload: the cloud
+   * stars merge into `store`, then each file is rewritten with the site's merged stars.
+   */
+  async syncCatalogStars(
+    store: StarStore,
+    sites: readonly string[],
+    interactive: boolean = true,
+  ): Promise<boolean> {
+    return this.catalogTransfer('Catalog star sync', interactive, false, async (token, session) => {
+      const { catalogPort } = this.starSession(token, null, session.revision, session.provider);
+      for (const site of sites) {
+        session.assertActive();
+        await this.starCoordinator.push(store, catalogPort(site), null);
+      }
+      return true;
+    });
+  }
+
+  /** The cloud star files of the listed catalog sites, by site; null when the download failed. */
+  async downloadCatalogStars(
+    sites: readonly string[],
+    interactive: boolean = true,
+  ): Promise<Record<string, StarsExportPayloadV2> | null> {
+    return this.catalogTransfer(
+      'Catalog star download',
+      interactive,
+      null,
+      async (token, session) => {
+        const bySite = await this.payloads.downloadCatalogStars(token, sites);
+        session.assertActive();
+        return bySite;
+      },
+    );
+  }
+
+  /** The catalog sites with local stars or deletions, in a stable order. */
+  private async localCatalogStarSites(store: StarStore): Promise<string[]> {
+    return [...catalogStarSites(await store.getSyncSnapshot(null))].sort();
+  }
+
+  /**
+   * Runs one catalog-site transfer with a token. These never change the per-platform sync
+   * times: those record the folder sync the user ran.
+   */
+  private async catalogTransfer<T>(
+    label: string,
+    interactive: boolean,
+    fallback: T,
+    run: (token: string, session: CatalogSession) => Promise<T>,
+  ): Promise<T> {
+    try {
+      this.updateState({ isSyncing: true, error: null });
+      await this.stateLoadPromise;
+      // Captured before auth: a provider switch or sign-out meanwhile ends the transfer.
+      const revision = this.sessionRevision;
+      const provider = this.state.provider;
+      const session: CatalogSession = {
+        revision,
+        provider,
+        assertActive: () => {
+          if (revision !== this.sessionRevision || provider !== this.state.provider) {
+            throw new Error('Cloud session changed during transfer');
+          }
+        },
+      };
+      const token = await this.auth.getToken(interactive);
+      if (!token) {
+        if (!interactive) {
+          this.updateState({ isSyncing: false, isAuthenticated: false });
+          return fallback;
+        }
+        throw new Error('Not authenticated');
+      }
+      const result = await run(token, session);
+      this.updateState({ isSyncing: false, error: null });
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : `${label} failed`;
+      console.error(`[GoogleDriveSyncService] ${label} failed:`, error);
+      this.updateState({ isSyncing: false, error: errorMessage });
+      return fallback;
+    }
+  }
+
   private starSession(
     token: string,
     scope: SyncAccountScope | null,
@@ -445,24 +612,20 @@ export class GoogleDriveSyncService {
       const result = await chrome.storage.local.get([
         'gvSyncMode',
         'gvSyncProvider',
-        'gvLastSyncTime',
-        'gvLastUploadTime',
-        'gvLastSyncTimeAIStudio',
-        'gvLastUploadTimeAIStudio',
-        'gvLastSyncTimeChatGPT',
-        'gvLastUploadTimeChatGPT',
+        ...SYNC_TIME_STORAGE.map(({ storageKey }) => storageKey),
         'gvSyncError',
       ]);
+      const times = Object.fromEntries(
+        SYNC_TIME_STORAGE.map(({ field, storageKey }) => [
+          field,
+          getNumberValue(result[storageKey]),
+        ]),
+      ) as Record<SyncTimeField, number | null>;
       this.state = {
         provider:
           result.gvSyncProvider === 'icloud' && isSafariRuntime() ? 'icloud' : 'googleDrive',
         mode: (result.gvSyncMode as SyncMode) || 'disabled',
-        lastSyncTime: getNumberValue(result.gvLastSyncTime),
-        lastUploadTime: getNumberValue(result.gvLastUploadTime),
-        lastSyncTimeAIStudio: getNumberValue(result.gvLastSyncTimeAIStudio),
-        lastUploadTimeAIStudio: getNumberValue(result.gvLastUploadTimeAIStudio),
-        lastSyncTimeChatGPT: getNumberValue(result.gvLastSyncTimeChatGPT),
-        lastUploadTimeChatGPT: getNumberValue(result.gvLastUploadTimeChatGPT),
+        ...times,
         error: getStringValue(result.gvSyncError),
         isSyncing: false,
         isAuthenticated: false,
@@ -481,12 +644,9 @@ export class GoogleDriveSyncService {
       await chrome.storage.local.set({
         gvSyncMode: this.state.mode,
         gvSyncProvider: this.state.provider,
-        gvLastSyncTime: this.state.lastSyncTime,
-        gvLastUploadTime: this.state.lastUploadTime,
-        gvLastSyncTimeAIStudio: this.state.lastSyncTimeAIStudio,
-        gvLastUploadTimeAIStudio: this.state.lastUploadTimeAIStudio,
-        gvLastSyncTimeChatGPT: this.state.lastSyncTimeChatGPT,
-        gvLastUploadTimeChatGPT: this.state.lastUploadTimeChatGPT,
+        ...Object.fromEntries(
+          SYNC_TIME_STORAGE.map(({ field, storageKey }) => [storageKey, this.state[field]]),
+        ),
         gvSyncError: this.state.error,
       });
     } catch (error) {

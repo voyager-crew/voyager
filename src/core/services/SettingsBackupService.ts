@@ -233,9 +233,8 @@ export const NON_SETTINGS_BACKUP_POLICIES = {
   },
   [StorageKeys.CATALOG_TIMELINE_HIERARCHY_PREFIX]: {
     storage: 'local',
-    disposition: 'local-data',
-    reason:
-      'Catalog-site timeline outlines are user data, kept locally until they get a Drive file.',
+    disposition: 'separate-file',
+    reason: 'Catalog-site timeline outlines have their own per-site Drive file.',
   },
   [StorageKeys.HIGHLIGHT_CLOUD_SYNC_ENABLED]: {
     storage: 'local',
@@ -411,6 +410,12 @@ export const NON_SETTINGS_BACKUP_POLICIES = {
     storage: 'local',
     disposition: 'local-data',
     reason: 'Message timestamp history is local data, not a setting.',
+  },
+  [StorageKeys.CATALOG_MESSAGE_TIMESTAMPS_PREFIX]: {
+    storage: 'local',
+    disposition: 'local-data',
+    reason:
+      'Catalog-site message send times (one key per conversation) are local data, like Gemini message timestamps.',
   },
   [StorageKeys.GV_TURN_IDENTITY_CACHE]: {
     storage: 'local',

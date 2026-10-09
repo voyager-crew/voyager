@@ -2,7 +2,7 @@
  * ChatGPT folders on the shared folder core: a folder section in ChatGPT's
  * sidebar (introduced once by a guide), the shared floating panel, and "Move to
  * folder" in a row's menu, or a row dragged onto a folder. The store is the
- * shared FolderRepository with ChatGPT's own bucket. Everything this plugin
+ * shared site folder store with ChatGPT's own bucket. Everything this plugin
  * creates is registered on its PluginScope, so turning it off leaves nothing behind.
  */
 import { DOWNLOAD_PATH, UPLOAD_PATH } from '@/core/icons/transferPaths';
@@ -13,8 +13,15 @@ import type { EditOutcome, FolderCommands } from '@/features/folder/commands/fol
 import { type AddVia, FOLDER_SITE_POLICIES } from '@/features/folder/owner/folderOwnerPolicy';
 import { FolderImportExportService } from '@/features/folder/services/FolderImportExportService';
 import type { PluginScope } from '@/features/plugins/runtime/pluginScope';
+import { sendSiteOf, trackUserSends } from '@/features/plugins/sends/trackUserSends';
 import type { PluginSettings, SiteAdapter } from '@/features/plugins/types';
 import { FolderSelection } from '@/pages/content/folder/FolderSelection';
+import type { SiteFolderChange } from '@/pages/content/folder/SiteFolderStore';
+import {
+  type CloudSyncSite,
+  syncSiteFolders,
+  uploadSiteFolders,
+} from '@/pages/content/folder/cloudSyncClient';
 import { createCommandTreeActions } from '@/pages/content/folder/commandTreeActions';
 import { mountFloatingFab, unmountFloatingFab } from '@/pages/content/folder/floatingModeFab';
 import { type FloatingPanelHandle, mountFloatingPanel } from '@/pages/content/folder/floatingPanel';
@@ -31,22 +38,17 @@ import {
   bindRootDropZone,
   dropOnSidebar,
 } from '@/pages/content/folder/sidebarDrops';
+import { readCloudTooltip, readSyncTooltip } from '@/pages/content/folder/syncTooltip';
 import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 import { getTranslationSyncUnsafe as t, initI18n } from '@/utils/i18n';
 
 import { isTemporaryChat } from '../chatgptTemporaryHandoff/handoff';
-import { type ChatGptFolderChange, ChatGptFolderStore } from './ChatGptFolderStore';
-import {
-  type ChatGptCloudSyncHost,
-  syncChatGptFolders,
-  uploadChatGptFolders,
-} from './chatgptCloudSync';
+import { ChatGptFolderStore } from './ChatGptFolderStore';
 import { ChatGptFolderGuide } from './chatgptFolderGuide';
 import { type FolderPickerHandle, openFolderPicker } from './chatgptFolderPicker';
 import { ChatGptFolderSection, sectionToolbarIcon } from './chatgptFolderSection';
 import { ChatGptHideFiled, HIDE_FILED_SETTING } from './chatgptHideFiled';
 import { bareConversationId, readChatGptConversation } from './chatgptIdentity';
-import { type ChatGptTurnSelectors, trackChatGptLastTurn } from './chatgptLastTurn';
 import { ChatGptMoveMenu, MOVE_ENTRY_ATTR } from './chatgptMoveMenu';
 import { openNativeRename } from './chatgptNativeRename';
 import { openChatGptConversation, readCurrentConversation } from './chatgptPage';
@@ -65,6 +67,8 @@ const HINT_KEYS = ['chatgptFoldersHint', 'floatingPanelGestureHint'];
 const NOTICE_MS = 4000;
 /** Like that status line, each outcome replaces the one before. */
 const NOTICE_CHANNEL = 'chatgpt-folders';
+/** Load and save problems, as long as AI Studio's error notices. */
+const STORAGE_NOTICE_MS = 5000;
 
 type Notice = { message: string; tone: ToastTone };
 
@@ -190,8 +194,10 @@ class ChatGptFoldersView {
           export: () => this.exportFolders(),
         },
         cloud: {
-          upload: () => void uploadChatGptFolders(this.cloudHost),
-          sync: () => void syncChatGptFolders(this.cloudHost),
+          upload: () => void uploadSiteFolders(this.cloudSite),
+          sync: () => void syncSiteFolders(this.cloudSite),
+          // The sidebar's one cloud button was a bare label; only the floating panel showed these times.
+          tooltip: () => readCloudTooltip('chatgpt'),
         },
       });
       section.setDataReady(this.store.ready);
@@ -218,7 +224,7 @@ class ChatGptFoldersView {
     );
   }
 
-  refresh(change: ChatGptFolderChange = 'data'): void {
+  refresh(change: SiteFolderChange = 'data'): void {
     const { data, ready } = this.store;
     // The panel keeps the manual order, which an open does not change.
     this.panel?.update(data);
@@ -327,17 +333,32 @@ class ChatGptFoldersView {
       });
   }
 
-  /** What a cloud upload or sync reads and writes; the background picks Drive or iCloud. */
-  private readonly cloudHost: ChatGptCloudSyncHost = {
-    data: () => this.store.data,
-    ready: () => this.store.ready,
-    replaceData: (data) => this.store.replaceData(data),
+  /**
+   * What a cloud upload or sync reads and writes; the background picks Drive or
+   * iCloud. A failed save is reported by the store.
+   */
+  private readonly cloudSite: CloudSyncSite = {
+    platform: 'chatgpt',
+    t,
     notify: (message, tone) => this.notify(message, tone),
-    isDisposed: () => this.scope.isDisposed,
+    begin: () => {
+      if (!this.store.ready) return null;
+      return {
+        current: () => !this.scope.isDisposed,
+        folders: this.store.data,
+        data: () => this.store.data,
+        save: async (folders) => this.store.ready && this.store.replaceData(folders),
+      };
+    },
   };
 
   private notify(message: string, tone: ToastTone): void {
     this.toaster.show({ message, tone, durationMs: NOTICE_MS, channel: NOTICE_CHANNEL });
+  }
+
+  /** A load or save problem stays on its own, so the next outcome does not replace it. */
+  notifyStorage(message: string, tone: ToastTone): void {
+    if (!this.scope.isDisposed) this.toaster.show({ message, tone, durationMs: STORAGE_NOTICE_MS });
   }
 
   private setOpen(open: boolean): void {
@@ -356,12 +377,14 @@ class ChatGptFoldersView {
     const store = this.store;
     this.panel = mountFloatingPanel({
       data: store.data,
-      rootBucketId: CHATGPT_FOLDER_CONFIG.rootBucketId,
-      conversationIdentity: FOLDER_SITE_POLICIES.chatgpt,
+      policy: FOLDER_SITE_POLICIES.chatgpt,
+      cloudActions: true,
       dataReady: store.ready,
       hintKeys: HINT_KEYS,
-      onCloudUpload: () => void uploadChatGptFolders(this.cloudHost),
-      onCloudSync: () => void syncChatGptFolders(this.cloudHost),
+      onCloudUpload: () => void uploadSiteFolders(this.cloudSite),
+      onCloudSync: () => void syncSiteFolders(this.cloudSite),
+      getCloudUploadTooltip: () => readSyncTooltip('chatgpt', 'upload'),
+      getCloudSyncTooltip: () => readSyncTooltip('chatgpt', 'sync'),
       headerActions: [
         {
           modifier: 'import',
@@ -483,13 +506,6 @@ function importNotice(outcome: EditOutcome): Notice | null {
   }
 }
 
-/** The page's selectors for a user message and the prompt, when its adapter names both. */
-function turnSelectorsOf(adapter: SiteAdapter | null): ChatGptTurnSelectors | null {
-  const userTurn = adapter?.selectors.userTurn;
-  const composer = adapter?.selectors.composer;
-  return userTurn && composer ? { userTurn, composer } : null;
-}
-
 export async function activateChatGptFolders(
   scope: PluginScope,
   settings: PluginSettings = {},
@@ -497,7 +513,11 @@ export async function activateChatGptFolders(
 ): Promise<void> {
   await initI18n();
   if (scope.isDisposed) return;
-  const store = new ChatGptFolderStore();
+  // Created below, before the store first loads, so a load's notice has somewhere to show.
+  let view: ChatGptFoldersView | null = null;
+  const store = new ChatGptFolderStore(undefined, (message, tone) =>
+    view?.notifyStorage(message, tone),
+  );
   scope.child(store, 'chatgpt-folders:store');
   const [prefs, sectionPrefs] = await Promise.all([loadPanelPrefs(), loadSectionPrefs()]);
   if (scope.isDisposed) return;
@@ -516,12 +536,12 @@ export async function activateChatGptFolders(
       nativeTitle,
     });
   };
-  const view = new ChatGptFoldersView(scope, store, commands, prefs, (c) => {
+  view = new ChatGptFoldersView(scope, store, commands, prefs, (c) => {
     void renameNative(c);
   });
-  const turnSelectors = turnSelectorsOf(adapter);
-  view.start(sectionPrefs, turnSelectors !== null);
-  if (turnSelectors) {
+  const sendSite = sendSiteOf(adapter);
+  view.start(sectionPrefs, sendSite !== null);
+  if (sendSite) {
     // A send seen while the stored folders still load waits for them; the store
     // refuses edits until then, and the tracker has already let the send go.
     const waiting = new Map<string, number>();
@@ -542,8 +562,9 @@ export async function activateChatGptFolders(
         waiting.clear();
       };
     }, 'chatgpt-folders:activity-wait');
-    trackChatGptLastTurn(scope, turnSelectors, (conversationId, lastTurnAt) => {
-      waiting.set(conversationId, Math.max(lastTurnAt, waiting.get(conversationId) ?? 0));
+    // A chat's Activity time is when the user last sent a message in it.
+    trackUserSends(scope, sendSite, ({ conversationKey, at }) => {
+      waiting.set(conversationKey, Math.max(at, waiting.get(conversationKey) ?? 0));
       flush();
     });
   }

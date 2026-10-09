@@ -138,6 +138,19 @@ describe('ChatGPT legacy FolderCommands folder moves', () => {
     expect(parents).toMatchObject({ work: 'personal', notes: 'work', personal: null });
   });
 
+  it('reports the depth limit when a new folder would nest too deep, and creates nothing', async () => {
+    const outcome = await createLegacyChatGptCommands(store).run({
+      kind: 'createFolder',
+      folderId: 'ignored',
+      name: 'Too deep',
+      parentId: 'notes',
+    });
+    await settle();
+
+    expect(outcome).toMatchObject({ kind: 'rejected', reason: 'depth_limit' });
+    expect(stored().folders.map((f) => f.name)).toEqual(['Work', 'Notes', 'Personal']);
+  });
+
   it('refuses to nest a folder under one that is gone', async () => {
     const outcome = await createLegacyChatGptCommands(store).run({
       kind: 'moveFolder',

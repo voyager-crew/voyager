@@ -2,7 +2,7 @@
  * Sync-related type definitions for Google Drive sync feature
  * Provides type safety for sync state management and data transfer
  */
-import type { FolderPlatform } from '@/features/folder/platforms';
+import type { FolderPlatform, SyncTimeField } from '@/features/folder/platforms';
 import type { PluginStateMap } from '@/features/plugins/storage/pluginState';
 import type { StarredMessagesData } from '@/features/savedLibrary/starTypes';
 
@@ -32,23 +32,15 @@ export interface SyncAccountScope {
 }
 
 /**
- * Current sync state for UI display
+ * Current sync state for UI display. Each folder platform keeps its own last upload and
+ * last download time under the fields `FOLDER_PLATFORMS` names, so a new platform's times
+ * are required here (and in `DEFAULT_SYNC_STATE`) as soon as it is registered.
  */
-export interface SyncState {
+export interface SyncState extends Record<SyncTimeField, number | null> {
   /** Cloud storage provider. iCloud is available only in the Safari build. */
   provider: SyncProvider;
   /** Current sync mode setting */
   mode: SyncMode;
-  /** Timestamp of last successful sync/download (null if never synced) - Gemini */
-  lastSyncTime: number | null;
-  /** Timestamp of last successful upload (null if never uploaded) - Gemini */
-  lastUploadTime: number | null;
-  /** Timestamp of last successful sync/download for AI Studio */
-  lastSyncTimeAIStudio: number | null;
-  /** Timestamp of last successful upload for AI Studio */
-  lastUploadTimeAIStudio: number | null;
-  lastSyncTimeChatGPT: number | null;
-  lastUploadTimeChatGPT: number | null;
   /** Whether a sync operation is currently in progress */
   isSyncing: boolean;
   /** Last error message (null if no error) */
@@ -144,7 +136,7 @@ export type {
 export type {
   TimelineHierarchyConversationData as TimelineHierarchyConversationDataSync,
   TimelineHierarchyData as TimelineHierarchyDataSync,
-} from '@/pages/content/timeline/hierarchyTypes';
+} from '@/features/timeline/hierarchyTypes';
 
 /**
  * Fork nodes export payload format
@@ -163,7 +155,7 @@ export interface TimelineHierarchyExportPayload {
   format: 'gemini-voyager.timeline-hierarchy.v1';
   exportedAt: string;
   version?: string;
-  data: import('@/pages/content/timeline/hierarchyTypes').TimelineHierarchyData;
+  data: import('@/features/timeline/hierarchyTypes').TimelineHierarchyData;
 }
 
 /**

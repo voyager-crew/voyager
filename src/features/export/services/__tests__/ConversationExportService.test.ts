@@ -2,7 +2,6 @@
  * ConversationExportService unit tests
  */
 import { toBlob } from 'html-to-image';
-import { JSDOM } from 'jsdom';
 import JSZip from 'jszip';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -23,11 +22,6 @@ vi.mock('html-to-image', () => {
   };
 });
 
-// Setup DOM environment
-
-const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
-global.document = dom.window.document as unknown as Document;
-global.window = dom.window as unknown as Window & typeof globalThis;
 const extractor = createContentExtractor(resolveExportAdapter());
 const extracted = (turns: ChatTurn[]): ChatTurn[] =>
   turns.map((turn) => extractTurnContent(turn, extractor));

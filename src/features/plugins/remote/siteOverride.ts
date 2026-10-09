@@ -73,6 +73,8 @@ export function isSameSiteAdapter(a: SiteAdapter | null, b: SiteAdapter | null):
     a.conversationIdPattern === b.conversationIdPattern &&
     JSON.stringify(a.matches) === JSON.stringify(b.matches) &&
     JSON.stringify(a.selectors) === JSON.stringify(b.selectors) &&
+    // The send tracker reads turn keys through this list; a change must rebuild it.
+    JSON.stringify(a.turnKeyAttributes ?? []) === JSON.stringify(b.turnKeyAttributes ?? []) &&
     JSON.stringify(a.theme) === JSON.stringify(b.theme) &&
     JSON.stringify([...a.capabilities].sort()) === JSON.stringify([...b.capabilities].sort())
   );

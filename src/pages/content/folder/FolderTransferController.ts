@@ -8,7 +8,7 @@ import type {
 } from '@/features/folder/types/import-export';
 import { getTranslationSyncUnsafe as t } from '@/utils/i18n';
 
-import { readSyncTooltip, syncFolders, uploadFolders } from './folderCloudSync';
+import { syncFolders, uploadFolders } from './folderCloudSync';
 import { createImportDialog } from './folderImportDialog';
 import {
   type FolderTransferHost,
@@ -17,6 +17,7 @@ import {
   debugTransfer,
   isCurrentTransfer,
 } from './folderTransferHost';
+import { readSyncTooltip } from './syncTooltip';
 
 function importSuccessMessage(strategy: ImportStrategy, stats: ImportResult): string {
   const skipped =
@@ -219,10 +220,10 @@ export class FolderTransferController {
   }
 
   getUploadTooltip(): Promise<string> {
-    return readSyncTooltip('upload');
+    return readSyncTooltip('gemini', 'upload');
   }
 
   getSyncTooltip(): Promise<string> {
-    return readSyncTooltip('sync');
+    return readSyncTooltip('gemini', 'sync');
   }
 }

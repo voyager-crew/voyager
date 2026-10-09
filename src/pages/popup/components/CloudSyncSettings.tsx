@@ -145,7 +145,7 @@ export function CloudSyncSettings({ sourceTabId }: CloudSyncSettingsProps = {}) 
           </div>
         </div>
 
-        {platform === 'gemini' && (
+        {FOLDER_PLATFORMS[platform].syncsConversationExtras && (
           <div className="highlight-cloud-sync-row border-border/70 bg-muted/30 gap-3 rounded-lg border px-3 py-2">
             <div className="min-w-0">
               <Label htmlFor="highlight-cloud-sync" className="cursor-pointer text-sm font-medium">

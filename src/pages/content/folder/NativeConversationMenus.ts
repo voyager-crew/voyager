@@ -35,7 +35,8 @@ import {
 
 export interface NativeConversationMenuCallbacks {
   getContext: () => NativeSidebarReadContext & { storageKey: string };
-  onMoveToFolder: (info: NativeConversationInfo) => void;
+  /** `trigger` is the ⋮ button the menu opened from, which outlives the menu. */
+  onMoveToFolder: (info: NativeConversationInfo, trigger: HTMLElement | null) => void;
   onConfirmedDelete: (id: string) => void;
 }
 
@@ -214,7 +215,7 @@ export class NativeConversationMenus {
         const context = getConversationMenuContext(panel);
         const info = context ? this.resolveConversationInfoForMenu(context) : null;
         if (info) {
-          this.callbacks.onMoveToFolder(info);
+          this.callbacks.onMoveToFolder(info, context?.trigger ?? null);
         } else {
           debug('warn', 'Move to folder: could not resolve conversation info on click');
         }

@@ -1,4 +1,4 @@
-import { StorageKeys, isTimelineStyle } from '@/core/types/common';
+import { StorageKeys } from '@/core/types/common';
 import { applyRTLClass } from '@/core/utils/rtl';
 import { initI18n } from '@/utils/i18n';
 
@@ -9,6 +9,12 @@ import { TimelineNavigation } from './TimelineNavigation';
 import { TimelineState } from './TimelineState';
 import { TimelineTooltip } from './TimelineTooltip';
 import { TimelineView } from './TimelineView';
+import {
+  type TimelineSettingField,
+  type TimelineSettings,
+  readTimelineSettings,
+  timelineSettingKey,
+} from './timelineSettings';
 import type { DotElement, ExtGlobal, SyncSettingsListener, TimelinePositionData } from './types';
 /** Composes one conversation's DOM observation, state, navigation and timeline surfaces. */
 export class TimelineEngine {
@@ -20,6 +26,15 @@ export class TimelineEngine {
   private zeroTurnsRetryCount = 0;
   private onSyncSettingsChanged: SyncSettingsListener | null = null;
   private static readonly SEARCH_HIGHLIGHT_CLASS = 'timeline-search-highlight';
+  /** Sync fields that are behaviour knobs; width and position belong to rail placement. */
+  private static readonly SETTING_KNOBS: readonly TimelineSettingField[] = [
+    'ScrollMode',
+    'Style',
+    'HideContainer',
+    'Draggable',
+    'MarkerLevel',
+    'PreviewPinned',
+  ];
   private readonly state: TimelineState;
   private readonly geometry: TimelineHierarchyGeometry;
   private readonly timestamps: TimelineTimestampOwner | null;
@@ -30,6 +45,10 @@ export class TimelineEngine {
   private readonly lifetime = new AbortController();
   private recalcTimer: number | null = null;
   private pluginSettings: Record<string, unknown> | null = null;
+  /** The site's timeline sync values, as last read or changed. */
+  private storedSettings: Record<string, unknown> = {};
+  /** The settings the rail shows; later changes apply only the knobs that differ. */
+  private applied: TimelineSettings | null = null;
   private markerLevelSwitch = false;
   // A scope aborts before awaiting pending startup, so old teardown cannot touch a newly mounted rail.
   constructor(
@@ -80,17 +99,41 @@ export class TimelineEngine {
   handleHash = (): void => {
     this.navigation.handleStarredMessageNavigation();
   };
-  private settingKey(suffix: string): string {
-    return `${this.adapter.storage.settingsPrefix}${suffix}`;
+  private settingKey(field: TimelineSettingField): string {
+    return timelineSettingKey(this.adapter.route.siteId, field);
   }
+  private resolveSettings(): TimelineSettings {
+    return readTimelineSettings({
+      siteId: this.adapter.route.siteId,
+      pluginSettings: this.pluginSettings,
+      stored: this.storedSettings,
+    });
+  }
+  /** Plugin settings of a catalog rail; Gemini reads only its sync keys. */
   updateSettings(settings: Record<string, unknown>): void {
     if (this.destroyed) return;
     this.pluginSettings = settings;
-    this.view.timelineStyle = settings.compactView === true ? 'compact' : 'dots';
-    if (isTimelineStyle(settings.timelineStyle)) this.view.timelineStyle = settings.timelineStyle;
-    this.view.applyTimelineStyle();
-    this.view.toggleDraggable(settings.draggable !== false);
-    this.setMarkerLevelEnabled(settings.markerLevel === true);
+    this.applyChangedSettings();
+  }
+  private applyChangedSettings(): void {
+    const next = this.resolveSettings();
+    const previous = this.applied;
+    this.applied = next;
+    const changed = (knob: keyof TimelineSettings) => !previous || previous[knob] !== next[knob];
+    if (changed('scrollMode')) this.navigation.mode = next.scrollMode;
+    if (changed('style')) {
+      this.view.timelineStyle = next.style;
+      this.view.applyTimelineStyle();
+    }
+    if (changed('hideContainer')) {
+      this.view.hideContainer = next.hideContainer;
+      this.view.applyContainerVisibility();
+    }
+    if (changed('draggable')) this.view.toggleDraggable(next.draggable);
+    // Levels follow the style too: they have a shape only on the dots rail.
+    if (changed('markerLevel')) this.setMarkerLevelEnabled(next.markerLevel);
+    else if (changed('style')) this.applyMarkerLevel();
+    if (changed('previewPinned')) this.view.previewPanel?.setPinned(next.previewPinned);
   }
   private mountUI(): void {
     this.view.mount();
@@ -110,6 +153,7 @@ export class TimelineEngine {
           summary: marker?.summary ?? dot.getAttribute('aria-label') ?? '',
           assistantSummary: marker?.assistantSummary ?? '',
           starred: this.state.isMarkerStarred(id),
+          timestamp: id ? (this.timestamps?.formatTooltipTimestamp(id) ?? null) : null,
         };
       },
     });
@@ -203,8 +247,7 @@ export class TimelineEngine {
         [this.settingKey('HideContainer')]: false,
         [this.settingKey('BarWidth')]: null,
         [this.settingKey('Draggable')]: false,
-        [this.settingKey('MarkerLevel')]:
-          this.pluginSettings !== null && this.pluginSettings.markerLevel === true,
+        [this.settingKey('MarkerLevel')]: false,
         [this.settingKey('Position')]: null,
         [this.settingKey('PreviewPinned')]: false,
         [StorageKeys.LANGUAGE]: null,
@@ -245,19 +288,18 @@ export class TimelineEngine {
       }
       if (this.destroyed) return;
 
-      const m = res?.[this.settingKey('ScrollMode')];
-      if (m === 'flow' || m === 'jump') this.navigation.mode = m;
-      const storedTimelineStyle = res?.[this.settingKey('Style')];
-      if (isTimelineStyle(storedTimelineStyle)) {
-        this.view.timelineStyle = storedTimelineStyle;
-      }
-      this.view.hideContainer = !!res?.[this.settingKey('HideContainer')];
+      this.storedSettings = res ?? {};
+      const settings = this.resolveSettings();
+      this.applied = settings;
+      this.navigation.mode = settings.scrollMode;
+      this.view.timelineStyle = settings.style;
+      this.view.hideContainer = settings.hideContainer;
       this.view.placement.restoreWidth(res?.[this.settingKey('BarWidth')]);
       this.view.applyContainerVisibility();
       this.view.applyTimelineStyle();
-      this.view.toggleDraggable(!!res?.[this.settingKey('Draggable')]);
-      this.setMarkerLevelEnabled(!!res?.[this.settingKey('MarkerLevel')]);
-      this.view.previewPanel?.setPinned(res?.[this.settingKey('PreviewPinned')] === true);
+      this.view.toggleDraggable(settings.draggable);
+      this.setMarkerLevelEnabled(settings.markerLevel);
+      this.view.previewPanel?.setPinned(settings.previewPinned);
       this.view.rtl = applyRTLClass(res?.[StorageKeys.LANGUAGE] as string | null | undefined);
 
       this.view.placement.restorePosition(
@@ -265,8 +307,6 @@ export class TimelineEngine {
       );
       this.view.updateRulerDirection();
       this.view.previewPanel?.reposition();
-
-      if (this.pluginSettings) this.updateSettings(this.pluginSettings);
 
       // listen for changes from popup and update mode live
       this.registerSyncSettingsListener();
@@ -292,37 +332,20 @@ export class TimelineEngine {
         area: string,
       ) => {
         if (area !== 'sync') return;
-        if (changes?.[this.settingKey('ScrollMode')]) {
-          const n = changes[this.settingKey('ScrollMode')].newValue;
-          if (n === 'flow' || n === 'jump') this.navigation.mode = n;
-        }
-        if (changes?.[this.settingKey('Style')]) {
-          const nextStyle = changes[this.settingKey('Style')].newValue;
-          if (isTimelineStyle(nextStyle)) {
-            this.view.timelineStyle = nextStyle;
-            this.view.applyTimelineStyle();
-            this.applyMarkerLevel();
-          }
-        }
-        if (changes?.[this.settingKey('HideContainer')]) {
-          this.view.hideContainer = !!changes[this.settingKey('HideContainer')].newValue;
-          this.view.applyContainerVisibility();
+        const knobs = TimelineEngine.SETTING_KNOBS.filter(
+          (field) => changes?.[this.settingKey(field)],
+        );
+        if (knobs.length > 0) {
+          const updated = { ...this.storedSettings };
+          for (const field of knobs)
+            updated[this.settingKey(field)] = changes[this.settingKey(field)].newValue;
+          this.storedSettings = updated;
+          this.applyChangedSettings();
         }
         if (changes?.[this.settingKey('BarWidth')]) {
           if (this.view.placement.restoreWidth(changes[this.settingKey('BarWidth')].newValue)) {
             this.view.applyContainerVisibility();
           }
-        }
-        if (changes?.[this.settingKey('Draggable')]) {
-          this.view.toggleDraggable(!!changes[this.settingKey('Draggable')].newValue);
-        }
-        if (changes?.[this.settingKey('MarkerLevel')]) {
-          this.setMarkerLevelEnabled(!!changes[this.settingKey('MarkerLevel')].newValue);
-        }
-        if (changes?.[this.settingKey('PreviewPinned')]) {
-          this.view.previewPanel?.setPinned(
-            changes[this.settingKey('PreviewPinned')].newValue === true,
-          );
         }
         if (changes?.[this.settingKey('Position')]) {
           this.view.placement.updateSavedPosition(

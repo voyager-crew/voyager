@@ -11,7 +11,7 @@ import { readChatGptFolderExport } from '@/features/plugins/builtin/chatgptFolde
 export type FolderPlatform = 'gemini' | 'aistudio' | 'chatgpt';
 
 export interface FolderPlatformDefinition {
-  /** Page hosts whose content scripts own this bucket. */
+  /** Page hosts whose content scripts own this bucket; the owner and sync trust only these. */
   hosts: readonly string[];
   /** `chrome.storage.local` base key; account isolation appends `:acct:<hash>`. */
   folderStorageKey: string;
@@ -30,9 +30,18 @@ export interface FolderPlatformDefinition {
       | { ok: false; reason: 'invalid' | 'wrong-site'; message?: string };
   } | null;
   driveFoldersFileName: string;
-  driveFoldersFileType: 'folders' | 'aistudio-folders' | 'chatgpt-folders';
-  lastUploadTimeField: 'lastUploadTime' | 'lastUploadTimeAIStudio' | 'lastUploadTimeChatGPT';
-  lastSyncTimeField: 'lastSyncTime' | 'lastSyncTimeAIStudio' | 'lastSyncTimeChatGPT';
+  /**
+   * Whether this platform's sync also carries its conversation extras: stars, forks, timeline
+   * hierarchy and highlights in their account-scoped Drive files.
+   */
+  syncsConversationExtras: boolean;
+  /** `DataBackupService` namespace of the page-side folder backups (`gvBackup_<namespace>_*`). */
+  backupNamespace: string;
+  /** `SyncState` field and its `chrome.storage.local` key; both are persisted spellings. */
+  lastUploadTimeField: string;
+  lastUploadTimeStorageKey: string;
+  lastSyncTimeField: string;
+  lastSyncTimeStorageKey: string;
 }
 
 export const FOLDER_PLATFORMS = {
@@ -43,9 +52,12 @@ export const FOLDER_PLATFORMS = {
     syncsSharedData: true,
     folderExport: null,
     driveFoldersFileName: 'gemini-voyager-folders.json',
-    driveFoldersFileType: 'folders',
+    syncsConversationExtras: true,
+    backupNamespace: 'gemini-folders',
     lastUploadTimeField: 'lastUploadTime',
+    lastUploadTimeStorageKey: 'gvLastUploadTime',
     lastSyncTimeField: 'lastSyncTime',
+    lastSyncTimeStorageKey: 'gvLastSyncTime',
   },
   aistudio: {
     hosts: ['aistudio.google.com', 'aistudio.google.cn'],
@@ -54,22 +66,35 @@ export const FOLDER_PLATFORMS = {
     syncsSharedData: true,
     folderExport: null,
     driveFoldersFileName: 'gemini-voyager-aistudio-folders.json',
-    driveFoldersFileType: 'aistudio-folders',
+    syncsConversationExtras: false,
+    backupNamespace: 'aistudio-folders',
     lastUploadTimeField: 'lastUploadTimeAIStudio',
+    lastUploadTimeStorageKey: 'gvLastUploadTimeAIStudio',
     lastSyncTimeField: 'lastSyncTimeAIStudio',
+    lastSyncTimeStorageKey: 'gvLastSyncTimeAIStudio',
   },
   chatgpt: {
+    // The canonical host only: `chat.openai.com` redirects here, is not in the optional
+    // host permissions, and must not write or sync this bucket. Links read from it still open.
     hosts: ['chatgpt.com'],
     folderStorageKey: StorageKeys.FOLDER_DATA_CHATGPT,
     accountIsolationStorageKey: null,
     syncsSharedData: false,
     folderExport: { platform: 'chatgpt', read: readChatGptFolderExport },
     driveFoldersFileName: 'gemini-voyager-chatgpt-folders.json',
-    driveFoldersFileType: 'chatgpt-folders',
+    syncsConversationExtras: false,
+    backupNamespace: 'chatgpt-folders',
     lastUploadTimeField: 'lastUploadTimeChatGPT',
+    lastUploadTimeStorageKey: 'gvLastUploadTimeChatGPT',
     lastSyncTimeField: 'lastSyncTimeChatGPT',
+    lastSyncTimeStorageKey: 'gvLastSyncTimeChatGPT',
   },
 } as const satisfies Readonly<Record<FolderPlatform, FolderPlatformDefinition>>;
+
+/** The per-platform `SyncState` transfer-time fields, as the registry spells them. */
+export type SyncTimeField = (typeof FOLDER_PLATFORMS)[FolderPlatform][
+  | 'lastUploadTimeField'
+  | 'lastSyncTimeField'];
 
 export type AccountScopedFolderPlatform = {
   [P in FolderPlatform]: (typeof FOLDER_PLATFORMS)[P]['accountIsolationStorageKey'] extends null

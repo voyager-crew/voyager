@@ -1,12 +1,6 @@
-import { JSDOM } from 'jsdom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ExportDialog } from '../ExportDialog';
-
-const dom = new JSDOM('<!DOCTYPE html><html><head></head><body></body></html>');
-globalThis.document = dom.window.document;
-globalThis.window = dom.window as unknown as Window & typeof globalThis;
-globalThis.navigator = dom.window.navigator;
 
 function setUserAgentVendor(userAgent: string, vendor: string): void {
   Object.defineProperty(globalThis.navigator, 'userAgent', {

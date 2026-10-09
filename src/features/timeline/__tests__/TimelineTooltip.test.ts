@@ -139,6 +139,25 @@ describe('TimelineTooltip', () => {
     expect(element.classList.contains('visible')).toBe(true);
   });
 
+  it('shows the send time above the prompt in the ruler style', () => {
+    context.style = 'ruler';
+    content.timestamp = '2026-10-10 00:05:20';
+    tooltip.show(dot);
+
+    const lines = [...element.children].map((child) => child.className);
+    expect(lines).toEqual([
+      'gv-timeline-ruler-time',
+      'gv-timeline-ruler-prompt',
+      'gv-timeline-ruler-response',
+    ]);
+    expect(element.querySelector('.gv-timeline-ruler-time')?.textContent).toBe(
+      '2026-10-10 00:05:20',
+    );
+    expect(element.getAttribute('aria-label')).toBe(
+      '2026-10-10 00:05:20\n★ A long conversation preview\nA model response',
+    );
+  });
+
   it('uses the marker label when a ruler summary is missing and omits an empty response', () => {
     context.style = 'ruler';
     content.summary = '';
