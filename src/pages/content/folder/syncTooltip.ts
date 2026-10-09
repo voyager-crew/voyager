@@ -38,26 +38,45 @@ const TOOLTIPS = {
 
 export type SyncTooltipKind = keyof typeof TOOLTIPS;
 
+type SyncTimes = Partial<Record<string, number | null>>;
+
+/** The background's sync state, or null when it cannot be read. */
+async function readSyncTimes(): Promise<SyncTimes | null> {
+  try {
+    const response = (await browser.runtime.sendMessage({ type: 'gv.sync.getState' })) as
+      | { ok?: boolean; state?: SyncTimes }
+      | undefined;
+    if (response?.ok && response.state) return response.state;
+  } catch (error) {
+    console.warn('[FolderSync] Failed to get sync state for tooltip:', error);
+  }
+  return null;
+}
+
+/** "Last synced: 5 minutes ago", or "Never synced", for this platform. */
+function lastRunLine(state: SyncTimes, platform: FolderPlatform, kind: SyncTooltipKind): string {
+  const keys = TOOLTIPS[kind];
+  // Each platform keeps its own times; reading another's shows the wrong site's sync.
+  const time = state[FOLDER_PLATFORMS[platform][keys.field]] ?? null;
+  return time ? t(keys.last).replace('{time}', formatRelativeTime(time)) : t(keys.never);
+}
+
 /** The button's label, plus this platform's last run time when the background knows it. */
 export async function readSyncTooltip(
   platform: FolderPlatform,
   kind: SyncTooltipKind,
 ): Promise<string> {
-  const keys = TOOLTIPS[kind];
-  const base = t(keys.base);
-  try {
-    const response = (await browser.runtime.sendMessage({ type: 'gv.sync.getState' })) as
-      | { ok?: boolean; state?: Partial<Record<string, number | null>> }
-      | undefined;
-    if (response?.ok && response.state) {
-      // Each platform keeps its own times; reading another's shows the wrong site's sync.
-      const time = response.state[FOLDER_PLATFORMS[platform][keys.field]] ?? null;
-      return time
-        ? `${base}\n${t(keys.last).replace('{time}', formatRelativeTime(time))}`
-        : `${base}\n${t(keys.never)}`;
-    }
-  } catch (error) {
-    console.warn('[FolderSync] Failed to get sync state for tooltip:', error);
-  }
-  return base;
+  const base = t(TOOLTIPS[kind].base);
+  const state = await readSyncTimes();
+  return state ? `${base}\n${lastRunLine(state, platform, kind)}` : base;
+}
+
+/** The merged cloud button's label, plus this platform's last upload and sync times. */
+export async function readCloudTooltip(platform: FolderPlatform): Promise<string> {
+  const base = t('folder_cloud');
+  const state = await readSyncTimes();
+  if (!state) return base;
+  return [base, lastRunLine(state, platform, 'upload'), lastRunLine(state, platform, 'sync')].join(
+    '\n',
+  );
 }

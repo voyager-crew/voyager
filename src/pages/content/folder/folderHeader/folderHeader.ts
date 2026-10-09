@@ -64,6 +64,8 @@ export type FolderHeaderAction = {
   onClick?: (event: MouseEvent) => void;
   /** Items to show when pressed, read at press time. */
   menu?: () => readonly FolderHeaderMenuItem[];
+  /** A fuller title, read each time the pointer or focus arrives; the accessible name stays the label. */
+  tooltip?: () => Promise<string>;
 };
 
 export type FolderHeaderOptions = {
@@ -109,6 +111,17 @@ function createActionButton(
   if (action.hidden) button.hidden = true;
   for (const [name, value] of Object.entries(action.attributes ?? {})) {
     button.setAttribute(name, value);
+  }
+  const tooltip = action.tooltip;
+  if (tooltip) {
+    const refresh = (): void =>
+      void tooltip()
+        .then((title) => {
+          button.title = title;
+        })
+        .catch(() => {});
+    button.addEventListener('mouseenter', refresh);
+    button.addEventListener('focus', refresh);
   }
   const openMenu = options.openMenu ?? defaultOpenMenu;
   button.addEventListener('click', (event) => {
@@ -236,7 +249,7 @@ export function menuIconHtml(path: string): string {
 
 /** The cloud button: one menu with Upload and Sync, whichever provider the user chose. */
 export function cloudMenuAction(
-  transfer: { upload: () => void; sync: () => void },
+  transfer: { upload: () => void; sync: () => void; tooltip?: () => Promise<string> },
   extra: Partial<Pick<FolderHeaderAction, 'reveal' | 'className'>> = {},
 ): FolderHeaderAction {
   return {
@@ -244,6 +257,7 @@ export function cloudMenuAction(
     icon: () => createCloudIcon(18),
     labelKey: 'folder_cloud',
     reveal: extra.reveal,
+    tooltip: transfer.tooltip,
     // Gemini's bundled symbol font lacks these cloud glyphs.
     menu: () => [
       {

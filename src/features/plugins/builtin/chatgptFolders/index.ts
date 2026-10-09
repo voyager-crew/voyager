@@ -38,7 +38,7 @@ import {
   bindRootDropZone,
   dropOnSidebar,
 } from '@/pages/content/folder/sidebarDrops';
-import { readSyncTooltip } from '@/pages/content/folder/syncTooltip';
+import { readCloudTooltip, readSyncTooltip } from '@/pages/content/folder/syncTooltip';
 import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 import { getTranslationSyncUnsafe as t, initI18n } from '@/utils/i18n';
 
@@ -196,6 +196,8 @@ class ChatGptFoldersView {
         cloud: {
           upload: () => void uploadSiteFolders(this.cloudSite),
           sync: () => void syncSiteFolders(this.cloudSite),
+          // The sidebar's one cloud button was a bare label; only the floating panel showed these times.
+          tooltip: () => readCloudTooltip('chatgpt'),
         },
       });
       section.setDataReady(this.store.ready);

@@ -21,7 +21,8 @@ export type FolderHeaderActionsOptions = {
   /** Site buttons, placed before import/export. */
   extra?: readonly FolderHeaderAction[];
   transfer: { import: () => void; export: () => void };
-  cloud: { upload: () => void; sync: () => void };
+  /** `tooltip`: the cloud button's title with the site's last upload and sync times. */
+  cloud: { upload: () => void; sync: () => void; tooltip?: () => Promise<string> };
   settings: (event: MouseEvent) => void;
   create: {
     className?: string;

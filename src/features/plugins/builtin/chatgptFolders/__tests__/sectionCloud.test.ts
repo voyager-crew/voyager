@@ -7,6 +7,7 @@ import type { FolderData } from '@/core/types/folder';
 import { ROOT_CONVERSATIONS_ID } from '@/features/folder/constants';
 import { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import { routeCatalogOutlineWrites } from '@/features/timeline/__tests__/catalogOutlineBackground';
+import { formatRelativeTime } from '@/pages/content/folder/syncTooltip';
 import { toastDriver } from '@/tests/toastDriver';
 import { initI18n, getTranslationSyncUnsafe as t } from '@/utils/i18n';
 
@@ -114,6 +115,38 @@ describe('ChatGPT folder section: cloud', () => {
       t('folder_cloud_upload'),
       t('folder_cloud_sync'),
     ]);
+  });
+
+  it('hovering the cloud button shows when the ChatGPT folders were last uploaded and synced', async () => {
+    const uploadedAt = Date.now() - 5 * 60_000;
+    const syncedAt = Date.now() - 2 * 3_600_000;
+    sendMessage.mockImplementation(async (message: { type: string }) =>
+      message.type === 'gv.sync.getState'
+        ? {
+            ok: true,
+            // Gemini's own times must not stand in for ChatGPT's.
+            state: {
+              lastUploadTime: 1,
+              lastSyncTime: 1,
+              lastUploadTimeChatGPT: uploadedAt,
+              lastSyncTimeChatGPT: syncedAt,
+            },
+          }
+        : undefined,
+    );
+    const cloud = headerButton(t('folder_cloud'));
+
+    cloud.dispatchEvent(new MouseEvent('mouseenter'));
+    await settle(10);
+
+    expect(cloud.title).toBe(
+      [
+        t('folder_cloud'),
+        t('lastUploaded').replace('{time}', formatRelativeTime(uploadedAt)),
+        t('lastSynced').replace('{time}', formatRelativeTime(syncedAt)),
+      ].join('\n'),
+    );
+    expect(cloud.getAttribute('aria-label')).toBe(t('folder_cloud'));
   });
 
   it('pressing the cloud button again closes its menu instead of reopening it', () => {
