@@ -7,6 +7,8 @@ export interface TimelineTooltipContent {
   summary: string;
   assistantSummary: string;
   starred: boolean;
+  /** Formatted send time, when the site records one. */
+  timestamp?: string | null;
 }
 
 interface TimelineTooltipOptions {
@@ -326,7 +328,16 @@ export class TimelineTooltip {
     prompt.setAttribute('dir', 'auto');
     prompt.textContent = id && content.starred ? `★ ${userText}` : userText;
 
-    const children: HTMLElement[] = [prompt];
+    const children: HTMLElement[] = [];
+    const timestamp = content.timestamp?.trim() ?? '';
+    // The node style prefixes the time to its text; the ruler card must carry it too, or it is lost here.
+    if (timestamp) {
+      const time = document.createElement('div');
+      time.className = 'gv-timeline-ruler-time';
+      time.textContent = timestamp;
+      children.push(time);
+    }
+    children.push(prompt);
     const assistantText = content.assistantSummary.trim();
     if (assistantText) {
       const response = document.createElement('div');
@@ -337,7 +348,10 @@ export class TimelineTooltip {
     }
 
     tip.replaceChildren(...children);
-    tip.setAttribute('aria-label', [prompt.textContent, assistantText].filter(Boolean).join('\n'));
+    tip.setAttribute(
+      'aria-label',
+      [timestamp, prompt.textContent, assistantText].filter(Boolean).join('\n'),
+    );
     tip.style.width = `${Math.floor(width)}px`;
     return tip.offsetHeight || (assistantText ? 70 : 42);
   }

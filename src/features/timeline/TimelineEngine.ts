@@ -153,6 +153,7 @@ export class TimelineEngine {
           summary: marker?.summary ?? dot.getAttribute('aria-label') ?? '',
           assistantSummary: marker?.assistantSummary ?? '',
           starred: this.state.isMarkerStarred(id),
+          timestamp: id ? (this.timestamps?.formatTooltipTimestamp(id) ?? null) : null,
         };
       },
     });
