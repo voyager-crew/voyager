@@ -182,6 +182,24 @@ export function chatgptExtractFormula(
   return true;
 }
 
+/** ChatGPT's current code block: a `div`, not a `pre`, with its source in a `code`. */
+const CODE_BLOCK_SELECTOR = '[data-markdown-copy="code-block"]';
+/** Block chrome ChatGPT leaves out of its own copy: language label, wrap and copy buttons. */
+const COPY_EXCLUDED_SELECTOR = '[data-markdown-copy="exclude"]';
+const CODE_LANGUAGE_LABEL_SELECTOR = `${COPY_EXCLUDED_SELECTOR} .truncate`;
+/** ChatGPT's own Mermaid drawing; the finished chart keeps no source to export. */
+const MERMAID_PREVIEW_SELECTOR = '[data-chatgpt-mermaid-preview]';
+const LANGUAGE_ID = /^[a-z0-9_+#.-]{1,32}$/i;
+const PLAIN_TEXT_IDS = new Set(['plaintext', 'plain', 'text', 'txt']);
+
+/** The header label names the language, localized: 纯文本 or "Plain text" mean none. */
+function readCodeLanguageLabel(block: Element): string {
+  const label = block.querySelector(CODE_LANGUAGE_LABEL_SELECTOR)?.textContent?.trim() ?? '';
+  if (!LANGUAGE_ID.test(label)) return '';
+  const language = label.toLowerCase();
+  return PLAIN_TEXT_IDS.has(language) ? '' : language;
+}
+
 function extractCodeBlock(
   child: Element,
   htmlParts: string[],
@@ -189,11 +207,21 @@ function extractCodeBlock(
   flags: Pick<ExtractedContent, 'hasImages' | 'hasFormulas' | 'hasTables' | 'hasCode'>,
   tagName?: string,
 ): boolean | undefined {
-  if (tagName !== 'pre') return;
-  const codeElement = child.querySelector('code') || child;
+  if (child.matches(COPY_EXCLUDED_SELECTOR)) return true;
+  if (child.matches(MERMAID_PREVIEW_SELECTOR) && !child.querySelector('pre, code')) return true;
+  // ChatGPT dropped `pre` and `language-*` for this block; read it by its copy markers, or
+  // its header label and buttons export as prose.
+  if (tagName !== 'pre' && !child.matches(CODE_BLOCK_SELECTOR)) return;
+  const codeElement =
+    Array.from(child.querySelectorAll('code')).find(
+      (code) => !code.closest(COPY_EXCLUDED_SELECTOR),
+    ) ?? (tagName === 'pre' ? child : null);
+  if (!codeElement) return true;
   const code = codeElement.textContent || '';
   const className = (codeElement.getAttribute('class') || '').toLowerCase();
-  const language = className.match(/language-([a-z0-9]+)/i)?.[1] ?? '';
+  const language =
+    className.match(/language-([a-z0-9]+)/i)?.[1] ??
+    readCodeLanguageLabel(child.querySelector(CODE_BLOCK_SELECTOR) ?? child);
   if (code.trim()) {
     flags.hasCode = true;
     htmlParts.push(`<pre><code class="language-${language}">${escapeHtml(code)}</code></pre>`);
