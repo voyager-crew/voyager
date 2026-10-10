@@ -1,3 +1,5 @@
+import { isGenericLanguageLabel } from '../codeBlock';
+
 /**
  * Check if a code block contains Mermaid syntax and appears complete enough to render
  */
@@ -155,4 +157,18 @@ export const normalizeMermaidCode = (code: string): string => {
       return [`${indent}${statement.trimEnd()}`, `${indent}%%${comment}`];
     })
     .join('\n');
+};
+
+/**
+ * Whether a code block is Mermaid, from its language label (lowercase, null
+ * when the block has none) and its source. Shared by Gemini and the `mermaid`
+ * plugin primitive, so every site decides the same way.
+ */
+export const shouldRenderMermaid = (language: string | null, code: string): boolean => {
+  // Explicitly "mermaid": always render.
+  if (language === 'mermaid') return true;
+  // A specific programming language: never, so MATLAB (%% comments), Python, etc. stay code.
+  if (language && !isGenericLanguageLabel(language)) return false;
+  // No label or a generic one: detect from the content.
+  return isMermaidCode(code);
 };

@@ -41,6 +41,8 @@ export function shouldSkipElement(element: Element): boolean {
     element.classList.contains('nanobanana-indicator') ||
     // Generated image overlay controls (share/copy/download buttons)
     element.classList.contains('generated-image-controls') ||
+    // A plugin's drawn diagram: its host code block, kept in the page, exports the source.
+    element.classList.contains('gv-diagram-panel') ||
     (element.classList.contains('hide-from-message-actions') &&
       !element.matches('.image-container, single-image, generated-image') &&
       !element.querySelector('img.hero-image, img.spark-licensed-portrait, img.image'))
@@ -76,6 +78,7 @@ export function stripExportArtifacts(root: HTMLElement): void {
     '.nanobanana-indicator',
     '.generated-image-controls',
     '.hide-from-message-actions',
+    '.gv-diagram-panel',
   ].join(',');
 
   root.querySelectorAll(selector).forEach((el) => {

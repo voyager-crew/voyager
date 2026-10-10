@@ -52,6 +52,11 @@
       "name": "chatgpt-user-latex",
       "source": "sites/chatgpt/plugins/user-latex/plugin.json",
       "official": true
+    },
+    {
+      "name": "chatgpt-diagram-rendering",
+      "source": "sites/chatgpt/plugins/diagram-rendering/plugin.json",
+      "official": true
     }
   ]
 }

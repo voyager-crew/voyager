@@ -8,6 +8,7 @@
  */
 import { PRIMITIVE_CONTRACTS } from './contracts';
 import { formulaCopyPrimitive } from './formulaCopy';
+import { mermaidPrimitive } from './mermaid';
 import { turnNavigatorPrimitive } from './turnNavigator';
 import type { Primitive } from './types';
 import { userLatexPrimitive } from './userLatex';
@@ -18,6 +19,7 @@ const PRIMITIVES: ReadonlyMap<string, Primitive<never>> = new Map<string, Primit
   [vimInputPrimitive.contract.name, vimInputPrimitive as Primitive<never>],
   [turnNavigatorPrimitive.contract.name, turnNavigatorPrimitive as Primitive<never>],
   [userLatexPrimitive.contract.name, userLatexPrimitive as Primitive<never>],
+  [mermaidPrimitive.contract.name, mermaidPrimitive as Primitive<never>],
 ]);
 
 export function getPrimitive(name: string): Primitive<never> | undefined {

@@ -42,6 +42,44 @@ export interface PrimitiveContract {
 
 export const PRIMITIVE_NAME_PATTERN = /^[a-z][a-zA-Z0-9]{1,39}$/;
 
+/**
+ * Params shared by the code-block diagram primitives (`mermaid`, and ECharts /
+ * WaveDrom after it): where a site keeps its replies, code blocks, their source
+ * text and language label. All optional; defaults read the site adapter.
+ */
+const CODE_BLOCK_DIAGRAM_PARAMS: Readonly<Record<string, PrimitiveParamSpec>> = {
+  turn: {
+    type: 'selector',
+    required: false,
+    description:
+      "Reply elements whose code blocks are rendered; defaults to the site adapter's assistantTurn.",
+  },
+  codeBlock: {
+    type: 'selector',
+    required: false,
+    description:
+      "One code block inside a reply. The diagram goes right before it, and it is hidden while the diagram shows. Defaults to the site adapter's codeBlock, else pre.",
+  },
+  code: {
+    type: 'selector',
+    required: false,
+    description:
+      'Element inside the code block holding the source text; defaults to code, else the block itself.',
+  },
+  codeLine: {
+    type: 'selector',
+    required: false,
+    description:
+      'Line elements inside the source element, joined with newlines, for hosts that render one element per line without newline characters.',
+  },
+  language: {
+    type: 'selector',
+    required: false,
+    description:
+      'Element inside the code block whose text is the language label; defaults to a language-* class on the source element or the block.',
+  },
+};
+
 export const PRIMITIVE_CONTRACTS: readonly PrimitiveContract[] = [
   {
     name: 'formulaCopy',
@@ -137,6 +175,14 @@ export const PRIMITIVE_CONTRACTS: readonly PrimitiveContract[] = [
     },
     description:
       'Renders $…$ and $$…$$ LaTeX the user typed in their own messages, keeping the source for export and copy; turning it off restores the text.',
+  },
+  {
+    name: 'mermaid',
+    sinceEngine: '1.7.0',
+    semantic: ['assistantTurn', 'codeBlock'],
+    params: CODE_BLOCK_DIAGRAM_PARAMS,
+    description:
+      'Renders Mermaid code blocks in replies as diagrams with a Diagram / Code toggle, using the renderer Gemini uses. The code block stays in the page for copy and export; turning the plugin off removes the diagrams.',
   },
 ];
 

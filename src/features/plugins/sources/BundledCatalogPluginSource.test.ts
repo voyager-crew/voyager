@@ -12,6 +12,7 @@ describe('BundledCatalogPluginSource', () => {
 
     // Discovery order: site directory, then plugin directory.
     expect(manifests.map((plugin) => plugin.id)).toEqual([
+      'voyager.chatgpt-diagram-rendering',
       'voyager.chatgpt-reading-width',
       'voyager.chatgpt-user-latex',
       'voyager.claude-cjk-render-fix',

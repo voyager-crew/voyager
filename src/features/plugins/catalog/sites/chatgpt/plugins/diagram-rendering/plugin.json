@@ -1,0 +1,54 @@
+{
+  "$schema": "https://voyager.nagi.fun/plugin.schema.json",
+  "id": "voyager.chatgpt-diagram-rendering",
+  "name": "ChatGPT · Diagram rendering",
+  "version": "1.0.0",
+  "description": "Show Mermaid code blocks in ChatGPT's replies as diagrams, as Voyager does on Gemini. Switch any block back to its code.",
+  "i18n": {
+    "zh": {
+      "name": "ChatGPT · 图表渲染",
+      "description": "把 ChatGPT 回复里的 Mermaid 代码块显示成图表，和 Voyager 在 Gemini 上一样；每个代码块都能切回源码。"
+    },
+    "zh_TW": {
+      "name": "ChatGPT · 圖表渲染",
+      "description": "把 ChatGPT 回覆裡的 Mermaid 程式碼區塊顯示成圖表，和 Voyager 在 Gemini 上一樣；每個區塊都能切回原始碼。"
+    },
+    "ja": {
+      "name": "ChatGPT · 図表のレンダリング",
+      "description": "ChatGPT の返答に含まれる Mermaid コードブロックを、Gemini での Voyager と同じように図として表示します。ブロックごとにコード表示へ戻せます。"
+    },
+    "ko": {
+      "name": "ChatGPT · 다이어그램 렌더링",
+      "description": "ChatGPT 답변의 Mermaid 코드 블록을 Gemini에서처럼 다이어그램으로 보여 줍니다. 블록마다 코드 보기로 되돌릴 수 있습니다."
+    },
+    "fr": {
+      "name": "ChatGPT · Rendu des diagrammes",
+      "description": "Affiche les blocs de code Mermaid des réponses de ChatGPT sous forme de diagrammes, comme Voyager le fait sur Gemini. Chaque bloc peut revenir à son code."
+    },
+    "es": {
+      "name": "ChatGPT · Renderizado de diagramas",
+      "description": "Muestra los bloques de código Mermaid de las respuestas de ChatGPT como diagramas, igual que Voyager en Gemini. Cada bloque puede volver a su código."
+    },
+    "pt": {
+      "name": "ChatGPT · Renderização de diagramas",
+      "description": "Mostra os blocos de código Mermaid das respostas do ChatGPT como diagramas, como o Voyager faz no Gemini. Cada bloco pode voltar ao código."
+    },
+    "ru": {
+      "name": "ChatGPT · Отрисовка диаграмм",
+      "description": "Показывает блоки кода Mermaid в ответах ChatGPT как диаграммы, как Voyager делает это в Gemini. Любой блок можно переключить обратно на код."
+    },
+    "ar": {
+      "name": "ChatGPT · عرض المخططات",
+      "description": "يعرض كتل شيفرة Mermaid في ردود ChatGPT كمخططات، كما يفعل Voyager في Gemini. ويمكن إرجاع أي كتلة إلى شيفرتها."
+    }
+  },
+  "author": "voyager-official",
+  "category": "readability",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/voyager-crew/voyager/tree/main/src/features/plugins/catalog/sites/chatgpt/plugins/diagram-rendering",
+  "engine": ">=1.7.0",
+  "tier": "declarative",
+  "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+  "requires": { "handlers": ["mermaid"] },
+  "contributes": { "domOps": [{ "op": "native", "handler": "mermaid", "params": {} }] }
+}

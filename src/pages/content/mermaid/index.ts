@@ -1,9 +1,8 @@
 import { logger } from '@/core/services/LoggerService';
 
-import { isGenericLanguageLabel } from '../codeBlock';
 import { createStyles, renderMermaid } from './codeBlock';
 import { MermaidRenderer } from './renderer';
-import { isMermaidCode } from './source';
+import { shouldRenderMermaid } from './source';
 
 const renderer = new MermaidRenderer();
 
@@ -41,20 +40,7 @@ const processCodeBlocks = () => {
     // Check the language label from Gemini's code block header
     const language = getCodeBlockLanguage(codeEl);
 
-    // Case 1: Language is explicitly "mermaid" - always render
-    if (language === 'mermaid') {
-      renderMermaid(codeEl as HTMLElement, codeText, renderer);
-      return;
-    }
-
-    // Case 2: Language is a specific programming language (not generic) - skip rendering
-    // This prevents false positives for MATLAB (%% comments), Python, etc.
-    if (language && !isGenericLanguageLabel(language)) {
-      return;
-    }
-
-    // Case 3: No language label or generic label - use content detection
-    if (isMermaidCode(codeText)) {
+    if (shouldRenderMermaid(language, codeText)) {
       renderMermaid(codeEl as HTMLElement, codeText, renderer);
     }
   });

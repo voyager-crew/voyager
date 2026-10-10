@@ -148,7 +148,8 @@ export const createStyles = () => {
   document.head.appendChild(style);
 };
 
-function createMermaidErrorCard(errorMessage: string): HTMLElement {
+/** The card shown in place of a diagram whose source does not parse. */
+export function createMermaidErrorCard(errorMessage: string): HTMLElement {
   const card = document.createElement('div');
   card.style.cssText =
     'padding: 24px; text-align: center; color: var(--gemini-on-surface-variant, #666);';

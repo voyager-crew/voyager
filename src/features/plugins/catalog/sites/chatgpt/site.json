@@ -6,6 +6,7 @@
   "selectors": {
     "userTurn": "[data-user-message-bubble], [data-message-author-role=\"user\"]:not(:has([data-user-message-bubble]))",
     "assistantTurn": "[data-chatgpt-selection-message-id]",
+    "codeBlock": "pre",
     "composer": "#prompt-textarea, div[contenteditable=\"true\"]",
     "sidebar": "nav[aria-label], #stage-slideover-sidebar"
   },

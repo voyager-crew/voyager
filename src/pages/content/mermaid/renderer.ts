@@ -1,4 +1,4 @@
-type MermaidTheme = 'dark' | 'light';
+export type MermaidTheme = 'dark' | 'light';
 type MermaidLibrary = Awaited<typeof import('mermaid')>['default'];
 
 const MERMAID_LIGHT_THEME_DIRECTIVE = '%%{init: {"theme":"default"}}%%';
@@ -139,11 +139,17 @@ const getMermaidTheme = (): MermaidTheme =>
     ? 'dark'
     : 'light';
 
-/** Owns the lazy library cache and the theme used by the active configuration. */
+/**
+ * Owns the lazy library cache and the theme used by the active configuration.
+ * `resolveTheme` defaults to Gemini's page state; plugin sites pass
+ * `html[data-gv-scheme]`.
+ */
 export class MermaidRenderer {
   private instance: MermaidLibrary | null = null;
   private loadFailed = false;
   private initializedTheme: MermaidTheme | null = null;
+
+  constructor(private readonly resolveTheme: () => MermaidTheme = getMermaidTheme) {}
 
   private async load(): Promise<MermaidLibrary | null> {
     if (this.instance) return this.instance;
@@ -164,7 +170,7 @@ export class MermaidRenderer {
     const mermaid = await this.load();
     if (!mermaid) return false;
 
-    const theme = getMermaidTheme();
+    const theme = this.resolveTheme();
     mermaid.initialize({
       startOnLoad: false,
       theme: theme === 'dark' ? 'dark' : 'default',
@@ -179,8 +185,11 @@ export class MermaidRenderer {
     return true;
   }
 
-  /** Raw SVGs need sanitizing before insertion. Null means loading failed; syntax errors become text. */
-  async render(normalizedCode: string) {
+  /**
+   * Raw SVGs need sanitizing before insertion. Null means loading failed; syntax errors become text.
+   * In a dark theme a light copy is rendered for export unless `lightExport` is false.
+   */
+  async render(normalizedCode: string, { lightExport = true }: { lightExport?: boolean } = {}) {
     const mermaid = await this.load();
     if (!mermaid) return null;
 
@@ -216,7 +225,7 @@ export class MermaidRenderer {
     }
 
     let lightExportSvg: string | null = null;
-    if (renderedDiagram && this.initializedTheme === 'dark') {
+    if (lightExport && renderedDiagram && this.initializedTheme === 'dark') {
       const exportId = `${uniqueId}-export`;
       try {
         const exportResult = await mermaid.render(
