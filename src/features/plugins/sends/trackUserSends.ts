@@ -12,6 +12,7 @@
  * nowhere (ChatGPT's temporary chats) report nothing. Everything here fails
  * closed: a missed send is fine, a send pinned to the wrong turn is not.
  */
+import { textWithLatexSource } from '@/core/utils/userLatexSource';
 import {
   hasComposerAttachments,
   readComposerText,
@@ -118,7 +119,8 @@ export function trackUserSends(
     if (!newest || pending.known.has(newest.key)) return;
     // Exactly its prompt: a refused prompt stays unsent, and the chat's own last
     // message hydrating next must not pass for it. A file sent alone has no prompt.
-    if (pending.prompt !== '' && compact(newest.turn.textContent ?? '') !== pending.prompt) return;
+    if (pending.prompt !== '' && compact(textWithLatexSource(newest.turn)) !== pending.prompt)
+      return;
     const { conversationKey, sentAt } = pending;
     forget();
     if (routeConversation() === conversationKey)

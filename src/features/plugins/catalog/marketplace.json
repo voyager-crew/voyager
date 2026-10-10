@@ -47,6 +47,11 @@
       "name": "deepseek-wrap-code",
       "source": "sites/deepseek/plugins/wrap-code/plugin.json",
       "official": true
+    },
+    {
+      "name": "chatgpt-user-latex",
+      "source": "sites/chatgpt/plugins/user-latex/plugin.json",
+      "official": true
     }
   ]
 }

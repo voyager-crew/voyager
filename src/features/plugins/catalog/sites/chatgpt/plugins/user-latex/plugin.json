@@ -1,0 +1,54 @@
+{
+  "$schema": "https://voyager.nagi.fun/plugin.schema.json",
+  "id": "voyager.chatgpt-user-latex",
+  "name": "ChatGPT · LaTeX in Your Messages",
+  "version": "1.0.0",
+  "description": "Render the $…$ and $$…$$ math you type in your own messages, as ChatGPT already does in its replies.",
+  "i18n": {
+    "zh": {
+      "name": "ChatGPT · 用户消息 LaTeX 渲染",
+      "description": "渲染你在自己消息中输入的 $…$ 和 $$…$$ 数学公式，就像 ChatGPT 渲染它的回复一样。"
+    },
+    "zh_TW": {
+      "name": "ChatGPT · 使用者訊息 LaTeX 渲染",
+      "description": "渲染你在自己訊息中輸入的 $…$ 與 $$…$$ 數學公式，就像 ChatGPT 渲染它的回覆一樣。"
+    },
+    "ja": {
+      "name": "ChatGPT · 自分のメッセージの LaTeX 表示",
+      "description": "自分のメッセージに入力した $…$ と $$…$$ の数式を、ChatGPT の返答と同じように表示します。"
+    },
+    "ko": {
+      "name": "ChatGPT · 내 메시지 LaTeX 렌더링",
+      "description": "내가 입력한 메시지 속 $…$ 및 $$…$$ 수식을 ChatGPT 답변처럼 렌더링합니다."
+    },
+    "fr": {
+      "name": "ChatGPT · LaTeX dans vos messages",
+      "description": "Affiche en formules les $…$ et $$…$$ que vous tapez dans vos propres messages, comme ChatGPT le fait déjà dans ses réponses."
+    },
+    "es": {
+      "name": "ChatGPT · LaTeX en tus mensajes",
+      "description": "Renderiza las fórmulas $…$ y $$…$$ que escribes en tus propios mensajes, como ChatGPT ya hace en sus respuestas."
+    },
+    "pt": {
+      "name": "ChatGPT · LaTeX nas suas mensagens",
+      "description": "Renderiza as fórmulas $…$ e $$…$$ que você digita nas suas próprias mensagens, como o ChatGPT já faz nas respostas."
+    },
+    "ru": {
+      "name": "ChatGPT · LaTeX в ваших сообщениях",
+      "description": "Отображает формулы $…$ и $$…$$, набранные в ваших сообщениях, так же, как ChatGPT показывает их в своих ответах."
+    },
+    "ar": {
+      "name": "ChatGPT · LaTeX في رسائلك",
+      "description": "يعرض صيغ $…$ و$$…$$ التي تكتبها في رسائلك كما يعرضها ChatGPT في ردوده."
+    }
+  },
+  "author": "voyager-official",
+  "category": "readability",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/voyager-crew/voyager/tree/main/src/features/plugins/catalog/sites/chatgpt/plugins/user-latex",
+  "engine": ">=1.7.0",
+  "tier": "declarative",
+  "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+  "requires": { "handlers": ["userLatex"] },
+  "contributes": { "domOps": [{ "op": "native", "handler": "userLatex", "params": {} }] }
+}

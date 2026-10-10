@@ -53,6 +53,15 @@
           "sinceEngine": "1.5.0"
         }
       }
+    },
+    "userLatex": {
+      "sinceEngine": "1.7.0",
+      "params": {
+        "turn": {
+          "type": "selector",
+          "required": false
+        }
+      }
     }
   }
 }

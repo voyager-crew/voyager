@@ -2,6 +2,9 @@
  * User Message LaTeX Renderer
  * Renders LaTeX math ($...$ and $$...$$) in user-typed messages.
  *
+ * `renderUserLatex` / `restoreUserLatex` are site-neutral; the `userLatex`
+ * plugin primitive drives them on plugin sites. `startUserLatex` is Gemini's.
+ *
  * Target DOM structure (Gemini):
  *   span.user-query-bubble-with-background
  *     └─ span.horizontal-container
@@ -183,10 +186,14 @@ export function parseSegments(text: string): Segment[] {
   return out;
 }
 
+/** The nodes a render replaced, put back by {@link restoreUserLatex}. */
+const replacedNodes = new WeakMap<HTMLElement, Node[]>();
+
 /**
- * Render LaTeX in a single user message paragraph element.
+ * Render LaTeX in a single user message paragraph element. Once `signal` has
+ * aborted, a render still waiting for KaTeX leaves the element untouched.
  */
-async function processElement(el: HTMLElement): Promise<void> {
+export async function renderUserLatex(el: HTMLElement, signal?: AbortSignal): Promise<void> {
   if (el.dataset.userLatexProcessed) return;
 
   const raw = el.textContent ?? '';
@@ -211,6 +218,10 @@ async function processElement(el: HTMLElement): Promise<void> {
 
   const katex = await loadKatex();
   if (!katex) return; // load failed — leave the original "$...$" text in place
+  if (signal?.aborted) {
+    delete el.dataset.userLatexProcessed;
+    return;
+  }
 
   // If Gemini repainted this node while KaTeX was loading, the captured `raw`
   // (and its segments) are stale. Bail and let a later observer pass reprocess
@@ -245,14 +256,27 @@ async function processElement(el: HTMLElement): Promise<void> {
   // Preserve original text for downstream features (export, timeline)
   el.dataset.userLatexOriginal = raw;
   // Replace element content with rendered output
+  replacedNodes.set(el, Array.from(el.childNodes));
   el.textContent = '';
   el.appendChild(frag);
+}
+
+/** Undo {@link renderUserLatex}, putting the host's own text nodes back. */
+export function restoreUserLatex(el: HTMLElement): void {
+  const original = el.dataset.userLatexOriginal;
+  // Only over our own rendering: after a host repaint the element already holds the host's text.
+  if (original !== undefined && el.querySelector(':scope > [class^="gv-user-latex-"]')) {
+    el.replaceChildren(...(replacedNodes.get(el) ?? [document.createTextNode(original)]));
+  }
+  replacedNodes.delete(el);
+  delete el.dataset.userLatexOriginal;
+  delete el.dataset.userLatexProcessed;
 }
 
 /** Scan all currently visible user message lines. */
 function processAll(): void {
   document.querySelectorAll<HTMLElement>(USER_MSG_SELECTOR).forEach((el) => {
-    void processElement(el);
+    void renderUserLatex(el);
   });
 }
 

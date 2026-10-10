@@ -36,6 +36,7 @@ describe('bundled catalog discovery', () => {
     const entries = listBundledPluginEntries();
     expect(entries.map((entry) => entry.path)).toEqual([
       'sites/chatgpt/plugins/reading-width/plugin.json',
+      'sites/chatgpt/plugins/user-latex/plugin.json',
       'sites/claude/plugins/cjk-render-fix/plugin.json',
       'sites/claude/plugins/reading-width/plugin.json',
       'sites/deepseek/plugins/formula-copy/plugin.json',

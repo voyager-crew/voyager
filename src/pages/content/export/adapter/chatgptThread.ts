@@ -1,3 +1,4 @@
+import { textWithLatexSource } from '@/core/utils/userLatexSource';
 import type {
   ContentExtractor,
   ExtractedContent,
@@ -169,7 +170,7 @@ export function readTurnFingerprint(item: Element): string {
     if (id) ids.add(id);
   }
   if (ids.size > 0) return `ids:${Array.from(ids).sort().join(' ')}`;
-  return `text:${hashText(item.textContent?.trim() ?? '')}`;
+  return `text:${hashText(textWithLatexSource(item).trim())}`;
 }
 
 /** Whether a rendered ChatGPT thread (the current DOM) is present. */

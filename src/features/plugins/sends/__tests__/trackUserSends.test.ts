@@ -85,6 +85,19 @@ describe('ChatGPT send tracker', () => {
     expect(record).not.toHaveBeenCalled();
   });
 
+  it('a prompt with LaTeX is recorded once its math has rendered', async () => {
+    composer.textContent = 'Is $I_3$ the identity?';
+    composer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const item = exchange('sent');
+    // The user-LaTeX renderer's output: the source is kept beside the rendered glyphs.
+    item.firstElementChild!.innerHTML =
+      '<div dir="auto" data-user-latex-original="Is $I_3$ the identity?">Is <span class="gv-user-latex-inline">I3</span> the identity?</div>';
+    thread.append(item);
+    await settle();
+
+    expect(record.mock.calls).toEqual([[WORK, Date.now()]]);
+  });
+
   it('a shown send is recorded once under its chat', async () => {
     typeAndSend();
     thread.append(exchange('sent'));

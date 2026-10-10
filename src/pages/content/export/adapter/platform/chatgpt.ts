@@ -1,3 +1,4 @@
+import { USER_LATEX_ORIGINAL_ATTRIBUTE } from '@/core/utils/userLatexSource';
 import type { ExtractedContent } from '@/features/export/services/DOMContentExtractor';
 import { escapeHtml, escapeHtmlAttribute } from '@/features/export/services/exportDomPolicy';
 import type { SiteAdapter } from '@/features/plugins/types';
@@ -97,6 +98,12 @@ function readStructuredUserText(root: HTMLElement): string {
       return;
     }
     if (!(node instanceof Element)) return;
+    // Rendered user LaTeX exports as the source the user typed, as on Gemini.
+    const latex = node.getAttribute(USER_LATEX_ORIGINAL_ATTRIBUTE);
+    if (latex !== null) {
+      parts.push(latex.replace(/\r\n?/g, '\n').replace(/[^\S\n]+/g, ' '));
+      return;
+    }
     if (node.tagName === 'BR') {
       parts.push('\n');
       return;

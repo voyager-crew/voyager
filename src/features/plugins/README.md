@@ -323,7 +323,9 @@ Shipped primitives (`verbs/contracts.ts`): `formulaCopy` (since 1.3.0), `vimInpu
 `composer` param, defaults to the adapter's `composer` selector) and `turnNavigator` (since 1.4.0,
 `turn` / `conversationIdPattern` / `scrollContainer` / `yieldWhen` / `position`, all optional and
 defaulting to the adapter, plus the optional `conversationIdAttribute` attribute and `turnItem`
-selector since 1.5.0). The formula-copy,
+selector since 1.5.0) and `userLatex` (since 1.7.0, optional `turn` selector defaulting to the
+adapter's `userTurn`; renders the LaTeX a user typed with Gemini's renderer and restores the text on
+unmount). The formula-copy,
 Vim, Claude-timeline and ChatGPT-timeline builtins are now manifests that invoke these primitives;
 the shared timeline engine lives in `../timeline/TimelineEngine.ts`. Its catalog adapter
 (`../timeline/adapters/catalog/`) accumulates markers across virtualized windows (`turnMerge.ts`)

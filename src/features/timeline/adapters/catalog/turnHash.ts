@@ -1,6 +1,9 @@
+import { textWithLatexSource } from '@/core/utils/userLatexSource';
+
 /** The mounted turn's normalized DOM text is its shared summary and hash input. */
 export function turnSummary(element: Element): string {
-  return (element.textContent ?? '').replace(/\s+/g, ' ').trim();
+  // Rendered user LaTeX reads as its source, so rendering never changes a turn's id or star.
+  return textWithLatexSource(element).replace(/\s+/g, ' ').trim();
 }
 
 /**
