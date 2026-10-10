@@ -1,3 +1,5 @@
+import type { DOMPurify } from 'dompurify';
+
 import { isGenericLanguageLabel } from '../codeBlock';
 import { resolveMermaidTheme } from '../mermaid/renderer';
 
@@ -72,6 +74,26 @@ interface WaveDromBundle {
   /** Bundled dark skin with near-black fills remapped for Gemini's dark page. */
   waveSkinDarkRemapped: WaveSkin;
 }
+
+let wavePurifier: DOMPurify | null = null;
+
+/**
+ * Sanitise WaveDrom's SVG while keeping its `<use>` bricks. WaveDrom draws every
+ * wave segment as `<use xlink:href="#pclk">`; DOMPurify drops `<use>` by default,
+ * which left lanes with labels but no waves. Only same-document `#` references
+ * survive, on a private DOMPurify instance so the hook never touches other sanitisers.
+ */
+export const sanitizeWaveSvg = (purify: DOMPurify, svg: string): string => {
+  if (!wavePurifier) {
+    wavePurifier = purify(window);
+    wavePurifier.addHook('afterSanitizeAttributes', (node) => {
+      if (node.nodeName.toLowerCase() !== 'use') return;
+      const href = node.getAttribute('xlink:href') ?? node.getAttribute('href') ?? '';
+      if (!href.startsWith('#')) node.remove();
+    });
+  }
+  return wavePurifier.sanitize(svg, { ADD_TAGS: ['use'] });
+};
 
 /**
  * Strip fixed pixel `width`/`height` attributes from an SVG root that already
@@ -224,7 +246,7 @@ export const createWaveDromRenderer = () => {
       // The SVG markup is library-generated from parsed WaveJSON, but the markup
       // still crosses innerHTML twice (inline container + fullscreen overlay), so
       // sanitise once here. The bundled dark-skin <style> block survives DOMPurify.
-      const svgSanitized = DOMPurify.sanitize(svgRaw);
+      const svgSanitized = sanitizeWaveSvg(DOMPurify, svgRaw);
       return makeResponsiveSvg(svgSanitized);
     } catch {
       return null;

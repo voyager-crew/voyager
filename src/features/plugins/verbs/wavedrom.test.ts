@@ -80,6 +80,22 @@ describe('wavedrom primitive', () => {
     expect(diagramOf(reply)!.style.backgroundColor).toBe('rgb(249, 250, 251)');
   });
 
+  it('a timing diagram draws its waves, not just lane labels', async () => {
+    const reply = chatgptReply(WAVEJSON);
+    activate();
+
+    await vi.waitFor(() => expect(timingDiagram(reply)).not.toBeNull());
+    const lanes = [...timingDiagram(reply)!.querySelectorAll('[id^="wavelane_draw_"]')];
+    expect(lanes.length).toBeGreaterThan(0);
+    for (const lane of lanes) {
+      const bricks = [...lane.querySelectorAll('use')];
+      expect(bricks.length).toBeGreaterThan(0);
+      for (const brick of bricks) {
+        expect(brick.getAttribute('xlink:href') ?? brick.getAttribute('href')).toMatch(/^#/);
+      }
+    }
+  });
+
   it('an untagged ChatGPT block of WaveJSON renders from its content', async () => {
     const reply = chatgptReply(WAVEJSON, '纯文本');
     activate();

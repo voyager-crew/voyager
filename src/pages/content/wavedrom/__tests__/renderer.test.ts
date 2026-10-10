@@ -6,6 +6,7 @@ import {
   makeResponsiveSvg,
   isWaveJsonCode,
   resolveGeminiTheme,
+  sanitizeWaveSvg,
 } from '../renderer';
 import { DARK_SKIN_STYLE, createWaveDromFixture } from './fixture';
 
@@ -190,5 +191,24 @@ describe('WaveDrom renderer skin collections', () => {
     await fixture.renderer.render(code, true);
     const darkSkin = renderAnyMock.mock.calls[1]?.[2] as Record<string, unknown>;
     expect(darkSkin).toEqual(expect.objectContaining({ dark: expect.any(Array) }));
+  });
+});
+
+describe('sanitizeWaveSvg', () => {
+  it('keeps same-document wave bricks and drops references to other documents', async () => {
+    const DOMPurify = (await import('dompurify')).default;
+    const svg = sanitizeWaveSvg(
+      DOMPurify,
+      '<svg><defs><g id="pclk"></g></defs><g id="wavelane_draw_0_0">' +
+        '<use xlink:href="#pclk"></use><use href="https://elsewhere.example/a.svg#b"></use>' +
+        '<use xlink:href="data:image/svg+xml,x#a"></use></g></svg>',
+    );
+    const lane = new DOMParser()
+      .parseFromString(svg, 'text/html')
+      .querySelector('[id="wavelane_draw_0_0"]');
+    const hrefs = [...(lane?.querySelectorAll('use') ?? [])].map(
+      (use) => use.getAttribute('xlink:href') ?? use.getAttribute('href'),
+    );
+    expect(hrefs).toEqual(['#pclk']);
   });
 });
