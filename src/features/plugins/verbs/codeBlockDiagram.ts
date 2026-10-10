@@ -38,7 +38,7 @@ export interface CodeBlockDiagram {
   readonly label: string;
   /** Extra CSS inside the panel's shadow root; the drawn diagram sits in `.diagram`. */
   readonly css?: string;
-  /** Whether a block with this language label (lowercase, null without one) and source is this diagram. */
+  /** Whether a block with this language id (lowercase; null when untagged or plain text) and source is this diagram. */
   matches(language: string | null, source: string): boolean;
   /** Load the library for `scheme`; false leaves every block as code. Runs again after a scheme change. */
   prepare(scheme: Scheme): Promise<boolean>;
@@ -64,21 +64,13 @@ const HIDDEN_ATTR = 'data-gv-diagram-hidden';
 const PANEL_CLASS = 'gv-diagram-panel';
 const LANGUAGE_CLASS = /(?:^|\s)lang(?:uage)?-(\S+)/i;
 /**
- * Localized labels a host prints on a block that has no language (ChatGPT shows
- * 纯文本 in Chinese). Read as no label, so content detection still runs as on Gemini.
+ * A language label is an id such as `mermaid`, `c++` or `objective-c`. Hosts
+ * print a localized phrase on a block without one (ChatGPT: 纯文本, Texte brut),
+ * which no list can cover, so anything not shaped like an id is no label.
  */
-const PLAIN_TEXT_LABELS: ReadonlySet<string> = new Set([
-  'plain text',
-  '纯文本',
-  '純文字',
-  'プレーンテキスト',
-  '일반 텍스트',
-  'texte brut',
-  'texto sin formato',
-  'texto simples',
-  'обычный текст',
-  'نص عادي',
-]);
+const LANGUAGE_ID = /^[a-z0-9_+#.-]{1,32}$/;
+/** Ids that name no language either, so the block's content still decides. */
+const PLAIN_TEXT_IDS: ReadonlySet<string> = new Set(['text', 'plaintext', 'plain', 'txt']);
 
 const PAGE_CSS = `
 [${HIDDEN_ATTR}] { display: none !important; }
@@ -151,8 +143,14 @@ function querySafe(root: ParentNode, selector: string): Element[] {
   }
 }
 
-function classLanguage(element: Element): string | null {
-  return LANGUAGE_CLASS.exec(element.getAttribute('class') ?? '')?.[1] ?? null;
+function classLanguage(element: Element): string | undefined {
+  return LANGUAGE_CLASS.exec(element.getAttribute('class') ?? '')?.[1];
+}
+
+/** `label` as a lowercase language id, or null when it names no language. */
+function languageId(label: string | null | undefined): string | null {
+  const id = label?.trim().toLowerCase();
+  return id && LANGUAGE_ID.test(id) && !PLAIN_TEXT_IDS.has(id) ? id : null;
 }
 
 export function validateCodeBlockDiagramParams(
@@ -175,7 +173,7 @@ export function validateCodeBlockDiagramParams(
   return issues.length > 0 ? { success: false, error: issues } : { success: true, data: params };
 }
 
-/** A code block's language label (lowercase, null without one) and source text. */
+/** A code block's language id (lowercase; null when untagged or plain text) and source text. */
 export function readCodeBlock(
   block: Element,
   params: CodeBlockDiagramParams,
@@ -186,9 +184,11 @@ export function readCodeBlock(
     lines.length > 0
       ? lines.map((line) => line.textContent ?? '').join('\n')
       : (code.textContent ?? '');
-  const label = params.language ? querySafe(block, params.language)[0]?.textContent?.trim() : '';
-  const language = (label || classLanguage(code) || classLanguage(block))?.toLowerCase();
-  return { language: language && !PLAIN_TEXT_LABELS.has(language) ? language : null, source };
+  const label = params.language ? querySafe(block, params.language)[0]?.textContent : null;
+  // A localized "plain text" label is no language: the block's content decides, as on Gemini.
+  const language =
+    languageId(label) ?? languageId(classLanguage(code)) ?? languageId(classLanguage(block));
+  return { language, source };
 }
 
 export function activateCodeBlockDiagram(

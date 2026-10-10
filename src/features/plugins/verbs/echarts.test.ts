@@ -150,6 +150,16 @@ describe('echarts primitive', () => {
     expect(library.init).toHaveBeenCalledTimes(1);
   });
 
+  it.each(['纯文本', 'Texte brut', 'プレーンテキスト', 'Testo normale', 'Plain text'])(
+    'an untagged block in any UI language is detected by its content (%s)',
+    async (label) => {
+      const reply = chatgptReply(BAR_OPTION, label);
+      activate();
+
+      await vi.waitFor(() => expect(chartOf(reply)).not.toBeNull());
+    },
+  );
+
   it('an echarts block that does not parse stays code', async () => {
     const reply = chatgptReply('{ series: [{ type: "pie", data: [ }');
     activate();

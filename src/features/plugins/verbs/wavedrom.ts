@@ -27,18 +27,6 @@ import type { Primitive } from './types';
 /** Holds the fullscreen viewer's styles; Gemini installs the same element. */
 const WAVEDROM_STYLES_ID = 'gv-wavedrom-styles';
 
-/**
- * Header labels a host gives a block that has no language tag. ChatGPT shows a
- * localized "plain text" (measured: 纯文本). Like Gemini's generic labels, they
- * leave the block to content detection.
- */
-const UNTAGGED_LABELS: ReadonlySet<string> = new Set(['纯文本', 'plain text']);
-
-/** Whether a block is WaveDrom, deciding exactly as Gemini does once an untagged label is cleared. */
-function matchesWaveDrom(language: string | null, source: string): boolean {
-  return shouldRenderWaveDrom(language && UNTAGGED_LABELS.has(language) ? null : language, source);
-}
-
 function waveDromDiagram(): CodeBlockDiagram {
   let theme = resolveWaveRenderTheme(WAVEDROM_THEME_MODE, 'light');
   const renderer = createWaveDromRenderer();
@@ -46,7 +34,7 @@ function waveDromDiagram(): CodeBlockDiagram {
   return {
     name: 'wavedrom',
     label: '〜 Diagram',
-    matches: matchesWaveDrom,
+    matches: shouldRenderWaveDrom,
     prepare(scheme) {
       theme = resolveWaveRenderTheme(WAVEDROM_THEME_MODE, scheme);
       return renderer.load();

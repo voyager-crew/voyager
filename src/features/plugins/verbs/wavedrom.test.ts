@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { requireBundledSiteAdapter } from '../catalog/sites';
+import manifest from '../catalog/sites/chatgpt/plugins/diagram-rendering/plugin.json';
 import { PluginScope } from '../runtime/pluginScope';
 import type { PrimitiveContext } from './types';
 import { wavedromPrimitive } from './wavedrom';
@@ -10,9 +11,9 @@ const WAVEJSON =
 
 /** ChatGPT's code block as measured live: no `pre` and no `language-*` class. */
 const CODE_BLOCK = '[data-markdown-copy="code-block"]';
-/** Its header label: the tag, or a localized "plain text" (纯文本) for an untagged block. */
-const LABEL = '[data-markdown-copy="exclude"] .truncate';
-const LIVE_PARAMS = { codeBlock: CODE_BLOCK, language: LABEL };
+/** The params the shipped ChatGPT plugin passes: its header label names the language. */
+const chatgptParams =
+  manifest.contributes.domOps.find((op) => op.handler === 'wavedrom')?.params ?? {};
 
 function chatgptReply(source: string, label = 'wavedrom'): HTMLElement {
   const reply = document.createElement('div');
@@ -43,7 +44,7 @@ function activate(): void {
     settings: {},
     setTargetCounter: () => {},
   };
-  void wavedromPrimitive.activate(scope, LIVE_PARAMS, context);
+  void wavedromPrimitive.activate(scope, chatgptParams, context);
 }
 
 const blockOf = (reply: Element) => reply.querySelector<HTMLElement>(CODE_BLOCK)!;
@@ -85,6 +86,16 @@ describe('wavedrom primitive', () => {
 
     await vi.waitFor(() => expect(timingDiagram(reply)).not.toBeNull());
   });
+
+  it.each(['纯文本', 'Texte brut', 'プレーンテキスト', 'Testo normale', 'Plain text'])(
+    'an untagged block in any UI language is detected by its content (%s)',
+    async (label) => {
+      const reply = chatgptReply(WAVEJSON, label);
+      activate();
+
+      await vi.waitFor(() => expect(timingDiagram(reply)).not.toBeNull());
+    },
+  );
 
   it('turning the plugin off restores the wavedrom code block', async () => {
     const reply = chatgptReply(WAVEJSON);

@@ -58,7 +58,11 @@
         "handler": "echarts",
         "params": { "language": "[data-markdown-copy=\"exclude\"] .truncate" }
       },
-      { "op": "native", "handler": "wavedrom", "params": {} }
+      {
+        "op": "native",
+        "handler": "wavedrom",
+        "params": { "language": "[data-markdown-copy=\"exclude\"] .truncate" }
+      }
     ]
   }
 }
