@@ -1,3 +1,4 @@
+import { isGenericLanguageLabel } from '../codeBlock';
 import { resolveMermaidTheme } from '../mermaid/renderer';
 
 /** WaveDrom theme policy (mirrors AionUi's WaveThemeMode). */
@@ -98,6 +99,22 @@ export const isWaveJsonCode = (code: string): boolean => {
   // Must look like a JSON object.
   if (!trimmed.startsWith('{')) return false;
   return true;
+};
+
+/**
+ * Whether a code block is WaveDrom, from its language label (lowercase, null
+ * when the block has none) and its source. Shared by Gemini and the `wavedrom`
+ * plugin primitive, so every site decides the same way.
+ */
+export const shouldRenderWaveDrom = (language: string | null, code: string): boolean => {
+  // Explicit WaveDrom labels always render.
+  if (language === 'wavedrom' || language === 'wavejson') return true;
+  // Specific language labels (json, typescript, …) skip WaveJSON detection:
+  // WaveJSON is a niche format, and ordinary JSON output must not be
+  // mistaken for a timing diagram.
+  if (language && !isGenericLanguageLabel(language)) return false;
+  // Content-based detection for unlabelled / generic blocks (Code snippet, 代码段, …).
+  return isWaveJsonCode(code);
 };
 
 export const resolveGeminiTheme = (doc: Document, prefersDark: boolean): 'light' | 'dark' =>
@@ -214,7 +231,10 @@ export const createWaveDromRenderer = () => {
     }
   };
 
-  return { render };
+  /** Load the library ahead of the first render; false when it cannot load. */
+  const load = async (): Promise<boolean> => (await loadWaveDrom()) !== null;
+
+  return { render, load };
 };
 
 export type WaveDromRenderer = ReturnType<typeof createWaveDromRenderer>;

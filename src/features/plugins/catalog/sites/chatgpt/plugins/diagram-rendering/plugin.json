@@ -49,7 +49,7 @@
   "engine": ">=1.7.0",
   "tier": "declarative",
   "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
-  "requires": { "handlers": ["mermaid", "echarts"] },
+  "requires": { "handlers": ["mermaid", "echarts", "wavedrom"] },
   "contributes": {
     "domOps": [
       { "op": "native", "handler": "mermaid", "params": {} },
@@ -57,7 +57,8 @@
         "op": "native",
         "handler": "echarts",
         "params": { "language": "[data-markdown-copy=\"exclude\"] .truncate" }
-      }
+      },
+      { "op": "native", "handler": "wavedrom", "params": {} }
     ]
   }
 }

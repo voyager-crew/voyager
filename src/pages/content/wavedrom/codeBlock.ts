@@ -1,11 +1,10 @@
 import { logger } from '@/core/services/LoggerService';
 
-import { isGenericLanguageLabel } from '../codeBlock';
 import {
   getAppTheme,
-  isWaveJsonCode,
   PANEL_BG,
   resolveWaveRenderTheme,
+  shouldRenderWaveDrom,
   WAVEDROM_THEME_MODE,
   type WaveDromRenderer,
 } from './renderer';
@@ -96,23 +95,7 @@ export const createWaveDromCodeBlocks = (renderer: WaveDromRenderer, view: WaveD
       const codeText = codeEl.textContent || '';
       const language = getCodeBlockLanguage(codeEl);
 
-      // Explicit WaveDrom labels always render.
-      if (language === 'wavedrom' || language === 'wavejson') {
-        void renderWaveDrom(codeEl as HTMLElement, codeText);
-        return;
-      }
-
-      // Specific language labels (json, typescript, …) skip WaveJSON detection:
-      // WaveJSON is a niche format, and ordinary JSON output must not be
-      // mistaken for a timing diagram.
-      if (language && !isGenericLanguageLabel(language)) {
-        view.teardownForCode(codeEl);
-        return;
-      }
-
-      // Content-based detection for unlabelled / generic blocks
-      // (Code snippet, 代码段, …).
-      if (isWaveJsonCode(codeText)) {
+      if (shouldRenderWaveDrom(language, codeText)) {
         void renderWaveDrom(codeEl as HTMLElement, codeText);
         return;
       }

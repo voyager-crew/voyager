@@ -20,6 +20,11 @@ it brings the code back, and clicking the diagram opens it full screen. Blocks
 labelled with another language stay code. Turning the plugin off removes the
 diagrams and shows every code block again.
 
+WaveDrom timing diagrams work the same way through the `wavedrom` primitive: a
+block labelled `wavedrom` or `wavejson`, or an untagged (plain-text) one whose content
+reads as WaveJSON, is drawn as a timing diagram on the same light backdrop
+Gemini uses; invalid or unfinished WaveJSON stays code.
+
 ## How it works
 
 The plugin contains no code of its own: it invokes Voyager's first-party
@@ -45,6 +50,7 @@ in this manifest.
 
 - Requires Voyager plugin engine 1.7.0 or newer (`requires.handlers: ["mermaid", "echarts"]`).
 - Ships disabled; enable it from the popup on ChatGPT.
+- WaveDrom needs `requires.handlers` to include `wavedrom` (engine 1.7.0).
 
 ## Verification
 
@@ -56,3 +62,4 @@ in this manifest.
 - Dark theme: pending.
 - `bun run plugin:check src/features/plugins/catalog/sites/chatgpt/plugins/diagram-rendering`: passes.
 - Popup health: pending.
+- WaveDrom page, light and dark theme: pending a live check with a `wavedrom` block.
