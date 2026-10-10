@@ -14,7 +14,9 @@
  * Host safety: the host's code block is never moved or edited. The panel goes
  * right before it with its UI in a shadow root, so reply text, timeline
  * summaries and export never read it; the block is hidden only through
- * `data-gv-diagram-hidden`. Unmount removes every panel and that attribute.
+ * `data-gv-diagram-hidden`. One activation owns a block (`data-gv-diagram-owner`),
+ * so two diagram plugins never stack panels on it. Unmount removes every panel
+ * and both attributes.
  */
 import type { Result } from '@/core/types/common';
 import { SCHEME_ATTR, type Scheme, getScheme } from '@/pages/content/platformTheme/scheme';
@@ -61,6 +63,8 @@ const MAX_SELECTOR_LENGTH = 2_000;
 const RESCAN_DELAY_MS = 1_000;
 const DEFAULT_CODE_BLOCK = 'pre';
 const HIDDEN_ATTR = 'data-gv-diagram-hidden';
+/** The activation that draws a block, `<kind>:<id>`; any other activation leaves it alone. */
+const OWNER_ATTR = 'data-gv-diagram-owner';
 const PANEL_CLASS = 'gv-diagram-panel';
 const LANGUAGE_CLASS = /(?:^|\s)lang(?:uage)?-(\S+)/i;
 /**
@@ -204,6 +208,14 @@ export function activateCodeBlockDiagram(
   context.setTargetCounter(() => querySafe(doc, turn).length);
 
   const panels = new Map<HTMLElement, Panel>();
+  const owner = `${diagram.name}:${Math.random().toString(36).slice(2, 10)}`;
+  const ownedByOther = (block: HTMLElement): boolean => {
+    const current = block.getAttribute(OWNER_ATTR);
+    return current !== null && current !== owner;
+  };
+  const release = (block: HTMLElement): void => {
+    if (block.getAttribute(OWNER_ATTR) === owner) block.removeAttribute(OWNER_ATTR);
+  };
   const drawing = new Set<HTMLElement>();
   // A source that failed unexpectedly is not retried, or every rescan would redraw it.
   const failed = new WeakMap<HTMLElement, string>();
@@ -218,6 +230,7 @@ export function activateCodeBlockDiagram(
     panel.cleanup?.();
     panel.host.remove();
     block.removeAttribute(HIDDEN_ATTR);
+    release(block);
   };
 
   // Page styles arrive with the first panel, so a page without diagrams is never touched.
@@ -282,8 +295,12 @@ export function activateCodeBlockDiagram(
 
   const draw = async (block: HTMLElement, source: string): Promise<void> => {
     drawing.add(block);
+    block.setAttribute(OWNER_ATTR, owner);
     try {
-      if (!(await prepare()) || scope.isDisposed || !block.isConnected) return;
+      if (!(await prepare()) || scope.isDisposed || !block.isConnected) {
+        if (!panels.has(block)) release(block);
+        return;
+      }
       const panel = panels.get(block) ?? createPanel(block);
       panel.cleanup?.();
       panel.cleanup = undefined;
@@ -309,6 +326,8 @@ export function activateCodeBlockDiagram(
     for (const reply of querySafe(doc, turn)) {
       for (const block of querySafe(reply, blockSelector)) {
         if (!(block instanceof HTMLElement) || drawing.has(block)) continue;
+        // Two activations' panels before one block would displace each other on every rescan.
+        if (ownedByOther(block)) continue;
         const { language, source } = readCodeBlock(block, params);
         if (!diagram.matches(language, source)) {
           remove(block);
@@ -322,7 +341,13 @@ export function activateCodeBlockDiagram(
 
   // Registered first so it runs last: observers and timers are gone before panels go.
   scope.effect(
-    () => () => Array.from(panels.keys()).forEach(remove),
+    () => () => {
+      Array.from(panels.keys()).forEach(remove);
+      // A draw still waiting on its library holds a claim but no panel yet.
+      querySafe(doc, `[${OWNER_ATTR}="${owner}"]`).forEach((block) =>
+        block.removeAttribute(OWNER_ATTR),
+      );
+    },
     `${diagram.name}:remove-panels`,
   );
   let rescan: Dispose | null = null;

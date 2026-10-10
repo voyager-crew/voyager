@@ -160,6 +160,29 @@ describe('mermaid primitive', () => {
     removed.mockRestore();
   });
 
+  it('two diagram plugins on one block settle without redrawing', async () => {
+    const reply = chatgptReply(FLOWCHART);
+    const first = scope;
+    activate(chatgpt.adapter);
+    const second = new PluginScope();
+    scope = second;
+    activate(chatgpt.adapter);
+    scope = first;
+
+    // Two rescan periods: competing panels would displace each other on every one.
+    await new Promise((resolve) => setTimeout(resolve, 2_500));
+
+    expect(reply.querySelectorAll('.gv-diagram-panel')).toHaveLength(1);
+    expect(library.render).toHaveBeenCalledTimes(1);
+    expect(panelOf(reply)!.nextElementSibling).toBe(reply.querySelector('pre'));
+
+    // The other plugin takes the block over once the owner turns off.
+    await first.dispose();
+    await vi.waitFor(() => expect(drawn(reply)).toBe('Diagram'), { timeout: 3000 });
+    expect(reply.querySelectorAll('.gv-diagram-panel')).toHaveLength(1);
+    scope = second;
+  }, 10_000);
+
   it('a non-mermaid code block is left alone', async () => {
     // Mermaid-looking text under another language label stays code, as on Gemini.
     const python = chatgptReply(FLOWCHART, 'python');
