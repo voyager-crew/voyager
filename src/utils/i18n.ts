@@ -102,7 +102,7 @@ export function getTranslationSyncUnsafe(key: string): string {
  * Should be called early in the application lifecycle
  */
 export async function initI18n(): Promise<void> {
-  cachedLanguage = await getCurrentLanguage();
+  applyCachedLanguage(await getCurrentLanguage());
 
   // Listen for language changes. Several features call initI18n on their own
   // start, so register once per page instead of once per caller.
@@ -111,7 +111,7 @@ export async function initI18n(): Promise<void> {
   browser.storage.onChanged.addListener((changes, areaName) => {
     const next = changes[StorageKeys.LANGUAGE]?.newValue;
     if ((areaName === 'sync' || areaName === 'local') && typeof next === 'string') {
-      cachedLanguage = normalizeLanguage(next);
+      applyCachedLanguage(normalizeLanguage(next));
     }
   });
 }
@@ -123,7 +123,24 @@ export async function initI18n(): Promise<void> {
  * avoiding race conditions with the async storage.onChanged listener.
  */
 export function setCachedLanguage(lang: AppLanguage): void {
+  applyCachedLanguage(lang);
+}
+
+const languageSubscribers = new Set<() => void>();
+
+function applyCachedLanguage(lang: AppLanguage): void {
+  if (cachedLanguage === lang) return;
   cachedLanguage = lang;
+  for (const subscriber of languageSubscribers) subscriber();
+}
+
+/**
+ * Runs `callback` after the language synchronous translations use changes, so
+ * already-rendered labels can follow it. Returns the unsubscribe.
+ */
+export function onCachedLanguageChange(callback: () => void): () => void {
+  languageSubscribers.add(callback);
+  return () => languageSubscribers.delete(callback);
 }
 
 /**

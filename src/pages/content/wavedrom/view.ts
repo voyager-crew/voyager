@@ -1,8 +1,4 @@
-import {
-  DIAGRAM_TOOLBAR_BUTTON_CSS,
-  getDiagramToolbarLabels,
-  setDiagramToolbarButton,
-} from '@/core/ui/diagramToolbar';
+import { DIAGRAM_TOOLBAR_BUTTON_CSS, setDiagramToolbarButton } from '@/core/ui/diagramToolbar';
 
 import type { WaveDromFullscreen } from './fullscreen';
 
@@ -262,14 +258,13 @@ export const createWaveDromView = (fullscreen: WaveDromFullscreen) => {
       // the overlay in Code view (same fix as the Mermaid renderer).
       moveNativeCopyButton(codeBlockHost, toggleContainer);
 
-      const labels = getDiagramToolbarLabels();
       const diagramBtn = document.createElement('button');
-      setDiagramToolbarButton(diagramBtn, 'wavedrom', labels.diagram);
+      setDiagramToolbarButton(diagramBtn, 'wavedrom');
       diagramBtn.className = 'active';
       diagramBtn.dataset.view = 'diagram';
 
       const codeBtn = document.createElement('button');
-      setDiagramToolbarButton(codeBtn, 'code', labels.code);
+      setDiagramToolbarButton(codeBtn, 'code');
       codeBtn.dataset.view = 'code';
 
       toggleContainer.append(diagramBtn, codeBtn);

@@ -23,7 +23,6 @@ import {
   DIAGRAM_TOOLBAR_BUTTON_CSS,
   type DiagramKind,
   type DiagramToolbarIcon,
-  getDiagramToolbarLabels,
   setDiagramToolbarButton,
 } from '@/core/ui/diagramToolbar';
 import { SCHEME_ATTR, type Scheme, getScheme } from '@/pages/content/platformTheme/scheme';
@@ -53,13 +52,13 @@ export interface CodeBlockDiagram {
   prepare(scheme: Scheme): Promise<boolean>;
   /** Draw `source` into `target` (attached and visible); a returned cleanup runs before the next draw and on removal. */
   render(target: HTMLElement, source: string): Promise<void | (() => void)>;
-  /** The drawn diagram was clicked, or the fullscreen button pressed when `fullscreenLabel` is set. */
+  /** The drawn diagram was clicked, or the fullscreen button pressed when `fullscreenButton` is set. */
   openFullscreen?(target: HTMLElement): void;
   /**
-   * Accessible name of a toolbar fullscreen button. Set it for an interactive
-   * diagram (a chart's legend and tooltips), whose clicks must not open fullscreen.
+   * Adds a toolbar fullscreen button. Set it for an interactive diagram (a
+   * chart's legend and tooltips), whose clicks must not open fullscreen.
    */
-  readonly fullscreenLabel?: string;
+  readonly fullscreenButton?: boolean;
   /** Page-level setup, such as fullscreen styles, for the activation's lifetime. */
   install?(doc: Document): () => void;
 }
@@ -264,18 +263,16 @@ export function activateCodeBlockDiagram(
     const toolbar = doc.createElement('div');
     toolbar.className = 'toolbar';
     toolbar.setAttribute('role', 'group');
-    const button = (icon: DiagramToolbarIcon, label: string, iconOnly = false) => {
+    const button = (icon: DiagramToolbarIcon) => {
       const element = doc.createElement('button');
       element.type = 'button';
-      setDiagramToolbarButton(element, icon, label, { iconOnly });
+      setDiagramToolbarButton(element, icon);
       toolbar.append(element);
       return element;
     };
-    const labels = getDiagramToolbarLabels();
-    const diagramButton = button(diagram.kind, labels.diagram);
-    const codeButton = button('code', labels.code);
-    const fullscreenLabel = diagram.fullscreenLabel;
-    const fullscreenButton = fullscreenLabel ? button('fullscreen', fullscreenLabel, true) : null;
+    const diagramButton = button(diagram.kind);
+    const codeButton = button('code');
+    const fullscreenButton = diagram.fullscreenButton ? button('fullscreen') : null;
     const target = doc.createElement('div');
     target.className = 'diagram';
     root.append(style, toolbar, target);

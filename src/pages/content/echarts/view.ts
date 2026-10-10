@@ -1,8 +1,4 @@
-import {
-  DIAGRAM_TOOLBAR_BUTTON_CSS,
-  getDiagramToolbarLabels,
-  setDiagramToolbarButton,
-} from '@/core/ui/diagramToolbar';
+import { DIAGRAM_TOOLBAR_BUTTON_CSS, setDiagramToolbarButton } from '@/core/ui/diagramToolbar';
 
 import { provideEChartsDataUrl } from './exportBridge';
 import type { createEChartsFullscreen } from './fullscreen';
@@ -225,20 +221,19 @@ export function createEChartsView(
       // the overlay in Code view (same fix as the WaveDrom renderer).
       moveNativeCopyButton(codeBlockHost, toggleContainer);
 
-      const labels = getDiagramToolbarLabels();
       const diagramBtn = document.createElement('button');
-      setDiagramToolbarButton(diagramBtn, 'echarts', labels.diagram);
+      setDiagramToolbarButton(diagramBtn, 'echarts');
       diagramBtn.className = 'active';
       diagramBtn.dataset.view = 'diagram';
       diagramBtn.setAttribute('aria-pressed', 'true');
 
       const codeBtn = document.createElement('button');
-      setDiagramToolbarButton(codeBtn, 'code', labels.code);
+      setDiagramToolbarButton(codeBtn, 'code');
       codeBtn.dataset.view = 'code';
       codeBtn.setAttribute('aria-pressed', 'false');
 
       const fullscreenBtn = document.createElement('button');
-      setDiagramToolbarButton(fullscreenBtn, 'fullscreen', labels.fullscreen, { iconOnly: true });
+      setDiagramToolbarButton(fullscreenBtn, 'fullscreen');
       fullscreenBtn.dataset.action = 'fullscreen';
 
       toggleContainer.append(diagramBtn, codeBtn, fullscreenBtn);

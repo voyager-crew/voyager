@@ -1,9 +1,5 @@
 import { logger } from '@/core/services/LoggerService';
-import {
-  DIAGRAM_TOOLBAR_BUTTON_CSS,
-  getDiagramToolbarLabels,
-  setDiagramToolbarButton,
-} from '@/core/ui/diagramToolbar';
+import { DIAGRAM_TOOLBAR_BUTTON_CSS, setDiagramToolbarButton } from '@/core/ui/diagramToolbar';
 
 import { openFullscreen } from './fullscreen';
 import { type MermaidRenderer, sanitizeMermaidSvg } from './renderer';
@@ -213,14 +209,13 @@ function getOrCreateWrapper(codeBlockHost: HTMLElement): HTMLElement {
       toggleContainer.appendChild(nativeCopyBtn);
     }
 
-    const labels = getDiagramToolbarLabels();
     const diagramBtn = document.createElement('button');
-    setDiagramToolbarButton(diagramBtn, 'mermaid', labels.diagram);
+    setDiagramToolbarButton(diagramBtn, 'mermaid');
     diagramBtn.className = 'active';
     diagramBtn.dataset.view = 'diagram';
 
     const codeBtn = document.createElement('button');
-    setDiagramToolbarButton(codeBtn, 'code', labels.code);
+    setDiagramToolbarButton(codeBtn, 'code');
     codeBtn.dataset.view = 'code';
 
     toggleContainer.appendChild(diagramBtn);

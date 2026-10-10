@@ -10,18 +10,12 @@ import {
   createMaximize2Icon,
   createWorkflowIcon,
 } from '@/core/icons/diagramToolbarIcons';
-import { getTranslationSyncUnsafe } from '@/utils/i18n';
+import { getTranslationSyncUnsafe, onCachedLanguageChange } from '@/utils/i18n';
 
 /** Which diagram a Diagram button shows; each kind has its own icon. */
 export type DiagramKind = 'mermaid' | 'echarts' | 'wavedrom';
 
 export type DiagramToolbarIcon = DiagramKind | 'code' | 'fullscreen';
-
-export interface DiagramToolbarLabels {
-  readonly diagram: string;
-  readonly code: string;
-  readonly fullscreen: string;
-}
 
 const ICON_SIZE = 14;
 
@@ -37,36 +31,54 @@ const ICONS: Record<DiagramToolbarIcon, (size: number) => SVGSVGElement> = {
   fullscreen: createMaximize2Icon,
 };
 
-// Follows Voyager's own language setting like the rest of its injected UI;
-// chrome.i18n would use the browser locale and show English on a Chinese setup.
-function message(key: string, fallback: string): string {
+const LABELS: Record<'diagram' | 'code' | 'fullscreen', readonly [key: string, fallback: string]> =
+  {
+    diagram: ['diagramButton', 'Diagram'],
+    code: ['diagramCodeButton', 'Code'],
+    fullscreen: ['echartsFullscreenButton', 'Fullscreen'],
+  };
+
+const labelOf = (icon: DiagramToolbarIcon): string => {
+  const [key, fallback] = LABELS[icon === 'code' || icon === 'fullscreen' ? icon : 'diagram'];
   const text = getTranslationSyncUnsafe(key);
   return text && text !== key ? text : fallback;
-}
+};
 
-export function getDiagramToolbarLabels(): DiagramToolbarLabels {
-  return {
-    diagram: message('diagramButton', 'Diagram'),
-    code: message('diagramCodeButton', 'Code'),
-    fullscreen: message('echartsFullscreenButton', 'Fullscreen'),
-  };
-}
+const labelled = new Map<WeakRef<HTMLButtonElement>, DiagramToolbarIcon>();
+let stopFollowingLanguage: (() => void) | null = null;
 
-/**
- * Gives a toolbar button its icon and visible label. An icon-only button
- * carries the label as its accessible name and tooltip instead.
- */
-export function setDiagramToolbarButton(
-  button: HTMLButtonElement,
-  icon: DiagramToolbarIcon,
-  label: string,
-  { iconOnly = false }: { iconOnly?: boolean } = {},
-): void {
+function applyButton(button: HTMLButtonElement, icon: DiagramToolbarIcon): void {
+  const label = labelOf(icon);
   button.replaceChildren(ICONS[icon](ICON_SIZE));
-  if (iconOnly) {
+  if (icon === 'fullscreen') {
     button.title = label;
     button.setAttribute('aria-label', label);
   } else {
     button.append(label);
   }
+}
+
+// Rendered buttons relabel when the Voyager language changes, not only on the
+// next render; refs are weak so removed toolbars are never kept alive.
+function relabelAll(): void {
+  for (const [ref, icon] of labelled) {
+    const button = ref.deref();
+    if (button) applyButton(button, icon);
+    else labelled.delete(ref);
+  }
+  if (labelled.size === 0) {
+    stopFollowingLanguage?.();
+    stopFollowingLanguage = null;
+  }
+}
+
+/**
+ * Gives a toolbar button its icon and label in the Voyager language setting
+ * (not the browser locale), and keeps the label in that language as it changes.
+ * The fullscreen button is icon-only: its label is the accessible name and tooltip.
+ */
+export function setDiagramToolbarButton(button: HTMLButtonElement, icon: DiagramToolbarIcon): void {
+  applyButton(button, icon);
+  labelled.set(new WeakRef(button), icon);
+  stopFollowingLanguage ??= onCachedLanguageChange(relabelAll);
 }

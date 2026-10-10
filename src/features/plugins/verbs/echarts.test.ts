@@ -4,6 +4,7 @@ import { createContentExtractor } from '@/features/export/services/DOMContentExt
 import { turnSummary } from '@/features/timeline/adapters/catalog/turnHash';
 import { PANEL_BG } from '@/pages/content/echarts/renderer';
 import { buildChatGptAdapter } from '@/pages/content/export/adapter/platform/chatgpt';
+import { setCachedLanguage } from '@/utils/i18n';
 
 import { requireBundledSiteAdapter } from '../catalog/sites';
 import manifest from '../catalog/sites/chatgpt/plugins/diagram-rendering/plugin.json';
@@ -23,17 +24,6 @@ const library = vi.hoisted(() => {
   };
 });
 vi.mock('@/pages/content/echarts/runtime', () => ({ init: library.init }));
-
-// Stands in for the user's Voyager language setting, which toolbar labels follow.
-const uiLanguage = vi.hoisted(() => ({ messages: null as Record<string, string> | null }));
-vi.mock('@/utils/i18n', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/utils/i18n')>();
-  return {
-    ...actual,
-    getTranslationSyncUnsafe: (key: string) =>
-      uiLanguage.messages?.[key] ?? actual.getTranslationSyncUnsafe(key),
-  };
-});
 
 const PIE_OPTION = '{\n  series: [{ type: "pie", data: [{ value: 1, name: "a" }] }],\n}';
 const BAR_OPTION = `{
@@ -203,11 +193,7 @@ describe('echarts primitive', () => {
   });
 
   it('diagram toolbar buttons show an icon and a translated label', async () => {
-    uiLanguage.messages = {
-      diagramButton: '图表',
-      diagramCodeButton: '代码',
-      echartsFullscreenButton: '全屏',
-    };
+    setCachedLanguage('zh');
     try {
       const reply = chatgptReply(PIE_OPTION);
       activate();
@@ -225,7 +211,7 @@ describe('echarts primitive', () => {
       expect(fullscreenButton.textContent).toBe('');
       expect(fullscreenButton.getAttribute('aria-label')).toBe('全屏');
     } finally {
-      uiLanguage.messages = null;
+      setCachedLanguage('en');
     }
   });
 

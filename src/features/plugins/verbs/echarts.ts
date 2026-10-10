@@ -5,7 +5,6 @@
  * the options are parsed and sanitized as on Gemini (never evaluated), the
  * library stays a lazy import, and the theme follows `html[data-gv-scheme]`.
  */
-import { getDiagramToolbarLabels } from '@/core/ui/diagramToolbar';
 import { createEChartsFullscreen } from '@/pages/content/echarts/fullscreen';
 import { CHART_HEIGHT, PANEL_BG, createEChartsRenderer } from '@/pages/content/echarts/renderer';
 import { parseEChartsOption, shouldRenderECharts } from '@/pages/content/echarts/source';
@@ -41,7 +40,7 @@ function echartsDiagram(): CodeBlockDiagram {
   box-sizing: border-box;
   background-color: var(--gv-echarts-panel-bg);
 }`,
-    fullscreenLabel: getDiagramToolbarLabels().fullscreen,
+    fullscreenButton: true,
     matches: shouldRenderECharts,
     async prepare(next) {
       scheme = next;
