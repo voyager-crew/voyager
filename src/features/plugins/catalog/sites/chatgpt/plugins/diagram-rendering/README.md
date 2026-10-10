@@ -13,53 +13,51 @@ engine: '>=1.7.0'
 
 # ChatGPT · Diagram rendering
 
-ChatGPT shows a Mermaid diagram it writes as a plain code block. With the
-plugin on, each Mermaid block in a reply is drawn as a diagram, with the
-renderer and detection Voyager uses on Gemini; a **Diagram / Code** toggle above
-it brings the code back, and clicking the diagram opens it full screen. Blocks
-labelled with another language stay code. Turning the plugin off removes the
-diagrams and shows every code block again.
+ChatGPT shows an ECharts option or a WaveDrom timing diagram it writes as a
+plain code block. With the plugin on, each such block in a reply is drawn with
+the renderer and detection Voyager uses on Gemini; a **Diagram / Code** toggle
+above it brings the code back. Blocks labelled with another language stay code.
+Turning the plugin off removes the diagrams and shows every code block again.
 
-WaveDrom timing diagrams work the same way through the `wavedrom` primitive: a
-block labelled `wavedrom` or `wavejson`, or an untagged (plain-text) one whose content
-reads as WaveJSON, is drawn as a timing diagram on the same light backdrop
-Gemini uses; invalid or unfinished WaveJSON stays code.
+- **ECharts**: a block labelled `echarts`, `echart` or `chart`, or an untagged
+  one whose content is an ECharts option, is parsed (never evaluated), sanitized
+  and drawn as an interactive chart. Its **⛶** toolbar button opens it full
+  screen, since clicks on the chart belong to its legend and tooltips.
+- **WaveDrom**: a block labelled `wavedrom` or `wavejson`, or an untagged one
+  whose content reads as WaveJSON, is drawn as a timing diagram on the light
+  backdrop Gemini uses; clicking it opens it full screen. Invalid or unfinished
+  WaveJSON stays code.
+
+Mermaid is not part of this plugin: ChatGPT now draws Mermaid itself
+(`[data-chatgpt-mermaid-preview]`) and leaves no code block behind, so a second
+copy would only duplicate it. Voyager's `mermaid` primitive stays available for
+other sites.
 
 ## How it works
 
-The plugin contains no code of its own: it invokes Voyager's first-party
-`mermaid` primitive through a `native` op, on the ChatGPT adapter's
-`codeBlock` (`pre`) inside each `assistantTurn`. The language comes from the
-block's `language-*` class; an unlabelled block is drawn only when its content
-reads as a complete Mermaid diagram.
-
-A second `native` op invokes the `echarts` primitive on ChatGPT's current code
-block (`[data-markdown-copy="code-block"]`, source in its `code`), reading the
-language from the header label `[data-markdown-copy="exclude"] .truncate`. A
-block labelled `echarts`, `echart` or `chart`, or a plain-text one (纯文本) whose
-content is an ECharts option, is parsed (never evaluated), sanitized and drawn as
-an interactive chart with Gemini's renderer; its **⛶** toolbar button opens it
-full screen, since clicks on the chart belong to its legend and tooltips.
+The plugin contains no code of its own: two `native` ops invoke Voyager's
+first-party `echarts` and `wavedrom` primitives on the ChatGPT adapter's
+`codeBlock` (`[data-markdown-copy="code-block"]`, source in its `code`) inside
+each `assistantTurn`. Both read the language from the header label
+`[data-markdown-copy="exclude"] .truncate`. ChatGPT localizes the label of an
+untagged block (纯文本, Texte brut, …), so the engine counts a label as a
+language only when it is shaped like an id such as `echarts` or `json`;
+anything else, and `text` / `plaintext`, leaves the block to content detection.
 
 ChatGPT's code block is never moved or edited, so its copy button, text
 selection and export keep working: the diagram sits in a panel just before it,
 inside a shadow root, and the block is hidden with `data-gv-diagram-hidden`
 only while the diagram view is chosen. The theme follows ChatGPT's light or dark
-mode through `html[data-gv-scheme]`. WaveDrom will join as another `native` op
-in this manifest.
+mode through `html[data-gv-scheme]`.
 
-- Requires Voyager plugin engine 1.7.0 or newer (`requires.handlers: ["mermaid", "echarts"]`).
+- Requires Voyager plugin engine 1.7.0 or newer (`requires.handlers: ["echarts", "wavedrom"]`).
 - Ships disabled; enable it from the popup on ChatGPT.
-- WaveDrom needs `requires.handlers` to include `wavedrom` (engine 1.7.0).
 
 ## Verification
 
-- Page: pending a live check on a real ChatGPT conversation with a Mermaid block,
-  including whether ChatGPT now draws Mermaid itself (the plugin must not draw a
-  second copy).
-- Target match count: pending (`document.querySelectorAll('[data-chatgpt-selection-message-id] pre').length`).
-- Light theme: pending.
-- Dark theme: pending.
+- Page: tagged blocks show `echarts` / `wavedrom` in the header label (live
+  check); Mermaid is drawn by ChatGPT itself, with no code block left.
+- Target match count: pending (`document.querySelectorAll('[data-chatgpt-selection-message-id] [data-markdown-copy="code-block"]').length`).
+- ECharts and WaveDrom, light and dark theme: pending.
 - `bun run plugin:check src/features/plugins/catalog/sites/chatgpt/plugins/diagram-rendering`: passes.
 - Popup health: pending.
-- WaveDrom page, light and dark theme: pending a live check with a `wavedrom` block.

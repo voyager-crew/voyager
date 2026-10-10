@@ -325,12 +325,15 @@ Shipped primitives (`verbs/contracts.ts`): `formulaCopy` (since 1.3.0), `vimInpu
 defaulting to the adapter, plus the optional `conversationIdAttribute` attribute and `turnItem`
 selector since 1.5.0) and `userLatex` (since 1.7.0, optional `turn` selector defaulting to the
 adapter's `userTurn`; renders the LaTeX a user typed with Gemini's renderer and restores the text on
-unmount) and `mermaid` (since 1.7.0, optional `turn` / `codeBlock` / `code` / `codeLine` /
-`language` selectors defaulting to the adapter's `assistantTurn` and `codeBlock`). `mermaid` is the
-first code-block diagram primitive: Gemini's renderer core plus the shared engine in
-`verbs/codeBlockDiagram.ts`, which draws a diagram in a shadow-root panel before the host's
-untouched code block. ECharts and WaveDrom follow the PATTERN note at the top of that file, and
-each site gets one `diagram-rendering` plugin listing the diagram ops. The formula-copy,
+unmount) and the code-block diagram primitives `mermaid`, `echarts` and `wavedrom` (all since
+1.7.0, optional `turn` / `codeBlock` / `code` / `codeLine` / `language` selectors defaulting to
+the adapter's `assistantTurn` and `codeBlock`). Each is Gemini's renderer core plus the shared
+engine in `verbs/codeBlockDiagram.ts`, which draws a diagram in a shadow-root panel before the
+host's untouched code block; a label counts as a language only when it is shaped like an id, so a
+host's localized "plain text" label leaves the block to content detection. New diagram kinds follow
+the PATTERN note at the top of that file, and each site gets one `diagram-rendering` plugin listing
+its diagram ops: ChatGPT's lists `echarts` and `wavedrom`, since ChatGPT draws Mermaid itself, and
+`mermaid` waits for a site that needs it. The formula-copy,
 Vim, Claude-timeline and ChatGPT-timeline builtins are now manifests that invoke these primitives;
 the shared timeline engine lives in `../timeline/TimelineEngine.ts`. Its catalog adapter
 (`../timeline/adapters/catalog/`) accumulates markers across virtualized windows (`turnMerge.ts`)

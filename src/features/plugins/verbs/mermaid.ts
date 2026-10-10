@@ -1,7 +1,8 @@
 /**
  * `mermaid` primitive: Gemini's Mermaid renderer (`pages/content/mermaid`) on
  * another site's code blocks, through the shared engine in `codeBlockDiagram.ts`
- * (read its PATTERN note before adding ECharts or WaveDrom). The same
+ * (its reference implementation). No bundled plugin uses it yet: ChatGPT draws
+ * Mermaid itself, so its plugin lists only ECharts and WaveDrom. The same
  * `shouldRenderMermaid` decides which blocks are Mermaid on every site, the
  * library stays a lazy import, and the theme follows `html[data-gv-scheme]`.
  */

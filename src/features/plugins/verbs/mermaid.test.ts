@@ -5,9 +5,11 @@ import { turnSummary } from '@/features/timeline/adapters/catalog/turnHash';
 import { buildChatGptAdapter } from '@/pages/content/export/adapter/platform/chatgpt';
 
 import { requireBundledSiteAdapter } from '../catalog/sites';
+import manifest from '../catalog/sites/chatgpt/plugins/diagram-rendering/plugin.json';
 import { PluginScope } from '../runtime/pluginScope';
 import type { SiteAdapter } from '../types';
 import { mermaidPrimitive } from './mermaid';
+import { getPrimitive } from './registry';
 import type { PrimitiveContext } from './types';
 
 const library = vi.hoisted(() => ({ initialize: vi.fn(), render: vi.fn() }));
@@ -232,6 +234,32 @@ describe('mermaid primitive', () => {
     expect(library.initialize).toHaveBeenLastCalledWith(
       expect.objectContaining({ theme: 'default' }),
     );
+  });
+
+  it("ChatGPT's diagram plugin leaves Mermaid to ChatGPT's own preview", async () => {
+    // ChatGPT draws Mermaid itself; a second copy from the plugin would duplicate it.
+    const reply = document.createElement('div');
+    reply.setAttribute('data-chatgpt-selection-message-id', 'm1');
+    reply.innerHTML =
+      '<div data-markdown-copy="code-block"><div data-markdown-copy="exclude">' +
+      '<span class="truncate">mermaid</span></div><code></code></div>';
+    reply.querySelector('code')!.textContent = FLOWCHART;
+    document.querySelector('main')!.append(reply);
+    const context: PrimitiveContext = {
+      doc: document,
+      adapter: chatgpt.adapter,
+      pluginId: manifest.id,
+      settings: {},
+      setTargetCounter: () => {},
+    };
+
+    for (const op of manifest.contributes.domOps) {
+      void getPrimitive(op.handler)!.activate(scope, op.params as never, context);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(panelOf(reply)).toBeNull();
+    expect(library.render).not.toHaveBeenCalled();
   });
 
   it('a page without Mermaid never loads the library', async () => {

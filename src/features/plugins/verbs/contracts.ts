@@ -43,8 +43,8 @@ export interface PrimitiveContract {
 export const PRIMITIVE_NAME_PATTERN = /^[a-z][a-zA-Z0-9]{1,39}$/;
 
 /**
- * Params shared by the code-block diagram primitives (`mermaid`, and ECharts /
- * WaveDrom after it): where a site keeps its replies, code blocks, their source
+ * Params shared by the code-block diagram primitives (`mermaid`, `echarts`,
+ * `wavedrom`): where a site keeps its replies, code blocks, their source
  * text and language label. All optional; defaults read the site adapter.
  */
 const CODE_BLOCK_DIAGRAM_PARAMS: Readonly<Record<string, PrimitiveParamSpec>> = {
