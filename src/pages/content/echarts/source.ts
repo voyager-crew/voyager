@@ -478,3 +478,18 @@ export function isEChartsLanguageEligible(codeEl: Element): boolean {
     isGenericLanguageLabel(language)
   );
 }
+
+/**
+ * Whether a code block is an ECharts option, from its language label
+ * (lowercase, null when the block has none) and its source. Shared by Gemini
+ * and the `echarts` plugin primitive, so every site decides the same way.
+ */
+export const shouldRenderECharts = (language: string | null, code: string): boolean => {
+  // Explicit ECharts labels always render.
+  if (language === 'echarts' || language === 'echart' || language === 'chart') return true;
+  // Specific language labels (json, typescript, …) skip chart detection: ECharts
+  // options are a niche format, and ordinary JSON output must not be mistaken for a chart.
+  if (language && !isGenericLanguageLabel(language)) return false;
+  // Unlabelled or generic blocks (Code snippet, 代码段, …): detect from the content.
+  return isEChartsOptionCode(code);
+};

@@ -1,4 +1,3 @@
-import { isGenericLanguageLabel } from '../codeBlock';
 import {
   getAppTheme,
   PANEL_BG,
@@ -8,8 +7,8 @@ import {
 import {
   getCodeBlockLanguage,
   isEChartsLanguageEligible,
-  isEChartsOptionCode,
   parseEChartsOption,
+  shouldRenderECharts,
 } from './source';
 import type { createEChartsView } from './view';
 
@@ -155,26 +154,7 @@ export function createEChartsCodeBlocks(
     const codeElements = document.querySelectorAll('code[data-test-id="code-content"]');
     codeElements.forEach((codeEl) => {
       const codeText = codeEl.textContent || '';
-      const language = getCodeBlockLanguage(codeEl);
-
-      // Explicit ECharts labels always render.
-      if (language === 'echarts' || language === 'echart' || language === 'chart') {
-        void renderEcharts(codeEl as HTMLElement, codeText);
-        return;
-      }
-
-      // Specific language labels (json, typescript, …) skip chart detection:
-      // ECharts options are a niche format, and ordinary JSON output must not
-      // be mistaken for a chart.
-      if (language && !isGenericLanguageLabel(language)) {
-        const wrapper = codeEl.closest<HTMLElement>('.gv-echarts-wrapper');
-        if (wrapper) view.teardown(wrapper);
-        return;
-      }
-
-      // Content-based detection for unlabelled / generic blocks
-      // (Code snippet, 代码段, …).
-      if (isEChartsOptionCode(codeText)) {
+      if (shouldRenderECharts(getCodeBlockLanguage(codeEl), codeText)) {
         void renderEcharts(codeEl as HTMLElement, codeText);
       } else {
         const wrapper = codeEl.closest<HTMLElement>('.gv-echarts-wrapper');

@@ -44,8 +44,13 @@ export interface CodeBlockDiagram {
   prepare(scheme: Scheme): Promise<boolean>;
   /** Draw `source` into `target` (attached and visible); a returned cleanup runs before the next draw and on removal. */
   render(target: HTMLElement, source: string): Promise<void | (() => void)>;
-  /** The drawn diagram was clicked. */
+  /** The drawn diagram was clicked, or the fullscreen button pressed when `fullscreenLabel` is set. */
   openFullscreen?(target: HTMLElement): void;
+  /**
+   * Accessible name of a toolbar fullscreen button. Set it for an interactive
+   * diagram (a chart's legend and tooltips), whose clicks must not open fullscreen.
+   */
+  readonly fullscreenLabel?: string;
   /** Page-level setup, such as fullscreen styles, for the activation's lifetime. */
   install?(doc: Document): () => void;
 }
@@ -58,6 +63,22 @@ const DEFAULT_CODE_BLOCK = 'pre';
 const HIDDEN_ATTR = 'data-gv-diagram-hidden';
 const PANEL_CLASS = 'gv-diagram-panel';
 const LANGUAGE_CLASS = /(?:^|\s)lang(?:uage)?-(\S+)/i;
+/**
+ * Localized labels a host prints on a block that has no language (ChatGPT shows
+ * 纯文本 in Chinese). Read as no label, so content detection still runs as on Gemini.
+ */
+const PLAIN_TEXT_LABELS: ReadonlySet<string> = new Set([
+  'plain text',
+  '纯文本',
+  '純文字',
+  'プレーンテキスト',
+  '일반 텍스트',
+  'texte brut',
+  'texto sin formato',
+  'texto simples',
+  'обычный текст',
+  'نص عادي',
+]);
 
 const PAGE_CSS = `
 [${HIDDEN_ATTR}] { display: none !important; }
@@ -89,6 +110,7 @@ button {
   cursor: pointer;
 }
 button:hover { background: var(--gv-diagram-hover); }
+button:disabled { cursor: not-allowed; opacity: 0.45; }
 button:focus-visible { outline: 2px solid var(--gv-pm-brand, #1a73e8); outline-offset: 2px; }
 button[aria-pressed='true'] {
   border-color: transparent;
@@ -165,8 +187,8 @@ export function readCodeBlock(
       ? lines.map((line) => line.textContent ?? '').join('\n')
       : (code.textContent ?? '');
   const label = params.language ? querySafe(block, params.language)[0]?.textContent?.trim() : '';
-  const language = label || classLanguage(code) || classLanguage(block);
-  return { language: language ? language.toLowerCase() : null, source };
+  const language = (label || classLanguage(code) || classLanguage(block))?.toLowerCase();
+  return { language: language && !PLAIN_TEXT_LABELS.has(language) ? language : null, source };
 }
 
 export function activateCodeBlockDiagram(
@@ -230,6 +252,12 @@ export function activateCodeBlockDiagram(
     };
     const diagramButton = button(diagram.label);
     const codeButton = button('</> Code');
+    const fullscreenLabel = diagram.fullscreenLabel;
+    const fullscreenButton = fullscreenLabel ? button('⛶') : null;
+    if (fullscreenButton && fullscreenLabel) {
+      fullscreenButton.title = fullscreenLabel;
+      fullscreenButton.setAttribute('aria-label', fullscreenLabel);
+    }
     const target = doc.createElement('div');
     target.className = 'diagram';
     root.append(style, toolbar, target);
@@ -239,10 +267,11 @@ export function activateCodeBlockDiagram(
       diagramButton.setAttribute('aria-pressed', String(view === 'diagram'));
       codeButton.setAttribute('aria-pressed', String(view === 'code'));
       block.toggleAttribute(HIDDEN_ATTR, view === 'diagram');
+      if (fullscreenButton) fullscreenButton.disabled = view === 'code';
     };
     diagramButton.addEventListener('click', () => show('diagram'));
     codeButton.addEventListener('click', () => show('code'));
-    target.addEventListener('click', () => diagram.openFullscreen?.(target));
+    (fullscreenButton ?? target).addEventListener('click', () => diagram.openFullscreen?.(target));
 
     block.before(host);
     show('diagram');

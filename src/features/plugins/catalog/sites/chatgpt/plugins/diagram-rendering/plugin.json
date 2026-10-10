@@ -49,6 +49,15 @@
   "engine": ">=1.7.0",
   "tier": "declarative",
   "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
-  "requires": { "handlers": ["mermaid"] },
-  "contributes": { "domOps": [{ "op": "native", "handler": "mermaid", "params": {} }] }
+  "requires": { "handlers": ["mermaid", "echarts"] },
+  "contributes": {
+    "domOps": [
+      { "op": "native", "handler": "mermaid", "params": {} },
+      {
+        "op": "native",
+        "handler": "echarts",
+        "params": { "language": "[data-markdown-copy=\"exclude\"] .truncate" }
+      }
+    ]
+  }
 }

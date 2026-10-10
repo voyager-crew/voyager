@@ -7,6 +7,7 @@
  * only pick one by name and pass validated parameters.
  */
 import { PRIMITIVE_CONTRACTS } from './contracts';
+import { echartsPrimitive } from './echarts';
 import { formulaCopyPrimitive } from './formulaCopy';
 import { mermaidPrimitive } from './mermaid';
 import { turnNavigatorPrimitive } from './turnNavigator';
@@ -20,6 +21,7 @@ const PRIMITIVES: ReadonlyMap<string, Primitive<never>> = new Map<string, Primit
   [turnNavigatorPrimitive.contract.name, turnNavigatorPrimitive as Primitive<never>],
   [userLatexPrimitive.contract.name, userLatexPrimitive as Primitive<never>],
   [mermaidPrimitive.contract.name, mermaidPrimitive as Primitive<never>],
+  [echartsPrimitive.contract.name, echartsPrimitive as Primitive<never>],
 ]);
 
 export function getPrimitive(name: string): Primitive<never> | undefined {

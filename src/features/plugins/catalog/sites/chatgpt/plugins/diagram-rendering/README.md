@@ -28,14 +28,22 @@ The plugin contains no code of its own: it invokes Voyager's first-party
 block's `language-*` class; an unlabelled block is drawn only when its content
 reads as a complete Mermaid diagram.
 
+A second `native` op invokes the `echarts` primitive on ChatGPT's current code
+block (`[data-markdown-copy="code-block"]`, source in its `code`), reading the
+language from the header label `[data-markdown-copy="exclude"] .truncate`. A
+block labelled `echarts`, `echart` or `chart`, or a plain-text one (纯文本) whose
+content is an ECharts option, is parsed (never evaluated), sanitized and drawn as
+an interactive chart with Gemini's renderer; its **⛶** toolbar button opens it
+full screen, since clicks on the chart belong to its legend and tooltips.
+
 ChatGPT's code block is never moved or edited, so its copy button, text
 selection and export keep working: the diagram sits in a panel just before it,
 inside a shadow root, and the block is hidden with `data-gv-diagram-hidden`
 only while the diagram view is chosen. The theme follows ChatGPT's light or dark
-mode through `html[data-gv-scheme]`. ECharts and WaveDrom will join as more
-`native` ops in this manifest.
+mode through `html[data-gv-scheme]`. WaveDrom will join as another `native` op
+in this manifest.
 
-- Requires Voyager plugin engine 1.7.0 or newer (`requires.handlers: ["mermaid"]`).
+- Requires Voyager plugin engine 1.7.0 or newer (`requires.handlers: ["mermaid", "echarts"]`).
 - Ships disabled; enable it from the popup on ChatGPT.
 
 ## Verification

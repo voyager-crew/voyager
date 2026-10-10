@@ -128,6 +128,29 @@ describe('processCodeBlocks language labels', () => {
     expect(document.querySelector('.gv-echarts-wrapper')).toBeNull();
   });
 
+  it('Gemini echarts rendering is unchanged', async () => {
+    vi.mocked(chrome.storage.sync.get).mockImplementation(((
+      _defaults: unknown,
+      callback: (items: Record<string, unknown>) => void,
+    ) => callback({ gvEchartsEnabled: true })) as never);
+    const labelled = makeCodeBlock('echarts', PIE_OPTION).closest<HTMLElement>('code-block')!;
+    const unlabelled = makeCodeBlock(null, BAR_OPTION).closest<HTMLElement>('code-block')!;
+    const json = makeCodeBlock('json', PIE_OPTION).closest<HTMLElement>('code-block')!;
+
+    fixture.feature.start();
+
+    await vi.waitFor(() =>
+      expect(document.querySelectorAll('.gv-echarts-wrapper')).toHaveLength(2),
+    );
+    // Gemini still wraps its own host in place and hides it behind the chart.
+    for (const host of [labelled, unlabelled]) {
+      expect(host.parentElement?.classList.contains('gv-echarts-wrapper')).toBe(true);
+      expect(host.style.display).toBe('none');
+    }
+    expect(json.parentElement).toBe(document.body);
+    expect(document.querySelector('.gv-diagram-panel')).toBeNull();
+  });
+
   it('skips non-chart JSON in an unlabelled block', async () => {
     makeCodeBlock(null, '{"foo": "bar", "list": [1, 2, 3]}');
     fixture.blocks.process();

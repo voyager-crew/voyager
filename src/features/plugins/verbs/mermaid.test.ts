@@ -54,7 +54,9 @@ const chatgpt = sites[0];
 
 let scope: PluginScope;
 
-function activate(adapter: SiteAdapter, params = {}) {
+// The fixtures model `pre` blocks (ChatGPT before October 2026, Claude); ChatGPT's
+// adapter now names its newer block, so point the engine at `pre` explicitly.
+function activate(adapter: SiteAdapter, params = { codeBlock: 'pre' }) {
   let counter: () => number = () => -1;
   const context: PrimitiveContext = {
     doc: document,
