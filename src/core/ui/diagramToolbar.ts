@@ -10,6 +10,7 @@ import {
   createMaximize2Icon,
   createWorkflowIcon,
 } from '@/core/icons/diagramToolbarIcons';
+import { getTranslationSyncUnsafe } from '@/utils/i18n';
 
 /** Which diagram a Diagram button shows; each kind has its own icon. */
 export type DiagramKind = 'mermaid' | 'echarts' | 'wavedrom';
@@ -36,12 +37,11 @@ const ICONS: Record<DiagramToolbarIcon, (size: number) => SVGSVGElement> = {
   fullscreen: createMaximize2Icon,
 };
 
+// Follows Voyager's own language setting like the rest of its injected UI;
+// chrome.i18n would use the browser locale and show English on a Chinese setup.
 function message(key: string, fallback: string): string {
-  try {
-    return chrome.i18n?.getMessage(key) || fallback;
-  } catch {
-    return fallback;
-  }
+  const text = getTranslationSyncUnsafe(key);
+  return text && text !== key ? text : fallback;
 }
 
 export function getDiagramToolbarLabels(): DiagramToolbarLabels {

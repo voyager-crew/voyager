@@ -24,6 +24,17 @@ const library = vi.hoisted(() => {
 });
 vi.mock('@/pages/content/echarts/runtime', () => ({ init: library.init }));
 
+// Stands in for the user's Voyager language setting, which toolbar labels follow.
+const uiLanguage = vi.hoisted(() => ({ messages: null as Record<string, string> | null }));
+vi.mock('@/utils/i18n', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/i18n')>();
+  return {
+    ...actual,
+    getTranslationSyncUnsafe: (key: string) =>
+      uiLanguage.messages?.[key] ?? actual.getTranslationSyncUnsafe(key),
+  };
+});
+
 const PIE_OPTION = '{\n  series: [{ type: "pie", data: [{ value: 1, name: "a" }] }],\n}';
 const BAR_OPTION = `{
   "xAxis": { "type": "category", "data": ["A", "B"] },
@@ -177,7 +188,7 @@ describe('echarts primitive', () => {
     const chart = chartOf(reply)!;
     const buttons = Array.from(panelOf(reply)!.shadowRoot!.querySelectorAll('button'));
     const fullscreenButton = buttons.at(-1)!;
-    expect(fullscreenButton.getAttribute('aria-label')).toBe('echartsFullscreenButton');
+    expect(fullscreenButton.getAttribute('aria-label')).toBe('Fullscreen');
 
     chart.click();
     expect(document.querySelector('.gv-echarts-modal')).toBeNull();
@@ -192,13 +203,11 @@ describe('echarts primitive', () => {
   });
 
   it('diagram toolbar buttons show an icon and a translated label', async () => {
-    const zh: Record<string, string> = {
+    uiLanguage.messages = {
       diagramButton: '图表',
       diagramCodeButton: '代码',
       echartsFullscreenButton: '全屏',
     };
-    const getMessage = vi.mocked(chrome.i18n.getMessage);
-    getMessage.mockImplementation((key: string) => zh[key] ?? key);
     try {
       const reply = chatgptReply(PIE_OPTION);
       activate();
@@ -216,7 +225,7 @@ describe('echarts primitive', () => {
       expect(fullscreenButton.textContent).toBe('');
       expect(fullscreenButton.getAttribute('aria-label')).toBe('全屏');
     } finally {
-      getMessage.mockImplementation((key: string) => key);
+      uiLanguage.messages = null;
     }
   });
 
