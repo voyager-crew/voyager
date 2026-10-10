@@ -312,9 +312,31 @@ function preserveLatexPipeCommandsInMarkdownTable(latex: string): string {
   });
 }
 
+type ListDialect = Pick<ExportContentDialect, 'extractInlineFormula' | 'extractCodeBlock'>;
+
+/** The host's own block-code reading of an element, or null when the host does not claim it. */
+function readHostCodeBlock(
+  element: Element,
+  adapter: ListDialect,
+): { html: string; text: string } | null {
+  const htmlParts: string[] = [];
+  const textParts: string[] = [];
+  const flags = { hasImages: false, hasFormulas: false, hasTables: false, hasCode: false };
+  if (!adapter.extractCodeBlock(element, htmlParts, textParts, flags, element.localName)) {
+    return null;
+  }
+  return { html: htmlParts.join(''), text: flags.hasCode ? textParts.join('').trim() : '' };
+}
+
+function containsHostCodeBlock(element: Element, adapter: ListDialect): boolean {
+  return Array.from(element.querySelectorAll('*')).some(
+    (descendant) => readHostCodeBlock(descendant, adapter) !== null,
+  );
+}
+
 export function extractList(
   element: HTMLElement,
-  adapter: Pick<ExportContentDialect, 'extractInlineFormula'>,
+  adapter: ListDialect,
   depth: number = 0,
 ): { html: string; text: string; hasFormulas: boolean; hasCode: boolean } {
   const isOrdered = element.tagName === 'OL';
@@ -354,6 +376,17 @@ export function extractList(
       hasItemContent = true;
     };
 
+    const pushCodeBlock = (fenced: string): void => {
+      ensureItemMarker();
+      hasCode = true;
+      textLines.push(
+        fenced
+          .split('\n')
+          .map((line) => continuationIndent + line)
+          .join('\n'),
+      );
+    };
+
     const processItemNodes = (nodes: Node[]): void => {
       nodes.forEach((node) => {
         if (node.nodeType !== Node.ELEMENT_NODE) {
@@ -379,20 +412,24 @@ export function extractList(
         if (directExportCodeBlock) {
           flushProse();
           const content = extractExportCodeBlock(directExportCodeBlock);
-          if (!content?.text) return;
-
-          ensureItemMarker();
-          hasCode = true;
-          textLines.push(
-            content.text
-              .split('\n')
-              .map((line) => continuationIndent + line)
-              .join('\n'),
-          );
+          if (content?.text) pushCodeBlock(content.text);
           return;
         }
 
-        if (exportCodeBlocks.length > 0 || child.querySelector('ul, ol')) {
+        // Hosts whose blocks have no shared selector (ChatGPT's div or pre) read them through
+        // their adapter, or the list flattens the code into prose with its header label.
+        const hostCodeBlock = readHostCodeBlock(child, adapter);
+        if (hostCodeBlock) {
+          flushProse();
+          if (hostCodeBlock.text) pushCodeBlock(hostCodeBlock.text);
+          return;
+        }
+
+        if (
+          exportCodeBlocks.length > 0 ||
+          child.querySelector('ul, ol') ||
+          containsHostCodeBlock(child, adapter)
+        ) {
           flushProse();
           processItemNodes(Array.from(child.childNodes));
           return;
@@ -410,7 +447,10 @@ export function extractList(
     }
   });
 
-  const html = serializeListHtml(element);
+  const html = serializeListHtml(
+    element,
+    (block) => readHostCodeBlock(block, adapter)?.html || null,
+  );
 
   return {
     hasFormulas,

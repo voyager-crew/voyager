@@ -184,8 +184,14 @@ export function extractExportCodeBlock(
   return extractCodeBlock(element);
 }
 
-/** Clone markup, but read chart pixels from the matching live owner. */
-export function serializeListHtml(element: HTMLElement): string {
+/**
+ * Clone markup, but read chart pixels from the matching live owner. `readHostCodeBlock`
+ * returns the host adapter's markup for a block it claims, or null to keep the element.
+ */
+export function serializeListHtml(
+  element: HTMLElement,
+  readHostCodeBlock?: (block: HTMLElement) => string | null,
+): string {
   const liveEchartsWrappers = Array.from(
     element.querySelectorAll<HTMLElement>(ECHARTS_WRAPPER_SELECTOR),
   );
@@ -237,5 +243,19 @@ export function serializeListHtml(element: HTMLElement): string {
       codeBlock.replaceWith(replacement.firstElementChild);
     }
   });
+  if (readHostCodeBlock) {
+    for (const block of Array.from(cleanList.querySelectorAll<HTMLElement>('*'))) {
+      // Skip what a replaced ancestor took with it.
+      if (!cleanList.contains(block)) continue;
+      const html = readHostCodeBlock(block);
+      if (!html) continue;
+
+      const replacement = document.createElement('div');
+      replacement.innerHTML = html;
+      if (replacement.firstElementChild) {
+        block.replaceWith(replacement.firstElementChild);
+      }
+    }
+  }
   return cleanList.outerHTML;
 }

@@ -90,4 +90,38 @@ describe('ChatGPT code block export', () => {
 
     expect(exported.text).toBe('Here it is:\nDone.');
   });
+
+  it('a code block inside a ChatGPT list item exports as a fenced block', () => {
+    const exported = extractor.extractAssistantContent(
+      reply(
+        `<ul><li><p>Example</p>${codeBlockMarkup('python', ['def add(a, b):', '    return a + b'])}</li></ul>`,
+      ),
+    );
+
+    expect(exported.text).toBe(
+      'Here it is:\n\n- Example\n  ```python\n  def add(a, b):\n      return a + b\n  ```\nDone.',
+    );
+    expect(exported.hasCode).toBe(true);
+    const rendered = document.createElement('div');
+    rendered.innerHTML = exported.html;
+    expect(rendered.querySelector('pre code.language-python')?.textContent).toBe(
+      'def add(a, b):\n    return a + b',
+    );
+    rendered.querySelectorAll('pre').forEach((pre) => pre.remove());
+    expect(rendered.textContent).not.toContain('python');
+  });
+
+  it('a pre code block inside a list keeps its newlines', () => {
+    const exported = extractor.extractAssistantContent(
+      reply(
+        '<ol><li><p>Example</p><pre><div><div>python</div><div><button>Copy code</button></div>' +
+          '<div><code class="hljs language-python">print("hi")\nprint("bye")</code></div></div></pre></li></ol>',
+      ),
+    );
+
+    expect(exported.text).toBe(
+      'Here it is:\n\n1. Example\n   ```python\n   print("hi")\n   print("bye")\n   ```\nDone.',
+    );
+    expect(exported.hasCode).toBe(true);
+  });
 });
