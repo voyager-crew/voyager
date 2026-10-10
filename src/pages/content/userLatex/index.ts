@@ -13,6 +13,7 @@
  *               └─ p.query-text-line.ng-star-inserted  ← processed here
  */
 import { ensureKatexStyles } from '@/core/utils/katexStyles';
+import { hasUserLatexRendering } from '@/core/utils/userLatexSource';
 
 /** Selector for user message text paragraph elements. */
 const USER_MSG_SELECTOR = 'p.query-text-line';
@@ -190,10 +191,27 @@ export function parseSegments(text: string): Segment[] {
 const replacedNodes = new WeakMap<HTMLElement, Node[]>();
 
 /**
- * Render LaTeX in a single user message paragraph element. Once `signal` has
- * aborted, a render still waiting for KaTeX leaves the element untouched.
+ * Forget a rendering the host has since painted over, so its source no longer
+ * describes the element and the next render reads the host's new text.
  */
-export async function renderUserLatex(el: HTMLElement, signal?: AbortSignal): Promise<void> {
+export function dropStaleUserLatex(el: HTMLElement): void {
+  if (el.dataset.userLatexOriginal !== undefined && !hasUserLatexRendering(el)) {
+    restoreUserLatex(el);
+  }
+}
+
+/**
+ * Render LaTeX in a single user message paragraph element. Once `signal` has
+ * aborted, or `canReplace` (asked after KaTeX loads) says no, a render still
+ * waiting for KaTeX leaves the element untouched.
+ */
+export async function renderUserLatex(
+  el: HTMLElement,
+  signal?: AbortSignal,
+  canReplace?: () => boolean,
+): Promise<void> {
+  // An edited message repainted over the same element would otherwise keep its old source forever.
+  dropStaleUserLatex(el);
   if (el.dataset.userLatexProcessed) return;
 
   const raw = el.textContent ?? '';
@@ -227,6 +245,11 @@ export async function renderUserLatex(el: HTMLElement, signal?: AbortSignal): Pr
   // (and its segments) are stale. Bail and let a later observer pass reprocess
   // the fresh content instead of clobbering it with the old rendering.
   if (el.textContent !== raw) {
+    delete el.dataset.userLatexProcessed;
+    return;
+  }
+  // Same text can still be a different element now (an inline editor took its place).
+  if (canReplace && !canReplace()) {
     delete el.dataset.userLatexProcessed;
     return;
   }
@@ -265,7 +288,7 @@ export async function renderUserLatex(el: HTMLElement, signal?: AbortSignal): Pr
 export function restoreUserLatex(el: HTMLElement): void {
   const original = el.dataset.userLatexOriginal;
   // Only over our own rendering: after a host repaint the element already holds the host's text.
-  if (original !== undefined && el.querySelector(':scope > [class^="gv-user-latex-"]')) {
+  if (original !== undefined && hasUserLatexRendering(el)) {
     el.replaceChildren(...(replacedNodes.get(el) ?? [document.createTextNode(original)]));
   }
   replacedNodes.delete(el);

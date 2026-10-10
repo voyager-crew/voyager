@@ -9,7 +9,7 @@
  * `data-user-latex-original` for export, the timeline and send tracking, and
  * unmount puts the host's original text nodes back.
  */
-import { renderUserLatex, restoreUserLatex } from '@/pages/content/userLatex';
+import { dropStaleUserLatex, renderUserLatex, restoreUserLatex } from '@/pages/content/userLatex';
 
 import type { ManifestIssue } from '../manifest/validate';
 import type { Dispose } from '../runtime/pluginScope';
@@ -40,6 +40,8 @@ const SKIP_SELECTOR = [
   '[class^="gv-"]',
   '[class*=" gv-"]',
 ].join(', ');
+/** Checked on every ancestor, page included: nothing inside an editor is ever rendered. */
+const EDITABLE_SELECTOR = 'textarea, input, [contenteditable]:not([contenteditable="false"])';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -81,12 +83,14 @@ export const userLatexPrimitive: Primitive<UserLatexParams> = {
     const { doc } = context;
     context.setTargetCounter(() => querySafe(doc, turn).length);
 
-    const skipped = (element: Element, message: Element): boolean => {
+    const skipped = (element: HTMLElement, message: Element): boolean => {
       // Only up to the message: Voyager stamps gv- classes on the page (body.gv-rtl) around every message.
       for (let node: Element | null = element; node; node = node.parentElement) {
         if (node.matches(SKIP_SELECTOR)) return true;
         if (node === message) break;
       }
+      // A custom turn selector can match inside an editor, so editability looks past the message.
+      if (element.isContentEditable || element.closest(EDITABLE_SELECTOR)) return true;
       return (
         composer !== undefined && querySafe(doc, composer).some((field) => field.contains(element))
       );
@@ -94,9 +98,17 @@ export const userLatexPrimitive: Primitive<UserLatexParams> = {
     const renderAll = (): void => {
       for (const message of querySafe(doc, turn)) {
         for (const element of [message, ...message.querySelectorAll('*')]) {
-          if (!(element instanceof HTMLElement) || element.childElementCount > 0) continue;
+          if (!(element instanceof HTMLElement)) continue;
+          dropStaleUserLatex(element);
+          if (element.childElementCount > 0) continue;
           if (!element.textContent?.includes('$') || skipped(element, message)) continue;
-          void renderUserLatex(element, scope.signal);
+          // Eligibility again once KaTeX has loaded: the element may have become an editor meanwhile.
+          const stillEligible = (): boolean =>
+            message.contains(element) &&
+            element.isConnected &&
+            element.childElementCount === 0 &&
+            !skipped(element, message);
+          void renderUserLatex(element, scope.signal, stillEligible);
         }
       }
     };

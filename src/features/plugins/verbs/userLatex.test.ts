@@ -3,7 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { textWithLatexSource } from '@/core/utils/userLatexSource';
 import { turnSummary } from '@/features/timeline/adapters/catalog/turnHash';
 import { chatgptExtractUserText } from '@/pages/content/export/adapter/platform/chatgpt';
-import { _resetUserLatexKatexLoader } from '@/pages/content/userLatex';
+import {
+  _resetUserLatexKatexLoader,
+  _setUserLatexKatexLoaderForTest,
+} from '@/pages/content/userLatex';
 
 import { requireBundledSiteAdapter } from '../catalog/sites';
 import { PluginScope } from '../runtime/pluginScope';
@@ -60,6 +63,16 @@ function activate(adapter: SiteAdapter, params = {}) {
 }
 
 const rendered = (element: Element) => element.querySelectorAll('.katex');
+
+/** Holds KaTeX loading until the returned function is called. */
+function holdKatex(): () => void {
+  let release!: () => void;
+  const loaded = new Promise<typeof import('katex')>((resolve) => {
+    release = () => resolve({ default: { renderToString } } as unknown as typeof import('katex'));
+  });
+  _setUserLatexKatexLoaderForTest(() => loaded);
+  return () => release();
+}
 
 beforeEach(() => {
   _resetUserLatexKatexLoader();
@@ -172,5 +185,61 @@ describe('userLatex primitive', () => {
     const exported: string[] = [];
     chatgptExtractUserText(document.querySelectorAll('.none'), exported, bubble);
     expect(exported).toEqual(['Is $I_3$ the identity?']);
+  });
+  it('an edited ChatGPT message is read with its new text', async () => {
+    const bubble = chatgptMessage('original $x$');
+    const holder = bubble.querySelector<HTMLElement>('[dir="auto"]')!;
+    activate(sites[0].adapter);
+    await vi.waitFor(() => expect(rendered(bubble)).toHaveLength(1));
+
+    // React writes the edited text over the same element, replacing our rendering.
+    holder.textContent = 'edited $y$';
+
+    expect(turnSummary(bubble)).toBe('edited $y$');
+    const exported: string[] = [];
+    chatgptExtractUserText(document.querySelectorAll('.none'), exported, bubble);
+    expect(exported).toEqual(['edited $y$']);
+    // The edit renders on the next pass and keeps reading as its own source.
+    await vi.waitFor(() => expect(rendered(bubble)).toHaveLength(1));
+    expect(renderToString).toHaveBeenLastCalledWith('y', expect.anything());
+    expect(textWithLatexSource(bubble)).toBe('edited $y$');
+  });
+
+  it('a message that turns into an editor while KaTeX loads is left alone', async () => {
+    const release = holdKatex();
+    const bubble = chatgptMessage('edit $x$');
+    const holder = bubble.querySelector<HTMLElement>('[dir="auto"]')!;
+    activate(sites[0].adapter);
+
+    // Same textContent, but now an editor the user is typing in.
+    holder.innerHTML = '<textarea>edit $x$</textarea>';
+    const editor = holder.querySelector('textarea')!;
+    release();
+
+    // Settled either way: rendered over the editor, or given up for a later pass.
+    await vi.waitFor(() =>
+      expect(
+        holder.dataset.userLatexOriginal !== undefined ||
+          holder.dataset.userLatexProcessed === undefined,
+      ).toBe(true),
+    );
+    expect(holder.firstChild).toBe(editor);
+    expect(editor.isConnected).toBe(true);
+    expect(rendered(bubble)).toHaveLength(0);
+  });
+
+  it('a turn inside an editable field is never rendered', async () => {
+    const editor = document.createElement('div');
+    editor.setAttribute('contenteditable', 'true');
+    editor.innerHTML = '<div class="mine"><span>draft $x$</span></div>';
+    document.querySelector('main')!.append(editor);
+    const sent = claudeMessage('sent $w$');
+    sent.classList.add('mine');
+    // Claude's composer selector names only its ProseMirror editor, not this field.
+    activate(sites[1].adapter, { turn: '.mine' });
+
+    await vi.waitFor(() => expect(rendered(sent)).toHaveLength(1));
+    expect(editor.innerHTML).toBe('<div class="mine"><span>draft $x$</span></div>');
+    expect(renderToString).toHaveBeenCalledTimes(1);
   });
 });
