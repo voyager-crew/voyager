@@ -91,6 +91,32 @@ describe('ChatGPT code block export', () => {
     expect(exported.text).toBe('Here it is:\nDone.');
   });
 
+  it("a reply with only a ChatGPT-drawn chart doesn't export its chart labels", () => {
+    const element = document.createElement('div');
+    element.innerHTML =
+      '<div class="markdown"><div data-chatgpt-mermaid-preview="">' +
+      '<svg><g><text>Start</text></g><g><text>Finish</text></g></svg></div></div>';
+    document.body.append(element);
+
+    const exported = extractor.extractAssistantContent(element);
+
+    expect(exported.text).toBe('');
+    expect(exported.html).not.toContain('Start');
+  });
+
+  it('an empty code block in a list leaves no header in exported HTML', () => {
+    const exported = extractor.extractAssistantContent(
+      reply(`<ul><li>${codeBlockMarkup('python', [])}</li></ul>`),
+    );
+
+    expect(exported.text).toBe('Here it is:\n\n- \nDone.');
+    const rendered = document.createElement('div');
+    rendered.innerHTML = exported.html;
+    expect(rendered.querySelector('li')).not.toBeNull();
+    expect(rendered.textContent).not.toContain('python');
+    expect(rendered.textContent).not.toContain('复制');
+  });
+
   it('a code block inside a ChatGPT list item exports as a fenced block', () => {
     const exported = extractor.extractAssistantContent(
       reply(

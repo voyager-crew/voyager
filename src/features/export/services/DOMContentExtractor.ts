@@ -160,7 +160,8 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
         (element as HTMLElement);
       try {
         const plain =
-          (fallbackContainer as HTMLElement).innerText || fallbackContainer.textContent || '';
+          readTextOutsideEmptyBlocks(fallbackContainer) ??
+          ((fallbackContainer as HTMLElement).innerText || fallbackContainer.textContent || '');
         combinedText = normalizeText(plain);
       } catch {
         /* ignore */
@@ -169,6 +170,46 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     result.text = combinedText;
 
     return result;
+  }
+
+  /** Whether the dialect claims `element` as a code block that exports as nothing. */
+  function isEmptyClaimedBlock(element: Element): boolean {
+    const textParts: string[] = [];
+    const flags = { hasImages: false, hasFormulas: false, hasTables: false, hasCode: false };
+    const claimed = dialect.extractCodeBlock(
+      element,
+      [],
+      textParts,
+      flags,
+      element.localName,
+      false,
+    );
+    return Boolean(claimed) && !textParts.join('').trim();
+  }
+
+  /**
+   * `container`'s text without the blocks the walk deliberately exported as nothing, or
+   * null when it holds none. A host-drawn chart's labels are no reply text (ChatGPT's
+   * Mermaid preview would otherwise export as "StartFinish").
+   */
+  function readTextOutsideEmptyBlocks(container: Element): string | null {
+    let skipped = false;
+    const walker = document.createTreeWalker(
+      container,
+      NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+      (node) => {
+        if (!(node instanceof Element)) return NodeFilter.FILTER_ACCEPT;
+        if (shouldSkipElement(node)) return NodeFilter.FILTER_REJECT;
+        if (!isEmptyClaimedBlock(node)) return NodeFilter.FILTER_SKIP;
+        skipped = true;
+        return NodeFilter.FILTER_REJECT;
+      },
+    );
+    const parts: string[] = [];
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (node.nodeType === Node.TEXT_NODE) parts.push(node.textContent ?? '');
+    }
+    return skipped ? parts.join('') : null;
   }
 
   function processNodes(
