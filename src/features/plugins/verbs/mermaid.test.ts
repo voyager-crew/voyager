@@ -141,6 +141,25 @@ describe('mermaid primitive', () => {
     expect(document.querySelector('style[data-gv-plugin-scope]')).toBeNull();
   });
 
+  it('turning the plugin off closes an open fullscreen diagram', async () => {
+    const reply = chatgptReply(FLOWCHART);
+    activate(chatgpt.adapter);
+    await vi.waitFor(() => expect(drawn(reply)).toBe('Diagram'));
+    const added = vi.spyOn(document, 'addEventListener');
+    const removed = vi.spyOn(document, 'removeEventListener');
+    panelOf(reply)!.shadowRoot!.querySelector<HTMLElement>('.diagram')!.click();
+    expect(document.querySelector('.gv-mermaid-modal')).not.toBeNull();
+
+    await scope.dispose();
+
+    expect(document.querySelector('.gv-mermaid-modal')).toBeNull();
+    const types = (spy: typeof added) => spy.mock.calls.map(([type]) => type).sort();
+    expect(added.mock.calls.length).toBeGreaterThan(0);
+    expect(types(removed)).toEqual(types(added));
+    added.mockRestore();
+    removed.mockRestore();
+  });
+
   it('a non-mermaid code block is left alone', async () => {
     // Mermaid-looking text under another language label stays code, as on Gemini.
     const python = chatgptReply(FLOWCHART, 'python');

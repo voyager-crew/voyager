@@ -7,7 +7,7 @@
  * library stays a lazy import, and the theme follows `html[data-gv-scheme]`.
  */
 import { createMermaidErrorCard, createStyles } from '@/pages/content/mermaid/codeBlock';
-import { openFullscreen } from '@/pages/content/mermaid/fullscreen';
+import { createMermaidFullscreen } from '@/pages/content/mermaid/fullscreen';
 import { MermaidRenderer, sanitizeMermaidSvg } from '@/pages/content/mermaid/renderer';
 import { normalizeMermaidCode, shouldRenderMermaid } from '@/pages/content/mermaid/source';
 import type { Scheme } from '@/pages/content/platformTheme/scheme';
@@ -27,6 +27,7 @@ const MERMAID_STYLES_ID = 'gv-mermaid-styles';
 function mermaidDiagram(): CodeBlockDiagram {
   let scheme: Scheme = 'light';
   const renderer = new MermaidRenderer(() => scheme);
+  const fullscreen = createMermaidFullscreen();
   return {
     name: 'mermaid',
     label: '📊 Diagram',
@@ -48,12 +49,16 @@ function mermaidDiagram(): CodeBlockDiagram {
       }
     },
     openFullscreen(target) {
-      if (target.querySelector('svg')) openFullscreen(target.innerHTML);
+      if (target.querySelector('svg')) fullscreen.open(target.innerHTML);
     },
     install(doc) {
-      if (doc.getElementById(MERMAID_STYLES_ID)) return () => {};
+      // An open viewer belongs to this activation: turning the plugin off closes it and its listeners.
+      if (doc.getElementById(MERMAID_STYLES_ID)) return fullscreen.close;
       createStyles();
-      return () => doc.getElementById(MERMAID_STYLES_ID)?.remove();
+      return () => {
+        fullscreen.close();
+        doc.getElementById(MERMAID_STYLES_ID)?.remove();
+      };
     },
   };
 }
