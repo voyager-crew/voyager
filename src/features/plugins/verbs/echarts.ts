@@ -5,6 +5,7 @@
  * the options are parsed and sanitized as on Gemini (never evaluated), the
  * library stays a lazy import, and the theme follows `html[data-gv-scheme]`.
  */
+import { getDiagramToolbarLabels } from '@/core/ui/diagramToolbar';
 import { createEChartsFullscreen } from '@/pages/content/echarts/fullscreen';
 import { CHART_HEIGHT, PANEL_BG, createEChartsRenderer } from '@/pages/content/echarts/renderer';
 import { parseEChartsOption, shouldRenderECharts } from '@/pages/content/echarts/source';
@@ -25,21 +26,13 @@ const ECHARTS_STYLES_ID = 'gv-echarts-styles';
 /** Gemini's chart container class, which the fullscreen styles size. */
 const CHART_CLASS = 'gv-echarts-diagram';
 
-function fullscreenLabel(): string {
-  try {
-    return chrome.i18n?.getMessage('echartsFullscreenButton') || 'Fullscreen';
-  } catch {
-    return 'Fullscreen';
-  }
-}
-
 function echartsDiagram(): CodeBlockDiagram {
   let scheme: Scheme = 'light';
   const renderer = createEChartsRenderer();
   const fullscreen = createEChartsFullscreen(renderer.resize);
   return {
     name: 'echarts',
-    label: '📊 Diagram',
+    kind: 'echarts',
     // The chart paints its own backdrop and takes clicks, so no padding or zoom cursor.
     css: `.diagram { padding: 0; overflow: hidden; cursor: auto; }
 .${CHART_CLASS} {
@@ -48,7 +41,7 @@ function echartsDiagram(): CodeBlockDiagram {
   box-sizing: border-box;
   background-color: var(--gv-echarts-panel-bg);
 }`,
-    fullscreenLabel: fullscreenLabel(),
+    fullscreenLabel: getDiagramToolbarLabels().fullscreen,
     matches: shouldRenderECharts,
     async prepare(next) {
       scheme = next;

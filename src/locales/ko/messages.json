@@ -1773,14 +1773,6 @@
     "message": "코드 블록의 WaveJSON을 대화형 타이밍 다이어그램으로 자동 렌더링합니다",
     "description": "WaveDrom 기능 설명"
   },
-  "wavedromDiagramButton": {
-    "message": "〜 다이어그램",
-    "description": "렌더링된 다이어그램으로 전환하는 버튼 라벨"
-  },
-  "wavedromCodeButton": {
-    "message": "</> 코드",
-    "description": "WaveJSON 소스로 전환하는 버튼 라벨"
-  },
   "wavedromZoomIn": {
     "message": "확대",
     "description": "전체화면 툴바: 확대 버튼 제목"
@@ -1809,13 +1801,13 @@
     "message": "ECharts 옵션 코드 블록을 대화형 차트로 자동 렌더링",
     "description": "ECharts rendering feature hint"
   },
-  "echartsDiagramButton": {
-    "message": "📊 차트",
-    "description": "Toggle button label to show the rendered chart"
+  "diagramButton": {
+    "message": "다이어그램",
+    "description": "Diagram toolbar button that shows the rendered diagram (Mermaid, ECharts or WaveDrom)"
   },
-  "echartsCodeButton": {
-    "message": "</> 코드",
-    "description": "Toggle button label to show the ECharts option source"
+  "diagramCodeButton": {
+    "message": "코드",
+    "description": "Diagram toolbar button that shows the diagram source code"
   },
   "echartsFullscreenButton": {
     "message": "전체 화면",

@@ -1733,14 +1733,6 @@
     "message": "自動將程式碼區塊中的 WaveJSON 渲染為可互動的時序波形圖",
     "description": "WaveDrom 渲染功能提示"
   },
-  "wavedromDiagramButton": {
-    "message": "〜 圖示",
-    "description": "切換到已渲染圖示的按鈕標籤"
-  },
-  "wavedromCodeButton": {
-    "message": "</> 程式碼",
-    "description": "切換到 WaveJSON 原始碼的按鈕標籤"
-  },
   "wavedromZoomIn": {
     "message": "放大",
     "description": "全螢幕工具列：放大按鈕標題"
@@ -1769,13 +1761,13 @@
     "message": "自動將 ECharts 設定程式碼區塊轉換為互動式圖表",
     "description": "ECharts rendering feature hint"
   },
-  "echartsDiagramButton": {
-    "message": "📊 圖表",
-    "description": "Toggle button label to show the rendered chart"
+  "diagramButton": {
+    "message": "圖表",
+    "description": "Diagram toolbar button that shows the rendered diagram (Mermaid, ECharts or WaveDrom)"
   },
-  "echartsCodeButton": {
-    "message": "</> 程式碼",
-    "description": "Toggle button label to show the ECharts option source"
+  "diagramCodeButton": {
+    "message": "程式碼",
+    "description": "Diagram toolbar button that shows the diagram source code"
   },
   "echartsFullscreenButton": {
     "message": "全螢幕",

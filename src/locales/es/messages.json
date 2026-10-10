@@ -1773,14 +1773,6 @@
     "message": "Renderiza automáticamente los bloques de código WaveJSON como diagramas de tiempos interactivos",
     "description": "Descripción de la función WaveDrom"
   },
-  "wavedromDiagramButton": {
-    "message": "〜 Diagrama",
-    "description": "Etiqueta del botón para mostrar el diagrama renderizado"
-  },
-  "wavedromCodeButton": {
-    "message": "</> Código",
-    "description": "Etiqueta del botón para mostrar el código fuente WaveJSON"
-  },
   "wavedromZoomIn": {
     "message": "Acercar",
     "description": "Barra de herramientas de pantalla completa: título del botón de acercar"
@@ -1809,13 +1801,13 @@
     "message": "Representar automáticamente los bloques de código de opciones de ECharts como gráficos interactivos",
     "description": "ECharts rendering feature hint"
   },
-  "echartsDiagramButton": {
-    "message": "📊 Gráfico",
-    "description": "Toggle button label to show the rendered chart"
+  "diagramButton": {
+    "message": "Diagrama",
+    "description": "Diagram toolbar button that shows the rendered diagram (Mermaid, ECharts or WaveDrom)"
   },
-  "echartsCodeButton": {
-    "message": "</> Código",
-    "description": "Toggle button label to show the ECharts option source"
+  "diagramCodeButton": {
+    "message": "Código",
+    "description": "Diagram toolbar button that shows the diagram source code"
   },
   "echartsFullscreenButton": {
     "message": "Pantalla completa",

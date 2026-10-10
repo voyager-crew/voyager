@@ -33,7 +33,7 @@ function waveDromDiagram(): CodeBlockDiagram {
   const fullscreen = createWaveDromFullscreen();
   return {
     name: 'wavedrom',
-    label: '〜 Diagram',
+    kind: 'wavedrom',
     matches: shouldRenderWaveDrom,
     prepare(scheme) {
       theme = resolveWaveRenderTheme(WAVEDROM_THEME_MODE, scheme);

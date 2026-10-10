@@ -29,7 +29,7 @@ describe('Gemini wavedrom rendering', () => {
     startWaveDrom();
 
     await vi.waitFor(() =>
-      expect(document.querySelectorAll('.gv-wavedrom-wrapper svg')).toHaveLength(2),
+      expect(document.querySelectorAll('.gv-wavedrom-diagram svg')).toHaveLength(2),
     );
     // Gemini still wraps its own host in place and hides it behind the diagram.
     for (const host of [labelled, unlabelled]) {

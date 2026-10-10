@@ -1,14 +1,12 @@
+import {
+  DIAGRAM_TOOLBAR_BUTTON_CSS,
+  getDiagramToolbarLabels,
+  setDiagramToolbarButton,
+} from '@/core/ui/diagramToolbar';
+
 import { provideEChartsDataUrl } from './exportBridge';
 import type { createEChartsFullscreen } from './fullscreen';
 import { CHART_HEIGHT, PANEL_BG, type createEChartsRenderer } from './renderer';
-
-const t = (key: string, fallback: string): string => {
-  try {
-    return chrome.i18n?.getMessage(key) || fallback;
-  } catch {
-    return fallback;
-  }
-};
 
 interface NativeControlPlacement {
   parent: Node | null;
@@ -96,6 +94,7 @@ export function createEChartsView(
     }
 
     .gv-echarts-toggle button {
+      ${DIAGRAM_TOOLBAR_BUTTON_CSS}
       padding: 4px 10px;
       border: none;
       border-radius: 6px;
@@ -226,23 +225,21 @@ export function createEChartsView(
       // the overlay in Code view (same fix as the WaveDrom renderer).
       moveNativeCopyButton(codeBlockHost, toggleContainer);
 
+      const labels = getDiagramToolbarLabels();
       const diagramBtn = document.createElement('button');
-      diagramBtn.textContent = t('echartsDiagramButton', '📊 Diagram');
+      setDiagramToolbarButton(diagramBtn, 'echarts', labels.diagram);
       diagramBtn.className = 'active';
       diagramBtn.dataset.view = 'diagram';
       diagramBtn.setAttribute('aria-pressed', 'true');
 
       const codeBtn = document.createElement('button');
-      codeBtn.textContent = t('echartsCodeButton', '</> Code');
+      setDiagramToolbarButton(codeBtn, 'code', labels.code);
       codeBtn.dataset.view = 'code';
       codeBtn.setAttribute('aria-pressed', 'false');
 
       const fullscreenBtn = document.createElement('button');
-      fullscreenBtn.textContent = '⛶';
+      setDiagramToolbarButton(fullscreenBtn, 'fullscreen', labels.fullscreen, { iconOnly: true });
       fullscreenBtn.dataset.action = 'fullscreen';
-      const fullscreenLabel = t('echartsFullscreenButton', 'Fullscreen');
-      fullscreenBtn.title = fullscreenLabel;
-      fullscreenBtn.setAttribute('aria-label', fullscreenLabel);
 
       toggleContainer.append(diagramBtn, codeBtn, fullscreenBtn);
       wrapper.insertBefore(toggleContainer, codeBlockHost);

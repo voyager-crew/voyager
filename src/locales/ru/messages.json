@@ -1773,14 +1773,6 @@
     "message": "Автоматически отображает блоки кода WaveJSON в виде интерактивных временных диаграмм",
     "description": "Описание функции WaveDrom"
   },
-  "wavedromDiagramButton": {
-    "message": "〜 Диаграмма",
-    "description": "Подпись кнопки показа диаграммы"
-  },
-  "wavedromCodeButton": {
-    "message": "</> Код",
-    "description": "Подпись кнопки показа исходного кода WaveJSON"
-  },
   "wavedromZoomIn": {
     "message": "Приблизить",
     "description": "Панель полноэкранного режима: кнопка приближения"
@@ -1809,13 +1801,13 @@
     "message": "Автоматически отображать блоки кода с опциями ECharts в виде интерактивных графиков",
     "description": "ECharts rendering feature hint"
   },
-  "echartsDiagramButton": {
-    "message": "📊 График",
-    "description": "Toggle button label to show the rendered chart"
+  "diagramButton": {
+    "message": "Диаграмма",
+    "description": "Diagram toolbar button that shows the rendered diagram (Mermaid, ECharts or WaveDrom)"
   },
-  "echartsCodeButton": {
-    "message": "</> Код",
-    "description": "Toggle button label to show the ECharts option source"
+  "diagramCodeButton": {
+    "message": "Код",
+    "description": "Diagram toolbar button that shows the diagram source code"
   },
   "echartsFullscreenButton": {
     "message": "На весь экран",

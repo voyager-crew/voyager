@@ -191,6 +191,35 @@ describe('echarts primitive', () => {
     expect(library.instances[0].dispose).toHaveBeenCalled();
   });
 
+  it('diagram toolbar buttons show an icon and a translated label', async () => {
+    const zh: Record<string, string> = {
+      diagramButton: '图表',
+      diagramCodeButton: '代码',
+      echartsFullscreenButton: '全屏',
+    };
+    const getMessage = vi.mocked(chrome.i18n.getMessage);
+    getMessage.mockImplementation((key: string) => zh[key] ?? key);
+    try {
+      const reply = chatgptReply(PIE_OPTION);
+      activate();
+      await vi.waitFor(() => expect(chartOf(reply)).not.toBeNull());
+      const [diagramButton, codeButton, fullscreenButton] = Array.from(
+        panelOf(reply)!.shadowRoot!.querySelectorAll('button'),
+      );
+
+      expect(diagramButton.querySelector('svg.lucide-chart-column')).not.toBeNull();
+      expect(diagramButton.textContent).toBe('图表');
+      expect(codeButton.querySelector('svg.lucide-code-xml')).not.toBeNull();
+      expect(codeButton.textContent).toBe('代码');
+      // Icon-only: the label is its accessible name, not visible text.
+      expect(fullscreenButton.querySelector('svg.lucide-maximize-2')).not.toBeNull();
+      expect(fullscreenButton.textContent).toBe('');
+      expect(fullscreenButton.getAttribute('aria-label')).toBe('全屏');
+    } finally {
+      getMessage.mockImplementation((key: string) => key);
+    }
+  });
+
   it('the fullscreen button is disabled in the code view', async () => {
     const reply = chatgptReply(PIE_OPTION);
     activate();

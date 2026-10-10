@@ -1,4 +1,9 @@
 import { logger } from '@/core/services/LoggerService';
+import {
+  DIAGRAM_TOOLBAR_BUTTON_CSS,
+  getDiagramToolbarLabels,
+  setDiagramToolbarButton,
+} from '@/core/ui/diagramToolbar';
 
 import { openFullscreen } from './fullscreen';
 import { type MermaidRenderer, sanitizeMermaidSvg } from './renderer';
@@ -34,6 +39,7 @@ export const createStyles = () => {
     }
 
     .gv-mermaid-toggle button {
+      ${DIAGRAM_TOOLBAR_BUTTON_CSS}
       padding: 4px 10px;
       border: none;
       border-radius: 6px;
@@ -171,7 +177,7 @@ export function createMermaidErrorCard(errorMessage: string): HTMLElement {
   hint.style.cssText = 'margin-top: 12px; font-size: 13px;';
   hint.append('Click ');
   const codeLabel = document.createElement('b');
-  codeLabel.textContent = '"</> Code"';
+  codeLabel.textContent = '"Code"';
   hint.append(codeLabel, ' to view source');
 
   card.append(icon, title, details, hint);
@@ -207,13 +213,14 @@ function getOrCreateWrapper(codeBlockHost: HTMLElement): HTMLElement {
       toggleContainer.appendChild(nativeCopyBtn);
     }
 
+    const labels = getDiagramToolbarLabels();
     const diagramBtn = document.createElement('button');
-    diagramBtn.textContent = '📊 Diagram';
+    setDiagramToolbarButton(diagramBtn, 'mermaid', labels.diagram);
     diagramBtn.className = 'active';
     diagramBtn.dataset.view = 'diagram';
 
     const codeBtn = document.createElement('button');
-    codeBtn.textContent = '</> Code';
+    setDiagramToolbarButton(codeBtn, 'code', labels.code);
     codeBtn.dataset.view = 'code';
 
     toggleContainer.appendChild(diagramBtn);

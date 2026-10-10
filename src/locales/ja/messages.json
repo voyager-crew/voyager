@@ -1773,14 +1773,6 @@
     "message": "コードブロック内の WaveJSON をインタラクティブなタイミング図として自動描画します",
     "description": "WaveDrom 機能の説明"
   },
-  "wavedromDiagramButton": {
-    "message": "〜 図",
-    "description": "描画された図に切り替えるボタンのラベル"
-  },
-  "wavedromCodeButton": {
-    "message": "</> コード",
-    "description": "WaveJSON ソースに切り替えるボタンのラベル"
-  },
   "wavedromZoomIn": {
     "message": "拡大",
     "description": "全画面ツールバー：拡大ボタンのタイトル"
@@ -1809,13 +1801,13 @@
     "message": "ECharts のオプションコードブロックをインタラクティブなチャートとして自動レンダリング",
     "description": "ECharts rendering feature hint"
   },
-  "echartsDiagramButton": {
-    "message": "📊 チャート",
-    "description": "Toggle button label to show the rendered chart"
+  "diagramButton": {
+    "message": "図",
+    "description": "Diagram toolbar button that shows the rendered diagram (Mermaid, ECharts or WaveDrom)"
   },
-  "echartsCodeButton": {
-    "message": "</> コード",
-    "description": "Toggle button label to show the ECharts option source"
+  "diagramCodeButton": {
+    "message": "コード",
+    "description": "Diagram toolbar button that shows the diagram source code"
   },
   "echartsFullscreenButton": {
     "message": "全画面",

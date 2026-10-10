@@ -1,12 +1,10 @@
-import type { WaveDromFullscreen } from './fullscreen';
+import {
+  DIAGRAM_TOOLBAR_BUTTON_CSS,
+  getDiagramToolbarLabels,
+  setDiagramToolbarButton,
+} from '@/core/ui/diagramToolbar';
 
-const t = (key: string, fallback: string): string => {
-  try {
-    return chrome.i18n?.getMessage(key) || fallback;
-  } catch {
-    return fallback;
-  }
-};
+import type { WaveDromFullscreen } from './fullscreen';
 
 interface NativeControlPlacement {
   parent: Node | null;
@@ -93,6 +91,7 @@ export const createWaveDromView = (fullscreen: WaveDromFullscreen) => {
     }
 
     .gv-wavedrom-toggle button {
+      ${DIAGRAM_TOOLBAR_BUTTON_CSS}
       padding: 4px 10px;
       border: none;
       border-radius: 6px;
@@ -263,13 +262,14 @@ export const createWaveDromView = (fullscreen: WaveDromFullscreen) => {
       // the overlay in Code view (same fix as the Mermaid renderer).
       moveNativeCopyButton(codeBlockHost, toggleContainer);
 
+      const labels = getDiagramToolbarLabels();
       const diagramBtn = document.createElement('button');
-      diagramBtn.textContent = t('wavedromDiagramButton', '〜 Diagram');
+      setDiagramToolbarButton(diagramBtn, 'wavedrom', labels.diagram);
       diagramBtn.className = 'active';
       diagramBtn.dataset.view = 'diagram';
 
       const codeBtn = document.createElement('button');
-      codeBtn.textContent = t('wavedromCodeButton', '</> Code');
+      setDiagramToolbarButton(codeBtn, 'code', labels.code);
       codeBtn.dataset.view = 'code';
 
       toggleContainer.append(diagramBtn, codeBtn);

@@ -1773,14 +1773,6 @@
     "message": "Automatically render WaveJSON code blocks as interactive timing diagrams",
     "description": "WaveDrom rendering feature hint"
   },
-  "wavedromDiagramButton": {
-    "message": "〜 Diagram",
-    "description": "Toggle button label to show the rendered diagram"
-  },
-  "wavedromCodeButton": {
-    "message": "</> Code",
-    "description": "Toggle button label to show the WaveJSON source"
-  },
   "wavedromZoomIn": {
     "message": "Zoom In",
     "description": "Fullscreen toolbar: zoom in button title"
@@ -1809,13 +1801,13 @@
     "message": "Automatically render ECharts option code blocks as interactive charts",
     "description": "ECharts rendering feature hint"
   },
-  "echartsDiagramButton": {
-    "message": "📊 Diagram",
-    "description": "Toggle button label to show the rendered chart"
+  "diagramButton": {
+    "message": "Diagram",
+    "description": "Diagram toolbar button that shows the rendered diagram (Mermaid, ECharts or WaveDrom)"
   },
-  "echartsCodeButton": {
-    "message": "</> Code",
-    "description": "Toggle button label to show the ECharts option source"
+  "diagramCodeButton": {
+    "message": "Code",
+    "description": "Diagram toolbar button that shows the diagram source code"
   },
   "echartsFullscreenButton": {
     "message": "Fullscreen",

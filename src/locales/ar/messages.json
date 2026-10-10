@@ -1773,14 +1773,6 @@
     "message": "عرض تلقائي لكتل أكواد WaveJSON كمخططات توقيت تفاعلية",
     "description": "وصف ميزة WaveDrom"
   },
-  "wavedromDiagramButton": {
-    "message": "〜 المخطط",
-    "description": "تسمية زر التحويل إلى المخطط المعروض"
-  },
-  "wavedromCodeButton": {
-    "message": "</> الكود",
-    "description": "تسمية زر التحويل إلى كود WaveJSON المصدري"
-  },
   "wavedromZoomIn": {
     "message": "تكبير",
     "description": "شريط أدوات ملء الشاشة: عنوان زر التكبير"
@@ -1809,13 +1801,13 @@
     "message": "عرض أكواد خيارات ECharts تلقائيًا كرسوم بيانية تفاعلية",
     "description": "ECharts rendering feature hint"
   },
-  "echartsDiagramButton": {
-    "message": "📊 رسم بياني",
-    "description": "Toggle button label to show the rendered chart"
+  "diagramButton": {
+    "message": "مخطط",
+    "description": "Diagram toolbar button that shows the rendered diagram (Mermaid, ECharts or WaveDrom)"
   },
-  "echartsCodeButton": {
-    "message": "</> الكود",
-    "description": "Toggle button label to show the ECharts option source"
+  "diagramCodeButton": {
+    "message": "الكود",
+    "description": "Diagram toolbar button that shows the diagram source code"
   },
   "echartsFullscreenButton": {
     "message": "ملء الشاشة",

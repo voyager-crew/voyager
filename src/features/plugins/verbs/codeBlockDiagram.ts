@@ -19,6 +19,13 @@
  * and both attributes.
  */
 import type { Result } from '@/core/types/common';
+import {
+  DIAGRAM_TOOLBAR_BUTTON_CSS,
+  type DiagramKind,
+  type DiagramToolbarIcon,
+  getDiagramToolbarLabels,
+  setDiagramToolbarButton,
+} from '@/core/ui/diagramToolbar';
 import { SCHEME_ATTR, type Scheme, getScheme } from '@/pages/content/platformTheme/scheme';
 
 import type { ManifestIssue } from '../manifest/validate';
@@ -36,8 +43,8 @@ export interface CodeBlockDiagramParams {
 export interface CodeBlockDiagram {
   /** The primitive's name, stamped on each panel as `data-gv-diagram`. */
   readonly name: string;
-  /** Text of the toggle button that shows the diagram. */
-  readonly label: string;
+  /** Icon of the toggle button that shows the diagram. */
+  readonly kind: DiagramKind;
   /** Extra CSS inside the panel's shadow root; the drawn diagram sits in `.diagram`. */
   readonly css?: string;
   /** Whether a block with this language id (lowercase; null when untagged or plain text) and source is this diagram. */
@@ -97,6 +104,7 @@ const SHADOW_CSS = `
 :host { display: block; }
 .toolbar { display: flex; justify-content: flex-end; gap: 4px; margin-bottom: 4px; }
 button {
+  ${DIAGRAM_TOOLBAR_BUTTON_CSS}
   padding: 4px 10px;
   border: 1px solid var(--gv-diagram-border);
   border-radius: 6px;
@@ -256,21 +264,18 @@ export function activateCodeBlockDiagram(
     const toolbar = doc.createElement('div');
     toolbar.className = 'toolbar';
     toolbar.setAttribute('role', 'group');
-    const button = (text: string): HTMLButtonElement => {
+    const button = (icon: DiagramToolbarIcon, label: string, iconOnly = false) => {
       const element = doc.createElement('button');
       element.type = 'button';
-      element.textContent = text;
+      setDiagramToolbarButton(element, icon, label, { iconOnly });
       toolbar.append(element);
       return element;
     };
-    const diagramButton = button(diagram.label);
-    const codeButton = button('</> Code');
+    const labels = getDiagramToolbarLabels();
+    const diagramButton = button(diagram.kind, labels.diagram);
+    const codeButton = button('code', labels.code);
     const fullscreenLabel = diagram.fullscreenLabel;
-    const fullscreenButton = fullscreenLabel ? button('⛶') : null;
-    if (fullscreenButton && fullscreenLabel) {
-      fullscreenButton.title = fullscreenLabel;
-      fullscreenButton.setAttribute('aria-label', fullscreenLabel);
-    }
+    const fullscreenButton = fullscreenLabel ? button('fullscreen', fullscreenLabel, true) : null;
     const target = doc.createElement('div');
     target.className = 'diagram';
     root.append(style, toolbar, target);

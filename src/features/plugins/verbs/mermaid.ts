@@ -30,7 +30,7 @@ function mermaidDiagram(): CodeBlockDiagram {
   const fullscreen = createMermaidFullscreen();
   return {
     name: 'mermaid',
-    label: '📊 Diagram',
+    kind: 'mermaid',
     // The syntax-error card reads Gemini's colour token; give it the panel's.
     css: '.diagram { --gemini-on-surface-variant: var(--gv-diagram-fg); }',
     matches: shouldRenderMermaid,

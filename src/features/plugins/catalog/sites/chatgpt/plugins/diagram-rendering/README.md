@@ -21,8 +21,8 @@ Turning the plugin off removes the diagrams and shows every code block again.
 
 - **ECharts**: a block labelled `echarts`, `echart` or `chart`, or an untagged
   one whose content is an ECharts option, is parsed (never evaluated), sanitized
-  and drawn as an interactive chart. Its **⛶** toolbar button opens it full
-  screen, since clicks on the chart belong to its legend and tooltips.
+  and drawn as an interactive chart. Its **Fullscreen** toolbar button opens it
+  full screen, since clicks on the chart belong to its legend and tooltips.
 - **WaveDrom**: a block labelled `wavedrom` or `wavejson`, or an untagged one
   whose content reads as WaveJSON, is drawn as a timing diagram on the light
   backdrop Gemini uses; clicking it opens it full screen. Invalid or unfinished

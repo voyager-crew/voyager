@@ -16,7 +16,7 @@ const context: PrimitiveContext = {
 function fakeDiagram(prepared: Promise<boolean>): CodeBlockDiagram {
   return {
     name: 'fake',
-    label: 'Diagram',
+    kind: 'mermaid',
     matches: (language) => language === 'fake',
     prepare: () => prepared,
     async render(target, source) {
