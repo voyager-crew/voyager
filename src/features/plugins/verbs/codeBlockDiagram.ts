@@ -351,11 +351,23 @@ export function activateCodeBlockDiagram(
     `${diagram.name}:remove-panels`,
   );
   let rescan: Dispose | null = null;
-  scope.observe(doc.body, { childList: true, subtree: true, characterData: true }, () => {
+  const scheduleScan = (): void => {
     if (scope.isDisposed) return;
     void rescan?.();
     rescan = scope.timer(scan, RESCAN_DELAY_MS);
-  });
+  };
+  scope.observe(doc.body, { childList: true, subtree: true, characterData: true }, scheduleScan);
+  scope.observe(
+    doc.body,
+    { attributes: true, subtree: true, attributeFilter: [OWNER_ATTR] },
+    (records) => {
+      // A claim dropped before its first draw leaves no panel to remove, so only the attribute says the block is free.
+      const freed = records.some(
+        ({ target }) => target instanceof Element && !target.hasAttribute(OWNER_ATTR),
+      );
+      if (freed) scheduleScan();
+    },
+  );
   scope.observe(doc.documentElement, { attributes: true, attributeFilter: [SCHEME_ATTR] }, () => {
     // Before the first draw there is nothing to redo; that draw reads the scheme.
     if (!ready || scope.isDisposed) return;
