@@ -449,7 +449,8 @@ export function extractList(
 
   const html = serializeListHtml(
     element,
-    (block) => readHostCodeBlock(block, adapter)?.html || null,
+    // '' is a block the adapter consumed into nothing; only null leaves the element as it is.
+    (block) => readHostCodeBlock(block, adapter)?.html ?? null,
   );
 
   return {

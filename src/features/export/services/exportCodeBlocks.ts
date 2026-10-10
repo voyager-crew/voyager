@@ -186,7 +186,8 @@ export function extractExportCodeBlock(
 
 /**
  * Clone markup, but read chart pixels from the matching live owner. `readHostCodeBlock`
- * returns the host adapter's markup for a block it claims, or null to keep the element.
+ * returns the host adapter's markup for a block it claims ('' drops the block), or null
+ * to keep the element.
  */
 export function serializeListHtml(
   element: HTMLElement,
@@ -248,12 +249,14 @@ export function serializeListHtml(
       // Skip what a replaced ancestor took with it.
       if (!cleanList.contains(block)) continue;
       const html = readHostCodeBlock(block);
-      if (!html) continue;
+      if (html === null) continue;
 
       const replacement = document.createElement('div');
       replacement.innerHTML = html;
       if (replacement.firstElementChild) {
         block.replaceWith(replacement.firstElementChild);
+      } else {
+        block.remove();
       }
     }
   }
