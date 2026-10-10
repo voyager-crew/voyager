@@ -19,13 +19,16 @@ describe('diagram toolbar buttons', () => {
     setDiagramToolbarButton(code, 'code');
     setDiagramToolbarButton(fullscreen, 'fullscreen');
     document.body.append(diagram, code, fullscreen);
-    expect([diagram.textContent, code.textContent]).toEqual(['图表', '代码']);
+    const names = () =>
+      [diagram, code, fullscreen].map((button) => button.getAttribute('aria-label'));
+    expect(names()).toEqual(['图表', '代码', '全屏']);
 
     setCachedLanguage('en');
 
-    expect([diagram.textContent, code.textContent]).toEqual(['Diagram', 'Code']);
-    expect(fullscreen.getAttribute('aria-label')).toBe('Fullscreen');
-    expect(fullscreen.textContent).toBe('');
+    expect(names()).toEqual(['Diagram', 'Code', 'Fullscreen']);
+    // Icon-only: the label is the tooltip and accessible name, never visible text.
+    expect(code.title).toBe('Code');
+    expect(code.textContent).toBe('');
     expect(diagram.querySelector('svg.lucide-chart-column')).not.toBeNull();
   });
 });

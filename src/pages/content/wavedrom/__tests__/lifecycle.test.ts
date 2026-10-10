@@ -138,6 +138,10 @@ describe('runtime disable lifecycle', () => {
     });
     expect(document.querySelector('.gv-wavedrom-toggle')?.contains(nativeButtons)).toBe(true);
     expect(document.getElementById('gv-wavedrom-styles')).not.toBeNull();
+    // The toolbar sits above the timing diagram instead of floating over its waves.
+    const toggle = document.querySelector<HTMLElement>('.gv-wavedrom-toggle')!;
+    expect(document.querySelector('.gv-wavedrom-wrapper')!.firstElementChild).toBe(toggle);
+    expect(getComputedStyle(toggle).position).not.toBe('absolute');
     fixture.fullscreen.open('<svg viewBox="0 0 50 50"><g/></svg>', '#f9fafb');
     expect(document.querySelector('.gv-wavedrom-modal')).not.toBeNull();
 

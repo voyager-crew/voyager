@@ -192,7 +192,7 @@ describe('echarts primitive', () => {
     expect(library.instances[0].dispose).toHaveBeenCalled();
   });
 
-  it('diagram toolbar buttons show an icon and a translated label', async () => {
+  it('diagram toolbar buttons are icons named in the Voyager language', async () => {
     setCachedLanguage('zh');
     try {
       const reply = chatgptReply(PIE_OPTION);
@@ -203,10 +203,10 @@ describe('echarts primitive', () => {
       );
 
       expect(diagramButton.querySelector('svg.lucide-chart-column')).not.toBeNull();
-      expect(diagramButton.textContent).toBe('图表');
+      expect(diagramButton.getAttribute('aria-label')).toBe('图表');
       expect(codeButton.querySelector('svg.lucide-code-xml')).not.toBeNull();
-      expect(codeButton.textContent).toBe('代码');
-      // Icon-only: the label is its accessible name, not visible text.
+      expect(codeButton.getAttribute('aria-label')).toBe('代码');
+      expect(codeButton.textContent).toBe('');
       expect(fullscreenButton.querySelector('svg.lucide-maximize-2')).not.toBeNull();
       expect(fullscreenButton.textContent).toBe('');
       expect(fullscreenButton.getAttribute('aria-label')).toBe('全屏');

@@ -91,7 +91,7 @@ export function createEChartsView(
 
     .gv-echarts-toggle button {
       ${DIAGRAM_TOOLBAR_BUTTON_CSS}
-      padding: 4px 10px;
+      padding: 5px 7px;
       border: none;
       border-radius: 6px;
       cursor: pointer;

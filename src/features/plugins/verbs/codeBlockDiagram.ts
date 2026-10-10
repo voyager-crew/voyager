@@ -104,7 +104,7 @@ const SHADOW_CSS = `
 .toolbar { display: flex; justify-content: flex-end; gap: 4px; margin-bottom: 4px; }
 button {
   ${DIAGRAM_TOOLBAR_BUTTON_CSS}
-  padding: 4px 10px;
+  padding: 5px 7px;
   border: 1px solid var(--gv-diagram-border);
   border-radius: 6px;
   background: transparent;

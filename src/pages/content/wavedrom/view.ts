@@ -72,12 +72,11 @@ export const createWaveDromView = (fullscreen: WaveDromFullscreen) => {
       position: relative;
     }
 
+    /* Sits above the diagram, not over it: a timing diagram has no top margin to float on. */
     .gv-wavedrom-toggle {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      z-index: 10;
       display: flex;
+      width: fit-content;
+      margin: 8px 8px 4px auto;
       align-items: center;
       gap: 4px;
       background: var(--gemini-surface-container, rgba(0,0,0,0.05));
@@ -88,7 +87,7 @@ export const createWaveDromView = (fullscreen: WaveDromFullscreen) => {
 
     .gv-wavedrom-toggle button {
       ${DIAGRAM_TOOLBAR_BUTTON_CSS}
-      padding: 4px 10px;
+      padding: 5px 7px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
@@ -268,7 +267,7 @@ export const createWaveDromView = (fullscreen: WaveDromFullscreen) => {
       codeBtn.dataset.view = 'code';
 
       toggleContainer.append(diagramBtn, codeBtn);
-      wrapper.appendChild(toggleContainer);
+      wrapper.prepend(toggleContainer);
 
       const diagramContainer = document.createElement('div');
       diagramContainer.className = 'gv-wavedrom-diagram';

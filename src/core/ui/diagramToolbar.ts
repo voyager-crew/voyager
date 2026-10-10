@@ -19,9 +19,9 @@ export type DiagramToolbarIcon = DiagramKind | 'code' | 'fullscreen';
 
 const ICON_SIZE = 14;
 
-/** Lays an icon and its label side by side; append to the toolbar's `button` rule. */
+/** Centres the icon; append to the toolbar's `button` rule. */
 export const DIAGRAM_TOOLBAR_BUTTON_CSS =
-  'display: inline-flex; align-items: center; justify-content: center; gap: 5px;';
+  'display: inline-flex; align-items: center; justify-content: center;';
 
 const ICONS: Record<DiagramToolbarIcon, (size: number) => SVGSVGElement> = {
   mermaid: createWorkflowIcon,
@@ -50,12 +50,8 @@ let stopFollowingLanguage: (() => void) | null = null;
 function applyButton(button: HTMLButtonElement, icon: DiagramToolbarIcon): void {
   const label = labelOf(icon);
   button.replaceChildren(ICONS[icon](ICON_SIZE));
-  if (icon === 'fullscreen') {
-    button.title = label;
-    button.setAttribute('aria-label', label);
-  } else {
-    button.append(label);
-  }
+  button.title = label;
+  button.setAttribute('aria-label', label);
 }
 
 // Rendered buttons relabel when the Voyager language changes, not only on the
@@ -73,9 +69,8 @@ function relabelAll(): void {
 }
 
 /**
- * Gives a toolbar button its icon and label in the Voyager language setting
- * (not the browser locale), and keeps the label in that language as it changes.
- * The fullscreen button is icon-only: its label is the accessible name and tooltip.
+ * Gives an icon-only toolbar button its icon, plus a tooltip and accessible name
+ * in the Voyager language setting (not the browser locale) that follow it as it changes.
  */
 export function setDiagramToolbarButton(button: HTMLButtonElement, icon: DiagramToolbarIcon): void {
   applyButton(button, icon);
