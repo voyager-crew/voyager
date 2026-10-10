@@ -403,4 +403,42 @@ describe('exportRichText.lists', () => {
     expect(extracted.html).toContain('data:image/svg+xml');
     expect(extracted.html).toContain('hide-tail');
   });
+
+  it('an exported list keeps its diagram code visible', () => {
+    // A diagram plugin hides the host block in the page; image export renders the clone there.
+    const pageStyle = document.createElement('style');
+    pageStyle.textContent = '[data-gv-diagram-hidden] { display: none !important; }';
+    document.head.append(pageStyle);
+    const assistant = document.createElement('div');
+    assistant.innerHTML = `
+      <message-content>
+        <div class="markdown">
+          <ul>
+            <li>
+              Chart
+              <div class="gv-diagram-panel"></div>
+              <div data-markdown-copy="code-block" data-gv-diagram-hidden="">
+                <code>{ series: [{ type: "pie" }] }</code>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </message-content>
+    `;
+
+    const extracted = extractor.extractAssistantContent(assistant);
+    const rendered = document.createElement('div');
+    rendered.innerHTML = extracted.html;
+    document.body.append(rendered);
+
+    const code = Array.from(rendered.querySelectorAll('code')).find((el) =>
+      el.textContent?.includes('series'),
+    );
+    expect(code).toBeDefined();
+    for (let el: Element | null = code!; el && el !== rendered; el = el.parentElement) {
+      expect(getComputedStyle(el).display).not.toBe('none');
+    }
+    rendered.remove();
+    pageStyle.remove();
+  });
 });
