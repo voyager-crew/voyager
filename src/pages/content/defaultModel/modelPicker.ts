@@ -76,7 +76,7 @@ export class ModelPicker {
     return {
       kind,
       items,
-      inlineThinking: this.findInlineExtendedThinkingToggle(panel),
+      inlineThinking: this.findInlineThinkingItems(panel),
       nestedThinking,
     };
   }
@@ -169,17 +169,36 @@ export class ModelPicker {
         return false;
       }
 
-      // Current Gemini UI no longer exposes a Standard / Extended submenu.
-      // Extended thinking is a single opt-in row in the model menu; Standard
-      // is the implicit state when that row is not selected.
-      const inlineToggle = this.findInlineExtendedThinkingToggle(modelPane);
-      if (inlineToggle) {
-        const alreadySelected =
-          inlineToggle.classList.contains('selected') ||
-          inlineToggle.getAttribute('aria-checked') === 'true' ||
-          inlineToggle.getAttribute('aria-selected') === 'true';
+      // A single inline row is the opt-in Extended thinking toggle (#808);
+      // Standard is the implicit state when that row is not selected.
+      const inlineItems = this.findInlineThinkingItems(modelPane);
+      if (inlineItems.length === 1) {
+        const [inlineToggle] = inlineItems;
+        return this.applyThinkingItem(
+          inlineToggle,
+          this.isThinkingItemSelected(inlineToggle),
+          interaction,
+        );
+      }
 
-        return this.applyThinkingItem(inlineToggle, alreadySelected, interaction);
+      // Oct 2026: Gemini lists Low / Medium / High as sibling rows sharing the
+      // toggle's jslog id; treating the first as the toggle could only ever apply Low.
+      if (inlineItems.length > 1) {
+        const index = this.preferences.resolveThinkingRowIndex(
+          inlineItems.map((item) => this.getThinkingLevelLabel(item)),
+          target,
+        );
+        const targetItem = inlineItems[index];
+        if (!targetItem) {
+          document.body.click();
+          interaction.failed();
+          return false;
+        }
+        return this.applyThinkingItem(
+          targetItem,
+          this.isThinkingItemSelected(targetItem),
+          interaction,
+        );
       }
 
       const thinkingRow = this.findThinkingLevelTriggerRow();
@@ -206,12 +225,13 @@ export class ModelPicker {
         return false;
       }
 
-      const targetLabel = target.label.toLowerCase().trim();
-      const byLabel = items.find(
-        (it) => this.getThinkingLevelLabel(it).toLowerCase().trim() === targetLabel,
-      );
-      const byIndex = items[target.index] ?? null;
-      const targetItem = byLabel ?? byIndex;
+      const targetItem =
+        items[
+          this.preferences.resolveThinkingRowIndex(
+            items.map((it) => this.getThinkingLevelLabel(it)),
+            target,
+          )
+        ];
 
       if (!targetItem) {
         document.body.click();
@@ -363,11 +383,17 @@ export class ModelPicker {
     return jslogId === EXTENDED_THINKING_TOGGLE_JSLOG_ID;
   }
 
-  private findInlineExtendedThinkingToggle(root: ParentNode): HTMLElement | null {
+  private findInlineThinkingItems(root: ParentNode): HTMLElement[] {
+    return Array.from(root.querySelectorAll<HTMLElement>(MODE_ITEM_SELECTOR)).filter((item) =>
+      this.isInlineExtendedThinkingToggle(item),
+    );
+  }
+
+  private isThinkingItemSelected(item: HTMLElement): boolean {
     return (
-      Array.from(root.querySelectorAll<HTMLElement>(MODE_ITEM_SELECTOR)).find((item) =>
-        this.isInlineExtendedThinkingToggle(item),
-      ) ?? null
+      item.classList.contains('selected') ||
+      item.getAttribute('aria-checked') === 'true' ||
+      item.getAttribute('aria-selected') === 'true'
     );
   }
 
@@ -391,12 +417,23 @@ export class ModelPicker {
     // Compact layout may omit data-mode-id but keeps the internal model id in jslog metadata.
     const jslog = item.getAttribute('jslog');
     if (typeof jslog === 'string') {
-      const matchedIds = jslog.match(/[a-f0-9]{16}/gi);
+      const matchedIds = this.readJslogMetadata(jslog).match(/[a-f0-9]{16}/gi);
       const id = matchedIds?.[matchedIds.length - 1]?.trim();
       if (id) return id;
     }
 
     return null;
+  }
+
+  private readJslogMetadata(jslog: string): string {
+    // Oct 2026: Gemini base64-encodes the BardVeMetadataKey payload, hiding the hex model ids.
+    const encoded = jslog.match(/BardVeMetadataKey:([A-Za-z0-9+/_-]+={0,2})(?:;|$)/)?.[1];
+    if (!encoded) return jslog;
+    try {
+      return atob(encoded.replace(/-/g, '+').replace(/_/g, '/'));
+    } catch {
+      return jslog;
+    }
   }
 
   private isModelItemSelected(item: HTMLElement): boolean {

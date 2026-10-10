@@ -222,6 +222,32 @@ export class DefaultModelPreferences {
     return false;
   }
 
+  /**
+   * Semantic mode of a row in a multi-row thinking list. The first row is
+   * Gemini's implicit level (Standard, now Low: the pill shows no thinking line
+   * there) and the last is the deepest (Extended, now High). Middle rows such
+   * as Medium have no legacy equivalent and are matched by label.
+   */
+  public thinkingModeForRow(index: number, count: number): ThinkingMode | undefined {
+    if (count === 1 || index === count - 1) return 'extended';
+    return index === 0 ? 'standard' : undefined;
+  }
+
+  /**
+   * Resolve the single row a stored thinking default points at. The label is
+   * the stable key; otherwise the semantic mode, then the legacy positional
+   * index, where any non-first index meant Extended (the deepest row).
+   */
+  public resolveThinkingRowIndex(labels: string[], target: DefaultThinkingLevel | null): number {
+    if (!target || !labels.length) return -1;
+    const targetLabel = target.label.toLowerCase().trim();
+    const byLabel = labels.findIndex((label) => label.toLowerCase().trim() === targetLabel);
+    if (byLabel !== -1) return byLabel;
+    const last = labels.length - 1;
+    if (target.mode) return target.mode === 'extended' ? last : 0;
+    return target.index > 0 ? last : 0;
+  }
+
   public thinkingMatchesLines(target: DefaultThinkingLevel, lines: string[]): boolean {
     // Gemini omits the thinking-level line in the trigger pill when at Standard.
     // Index 0 is not sufficient: compact pickers may contain only Extended.

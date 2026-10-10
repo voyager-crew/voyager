@@ -211,13 +211,22 @@ export class DefaultStars {
   }
 
   private async injectInlineExtendedThinkingStar(menuPanel: HTMLElement): Promise<boolean> {
-    const item = this.picker.describeMenu(menuPanel).inlineThinking;
-    if (!item) return false;
+    const inlineItems = this.picker.describeMenu(menuPanel).inlineThinking;
+    if (!inlineItems.length) return false;
 
     if (!this.preferences.enabled) {
-      item.querySelectorAll('.gv-default-star-btn').forEach((star) => star.remove());
+      inlineItems.forEach((item) =>
+        item.querySelectorAll('.gv-default-star-btn').forEach((star) => star.remove()),
+      );
       return false;
     }
+
+    // Low / Medium / High rows (Oct 2026) are a level list, not the Extended toggle.
+    if (inlineItems.length > 1) {
+      this.injectThinkingRowStars(inlineItems);
+      return true;
+    }
+    const [item] = inlineItems;
 
     const label = this.picker.describeItem(item).thinkingLabel;
     if (!label) return false;
@@ -274,14 +283,22 @@ export class DefaultStars {
       }
     });
 
-    const currentDefault = this.preferences.thinking;
+    this.injectThinkingRowStars(items);
+    return true;
+  }
+
+  private injectThinkingRowStars(items: HTMLElement[]): void {
+    const labels = items.map((item) => this.picker.describeItem(item).thinkingLabel);
     // Resolve the single default row up front. Deciding per-item let a drifted
     // stored index light up a second star alongside the label match — the
     // "both thinking levels selected" bug.
-    const defaultIndex = this.resolveThinkingDefaultIndex(items, currentDefault);
+    const defaultIndex = this.preferences.resolveThinkingRowIndex(
+      labels,
+      this.preferences.thinking,
+    );
 
     items.forEach((item, index) => {
-      const label = this.picker.describeItem(item).thinkingLabel;
+      const label = labels[index];
       if (!label) return;
 
       const isDefault = index === defaultIndex;
@@ -291,47 +308,19 @@ export class DefaultStars {
         return;
       }
 
-      const btn = this.createStar('thinking', (button) => {
-        const mode: ThinkingMode = items.length === 1 || index > 0 ? 'extended' : 'standard';
-        return this.handleThinkingLevelStarClick(index, label, button, mode);
-      });
+      const btn = this.createStar('thinking', (button) =>
+        this.handleThinkingLevelStarClick(
+          index,
+          label,
+          button,
+          this.preferences.thinkingModeForRow(index, items.length),
+        ),
+      );
 
       this.appendStar(item, btn, 'thinking');
 
       this.updateStarState(item, isDefault, 'thinking');
     });
-
-    return true;
-  }
-
-  /**
-   * Resolve which single thinking-level row is the stored default.
-   * The label is the stable, user-facing key; when it resolves to a concrete
-   * row that row is the ONLY default. We fall back to the stored positional
-   * index solely when no label matches (e.g. the UI language changed since the
-   * default was saved), and only when it addresses a real row. Deciding this
-   * once — instead of an OR test per row — is what prevents two stars from
-   * lighting up when the stored index and label disagree.
-   */
-  private resolveThinkingDefaultIndex(
-    items: HTMLElement[],
-    currentDefault: DefaultThinkingLevel | null,
-  ): number {
-    if (!currentDefault) return -1;
-
-    const targetLabel = currentDefault.label?.toLowerCase().trim();
-    if (targetLabel) {
-      const byLabel = items.findIndex(
-        (item) => this.picker.describeItem(item).thinkingLabel.toLowerCase().trim() === targetLabel,
-      );
-      if (byLabel !== -1) return byLabel;
-    }
-
-    if (currentDefault.index >= 0 && currentDefault.index < items.length) {
-      return currentDefault.index;
-    }
-
-    return -1;
   }
 
   private updateStarState(item: HTMLElement, isDefault: boolean, kind: 'model' | 'thinking') {
@@ -400,6 +389,10 @@ export class DefaultStars {
     const submenu = this.picker.findThinkingLevelSubmenuPane();
     if (submenu) {
       void this.injectThinkingLevelStars(submenu);
+    } else {
+      // Inline level rows share the model menu; refresh it so the previous default unstars.
+      const menuPanel = this.picker.getModeSwitchMenuPanel();
+      if (menuPanel) void this.injectStarButtons(menuPanel);
     }
 
     await persistence;
