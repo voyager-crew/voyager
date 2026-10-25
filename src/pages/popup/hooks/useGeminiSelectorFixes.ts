@@ -4,14 +4,18 @@ import browser from 'webextension-polyfill';
 
 import { GEMINI_SELECTOR_HOSTS } from '@/core/gemini/selectors/types';
 import { StorageKeys } from '@/core/types/common';
-import {
-  GEMINI_SELECTOR_REFRESH_MESSAGE,
-  GEMINI_SELECTOR_SET_ENABLED_MESSAGE,
-  GEMINI_SELECTOR_STATUS_MESSAGE,
-  type GeminiSelectorResponse,
-  readGeminiSelectorResponse,
-} from '@/features/geminiSelectorFixes/messages';
+import { readGeminiSelectorResponse } from '@/features/geminiSelectorFixes/messages';
 import { geminiSelectorHostFromUrl } from '@/features/geminiSelectorFixes/policy';
+import { type Machine, startMachine } from '@/features/plugins/runtime/stateMachine';
+
+import {
+  type FixesEvent,
+  type FixesRequest,
+  type FixesState,
+  INITIAL_FIXES_STATE,
+  createGeminiSelectorFixesEffects,
+  geminiSelectorFixesTransition,
+} from './geminiSelectorFixesMachine';
 
 interface SourceTab {
   activeTabContextLoaded: boolean;
@@ -20,20 +24,22 @@ interface SourceTab {
   activeTabId: number | null;
 }
 
-type ChannelStatus = Extract<GeminiSelectorResponse, { ok: true }>;
-type Operation = 'loading' | 'saving' | 'checking' | null;
-
-interface SelectorFixesState {
+interface SelectorFixesView {
   target: string;
-  channel: ChannelStatus | null;
-  operation: Operation;
-  error: 'check' | 'save' | null;
+  state: FixesState;
   /** Away from Gemini the card appears only while ON; it stays after the user turns it off. */
-  seenOn?: boolean;
+  seenOn: boolean;
 }
 
 /** Away from a Gemini tab the popup can still read consent and turn it off, nothing else. */
 const ELSEWHERE = 'elsewhere';
+
+const OPERATIONS = {
+  loading: 'loading',
+  saving: 'saving',
+  checking: 'checking',
+  idle: null,
+} as const;
 
 /** The background owns consent and requests; this hook owns only the popup's view. */
 export function useGeminiSelectorFixes(tab: SourceTab, sourceTabId?: number) {
@@ -46,28 +52,11 @@ export function useGeminiSelectorFixes(tab: SourceTab, sourceTabId?: number) {
   const tabId = tab.activeTabId;
   const onGemini = host !== undefined && tabId !== null;
   const target = onGemini ? `${host}:${tabId}` : tab.activeTabContextLoaded ? ELSEWHERE : '';
-  const [state, setState] = useState<SelectorFixesState>({
-    target: '',
-    channel: null,
-    operation: null,
-    error: null,
-  });
-  const current = useRef(state);
-  const requestVersion = useRef(0);
-  const pendingSetting = useRef<{ version: number; enabled: boolean } | null>(null);
+  const [view, setView] = useState<SelectorFixesView | null>(null);
+  const machine = useRef<Machine<FixesState, FixesEvent> | null>(null);
 
-  const update = useCallback((next: SelectorFixesState) => {
-    const previous = current.current;
-    const seenOn =
-      (previous.target === next.target && previous.seenOn === true) ||
-      next.channel?.enabled === true;
-    current.current = { ...next, seenOn };
-    setState(current.current);
-  }, []);
-
-  const request = useCallback(
-    async (type: string, extra: { enabled?: boolean; force?: boolean } = {}) => {
-      if (!target) return null;
+  const request = useCallback<FixesRequest>(
+    async (type, extra = {}) => {
       // Without a Gemini source tab the background admits only status reads and OFF.
       const message = onGemini
         ? { type, host, tabId, ...extra }
@@ -79,136 +68,59 @@ export function useGeminiSelectorFixes(tab: SourceTab, sourceTabId?: number) {
         return null;
       }
     },
-    [host, onGemini, tabId, target],
-  );
-
-  const refresh = useCallback(
-    async (version: number, force: boolean) => {
-      const before = current.current;
-      if (
-        !onGemini ||
-        before.target !== target ||
-        !before.channel?.enabled ||
-        !before.channel.buildEnabled
-      )
-        return;
-      update({ ...before, operation: 'checking', error: null });
-      const response = await request(GEMINI_SELECTOR_REFRESH_MESSAGE, { force });
-      if (version !== requestVersion.current) return;
-      update({
-        ...current.current,
-        channel: response?.ok ? response : current.current.channel,
-        operation: null,
-        error: response?.ok ? null : 'check',
-      });
-    },
-    [onGemini, request, target, update],
-  );
-
-  const readStatus = useCallback(
-    async (checkWhenEnabled: boolean) => {
-      const version = ++requestVersion.current;
-      const previous = current.current.target === target ? current.current.channel : null;
-      update({ target, channel: previous, operation: 'loading', error: null });
-      const response = await request(GEMINI_SELECTOR_STATUS_MESSAGE);
-      if (version !== requestVersion.current) return;
-      update({
-        target,
-        channel: response?.ok ? response : previous,
-        operation: null,
-        error: response?.ok ? null : 'check',
-      });
-      if (response?.ok && checkWhenEnabled) await refresh(version, false);
-    },
-    [refresh, request, target, update],
+    [host, onGemini, tabId],
   );
 
   useEffect(() => {
     if (!target) return;
-    void readStatus(true);
+    // One machine per source tab: a new target drops every reply the old one still awaits.
+    const fixes = startMachine<FixesState, FixesEvent>(
+      {
+        id: 'geminiSelectorFixesPopup',
+        transition: geminiSelectorFixesTransition(onGemini),
+        effects: createGeminiSelectorFixesEffects(request),
+      },
+      INITIAL_FIXES_STATE,
+    );
+    let seenOn = false;
+    const publish = (state: FixesState) => {
+      seenOn ||= state.channel?.enabled === true;
+      setView({ target, state, seenOn });
+    };
+    publish(fixes.state);
+    fixes.subscribe(publish);
+    machine.current = fixes;
     const onChanged = (changes: Record<string, browser.Storage.StorageChange>, area: string) => {
       if (area !== 'local' || !Object.hasOwn(changes, StorageKeys.GEMINI_SELECTOR_ONLINE_FIXES))
         return;
       const enabled = changes[StorageKeys.GEMINI_SELECTOR_ONLINE_FIXES].newValue === true;
-      const observed = current.current;
-      if (observed.target === target && observed.channel) {
-        // A failed follow-up read cannot undo consent that storage already confirmed.
-        update({
-          ...observed,
-          channel: {
-            ...observed.channel,
-            enabled,
-            cachedRevision: enabled ? observed.channel.cachedRevision : null,
-          },
-        });
-      }
-      // Our writer still has to finish cache deletion; the consent event alone is not its ack.
-      if (
-        pendingSetting.current?.enabled === enabled &&
-        pendingSetting.current.version === requestVersion.current
-      )
-        return;
-      // A second popup can turn the channel off during a check. Supersede that reply immediately.
-      void readStatus(enabled);
+      fixes.send({ type: 'consentChanged', enabled });
     };
     browser.storage.onChanged.addListener(onChanged);
     return () => {
-      requestVersion.current++;
-      pendingSetting.current = null;
+      if (machine.current === fixes) machine.current = null;
       browser.storage.onChanged.removeListener(onChanged);
+      void fixes.stop();
     };
-  }, [readStatus, target, update]);
+  }, [onGemini, request, target]);
 
-  const setEnabled = useCallback(
-    async (enabled: boolean) => {
-      const before = current.current;
-      if (
-        !target ||
-        (enabled && !onGemini) ||
-        before.target !== target ||
-        !before.channel?.buildEnabled ||
-        before.operation === 'saving' ||
-        before.operation === 'loading'
-      )
-        return;
-      const version = ++requestVersion.current;
-      pendingSetting.current = { version, enabled };
-      update({ ...before, operation: 'saving', error: null });
-      const response = await request(GEMINI_SELECTOR_SET_ENABLED_MESSAGE, { enabled });
-      if (version !== requestVersion.current) {
-        if (pendingSetting.current?.version === version) pendingSetting.current = null;
-        return;
-      }
-      // Consent can be durable even if removing the cache failed. Show that state and the error.
-      const reconciled = response?.ok ? response : await request(GEMINI_SELECTOR_STATUS_MESSAGE);
-      if (pendingSetting.current?.version === version) pendingSetting.current = null;
-      if (version !== requestVersion.current) return;
-      update({
-        ...current.current,
-        channel: reconciled?.ok ? reconciled : current.current.channel,
-        operation: null,
-        error: response?.ok ? null : 'save',
-      });
-      if (response?.ok && enabled) await refresh(version, false);
-    },
-    [onGemini, refresh, request, target, update],
-  );
+  const setEnabled = useCallback(async (enabled: boolean) => {
+    machine.current?.send({ type: 'setEnabled', enabled });
+  }, []);
 
   const checkNow = useCallback(async () => {
-    const before = current.current;
-    if (before.target !== target || before.operation !== null || !before.channel?.enabled) return;
-    await refresh(++requestVersion.current, true);
-  }, [refresh, target]);
+    machine.current?.send({ type: 'checkNow' });
+  }, []);
 
-  const view = state.target === target ? state : null;
+  const current = view?.target === target ? view : null;
   return {
-    visible: onGemini || (target !== '' && view?.seenOn === true),
+    visible: onGemini || (target !== '' && current?.seenOn === true),
     /** Turning on and checking need the Gemini tab the request will be checked against. */
     canTurnOn: onGemini,
-    channel: view?.channel ?? null,
+    channel: current?.state.channel ?? null,
     // A completed operation is null; only an absent view is still loading.
-    operation: view ? view.operation : target ? 'loading' : null,
-    error: view?.error ?? null,
+    operation: current ? OPERATIONS[current.state.status] : target ? 'loading' : null,
+    error: current?.state.error ?? null,
     setEnabled,
     checkNow,
   };

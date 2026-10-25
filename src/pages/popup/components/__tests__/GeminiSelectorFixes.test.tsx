@@ -373,6 +373,26 @@ describe('Gemini selector fixes popup', () => {
     expect(requests(GEMINI_SELECTOR_REFRESH_MESSAGE)).toHaveLength(checks);
   });
 
+  it('does not show or check a stale ON read answered after another popup turned it off', async () => {
+    channel = { ...channel, enabled: true };
+    const staleRead = deferred<GeminiSelectorResponse>();
+    const answer = api.runtime.sendMessage.getMockImplementation()!;
+    api.runtime.sendMessage.mockImplementationOnce(async (message: Request) => {
+      sent.push(message);
+      return staleRead.promise;
+    });
+    api.runtime.sendMessage.mockImplementation(answer);
+    await render();
+    await act(async () => {
+      channel = { ...channel, enabled: false };
+      emitConsent(false);
+    });
+    await act(async () => staleRead.resolve({ ...channel, enabled: true }));
+    expect(toggle()?.checked).toBe(false);
+    expect(manual()).toBeUndefined();
+    expect(requests(GEMINI_SELECTOR_REFRESH_MESSAGE)).toEqual([]);
+  });
+
   it('keeps a confirmed external OFF visible when the background status read fails', async () => {
     channel = { ...channel, enabled: true };
     await render();

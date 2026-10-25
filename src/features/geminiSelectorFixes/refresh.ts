@@ -5,9 +5,9 @@ import {
   type GeminiSelectorHost,
   type GeminiTurnProfiles,
 } from '@/core/gemini/selectors/types';
-import { logger } from '@/core/services/LoggerService';
 import { StorageKeys } from '@/core/types/common';
 import { EXTENSION_VERSION } from '@/core/utils/version';
+import { type Machine, startMachine } from '@/features/plugins/runtime/stateMachine';
 import { isGeminiSelectorHost } from '@/features/plugins/sites/hostPolicy';
 
 import {
@@ -18,17 +18,20 @@ import {
   readCachedGeminiSelectorFile,
   readGeminiSelectorAttempt,
 } from './cache';
+import {
+  IDLE_CHECK,
+  type SelectorCheckEvent,
+  type SelectorCheckState,
+  createSelectorCheckEffects,
+  selectorCheckTransition,
+} from './checkMachine';
 import { isGeminiSelectorRemoteEnabledAtBuild } from './config';
 import type {
   GeminiSelectorRefreshResult,
   GeminiSelectorResponse,
   GeminiSelectorStatus,
 } from './messages';
-import {
-  GEMINI_SELECTOR_TIMEOUT_MS,
-  geminiSelectorFileUrl,
-  isGeminiSelectorCheckDue,
-} from './policy';
+import { GEMINI_SELECTOR_TIMEOUT_MS, geminiSelectorFileUrl } from './policy';
 import { readGeminiSelectorResponseBody } from './response';
 import {
   type GeminiSelectorStorage,
@@ -47,11 +50,6 @@ export interface GeminiSelectorRefresherOptions {
   readonly timeoutMs?: number;
 }
 
-interface Flight {
-  readonly controller: AbortController;
-  readonly promise: Promise<GeminiSelectorResponse>;
-}
-
 /** One background owner; no timer or caller can bypass the opt-in gate. */
 export class GeminiSelectorRefresher {
   private readonly storage: GeminiSelectorStorage;
@@ -61,7 +59,10 @@ export class GeminiSelectorRefresher {
   private readonly bundledRevision: number;
   private readonly buildEnabled: boolean;
   private readonly timeoutMs: number;
-  private readonly inFlight = new Map<GeminiSelectorHost, Flight>();
+  private readonly checks = new Map<
+    GeminiSelectorHost,
+    Machine<SelectorCheckState, SelectorCheckEvent>
+  >();
 
   constructor(options: GeminiSelectorRefresherOptions = {}) {
     this.storage = options.storage ?? geminiSelectorStorage();
@@ -102,9 +103,9 @@ export class GeminiSelectorRefresher {
     };
   }
 
+  /** Withdraws consent from every running check; each still saves its attempt time. */
   abortAll(): void {
-    for (const flight of this.inFlight.values()) flight.controller.abort();
-    // Keep each slot until its final write settles, so an old cleanup cannot erase a newer pass.
+    for (const check of this.checks.values()) check.send({ type: 'withdrawn' });
   }
 
   async setEnabled(host: GeminiSelectorHost, enabled: boolean): Promise<GeminiSelectorStatus> {
@@ -136,64 +137,34 @@ export class GeminiSelectorRefresher {
     if (!isGeminiSelectorHost(host))
       return Promise.resolve({ ok: false, error: 'invalid-request' });
     if (!this.buildEnabled) return this.status(host, 'disabled');
-    const existing = this.inFlight.get(host);
-    if (existing) return existing.promise;
-    const controller = new AbortController();
-    const promise = this.perform(host, options.force === true, controller)
-      .catch((error: unknown): GeminiSelectorResponse => {
-        logger.warn('Gemini selector refresh could not persist its state', {
-          host,
-          error: String(error),
-        });
-        return { ok: false, error: 'storage' };
-      })
-      .finally(() => {
-        if (this.inFlight.get(host)?.controller === controller) this.inFlight.delete(host);
-      });
-    this.inFlight.set(host, { controller, promise });
-    return promise;
+    const check = this.checkFor(host);
+    return new Promise((reply) => {
+      check.send({ type: 'check', force: options.force === true, reply });
+    });
   }
 
-  private async perform(
-    host: GeminiSelectorHost,
-    force: boolean,
-    controller: AbortController,
-  ): Promise<GeminiSelectorStatus> {
-    const state = await this.status(host);
-    if (!state.enabled || controller.signal.aborted) return this.status(host, 'disabled');
-    if (!force && !isGeminiSelectorCheckDue(state.lastAttemptAt, this.now())) {
-      return this.status(host, 'notDue');
-    }
-    // Consent is checked again immediately before fetch; force only bypasses the due time.
-    if (!(await loadGeminiSelectorEnabled(this.storage)) || controller.signal.aborted) {
-      return this.status(host, 'disabled');
-    }
-    const attemptedAt = this.now();
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    let onAbort: (() => void) | undefined;
-    let result: GeminiSelectorRefreshResult = 'failed';
-    const aborted = new Promise<never>((_, reject) => {
-      onAbort = () => reject(new Error('Gemini selector request was aborted'));
-      controller.signal.addEventListener('abort', onAbort, { once: true });
-      timer = setTimeout(() => controller.abort(), this.timeoutMs);
-    });
-    try {
-      const file = await Promise.race([this.fetchFile(host, controller.signal), aborted]);
-      if (timer !== undefined) clearTimeout(timer);
-      result = await this.accept(host, file, controller.signal);
-    } catch (error) {
-      if (!controller.signal.aborted) {
-        logger.warn('Gemini selector check failed', { host, error: String(error) });
-      }
-    } finally {
-      if (timer !== undefined) clearTimeout(timer);
-      if (onAbort) controller.signal.removeEventListener('abort', onAbort);
-      // Only completed attempts are persisted; a worker dying mid-fetch may retry once on restart.
-      // The host's in-flight slot stays until this write settles, so OFF -> ON cannot start another.
-      await this.storage.set({ [geminiSelectorAttemptKey(host)]: { lastAttemptAt: attemptedAt } });
-    }
-    if (!(await loadGeminiSelectorEnabled(this.storage))) result = 'disabled';
-    return this.status(host, result);
+  private checkFor(host: GeminiSelectorHost): Machine<SelectorCheckState, SelectorCheckEvent> {
+    const existing = this.checks.get(host);
+    if (existing) return existing;
+    const check = startMachine<SelectorCheckState, SelectorCheckEvent>(
+      {
+        id: 'geminiSelectorCheck',
+        transition: selectorCheckTransition,
+        effects: createSelectorCheckEffects({
+          timeoutMs: this.timeoutMs,
+          now: this.now,
+          status: (result) => this.status(host, result),
+          isEnabled: () => loadGeminiSelectorEnabled(this.storage),
+          fetchFile: (signal) => this.fetchFile(host, signal),
+          commit: (file, withdrawn) => this.accept(host, file, withdrawn),
+          recordAttempt: (attemptedAt) =>
+            this.storage.set({ [geminiSelectorAttemptKey(host)]: { lastAttemptAt: attemptedAt } }),
+        }),
+      },
+      IDLE_CHECK,
+    );
+    this.checks.set(host, check);
+    return check;
   }
 
   private async fetchFile(
@@ -213,12 +184,12 @@ export class GeminiSelectorRefresher {
   private async accept(
     host: GeminiSelectorHost,
     file: GeminiSelectorFile,
-    signal: AbortSignal,
+    withdrawn: () => boolean,
   ): Promise<GeminiSelectorRefreshResult> {
     const cacheKey = geminiSelectorCacheKey(host);
     const values = await this.storage.get([StorageKeys.GEMINI_SELECTOR_ONLINE_FIXES, cacheKey]);
     if (
-      signal.aborted ||
+      withdrawn() ||
       !isGeminiSelectorConsentEnabled(values[StorageKeys.GEMINI_SELECTOR_ONLINE_FIXES])
     ) {
       return 'disabled';
@@ -245,7 +216,7 @@ export class GeminiSelectorRefresher {
     };
     await this.storage.set({ [cacheKey]: entry });
     // A queued storage write can finish after OFF removed the cache; discard that late result.
-    if (signal.aborted || !(await loadGeminiSelectorEnabled(this.storage))) {
+    if (withdrawn() || !(await loadGeminiSelectorEnabled(this.storage))) {
       await this.storage.remove(cacheKey);
       return 'disabled';
     }
