@@ -45,11 +45,12 @@ describe('check-staged-size', () => {
     expect(run().status).toBe(0);
   });
 
-  it('skips lockfiles, binaries, build output and Chrome locale catalogs', () => {
+  it('skips lockfiles, binaries, build output, Chrome locale catalogs and privacy pages', () => {
     const big = 'x'.repeat(LIMIT_BYTES * 2);
     stage('bun.lock', big);
     stage('dist_chrome/content.js', big);
     stage('src/locales/en/messages.json', big);
+    stage('docs/ru/privacy.md', big);
     stage('docs/public/assets/shot.png', Buffer.concat([Buffer.from([0]), Buffer.from(big)]));
 
     expect(run().status).toBe(0);
