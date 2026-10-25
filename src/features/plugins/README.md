@@ -42,7 +42,7 @@ EntitlementProvider  ─► entitled?         │  styles + domOps, reversible, 
   `DomOperation` (discriminated union — the main extension point), `SiteAdapter`,
   and the `PluginSource` / `EntitlementProvider` seams.
 - **`sites/`** — `SiteAdapter` per site + a `SiteRegistry` that resolves the
-  current URL. Site-specific selectors live **only** in an adapter, behind the
+  current URL. Declarative plugin selectors live in an adapter, behind the
   fixed semantic vocabulary in `sites/semanticKeys.ts` (`userTurn`,
   `assistantTurn`, `thinkingBlock`, `codeBlock`, `composer`, `sidebar`,
   `sidePanel`, `headerActions`, `scrollContainer`, `composerRoot`,
@@ -52,9 +52,12 @@ EntitlementProvider  ─► entitled?         │  styles + domOps, reversible, 
   one-line shells over their `site.json`: edit the JSON, not the TS. Gemini and
   AI Studio stay native surfaces (`NATIVE_SITE_IDS`, `sites/hostPolicy.ts`); their
   `site.json` is packaged with the extension and never published remotely.
-  Gemini's `userTurn`/`assistantTurn` are the joined membership lists from
+  Gemini's packaged `userTurn`/`assistantTurn` are the joined bundled membership lists from
   `core/gemini/turnSelectors.ts`, bound by `adapters/gemini.parity.test.ts`;
-  timeline, export and highlight keep reading the ordered lists there.
+  Gemini native turn consumers read ordered profiles through
+  `core/gemini/selectors/`; the independent, default-off selector channel can
+  update those profiles without changing this packaged adapter or any plugin.
+  Draft deletion keeps using the bundled turn profiles.
   `sites/siteAdapterData.ts` holds
   `validateSiteAdapterData`, the one validator for the bundled `site.json`, the
   remote override and `catalog:build`.
@@ -111,9 +114,12 @@ because `import.meta.glob` does not exist under Bun.) Sites today are
 `aistudio`, `chatgpt`, `claude`, `deepseek` and `gemini`. A plugin's `matches`
 must stay inside its site's `matches` (plan D18) or the build fails, and
 `bun run catalog:build` validates every site and plugin before publishing.
-Gemini and AI Studio are validated like the rest but never published: the host
+Gemini and AI Studio plugin catalogs are validated like the rest but never published: the host
 policy (`allowsRemoteCatalog`) keeps their four hosts out of the per-host
 catalog, and their plugins stay out of `marketplace.json`.
+Gemini's separate opt-in selector files are described in
+[remote/README.md](remote/README.md#separate-opt-in-gemini-selector-files); AI Studio
+remains entirely packaged-only.
 
 `catalog/marketplace.json` is **not** that mapping table, and no page reads it:
 the site's plugin table is built from the manifests themselves

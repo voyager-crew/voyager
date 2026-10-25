@@ -4417,5 +4417,49 @@
   },
   "export_read_history_unavailable": {
     "message": "Couldn't read the full conversation history. Scroll up to load earlier messages, then try again."
+  },
+  "geminiSelectorFixesTitle": {
+    "message": "Online fixes for Gemini page detection",
+    "description": "Switch for the Gemini-only page detection data channel (turn selector lists); off by default"
+  },
+  "geminiSelectorFixesHint": {
+    "message": "Gets page detection fixes from voyager.nagi.fun, at most once every 6 hours. No page content is sent. Off by default.",
+    "description": "Endpoint, automatic check interval, privacy and default setting"
+  },
+  "geminiSelectorFixesOff": {
+    "message": "Off: no checks, even manual ones. Open Gemini pages keep their current rules until you refresh them.",
+    "description": "Off blocks all selector requests; open pages keep their snapshot until refreshed"
+  },
+  "geminiSelectorFixesCheckNow": {
+    "message": "Check now",
+    "description": "Manual selector check, available only with explicit consent enabled"
+  },
+  "geminiSelectorFixesChecking": {
+    "message": "Checking…",
+    "description": "A Gemini selector check is in progress"
+  },
+  "geminiSelectorFixesUpdated": {
+    "message": "New fixes downloaded. Refresh Gemini to apply them.",
+    "description": "Downloaded selector data is used on the next full page load"
+  },
+  "geminiSelectorFixesUpToDate": {
+    "message": "Up to date. No new fixes.",
+    "description": "Successful check without new selector fixes; do not ask the user to refresh"
+  },
+  "geminiSelectorFixesFailed": {
+    "message": "Couldn’t check. Voyager keeps using its current rules.",
+    "description": "A check failed; Voyager keeps the rules it already uses, which may be only the bundled ones"
+  },
+  "geminiSelectorFixesUnavailable": {
+    "message": "Online fixes are unavailable in this version.",
+    "description": "Online selector fixes are disabled at build time"
+  },
+  "geminiSelectorFixesSaveFailed": {
+    "message": "Couldn’t save the change. Try again.",
+    "description": "Consent or cache cleanup failed; show the setting confirmed by the background"
+  },
+  "geminiSelectorFixesTurnOnInGemini": {
+    "message": "Open Gemini to turn this on.",
+    "description": "Shown on a non-Gemini tab after the user turned the online fixes off there; turning on needs a Gemini tab"
   }
 }

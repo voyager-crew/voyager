@@ -98,7 +98,7 @@ function fixture(messages: StarredMessage[] = []) {
   const mount = (id = turnId, extra = '') => {
     document.body.innerHTML = `<main><user-query data-turn-id="${id}">First line
 Second line${extra}</user-query><model-response>Answer stays in the conversation</model-response></main>`;
-    const markers = new TimelineTurns().collect(document.querySelector('main')!, 'user-query');
+    const markers = new TimelineTurns().plan(document.querySelector('main')!, 'user-query').markers;
     state.replaceMarkers(markers);
     return markers;
   };
@@ -199,7 +199,7 @@ it('recalculating an unchanged conversation reads no computed styles', async () 
     );
   const collect = () =>
     state.replaceMarkers(
-      new TimelineTurns().collect(document.querySelector('main')!, 'user-query'),
+      new TimelineTurns().plan(document.querySelector('main')!, 'user-query').markers,
     );
   collect();
   await vi.waitFor(async () =>

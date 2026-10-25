@@ -6,8 +6,9 @@
  *   - static injection: the main content script is declared for these hosts in
  *     `manifest.json`, with matching `host_permissions`, so they never need a
  *     dynamic registration or an optional host grant;
- *   - remote catalog: never. No catalog file is looked up or published for
- *     these hosts (D14, the zero-request promise for Gemini);
+ *   - remote plugin catalog: never. No plugin catalog file is looked up or
+ *     published for these hosts (D14). Gemini's opt-in selector-only channel
+ *     has a separate exact-host predicate and cannot change this answer;
  *   - plugin theme: never. Gemini and AI Studio keep Voyager's own accent;
  *   - catalog data stores (catalog outline, send times, ...): not theirs.
  *     Voyager's native timeline owns that data here, whether or not the site
@@ -22,6 +23,10 @@
  * Kept free of storage keys, browser APIs and `import.meta`: the local-plugin
  * validator imports this, and the CLI bundles that chain.
  */
+import {
+  GEMINI_SELECTOR_HOSTS,
+  type GeminiSelectorHost,
+} from '../../../core/gemini/selectors/types';
 import type { ManifestIssue } from '../manifest/validate';
 import type { PluginManifest, SiteAdapter } from '../types';
 import { type PackagedSiteId, pluginOwnedHandlers } from './featureOwners';
@@ -121,6 +126,11 @@ export function isStaticallyInjectedHost(host: string): boolean {
 /** False for every packaged host, always: they never touch the remote catalog. */
 export function allowsRemoteCatalog(host: string): boolean {
   return policyForHost(host) === undefined;
+}
+
+/** Separate opt-in selector data only; this never admits a plugin catalog host. */
+export function isGeminiSelectorHost(host: string): host is GeminiSelectorHost {
+  return (GEMINI_SELECTOR_HOSTS as readonly string[]).includes(host);
 }
 
 function siteAllowsPluginTheme(siteId: string): boolean {

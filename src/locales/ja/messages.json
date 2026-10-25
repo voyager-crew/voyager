@@ -4417,5 +4417,49 @@
   },
   "export_read_history_unavailable": {
     "message": "会話の履歴をすべて読み込めませんでした。上にスクロールして以前のメッセージを読み込んでから、もう一度お試しください。"
+  },
+  "geminiSelectorFixesTitle": {
+    "message": "Gemini ページ認識のオンライン修正",
+    "description": "Switch for the Gemini-only page detection data channel (turn selector lists); off by default"
+  },
+  "geminiSelectorFixesHint": {
+    "message": "voyager.nagi.fun からページ認識の修正を取得します。確認は 6 時間に 1 回までで、ページの内容は送信しません。初期設定はオフです。",
+    "description": "Endpoint, automatic check interval, privacy and default setting"
+  },
+  "geminiSelectorFixesOff": {
+    "message": "オフ：手動を含め、修正を確認しません。開いている Gemini ページは、再読み込みするまで現在のルールを使います。",
+    "description": "Off blocks all selector requests; open pages keep their snapshot until refreshed"
+  },
+  "geminiSelectorFixesCheckNow": {
+    "message": "今すぐ確認",
+    "description": "Manual selector check, available only with explicit consent enabled"
+  },
+  "geminiSelectorFixesChecking": {
+    "message": "確認中…",
+    "description": "A Gemini selector check is in progress"
+  },
+  "geminiSelectorFixesUpdated": {
+    "message": "新しい修正をダウンロードしました。Gemini を再読み込みすると反映されます。",
+    "description": "Downloaded selector data is used on the next full page load"
+  },
+  "geminiSelectorFixesUpToDate": {
+    "message": "最新です。新しい修正はありません。",
+    "description": "Successful check without new selector fixes; do not ask the user to refresh"
+  },
+  "geminiSelectorFixesFailed": {
+    "message": "確認できませんでした。現在のルールを引き続き使用します。",
+    "description": "A check failed; Voyager keeps the rules it already uses, which may be only the bundled ones"
+  },
+  "geminiSelectorFixesUnavailable": {
+    "message": "このバージョンではオンライン修正を利用できません。",
+    "description": "Online selector fixes are disabled at build time"
+  },
+  "geminiSelectorFixesSaveFailed": {
+    "message": "変更を保存できませんでした。もう一度お試しください。",
+    "description": "Consent or cache cleanup failed; show the setting confirmed by the background"
+  },
+  "geminiSelectorFixesTurnOnInGemini": {
+    "message": "オンにするには Gemini を開いてください。",
+    "description": "Shown on a non-Gemini tab after the user turned the online fixes off there; turning on needs a Gemini tab"
   }
 }

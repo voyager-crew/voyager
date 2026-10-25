@@ -2,21 +2,21 @@
  * DOM selector utilities
  * Centralized selectors (was duplicated in multiple files)
  */
+import type { GeminiTurnView } from '@/core/gemini/selectors';
 import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
 
 /**
- * Gemini user-turn selectors, including the Angular host elements. Read at query time; the
- * bundled lists live in `@/core/gemini/turnSelectors`.
+ * Gemini user-turn selectors, including Angular hosts, from the effective or explicit view.
  */
-export function getUserTurnSelectors(): string[] {
-  return getGeminiTurnSelectors('turn.userWithHosts');
+export function getUserTurnSelectors(view?: GeminiTurnView): string[] {
+  return getGeminiTurnSelectors('turn.userWithHosts', view);
 }
 
 /**
  * Gemini assistant-turn selectors, including bare response hosts and the list-item fallback.
  */
-export function getAssistantTurnSelectors(): string[] {
-  return getGeminiTurnSelectors('turn.assistantWithHosts');
+export function getAssistantTurnSelectors(view?: GeminiTurnView): string[] {
+  return getGeminiTurnSelectors('turn.assistantWithHosts', view);
 }
 
 /**

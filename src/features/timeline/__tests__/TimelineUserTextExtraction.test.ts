@@ -44,9 +44,8 @@ function geminiText(): string {
 }
 
 function geminiMarkers(turns: TimelineTurns) {
-  return turns.collect(
-    document.querySelector<HTMLElement>('main')!,
-    '.user-query-bubble-with-background',
+  return turns.commit(
+    turns.plan(document.querySelector<HTMLElement>('main')!, '.user-query-bubble-with-background'),
   );
 }
 

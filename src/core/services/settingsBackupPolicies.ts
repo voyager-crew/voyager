@@ -376,6 +376,21 @@ export const NON_SETTINGS_BACKUP_POLICIES = {
     reason:
       'Per-host remote plugin catalogs are re-fetched on the next check and must not be restored.',
   },
+  [StorageKeys.GEMINI_SELECTOR_ONLINE_FIXES]: {
+    storage: 'local',
+    disposition: 'device-local',
+    reason: 'Gemini selector network consent is granted separately on each installation.',
+  },
+  [StorageKeys.GEMINI_SELECTOR_CACHE_PREFIX]: {
+    storage: 'local',
+    disposition: 'cache',
+    reason: 'Accepted Gemini selector data is version-bound and can be downloaded again.',
+  },
+  [StorageKeys.GEMINI_SELECTOR_ATTEMPT_PREFIX]: {
+    storage: 'local',
+    disposition: 'operational',
+    reason: 'Per-host Gemini selector attempt times limit this installation network checks.',
+  },
   [StorageKeys.PLUGIN_UI_COLLAPSED]: {
     storage: 'local',
     disposition: 'device-local',

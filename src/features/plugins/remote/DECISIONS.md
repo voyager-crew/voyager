@@ -2,7 +2,7 @@
 
 插件分发方案（2026-09-07 定稿，P1–P4 已实现）中仍然约束代码的部分。机制说明见 [remote/README.md](README.md) 与 [插件生态总览](../README.md)；这里只记**定了什么、为什么**。编号沿用原方案，代码注释里的 `plan D7`、`C1`、`§11.2` 指的就是这里。
 
-一句话：站点知识和插件是数据，走远程通道，合并到 `main` 即发布；原语、引擎和无法参数化的 builtin 是代码，随本体发版。Gemini 与 AI Studio 不进远程目录；新站点随本体发版。
+一句话：站点知识和插件是数据，走远程通道，合并到 `main` 即发布；原语、引擎和无法参数化的 builtin 是代码，随本体发版。Gemini 与 AI Studio 不进插件目录；Gemini 另有默认关闭的 selector-only 通道，AI Studio 仍只用包内数据；新站点随本体发版。
 
 ## 1. 已定决策
 
@@ -23,17 +23,27 @@ D15 原方案未使用。
 | D11 | 可见性       | popup 显示插件版本；目录更新后显示角标（`gvPluginSeenVersions`，local、按设备、不备份）；清单 `changelog` 一行说明                                                                                                                                                                                                                                                                                                                          |
 | D12 | 健康信号     | 适配器 `userTurn` 已命中、插件自身目标为零、DOM 静默一段时间后，才标黄「本页无效果」；目标出现即清除。纯 CSS 插件（无 domOps、无原语）豁免（`runtime/healthMonitor.ts`）。默认开启的 Gemini / AI Studio 官方插件可在 `featureOwners.ts` 用 `healthTracking: false` 退出，免得每个 Gemini 页面都多一个 body 观察者                                                                                                                           |
 | D13 | 隐私         | 打开远程通道的同一变更里，更新 release-privacy 契约、站内隐私页和商店描述；启用插件时的授权文案说明会向 voyager.nagi.fun 检查更新。文案限定为「插件目录」，公告服务及其开关不变，不承诺「不连接任何服务器」                                                                                                                                                                                                                                 |
-| D14 | Gemini       | Gemini / AI Studio 不进目录，这两站用户**零插件目录请求**。`sites/hostPolicy.ts` 的 `allowsRemoteCatalog`（远程侧为 `isEligibleCatalogHost`）在页面、popup、后台三处守住，`catalog:build` 也不为它们产出文件。两站后来也成了插件平台，有包内 `site.json` 与官方插件，但都只随本体发版，不改变这一条。零目录请求不等于页面零请求：公告、云同步各有规则                                                                                       |
+| D14 | Gemini       | Gemini / AI Studio 始终**零插件目录请求**，Gemini 另有一条默认关闭、只传页面识别数据的独立通道，细则见下方 §1.1。                                                                                                                                                                                                                                                                                                                           |
 | D16 | 新站点       | 远程只更新打包快照里已有的站点；新站点随本体发版。「清单 matches → 用户授权 → 注入内容脚本 → PluginHost 拉取」这条链决定远程无法引入新 host                                                                                                                                                                                                                                                                                                 |
 | D17 | 校验实现     | 不引入 zod 等 schema 库。清单、`site.json`、原语 params 都是手写 guard（`manifest/validate.ts`、`sites/siteAdapterData.ts`）；`docs/public/plugin.schema.json` / `site.schema.json` 手写发布，测试让示例清单同时过 schema 和 guard                                                                                                                                                                                                          |
 | D18 | matches 归属 | `plugin.json` 和 `site.json` 都保留 `matches`；插件的 matches 必须是站点 matches 的子集（`patternWithin`），`plugin:check` 与 `catalog:build` 都校验                                                                                                                                                                                                                                                                                        |
 | D19 | 拉取失败     | 记录 `lastAttemptAt`；失败退避照抄公告服务：30 分钟起、每次翻倍、24 小时封顶（`hostCatalogBackoffMs`）。下次自动检查 = 上次尝试 + max(阈值, 退避)，退避不会让检查比阈值更频繁                                                                                                                                                                                                                                                               |
 | D20 | 远程覆盖范围 | 远程只能覆盖 bundled 目录里的 id 和新 id。builtin id 一律以本体为准，远程同 id 条目被忽略：第一方代码的作用范围与设置不能被远程改写。之后扩大为：Gemini / AI Studio 的包内官方 id（`PACKAGED_OFFICIAL_PLUGIN_IDS`）和目录站点的文件夹插件（`isBuildOnlyPluginId`）也只来自本构建，kill switch 不会下架它们；`local.*` 归用户导入，合并在最后、在 kill switch 之外                                                                           |
 
+### 1.1 D14 细则：Gemini 页面识别在线修复
+
+- 插件目录不放开：`sites/hostPolicy.ts` 的 `allowsRemoteCatalog`（远程侧 `isEligibleCatalogHost`）在页面、popup、后台三处守住，`catalog:build` 不为 Gemini / AI Studio 生成 `/catalog/hosts/` 插件文件。两站的包内 `site.json` 与官方插件只随本体发版。零目录请求不等于页面零请求：公告、云同步各有规则。
+- 独立开关「Gemini 页面识别在线修复」：local boolean `gvGeminiSelectorOnlineFixes`，默认关闭，不参与同步或设置备份。
+- 只为 `gemini.google.com` 获取 `/catalog/gemini-selectors/v1/hosts/gemini.google.com.json`。Gemini Enterprise 在内容脚本里提前返回、不进入 Gemini 页面启动，所以不为它请求数据。文件只含经同一 guard 校验的 selector data，不传插件、CSS、代码、行为或身份规则。
+- 自动检查至多每 6 小时一次；独立的 `lastAttemptAt` 跨开关保留，关了再开不会重置间隔；扩展重启中断的检查可能重试。手动检查只在 ON 时跳过间隔。
+- OFF 禁止所有选择器请求，包括手动、`force` 和旧缓存触发，取消在途请求并清除下载缓存。打开开关和手动检查需要当前标签页是 Gemini；关闭在 popup 里从任何标签页都能做。
+- 页内 snapshot 冻结到用户自行刷新，关闭也不热切换或自动重载。AI Studio 没有此例外。
+
 ## 10. 回滚
 
 - 远程内容：revert 主仓提交，Pages 重新部署并 purge CDN，客户端下次检查即采用回退后的远程条目（D6 不按版本高者胜）。插件若已随 bundle 发布，新客户端不会因 revert 后目录里缺席而移除它，必须把旧 id 加入站点的 `revoked.json`；重新发布已撤回的 id 时，必须先从 `revoked.json` 移除它。
 - 客户端：关掉「插件在线更新」即回到打包快照；任一阶段可以单独 revert，不触及用户存储。
+- Gemini selector-only 数据：revert 后用更高 `catalogRevision` 重新发布；空 `selectors` 撤回全部覆盖。客户端关闭独立开关会停止请求并删除下载缓存，已打开页面保留原 snapshot，用户刷新后回到 bundle；保留独立的上次尝试时间。此规则不沿用插件条目 D6 的版本合并语义。
 - 商店审核兜底：`VOYAGER_PLUGIN_CATALOG_REMOTE=off` 编出从不连接目录的构建（C6）。
 
 ## 11. 商店政策结论（2026-09-07 调研，含原文出处）

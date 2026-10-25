@@ -88,7 +88,7 @@ async function navigateToConversationAndWait(
 ): Promise<boolean> {
   const currentConversationId = geminiConversationIdFromLocation();
   if (currentConversationId === conversationId) {
-    const existing = await waitForAnyElement(userSelectors(), 8000);
+    const existing = await waitForAnyElement(userSelectors, 8000);
     return !!existing;
   }
 
@@ -103,7 +103,7 @@ async function navigateToConversationAndWait(
 
   const routeReady = await waitForConversationUrl(conversationId, 12000);
   if (!routeReady) return false;
-  const contentReady = await waitForAnyElement(userSelectors(), 15000);
+  const contentReady = await waitForAnyElement(userSelectors, 15000);
   return !!contentReady;
 }
 

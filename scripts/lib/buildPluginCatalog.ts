@@ -34,8 +34,10 @@
  *
  * Gemini and AI Studio (`sites/gemini`, `sites/aistudio`) are read and checked
  * like every site, so a broken manifest there still fails the build, but no
- * host file is written for their hosts: `hostPolicy.allowsRemoteCatalog` keeps
- * them packaged only (D14), and the stale-file sweep removes any left behind.
+ * plugin catalog host file is written for their hosts: `hostPolicy.allowsRemoteCatalog`
+ * keeps them packaged only (D14), and the stale-file sweep removes any left behind.
+ * `main` also invokes the separate Gemini selector-only publisher; it never adds
+ * Gemini to this plugin catalog or changes an adapter remotely.
  *
  * Output is deterministic — sites, hosts and plugin ids are sorted — so a re-run
  * with the same `generatedAt` produces byte-identical files.
@@ -66,6 +68,7 @@ import {
 } from '../../src/features/plugins/sites/siteAdapterData';
 import { resolveStyleFileContributions } from '../../src/features/plugins/sources/styleFiles';
 import type { PluginManifest, SiteAdapter } from '../../src/features/plugins/types';
+import { writeGeminiSelectorFiles } from './buildGeminiSelectorFixes';
 import { getCatalogRevision } from './catalogRevision';
 import { pluginCoversHost, readSiteRevocations } from './catalogRevocations';
 import {
@@ -389,11 +392,17 @@ export async function main(): Promise<void> {
     now: new Date().toISOString(),
   });
 
+  const catalogRevision = getCatalogRevision(repoRoot, 'production');
   const results = await writeHostCatalogs({
     catalogDir: DEFAULT_CATALOG_DIR,
     outDir: options.outDir,
     generatedAt: options.now,
-    catalogRevision: getCatalogRevision(repoRoot, 'production'),
+    catalogRevision,
+  });
+  writeGeminiSelectorFiles({
+    catalogDir: DEFAULT_CATALOG_DIR,
+    outDir: options.outDir,
+    catalogRevision,
   });
 
   for (const result of results) {

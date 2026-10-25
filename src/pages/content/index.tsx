@@ -1,3 +1,4 @@
+import { logger } from '@/core/services/LoggerService';
 import { CleanupPositions } from '@/core/types/cleanupPositions';
 import { StorageKeys } from '@/core/types/common';
 import { CleanupManager } from '@/core/utils/cleanupManager';
@@ -32,7 +33,9 @@ import { createGeminiInputStartup, startAIStudioSendKeys, startPageSendKeys } fr
 import { initKaTeXConfig } from './katexConfig';
 import { NATIVE_FEATURES } from './nativeFeatures';
 import { createOnboardingCoachmarks } from './onboardingCoachmarks';
+import { registerPageErrorHandlers } from './pageErrorHandlers';
 import { PageRetiredError, createPageSteps } from './pageInitSteps';
+import { startPageGeminiSelectors } from './pageSelectorStartup';
 import { ensureScheme, stopScheme } from './platformTheme/scheme';
 import { registerBuiltinNativeHandlers } from './pluginNativeRegistration';
 import { createPromptManagerEngine, readPromptCoverage } from './prompt/promptManagerEngine';
@@ -100,6 +103,8 @@ function mountForPage(feature: NativeFeature): Promise<StopNativeFeature> {
 
 let initialized = false;
 let initializationTimer: number | null = null;
+let selectorReady: Promise<void> = Promise.resolve();
+let selectorCurrent = () => true;
 
 /**
  * Initialize all features sequentially to reduce simultaneous load
@@ -112,7 +117,8 @@ async function initializeFeatures(): Promise<void> {
   // return (custom coverage, Enterprise, AI Studio off) or failure below
   // leaves the official plugins it did not admit denied.
   try {
-    if (!hasValidExtensionContext()) {
+    await settle(selectorReady);
+    if (!selectorCurrent() || !hasValidExtensionContext()) {
       return;
     }
 
@@ -305,22 +311,35 @@ function handleVisibilityChange(): void {
       CleanupPositions.FlushDraftsBeforeUnload,
     );
 
-    // Plugin ecosystem host. Started up-front on EVERY page the content script is
-    // injected into (Gemini / AI Studio, and any site a user enabled a plugin for,
-    // e.g. claude.ai via dynamic registration). It self-detects the site adapter
-    // and only mounts plugins that match the current URL AND are enabled. Most
-    // builtin plugins ship disabled; the few on by default (pluginDefaults.ts)
-    // target their own plugin platform.
+    // The host resolves the page adapter and mounts only matching, enabled plugins.
     // Bind builtin "native function plugins" before the host starts, so
     // PluginHost can run them when enabled on Claude/ChatGPT.
     // Migrated Gemini/AI Studio features mount only after initializeFeatures admits them.
     // Permanent page services retain their native lifetime. The host
     // itself follows AI Studio's master switch (runtime/surfaceSwitch.ts), so
     // "Voyager off on AI Studio" also keeps local plugins off there.
+    const selectorStartup = startPageGeminiSelectors({
+      url: location.href,
+      doc: document,
+      lifetime: pageLifetime.signal,
+    });
     cleanupManager.registerCleanupFunction(
-      startPluginHost({ admission: officialAdmission }),
-      CleanupPositions.CleanupPluginHost,
+      selectorStartup.stop,
+      CleanupPositions.CleanupGeminiSelectors,
     );
+    selectorCurrent = selectorStartup.isCurrent;
+    // Share hydration with features; ping and account services already started synchronously.
+    selectorReady = selectorStartup.ready
+      .then(() => {
+        if (!selectorCurrent()) return;
+        cleanupManager.registerCleanupFunction(
+          startPluginHost({ admission: officialAdmission }),
+          CleanupPositions.CleanupPluginHost,
+        );
+      })
+      .catch((error: unknown) => {
+        logger.error('Plugin startup failed', { error: String(error) });
+      });
 
     // Cosmetic: on Claude / ChatGPT, re-skin Voyager's accent to the host
     // platform's brand colour (injects --gv-pm-brand + a gv-platform-themed body
@@ -329,26 +348,7 @@ function handleVisibilityChange(): void {
     // on Gemini / AI Studio.
     if (!isPluginSubframe) void mountForPage(NATIVE_FEATURES.brandTheme);
 
-    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
-      if (isExtensionContextInvalidatedError(event.reason)) {
-        event.preventDefault();
-      }
-    };
-    const onWindowError = (event: ErrorEvent) => {
-      if (isExtensionContextInvalidatedError(event.error ?? event.message)) {
-        event.preventDefault();
-      }
-    };
-    window.addEventListener('unhandledrejection', onUnhandledRejection);
-    cleanupManager.registerCleanupFunction(
-      () => window.removeEventListener('unhandledrejection', onUnhandledRejection),
-      CleanupPositions.RemoveUnhandledRejectionEventListener,
-    );
-    window.addEventListener('error', onWindowError);
-    cleanupManager.registerCleanupFunction(
-      () => window.removeEventListener('error', onWindowError),
-      CleanupPositions.RemoveErrorEventListener,
-    );
+    registerPageErrorHandlers(cleanupManager);
     const onStorageChanged = (
       changes: Record<string, chrome.storage.StorageChange>,
       areaName: string,

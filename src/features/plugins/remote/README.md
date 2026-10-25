@@ -34,9 +34,9 @@ without an extension release.
   counted from the last attempt, failure backoff, writer-version staleness); and
   page eligibility, meaning at least one **enabled** plugin targets the host.
   Gemini and AI Studio are never catalog hosts (`isEligibleCatalogHost`), even
-  with a local plugin enabled there, so they never produce a request. A manual
-  check sends `force` and skips every gate except the build flag and the host
-  shape.
+  with a local plugin enabled there, so they never produce a plugin catalog
+  request. A manual check sends `force` and skips settings, due-time and enabled-plugin gates,
+  but never the build flag or host eligibility.
 - **`remote/hostCatalogPolicy.ts`** — the pure rules the background and the
   content script must agree on (which hosts may be looked up, when a check is
   due, the backoff curve, when a cached entry may be used at all), each one
@@ -113,3 +113,60 @@ copy on the site's other hosts. When renaming a plugin id, add the old id to
 `revoked.json` so its bundled copy does not run alongside the renamed plugin.
 The additive field keeps `format: 1`; older clients ignore it and still revoke
 through absence from `plugins`. The reason stays in the source file.
+
+## Separate opt-in Gemini selector files
+
+Gemini keeps **zero plugin catalog requests**. Its optional **Gemini selector
+online fixes** switch is a separate data channel, implemented in
+`src/features/geminiSelectorFixes/`; it does not add a `PluginSource` or replace
+`site.json`. `allowsRemoteCatalog` and `isEligibleCatalogHost` still exclude
+Gemini and AI Studio. AI Studio has no selector channel either.
+
+The switch defaults to **off**. Its strict boolean
+`StorageKeys.GEMINI_SELECTOR_ONLINE_FIXES` (`gvGeminiSelectorOnlineFixes`) lives
+in `chrome.storage.local`, outside settings backup and sync. Off blocks **all**
+selector requests, including `force`, manual checks and requests with an old
+cache. Turning it off aborts in-flight checks and removes the selector cache.
+The separate last-attempt record survives toggles, so turning it back on does
+not reset the six-hour automatic interval. Manual checks bypass only the
+interval and require consent to remain on. Only completed attempts are
+persisted, so a check interrupted by an extension restart may be retried; while
+a check is in flight, every other caller shares that one request.
+
+Only the background fetches:
+
+```text
+https://voyager.nagi.fun/catalog/gemini-selectors/v1/hosts/gemini.google.com.json
+```
+
+Gemini Enterprise is not covered: its pages never start the Gemini turn
+consumers, so a file for it would have no reader.
+
+These independent files carry five ordered selector profiles: `turn.user`,
+`turn.userWithHosts`, `turn.assistant`, `turn.assistantFallback`, and
+`turn.assistantWithHosts`. They contain no plugins, CSS, actions, JavaScript,
+matches, capabilities, theme, identity extraction or click policy. The bundle
+and remote files use the same selector-data guard. A newer accepted revision
+replaces the previous patch; each supplied list replaces that bundled list as
+a whole. Missing keys keep their bundled values. An empty patch withdraws all
+online overrides. Roll back by reverting the data and publishing a **higher**
+source revision, not by lowering `catalogRevision`.
+
+`gv.geminiSelectors.status`, `gv.geminiSelectors.setEnabled`, and
+`gv.geminiSelectors.refresh` are the popup's background API. Turning the switch
+on and checking identify the inspected tab; the background resolves its actual
+HTTPS URL and admits only `gemini.google.com`. Reading the status and turning
+the switch off need no Gemini tab, so the popup on any tab can turn it off.
+Opening Gemini or its popup can request a due check; there is no polling alarm.
+The options page uses the same popup with its explicit `sourceTabId`; a closed
+source does not authorize checks for a different active tab. Selectors
+are snapshotted once per page, so new data and turning the switch off affect
+open pages only after the user refreshes. There is no automatic reload.
+
+GET requests omit cookies and referrers, reject redirects, and send no page or
+conversation content or account identifiers. The URL exposes only the fixed
+host name; normal network metadata such as IP address and User-Agent is visible
+to the static host. Announcements and plugin catalog settings remain separate.
+`VOYAGER_GEMINI_SELECTOR_REMOTE=off` disables this channel at build time;
+`VOYAGER_PLUGIN_CATALOG_REMOTE=off` also disables it. The disclosure is kept in
+all privacy locales and the store-listing reference, as required by D13/D14.

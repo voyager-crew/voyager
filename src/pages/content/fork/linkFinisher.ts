@@ -1,3 +1,4 @@
+import { type GeminiTurnView, resolveGeminiTurnOperation } from '@/core/gemini/selectors';
 import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
 import { logger } from '@/core/services/LoggerService';
 import { getSendKeyCoordinator } from '@/core/services/composer/sendKeys/sendKeyCoordinator';
@@ -48,15 +49,25 @@ function turnText(turn: Element): string {
   return clone.textContent ?? '';
 }
 
+function userTurns(view: GeminiTurnView): Element[] {
+  return Array.from(
+    document.querySelectorAll(getGeminiTurnSelectors('turn.userWithHosts', view).join(',')),
+  );
+}
+
 /** One operation owns all of its send evidence, bounded waits and notification eligibility. */
 class PendingForkLink implements ForkLinkReceipt {
   private stopped = false;
   private writing = false;
   private uiAlive = true;
   private destination: PageIdentity | null = null;
-  private intent: { text: string; turns: Set<Element>; ids: Set<string> } | null = null;
+  private intent: {
+    text: string;
+    turns: Set<Element>;
+    ids: Set<string>;
+    view: GeminiTurnView | null;
+  } | null = null;
   private readonly policy = geminiDraftPolicy();
-  private readonly userSelector = getGeminiTurnSelectors('turn.userWithHosts').join(',');
   private readonly deadlineTimer: number;
   private readonly poll: number;
   private readonly observer: MutationObserver;
@@ -117,11 +128,15 @@ class PendingForkLink implements ForkLinkReceipt {
       !findSendButton(field, SEND_SITE_POLICIES.gemini.sendContainerSelectors)
     )
       return;
-    const turns = new Set(document.querySelectorAll(this.userSelector));
+    const existing = resolveGeminiTurnOperation(userTurns, (matches) => matches.length > 0);
+    const turns = new Set(existing.value);
     this.intent = {
       text: normalize(this.policy.readText(field)),
       turns,
       ids: new Set(Array.from(turns, readServerTurnId).filter((id): id is string => id !== null)),
+      // Earlier turns were recorded through this view; another view could pass one off as new.
+      // With no earlier turns either view is safe, so the first send may still fall back.
+      view: turns.size > 0 ? existing.view : null,
     };
   }
 
@@ -206,11 +221,15 @@ class PendingForkLink implements ForkLinkReceipt {
     // Pin the first route before its user DOM arrives; a later route cannot steal the handoff.
     this.destination ??= current;
     const intent = this.intent;
-    const firstUser = Array.from(document.querySelectorAll(this.userSelector)).find((turn) => {
-      if (intent.turns.has(turn)) return false;
-      const id = makeTurnId(turn, 0);
-      return !intent.ids.has(id) && normalize(turnText(turn)) === intent.text;
-    });
+    const findSent = (view: GeminiTurnView) =>
+      userTurns(view).find((turn) => {
+        if (intent.turns.has(turn)) return false;
+        const id = makeTurnId(turn, 0);
+        return !intent.ids.has(id) && normalize(turnText(turn)) === intent.text;
+      });
+    const firstUser = intent.view
+      ? findSent(intent.view)
+      : resolveGeminiTurnOperation(findSent, (turn) => turn !== undefined).value;
     if (!firstUser) return;
 
     const { pendingFork, getConversationTitle } = this.handoff;

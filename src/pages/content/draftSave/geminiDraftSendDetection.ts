@@ -1,4 +1,4 @@
-import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
+import { getBundledGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
 import { getSendKeyCoordinator } from '@/core/services/composer/sendKeys/sendKeyCoordinator';
 import { findSendButton } from '@/core/services/composer/sendKeys/sendKeyDom';
 import { SEND_SITE_POLICIES } from '@/core/services/composer/sendKeys/sendSitePolicies';
@@ -20,7 +20,8 @@ export function startGeminiDraftSendDetection({ doc, policy, onSent, onIntent, s
   stop(): void;
 } {
   const view = doc.defaultView ?? window;
-  const userSelector = getGeminiTurnSelectors('turn.userWithHosts').join(',');
+  // Remote turn discovery must never supply the evidence that deletes a saved draft.
+  const userSelector = getBundledGeminiTurnSelectors('turn.userWithHosts').join(',');
   const normalize = (text: string) => policy.sanitize.fn(text).replace(/\s+/g, ' ').trim();
   let stopped = false;
   let intent: {

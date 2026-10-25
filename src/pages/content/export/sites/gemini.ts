@@ -6,6 +6,7 @@ import type { ExportPlatformAdapter } from '../adapter/platformAdapters';
 import { createConversationCollector } from '../conversationCollector';
 import { throwIfExportCancelled } from '../exportCancellation';
 import type { ExportSite } from '../exportSite';
+import { geminiFingerprintSelectors, geminiReadyUserSelectors } from '../geminiTurnReadiness';
 
 /** Gemini keeps every loaded turn mounted, so the export reads the page in place. */
 export function createGeminiExportSite(adapter: ExportPlatformAdapter): ExportSite {
@@ -15,7 +16,7 @@ export function createGeminiExportSite(adapter: ExportPlatformAdapter): ExportSi
     label: adapter.site.label,
     entryPoints: {
       kind: 'gemini',
-      userSelectors: adapter.getUserSelectors,
+      userSelectors: geminiReadyUserSelectors,
       assistantMessageIdFor: page.assistantMessageIdFor,
     },
     title: adapter.extractConversationTitle,
@@ -47,8 +48,9 @@ export function createGeminiExportSite(adapter: ExportPlatformAdapter): ExportSi
     },
     page,
     history: {
-      userSelectors: adapter.getUserSelectors,
+      userSelectors: geminiReadyUserSelectors,
       assistantSelectors: adapter.getAssistantSelectors,
+      fingerprintSelectors: geminiFingerprintSelectors,
     },
   };
 }

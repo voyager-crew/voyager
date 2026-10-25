@@ -5,13 +5,14 @@
  * released once settled.
  */
 export function waitForAnyElement(
-  selectors: string[],
+  selectors: string[] | (() => string[]),
   timeoutMs: number = 10000,
   signal?: AbortSignal,
 ): Promise<Element | null> {
   return new Promise((resolve) => {
     const find = (): Element | null => {
-      for (const s of selectors) {
+      const current = typeof selectors === 'function' ? selectors() : selectors;
+      for (const s of current) {
         const el = document.querySelector(s);
         if (el) return el;
       }

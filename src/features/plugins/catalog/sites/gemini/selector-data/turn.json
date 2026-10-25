@@ -1,0 +1,52 @@
+{
+  "turn.user": [
+    ".user-query-bubble-with-background",
+    ".user-query-bubble-container",
+    ".user-query-container",
+    "user-query-content .user-query-bubble-with-background",
+    "div[aria-label=\"User message\"]",
+    "article[data-author=\"user\"]",
+    "article[data-turn=\"user\"]",
+    "[data-message-author-role=\"user\"]",
+    "div[role=\"listitem\"][data-user=\"true\"]"
+  ],
+  "turn.userWithHosts": [
+    ".user-query-bubble-with-background",
+    ".user-query-bubble-container",
+    ".user-query-container",
+    "user-query-content .user-query-bubble-with-background",
+    "user-query-content",
+    "user-query",
+    "div[aria-label=\"User message\"]",
+    "article[data-author=\"user\"]",
+    "article[data-turn=\"user\"]",
+    "[data-message-author-role=\"user\"]",
+    "div[role=\"listitem\"][data-user=\"true\"]"
+  ],
+  "turn.assistant": [
+    "[aria-label=\"Gemini response\"]",
+    "[data-message-author-role=\"assistant\"]",
+    "[data-message-author-role=\"model\"]",
+    "article[data-author=\"assistant\"]",
+    "article[data-turn=\"assistant\"]",
+    "article[data-turn=\"model\"]",
+    ".model-response",
+    "model-response",
+    ".response-container"
+  ],
+  "turn.assistantFallback": ["div[role=\"listitem\"]:not([data-user=\"true\"])"],
+  "turn.assistantWithHosts": [
+    "[aria-label=\"Gemini response\"]",
+    "[data-message-author-role=\"assistant\"]",
+    "[data-message-author-role=\"model\"]",
+    "article[data-author=\"assistant\"]",
+    "article[data-turn=\"assistant\"]",
+    "article[data-turn=\"model\"]",
+    "model-response",
+    ".model-response",
+    "response-container",
+    ".response-container",
+    ".presented-response-container",
+    "div[role=\"listitem\"]:not([data-user=\"true\"])"
+  ]
+}

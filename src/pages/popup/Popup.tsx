@@ -19,12 +19,12 @@ import { CatalogTimelineOptions } from './components/CatalogTimelineOptions';
 import { CloudSyncSettings } from './components/CloudSyncSettings';
 import { DiagnosticsExportCard } from './components/DiagnosticsExportCard';
 import { FolderSettingsCard } from './components/FolderSettingsCard';
-import { GeneralSettingsCard } from './components/GeneralSettingsCard';
 import { KeyboardShortcutSettings } from './components/KeyboardShortcutSettings';
 import { NativeHealthNotice } from './components/NativeHealthNotice';
 import { NativeLocalPluginsSection } from './components/NativeLocalPluginsSection';
 import { PluginSiteSettings } from './components/PluginSiteSettings';
 import { PopupFooter } from './components/PopupFooter';
+import { PopupGeneralSettings } from './components/PopupGeneralSettings';
 import { PopupHeader } from './components/PopupHeader';
 import { PopupLayoutSettings } from './components/PopupLayoutSettings';
 import { PopupSearchBox } from './components/PopupSearchBox';
@@ -44,6 +44,7 @@ import {
 } from './hooks/useCatalogTimelineSettings';
 import { useFolderPopupSettings } from './hooks/useFolderPopupSettings';
 import { useFolderStructureCopy } from './hooks/useFolderStructureCopy';
+import { useGeminiSelectorFixes } from './hooks/useGeminiSelectorFixes';
 import { useGeneralPopupSettings } from './hooks/useGeneralPopupSettings';
 import { useNativeHealth } from './hooks/useNativeHealth';
 import { usePopupBrandTheme } from './hooks/usePopupBrandTheme';
@@ -146,6 +147,7 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
       ? plugins.legacySettings[StorageKeys.RESPONSE_COMPLETE_NOTIFICATION_ENABLED] === true
       : undefined,
   });
+  const selectorFixes = useGeminiSelectorFixes(tab, sourceTabId);
   const layout = usePopupLayoutSettings({ isAIStudio });
   const promptManager = usePromptManagerSettings({
     t,
@@ -386,16 +388,10 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
         {/* General Options */}
         {wrapSection(
           'general',
-          <GeneralSettingsCard
-            values={general.values}
-            onChange={general.onChange}
-            remoteAnnouncementPermissionCta={{
-              visible:
-                general.values.remoteAnnouncementEnabled &&
-                canUseSystemNotifications &&
-                !general.remoteAnnouncementPermissionGranted,
-              onRequest: general.requestRemoteAnnouncementSystemPermission,
-            }}
+          <PopupGeneralSettings
+            settings={general}
+            selectorFixes={selectorFixes}
+            canUseSystemNotifications={canUseSystemNotifications}
             isVisible={(settingId) => sections.shouldShowSetting('general', settingId)}
             t={t}
           />,

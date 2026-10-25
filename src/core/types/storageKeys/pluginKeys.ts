@@ -23,6 +23,13 @@ export const PLUGIN_STORAGE_KEYS = {
   // src/features/plugins/remote/hostCatalogCache.ts). Network-derived per-device
   // data rebuilt on the next check; never backed up.
   PLUGIN_HOST_CATALOG_PREFIX: 'gvPluginHostCatalog:',
+  // Separate Gemini selector-only channel: device-local consent, default off.
+  // Neither this boolean nor downloaded selectors travel in settings backups.
+  GEMINI_SELECTOR_ONLINE_FIXES: 'gvGeminiSelectorOnlineFixes',
+  // Accepted data is removed when consent is withdrawn.
+  GEMINI_SELECTOR_CACHE_PREFIX: 'gvGeminiSelectorCache:',
+  // Per-host attempt times survive OFF -> ON so toggling cannot bypass cadence.
+  GEMINI_SELECTOR_ATTEMPT_PREFIX: 'gvGeminiSelectorAttempt:',
   // Master switch for checking voyager.nagi.fun for plugin catalog updates
   // (chrome.storage.sync, backed up). Off = the extension never contacts the
   // catalog host except for an explicit manual check in the popup.

@@ -4417,5 +4417,49 @@
   },
   "export_read_history_unavailable": {
     "message": "未能读取完整的对话历史。请向上滚动加载更早的消息后重试。"
+  },
+  "geminiSelectorFixesTitle": {
+    "message": "Gemini 页面识别在线修复",
+    "description": "Switch for the Gemini-only page detection data channel (turn selector lists); off by default"
+  },
+  "geminiSelectorFixesHint": {
+    "message": "从 voyager.nagi.fun 获取页面识别修复，最多每 6 小时检查一次。不发送页面内容。默认关闭。",
+    "description": "Endpoint, automatic check interval, privacy and default setting"
+  },
+  "geminiSelectorFixesOff": {
+    "message": "已关闭：不检查修复，手动检查也不可用。已打开的 Gemini 页面在刷新前继续使用当前规则。",
+    "description": "Off blocks all selector requests; open pages keep their snapshot until refreshed"
+  },
+  "geminiSelectorFixesCheckNow": {
+    "message": "立即检查",
+    "description": "Manual selector check, available only with explicit consent enabled"
+  },
+  "geminiSelectorFixesChecking": {
+    "message": "正在检查…",
+    "description": "A Gemini selector check is in progress"
+  },
+  "geminiSelectorFixesUpdated": {
+    "message": "已下载新的修复，刷新 Gemini 后生效。",
+    "description": "Downloaded selector data is used on the next full page load"
+  },
+  "geminiSelectorFixesUpToDate": {
+    "message": "已是最新，没有新的修复。",
+    "description": "Successful check without new selector fixes; do not ask the user to refresh"
+  },
+  "geminiSelectorFixesFailed": {
+    "message": "检查失败，继续使用当前规则。",
+    "description": "A check failed; Voyager keeps the rules it already uses, which may be only the bundled ones"
+  },
+  "geminiSelectorFixesUnavailable": {
+    "message": "此版本不提供在线修复。",
+    "description": "Online selector fixes are disabled at build time"
+  },
+  "geminiSelectorFixesSaveFailed": {
+    "message": "未能保存更改，请重试。",
+    "description": "Consent or cache cleanup failed; show the setting confirmed by the background"
+  },
+  "geminiSelectorFixesTurnOnInGemini": {
+    "message": "请在 Gemini 页面中开启。",
+    "description": "Shown on a non-Gemini tab after the user turned the online fixes off there; turning on needs a Gemini tab"
   }
 }

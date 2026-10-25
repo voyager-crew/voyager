@@ -1,3 +1,4 @@
+import { resolveGeminiTurnOperation, type GeminiTurnView } from '@/core/gemini/selectors';
 import { getAssistantTurnSelectors } from '@/core/utils/selectors';
 
 /**
@@ -81,11 +82,13 @@ export function hasGeneratingIndicator({ countTypingAnimation = true } = {}): bo
 }
 
 export function getAssistantResponses(): HTMLElement[] {
-  const selector = getAssistantTurnSelectors().join(', ');
-  const responses = Array.from(document.querySelectorAll<HTMLElement>(selector)).filter((element) =>
-    element.textContent?.trim(),
-  );
-  return responses;
+  return resolveGeminiTurnOperation(
+    (view) =>
+      Array.from(
+        document.querySelectorAll<HTMLElement>(getAssistantTurnSelectors(view).join(', ')),
+      ).filter((element) => element.textContent?.trim()),
+    (responses) => responses.length > 0,
+  ).value;
 }
 
 export function getLatestAssistantResponse(): HTMLElement | null {
@@ -129,8 +132,8 @@ export function getConversationTitle(): string {
   return heading ?? '';
 }
 
-function isInsideAssistantResponse(element: Element): boolean {
-  const selector = getAssistantTurnSelectors().join(', ');
+function isInsideAssistantResponse(element: Element, view: GeminiTurnView): boolean {
+  const selector = getAssistantTurnSelectors(view).join(', ');
   try {
     return !!element.closest(selector);
   } catch {
@@ -165,11 +168,16 @@ function getVisibleElementText(element: HTMLElement): string {
 }
 
 export function getUserPromptElements(): HTMLElement[] {
+  // Membership uses one accepted host view, including responses whose text is still empty.
+  const { view } = resolveGeminiTurnOperation(
+    (candidate) => document.querySelector(getAssistantTurnSelectors(candidate).join(', ')),
+    (response) => response !== null,
+  );
   return Array.from(
     document.querySelectorAll<HTMLElement>(USER_PROMPT_SELECTORS.join(', ')),
   ).filter(
     (element) =>
-      !isInsideAssistantResponse(element) &&
+      !isInsideAssistantResponse(element, view) &&
       !isPromptInteractionTarget(element) &&
       // Gemini's hidden "You said …" label is the last match in every turn; reading it emptied every prompt.
       !element.closest('[class*="visually-hidden" i]'),

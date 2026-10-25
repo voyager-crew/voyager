@@ -1,3 +1,4 @@
+import { getGeminiTurnView, type GeminiTurnView } from '@/core/gemini/selectors';
 import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
 import { queryOutsideThoughts } from '@/features/export/services/exportDomPolicy';
 
@@ -81,28 +82,31 @@ export function pickAssistantExportElement(assistantHost: HTMLElement): HTMLElem
 }
 
 /** Gemini prompt selectors, led by the one the timeline configured or detected. */
-export function geminiUserTurnSelectors(): string[] {
+export function geminiUserTurnSelectors(view: GeminiTurnView = getGeminiTurnView()): string[] {
   const configured = (() => {
     try {
       return (
         localStorage.getItem('geminiTimelineUserTurnSelector') ||
-        localStorage.getItem('geminiTimelineUserTurnSelectorAuto') ||
+        // Auto belongs to bundled discovery. It cannot add stale nodes to an online profile.
+        (!getGeminiTurnView().remoteKeys.has('turn.user')
+          ? localStorage.getItem('geminiTimelineUserTurnSelectorAuto')
+          : '') ||
         ''
       );
     } catch {
       return '';
     }
   })();
-  const defaults = getGeminiTurnSelectors('turn.user');
+  const defaults = getGeminiTurnSelectors('turn.user', view);
   return configured
     ? [configured, ...defaults.filter((selector) => selector !== configured)]
     : defaults;
 }
 
-export function geminiAssistantTurnSelectors(): string[] {
+export function geminiAssistantTurnSelectors(view: GeminiTurnView = getGeminiTurnView()): string[] {
   return [
-    ...getGeminiTurnSelectors('turn.assistant'),
-    ...getGeminiTurnSelectors('turn.assistantFallback'),
+    ...getGeminiTurnSelectors('turn.assistant', view),
+    ...getGeminiTurnSelectors('turn.assistantFallback', view),
   ];
 }
 

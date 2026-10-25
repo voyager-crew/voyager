@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger } from '@/core/services/LoggerService';
 import { capturePageIdentity } from '@/pages/content/selectionToolbar/pageIdentity';
 
+import { installGeminiTurnPatch } from '../../__tests__/geminiOnlineTurnFixture';
 import { ForkNodesService } from '../ForkNodesService';
 import type { PendingForkData } from '../forkLaunch';
 import { handoffPendingForkLink, startForkLinkFinisher } from '../linkFinisher';
@@ -14,6 +15,7 @@ vi.mock('@/core/services/composer/sendKeys/sendKeyCoordinator', () => ({
 
 describe('the page-owned fork first-send finisher', () => {
   let stopCore: () => void;
+  let stopSelectors: (() => void) | undefined;
   let linked: ReturnType<typeof vi.fn<() => Promise<void>>>;
   let finished: ReturnType<typeof vi.fn<() => void>>;
   let pending: PendingForkData;
@@ -83,6 +85,8 @@ describe('the page-owned fork first-send finisher', () => {
 
   afterEach(() => {
     stopCore();
+    stopSelectors?.();
+    stopSelectors = undefined;
     vi.clearAllTimers();
     vi.useRealTimers();
     vi.restoreAllMocks();
@@ -197,6 +201,56 @@ describe('the page-owned fork first-send finisher', () => {
     expect(ForkNodesService.addForkNode).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ turnId: 'u-0' }),
+    );
+  });
+
+  it.each(['online host', 'bundled fallback'])(
+    'links the same account-scoped first-send server id using the %s',
+    async (kind) => {
+      stopSelectors = await installGeminiTurnPatch({
+        'turn.userWithHosts': [kind === 'online host' ? '.online-user' : '.missing-user'],
+      });
+      history.replaceState({}, '', '/u/1/app');
+      handoff();
+      send();
+      go('/u/1/app/branch');
+      const container = sentTurn();
+      if (kind === 'online host') container.firstElementChild!.className = 'online-user';
+      await flush();
+
+      expect(ForkNodesService.addForkNode).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          turnId: 's-b7603911375615a5',
+          conversationId: 'branch',
+          conversationUrl: `${location.origin}/u/1/app/branch`,
+        }),
+      );
+      expect(linked).toHaveBeenCalledOnce();
+    },
+  );
+
+  it('does not link an earlier identical prompt that only the bundled profile would find', async () => {
+    stopSelectors = await installGeminiTurnPatch({ 'turn.userWithHosts': ['.online-host'] });
+    // An earlier turn with the same text and no server id, matched online by its host element.
+    const earlier = document.createElement('div');
+    earlier.className = 'online-host';
+    const bubble = document.createElement('div');
+    bubble.className = 'user-query-bubble-with-background';
+    bubble.textContent = 'First request';
+    earlier.append(bubble);
+    document.querySelector('main')!.append(earlier);
+    handoff();
+    send();
+    go('/app/branch');
+    await flush();
+    expect(ForkNodesService.addForkNode).not.toHaveBeenCalled();
+
+    sentTurn().classList.add('online-host');
+    await flush();
+    expect(ForkNodesService.addForkNode).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ turnId: 's-b7603911375615a5', conversationId: 'branch' }),
     );
   });
 

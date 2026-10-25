@@ -11,6 +11,9 @@ on:
       - 'scripts/update-readme-badges.mjs'
       - 'scripts/build-plugin-catalog.ts'
       - 'scripts/lib/catalogRevision.ts'
+      - 'scripts/lib/buildPluginCatalog.ts'
+      - 'scripts/lib/buildGeminiSelectorFixes.ts'
+      - 'src/core/gemini/selectors/**'
       - 'src/features/plugins/catalog/**'
       - 'src/features/plugins/sites/**'
       # The guide's plugin table lists the builtins and marks the default-on ones.
@@ -139,8 +142,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      # Writes docs/public/catalog/hosts/<host>.json; VitePress copies
-      # docs/public/ to the dist root, so it publishes at /catalog/hosts/.
+      # Writes plugin host files plus the separate Gemini selector-only files.
+      # VitePress copies docs/public/ to the dist root under /catalog/.
       - name: Build plugin catalog
         run: bun run catalog:build
 

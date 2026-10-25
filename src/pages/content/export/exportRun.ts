@@ -218,7 +218,7 @@ export function createExportRunner(deps: ExportRunnerDeps): ExportRunner {
     // 1. Find Top Node
     if (state.attempt > 0) {
       logger.debug('[Gemini Voyager] Resuming export... waiting for content load.');
-      await waitForAnyElement(history.userSelectors(), 15000, signal);
+      await waitForAnyElement(history.userSelectors, 15000, signal);
       throwIfExportCancelled(signal);
     }
 
@@ -240,7 +240,10 @@ export function createExportRunner(deps: ExportRunnerDeps): ExportRunner {
       return;
     }
 
-    const fingerprintSelectors = [...history.userSelectors(), ...history.assistantSelectors()];
+    const fingerprintSelectors = history.fingerprintSelectors?.() ?? [
+      ...history.userSelectors(),
+      ...history.assistantSelectors(),
+    ];
     const beforeFingerprint = computeConversationFingerprint(
       document.body,
       fingerprintSelectors,

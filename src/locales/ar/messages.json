@@ -4417,5 +4417,49 @@
   },
   "export_read_history_unavailable": {
     "message": "تعذّرت قراءة سجل المحادثة كاملًا. مرّر لأعلى لتحميل الرسائل الأقدم، ثم حاول مرة أخرى."
+  },
+  "geminiSelectorFixesTitle": {
+    "message": "إصلاحات التعرّف على صفحات Gemini عبر الإنترنت",
+    "description": "Switch for the Gemini-only page detection data channel (turn selector lists); off by default"
+  },
+  "geminiSelectorFixesHint": {
+    "message": "يجلب إصلاحات التعرّف على الصفحات من voyager.nagi.fun، مرة واحدة كل 6 ساعات على الأكثر. لا يُرسَل أي محتوى من الصفحة. متوقف افتراضيًا.",
+    "description": "Endpoint, automatic check interval, privacy and default setting"
+  },
+  "geminiSelectorFixesOff": {
+    "message": "متوقف: لا يتم البحث عن إصلاحات، حتى يدويًا. تواصل صفحات Gemini المفتوحة استخدام قواعدها الحالية حتى تعيد تحميلها.",
+    "description": "Off blocks all selector requests; open pages keep their snapshot until refreshed"
+  },
+  "geminiSelectorFixesCheckNow": {
+    "message": "التحقق الآن",
+    "description": "Manual selector check, available only with explicit consent enabled"
+  },
+  "geminiSelectorFixesChecking": {
+    "message": "جارٍ التحقق…",
+    "description": "A Gemini selector check is in progress"
+  },
+  "geminiSelectorFixesUpdated": {
+    "message": "تم تنزيل إصلاحات جديدة. أعد تحميل Gemini لتطبيقها.",
+    "description": "Downloaded selector data is used on the next full page load"
+  },
+  "geminiSelectorFixesUpToDate": {
+    "message": "محدّث. لا توجد إصلاحات جديدة.",
+    "description": "Successful check without new selector fixes; do not ask the user to refresh"
+  },
+  "geminiSelectorFixesFailed": {
+    "message": "تعذّر التحقق. يواصل Voyager استخدام قواعده الحالية.",
+    "description": "A check failed; Voyager keeps the rules it already uses, which may be only the bundled ones"
+  },
+  "geminiSelectorFixesUnavailable": {
+    "message": "الإصلاحات عبر الإنترنت غير متاحة في هذا الإصدار.",
+    "description": "Online selector fixes are disabled at build time"
+  },
+  "geminiSelectorFixesSaveFailed": {
+    "message": "تعذّر حفظ التغيير. حاول مجددًا.",
+    "description": "Consent or cache cleanup failed; show the setting confirmed by the background"
+  },
+  "geminiSelectorFixesTurnOnInGemini": {
+    "message": "افتح Gemini لتفعيل هذا الخيار.",
+    "description": "Shown on a non-Gemini tab after the user turned the online fixes off there; turning on needs a Gemini tab"
   }
 }

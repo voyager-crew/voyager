@@ -68,6 +68,10 @@ export default defineConfig({
     'import.meta.env.VOYAGER_PLUGIN_CATALOG_REMOTE': JSON.stringify(
       process.env.VOYAGER_PLUGIN_CATALOG_REMOTE ?? 'on',
     ),
+    // Independent data-only opt-in channel; the general build-off flag also disables it.
+    'import.meta.env.VOYAGER_GEMINI_SELECTOR_REMOTE': JSON.stringify(
+      process.env.VOYAGER_GEMINI_SELECTOR_REMOTE ?? 'on',
+    ),
   },
   resolve: {
     alias: {

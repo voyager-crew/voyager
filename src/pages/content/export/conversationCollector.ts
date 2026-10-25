@@ -6,7 +6,6 @@
  * Gemini's thinking panel and Deep Research immersive nodes, starred-turn
  * lookup, and appending Canvas document content to responses that reference it.
  */
-import { filterTopLevel } from '@/core/utils/array';
 import {
   type ContentExtractor,
   createContentExtractor,
@@ -19,11 +18,11 @@ import { isServerTurnId } from '../fork/turnId';
 import { historyTimestampStore } from '../timestamp/historyTimestamps';
 import type { ExportPlatformAdapter } from './adapter/platformAdapters';
 import { assistantHasCanvasDoc, extractAllCanvasDocs, isAnyCanvasOpen } from './canvasDocExtractor';
+import { findAssistantForTurn, pickAssistantExportElement } from './conversationDom';
 import {
-  filterOutDeepResearchImmersiveNodes,
-  findAssistantForTurn,
-  pickAssistantExportElement,
-} from './conversationDom';
+  resolveConversationTurnOperation,
+  type ConversationTurnDom,
+} from './conversationTurnOperation';
 import { resolveUniqueExportTurnIds } from './selectionIds';
 import { groupSelectedMessagesByTurn } from './selectionUtils';
 import { geminiConversationIdFromLocation } from './sidebarConversationNavigation';
@@ -219,36 +218,26 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
   let cachedCanvasDocs: CanvasDoc[] | null = null;
 
   const conversationRoot = (): HTMLElement =>
-    adapter.resolveConversationRoot(adapter.getUserSelectors(), document);
+    resolveConversationTurnOperation(
+      adapter,
+      (turns) => turns,
+      ({ users }) => users.length > 0,
+    ).root;
 
-  const topUserElement = (): HTMLElement | null => {
-    const selectors = adapter.getUserSelectors();
-    const root = adapter.resolveConversationRoot(selectors, document);
-    const all = filterOutDeepResearchImmersiveNodes(
-      Array.from(root.querySelectorAll<HTMLElement>(selectors.join(','))),
+  const topUserElement = (): HTMLElement | null =>
+    resolveConversationTurnOperation(
+      adapter,
+      ({ users }) => users[0] ?? null,
+      (user) => user !== null,
     );
-    if (!all.length) return null;
-    const topLevel = filterTopLevel(all);
-    return topLevel.length > 0 ? topLevel[0] : null;
-  };
 
-  const collectChatPairs = (starredIds: ReadonlySet<string> = new Set()): ChatTurn[] => {
-    const userSelectors = adapter.getUserSelectors();
-    const root = adapter.resolveConversationRoot(userSelectors, document);
-    const assistantSelectors = adapter.getAssistantSelectors();
-    const userNodeList = filterOutDeepResearchImmersiveNodes(
-      Array.from(root.querySelectorAll<HTMLElement>(userSelectors.join(','))),
-    );
-    if (!userNodeList || userNodeList.length === 0) return [];
-    const users = filterTopLevel(userNodeList);
+  const readChatPairs = (
+    { users, assistants, userSelector, assistantSelector }: ConversationTurnDom,
+    starredIds: ReadonlySet<string>,
+  ): ChatTurn[] => {
     if (users.length === 0) return [];
 
     const uniqueTurnIds = resolveUniqueExportTurnIds(users);
-
-    const assistantsAll = filterOutDeepResearchImmersiveNodes(
-      Array.from(root.querySelectorAll<HTMLElement>(assistantSelectors.join(','))),
-    );
-    const assistants = filterTopLevel(assistantsAll);
 
     const nativeConversationId = geminiConversationIdFromLocation();
     const pairs: ChatTurn[] = [];
@@ -260,8 +249,8 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
         uEl,
         users[i + 1],
         assistants,
-        userSelectors.join(','),
-        assistantSelectors.join(','),
+        userSelector,
+        assistantSelector,
       );
       const aText = aEl ? extractAssistantText(aEl) : '';
       const turnId = uniqueTurnIds[i];
@@ -283,28 +272,33 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
           assistantElement: finalAssistantEl,
           assistantHostElement: aEl || undefined,
         });
-        // Canvas document content injection: if this assistant response references
-        // a Canvas doc, append full Canvas content directly into the DOM element
-        // so DOMContentExtractor can pick it up.
-        // Guard against duplicate injection (collectChatPairs may be called multiple times).
-        if (
-          aEl &&
-          assistantHasCanvasDoc(aEl) &&
-          (isAnyCanvasOpen() || (cachedCanvasDocs && cachedCanvasDocs.length > 0)) &&
-          finalAssistantEl &&
-          !finalAssistantEl.querySelector(`.${CANVAS_EXPORT_SECTION_CLASS}`)
-        ) {
-          const canvasDocs =
-            cachedCanvasDocs && cachedCanvasDocs.length > 0
-              ? cachedCanvasDocs
-              : extractAllCanvasDocs();
-          if (canvasDocs.length > 0) {
-            appendCanvasDocSections(
-              finalAssistantEl.querySelector('.markdown, .markdown-main-panel') || finalAssistantEl,
-              canvasDocs,
-            );
-          }
-        }
+      }
+    }
+    return pairs;
+  };
+
+  const collectChatPairs = (starredIds: ReadonlySet<string> = new Set()): ChatTurn[] => {
+    const pairs = resolveConversationTurnOperation(
+      adapter,
+      (turns) => readChatPairs(turns, starredIds),
+      (result) => result.length > 0,
+    );
+    // Only the accepted read may append Canvas content to the live response.
+    for (const { assistantHostElement: host, assistantElement: target } of pairs) {
+      if (
+        !host ||
+        !target ||
+        !assistantHasCanvasDoc(host) ||
+        !(isAnyCanvasOpen() || (cachedCanvasDocs && cachedCanvasDocs.length > 0)) ||
+        target.querySelector(`.${CANVAS_EXPORT_SECTION_CLASS}`)
+      )
+        continue;
+      const docs = cachedCanvasDocs?.length ? cachedCanvasDocs : extractAllCanvasDocs();
+      if (docs.length > 0) {
+        appendCanvasDocSections(
+          target.querySelector('.markdown, .markdown-main-panel') || target,
+          docs,
+        );
       }
     }
     return pairs;

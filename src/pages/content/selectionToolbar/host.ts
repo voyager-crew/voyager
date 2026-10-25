@@ -1,5 +1,6 @@
 import browser from 'webextension-polyfill';
 
+import { resolveGeminiTurnOperation, type GeminiTurnView } from '@/core/gemini/selectors';
 import { StorageKeys } from '@/core/types/common';
 import { getAssistantTurnSelectors, getUserTurnSelectors } from '@/core/utils/selectors';
 
@@ -62,8 +63,12 @@ interface SelectionToolbarHost {
 const registry = new Map<string, Registration>();
 let activeHost: SelectionToolbarHost | null = null;
 
-const getQuoteableMessageSelector = (): string =>
-  ['.conversation-container', ...getUserTurnSelectors(), ...getAssistantTurnSelectors()].join(', ');
+const getQuoteableMessageSelector = (view: GeminiTurnView): string =>
+  [
+    '.conversation-container',
+    ...getUserTurnSelectors(view),
+    ...getAssistantTurnSelectors(view),
+  ].join(', ');
 
 function sortedRegistrations(): Registration[] {
   return Array.from(registry.values()).sort(
@@ -291,8 +296,14 @@ function createHost(): SelectionToolbarHost {
       candidate.commonAncestorContainer instanceof Element
         ? candidate.commonAncestorContainer
         : candidate.commonAncestorContainer.parentElement;
-    const quoteable = getQuoteableMessageSelector();
-    if (!element?.closest(quoteable) || !commonAncestor?.closest(quoteable)) return null;
+    const { value: insideMessage } = resolveGeminiTurnOperation(
+      (view) => {
+        const quoteable = getQuoteableMessageSelector(view);
+        return !!element?.closest(quoteable) && !!commonAncestor?.closest(quoteable);
+      },
+      (inside) => inside,
+    );
+    if (!insideMessage) return null;
     return candidate;
   }
 

@@ -140,6 +140,12 @@ export const POPUP_SETTINGS_SEARCH_ITEMS = [
   // Each topic card and each listed plugin is its own target, built from what the list shows
   // (officialPluginSearch.ts).
   popupSectionSearchTarget('general', ['generalOptions']),
+  popupSearchTarget(
+    'general',
+    'geminiSelectorFixes',
+    ['geminiSelectorFixesTitle', 'geminiSelectorFixesHint'],
+    ['selector page detection online fix repair Gemini 选择器 页面识别 在线 修复'],
+  ),
   popupSearchTarget('general', 'enableTabTitleUpdate', [
     'enableTabTitleUpdate',
     'enableTabTitleUpdateHint',

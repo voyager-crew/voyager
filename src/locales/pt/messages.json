@@ -4417,5 +4417,49 @@
   },
   "export_read_history_unavailable": {
     "message": "Não foi possível ler o histórico completo da conversa. Role para cima para carregar as mensagens anteriores e tente novamente."
+  },
+  "geminiSelectorFixesTitle": {
+    "message": "Correções online para a detecção de páginas do Gemini",
+    "description": "Switch for the Gemini-only page detection data channel (turn selector lists); off by default"
+  },
+  "geminiSelectorFixesHint": {
+    "message": "Obtém correções de detecção de páginas em voyager.nagi.fun, no máximo uma vez a cada 6 horas. Nenhum conteúdo da página é enviado. Desativado por padrão.",
+    "description": "Endpoint, automatic check interval, privacy and default setting"
+  },
+  "geminiSelectorFixesOff": {
+    "message": "Desativado: nenhuma verificação, nem manual. As páginas do Gemini abertas mantêm as regras atuais até você recarregá-las.",
+    "description": "Off blocks all selector requests; open pages keep their snapshot until refreshed"
+  },
+  "geminiSelectorFixesCheckNow": {
+    "message": "Verificar agora",
+    "description": "Manual selector check, available only with explicit consent enabled"
+  },
+  "geminiSelectorFixesChecking": {
+    "message": "Verificando…",
+    "description": "A Gemini selector check is in progress"
+  },
+  "geminiSelectorFixesUpdated": {
+    "message": "Novas correções baixadas. Recarregue o Gemini para aplicá-las.",
+    "description": "Downloaded selector data is used on the next full page load"
+  },
+  "geminiSelectorFixesUpToDate": {
+    "message": "Tudo em dia. Nenhuma correção nova.",
+    "description": "Successful check without new selector fixes; do not ask the user to refresh"
+  },
+  "geminiSelectorFixesFailed": {
+    "message": "Não foi possível verificar. O Voyager continua usando as regras atuais.",
+    "description": "A check failed; Voyager keeps the rules it already uses, which may be only the bundled ones"
+  },
+  "geminiSelectorFixesUnavailable": {
+    "message": "As correções online não estão disponíveis nesta versão.",
+    "description": "Online selector fixes are disabled at build time"
+  },
+  "geminiSelectorFixesSaveFailed": {
+    "message": "Não foi possível salvar a alteração. Tente novamente.",
+    "description": "Consent or cache cleanup failed; show the setting confirmed by the background"
+  },
+  "geminiSelectorFixesTurnOnInGemini": {
+    "message": "Abra o Gemini para ativar.",
+    "description": "Shown on a non-Gemini tab after the user turned the online fixes off there; turning on needs a Gemini tab"
   }
 }

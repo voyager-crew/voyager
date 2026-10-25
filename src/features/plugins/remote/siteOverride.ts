@@ -10,6 +10,7 @@
 import { logger } from '@/core/services/LoggerService';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 
+import { allowsRemoteCatalog } from '../sites/hostPolicy';
 import { matchesAnyPattern } from '../sites/matchPattern';
 import type { SiteRegistry } from '../sites/registry';
 import type { PluginSource, PluginSourceContext, SiteAdapter } from '../types';
@@ -58,7 +59,8 @@ export async function loadSiteOverrideForHost(
   host: string | undefined,
   extensionVersion: string = EXTENSION_VERSION,
 ): Promise<SiteAdapter | null> {
-  if (!host || !isRemotePluginCatalogEnabledAtBuild()) return null;
+  // A stale legacy cache must never open the packaged sites' adapter boundary.
+  if (!host || !allowsRemoteCatalog(host) || !isRemotePluginCatalogEnabledAtBuild()) return null;
   return siteAdapterFromEntry(await loadHostCatalogCache(host), extensionVersion);
 }
 
