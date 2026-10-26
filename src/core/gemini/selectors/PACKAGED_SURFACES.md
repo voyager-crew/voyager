@@ -28,9 +28,9 @@ Continuation of the [complete packaged-data ledger](PACKAGED_DATA.md).
 
 ## input-packaged.json
 
-| Exact retained keys                                                                                                                                  | Reason                                                                                                                                                                                                                                |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `input.clearance`, `input.fab`, `vim.mountInput`, `vim.mountRoot`, `vim.crossSiteEdit`, `vim.editActions`, `vim.mountChatInput`, `vim.mountChatRoot` | No independent proof of renamed prompt/FAB clearance or Vim mount targets. Foreign-site mount slots are explicit no-match; editing controls retain their native interaction protocol. Composer repair uses its guarded input profile. |
+| Exact retained keys                                                                                                                                  | Reason                                                                                                                                                                                                                                                       |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `input.clearance`, `input.fab`, `vim.mountInput`, `vim.mountRoot`, `vim.crossSiteEdit`, `vim.editActions`, `vim.mountChatInput`, `vim.mountChatRoot` | No independent proof of renamed prompt/FAB clearance or Vim mount targets. Clearance and mount candidates retain their baseline values and order; editing controls retain their native interaction protocol. Composer repair uses its guarded input profile. |
 
 ## menu-packaged.json
 

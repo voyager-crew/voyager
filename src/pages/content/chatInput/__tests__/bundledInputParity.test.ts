@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { getBundledSiteSelectorView } from '@/core/selectors';
+import { inputSiteId, packagedInputSelectors } from '@/core/services/composer/siteInputData';
+
 import { resolvePromptSiteAdapter } from '../../prompt/resolvePromptSiteAdapter';
 import { findChatInput } from '../index';
 import { getVimComposerMount } from '../vimComposerMount';
@@ -42,29 +45,36 @@ const GENERIC_CANDIDATES = [
   '<textarea></textarea>',
 ];
 
-const COMMON_CANDIDATES = [GENERIC_CANDIDATES[4], ...GENERIC_CANDIDATES.slice(6)];
-const CANDIDATES: Record<string, string[]> = {
-  'custom.example': GENERIC_CANDIDATES,
-  'gemini.google.com': GENERIC_CANDIDATES,
-  'chatgpt.com': [GENERIC_CANDIDATES[1], GENERIC_CANDIDATES[2], ...COMMON_CANDIDATES],
-  'claude.ai': [GENERIC_CANDIDATES[0], ...COMMON_CANDIDATES],
-  'aistudio.google.com': [
-    '<ms-prompt-box><textarea formcontrolname="promptText"></textarea></ms-prompt-box>',
-    '<ms-chunk-input><textarea></textarea></ms-chunk-input>',
-    '<textarea aria-label="Prompt"></textarea>',
-    ...COMMON_CANDIDATES,
-  ],
-  'chat.deepseek.com': ['<textarea class="ds-scroll-area"></textarea>', ...COMMON_CANDIDATES],
-  'www.kimi.com': [
-    '<div class="chat-input-editor" contenteditable="true" role="textbox"></div>',
-    ...COMMON_CANDIDATES,
-  ],
-};
+// Compatibility contract copied from findChatInput at 6fa19b4ae, not from current data.
+const BASELINE_CANDIDATES = [
+  '[data-testid="chat-input"][contenteditable="true"]',
+  '#prompt-textarea[contenteditable="true"]',
+  '[data-composer-markdown][contenteditable="true"]',
+  'rich-textarea [contenteditable="true"]',
+  'div[contenteditable="true"][role="textbox"]',
+  '.input-area textarea',
+  'textarea[placeholder*="Ask"]',
+  'textarea',
+];
 
 describe('bundled input parity', () => {
-  it.each(HOSTS)('%s selects its own ordered composer before a search textarea', (hostname) => {
+  it.each(HOSTS)('%s bundled input and Vim candidates equal baseline order', (hostname) => {
     host(hostname);
-    const candidates = CANDIDATES[hostname];
+    const site = inputSiteId();
+    if (!site) {
+      expect(packagedInputSelectors('input.candidates')).toEqual(BASELINE_CANDIDATES);
+      expect(packagedInputSelectors('vim.candidates')).toEqual(BASELINE_CANDIDATES);
+      return;
+    }
+    const profiles = getBundledSiteSelectorView(site).profiles;
+    const input = profiles[site === 'gemini' ? 'composer.candidates' : 'input.candidates'];
+    expect(input).toEqual(BASELINE_CANDIDATES);
+    expect(profiles['vim.candidates'] ?? input).toEqual(BASELINE_CANDIDATES);
+  });
+
+  it.each(HOSTS)('%s keeps baseline composer precedence before a search textarea', (hostname) => {
+    host(hostname);
+    const candidates = GENERIC_CANDIDATES;
     for (let index = 0; index < candidates.length - 1; index++) {
       document.body.innerHTML = candidates.slice(index).reverse().join('');
       for (const element of document.querySelectorAll<HTMLElement>('textarea, [contenteditable]'))
@@ -94,20 +104,23 @@ describe('bundled input parity', () => {
     },
   );
 
-  it('a custom host keeps its edited prompt and both native composer mount fallbacks', () => {
-    host('custom.example');
-    document.body.innerHTML =
-      '<textarea aria-label="Edit message"></textarea><form><div id="prompt-textarea" contenteditable="true"></div></form><fieldset><div data-testid="chat-input" contenteditable="true"></div></fieldset>';
-    const edit = document.querySelector('textarea')!;
-    show(edit);
-    expect(createVimInputTargets(() => null).findVimInput()).toBe(edit);
-    expect(getVimComposerMount(document.getElementById('prompt-textarea'), null)).toBe(
-      document.querySelector('form'),
-    );
-    expect(getVimComposerMount(document.querySelector('[data-testid="chat-input"]'), null)).toBe(
-      document.querySelector('fieldset'),
-    );
-  });
+  it.each(HOSTS)(
+    '%s keeps its edited prompt and both baseline composer mount fallbacks',
+    (hostname) => {
+      host(hostname);
+      document.body.innerHTML =
+        '<textarea aria-label="Edit message"></textarea><form><div id="prompt-textarea" contenteditable="true"></div></form><fieldset><div data-testid="chat-input" contenteditable="true"></div></fieldset>';
+      const edit = document.querySelector('textarea')!;
+      show(edit);
+      expect(createVimInputTargets(() => null).findVimInput()).toBe(edit);
+      expect(getVimComposerMount(document.getElementById('prompt-textarea'), null)).toBe(
+        document.querySelector('form'),
+      );
+      expect(getVimComposerMount(document.querySelector('[data-testid="chat-input"]'), null)).toBe(
+        document.querySelector('fieldset'),
+      );
+    },
+  );
 
   it('a custom host places its Prompt Manager beside the original floating action target', () => {
     host('custom.example');
