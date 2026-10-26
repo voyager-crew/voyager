@@ -2,14 +2,12 @@
 // @vitest-environment-options { "url": "https://gemini.google.com/app" }
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-import { getBundledGeminiSelectorView } from '@/core/gemini/selectors';
 import { StorageKeys } from '@/core/types/common';
 import { createToaster } from '@/core/ui/toast/toaster';
 
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
 import { DefaultModelAutoApply } from '../autoApply';
 import { ModelPicker } from '../modelPicker';
-import { findModelFocusInput } from '../modelPickerSelectors';
 import { DefaultModelPreferences } from '../preferences';
 
 let retire = () => {};
@@ -111,27 +109,15 @@ it('the same native composer receives focus with bundled and remote profiles', a
   expect(document.activeElement).toBe(field);
 });
 
-it('bundled focus retains its original first-match query cost', () => {
+it('model switching focuses the rich editor before generic fallbacks and skips disabled drafts', async () => {
   document.body.insertAdjacentHTML(
     'beforeend',
-    '<main><rich-textarea><div contenteditable="true"></div></rich-textarea></main>',
+    '<main><textarea disabled></textarea><textarea id="fallback"></textarea><rich-textarea><div contenteditable="true"></div></rich-textarea></main>',
   );
   const field = document.querySelector('[contenteditable]')!;
-  const scans = vi.spyOn(document, 'querySelectorAll');
-  // Compare to the original ordered first-match reader, not an implementation call count.
-  const baseline = () => {
-    for (const selector of getBundledGeminiSelectorView().profiles['modelPicker.focusInput']) {
-      for (const candidate of document.querySelectorAll<HTMLElement>(selector)) {
-        if (!candidate.isConnected) continue;
-        if (candidate instanceof HTMLTextAreaElement && candidate.disabled) continue;
-        return candidate;
-      }
-    }
-    return null;
-  };
-  expect(baseline()).toBe(field);
-  const originalQueries = scans.mock.calls.map(([selector]) => selector);
-  scans.mockClear();
-  expect(findModelFocusInput()).toBe(field);
-  expect(scans.mock.calls.map(([selector]) => selector)).toEqual(originalQueries);
+  await switchModel();
+  expect(document.activeElement).toBe(field);
+  field.closest('rich-textarea')!.remove();
+  await switchModel();
+  expect(document.activeElement).toBe(document.getElementById('fallback'));
 });

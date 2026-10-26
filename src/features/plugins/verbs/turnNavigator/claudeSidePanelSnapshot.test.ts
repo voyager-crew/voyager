@@ -4,6 +4,7 @@ import '@/features/timeline/adapters/catalog/testSetup';
 import { afterEach, expect, it, vi } from 'vitest';
 
 import { initializeSiteSelectors } from '@/core/selectors';
+import { BUILTIN_PLUGINS } from '@/features/plugins/builtin';
 import { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import { claudeAdapter } from '@/features/plugins/sites/adapters/claude';
 
@@ -53,7 +54,15 @@ async function startTimeline(
   window.scrollTo = vi.fn();
   const scope = new PluginScope();
   stops.push(() => scope.dispose());
-  await turnNavigatorPrimitive.activate(scope, yieldWhen === undefined ? {} : { yieldWhen }, {
+  const manifest = BUILTIN_PLUGINS.find((plugin) => plugin.id === pluginId);
+  const operation = manifest?.contributes.domOps?.find(
+    (op) => op.op === 'native' && op.handler === 'turnNavigator',
+  );
+  const params = turnNavigatorPrimitive.validateParams(
+    yieldWhen === undefined ? (operation?.op === 'native' ? operation.params : {}) : { yieldWhen },
+  );
+  if (!params.success) throw new Error('Invalid timeline parameters');
+  await turnNavigatorPrimitive.activate(scope, params.data, {
     doc: document,
     // Cached data stays available to other plugins; this builtin owns its guide policy.
     adapter: remote
@@ -93,25 +102,24 @@ it.each([false, true])(
   },
 );
 
-it('a declarative timeline keeps its cached side-panel override and shows the guide after that panel closes', async () => {
+it('a third-party timeline without a yield condition shows its guide beside a cached side panel', async () => {
   document.body.innerHTML =
     '<div data-testid="user-message">Question</div><iframe src="https://example.com/widget"></iframe>';
-  const scope = await startTimeline(true, 'local.custom-timeline');
-  expect(document.querySelector('[data-gv-turn-navigator]')).not.toBeNull();
-  expect(showTimelineStyleCoachmark).not.toHaveBeenCalled();
-  await scope.dispose();
-  document.querySelector('iframe')!.remove();
   await startTimeline(true, 'local.custom-timeline');
+  expect(document.querySelector('[data-gv-turn-navigator]')).not.toBeNull();
   expect(showTimelineStyleCoachmark).toHaveBeenCalled();
 });
 
-it('an explicit timeline yield condition retains priority over the builtin artifact default', async () => {
-  document.body.innerHTML =
-    '<div data-testid="user-message">Question</div><aside id="custom-panel">Panel</aside>';
-  const scope = await startTimeline(true, 'voyager.claude-timeline', '#custom-panel');
-  expect(showTimelineStyleCoachmark).not.toHaveBeenCalled();
-  await scope.dispose();
-  document.getElementById('custom-panel')!.remove();
-  await startTimeline(true, 'voyager.claude-timeline', '#custom-panel');
-  expect(showTimelineStyleCoachmark).toHaveBeenCalled();
-});
+it.each(['voyager.claude-timeline', 'local.custom-timeline'])(
+  '%s postpones its guide only while its explicit yield condition matches',
+  async (pluginId) => {
+    document.body.innerHTML =
+      '<div data-testid="user-message">Question</div><aside id="custom-panel">Panel</aside>';
+    const scope = await startTimeline(true, pluginId, '#custom-panel');
+    expect(showTimelineStyleCoachmark).not.toHaveBeenCalled();
+    await scope.dispose();
+    document.getElementById('custom-panel')!.remove();
+    await startTimeline(true, pluginId, '#custom-panel');
+    expect(showTimelineStyleCoachmark).toHaveBeenCalled();
+  },
+);

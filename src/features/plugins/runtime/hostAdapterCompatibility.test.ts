@@ -2,6 +2,7 @@ import { JSDOM } from 'jsdom';
 import { afterEach, expect, it } from 'vitest';
 
 import { getSiteSelectorContract } from '@/core/selectors/contracts';
+import { withPageSemanticSelectors } from '@/core/selectors/semanticSnapshot';
 import { requireBundledSiteAdapter } from '@/features/plugins/catalog/sites';
 
 import { SEMANTIC_SELECTOR_KEYS } from '../sites/semanticKeys';
@@ -25,7 +26,7 @@ it.each([
   ['chatgpt', 'chatgpt.com'],
   ['deepseek', 'chat.deepseek.com'],
 ])(
-  '%s declarative repairs outside the guarded contract still reach renamed page nodes',
+  '%s native and declarative repairs outside the guarded contract still reach renamed page nodes',
   (siteId, host) => {
     const page = new JSDOM('<!doctype html><body></body>', { url: `https://${host}/` });
     cleanup.push(() => page.window.close());
@@ -71,6 +72,15 @@ it.each([
       keys.map((key) => `${siteId} ${key}`),
     );
     baseline.unmountAll();
+
+    const nativeSnapshot = new DeclarativeEngine({
+      doc,
+      adapter: withPageSemanticSelectors(adapter, keys),
+    });
+    cleanup.push(() => nativeSnapshot.unmountAll());
+    nativeSnapshot.mount(plugin);
+    expect(Array.from(doc.querySelectorAll('.gv-catalog-repair'))).toEqual(originalTargets);
+    nativeSnapshot.unmountAll();
 
     const current = createHostEngine({
       doc,

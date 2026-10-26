@@ -62,13 +62,7 @@ export function withGuardedPageAdapter(
   if (!adapter || adapter.id === 'gemini' || getPageSelectorSiteId(doc) !== adapter.id)
     return adapter;
   const selectors: Record<string, string> = {};
-  const guardedKeys = getSiteSelectorContract(adapter.id)?.keys ?? [];
   for (const key of Object.keys(adapter.selectors)) {
-    // Unmigrated catalog semantics must retain the override accepted before page guards existed.
-    if (!guardedKeys.includes(key)) {
-      selectors[key] = adapter.selectors[key];
-      continue;
-    }
     Object.defineProperty(selectors, key, {
       enumerable: true,
       get: () => pageSemanticSelector(adapter, key, doc) ?? ':not(*)',
