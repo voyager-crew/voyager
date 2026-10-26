@@ -69,11 +69,33 @@ describe('Gemini startup hydration', () => {
     vi.mocked(chrome.storage.sync.get).mockResolvedValue({ [updatesKey]: false } as never);
     vi.mocked(chrome.storage.local.get).mockResolvedValue(stored() as never);
     await start().ready;
-    expect(chrome.storage.local.get).not.toHaveBeenCalled();
+    expect(chrome.storage.local.get).toHaveBeenCalledTimes(1);
     expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
     expect(userTexts()).toEqual(['Bundled turn']);
     expect(getGeminiTurnView().remoteKeys.size).toBe(0);
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('a missing cache starts bundled features without waiting for the host settings read', async () => {
+    vi.useFakeTimers();
+    vi.mocked(chrome.storage.local.get).mockResolvedValue({} as never);
+    vi.mocked(chrome.storage.sync.get).mockImplementation(() => new Promise(() => {}) as never);
+    const startup = start();
+    await startup.ready;
+    expect((await startup.initialAdapter)?.id).toBe('gemini');
+    expect(userTexts()).toEqual(['Bundled turn']);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('the host reuses the adapter and switch reads that installed its page snapshot', async () => {
+    vi.mocked(chrome.storage.local.get).mockResolvedValue(stored() as never);
+    const startup = start();
+    await startup.ready;
+    const first = await startup.legacySettings!.load();
+    expect(await startup.legacySettings!.load()).toBe(first);
+    expect((await startup.initialAdapter)?.locators?.['turn.user']).toEqual(['.new-user']);
+    expect(chrome.storage.local.get).toHaveBeenCalledTimes(1);
+    expect(chrome.storage.sync.get).toHaveBeenCalledTimes(1);
   });
 
   it('starts the due check after one cached snapshot without waiting for its response', async () => {

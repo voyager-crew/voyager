@@ -8,7 +8,7 @@ import { locatorSiteForHost } from '@/core/selectors/sites';
  * per host at a time (single flight across every open tab), validates it and
  * writes the per-host cache entry.
  *
- * Gates, in order (a manual `force` skips only scheduling and page eligibility):
+ * Gates, in order (manual `force` skips the switch, scheduling and page eligibility):
  *   1. build flag          — a build compiled without the remote channel never fetches;
  *   2. host shape          — only plain hostnames get a file name;
  *   3. user settings       — online-update switch, check interval, failure backoff,
@@ -155,7 +155,8 @@ export class HostCatalogRefresher {
   private perform(host: string, force: boolean): Promise<HostCatalogRefreshResult> {
     return runHostCatalogCheck({
       timeoutMs: this.timeoutMs,
-      subscribeOff: this.subscribeOff,
+      // D4: an explicit manual check remains authorized when automatic updates are off.
+      subscribeOff: force ? () => () => {} : this.subscribeOff,
       prepare: (signal) => this.prepare(host, force, signal),
       fetch: ({ entry, attemptedAt }, signal) =>
         this.fetchCandidate(host, entry, attemptedAt, signal),
@@ -191,8 +192,7 @@ export class HostCatalogRefresher {
       result: { ok: true, status: 'skipped', reason: 'disabled' },
     };
     const settings = await this.loadSettings();
-    // Manual checks bypass scheduling, never the channel's off switch.
-    if (signal.aborted || !settings.onlineUpdatesEnabled) return disabled;
+    if (signal.aborted || (!force && !settings.onlineUpdatesEnabled)) return disabled;
     const entry = await this.loadEntry(host);
     if (signal.aborted) return disabled;
     if (!force) {

@@ -102,6 +102,20 @@ describe('catalog locator sections', () => {
     expect(query(profiles, 'code.host')).toEqual(['code']);
   });
 
+  it('an older extension keeps its working repairs when a newer catalog adds a key', () => {
+    document.body.innerHTML = '<section class="repaired-turn" id="question">Question</section>';
+    const validated = validateHostCatalogFile(
+      payload({ 'turn.user': ['.repaired-turn'], 'future.user': ['body'] }),
+      HOST,
+    );
+    expect(query(validated!.site!.locators!, 'turn.user')).toEqual(['question']);
+    expect(validated?.site?.locators?.['future.user']).toBeUndefined();
+    expect(validated?.siteIssues).toContainEqual({
+      path: 'site.locators.future.user',
+      message: 'unknown locator key',
+    });
+  });
+
   it('a locator-shaped extension to an unsupported site cannot change its adapter', () => {
     const claude = requireBundledSiteAdapter('claude');
     const read = readSiteAdapterData({
@@ -110,7 +124,7 @@ describe('catalog locator sections', () => {
     });
     expect(read.result.success && read.result.data.selectors).toEqual(claude.selectors);
     expect(read.sectionIssues).toEqual([
-      { path: 'locators', message: 'invalid or unsupported site locator profiles' },
+      { path: 'locators.turn.user', message: 'unknown locator key' },
     ]);
   });
 
@@ -211,11 +225,13 @@ describe('catalog locator sections', () => {
     });
   });
 
-  it('turning online updates off blocks automatic and manual requests; enabling uses the same host file', async () => {
+  it('a manual check still fetches repairs with automatic updates off', async () => {
     let enabled = false;
     const fetchImpl = vi
       .fn<typeof fetch>()
-      .mockResolvedValue(new Response(JSON.stringify(payload({ 'turn.user': ['.repaired'] }))));
+      .mockImplementation(
+        async () => new Response(JSON.stringify(payload({ 'turn.user': ['.repaired'] }))),
+      );
     const saved: HostCatalogCacheEntry[] = [];
     const refresher = new HostCatalogRefresher({
       enabled: true,
@@ -229,8 +245,8 @@ describe('catalog locator sections', () => {
       isHostEligible: defaultIsHostEligible,
     });
     expect((await refresher.refresh(HOST)).status).toBe('skipped');
-    expect((await refresher.refresh(HOST, { force: true })).status).toBe('skipped');
     expect(fetchImpl).not.toHaveBeenCalled();
+    expect((await refresher.refresh(HOST, { force: true })).status).toBe('updated');
     enabled = true;
     expect((await refresher.refresh(HOST)).status).toBe('updated');
     expect(fetchImpl).toHaveBeenCalledWith(

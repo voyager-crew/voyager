@@ -159,7 +159,7 @@ describe('catalog update cancellation', () => {
     commit.resolve();
     expect((await pending).status).toBe('updated');
     test.loadSettings.mockResolvedValue({ ...ON, onlineUpdatesEnabled: false });
-    expect((await test.refresher.refresh(HOST, { force: true })).status).toBe('skipped');
+    expect((await test.refresher.refresh(HOST)).status).toBe('skipped');
     expect(test.fetchImpl).toHaveBeenCalledTimes(1);
     expect(test.listeners.size).toBe(0);
   });

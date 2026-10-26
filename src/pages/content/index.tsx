@@ -1,4 +1,3 @@
-import { logger } from '@/core/services/LoggerService';
 import { CleanupPositions } from '@/core/types/cleanupPositions';
 import { StorageKeys } from '@/core/types/common';
 import { CleanupManager } from '@/core/utils/cleanupManager';
@@ -328,18 +327,15 @@ function handleVisibilityChange(): void {
       CleanupPositions.CleanupPageSelectors,
     );
     selectorCurrent = selectorStartup.isCurrent;
-    // Share hydration with features; ping and account services already started synchronously.
-    selectorReady = selectorStartup.ready
-      .then(() => {
-        if (!selectorCurrent()) return;
-        cleanupManager.registerCleanupFunction(
-          startPluginHost({ admission: officialAdmission }),
-          CleanupPositions.CleanupPluginHost,
-        );
-      })
-      .catch((error: unknown) => {
-        logger.error('Plugin startup failed', { error: String(error) });
-      });
+    selectorReady = selectorStartup.ready;
+    cleanupManager.registerCleanupFunction(
+      startPluginHost({
+        admission: officialAdmission,
+        initialAdapter: selectorStartup.initialAdapter,
+        legacySettings: selectorStartup.legacySettings,
+      }),
+      CleanupPositions.CleanupPluginHost,
+    );
 
     // Cosmetic: on Claude / ChatGPT, re-skin Voyager's accent to the host
     // platform's brand colour (injects --gv-pm-brand + a gv-platform-themed body

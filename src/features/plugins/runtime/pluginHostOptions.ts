@@ -9,7 +9,7 @@ import { hasEnabledPluginForUrl } from '../remote/hostCatalogPolicy';
 import { isStaticallyInjectedHost } from '../sites/hostPolicy';
 import type { SiteRegistry } from '../sites/registry';
 import type { PluginStateMap } from '../storage/pluginState';
-import type { EntitlementProvider, PluginManifest, PluginSource } from '../types';
+import type { EntitlementProvider, PluginManifest, PluginSource, SiteAdapter } from '../types';
 import type { LegacySettingsSource } from './legacySnapshotFeed';
 import { PLUGIN_CATALOG_REFRESH_MESSAGE } from './messages';
 import type { OfficialAdmission } from './officialAdmission';
@@ -38,6 +38,8 @@ export interface PluginHostOptions {
   readonly admission?: OfficialAdmission;
   /** Injectable for tests; native surfaces read every binding, other pages only shared visual keys. */
   readonly legacySettings?: LegacySettingsSource;
+  /** Page hydration shares the host's first adapter read instead of gating host startup. */
+  readonly initialAdapter?: Promise<SiteAdapter | null>;
   /**
    * The device class this page runs on; a plugin without it in
    * `requires.formFactors` reports `needs-form-factor` and never mounts.

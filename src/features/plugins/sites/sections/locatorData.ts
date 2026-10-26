@@ -23,9 +23,15 @@ export function readSiteLocators(
     };
   return {
     locators: accepted.profiles,
-    issues: accepted.rejected.map((key) => ({
-      path: `locators.${key}`,
-      message: 'invalid locator group',
-    })),
+    issues: [
+      ...accepted.rejected.map((key) => ({
+        path: `locators.${key}`,
+        message: 'invalid locator group',
+      })),
+      ...accepted.unknown.map((key) => ({
+        path: `locators.${key}`,
+        message: 'unknown locator key',
+      })),
+    ],
   };
 }

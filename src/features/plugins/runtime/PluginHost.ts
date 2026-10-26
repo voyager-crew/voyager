@@ -18,10 +18,8 @@
  *   5. subscribe to state changes and re-reconcile (live enable/disable)
  *   6. subscribe to this host's remote catalog cache and to the user's local
  *      plugins, and reload on content change
- *   7. in the top frame, when an ENABLED plugin targets this page, ask the
- *      background to check the remote catalog (it applies the user's interval,
- *      switch and backoff). Pages without an enabled plugin, and every Gemini /
- *      AI Studio page (no catalog host), never send the request.
+ *   7. ask the background for a due catalog check on eligible top-frame pages.
+ *      Native page startup requests locator checks; official plugins remain packaged.
  *
  * All providers (registry, sources, entitlement) are injected so the host is
  * fully unit-testable and the monetization/marketplace seams can be swapped
@@ -95,6 +93,7 @@ export class PluginHost {
   private readonly context: PluginSourceContext;
   private readonly requestCatalogRefresh: (host: string) => void;
   private readonly isTopFrame: boolean;
+  private readonly initialAdapter: Promise<SiteAdapter | null> | undefined;
   private readonly readFormFactor: () => Promise<FormFactor>;
 
   private adapter: SiteAdapter | null = null;
@@ -153,6 +152,7 @@ export class PluginHost {
     this.context = { url: this.url, host: catalogHostFromUrl(this.url) };
     this.requestCatalogRefresh = options.requestCatalogRefresh ?? sendCatalogRefreshRequest;
     this.isTopFrame = options.isTopFrame ?? detectTopFrame();
+    this.initialAdapter = options.initialAdapter;
     this.readFormFactor = options.formFactor ?? requestPageFormFactor;
     this.surfaceSwitch =
       options.surfaceSwitch === undefined ? surfaceSwitchForUrl(this.url) : options.surfaceSwitch;
@@ -197,10 +197,16 @@ export class PluginHost {
       if (host) this.unsubscribeCatalog = subscribeHostCatalog(host, onSourceChange);
       // An import, update or removal of a local plugin is a catalog change too.
       this.unsubscribeLocal = subscribeLocalPlugins(onSourceChange);
+      const requeue = (): void => {
+        if (this.generation === gen) void this.enqueue(() => this.reconcile(gen));
+      };
+      // Visual effects shares its legacy choice on every already-injected page;
+      // non-native pages read only those keys. Unbound plugins never wait on it.
+      this.legacy = openLegacySnapshotFeed(this.legacySettings, requeue);
       // A published site override beats the bundled adapter for
       // pages it covers; resolved before the engine exists so semantic
       // selectors use the newest site knowledge from the first mount.
-      const adapter = await this.resolveAdapter();
+      const adapter = await (this.initialAdapter ?? this.resolveAdapter());
       if (this.generation !== gen) return;
       this.adapter = adapter;
       this.engine = this.createEngine(adapter);
@@ -210,12 +216,6 @@ export class PluginHost {
       // enqueues on the serialized chain, so nothing runs ahead of the
       // initial reconcile below.
       let stateFromListener: PluginStateMap | null = null;
-      const requeue = (): void => {
-        if (this.generation === gen) void this.enqueue(() => this.reconcile(gen));
-      };
-      // Visual effects shares its legacy choice on every already-injected page;
-      // non-native pages read only those keys. Unbound plugins never wait on it.
-      this.legacy = openLegacySnapshotFeed(this.legacySettings, requeue);
       this.unsubscribeAdmission = this.admission.subscribe(requeue);
       this.unsubscribeState = subscribePluginState((next) => {
         if (this.generation !== gen) return;

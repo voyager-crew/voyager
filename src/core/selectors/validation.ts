@@ -52,14 +52,16 @@ export function readSiteSelectorProfiles(
   value: unknown,
 ): Readonly<Record<string, readonly string[]>> | null {
   const contract = getSiteSelectorContract(siteId);
-  if (!contract || !isSelectorRecord(value)) return null;
-  if (Object.keys(value).some((key) => !contract.keys.includes(key))) return null;
-  return readBundledSelectorProfiles(value);
+  if (!contract || !isSelectorRecord(value) || !withinSelectorBudget(value)) return null;
+  return readBundledSelectorProfiles(
+    Object.fromEntries(Object.entries(value).filter(([key]) => contract.keys.includes(key))),
+  );
 }
 
 export interface SiteSelectorGroupsRead {
   readonly profiles: Readonly<Record<string, readonly string[]>>;
   readonly rejected: readonly string[];
+  readonly unknown: readonly string[];
 }
 
 /** One malformed group cannot prevent an unrelated surface from recovering. */
@@ -70,7 +72,8 @@ export function readSiteSelectorGroups(
 ): SiteSelectorGroupsRead | null {
   const contract = getSiteSelectorContract(siteId);
   if (!contract || !isSelectorRecord(value) || !withinSelectorBudget(value)) return null;
-  if (Object.keys(value).some((key) => !contract.keys.includes(key))) return null;
+  // New catalog keys must not withdraw repairs understood by an older extension.
+  const unknown = Object.keys(value).filter((key) => !contract.keys.includes(key));
   const profiles: Record<string, readonly string[]> = {};
   const rejected: string[] = [];
   for (const group of contract.groups) {
@@ -92,7 +95,7 @@ export function readSiteSelectorGroups(
     for (const key of present)
       profiles[key] = Object.freeze([...(value[key] as readonly string[])]);
   }
-  return { profiles: Object.freeze(profiles), rejected };
+  return { profiles: Object.freeze(profiles), rejected, unknown };
 }
 
 export function readSiteSelectorProfileGroup<Key extends string>(
@@ -100,6 +103,9 @@ export function readSiteSelectorProfileGroup<Key extends string>(
   value: unknown,
   keys: readonly Key[],
 ): Readonly<Record<Key, readonly string[]>> | null {
+  // Source fragments are authored with this build, so an extra key is a publishing typo.
+  if (!isSelectorRecord(value) || Object.keys(value).some((key) => !keys.includes(key as Key)))
+    return null;
   const profiles = readSiteSelectorProfiles(siteId, value);
   if (
     !profiles ||
