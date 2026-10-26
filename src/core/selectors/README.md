@@ -23,7 +23,7 @@ not immutable protocols, and a class rename may still require an extension relea
 | Site                         | Online page detection coverage                                                                                                                                                                                                       |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Gemini, including Enterprise | Conversation turns and content; sidebar and Gems; composer and prompt tools; menus; export and image surfaces; code and Canvas panels. The [Gemini registry](../gemini/selectors/README.md#groups-and-consumers) lists each surface. |
-| AI Studio                    | Composer candidates; complete library rows and drag targets; prompt history and navigation mounts.                                                                                                                                   |
+| AI Studio                    | Composer candidates; complete library rows and drag targets; prompt history, sidebar and navigation children. Placement slots remain packaged.                                                                                       |
 | ChatGPT                      | Composer and handoff candidates, Vim input, turns, model controls, header actions, temporary-chat navigation, export/streaming roots, code hosts, sidebar and scroll owners.                                                         |
 | Claude                       | Composer and handoff candidates, Vim input, complete reply roots for export, sidebar and scroll owners.                                                                                                                              |
 | Kimi                         | Composer candidates, Vim input, complete reply roots for export, sidebar and scroll owners.                                                                                                                                          |
@@ -62,7 +62,8 @@ Validation caps each site's profiles at 65,536 UTF-8 bytes, each ordered list at
 control characters are rejected. A malformed or unparsable locator drops its
 whole surface group. Unknown keys are reported and ignored so older clients retain their other repairs. An oversized section drops the section without invalidating plugins or unrelated site data. Authoring fragments remain strict about unexpected keys.
 
-Consumers perform a pure read against one captured view before any click,
+For keys admitted to the guarded page-locator contract, consumers perform a pure
+read against one captured view before any click,
 insertion, send, export, download or persistent write. Remote data counts only
 when an independent native or bundled read proves the complete result and its
 original owner. A partial list, reordered result, conflicting evidence or wrong
@@ -70,6 +71,11 @@ element reruns the entire operation against the bundle. Rejected candidates
 never contribute descendants or side effects. These checks stay off the
 bundled path: without remote changes, the reader runs once and no remote guard
 runs.
+
+Existing `site.selectors` fields outside a site’s guarded contract retain their
+earlier catalog override behavior in declarative DOM operations and native
+primitives. They are not silently replaced with bundled values. Independent
+native ownership proofs still read packaged evidence.
 
 ## Rollback runbook
 

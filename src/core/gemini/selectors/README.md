@@ -140,8 +140,10 @@ selected for publication.
   loose remote locator could capture another site's frame. Online data cannot
   supply the origin policy, and this migration does not change the bundled policy.
 - Dormant implementations remain dormant. Shared consumers resolve the current
-  site’s own data through `core/selectors/`; Gemini fragments contain no other
-  site’s composer dialect.
+  site’s own data through `core/selectors/`. Site-specific HUD mount fallbacks
+  live only in their own site’s input data; other sites use explicit no-match
+  slots. Gemini’s candidate lists retain their historical ordered editor
+  fallbacks, which do not grant another site’s catalog contract.
 
 ### MAIN-world scroll literals
 

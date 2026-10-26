@@ -70,9 +70,9 @@ Part of the [Gemini data README](README.md#packaged-only-boundaries) and the [sh
 
 ## export-layout-packaged.json
 
-| Exact retained keys                                                                                                                                                                                             | Reason                                                                                                                                        |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `controls`, `broadControls`, `canvasOwner`, `canvasContent`, `fullscreenCanvas`, `inactiveCanvas`, `turns`, `interactive`, `avoidRow`, `overlaySidebar`, `fallbackRoot`, `alignmentCanvas`, `alignmentComposer` | Shared toolbar placement/collision policy (§6 CSS/layout). See the shared-site ledger; the effective conversation/header mounts are separate. |
+| Exact retained keys                                                                                                                                                                                             | Reason                                                                                                                                                  |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `controls`, `broadControls`, `canvasOwner`, `canvasContent`, `fullscreenCanvas`, `inactiveCanvas`, `turns`, `interactive`, `avoidRow`, `overlaySidebar`, `fallbackRoot`, `alignmentCanvas`, `alignmentComposer` | No independent proof of renamed toolbar collision/alignment targets. See the shared-site ledger; the effective conversation/header mounts are separate. |
 
 ## export-toolbar.json
 
@@ -82,9 +82,9 @@ Part of the [Gemini data README](README.md#packaged-only-boundaries) and the [sh
 
 ## fork-packaged.json
 
-| Exact retained keys                                                       | Reason                                                                                                                                                                                    |
-| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fork.userHost`, `fork.copyButton`, `fork.copyIcon`, `fork.sentTextLines` | Native user owner, copy-button/icon action association and source-text interpretation (§6 identity/copy protocol). Content repairs use the shared guarded body, not a second fork source. |
+| Exact retained keys                                                                     | Reason                                                                                                                                                                                                                                                                      |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fork.userHost`, `fork.copyButton`, `fork.copyIcon`, `fork.sentTextLines`, `fork.input` | Native user owner, copy-button/icon action association and source-text interpretation (§6 identity/copy protocol). Content repairs use the shared guarded body. fork.input preserves the narrower bundled prefill read; remote repairs use the guarded composer.candidates. |
 
 ## formula-packaged.json
 

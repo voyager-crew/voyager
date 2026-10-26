@@ -171,6 +171,10 @@ take effect after a user refresh, with no automatic reload or native remount.
 The page requests a due catalog check after hydration; opening the popup only
 reads the cache, and its refresh button requests a manual check.
 
+Existing semantic site overrides outside a site’s page-locator contract keep
+their baseline declarative behavior, including native primitives. Admitted
+contract keys use the frozen guarded view; no semantic key is silently dropped.
+
 Every consumer guard and `remoteKeys` decision remains packaged. A partial
 collection, conflict with an independent native/bundled check or target other
 than the operation’s original element falls back for the whole operation before

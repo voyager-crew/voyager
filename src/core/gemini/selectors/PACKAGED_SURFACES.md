@@ -28,15 +28,9 @@ Continuation of the [complete packaged-data ledger](PACKAGED_DATA.md).
 
 ## input-packaged.json
 
-| Exact retained keys                                                                                                                                  | Reason                                                                                                                                                                                                                   |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `input.clearance`, `input.fab`, `vim.mountInput`, `vim.mountRoot`, `vim.crossSiteEdit`, `vim.editActions`, `vim.mountChatInput`, `vim.mountChatRoot` | Baseline prompt/FAB clearance and Vim mounting relationships (§6 layout). Editing controls and cross-site edit exclusions remain the native interaction protocol; composer repair uses its single guarded input profile. |
-
-## menu-overlay-packaged.json
-
-| Exact retained keys     | Reason                                                                                                                                          |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `exportOverlay.sidebar` | Packaged sidebar geometry/exclusion used by export overlay layout (§6); Canvas/composer alignment repairs have their own original-owner checks. |
+| Exact retained keys                                                                                                                                  | Reason                                                                                                                                                                                                                                |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `input.clearance`, `input.fab`, `vim.mountInput`, `vim.mountRoot`, `vim.crossSiteEdit`, `vim.editActions`, `vim.mountChatInput`, `vim.mountChatRoot` | No independent proof of renamed prompt/FAB clearance or Vim mount targets. Foreign-site mount slots are explicit no-match; editing controls retain their native interaction protocol. Composer repair uses its guarded input profile. |
 
 ## menu-packaged.json
 
@@ -46,9 +40,9 @@ Continuation of the [complete packaged-data ledger](PACKAGED_DATA.md).
 
 ## project-packaged.json
 
-| Exact retained keys                                                                | Reason                                                                                                                                                                              |
-| ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `project.send`, `project.modelAnchor`, `project.inputAnchor`, `project.fontSource` | Send action, instruction placement/removal and font-source protocol within the accepted composer (§6 write/interaction/layout); only project.inputs selects a repairable candidate. |
+| Exact retained keys                                                                | Reason                                                                                                                                                                                                      |
+| ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `project.send`, `project.modelAnchor`, `project.inputAnchor`, `project.fontSource` | No independent proof of renamed instruction placement or font-source anchors within the composer. Send action and instruction writes remain packaged protocols; project.inputs repairs the candidate input. |
 
 ## research-pack-packaged.json
 
@@ -58,15 +52,15 @@ Continuation of the [complete packaged-data ledger](PACKAGED_DATA.md).
 
 ## sent-chips-packaged.json
 
-| Exact retained keys                                       | Reason                                                                                                                                                 |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `sentChips.lines`, `sentChips.anchor`, `sentChips.toggle` | Source text and chip mount/toggle relationships (§6 source/UI). The complete original user bubble is independently repaired through sentChips.bubbles. |
+| Exact retained keys                                       | Reason                                                                                                                                                                          |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sentChips.lines`, `sentChips.anchor`, `sentChips.toggle` | No independent proof of a renamed preferred text subset or chip insertion/toggle anchor. The complete original user bubble is independently repaired through sentChips.bubbles. |
 
 ## sidebar-interaction-packaged.json
 
-| Exact retained keys                                      | Reason                                                                                                                                              |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `widthButtons`, `widthIcon`, `menuItem`, `optionsButton` | Fixed width CSS/icon/menu action interaction protocol (§6). Remote data selects only independently validated hit targets, never a different action. |
+| Exact retained keys                                      | Reason                                                                                                                                                                                                      |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `widthButtons`, `widthIcon`, `menuItem`, `optionsButton` | No independent proof that renamed widthButtons are the intended controls. Width CSS and icon/menu action semantics remain packaged protocols; remote data repairs only independently validated hit targets. |
 
 ## sidebar-packaged.json
 
