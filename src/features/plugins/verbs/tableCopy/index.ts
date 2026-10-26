@@ -8,6 +8,7 @@
  * replaces gets a fresh toolbar on the next scan. Unmount removes every
  * toolbar, so the page is exactly as the host left it.
  */
+import { hasPageSemanticFixes } from '@/core/selectors/semanticSnapshot';
 import { createToaster } from '@/core/ui/toast/toaster';
 import { onCachedLanguageChange } from '@/utils/i18n';
 
@@ -42,15 +43,19 @@ export const tableCopyPrimitive: Primitive<TableCopyParams> = {
     const { doc, adapter } = context;
     const turn = adapter?.selectors.assistantTurn;
     if (!turn) return;
+    const checked = hasPageSemanticFixes(adapter, ['assistantTurn'], doc);
+    const replies = () => doc.querySelectorAll(checked ? adapter!.selectors.assistantTurn : turn);
     const thinking = adapter?.selectors.thinkingBlock;
     // Replies, not tables: a conversation without a table is not a plugin with no effect.
-    context.setTargetCounter(() => doc.querySelectorAll(turn).length);
+    context.setTargetCounter(() => replies().length);
 
     const toolbars = new Map<HTMLTableElement, TableCopyToolbar>();
     const hosts = new WeakSet<Node>();
     const toaster = createToaster();
 
     const copy = async (table: HTMLTableElement, format: TableCopyFormat): Promise<void> => {
+      // Re-prove the response before a stale toolbar copies content from its replacement.
+      if (checked && !Array.from(replies()).some((reply) => reply.contains(table))) return;
       let copied = false;
       try {
         // Read on click, with no await before writeText, so the click still allows the write.
@@ -80,10 +85,16 @@ export const tableCopyPrimitive: Primitive<TableCopyParams> = {
 
     const scan = (): void => {
       if (scope.isDisposed) return;
+      const current = replies();
       for (const [table, toolbar] of Array.from(toolbars)) {
-        if (!table.isConnected || toolbar.host.nextElementSibling !== table) remove(table);
+        if (
+          !table.isConnected ||
+          toolbar.host.nextElementSibling !== table ||
+          (checked && !Array.from(current).some((reply) => reply.contains(table)))
+        )
+          remove(table);
       }
-      for (const reply of doc.querySelectorAll(turn)) {
+      for (const reply of current) {
         for (const table of reply.querySelectorAll<HTMLTableElement>('table')) {
           if (toolbars.has(table) || !eligible(table)) continue;
           const toolbar = createTableCopyToolbar(doc, (format) => void copy(table, format));

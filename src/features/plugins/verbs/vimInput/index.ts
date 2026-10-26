@@ -65,9 +65,12 @@ export const vimInputPrimitive: Primitive<VimInputParams> = {
           )
         : undefined;
     context.setTargetCounter(() => {
-      if (composer) {
+      const current =
+        params.composer ??
+        (context.adapter ? pageSemanticSelector(context.adapter, 'composer') : composer);
+      if (current) {
         try {
-          return context.doc.querySelectorAll(composer).length;
+          return context.doc.querySelectorAll(current).length;
         } catch {
           return 0;
         }

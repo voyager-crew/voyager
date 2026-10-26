@@ -66,3 +66,14 @@ export function withGuardedPageAdapter(
   }
   return { ...adapter, selectors };
 }
+
+/** Only remote semantic operations need to re-prove ownership after mounting. */
+export function hasPageSemanticFixes(
+  adapter: SiteAdapter | null,
+  keys: readonly string[],
+  doc: Document,
+): boolean {
+  if (!adapter || adapter.id !== getPageSelectorSiteId(doc)) return false;
+  const view = getSiteSelectorView(adapter.id);
+  return keys.some((key) => view.remoteKeys.has(key));
+}

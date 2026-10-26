@@ -1,4 +1,4 @@
-/** Only the declarative ledger can distinguish its decoration from Voyager-created UI. */
+/** The declarative ledger and guarded native owners distinguish their decorations from Voyager UI. */
 export class NativeDomDecorationService {
   private readonly classes = new WeakMap<Element, Map<string, Set<object>>>();
 

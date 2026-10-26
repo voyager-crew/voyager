@@ -8,6 +8,7 @@
  * itself keeps its own value, so the host's absolutely placed children stay
  * where they were.
  */
+import { nativeDomDecorations } from '@/core/services/NativeDomDecorationService';
 import { findComposer, readComposer } from '@/core/services/composer';
 import { onCachedLanguageChange } from '@/utils/i18n';
 
@@ -25,6 +26,7 @@ export interface ComposerBadgeOptions {
   readonly composer: string;
   readonly composerRoot: string | undefined;
   readonly metric: CounterMetric;
+  readonly resolveSelectors?: () => Pick<ComposerBadgeOptions, 'composer' | 'composerRoot'>;
 }
 
 /** SPA navigation replaces the composer; the badge follows once the page settles. */
@@ -77,6 +79,8 @@ export function startComposerBadge(options: ComposerBadgeOptions): () => void {
   const render = (): void => setBadgeLabel(badge, counterLabel(metric, count));
 
   const update = (): void => {
+    // Input/observer work crosses a frame boundary; re-prove before reading the retained field.
+    if (options.resolveSelectors) bind();
     count = field ? countText(readComposer(field), metric) : 0;
     // An empty draft has nothing to measure; a standing "0" above every new chat is noise.
     badge.hidden = count === 0;
@@ -97,6 +101,8 @@ export function startComposerBadge(options: ComposerBadgeOptions): () => void {
     badge.remove();
     if (anchor && anchorPositioned) {
       // Only Voyager's class goes: the host may have changed its own classes since.
+      if (options.resolveSelectors)
+        nativeDomDecorations.release(anchor, COUNTER_ANCHOR_CLASS, badge);
       anchor.classList.remove(COUNTER_ANCHOR_CLASS);
       if (!anchorPositioned.hadClass && anchor.classList.length === 0) {
         anchor.removeAttribute('class');
@@ -108,8 +114,8 @@ export function startComposerBadge(options: ComposerBadgeOptions): () => void {
 
   const fieldObserver = new MutationObserver(scheduleUpdate);
 
-  const bind = (): void => {
-    const next = findComposer(composer, { doc, requireVisible: false });
+  const bind = (current = options.resolveSelectors?.() ?? { composer, composerRoot }): void => {
+    const next = findComposer(current.composer, { doc, requireVisible: false });
     if (next !== field) {
       fieldObserver.disconnect();
       field = next;
@@ -118,7 +124,7 @@ export function startComposerBadge(options: ComposerBadgeOptions): () => void {
         fieldObserver.observe(field, { childList: true, subtree: true, characterData: true });
     }
     const root =
-      (field && composerRoot ? field.closest<HTMLElement>(composerRoot) : null) ??
+      (field && current.composerRoot ? field.closest<HTMLElement>(current.composerRoot) : null) ??
       field?.parentElement ??
       null;
     const nextAnchor = root && unclippedAnchor(root, view);
@@ -127,6 +133,9 @@ export function startComposerBadge(options: ComposerBadgeOptions): () => void {
       anchor = nextAnchor;
       if (anchor && !POSITIONED.test(view.getComputedStyle(anchor).position)) {
         anchorPositioned = { hadClass: anchor.hasAttribute('class') };
+        // Only an independently accepted native anchor may keep its own badge decoration.
+        if (options.resolveSelectors)
+          nativeDomDecorations.acquire(anchor, COUNTER_ANCHOR_CLASS, badge);
         anchor.classList.add(COUNTER_ANCHOR_CLASS);
       }
     }
@@ -136,9 +145,11 @@ export function startComposerBadge(options: ComposerBadgeOptions): () => void {
   const onInput = (event: Event): void => {
     const target = event.target;
     if (!(target instanceof Element)) return;
-    const typed = target.closest<HTMLElement>(composer);
+    const current = options.resolveSelectors?.() ?? { composer, composerRoot };
+    if (options.resolveSelectors) bind(current);
+    const typed = target.closest<HTMLElement>(current.composer);
     if (!typed) return;
-    if (typed !== field) bind();
+    if (typed !== field) bind(current);
     scheduleUpdate();
   };
 
@@ -157,7 +168,7 @@ export function startComposerBadge(options: ComposerBadgeOptions): () => void {
 
   doc.addEventListener('input', onInput, true);
   pageObserver.observe(doc.body, { childList: true, subtree: true });
-  const stopFollowingLanguage = onCachedLanguageChange(render);
+  const stopFollowingLanguage = onCachedLanguageChange(options.resolveSelectors ? update : render);
   bind();
   update();
 

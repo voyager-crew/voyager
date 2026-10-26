@@ -122,7 +122,9 @@ export const sendShortcutPrimitive: Primitive<SendShortcutParams> = {
     const composerRoot = adapter?.selectors.composerRoot;
     const sendButton = adapter?.selectors.sendButton;
     if (!composer || !composerRoot || !sendButton) return;
-    context.setTargetCounter(() => doc.querySelectorAll(composer).length);
+    context.setTargetCounter(
+      () => doc.querySelectorAll(readAdapter()?.selectors.composer ?? composer).length,
+    );
     // Claimed before the listener so the claim outlives it: teardown runs in reverse.
     scope.effect(() => claimComposerEnter(doc), 'send-shortcut:enter-owner');
 

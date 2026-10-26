@@ -1,3 +1,4 @@
+import { isOwnedDiagramSource } from '../../features/plugins/verbs/diagramExportRegistry';
 import { hasVoyagerOwner } from '../gemini/composer/ownedInput';
 import { sameItems } from '../utils/array';
 import { getBundledSiteSelectorView } from './bundle';
@@ -45,8 +46,9 @@ function isOriginalVisible(element: Element, doc: Document): boolean {
     return false;
   for (let node: Element | null = element; node; node = node.parentElement) {
     const style = window.getComputedStyle(node);
+    // A diagram hides its retained native source; only its owning renderer can attest that hide.
     if (
-      style.display === 'none' ||
+      (style.display === 'none' && !isOwnedDiagramSource(node)) ||
       style.visibility === 'hidden' ||
       style.visibility === 'collapse'
     )
@@ -129,19 +131,26 @@ function provesScroll(candidate: Element, doc: Document, view: SiteSelectorView)
   return false;
 }
 
-function onlyCode(candidate: Element, pre: Element): boolean {
-  if (candidate === pre) return true;
-  if (!candidate.contains(pre) || candidate.querySelectorAll('pre').length !== 1) return false;
+function onlyCode(candidate: Element, source: Element, chatgpt: boolean): boolean {
+  if (candidate === source) return source.localName === 'pre';
+  if (!candidate.contains(source)) return false;
+  // ChatGPT's current blocks use a whitespace-preserving code element without a pre.
+  const nativeSources = Array.from(candidate.querySelectorAll('pre, code')).filter(
+    (node) => !chatgpt || !node.closest('[data-markdown-copy="exclude"]'),
+  );
+  if (nativeSources.some((node) => node !== source && !source.contains(node))) return false;
   const walker = candidate.ownerDocument.createTreeWalker(
     candidate,
     NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
     (node) =>
-      node instanceof Element && node.matches('button.gv-code-block-toggle')
+      node instanceof Element &&
+      (node.matches('button.gv-code-block-toggle') ||
+        (chatgpt && node.matches('[data-markdown-copy="exclude"]')))
         ? NodeFilter.FILTER_REJECT
         : NodeFilter.FILTER_ACCEPT,
   );
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    if (pre.contains(node)) continue;
+    if (source.contains(node)) continue;
     if (node.nodeType === Node.TEXT_NODE && node.textContent?.trim()) return false;
     if (
       node instanceof Element &&
@@ -157,9 +166,15 @@ function onlyCode(candidate: Element, pre: Element): boolean {
 
 function provesCode(candidates: Element[], doc: Document, view: SiteSelectorView): boolean {
   const turns = nativeTurns(doc, view, true);
-  const code = Array.from(doc.querySelectorAll('pre')).filter(
-    (pre) => turns.some((turn) => turn.contains(pre)) && isOriginalVisible(pre, doc),
-  );
+  const chatgpt = view.siteId === 'chatgpt';
+  const code = Array.from(doc.querySelectorAll(chatgpt ? 'pre, code' : 'pre')).filter((source) => {
+    if (!turns.some((turn) => turn.contains(source)) || !isOriginalVisible(source, doc))
+      return false;
+    if (source.localName === 'pre') return true;
+    if (source.closest('pre, [data-markdown-copy="exclude"]')) return false;
+    const style = doc.defaultView?.getComputedStyle(source);
+    return style?.display === 'block' && /^(pre|pre-wrap|break-spaces)$/.test(style.whiteSpace);
+  });
   return (
     code.length > 0 &&
     code.length === candidates.length &&
@@ -167,7 +182,9 @@ function provesCode(candidates: Element[], doc: Document, view: SiteSelectorView
       const owner = turns.find((turn) => turn.contains(code[index]));
       // A user code sample or the whole response wrapper is not an assistant code-block host.
       return (
-        owner !== candidate && !!owner?.contains(candidate) && onlyCode(candidate, code[index])
+        owner !== candidate &&
+        !!owner?.contains(candidate) &&
+        onlyCode(candidate, code[index], chatgpt)
       );
     })
   );

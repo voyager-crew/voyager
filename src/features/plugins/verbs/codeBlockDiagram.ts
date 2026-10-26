@@ -35,11 +35,16 @@ import type { Dispose, PluginScope } from '../runtime/pluginScope';
 import { startDiagramDraw } from './codeBlockDiagramDraw';
 import { querySafe, readCodeBlock } from './codeBlockDiagramRead';
 import { HIDDEN_ATTR, PAGE_CSS, PANEL_CLASS, SHADOW_CSS } from './codeBlockDiagramStyles';
-import { createDiagramRead, usesGeminiCodeFixes } from './codeBlockDiagramTargets';
+import {
+  createDiagramRead,
+  usesGeminiCodeFixes,
+  usesCatalogCodeFixes,
+} from './codeBlockDiagramTargets';
 import {
   DIAGRAM_OWNER_ATTR,
   type DiagramExport,
   provideDiagramExport,
+  ownDiagramSource,
 } from './diagramExportRegistry';
 import type { PrimitiveContext } from './types';
 export { readCodeBlock, validateCodeBlockDiagramParams } from './codeBlockDiagramRead';
@@ -100,6 +105,7 @@ interface CodeOrigin {
 interface Panel {
   readonly host: HTMLElement;
   readonly target: HTMLElement;
+  readonly releaseSource: () => void;
   origin: CodeOrigin | null;
   /** Source of the last draw; null asks the next scan to draw again. */
   source: string | null;
@@ -118,9 +124,12 @@ export function activateCodeBlockDiagram(
   const turn = params.turn ?? adapter?.selectors.assistantTurn;
   if (!turn) return;
   const blockSelector = params.codeBlock ?? adapter?.selectors.codeBlock ?? DEFAULT_CODE_BLOCK;
-  context.setTargetCounter(() => querySafe(doc, turn).length);
+  context.setTargetCounter(
+    () => querySafe(doc, params.turn ?? adapter?.selectors.assistantTurn ?? turn).length,
+  );
   const readOperation = () => createDiagramRead(context, params, turn, blockSelector);
-  const online = () => usesGeminiCodeFixes(context, blockSelector);
+  const online = () =>
+    usesGeminiCodeFixes(context, blockSelector) || usesCatalogCodeFixes(context, params);
 
   const panels = new Map<HTMLElement, Panel>();
   const owner = `${diagram.name}:${Math.random().toString(36).slice(2, 10)}`;
@@ -143,6 +152,7 @@ export function activateCodeBlockDiagram(
     if (!panel) return;
     panels.delete(block);
     panel.withdraw?.();
+    panel.releaseSource();
     panel.cleanup?.();
     panel.host.remove();
     block.removeAttribute(HIDDEN_ATTR);
@@ -270,8 +280,17 @@ export function activateCodeBlockDiagram(
     (fullscreenButton ?? target).addEventListener('click', () => diagram.openFullscreen?.(target));
 
     block.before(host);
+    const releaseSource = ownDiagramSource(block);
     show('diagram');
-    const panel: Panel = { host, target, origin, source: null, cleanup: undefined, withdraw: null };
+    const panel: Panel = {
+      host,
+      target,
+      releaseSource,
+      origin,
+      source: null,
+      cleanup: undefined,
+      withdraw: null,
+    };
     panels.set(block, panel);
     return panel;
   };

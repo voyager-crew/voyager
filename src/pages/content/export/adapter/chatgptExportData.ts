@@ -15,7 +15,6 @@ export const chatgptExportData = {
 // The adapter userTurn also names legacy frames; current-thread reads must keep their inner bubble.
 export const CHATGPT_USER_BUBBLE = packaged['export.userBubble'];
 export const CHATGPT_ASSISTANT_TURN = site.selectors.assistantTurn;
-export const CHATGPT_CODE_BLOCK = site.selectors.codeBlock;
 
 /** Current-thread bubbles keep their narrower baseline until a complete remote turn repair wins. */
 export function chatgptTurnSelector(role: 'userTurn' | 'assistantTurn'): string {

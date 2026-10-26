@@ -3,7 +3,7 @@ import type { ExtractedContent } from '@/features/export/services/DOMContentExtr
 import { escapeHtml, escapeHtmlAttribute } from '@/features/export/services/exportDomPolicy';
 import type { SiteAdapter } from '@/features/plugins/types';
 
-import { chatgptExportData, CHATGPT_CODE_BLOCK } from '../chatgptExportData';
+import { chatgptExportData } from '../chatgptExportData';
 import { chatgptLoggedOutAssistantSelector } from '../chatgptExportLocators';
 import {
   DESKTOP_TURN_SELECTOR,
@@ -196,8 +196,6 @@ export function chatgptExtractFormula(
   return true;
 }
 
-/** ChatGPT's current code block: a `div`, not a `pre`, with its source in a `code`. */
-const CODE_BLOCK_SELECTOR = CHATGPT_CODE_BLOCK;
 /** Block chrome ChatGPT leaves out of its own copy: language label, wrap and copy buttons. */
 const COPY_EXCLUDED_SELECTOR = chatgptExportData['export.copyExcluded'];
 const CODE_LANGUAGE_LABEL_SELECTOR = chatgptExportData['export.codeLanguage'];
@@ -215,6 +213,7 @@ function readCodeLanguageLabel(block: Element): string {
 }
 
 function extractCodeBlock(
+  codeBlockSelector: string,
   child: Element,
   htmlParts: string[],
   textParts: string[],
@@ -225,7 +224,7 @@ function extractCodeBlock(
   if (child.matches(MERMAID_PREVIEW_SELECTOR) && !child.querySelector('pre, code')) return true;
   // ChatGPT dropped `pre` and `language-*` for this block; read it by its copy markers, or
   // its header label and buttons export as prose.
-  if (tagName !== 'pre' && !child.matches(CODE_BLOCK_SELECTOR)) return;
+  if (tagName !== 'pre' && !child.matches(codeBlockSelector)) return;
   const codeElement =
     Array.from(child.querySelectorAll('code')).find(
       (code) => !code.closest(COPY_EXCLUDED_SELECTOR),
@@ -235,7 +234,7 @@ function extractCodeBlock(
   const className = (codeElement.getAttribute('class') || '').toLowerCase();
   const language =
     className.match(/language-([a-z0-9]+)/i)?.[1] ??
-    readCodeLanguageLabel(child.querySelector(CODE_BLOCK_SELECTOR) ?? child);
+    readCodeLanguageLabel(child.querySelector(codeBlockSelector) ?? child);
   if (code.trim()) {
     flags.hasCode = true;
     htmlParts.push(`<pre><code class="language-${language}">${escapeHtml(code)}</code></pre>`);
@@ -289,7 +288,9 @@ export function buildChatGptAdapter(provided: SiteAdapter): ExportPlatformAdapte
     getUserAttachmentCandidates,
     extractAssistantImage,
     extractFormula: chatgptExtractFormula,
-    extractCodeBlock,
+    // Reprove the frozen catalog value at extraction time; a later DOM may invalidate its host.
+    extractCodeBlock: (child, html, text, flags, tag) =>
+      extractCodeBlock(site.selectors.codeBlock, child, html, text, flags, tag),
     extractInlineFormula: chatgptExtractInlineFormula,
   };
 }

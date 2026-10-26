@@ -21,6 +21,7 @@
  */
 import { resolveGeminiUserLatexLines } from '@/core/gemini/math/userLatex';
 import { getGeminiSelectorView } from '@/core/gemini/selectors';
+import { hasPageSemanticFixes } from '@/core/selectors/semanticSnapshot';
 import { createUserLatexOwner } from '@/core/utils/userLatexSource';
 import {
   createUserLatexClaims,
@@ -104,12 +105,18 @@ export const userLatexPrimitive: Primitive<UserLatexParams> = {
     const composer = context.adapter?.selectors.composer;
     if (!turn) return;
     const { doc } = context;
+    const checked = !params.turn && hasPageSemanticFixes(context.adapter, ['userTurn'], doc);
     const wholeTurn = params.unit === 'turn';
     // Only the packaged Gemini line profile participates; local selectors keep their own contract.
     const geminiLines =
       context.adapter?.id === 'gemini' && wholeTurn && turn === 'p.query-text-line';
     const readMessages = () =>
-      geminiLines ? resolveGeminiUserLatexLines(doc) : { value: querySafe(doc, turn), view: null };
+      geminiLines
+        ? resolveGeminiUserLatexLines(doc)
+        : {
+            value: querySafe(doc, checked ? context.adapter!.selectors.userTurn : turn),
+            view: null,
+          };
     const owner = createUserLatexOwner(context.pluginId);
     const claims = createUserLatexClaims(owner);
     context.setTargetCounter(() => readMessages().value.length);
@@ -127,8 +134,10 @@ export const userLatexPrimitive: Primitive<UserLatexParams> = {
       if (element.isContentEditable || element.closest(EDITABLE_SELECTOR)) return true;
       // Rendering a whole turn replaces everything in it: never with an editor inside.
       if (wholeTurn && element.querySelector(EDITABLE_SELECTOR)) return true;
+      const currentComposer = context.adapter?.selectors.composer ?? composer;
       return (
-        composer !== undefined && querySafe(doc, composer).some((field) => field.contains(element))
+        currentComposer !== undefined &&
+        querySafe(doc, currentComposer).some((field) => field.contains(element))
       );
     };
     // A leaf has no element children; a whole turn is rendered whatever it holds.
@@ -143,6 +152,8 @@ export const userLatexPrimitive: Primitive<UserLatexParams> = {
         message.contains(element) &&
         element.isConnected &&
         renderable(element, message) &&
+        // KaTeX may finish after the host moves this once-valid turn into another owner.
+        (!checked || readMessages().value.includes(message as HTMLElement)) &&
         accepts();
       void renderUserLatex(element, {
         owner,

@@ -17,6 +17,7 @@ export interface TurnBadgesOptions {
   readonly doc: Document;
   readonly turn: string;
   readonly metric: CounterMetric;
+  readonly resolveTurn?: () => string;
 }
 
 /** Long enough that a streaming reply is recounted after it settles, not per token. */
@@ -36,19 +37,21 @@ export function startTurnBadges(options: TurnBadgesOptions): () => void {
   const render = (entry: TurnBadge): void =>
     setBadgeLabel(entry.badge, counterLabel(metric, entry.count));
 
-  const outermostTurns = (): HTMLElement[] =>
+  const outermostTurns = (selector: string): HTMLElement[] =>
     // An adapter selector can match a reply and a wrapper of it; only the outer one gets a badge.
     Array.from(doc.querySelectorAll<HTMLElement>(selector)).filter(
       (element) => !element.parentElement?.closest(selector),
     );
 
   const scan = (): void => {
+    const turns = outermostTurns(options.resolveTurn?.() ?? selector);
     for (const [element, entry] of Array.from(badges)) {
-      if (element.isConnected) continue;
+      // A connected turn can become a dialog preview after the remote alias was accepted.
+      if (element.isConnected && (!options.resolveTurn || turns.includes(element))) continue;
       entry.badge.remove();
       badges.delete(element);
     }
-    for (const element of outermostTurns()) {
+    for (const element of turns) {
       let entry = badges.get(element);
       if (!entry) {
         entry = { badge: createBadge(doc, 'turn'), count: 0 };
@@ -65,7 +68,7 @@ export function startTurnBadges(options: TurnBadgesOptions): () => void {
     dirty.clear();
   };
 
-  const turnOf = (node: Node): HTMLElement | null => {
+  const turnOf = (node: Node, selector: string): HTMLElement | null => {
     const element = node instanceof Element ? node : node.parentElement;
     let owner = element?.closest<HTMLElement>(selector) ?? null;
     for (
@@ -83,20 +86,22 @@ export function startTurnBadges(options: TurnBadgesOptions): () => void {
     Array.from(record.removedNodes).every(isCounterBadge);
 
   const observer = new MutationObserver((records) => {
-    let changed = false;
-    for (const record of records) {
-      if (isOwnRecord(record)) continue;
-      changed = true;
-      const owner = turnOf(record.target);
+    const changes = records.filter((record) => !isOwnRecord(record));
+    if (!changes.length) return;
+    const current = options.resolveTurn?.() ?? selector;
+    for (const record of changes) {
+      const owner = turnOf(record.target, current);
       if (owner) dirty.add(owner);
     }
-    if (!changed) return;
     clearTimeout(settleTimer);
     settleTimer = setTimeout(scan, TURN_SETTLE_MS);
   });
 
   observer.observe(doc.body, { childList: true, subtree: true, characterData: true });
-  const stopFollowingLanguage = onCachedLanguageChange(() => badges.forEach(render));
+  const stopFollowingLanguage = onCachedLanguageChange(() => {
+    if (options.resolveTurn) scan();
+    badges.forEach(render);
+  });
   scan();
 
   return () => {

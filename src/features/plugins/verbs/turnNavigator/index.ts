@@ -179,7 +179,9 @@ export const turnNavigatorPrimitive: Primitive<TurnNavigatorParams> = {
     }
     context.setTargetCounter(() => {
       try {
-        return context.doc.querySelectorAll(turnSelector).length;
+        return context.doc.querySelectorAll(
+          params.turn ?? adapter.selectors.userTurn ?? turnSelector,
+        ).length;
       } catch {
         return 0;
       }
