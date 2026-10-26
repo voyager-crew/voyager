@@ -185,3 +185,221 @@ describe('default-model stars through online locator profiles', () => {
     ]);
   });
 });
+
+it('a remote star container cannot replace the existing native title with its description', async () => {
+  const scene = pickerScene();
+  const description = scene.rows.pro.querySelector('.sublabel')!;
+  const label = scene.rows.pro.querySelector('.label')!;
+  retire = await installGeminiSelectorPatch({ 'modelPicker.modelTitleContainer': ['.sublabel'] });
+  await mountStars(scene);
+  const button = star(scene.rows.pro);
+  expect(description.contains(button)).toBe(false);
+  expect(label.parentElement!.contains(button)).toBe(true);
+  button.click();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(preferenceBytes()).toEqual([
+    JSON.stringify({
+      [StorageKeys.DEFAULT_MODEL]: { id: OCT_2026_MODEL_IDS.pro, name: '3.1 Pro' },
+    }),
+  ]);
+});
+
+it('a Voyager preview cannot become a repaired star container after the native class is renamed', async () => {
+  const scene = pickerScene();
+  const native = scene.rows.pro.querySelector<HTMLElement>('.label-container')!;
+  native.className = 'native-title';
+  const preview = document.createElement('div');
+  preview.className = 'gv-preview';
+  preview.innerHTML = '<span class="label">3.1 Pro</span>';
+  scene.rows.pro.append(preview);
+  retire = await installGeminiSelectorPatch({ 'modelPicker.modelTitleContainer': ['.gv-preview'] });
+  const stop = await mountStars(scene);
+  const button = star(scene.rows.pro);
+  expect(preview.contains(button)).toBe(false);
+  expect(button.parentElement).toBe(scene.rows.pro);
+  stop();
+  retire();
+  retire = await installGeminiSelectorPatch({
+    'modelPicker.modelTitleContainer': ['.native-title'],
+  });
+  await mountStars(scene);
+  expect(native.contains(star(scene.rows.pro))).toBe(true);
+});
+
+it('an empty renamed star container cannot borrow the native label from another part of the row', async () => {
+  const scene = pickerScene();
+  const native = scene.rows.pro.querySelector<HTMLElement>('.label-container')!;
+  native.className = 'native-title';
+  const empty = document.createElement('div');
+  empty.className = 'empty-anchor';
+  scene.rows.pro.append(empty);
+  retire = await installGeminiSelectorPatch({
+    'modelPicker.modelTitleContainer': ['.empty-anchor'],
+  });
+  const stop = await mountStars(scene);
+  expect(star(scene.rows.pro).parentElement).toBe(scene.rows.pro);
+  stop();
+  retire();
+  retire = await installGeminiSelectorPatch({
+    'modelPicker.modelTitleContainer': ['.native-title'],
+  });
+  await mountStars(scene);
+  expect(native.contains(star(scene.rows.pro))).toBe(true);
+});
+
+it('an equally labelled native description cannot replace the original star title', async () => {
+  const scene = pickerScene();
+  const native = scene.rows.pro.querySelector('.label')!;
+  const preview = document.createElement('div');
+  preview.className = 'native-preview';
+  preview.innerHTML = '<span class="duplicate-label">3.1 Pro</span>';
+  scene.rows.pro.querySelector('.label-container')!.prepend(preview);
+  retire = await installGeminiSelectorPatch({
+    ...PICKER_ALIASES,
+    'modelPicker.modelLabel': ['.duplicate-label, [data-fixture-label]'],
+  });
+  await mountStars(scene);
+  const button = star(scene.rows.pro);
+  expect(preview.contains(button)).toBe(false);
+  expect(native.parentElement!.contains(button)).toBe(true);
+  button.click();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(preferenceBytes()).toEqual([
+    JSON.stringify({
+      [StorageKeys.DEFAULT_MODEL]: { id: OCT_2026_MODEL_IDS.pro, name: '3.1 Pro' },
+    }),
+  ]);
+});
+
+function renamedProTitle(scene: ReturnType<typeof pickerScene>) {
+  const title = scene.rows.pro.querySelector<HTMLElement>('.label')!;
+  title.classList.replace('label', 'renamed-label');
+  scene.rows.pro.setAttribute('aria-label', '3.1 Pro');
+  return title;
+}
+const RENAMED_LABEL = { 'modelPicker.modelLabel': ['.renamed-label, [data-fixture-label]'] };
+
+it('an independently labelled renamed title keeps its star usable after Voyager wraps it', async () => {
+  const scene = pickerScene();
+  const title = renamedProTitle(scene);
+  retire = await installGeminiSelectorPatch(RENAMED_LABEL);
+  await mountStars(scene);
+  const button = star(scene.rows.pro);
+  expect(title.parentElement!.contains(button)).toBe(true);
+  button.click();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(preferenceBytes()).toEqual([
+    JSON.stringify({
+      [StorageKeys.DEFAULT_MODEL]: { id: OCT_2026_MODEL_IDS.pro, name: '3.1 Pro' },
+    }),
+  ]);
+  expect(star(scene.rows.pro)).toBe(button);
+});
+
+it('an aria-label match cannot make a Voyager preview the renamed native title', async () => {
+  const scene = pickerScene();
+  const title = renamedProTitle(scene);
+  const preview = document.createElement('div');
+  preview.className = 'gv-preview';
+  preview.innerHTML = '<span class="fake-label">3.1 Pro</span>';
+  scene.rows.pro.append(preview);
+  retire = await installGeminiSelectorPatch({
+    'modelPicker.modelLabel': ['.fake-label, [data-fixture-label]:not(.renamed-label)'],
+  });
+  const stop = await mountStars(scene);
+  expect(scene.rows.pro.querySelector('.gv-default-star-btn')).toBeNull();
+  expect(star(scene.rows.flash)).not.toBeNull();
+  stop();
+  retire();
+  retire = await installGeminiSelectorPatch(RENAMED_LABEL);
+  await mountStars(scene);
+  expect(title.parentElement!.contains(star(scene.rows.pro))).toBe(true);
+});
+
+it('a pre-existing title-wrapper class cannot certify a repaired label as native', async () => {
+  const scene = pickerScene();
+  const title = renamedProTitle(scene);
+  const unowned = document.createElement('div');
+  unowned.className = 'gv-title-wrapper';
+  title.before(unowned);
+  unowned.append(title);
+  retire = await installGeminiSelectorPatch(RENAMED_LABEL);
+  const stop = await mountStars(scene);
+  expect(scene.rows.pro.querySelector('.gv-default-star-btn')).toBeNull();
+  expect(star(scene.rows.flash)).not.toBeNull();
+  stop();
+  unowned.replaceWith(title);
+  await mountStars(scene);
+  expect(star(scene.rows.pro).parentElement).toBe(title.parentElement);
+});
+
+it('a stopped star renderer cannot leave its old wrapper trusted by a new renderer', async () => {
+  const scene = pickerScene();
+  const title = renamedProTitle(scene);
+  retire = await installGeminiSelectorPatch(RENAMED_LABEL);
+  const stop = await mountStars(scene);
+  const wrapper = title.parentElement!;
+  expect(wrapper.contains(star(scene.rows.pro))).toBe(true);
+  stop();
+  title.before(wrapper);
+  wrapper.append(title);
+  const stopSecond = await mountStars(scene);
+  expect(scene.rows.pro.querySelector('.gv-default-star-btn')).toBeNull();
+  expect(star(scene.rows.flash)).not.toBeNull();
+  stopSecond();
+  wrapper.replaceWith(title);
+  await mountStars(scene);
+  expect(star(scene.rows.pro).parentElement).toBe(title.parentElement);
+});
+
+it('a remote label union cannot switch from the native title to Voyager’s new wrapper', async () => {
+  const scene = pickerScene();
+  renamedProTitle(scene);
+  retire = await installGeminiSelectorPatch({
+    'modelPicker.modelLabel': [
+      '.renamed-label, .gv-title-wrapper:has(.renamed-label), [data-fixture-label]',
+    ],
+  });
+  const stop = await mountStars(scene);
+  star(scene.rows.pro).click();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(preferenceBytes()).toEqual([]);
+  stop();
+  retire();
+  retire = await installGeminiSelectorPatch(RENAMED_LABEL);
+  await mountStars(scene);
+  star(scene.rows.pro).click();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(preferenceBytes()).toEqual([
+    JSON.stringify({
+      [StorageKeys.DEFAULT_MODEL]: { id: OCT_2026_MODEL_IDS.pro, name: '3.1 Pro' },
+    }),
+  ]);
+});
+
+it('a bundled fallback does not certify a pre-existing wrapper for a later remote-only label', async () => {
+  const scene = pickerScene();
+  const title = scene.rows.pro.querySelector<HTMLElement>('.label')!;
+  scene.rows.pro.setAttribute('aria-label', '3.1 Pro');
+  const wrapper = document.createElement('div');
+  wrapper.className = 'gv-title-wrapper';
+  title.before(wrapper);
+  wrapper.append(title);
+  retire = await installGeminiSelectorPatch(RENAMED_LABEL);
+  const stop = await mountStars(scene);
+  const button = star(scene.rows.pro);
+  expect(wrapper.contains(button)).toBe(true);
+  title.classList.replace('label', 'renamed-label');
+  button.click();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(preferenceBytes()).toEqual([]);
+  stop();
+  await mountStars(scene);
+  star(scene.rows.pro).click();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(preferenceBytes()).toEqual([
+    JSON.stringify({
+      [StorageKeys.DEFAULT_MODEL]: { id: OCT_2026_MODEL_IDS.pro, name: '3.1 Pro' },
+    }),
+  ]);
+});

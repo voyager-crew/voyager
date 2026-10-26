@@ -1,3 +1,4 @@
+import { findOwnedGeminiMainInputs } from '@/core/gemini/composer/ownedInput';
 import {
   getBundledGeminiSelectorView,
   getGeminiSelectorView,
@@ -45,12 +46,13 @@ export function findModelFocusInput(): HTMLElement | null {
     (view) => {
       const remote = view.remoteKeys.has('modelPicker.focusInput');
       const nativeComposer = remote ? findBundledFocusInput() : null;
+      const ownedInputs = remote ? findOwnedGeminiMainInputs(document) : [];
       for (const selector of view.profiles['modelPicker.focusInput']) {
         for (const candidate of document.querySelectorAll<HTMLElement>(selector)) {
           if (!candidate.isConnected) continue;
           if (candidate instanceof HTMLTextAreaElement && candidate.disabled) continue;
           // A remote match must still be the packaged composer's editable surface.
-          if (remote && !isNativeComposer(candidate, nativeComposer)) continue;
+          if (remote && !isNativeComposer(candidate, nativeComposer, ownedInputs)) continue;
           return candidate;
         }
       }
@@ -72,14 +74,17 @@ function findBundledFocusInput(): HTMLElement | null {
   return null;
 }
 
-function isNativeComposer(candidate: HTMLElement, preferred: HTMLElement | null): boolean {
-  if (!(candidate instanceof HTMLElement)) return false;
-  const editable =
-    candidate instanceof HTMLTextAreaElement ||
-    candidate.getAttribute('contenteditable') === 'true';
-  if (!editable || candidate.closest('[role="dialog"], [role="menu"], [role="menuitem"]')) {
+function isNativeComposer(
+  candidate: HTMLElement,
+  preferred: HTMLElement | null,
+  ownedInputs: readonly HTMLElement[],
+): boolean {
+  if (
+    !(candidate instanceof HTMLElement) ||
+    candidate.closest('[role="alertdialog"], [role="menu"], [role="menuitem"]')
+  )
     return false;
-  }
-  if (preferred) return candidate === preferred;
-  return Boolean(candidate.closest('rich-textarea, .input-area'));
+  // A rich-textarea in a reply or edit form is not the main composer that owns model changes.
+  if (ownedInputs.length !== 1 || ownedInputs[0] !== candidate) return false;
+  return !preferred || candidate === preferred;
 }

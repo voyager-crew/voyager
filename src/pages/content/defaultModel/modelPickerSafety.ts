@@ -1,5 +1,7 @@
+import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
 import { getBundledGeminiSelectorView, type GeminiSelectorView } from '@/core/gemini/selectors';
 
+import { TITLE_WRAPPER_CLASS } from './defaultStarView';
 import {
   hasNativeItemRole,
   isInlineThinkingItem,
@@ -128,10 +130,14 @@ function controlledElement(element: HTMLElement): HTMLElement | null {
 }
 
 function inExcludedSurface(element: HTMLElement): boolean {
-  return Boolean(
-    element.closest(
-      '[contenteditable="true"], [hidden], [aria-hidden="true"], .desktop-settings-menu, user-query, model-response, .gv-default-star-btn',
-    ),
+  // Renamed controls still belong to the original page, never a reply, edit form or preview layer.
+  return (
+    hasVoyagerOwner(element) ||
+    Boolean(
+      element.closest(
+        '[contenteditable="true"], [contenteditable="plaintext-only"], [hidden], [inert], [aria-hidden="true"], dialog, [role="dialog"], [role="alertdialog"], .desktop-settings-menu, user-query, model-response, [data-message-author-role], .edit-container, .user-query-container.edit-mode',
+      ),
+    )
   );
 }
 
@@ -145,7 +151,9 @@ export function assertPickerLabel(
     !(label instanceof HTMLElement) ||
     !hasNativeItemRole(item) ||
     !belongsToPickerItem(label, item) ||
-    label.closest('.gv-default-star-btn')
+    label.closest('.gv-default-star-btn') ||
+    label.classList.contains(TITLE_WRAPPER_CLASS) ||
+    hasVoyagerOwner(label, item)
   ) {
     throw new Error('Unrelated model label');
   }
@@ -156,8 +164,8 @@ export function assertPickerLabel(
   if (!canonical && !hasNativeLabelAssociation(item, label)) {
     throw new Error('Uncorroborated picker label');
   }
-  // A description matching a remote label cannot rename a still-readable native row.
-  if (canonical && canonical.textContent?.trim() !== label.textContent?.trim()) {
+  // Equal text in a preview is not the original native label that owns the star anchor.
+  if (canonical && canonical !== label) {
     throw new Error('Model label disagrees with native row');
   }
 }

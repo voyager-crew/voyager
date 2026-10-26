@@ -1,5 +1,7 @@
+import { nativeDomDecorations } from '@/core/services/NativeDomDecorationService';
+
 const DEFAULT_MODEL_UI_SELECTOR = '.gv-default-star-btn';
-const TITLE_WRAPPER_CLASS = 'gv-title-wrapper';
+export const TITLE_WRAPPER_CLASS = 'gv-title-wrapper';
 
 /** Remove every star button inside `root`. */
 export function sweepStars(root: ParentNode = document): void {
@@ -68,6 +70,7 @@ function unwrapTitle(wrapper: HTMLElement): void {
 export class DefaultStarView {
   private readonly stars = new InjectedNodes<HTMLElement>();
   private readonly titleWrappers = new InjectedNodes<HTMLElement>();
+  private readonly guardedWrappers = new WeakSet<HTMLElement>();
   private hostListeners: AbortController | null = null;
 
   public start(): void {
@@ -78,7 +81,11 @@ export class DefaultStarView {
     this.hostListeners?.abort();
     this.hostListeners = null;
     for (const star of this.stars.drain()) star.remove();
-    for (const wrapper of this.titleWrappers.drain()) unwrapTitle(wrapper);
+    for (const wrapper of this.titleWrappers.drain()) {
+      if (this.guardedWrappers.delete(wrapper))
+        nativeDomDecorations.release(wrapper, TITLE_WRAPPER_CLASS, this);
+      unwrapTitle(wrapper);
+    }
   }
 
   public updateStarState(item: HTMLElement, isDefault: boolean, kind: 'model' | 'thinking') {
@@ -129,6 +136,7 @@ export class DefaultStarView {
     item: HTMLElement,
     btn: HTMLElement,
     anchor: { container: HTMLElement | null; title: HTMLElement | null },
+    guarded = false,
   ): void {
     const { container, title } = anchor;
     if (!container || !title) {
@@ -143,6 +151,11 @@ export class DefaultStarView {
     if (!wrapper) {
       wrapper = document.createElement('div');
       wrapper.className = TITLE_WRAPPER_CLASS;
+      // Only wrappers this owner creates around an accepted native title may survive re-proof.
+      if (guarded) {
+        this.guardedWrappers.add(wrapper);
+        nativeDomDecorations.acquire(wrapper, TITLE_WRAPPER_CLASS, this);
+      }
       wrapper.style.cssText = 'display: flex; align-items: center; width: 100%;';
       if (parent) parent.insertBefore(wrapper, title);
       else container.appendChild(wrapper);

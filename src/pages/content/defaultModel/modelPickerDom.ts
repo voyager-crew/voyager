@@ -1,3 +1,4 @@
+import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
 import { getBundledGeminiSelectorView, type GeminiSelectorView } from '@/core/gemini/selectors';
 
 import {
@@ -370,7 +371,11 @@ export class ModelPickerDom {
       const canonical = row.querySelector(
         pickerSelector(getBundledGeminiSelectorView(), 'modelPicker.thinkingContent'),
       );
-      if ((canonical && canonical !== content) || !belongsToPickerItem(content, row)) {
+      if (
+        (canonical && canonical !== content) ||
+        !belongsToPickerItem(content, row) ||
+        hasVoyagerOwner(content, row)
+      ) {
         throw new Error('Unrelated thinking hover target');
       }
     }
@@ -378,21 +383,26 @@ export class ModelPickerDom {
   }
 
   public starAnchor(item: HTMLElement, kind: 'model' | 'thinking') {
-    const container = item.querySelector<HTMLElement>(
-      this.selector(
-        kind === 'model' ? 'modelPicker.modelTitleContainer' : 'modelPicker.thinkingTitleContainer',
-      ),
-    );
+    const containerKey =
+      kind === 'model' ? 'modelPicker.modelTitleContainer' : 'modelPicker.thinkingTitleContainer';
+    const container = item.querySelector<HTMLElement>(this.selector(containerKey));
     const title =
       container?.querySelector<HTMLElement>(
         this.selector(kind === 'model' ? 'modelPicker.modelLabel' : 'modelPicker.thinkingLabel'),
       ) ?? null;
-    if (
-      this.remote &&
-      container &&
-      (!(container instanceof HTMLElement) || !belongsToPickerItem(container, item))
-    ) {
-      throw new Error('Unrelated star container');
+    if (this.remote && container) {
+      const canonical = item.querySelector(
+        pickerSelector(getBundledGeminiSelectorView(), containerKey),
+      );
+      // A class repair cannot move a star off its native title or into a Voyager preview.
+      if (
+        !(container instanceof HTMLElement) ||
+        !belongsToPickerItem(container, item) ||
+        (canonical && canonical !== container) ||
+        (!canonical && !title)
+      ) {
+        throw new Error('Unrelated star container');
+      }
     }
     if (this.remote && title) assertPickerLabel(item, title, kind, this.view);
     return { container, title };

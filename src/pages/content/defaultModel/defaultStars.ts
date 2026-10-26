@@ -4,6 +4,7 @@ import type { Toaster } from '@/core/ui/toast/types';
 import { DefaultStarView, sweepStars } from './defaultStarView';
 import { ModelPicker } from './modelPicker';
 import { readModelId } from './modelPickerMetadata';
+import { hasRemotePickerProfile } from './modelPickerSelectors';
 import { DefaultModelPreferences } from './preferences';
 import type { DefaultModelSetting, DefaultThinkingLevel, ThinkingMode } from './preferences';
 
@@ -197,7 +198,12 @@ export class DefaultStars {
       this.handleStarClick(item, description.id, modelName, button),
     );
 
-    this.view.appendStar(item, btn, this.picker.starAnchor(item, 'model', view));
+    this.view.appendStar(
+      item,
+      btn,
+      this.picker.starAnchor(item, 'model', view),
+      hasRemotePickerProfile(view),
+    );
     this.view.updateStarState(
       item,
       this.isDefaultForItem(currentDefault, item, modelName),
@@ -236,7 +242,12 @@ export class DefaultStars {
         this.handleThinkingLevelStarClick(item, 0, label, button, 'extended'),
       );
 
-      this.view.appendStar(item, btn, this.picker.starAnchor(item, 'thinking', view));
+      this.view.appendStar(
+        item,
+        btn,
+        this.picker.starAnchor(item, 'thinking', view),
+        hasRemotePickerProfile(view),
+      );
     }
 
     this.view.updateStarState(
@@ -312,7 +323,12 @@ export class DefaultStars {
         ),
       );
 
-      this.view.appendStar(item, btn, this.picker.starAnchor(item, 'thinking', view));
+      this.view.appendStar(
+        item,
+        btn,
+        this.picker.starAnchor(item, 'thinking', view),
+        hasRemotePickerProfile(view),
+      );
 
       this.view.updateStarState(item, isDefault, 'thinking');
     });
