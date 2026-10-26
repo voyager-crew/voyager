@@ -4420,11 +4420,11 @@
   },
   "geminiSelectorFixesTitle": {
     "message": "Gemini 페이지 인식 온라인 수정",
-    "description": "Switch for the Gemini-only page detection data channel (turn selector lists); off by default"
+    "description": "Switch for Gemini page detection fixes for conversations, sidebar folders and the model menu; off by default"
   },
   "geminiSelectorFixesHint": {
-    "message": "voyager.nagi.fun에서 페이지 인식 수정을 받아옵니다. 확인은 6시간에 한 번까지이며 페이지 내용은 전송하지 않습니다. 기본값은 꺼짐입니다.",
-    "description": "Endpoint, automatic check interval, privacy and default setting"
+    "message": "voyager.nagi.fun에서 대화, 사이드바, 폴더, 모델 메뉴를 인식하기 위한 수정 정보를 받아옵니다. 확인은 6시간에 한 번까지이며 페이지 내용은 전송하지 않습니다. 기본값은 꺼짐입니다.",
+    "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
   },
   "geminiSelectorFixesOff": {
     "message": "꺼짐: 수동 확인을 포함해 수정을 확인하지 않습니다. 열려 있는 Gemini 페이지는 새로고침할 때까지 현재 규칙을 사용합니다.",

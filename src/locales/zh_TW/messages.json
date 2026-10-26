@@ -4420,11 +4420,11 @@
   },
   "geminiSelectorFixesTitle": {
     "message": "Gemini 頁面辨識線上修復",
-    "description": "Switch for the Gemini-only page detection data channel (turn selector lists); off by default"
+    "description": "Switch for Gemini page detection fixes for conversations, sidebar folders and the model menu; off by default"
   },
   "geminiSelectorFixesHint": {
-    "message": "從 voyager.nagi.fun 取得頁面辨識修復，最多每 6 小時檢查一次。不會傳送頁面內容。預設關閉。",
-    "description": "Endpoint, automatic check interval, privacy and default setting"
+    "message": "從 voyager.nagi.fun 取得對話、側邊欄、資料夾和模型選單的辨識修復，最多每 6 小時檢查一次。不會傳送頁面內容。預設關閉。",
+    "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
   },
   "geminiSelectorFixesOff": {
     "message": "已關閉：不檢查修復，也無法手動檢查。已開啟的 Gemini 頁面在重新整理前會繼續使用目前的規則。",

@@ -1,6 +1,9 @@
 import { extractConversationData, extractConversationId } from './nativeConversationIds';
 import { extractNativeDragTitle } from './nativeConversationTitles';
-import { getNativeConversationElements } from './nativeSidebarDom';
+import {
+  isPackagedNativeConversationRow,
+  packagedConversationRows,
+} from './sidebarConversationQueries';
 import type { ConversationReference, DragData } from './types';
 
 const SELECTED_CLASS = 'gv-conversation-selected';
@@ -50,7 +53,7 @@ export function findConversationElement(
     `[data-conversation-id="${conversationId}"]`,
   );
   if (folderConv) return folderConv;
-  for (const conv of Array.from(getNativeConversationElements(sidebar))) {
+  for (const conv of Array.from(packagedConversationRows(sidebar))) {
     if (extractConversationId(conv as HTMLElement) === conversationId) return conv as HTMLElement;
   }
   return null;
@@ -223,6 +226,8 @@ export function bindNativeConversationRow(
   element: HTMLElement,
   getSelection: () => NativeRowSelection,
 ): (() => void) | null {
+  // Online observations cannot turn an arbitrary container into a folder drag source.
+  if (!isPackagedNativeConversationRow(element)) return null;
   if (element.dataset.gvConvDragAttached === 'true') return null;
   element.dataset.gvConvDragAttached = 'true';
   const draggable = element.getAttribute('draggable');

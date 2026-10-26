@@ -1,3 +1,9 @@
+import type { GeminiSelectorView } from '@/core/gemini/selectors';
+import {
+  GEMINI_PACKAGED_TITLE_SELECTORS,
+  readCorroboratedGeminiTitle,
+  readGeminiActiveSidebarTitle,
+} from '@/core/gemini/sidebarTitles';
 import type { ExtractedContent } from '@/features/export/services/DOMContentExtractor';
 import { extractExportCodeBlock } from '@/features/export/services/exportCodeBlocks';
 import { normalizeText } from '@/features/export/services/exportDomPolicy';
@@ -34,17 +40,18 @@ function escapeCss(value: string): string {
   return globalThis.CSS?.escape?.(value) ?? value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-function extractTitleFromConversationElement(element: HTMLElement): string | null {
+function extractTitleFromConversationElement(
+  element: HTMLElement,
+  view: GeminiSelectorView,
+): string | null {
+  // Remote labels never change the packaged conversation-identity boundary.
   const scope = (element.closest('[data-test-id="conversation"]') as HTMLElement) || element;
-  const heading = scope.querySelector(
-    '.gds-label-l, .conversation-title-text, [data-test-id="conversation-title"], h3',
-  );
+  const heading = scope.querySelector(GEMINI_PACKAGED_TITLE_SELECTORS.export);
   const headingText = heading?.textContent?.trim();
   if (isMeaningfulTitle(headingText)) return headingText;
 
-  const link = scope.querySelector(
-    'a[href*="/app/"], a[href*="/gem/"]',
-  ) as HTMLAnchorElement | null;
+  const candidate = scope.querySelector(view.profiles['sidebar.conversationLinks'].join(', '));
+  const link = candidate instanceof HTMLAnchorElement ? candidate : null;
   const ariaLabel = link?.getAttribute('aria-label')?.trim();
   if (isMeaningfulTitle(ariaLabel)) return ariaLabel;
   const linkTitle = link?.getAttribute('title')?.trim();
@@ -74,7 +81,9 @@ function extractConversationTitle(): string {
           `[data-test-id="conversation"] a[href*="${escapedId}"]`,
         ) as HTMLElement);
       if (element) {
-        const title = extractTitleFromConversationElement(element);
+        const title = readCorroboratedGeminiTitle((view) =>
+          extractTitleFromConversationElement(element, view),
+        );
         if (title) return title;
       }
     }
@@ -86,13 +95,8 @@ function extractConversationTitle(): string {
   if (isMeaningfulTitle(pageTitle)) return pageTitle;
 
   try {
-    for (const selector of [
-      'mat-list-item.mdc-list-item--activated [mat-line]',
-      'mat-list-item[aria-current="page"] [mat-line]',
-    ]) {
-      const title = document.querySelector(selector)?.textContent?.trim();
-      if (isMeaningfulTitle(title)) return title;
-    }
+    const title = readGeminiActiveSidebarTitle('activeExport', isMeaningfulTitle);
+    if (title) return title;
   } catch {
     /* ignore */
   }

@@ -1,3 +1,4 @@
+import { readGeminiActiveSidebarTitle } from '@/core/gemini/sidebarTitles';
 import {
   accountIsolationService,
   detectAccountContextFromDocument,
@@ -98,15 +99,11 @@ function getConversationTitle(url: string, markers: readonly TimelineMarker[]): 
     !title.startsWith('Google AI Studio -')
   )
     return title;
-  for (const selector of [
-    'mat-list-item.mdc-list-item--activated [mat-line]',
-    'mat-list-item[aria-current="page"] [mat-line]',
-    '.conversation-list-item.active .conversation-title',
-    '.active-conversation .title',
-  ]) {
-    const text = document.querySelector(selector)?.textContent?.trim();
-    if (text && text !== 'New chat') return text;
-  }
+  const sidebarTitle = readGeminiActiveSidebarTitle(
+    'active',
+    (text) => text.length > 0 && text !== 'New chat',
+  );
+  if (sidebarTitle) return sidebarTitle;
   const summary = markers[0]?.summary;
   if (summary) return summary.length > 50 ? `${summary.slice(0, 50)}...` : summary;
   const id = new URL(url).pathname.match(/\/app\/([a-zA-Z0-9_-]+)/)?.[1];

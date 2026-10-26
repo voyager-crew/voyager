@@ -4420,11 +4420,11 @@
   },
   "geminiSelectorFixesTitle": {
     "message": "Online fixes for Gemini page detection",
-    "description": "Switch for the Gemini-only page detection data channel (turn selector lists); off by default"
+    "description": "Switch for Gemini page detection fixes for conversations, sidebar folders and the model menu; off by default"
   },
   "geminiSelectorFixesHint": {
-    "message": "Gets page detection fixes from voyager.nagi.fun, at most once every 6 hours. No page content is sent. Off by default.",
-    "description": "Endpoint, automatic check interval, privacy and default setting"
+    "message": "Gets detection fixes for conversations, the sidebar, folders and the model menu from voyager.nagi.fun. Checks at most once every 6 hours. No page content is sent. Off by default.",
+    "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
   },
   "geminiSelectorFixesOff": {
     "message": "Off: no checks, even manual ones. Open Gemini pages keep their current rules until you refresh them.",

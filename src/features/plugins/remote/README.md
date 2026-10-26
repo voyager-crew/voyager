@@ -116,8 +116,8 @@ through absence from `plugins`. The reason stays in the source file.
 
 ## Separate opt-in Gemini selector files
 
-Gemini keeps **zero plugin catalog requests**. Its optional **Gemini selector
-online fixes** switch is a separate data channel, implemented in
+Gemini keeps **zero plugin catalog requests**. Its optional **Online fixes for
+Gemini page detection** switch is a separate data channel, implemented in
 `src/features/geminiSelectorFixes/`; it does not add a `PluginSource` or replace
 `site.json`. `allowsRemoteCatalog` and `isEligibleCatalogHost` still exclude
 Gemini and AI Studio. AI Studio has no selector channel either.
@@ -136,21 +136,36 @@ a check is in flight, every other caller shares that one request.
 Only the background fetches:
 
 ```text
-https://voyager.nagi.fun/catalog/gemini-selectors/v1/hosts/gemini.google.com.json
+https://voyager.nagi.fun/catalog/gemini-selectors/v2/hosts/gemini.google.com.json
 ```
 
 Gemini Enterprise is not covered: its pages never start the Gemini turn
 consumers, so a file for it would have no reader.
 
-These independent files carry five ordered selector profiles: `turn.user`,
-`turn.userWithHosts`, `turn.assistant`, `turn.assistantFallback`, and
-`turn.assistantWithHosts`. They contain no plugins, CSS, actions, JavaScript,
-matches, capabilities, theme, identity extraction or click policy. The bundle
-and remote files use the same selector-data guard. A newer accepted revision
+The `v2` file (`format: 2`) carries ordered `turn.*`, `sidebar.*` and
+`modelPicker.*` profiles. The publisher reads the same `turn.json`, `sidebar.json`
+and `model-picker.json` fragments as the bundle. These cover conversation turns,
+sidebar entries/titles and folder display areas, plus model menu discovery.
+Identity extraction, account controls, delete/rename/confirmation, deletion
+tracking and click policy remain packaged. So do locators whose online match would
+have to equal the packaged one before use (sidebar toggle, hosts, new-chat and
+actions containers in `sidebar-packaged.json`; saved, exported and printed
+conversation titles in `sidebar-titles.json`): neither file is published. The files contain no plugins,
+CSS, actions, JavaScript, matches, capabilities or theme. The bundle and remote
+files use the same selector-data guard. A newer accepted revision
 replaces the previous patch; each supplied list replaces that bundled list as
 a whole. Missing keys keep their bundled values. An empty patch withdraws all
 online overrides. Roll back by reverting the data and publishing a **higher**
 source revision, not by lowering `catalogRevision`.
+
+The publisher also keeps `/gemini-selectors/v1/hosts/gemini.google.com.json`
+for older extensions: its `format: 1` projection contains only the original five
+`turn.*` profiles. Extra keys would make those clients reject the entire file.
+The current client fetches only v2 and requires format 2 on that response. The
+local cache is bound to `extensionVersion`, so a v1 file cached by an older
+extension is discarded on upgrade: until the next check stores a v2 file, every
+surface, turns included, uses the bundle. Format 1 never accepts v2-only keys. No
+consent or user-record migration is introduced by this protocol change.
 
 `gv.geminiSelectors.status`, `gv.geminiSelectors.setEnabled`, and
 `gv.geminiSelectors.refresh` are the popup's background API. Turning the switch

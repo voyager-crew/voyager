@@ -1,3 +1,10 @@
+import type { GeminiSelectorView } from '@/core/gemini/selectors';
+import {
+  GEMINI_PACKAGED_TITLE_SELECTORS,
+  readCorroboratedGeminiTitle,
+  readGeminiActiveSidebarTitle,
+} from '@/core/gemini/sidebarTitles';
+
 import type { ConversationMetadata } from '../types/export';
 
 /** Resolve cover and print-dialog names without exposing the page-title lookup protocol. */
@@ -57,20 +64,8 @@ function getConversationTitle(): string {
 
   // Strategy 3: Try to get from sidebar conversation list
   try {
-    const selectors = [
-      'mat-list-item.mdc-list-item--activated [mat-line]',
-      'mat-list-item[aria-current="page"] [mat-line]',
-      '.conversation-list-item.active .conversation-title',
-      '.active-conversation .title',
-    ];
-
-    for (const selector of selectors) {
-      const element = document.querySelector(selector);
-      const title = element?.textContent?.trim();
-      if (isMeaningfulConversationTitle(title)) {
-        return title;
-      }
-    }
+    const title = readGeminiActiveSidebarTitle('active', isMeaningfulConversationTitle);
+    if (title) return title;
   } catch (error) {
     console.debug('[PDF Export] Failed to get title from sidebar:', error);
   }
@@ -132,20 +127,21 @@ function extractTitleFromLinkText(link?: HTMLAnchorElement | null): string | nul
   return parts.reduce((a, b) => (b.length > a.length ? b : a), parts[0]) || null;
 }
 
-function extractTitleFromConversationElement(conversationEl: HTMLElement): string | null {
+function extractTitleFromConversationElement(
+  conversationEl: HTMLElement,
+  view: GeminiSelectorView,
+): string | null {
+  // This scope establishes conversation identity and stays packaged.
   const scope =
     (conversationEl.closest('[data-test-id="conversation"]') as HTMLElement) || conversationEl;
-  const bySelector = scope.querySelector(
-    '.gds-label-l, .conversation-title-text, [data-test-id="conversation-title"], h3',
-  );
+  const bySelector = scope.querySelector(GEMINI_PACKAGED_TITLE_SELECTORS.export);
   const selectorTitle = bySelector?.textContent?.trim();
   if (isMeaningfulConversationTitle(selectorTitle) && !isGemLabel(selectorTitle)) {
     return selectorTitle;
   }
 
-  const link = scope.querySelector(
-    'a[href*="/app/"], a[href*="/gem/"]',
-  ) as HTMLAnchorElement | null;
+  const candidate = scope.querySelector(view.profiles['sidebar.conversationLinks'].join(', '));
+  const link = candidate instanceof HTMLAnchorElement ? candidate : null;
   const ariaTitle = link?.getAttribute('aria-label')?.trim();
   if (isMeaningfulConversationTitle(ariaTitle) && !isGemLabel(ariaTitle)) {
     return ariaTitle;
@@ -159,10 +155,19 @@ function extractTitleFromConversationElement(conversationEl: HTMLElement): strin
     return fromLinkText;
   }
 
-  const label = scope.querySelector('.gds-body-m, .gds-label-m, .subtitle');
+  const label = scope.querySelector(view.profiles['sidebar.titleFallback'].join(', '));
   const labelText = label?.textContent?.trim();
   if (isMeaningfulConversationTitle(labelText) && !isGemLabel(labelText)) {
     return labelText;
+  }
+
+  // Generic row text must not hide an unusable online label/link read. Let the owner
+  // retry every title strategy from the bundle before using the raw-text fallback.
+  if (
+    view.remoteKeys.has('sidebar.conversationLinks') ||
+    view.remoteKeys.has('sidebar.titleFallback')
+  ) {
+    return null;
   }
 
   const raw = scope.textContent?.trim() || '';
@@ -180,12 +185,16 @@ function extractTitleFromConversationElement(conversationEl: HTMLElement): strin
 }
 
 export function resolveNativeSidebarTitle(conversationId: string): string | null {
+  return readCorroboratedGeminiTitle((view) => readNativeSidebarTitle(conversationId, view));
+}
+
+function readNativeSidebarTitle(conversationId: string, view: GeminiSelectorView): string | null {
   const escapedConversationId = escapeCssAttributeValue(conversationId);
   const byJslog = document.querySelector(
     `[data-test-id="conversation"][jslog*="c_${escapedConversationId}"]`,
   ) as HTMLElement | null;
   if (byJslog) {
-    const title = extractTitleFromConversationElement(byJslog);
+    const title = extractTitleFromConversationElement(byJslog, view);
     if (title) return title;
   }
 
@@ -193,7 +202,7 @@ export function resolveNativeSidebarTitle(conversationId: string): string | null
     `[data-test-id="conversation"] a[href*="${escapedConversationId}"]`,
   ) as HTMLElement | null;
   if (byHrefLink) {
-    const title = extractTitleFromConversationElement(byHrefLink);
+    const title = extractTitleFromConversationElement(byHrefLink, view);
     if (title) return title;
   }
 

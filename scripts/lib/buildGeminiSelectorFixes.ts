@@ -1,14 +1,18 @@
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { GEMINI_MODEL_PICKER_PROFILE_KEYS } from '../../src/core/gemini/selectors/modelPickerKeys';
+import { GEMINI_SIDEBAR_PROFILE_KEYS } from '../../src/core/gemini/selectors/sidebarKeys';
 import {
   GEMINI_SELECTOR_HOSTS,
   GEMINI_TURN_PROFILE_KEYS,
   type GeminiSelectorFile,
+  type GeminiSelectorProfileKey,
 } from '../../src/core/gemini/selectors/types';
 import {
   MAX_GEMINI_SELECTOR_BYTES,
   readGeminiSelectorFile,
+  readGeminiSelectorProfileGroup,
 } from '../../src/core/gemini/selectors/validation';
 
 export interface GeminiSelectorPublishOptions {
@@ -17,24 +21,38 @@ export interface GeminiSelectorPublishOptions {
   readonly catalogRevision: number;
 }
 
-/** Build from the same five ordered lists the package imports; no adapter or plugin enters this file. */
+const PROFILE_GROUPS = [
+  { file: 'turn.json', keys: GEMINI_TURN_PROFILE_KEYS },
+  { file: 'sidebar.json', keys: GEMINI_SIDEBAR_PROFILE_KEYS },
+  { file: 'model-picker.json', keys: GEMINI_MODEL_PICKER_PROFILE_KEYS },
+] as const;
+
+/** Build from the same locator fragments the package imports; no adapter or plugin enters it. */
 export function buildGeminiSelectorFiles(
   options: Pick<GeminiSelectorPublishOptions, 'catalogDir' | 'catalogRevision'>,
 ): ReadonlyMap<string, GeminiSelectorFile> {
   if (!Number.isSafeInteger(options.catalogRevision) || options.catalogRevision <= 0) {
     throw new Error('Gemini selector publication requires a positive source revision');
   }
-  const path = join(options.catalogDir, 'sites/gemini/selector-data/turn.json');
-  const raw = readFileSync(path, 'utf8');
-  if (Buffer.byteLength(raw, 'utf8') > MAX_GEMINI_SELECTOR_BYTES) {
-    throw new Error('Gemini selector source exceeds the decoded byte limit');
+  const selectors: Partial<Record<GeminiSelectorProfileKey, readonly string[]>> = {};
+  for (const group of PROFILE_GROUPS) {
+    const path = join(options.catalogDir, 'sites/gemini/selector-data', group.file);
+    const raw = readFileSync(path, 'utf8');
+    if (Buffer.byteLength(raw, 'utf8') > MAX_GEMINI_SELECTOR_BYTES) {
+      throw new Error(`${path}: Gemini selector source exceeds the decoded byte limit`);
+    }
+    const value: unknown = JSON.parse(raw);
+    const profiles = readGeminiSelectorProfileGroup<GeminiSelectorProfileKey>(value, group.keys);
+    if (!profiles) {
+      throw new Error(`${path}: bundled Gemini selector group is incomplete or invalid`);
+    }
+    Object.assign(selectors, profiles);
   }
-  const selectors: unknown = JSON.parse(raw);
   const files = new Map<string, GeminiSelectorFile>();
   for (const host of GEMINI_SELECTOR_HOSTS) {
     const file = readGeminiSelectorFile(
       {
-        format: 1,
+        format: 2,
         site: 'gemini',
         host,
         catalogRevision: options.catalogRevision,
@@ -42,37 +60,57 @@ export function buildGeminiSelectorFiles(
       },
       host,
     );
-    if (!file || GEMINI_TURN_PROFILE_KEYS.some((key) => !file.selectors[key])) {
-      throw new Error(`${path}: bundled Gemini selector data must contain all five profiles`);
-    }
+    if (!file) throw new Error(`${host}: combined Gemini selector data was rejected`);
     files.set(host, file);
   }
   return files;
 }
 
+function legacyProjection(file: GeminiSelectorFile): GeminiSelectorFile {
+  const selectors = Object.fromEntries(
+    GEMINI_TURN_PROFILE_KEYS.map((key) => [key, file.selectors[key]] as const),
+  );
+  const legacy = readGeminiSelectorFile({ ...file, format: 1, selectors }, file.host);
+  if (!legacy) throw new Error(`${file.host}: invalid legacy Gemini turn projection`);
+  return legacy;
+}
+
+/** v1 remains turn-only so released clients do not reject fixes for keys they do not know. */
 export function writeGeminiSelectorFiles(options: GeminiSelectorPublishOptions): readonly string[] {
   const files = buildGeminiSelectorFiles(options);
-  const hostsDir = join(options.outDir, 'gemini-selectors/v1/hosts');
-  const serialized = [...files].map(([host, file]) => {
-    const json = `${JSON.stringify(file, null, 2)}\n`;
-    // Measure the actual published UTF-8 file, not the in-memory list lengths.
-    if (Buffer.byteLength(json, 'utf8') > MAX_GEMINI_SELECTOR_BYTES) {
-      throw new Error(`${host}: published Gemini selector file exceeds the decoded byte limit`);
+  const versions = [
+    {
+      directory: 'v1',
+      files: [...files].map(([host, file]) => [host, legacyProjection(file)] as const),
+    },
+    { directory: 'v2', files: [...files] },
+  ];
+  // Validate both versions before writing either: a bad v2 must not leave a half-published pair.
+  const outputs = versions.map(({ directory, files: versionFiles }) => ({
+    hostsDir: join(options.outDir, 'gemini-selectors', directory, 'hosts'),
+    serialized: versionFiles.map(([host, file]) => {
+      const json = `${JSON.stringify(file, null, 2)}\n`;
+      if (Buffer.byteLength(json, 'utf8') > MAX_GEMINI_SELECTOR_BYTES) {
+        throw new Error(`${host}: published Gemini selector file exceeds the decoded byte limit`);
+      }
+      if (!readGeminiSelectorFile(JSON.parse(json) as unknown, host)) {
+        throw new Error(`${host}: serialized Gemini selector file was rejected`);
+      }
+      return { name: `${host}.json`, json };
+    }),
+  }));
+  const written: string[] = [];
+  for (const { hostsDir, serialized } of outputs) {
+    mkdirSync(hostsDir, { recursive: true });
+    for (const { name, json } of serialized) {
+      const path = join(hostsDir, name);
+      writeFileSync(path, json, 'utf8');
+      written.push(path);
     }
-    if (!readGeminiSelectorFile(JSON.parse(json) as unknown, host)) {
-      throw new Error(`${host}: serialized Gemini selector file was rejected`);
+    const names = new Set(serialized.map(({ name }) => name));
+    for (const name of readdirSync(hostsDir)) {
+      if (name.endsWith('.json') && !names.has(name)) rmSync(join(hostsDir, name), { force: true });
     }
-    return { name: `${host}.json`, json };
-  });
-  mkdirSync(hostsDir, { recursive: true });
-  const written = serialized.map(({ name, json }) => {
-    const path = join(hostsDir, name);
-    writeFileSync(path, json, 'utf8');
-    return path;
-  });
-  const names = new Set(serialized.map(({ name }) => name));
-  for (const name of readdirSync(hostsDir)) {
-    if (name.endsWith('.json') && !names.has(name)) rmSync(join(hostsDir, name), { force: true });
   }
   return written;
 }

@@ -5,6 +5,9 @@
  * Navigation goes through the sidebar's own link (a native SPA route change).
  * A hard navigation to the target URL happens only when no sidebar link exists.
  */
+import { getBundledGeminiSelectorView } from '@/core/gemini/selectors';
+import { geminiSidebarSelector } from '@/core/gemini/sidebar/queries';
+
 import { showExportAlert } from '../../../features/export/ui/exportToasts';
 import { waitForAnyElement } from './domWait';
 import type { ExportTranslate } from './exportLocale';
@@ -49,7 +52,8 @@ function findSidebarConversationLinkById(conversationId: string): HTMLAnchorElem
 
   const links = Array.from(
     document.querySelectorAll<HTMLAnchorElement>(
-      '[data-test-id="conversation"] a[href], a[data-test-id="conversation"][href]',
+      // Export target association and navigation are deliberately packaged-only.
+      geminiSidebarSelector('sidebar.links', getBundledGeminiSelectorView()),
     ),
   );
   for (const link of links) {

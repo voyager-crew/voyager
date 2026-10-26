@@ -1,8 +1,10 @@
 import {
   GEMINI_SELECTOR_HOSTS,
+  GEMINI_SELECTOR_PROFILE_KEYS,
   GEMINI_TURN_PROFILE_KEYS,
   type GeminiSelectorFile,
   type GeminiSelectorHost,
+  type GeminiSelectorProfileKey,
   type GeminiTurnProfileKey,
 } from './types';
 
@@ -22,6 +24,10 @@ export function isGeminiTurnProfileKey(key: string): key is GeminiTurnProfileKey
   return (GEMINI_TURN_PROFILE_KEYS as readonly string[]).includes(key);
 }
 
+export function isGeminiSelectorProfileKey(key: string): key is GeminiSelectorProfileKey {
+  return (GEMINI_SELECTOR_PROFILE_KEYS as readonly string[]).includes(key);
+}
+
 /** Shared shape/size guard; the page checks native syntax before adopting any patch. */
 export function readGeminiSelectorFile(
   value: unknown,
@@ -31,7 +37,7 @@ export function readGeminiSelectorFile(
   if (
     Object.keys(value).length !== ENVELOPE_KEYS.length ||
     !Object.keys(value).every((key) => (ENVELOPE_KEYS as readonly string[]).includes(key)) ||
-    value.format !== 1 ||
+    (value.format !== 1 && value.format !== 2) ||
     value.site !== 'gemini' ||
     value.host !== expectedHost ||
     !(GEMINI_SELECTOR_HOSTS as readonly string[]).includes(expectedHost) ||
@@ -42,12 +48,16 @@ export function readGeminiSelectorFile(
   ) {
     return null;
   }
+  const format = value.format;
+  const allowedKeys: readonly string[] =
+    format === 1 ? GEMINI_TURN_PROFILE_KEYS : GEMINI_SELECTOR_PROFILE_KEYS;
   const entries = Object.entries(value.selectors);
-  if (entries.length > GEMINI_TURN_PROFILE_KEYS.length) return null;
-  const selectors: Partial<Record<GeminiTurnProfileKey, readonly string[]>> = {};
+  if (entries.length > allowedKeys.length) return null;
+  const selectors: Partial<Record<GeminiSelectorProfileKey, readonly string[]>> = {};
   for (const [key, list] of entries) {
     if (
-      !isGeminiTurnProfileKey(key) ||
+      !isGeminiSelectorProfileKey(key) ||
+      !allowedKeys.includes(key) ||
       !Array.isArray(list) ||
       list.length === 0 ||
       list.length > MAX_GEMINI_SELECTOR_LIST_LENGTH
@@ -77,12 +87,37 @@ export function readGeminiSelectorFile(
     return null;
   }
   return Object.freeze({
-    format: 1,
+    format,
     site: 'gemini',
     host: expectedHost as GeminiSelectorHost,
     catalogRevision: value.catalogRevision,
     selectors: Object.freeze(selectors),
   });
+}
+
+/** Each bundled fragment owns exactly its declared keys, including before fragments are merged. */
+export function readGeminiSelectorProfileGroup<Key extends GeminiSelectorProfileKey>(
+  value: unknown,
+  keys: readonly Key[],
+): Readonly<Record<Key, readonly string[]>> | null {
+  const file = readGeminiSelectorFile(
+    {
+      format: 2,
+      site: 'gemini',
+      host: 'gemini.google.com',
+      catalogRevision: 1,
+      selectors: value,
+    },
+    'gemini.google.com',
+  );
+  if (
+    !file ||
+    Object.keys(file.selectors).length !== keys.length ||
+    keys.some((key) => !file.selectors[key])
+  ) {
+    return null;
+  }
+  return file.selectors as Readonly<Record<Key, readonly string[]>>;
 }
 
 /** C0 control characters other than tab, line feed, form feed and carriage return. */

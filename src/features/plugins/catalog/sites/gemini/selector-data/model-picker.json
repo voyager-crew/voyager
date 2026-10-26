@@ -1,0 +1,44 @@
+{
+  "modelPicker.trigger": [
+    "[data-test-id=\"bard-mode-menu-button\"]",
+    "button.input-area-switch",
+    ".input-area-switch-label",
+    "[data-test-id=\"model-selector\"]",
+    "button[aria-haspopup=\"menu\"].mat-mdc-menu-trigger"
+  ],
+  "modelPicker.legacyPanels": [
+    ".mat-mdc-menu-panel.gds-mode-switch-menu[role=\"menu\"]",
+    "mat-action-list.gds-mode-switch-menu-list"
+  ],
+  "modelPicker.panelFallback": [".mat-mdc-menu-panel[role=\"menu\"]:not(.desktop-settings-menu)"],
+  "modelPicker.overlayPane": [".cdk-overlay-pane"],
+  "modelPicker.container": [
+    ".cdk-overlay-pane, .mat-mdc-menu-panel[role=\"menu\"], mat-action-list.gds-mode-switch-menu-list"
+  ],
+  "modelPicker.observerRoot": [
+    ".cdk-overlay-container, .cdk-global-overlay-wrapper, .cdk-overlay-connected-position-bounding-box, .cdk-overlay-pane, .mat-mdc-menu-panel[role=\"menu\"], mat-action-list.gds-mode-switch-menu-list, [data-mode-id], [role=\"menuitemradio\"], [role=\"menuitem\"]"
+  ],
+  "modelPicker.items": ["[role=\"menuitemradio\"], [role=\"menuitem\"]"],
+  "modelPicker.modelEvidence": ["[data-mode-id], .mode-title, .title-and-description"],
+  "modelPicker.modelIdItem": ["[data-mode-id]"],
+  "modelPicker.modelLabel": [".mode-title, .gds-title-m, .gds-label-l, .label"],
+  "modelPicker.thinkingLabel": [".label, .gds-title-m, .gds-label-l"],
+  "modelPicker.thinkingRow": ["[value=\"thinking_level\"]"],
+  "modelPicker.thinkingItems": ["gem-menu-item, [role=\"menuitem\"]"],
+  "modelPicker.thinkingContent": ["gem-menu-item-content, .label-container"],
+  "modelPicker.modelTitleContainer": [".title-and-description, .label-container"],
+  "modelPicker.thinkingTitleContainer": [".label-container"],
+  "modelPicker.selectedModel": ["[aria-checked=\"true\"], .is-selected, .selected"],
+  "modelPicker.selectedThinking": [".selected, [aria-checked=\"true\"], [aria-selected=\"true\"]"],
+  "modelPicker.selectedNestedThinking": [".selected"],
+  "modelPicker.focusInput": [
+    "main rich-textarea [contenteditable=\"true\"]",
+    "rich-textarea [contenteditable=\"true\"]",
+    "main div[contenteditable=\"true\"][role=\"textbox\"]",
+    "div[contenteditable=\"true\"][role=\"textbox\"]",
+    "main .input-area textarea",
+    ".input-area textarea",
+    "main [contenteditable=\"true\"]",
+    "main textarea"
+  ]
+}

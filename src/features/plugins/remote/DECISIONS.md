@@ -34,7 +34,8 @@ D15 原方案未使用。
 
 - 插件目录不放开：`sites/hostPolicy.ts` 的 `allowsRemoteCatalog`（远程侧 `isEligibleCatalogHost`）在页面、popup、后台三处守住，`catalog:build` 不为 Gemini / AI Studio 生成 `/catalog/hosts/` 插件文件。两站的包内 `site.json` 与官方插件只随本体发版。零目录请求不等于页面零请求：公告、云同步各有规则。
 - 独立开关「Gemini 页面识别在线修复」：local boolean `gvGeminiSelectorOnlineFixes`，默认关闭，不参与同步或设置备份。
-- 只为 `gemini.google.com` 获取 `/catalog/gemini-selectors/v1/hosts/gemini.google.com.json`。Gemini Enterprise 在内容脚本里提前返回、不进入 Gemini 页面启动，所以不为它请求数据。文件只含经同一 guard 校验的 selector data，不传插件、CSS、代码、行为或身份规则。
+- 只为 `gemini.google.com` 获取 `/catalog/gemini-selectors/v2/hosts/gemini.google.com.json`。Enterprise 不进入 Gemini 页面启动。文件只含经同一 guard 校验的对话、侧栏/文件夹显示和模型菜单定位数据，不传插件、CSS、代码、行为或身份规则。
+- v2 使用 `format:2`；v1 保留 `format:1` 五个 `turn.*` 键的独立投影，继续服务旧客户端。缓存仍按扩展版本隔离，格式 1 缓存仅接受原五键。删除、重命名、账号、ID 与点击策略仍属包内代码。
 - 自动检查至多每 6 小时一次；独立的 `lastAttemptAt` 跨开关保留，关了再开不会重置间隔；扩展重启中断的检查可能重试。手动检查只在 ON 时跳过间隔。
 - OFF 禁止所有选择器请求，包括手动、`force` 和旧缓存触发，取消在途请求并清除下载缓存。打开开关和手动检查需要当前标签页是 Gemini；关闭在 popup 里从任何标签页都能做。
 - 页内 snapshot 冻结到用户自行刷新，关闭也不热切换或自动重载。AI Studio 没有此例外。

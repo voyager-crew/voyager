@@ -25,7 +25,14 @@ function listedForChatWidth(selectors: readonly string[]): string[] {
   return selectors.filter((selector) => !CHAT_WIDTH_UNLISTED.has(selector));
 }
 
-const BUNDLED_PROFILES = getBundledGeminiTurnView().profiles;
+const viewProfiles = getBundledGeminiTurnView().profiles;
+const BUNDLED_PROFILES = {
+  'turn.user': viewProfiles['turn.user'],
+  'turn.userWithHosts': viewProfiles['turn.userWithHosts'],
+  'turn.assistant': viewProfiles['turn.assistant'],
+  'turn.assistantFallback': viewProfiles['turn.assistantFallback'],
+  'turn.assistantWithHosts': viewProfiles['turn.assistantWithHosts'],
+} as const;
 
 // Widths come from the packaged bundle only: an online patch never reaches CSS text.
 const BUNDLED_GEMINI_TURN_SELECTORS = {

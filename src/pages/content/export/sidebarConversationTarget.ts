@@ -1,3 +1,5 @@
+import { GEMINI_PACKAGED_TITLE_SELECTORS } from '@/core/gemini/sidebarTitles';
+
 export type SidebarConversationTarget = {
   conversationId: string;
   url: string;
@@ -53,9 +55,8 @@ function parseTitleHintFromAriaLabel(label: string | null | undefined): string |
 }
 
 function readTitleFromConversationScope(scope: HTMLElement): string | null {
-  const bySelector = scope.querySelector(
-    '.gds-label-l, .conversation-title-text, [data-test-id="conversation-title"], h3',
-  );
+  // This title participates in picking a navigation target, so it is identity evidence.
+  const bySelector = scope.querySelector(GEMINI_PACKAGED_TITLE_SELECTORS.export);
   const selectorTitle = normalizeText(bySelector?.textContent);
   if (selectorTitle) return selectorTitle;
 

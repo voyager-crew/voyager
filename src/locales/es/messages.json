@@ -4420,11 +4420,11 @@
   },
   "geminiSelectorFixesTitle": {
     "message": "Correcciones en línea para la detección de páginas de Gemini",
-    "description": "Switch for the Gemini-only page detection data channel (turn selector lists); off by default"
+    "description": "Switch for Gemini page detection fixes for conversations, sidebar folders and the model menu; off by default"
   },
   "geminiSelectorFixesHint": {
-    "message": "Descarga correcciones de detección de páginas desde voyager.nagi.fun, como máximo una vez cada 6 horas. No se envía contenido de la página. Desactivado por defecto.",
-    "description": "Endpoint, automatic check interval, privacy and default setting"
+    "message": "Descarga de voyager.nagi.fun correcciones para reconocer conversaciones, la barra lateral, las carpetas y el menú de modelos. Busca actualizaciones como máximo una vez cada 6 horas. No se envía contenido de la página. Desactivado por defecto.",
+    "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
   },
   "geminiSelectorFixesOff": {
     "message": "Desactivado: no se buscan correcciones, ni siquiera manualmente. Las páginas de Gemini abiertas siguen usando sus reglas actuales hasta que las recargues.",

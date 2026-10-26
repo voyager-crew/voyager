@@ -1,9 +1,12 @@
-import { getBundledGeminiTurnView, getGeminiBundledRevision } from '@/core/gemini/selectors/bundle';
 import {
-  GEMINI_TURN_PROFILE_KEYS,
+  getBundledGeminiSelectorView,
+  getGeminiBundledRevision,
+} from '@/core/gemini/selectors/bundle';
+import {
+  GEMINI_SELECTOR_PROFILE_KEYS,
   type GeminiSelectorFile,
   type GeminiSelectorHost,
-  type GeminiTurnProfiles,
+  type GeminiSelectorProfiles,
 } from '@/core/gemini/selectors/types';
 import { StorageKeys } from '@/core/types/common';
 import { EXTENSION_VERSION } from '@/core/utils/version';
@@ -205,7 +208,7 @@ export class GeminiSelectorRefresher {
     const changed = !sameEffectiveSelectors(
       previousSelectors,
       file.selectors,
-      getBundledGeminiTurnView().profiles,
+      getBundledGeminiSelectorView().profiles,
     );
     const entry: GeminiSelectorCacheEntry = {
       format: 1,
@@ -234,9 +237,9 @@ function sameSelectors(left: GeminiSelectorFile, right: GeminiSelectorFile): boo
 function sameEffectiveSelectors(
   left: GeminiSelectorFile['selectors'],
   right: GeminiSelectorFile['selectors'],
-  bundled: GeminiTurnProfiles,
+  bundled: GeminiSelectorProfiles,
 ): boolean {
-  return GEMINI_TURN_PROFILE_KEYS.every((key) => {
+  return GEMINI_SELECTOR_PROFILE_KEYS.every((key) => {
     const before = left[key] ?? bundled[key];
     const after = right[key] ?? bundled[key];
     return (

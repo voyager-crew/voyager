@@ -1,5 +1,10 @@
+import { GEMINI_PACKAGED_SIDEBAR_SELECTORS } from '@/core/gemini/sidebar/packaged';
+
 import { extractConversationId } from './nativeConversationIds';
-import { getNativeConversationRoot } from './nativeSidebarDom';
+import {
+  isPackagedNativeConversationRow,
+  packagedConversationRoot,
+} from './sidebarConversationQueries';
 
 const ARCHIVED_CLASS = 'gv-conversation-archived';
 const ARCHIVED_ACTIONS_CLASS = 'gv-conversation-archived-actions';
@@ -31,6 +36,7 @@ export class NativeArchivedRows {
 
   /** Applies the setting to a single native conversation row. */
   apply(conv: HTMLElement, pass: object): void {
+    if (!isPackagedNativeConversationRow(conv)) return;
     if (!this.options.isHidingArchived()) {
       if (
         conv.classList.contains(ARCHIVED_CLASS) ||
@@ -78,8 +84,8 @@ export class NativeArchivedRows {
       return this.legacyActionsProbe.present;
     }
     const present =
-      getNativeConversationRoot(this.options.getSidebar()).querySelector(
-        '.conversation-actions-container',
+      packagedConversationRoot(this.options.getSidebar()).querySelector(
+        GEMINI_PACKAGED_SIDEBAR_SELECTORS.actionsContainer,
       ) !== null;
     this.legacyActionsProbe = { present, at: now };
     return present;
@@ -98,13 +104,13 @@ export class NativeArchivedRows {
     while (sibling) {
       if (
         sibling instanceof HTMLElement &&
-        sibling.classList.contains('conversation-actions-container')
+        sibling.matches(GEMINI_PACKAGED_SIDEBAR_SELECTORS.actionsContainer)
       ) {
         return sibling;
       }
       sibling = sibling.nextElementSibling;
     }
 
-    return parent.querySelector<HTMLElement>('.conversation-actions-container');
+    return parent.querySelector<HTMLElement>(GEMINI_PACKAGED_SIDEBAR_SELECTORS.actionsContainer);
   }
 }

@@ -1,3 +1,11 @@
+import { getBundledGeminiSelectorView, type GeminiSelectorView } from '@/core/gemini/selectors';
+import {
+  geminiSidebarSelector,
+  hasOnlineSidebarRoot,
+  packagedGeminiSidebarRoot,
+  resolveGeminiSidebarOperation,
+} from '@/core/gemini/sidebar/queries';
+
 import {
   extractConversationIdFromHref,
   normalizeConversationId,
@@ -15,6 +23,14 @@ import {
   extractFallbackTitle,
   extractNativeConversationTitle,
 } from './nativeConversationTitles';
+import {
+  isPackagedNativeConversationRow,
+  packagedConversationRoot,
+  packagedConversationRows,
+  readCompleteNativeConversationRows,
+  readSidebarConversationRows,
+  sidebarConversationRoot,
+} from './sidebarConversationQueries';
 
 /** Current native sidebar state, read again after asynchronous collection waits. */
 export interface NativeSidebarReadContext {
@@ -27,12 +43,11 @@ export interface NativeSidebarReadContext {
 const AI_ORG_COLLECT_TIMEOUT_MS = 3000;
 const AI_ORG_COLLECT_POLL_MS = 150;
 
-export function getNativeConversationRoot(sidebar: HTMLElement | null): ParentNode {
-  return sidebar?.isConnected ? sidebar : document;
-}
-
-export function getNativeConversationElements(sidebar: HTMLElement | null): NodeListOf<Element> {
-  return getNativeConversationRoot(sidebar).querySelectorAll('[data-test-id="conversation"]');
+export function getNativeConversationElements(sidebar: HTMLElement | null): HTMLElement[] {
+  return readCompleteNativeConversationRows(
+    (view) => sidebarConversationRoot(sidebar, view),
+    () => packagedConversationRoot(sidebar),
+  );
 }
 
 /**
@@ -46,7 +61,7 @@ export function findNativeConversationElement(
   if (!targetId) return null;
 
   // Try multiple strategies to find the conversation
-  const allConversations = getNativeConversationElements(sidebar);
+  const allConversations = packagedConversationRows(sidebar);
 
   for (const conv of allConversations) {
     const id = extractConversationIdFromElement(conv) || extractConversationId(conv as HTMLElement);
@@ -94,8 +109,8 @@ export function readNativeConversationInfo(
     extractNativeConversationUrl(conversationEl, accountIsolationEnabled) ||
     buildConversationUrlFromId(id, accountIsolationEnabled);
   const title =
-    extractNativeConversationTitle(conversationEl) ||
-    extractFallbackTitle(conversationEl) ||
+    extractNativeConversationTitle(conversationEl, getBundledGeminiSelectorView()) ||
+    extractFallbackTitle(conversationEl, getBundledGeminiSelectorView()) ||
     'Untitled';
   return { id, title, url };
 }
@@ -113,7 +128,7 @@ export function findNativeConversationLinkById(conversationId: string): HTMLAnch
 
   const links = Array.from(
     document.querySelectorAll<HTMLAnchorElement>(
-      '[data-test-id="conversation"] a[href], a[data-test-id="conversation"][href]',
+      geminiSidebarSelector('sidebar.links', getBundledGeminiSelectorView()),
     ),
   );
 
@@ -144,6 +159,8 @@ export function isConversationInDOM(
   conversationId: string,
   ignoreHiddenRows = false,
 ): boolean {
+  // An online mount point cannot turn a still-present native row into deletion evidence.
+  if (hasOnlineSidebarRoot()) sidebar = packagedGeminiSidebarRoot();
   if (!sidebar) {
     debugWarn('Sidebar container not available for DOM check');
     return true; // Conservative: assume conversation exists if we can't check
@@ -208,29 +225,50 @@ function isRenderedNativeConversationRow(row: HTMLElement): boolean {
  * empty stubs (no link, no title) while collapsed or mid-render, and only gain
  * an `<a href>` once actually rendered. We use the link as the populated signal.
  */
-function isPopulatedConversationEl(el: HTMLElement): boolean {
-  return !!el.querySelector('a[href*="/app/"], a[href*="/gem/"]');
+function isPopulatedConversationEl(el: HTMLElement, view: GeminiSelectorView): boolean {
+  const link = el.querySelector(geminiSidebarSelector('sidebar.conversationLinks', view));
+  return (
+    link instanceof HTMLAnchorElement &&
+    link.matches(geminiSidebarSelector('sidebar.conversationLinks', getBundledGeminiSelectorView()))
+  );
 }
 
 /** Synchronous extraction over the currently-populated sidebar rows. */
 function collectPopulatedConversations(
   sidebar: HTMLElement | null,
   accountIsolationEnabled: boolean,
+  view: GeminiSelectorView,
 ): Array<{ id: string; title: string; url: string }> {
   const results: Array<{ id: string; title: string; url: string }> = [];
   const seen = new Set<string>();
-  const conversationEls = getNativeConversationElements(sidebar);
+  const conversationEls = readSidebarConversationRows(sidebarConversationRoot(sidebar, view), view);
+  const packaged = getBundledGeminiSelectorView();
+  const trustedRows = new Set(packagedConversationRows(sidebar));
+  const listed = new Set(conversationEls);
+  // A partial online list would hand AI organization a short list of the user's chats.
+  if (view.remoteKeys.size > 0 && [...trustedRows].some((row) => !listed.has(row))) return [];
+  const onlineTitle = [
+    'sidebar.row',
+    'sidebar.title',
+    'sidebar.titleFallback',
+    'sidebar.conversationLinks',
+  ] as const;
 
-  for (const el of Array.from(conversationEls)) {
-    const htmlEl = el as HTMLElement;
-    if (!isPopulatedConversationEl(htmlEl)) continue; // skip virtualized stub
-    const id = extractNativeConversationId(htmlEl);
-    const url = extractNativeConversationUrl(htmlEl, accountIsolationEnabled);
+  for (const element of conversationEls) {
+    // AI organization can later import these records: online matches cannot establish identity.
+    if (!trustedRows.has(element) || !isPackagedNativeConversationRow(element)) continue;
+    if (!isPopulatedConversationEl(element, view)) continue; // skip virtualized stub
+    const id = extractNativeConversationId(element);
+    const url = extractNativeConversationUrl(element, accountIsolationEnabled);
     if (!id || !url) continue;
     if (seen.has(id)) continue; // collapsed rail can emit duplicate rows
+    const title = extractNativeConversationTitle(element, view);
+    if (onlineTitle.some((key) => view.remoteKeys.has(key))) {
+      // A failed label or an unrelated label cannot become an imported title or "Untitled".
+      if (!title || title !== extractNativeConversationTitle(element, packaged)) return [];
+    }
     seen.add(id);
-    const title = extractNativeConversationTitle(htmlEl) || 'Untitled';
-    results.push({ id, title, url });
+    results.push({ id, title: title || 'Untitled', url });
   }
 
   return results;
@@ -243,10 +281,17 @@ function collectPopulatedConversations(
 async function waitForPopulatedSidebarConversations(
   getContext: () => NativeSidebarReadContext,
 ): Promise<boolean> {
-  const hasPopulated = () =>
-    Array.from(getNativeConversationElements(getContext().sidebar)).some((el) =>
-      isPopulatedConversationEl(el as HTMLElement),
-    );
+  const hasPopulated = () => {
+    const { sidebar, accountIsolationEnabled } = getContext();
+    return resolveGeminiSidebarOperation(
+      (view) =>
+        view.remoteKeys.size === 0
+          ? // Packaged rows count once they have a link; collection parses IDs after the wait.
+            packagedConversationRows(sidebar).some((row) => isPopulatedConversationEl(row, view))
+          : collectPopulatedConversations(sidebar, accountIsolationEnabled, view).length > 0,
+      Boolean,
+    ).value;
+  };
 
   if (hasPopulated()) return true;
 
@@ -270,5 +315,8 @@ export async function collectAllSidebarConversations(
 ): Promise<Array<{ id: string; title: string; url: string }>> {
   await waitForPopulatedSidebarConversations(getContext);
   const { sidebar, accountIsolationEnabled } = getContext();
-  return collectPopulatedConversations(sidebar, accountIsolationEnabled);
+  return resolveGeminiSidebarOperation(
+    (view) => collectPopulatedConversations(sidebar, accountIsolationEnabled, view),
+    (rows) => rows.length > 0,
+  ).value;
 }

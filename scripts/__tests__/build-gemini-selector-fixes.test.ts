@@ -3,7 +3,11 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { GEMINI_SELECTOR_HOSTS } from '../../src/core/gemini/selectors/types';
+import { getBundledGeminiSelectorView } from '../../src/core/gemini/selectors/bundle';
+import type {
+  GeminiSelectorFile,
+  GeminiSelectorProfileKey,
+} from '../../src/core/gemini/selectors/types';
 import { readGeminiSelectorFile } from '../../src/core/gemini/selectors/validation';
 import {
   buildGeminiSelectorFiles,
@@ -12,7 +16,8 @@ import {
 
 const temporary: string[] = [];
 const catalogDir = resolve('src/features/plugins/catalog');
-const sourcePath = 'sites/gemini/selector-data/turn.json';
+const dataPath = 'sites/gemini/selector-data';
+const host = 'gemini.google.com';
 
 function temp(): string {
   const path = mkdtempSync(join(tmpdir(), 'voyager-gemini-selectors-'));
@@ -20,79 +25,134 @@ function temp(): string {
   return path;
 }
 
+function fixtureCatalog(): string {
+  const path = temp();
+  const destination = join(path, dataPath);
+  mkdirSync(destination, { recursive: true });
+  for (const file of ['turn.json', 'sidebar.json', 'model-picker.json']) {
+    writeFileSync(join(destination, file), readFileSync(join(catalogDir, dataPath, file)));
+  }
+  return path;
+}
+
+function published(outDir: string, version: 'v1' | 'v2'): GeminiSelectorFile {
+  const path = join(outDir, 'gemini-selectors', version, 'hosts', `${host}.json`);
+  const file = readGeminiSelectorFile(JSON.parse(readFileSync(path, 'utf8')) as unknown, host);
+  if (!file) throw new Error(`Published ${version} file is invalid`);
+  return file;
+}
+
+function readNodes(profiles: GeminiSelectorFile['selectors'], key: GeminiSelectorProfileKey) {
+  const selectors = profiles[key];
+  if (!selectors) throw new Error(`Missing published profile: ${key}`);
+  return Array.from(document.querySelectorAll(selectors.join(','))).map((node) => ({
+    node,
+    id: node.id,
+    text: node.textContent,
+  }));
+}
+
 afterEach(() => {
+  document.body.replaceChildren();
   for (const path of temporary.splice(0)) rmSync(path, { recursive: true, force: true });
 });
 
 describe('Gemini selector publication', () => {
-  it('publishes only the gemini.google.com data file with the supplied source revision', () => {
+  it('publishes v1 and v2 files that preserve bundled nodes, order and IDs', () => {
+    document.body.innerHTML = `
+      <div id="question-b" class="user-query-container">Second</div>
+      <div id="question-a" class="user-query-container">First</div>
+      <nav data-test-id="overflow-container">
+        <a id="row-b" data-test-id="conversation"><span class="gds-label-l">Second chat</span></a>
+        <a id="row-a" data-test-id="conversation"><span class="gds-label-l">First chat</span></a>
+      </nav>
+      <div role="menu">
+        <button id="model-fast" data-mode-id="fast">Fast</button>
+        <button id="model-pro" data-mode-id="pro">Pro</button>
+      </div>`;
     const outDir = temp();
     const written = writeGeminiSelectorFiles({ catalogDir, outDir, catalogRevision: 42 });
-    const hostsDir = join(outDir, 'gemini-selectors/v1/hosts');
-    expect(readdirSync(hostsDir)).toEqual(['gemini.google.com.json']);
-    expect(written).toHaveLength(1);
-    const source: unknown = JSON.parse(readFileSync(join(catalogDir, sourcePath), 'utf8'));
-    for (const host of GEMINI_SELECTOR_HOSTS) {
-      const payload: unknown = JSON.parse(readFileSync(join(hostsDir, `${host}.json`), 'utf8'));
-      const accepted = readGeminiSelectorFile(payload, host);
-      expect(accepted).not.toBeNull();
-      expect(accepted?.catalogRevision).toBe(42);
-      expect(accepted?.selectors).toEqual(source);
-      expect(payload).not.toHaveProperty('plugins');
-      expect(payload).not.toHaveProperty('matches');
-      expect(payload).not.toHaveProperty('theme');
+    expect(written).toHaveLength(2);
+    const legacy = published(outDir, 'v1');
+    const current = published(outDir, 'v2');
+    expect(legacy.format).toBe(1);
+    expect(current.format).toBe(2);
+    expect(legacy.catalogRevision).toBe(42);
+    expect(current.catalogRevision).toBe(42);
+    // Released v1 clients read exactly the turn fragment: nothing added, dropped or reordered.
+    expect(legacy.selectors).toEqual(
+      JSON.parse(readFileSync(join(catalogDir, dataPath, 'turn.json'), 'utf8')) as unknown,
+    );
+    const bundled = getBundledGeminiSelectorView().profiles;
+    expect(readNodes(legacy.selectors, 'turn.user')).toEqual(readNodes(bundled, 'turn.user'));
+    const comparableKeys = ['turn.user', 'sidebar.row', 'modelPicker.modelIdItem'] as const;
+    for (const key of comparableKeys) {
+      expect(readNodes(current.selectors, key)).toEqual(readNodes(bundled, key));
     }
+    expect(readNodes(current.selectors, 'sidebar.row').map((row) => row.id)).toEqual([
+      'row-b',
+      'row-a',
+    ]);
+    // v1's frozen guard would reject the expanded payload; its projection must remain readable.
+    expect(readGeminiSelectorFile({ ...current, format: 1 }, host)).toBeNull();
   });
 
-  it('drops obsolete files only inside its own selector output directory', () => {
+  it('removes obsolete hosts in both versions while preserving unrelated catalogs', () => {
     const outDir = temp();
-    const hostsDir = join(outDir, 'gemini-selectors/v1/hosts');
-    mkdirSync(hostsDir, { recursive: true });
-    writeFileSync(join(hostsDir, 'aistudio.google.com.json'), '{}');
-    writeFileSync(join(hostsDir, 'business.gemini.google.json'), '{}');
+    for (const version of ['v1', 'v2']) {
+      const hostsDir = join(outDir, 'gemini-selectors', version, 'hosts');
+      mkdirSync(hostsDir, { recursive: true });
+      writeFileSync(join(hostsDir, 'aistudio.google.com.json'), '{}');
+      writeFileSync(join(hostsDir, 'business.gemini.google.json'), '{}');
+    }
     mkdirSync(join(outDir, 'hosts'));
     writeFileSync(join(outDir, 'hosts/claude.ai.json'), '{"keep":true}');
     writeGeminiSelectorFiles({ catalogDir, outDir, catalogRevision: 42 });
-    expect(readdirSync(hostsDir)).toEqual(['gemini.google.com.json']);
+    for (const version of ['v1', 'v2'] as const) {
+      expect(readdirSync(join(outDir, 'gemini-selectors', version, 'hosts'))).toEqual([
+        'gemini.google.com.json',
+      ]);
+      expect(published(outDir, version).catalogRevision).toBe(42);
+    }
     expect(readFileSync(join(outDir, 'hosts/claude.ai.json'), 'utf8')).toBe('{"keep":true}');
   });
 
-  it('cannot publish an omitted bundled profile or behavior disguised as a key', () => {
-    const fixture = temp();
-    const directory = join(fixture, 'sites/gemini/selector-data');
-    mkdirSync(directory, { recursive: true });
-    writeFileSync(join(directory, 'turn.json'), JSON.stringify({ 'turn.user': ['.user'] }));
+  it('rejects incomplete or misplaced profile groups and accepts the repaired group', () => {
+    const fixture = fixtureCatalog();
+    const sidebarPath = join(fixture, dataPath, 'sidebar.json');
+    writeFileSync(sidebarPath, JSON.stringify({ 'sidebar.row': ['.row'] }));
     expect(() => buildGeminiSelectorFiles({ catalogDir: fixture, catalogRevision: 42 })).toThrow(
-      'all five',
+      'incomplete or invalid',
     );
-    const current = JSON.parse(readFileSync(join(catalogDir, sourcePath), 'utf8')) as Record<
-      string,
-      unknown
-    >;
-    writeFileSync(
-      join(directory, 'turn.json'),
-      JSON.stringify({ ...current, capabilities: ['chat'] }),
+    const sidebar: Record<string, unknown> = JSON.parse(
+      readFileSync(join(catalogDir, dataPath, 'sidebar.json'), 'utf8'),
     );
-    expect(() => buildGeminiSelectorFiles({ catalogDir: fixture, catalogRevision: 42 })).toThrow();
+    writeFileSync(sidebarPath, JSON.stringify({ ...sidebar, 'modelPicker.items': ['button'] }));
+    expect(() => buildGeminiSelectorFiles({ catalogDir: fixture, catalogRevision: 42 })).toThrow(
+      'incomplete or invalid',
+    );
+    writeFileSync(sidebarPath, JSON.stringify(sidebar));
+    const repaired = buildGeminiSelectorFiles({ catalogDir: fixture, catalogRevision: 42 });
+    expect(repaired.get(host)?.format).toBe(2);
   });
 
-  it('refuses a serialized file over the byte budget before publishing any host', () => {
-    const fixture = temp();
-    const directory = join(fixture, 'sites/gemini/selector-data');
-    mkdirSync(directory, { recursive: true });
-    const current = JSON.parse(readFileSync(join(catalogDir, sourcePath), 'utf8')) as Record<
-      string,
-      unknown
-    >;
-    const large = {
-      ...current,
-      'turn.user': Array.from({ length: 32 }, () => `.${'a'.repeat(2047)}`),
-    };
-    writeFileSync(join(directory, 'turn.json'), JSON.stringify(large));
+  it('leaves the published pair intact when a replacement exceeds the decoded byte budget', () => {
+    const fixture = fixtureCatalog();
     const outDir = temp();
+    writeGeminiSelectorFiles({ catalogDir, outDir, catalogRevision: 42 });
+    const turnPath = join(fixture, dataPath, 'turn.json');
+    const turns: Record<string, unknown> = JSON.parse(readFileSync(turnPath, 'utf8'));
+    writeFileSync(
+      turnPath,
+      JSON.stringify({
+        ...turns,
+        'turn.user': Array.from({ length: 32 }, () => `.${'a'.repeat(2047)}`),
+      }),
+    );
     expect(() =>
-      writeGeminiSelectorFiles({ catalogDir: fixture, outDir, catalogRevision: 42 }),
+      writeGeminiSelectorFiles({ catalogDir: fixture, outDir, catalogRevision: 43 }),
     ).toThrow();
-    expect(readdirSync(outDir)).toEqual([]);
+    expect(published(outDir, 'v1').catalogRevision).toBe(42);
+    expect(published(outDir, 'v2').catalogRevision).toBe(42);
   });
 });

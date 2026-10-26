@@ -1,6 +1,8 @@
 /**
  * DOM extraction module for Deep Research thinking content
  */
+import { readGeminiActiveSidebarTitle } from '@/core/gemini/sidebarTitles';
+
 import type { BrowseChip, ThinkingContent, ThinkingItem, ThinkingSection } from './types';
 
 /**
@@ -178,18 +180,11 @@ function getConversationTitle(): string {
     }
 
     // Strategy 2: Try to get from sidebar
-    const selectors = [
-      'mat-list-item.mdc-list-item--activated [mat-line]',
-      'mat-list-item[aria-current="page"] [mat-line]',
-      '.conversation-list-item.active .conversation-title',
-    ];
-
-    for (const selector of selectors) {
-      const element = document.querySelector(selector);
-      if (element?.textContent?.trim() && element.textContent.trim() !== 'New chat') {
-        return element.textContent.trim();
-      }
-    }
+    const sidebarTitle = readGeminiActiveSidebarTitle(
+      'activeResearch',
+      (title) => title.length > 0 && title !== 'New chat',
+    );
+    if (sidebarTitle) return sidebarTitle;
   } catch (error) {
     console.error('[Gemini Voyager] Error getting conversation title:', error);
   }

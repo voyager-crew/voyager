@@ -1,4 +1,4 @@
-import { getSidenavElement, isSidebarCollapsed } from './sidebarDom';
+import { getSidebarAnimationElements, getSidenavElement, isSidebarCollapsed } from './sidebarDom';
 
 const FULL_HIDE_STYLE_ID = 'gv-sidebar-full-hide-style';
 const EDGE_TRIGGER_ID = 'gv-sidebar-edge-trigger';
@@ -105,10 +105,6 @@ export function createFullHide(callbacks: FullHideCallbacks) {
     }
   }
 
-  function getSidebarContentContainer(): HTMLElement | null {
-    return document.querySelector<HTMLElement>('bard-sidenav side-navigation-content > div');
-  }
-
   function clearScheduledSidebarStateSync(): void {
     for (const timeoutId of sidebarStateSyncTimeoutIds) {
       window.clearTimeout(timeoutId);
@@ -133,11 +129,7 @@ export function createFullHide(callbacks: FullHideCallbacks) {
 
   function startFullHideCollapseAnimation(): void {
     clearFullHideCollapseAnimation();
-    const elements = [
-      getSidenavElement(),
-      document.querySelector<HTMLElement>('bard-sidenav side-navigation-content'),
-      getSidebarContentContainer(),
-    ].filter((element): element is HTMLElement => element !== null);
+    const elements = getSidebarAnimationElements();
 
     fullHideCollapseAnimationElements = elements;
     for (const element of elements) {

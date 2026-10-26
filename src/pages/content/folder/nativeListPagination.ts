@@ -1,5 +1,22 @@
-/** Gemini's sidebar scroller; it emits its "load older chats" request from its own scroll listener. */
-const NATIVE_LIST_SCROLLER_SELECTOR = 'infinite-scroller';
+import {
+  geminiSidebarSelector,
+  resolveGeminiSidebarOperation,
+} from '@/core/gemini/sidebar/queries';
+
+/** A scoped read; the pagination protocol and timers below remain packaged. */
+function findNativeListScroller(row: HTMLElement): HTMLElement | null {
+  return resolveGeminiSidebarOperation(
+    (view) => {
+      const candidate = row.closest(geminiSidebarSelector('sidebar.scroller', view));
+      return candidate instanceof HTMLElement &&
+        candidate !== document.body &&
+        candidate !== document.documentElement
+        ? candidate
+        : null;
+    },
+    (scroller) => scroller !== null,
+  ).value;
+}
 
 // Gemini asks for the next Recents page only on a scroll past its bottomScrollThreshold
 // of 90% (#1040), so a page we hide entirely adds no height and no scroll ever follows.
@@ -139,7 +156,7 @@ export function createNativePaginationNudge(): NativePaginationNudge {
 
   return {
     rowHidden: (row) => {
-      const scroller = row.closest<HTMLElement>(NATIVE_LIST_SCROLLER_SELECTOR);
+      const scroller = findNativeListScroller(row);
       if (!scroller) return;
       scrollers.add(scroller);
       frame ??= window.requestAnimationFrame(flush);

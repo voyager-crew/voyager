@@ -79,7 +79,7 @@ describe('Gemini selector opt-in refresh', () => {
     expect(await second).toMatchObject({ result: 'updated', cachedRevision: 11 });
     const [url, request] = fetchImpl.mock.calls[0];
     expect(url).toBe(
-      'https://voyager.nagi.fun/catalog/gemini-selectors/v1/hosts/gemini.google.com.json',
+      'https://voyager.nagi.fun/catalog/gemini-selectors/v2/hosts/gemini.google.com.json',
     );
     expect(request).toMatchObject({
       credentials: 'omit',
