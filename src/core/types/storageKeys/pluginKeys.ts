@@ -25,7 +25,7 @@ export const PLUGIN_STORAGE_KEYS = {
   PLUGIN_HOST_CATALOG_PREFIX: 'gvPluginHostCatalog:',
   // Master switch for checking voyager.nagi.fun for plugin catalog updates
   // (chrome.storage.sync, backed up). Off = the extension never contacts the
-  // catalog host, including explicit manual checks in the popup.
+  // catalog host except for an explicit manual check in the popup.
   PLUGIN_ONLINE_UPDATES_ENABLED: 'gvPluginOnlineUpdatesEnabled',
   // Minimum spacing between automatic catalog checks per host:
   // '1h' | '6h' | '24h' | 'manual' (chrome.storage.sync, backed up).
