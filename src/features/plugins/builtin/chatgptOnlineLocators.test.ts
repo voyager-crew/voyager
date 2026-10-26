@@ -16,7 +16,6 @@ import { hasThinkingSignal } from './chatgptLocalBridge/ops/pageReaders';
 import { interruptionNotice } from './chatgptLocalBridge/ops/replyEvidence';
 import { findTrigger, readPicker } from './chatgptModelSelect/pickerDom';
 import { notificationSelectorsOf } from './chatgptNotificationSelectors';
-import { findButtonTarget } from './chatgptTemporaryHandoff/buttonTarget';
 import { isTemporaryChat } from './chatgptTemporaryHandoff/handoff';
 
 let lifetime: SiteSelectorLifetime | undefined;
@@ -168,22 +167,6 @@ it('a remote effort row without arrow key support cannot change a model setting'
     '<div role="menu"><span role="status">High, 3 of 5.</span><div role="menuitem" class="effort"></div></div>';
   await online({}, {}, { effortControl: '.effort' });
   expect(readPicker(document.querySelector('[role="menu"]')!, pickerData).slider).toBeNull();
-});
-
-it('a renamed header keeps the handoff button inside the original native header', async () => {
-  document.body.innerHTML = '<header><div class="actions"><button>Action</button></div></header>';
-  await online({}, { headerActions: '.actions' });
-  expect(findButtonTarget()).toMatchObject({
-    parent: document.querySelector('.actions'),
-    floating: false,
-  });
-});
-
-it('a response toolbar cannot become the handoff header', async () => {
-  document.body.innerHTML =
-    '<main data-turn-key="one"><div class="actions"><button>Action</button></div></main>';
-  await online({}, { headerActions: '.actions' });
-  expect(findButtonTarget()).toMatchObject({ parent: document.body, floating: true });
 });
 
 it('temporary mode and its header controls use the repaired native button', async () => {

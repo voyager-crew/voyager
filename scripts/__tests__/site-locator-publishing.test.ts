@@ -7,8 +7,37 @@ import { validateHostCatalogFile } from '@/features/plugins/remote/hostCatalogFi
 import { build, makeTempDir, readHostFile, removeTempDirs } from './buildPluginCatalogFixtures';
 
 /** Literal wire contracts stay independent of how fragments are grouped in the implementation. */
+const PLACEMENT_KEYS = [
+  'exportLayout.controls',
+  'exportLayout.broadControls',
+  'exportLayout.canvasOwner',
+  'exportLayout.canvasContent',
+  'exportLayout.fullscreenCanvas',
+  'exportLayout.inactiveCanvas',
+  'exportLayout.turns',
+  'exportLayout.interactive',
+  'exportLayout.overlaySidebar',
+  'exportLayout.fallbackRoot',
+  'exportLayout.alignmentCanvas',
+  'exportLayout.alignmentComposer',
+  'input.clearance',
+  'input.fab',
+  'vim.host',
+  'vim.hud',
+  'vim.inputFallback',
+  'vim.mountInput',
+  'vim.mountRoot',
+  'vim.mountChatInput',
+  'vim.mountChatRoot',
+  'timeline.userText',
+] as const;
+
 const PUBLISHED_KEYS = {
   aistudio: [
+    ...PLACEMENT_KEYS,
+    'navigation.anchorSteps',
+    'navigation.empty',
+    'navigation.bottom',
     'input.candidates',
     'library.rows',
     'library.archivableRows',
@@ -23,6 +52,10 @@ const PUBLISHED_KEYS = {
     'navigation.sidebar',
   ],
   chatgpt: [
+    ...PLACEMENT_KEYS,
+    'export.threadList',
+    'export.historyPending',
+    'export.codeLanguage',
     'input.candidates',
     'input.handoff',
     'vim.candidates',
@@ -38,9 +71,15 @@ const PUBLISHED_KEYS = {
     'export.loggedOutThread',
     'export.loggedOutAssistant',
   ],
-  claude: ['input.candidates', 'input.handoff', 'vim.candidates', 'export.assistantContent'],
-  deepseek: ['export.assistantContent'],
-  kimi: ['input.candidates', 'vim.candidates', 'export.assistantContent'],
+  claude: [
+    ...PLACEMENT_KEYS,
+    'input.candidates',
+    'input.handoff',
+    'vim.candidates',
+    'export.assistantContent',
+  ],
+  deepseek: [...PLACEMENT_KEYS, 'export.assistantContent'],
+  kimi: [...PLACEMENT_KEYS, 'input.candidates', 'vim.candidates', 'export.assistantContent'],
 } as const;
 
 const SEMANTIC_KEYS = {

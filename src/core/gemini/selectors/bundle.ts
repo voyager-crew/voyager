@@ -19,6 +19,7 @@ import codeProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/
 import composerProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/composer.json';
 import contentProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/content.json';
 import contextImageProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/context-images.json';
+import extendedProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/extended.json';
 import gemsProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/gems.json';
 import generatedImageProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/generated-image.json';
 import imageExportProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/image-export.json';
@@ -40,12 +41,15 @@ import usageProfiles from '@/features/plugins/catalog/sites/gemini/selector-data
 import userLatexProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/user-latex.json';
 import vimProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/vim.json';
 
+import { PLACEMENT_PROFILES } from '../../selectors/contracts/placement';
+import { TIMELINE_TEXT_PROFILES } from '../../selectors/contracts/timeline';
 import { bundledSemanticProfiles } from '../../selectors/sites';
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
 import { GEMINI_CANVAS_CODE_PROFILE_KEYS } from './canvasKeys';
 import { GEMINI_CODE_PROFILE_KEYS } from './codeKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
 import { GEMINI_CONTENT_PROFILE_KEYS, GEMINI_CONTEXT_IMAGE_PROFILE_KEYS } from './contentKeys';
+import { GEMINI_EXTENDED_KEYS } from './extendedKeys';
 import { GEMINI_GEMS_PROFILE_KEYS } from './gemsKeys';
 import { GEMINI_GENERATED_IMAGE_PROFILE_KEYS } from './generatedImageKeys';
 import { GEMINI_IMAGE_EXPORT_PROFILE_KEYS } from './imageExportKeys';
@@ -91,6 +95,9 @@ function readGroup<Key extends GeminiSelectorProfileKey>(
 
 function readBundle(): GeminiSelectorProfiles {
   const profiles = {
+    ...readGroup(extendedProfiles, GEMINI_EXTENDED_KEYS, 'extended'),
+    ...PLACEMENT_PROFILES.gemini,
+    ...TIMELINE_TEXT_PROFILES.gemini,
     ...readGroup(turnProfiles, GEMINI_TURN_PROFILE_KEYS, 'turn'),
     ...readGroup(sidebarProfiles, GEMINI_SIDEBAR_PROFILE_KEYS, 'sidebar'),
     ...readGroup(modelPickerProfiles, GEMINI_MODEL_PICKER_PROFILE_KEYS, 'model picker'),

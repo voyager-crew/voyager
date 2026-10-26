@@ -9,6 +9,8 @@ import {
   hasGeminiCodeFixes,
   resolveGeminiCodeHosts,
 } from '@/core/gemini/code/hosts';
+import { getGeminiSelectorView } from '@/core/gemini/selectors';
+import { resolvePlacementOperation } from '@/core/selectors/placement';
 import type { CollapseReadSession } from '@/core/ui/collapse/engine';
 import { DIAGRAM_OWNER_ATTR } from '@/features/plugins/verbs/diagramExportRegistry';
 
@@ -17,7 +19,7 @@ import type { CodeBlockCollapseSite } from './engine';
 const CODE_SELECTOR = GEMINI_PACKAGED_CODE['code.content'].join(', ');
 const LANGUAGE_SELECTOR = GEMINI_PACKAGED_CODE['code.language'].join(', ');
 const DECORATION_SELECTOR = GEMINI_PACKAGED_CODE['code.decoration'].join(', ');
-const BUTTONS_SELECTOR = GEMINI_PACKAGED_CODE['code.buttons'].join(', ');
+
 /** Stamped by a diagram primitive (`verbs/codeBlockDiagram.ts`) on a block it draws. */
 const DIAGRAM_OWNER_SELECTOR = `[${DIAGRAM_OWNER_ATTR}]`;
 
@@ -38,7 +40,13 @@ export function isGeminiDiagramBlock(host: HTMLElement): boolean {
 /** The toggle joins Gemini's copy buttons, or the header when the row is missing. */
 export function geminiCodeBlockActions(host: HTMLElement): HTMLElement | null {
   const decoration = host.querySelector<HTMLElement>(DECORATION_SELECTOR);
-  return decoration?.querySelector<HTMLElement>(BUTTONS_SELECTOR) ?? decoration;
+  const view = getGeminiSelectorView();
+  const bundled = GEMINI_PACKAGED_CODE['code.buttons'].join(',');
+  return resolvePlacementOperation(view, 'code.buttons', (selector) =>
+    selector === bundled
+      ? (decoration?.querySelector<HTMLElement>(selector) ?? decoration)
+      : host.querySelector<HTMLElement>(selector),
+  );
 }
 
 /**

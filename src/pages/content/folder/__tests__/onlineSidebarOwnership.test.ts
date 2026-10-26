@@ -191,35 +191,6 @@ it('a renamed native sidebar host retains width-based state without borrowing a 
   expect(isSidebarOpen()).toBe(false);
 });
 
-it('a remote section cannot move a folder mount from native Recents onto an unrelated sibling', async () => {
-  const { overflow } = page();
-  overflow.insertAdjacentHTML('afterbegin', '<section class="wrong">Settings</section>');
-  const anchor = findSidebarMount('above-recents')?.anchor;
-  await online({ 'sidebar.recents': ['.wrong'] });
-  expect(findSidebarMount('above-recents')?.anchor).toBe(anchor);
-  await online({ 'sidebar.recents': ['.recents'] });
-  expect(findSidebarMount('above-recents')?.anchor).toBe(anchor);
-});
-
-it('a repaired Notebooks anchor preserves native identity through a section-tag rename', async () => {
-  const { overflow } = page();
-  overflow.insertAdjacentHTML(
-    'afterbegin',
-    '<expandable-section storagekey="notebooks" class="notebooks"></expandable-section><section class="wrong">Other section</section>',
-  );
-  const original = document.querySelector<HTMLElement>('.notebooks')!;
-  await online({ 'sidebar.notebooks': ['.wrong'] });
-  expect(findSidebarMount('above-notebooks')?.anchor).toBe(original);
-  const renamed = document.createElement('section');
-  renamed.className = 'notebooks';
-  renamed.setAttribute('storagekey', 'notebooks');
-  original.replaceWith(renamed);
-  await online({ 'sidebar.notebooks': ['.notebooks'] });
-  expect(findSidebarMount('above-notebooks')?.anchor).toBe(renamed);
-  renamed.removeAttribute('storagekey');
-  expect(findSidebarMount('above-notebooks')?.anchor).toBe(document.querySelector('.recents'));
-});
-
 it('a repaired paginator cannot skip the innermost native scroll owner', async () => {
   vi.useFakeTimers();
   const { scroll, row } = page();

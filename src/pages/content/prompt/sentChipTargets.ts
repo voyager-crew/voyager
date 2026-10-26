@@ -2,9 +2,12 @@ import {
   getBundledGeminiSelectorView,
   getGeminiSelectorView,
   resolveGeminiSelectorOperationInView,
+  type GeminiSelectorView,
 } from '@/core/gemini/selectors';
+import { resolvePlacementOperation } from '@/core/selectors/placement';
 import { locatorSiteForHost } from '@/core/selectors/sites';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/sent-chips-packaged.json';
+import { isUserTextSubset } from '@/features/timeline/userTextProof';
 
 export interface SentChipTarget {
   bubble: HTMLElement;
@@ -25,24 +28,56 @@ function firstList(root: ParentNode, selectors: readonly string[]): HTMLElement[
 export function readSentChipTargets(root: ParentNode): SentChipTarget[] {
   const key = 'sentChips.bubbles';
   const bundle = getBundledGeminiSelectorView();
-  const view = getGeminiSelectorView();
-  const read = (selectors: readonly string[]): SentChipTarget[] =>
+  const doc = root instanceof Document ? root : root.ownerDocument;
+  const view =
+    locatorSiteForHost(doc?.defaultView?.location.hostname ?? '') === 'gemini'
+      ? getGeminiSelectorView()
+      : bundle;
+  const read = (
+    selectors: readonly string[],
+    selected: GeminiSelectorView = view,
+  ): SentChipTarget[] =>
     firstList(root, selectors).map((bubble) => {
-      const lines = firstList(bubble, packaged['sentChips.lines']);
+      const bundledLines = firstList(bubble, packaged['sentChips.lines']);
+      let lines = bundledLines;
+      if (selected.remoteKeys.has('sentChips.lines')) {
+        const remote = firstList(bubble, selected.profiles['sentChips.lines']);
+        const native = bubble.querySelector('.query-text') ?? bubble;
+        const text = remote.map((node) => node.textContent ?? '').join(' ');
+        const reference = bundledLines.length
+          ? bundledLines.map((node) => node.textContent ?? '').join(' ')
+          : (native.textContent ?? '');
+        // A chip must describe the sent user text, never another saved prompt found nearby.
+        if (
+          remote.length &&
+          isUserTextSubset(text, reference) &&
+          remote.every(
+            (node) =>
+              !node.closest('model-response, [contenteditable="true"], input, textarea, button'),
+          )
+        )
+          lines = remote;
+      }
       return {
         bubble,
         lines,
-        anchor: lines[0]?.closest<HTMLElement>(packaged['sentChips.anchor']) ?? lines[0] ?? null,
+        anchor:
+          resolvePlacementOperation(
+            selected,
+            'sentChips.anchor',
+            (selector) =>
+              lines[0]?.closest<HTMLElement>(selector) ??
+              (selector === packaged['sentChips.anchor']
+                ? null
+                : bubble.querySelector<HTMLElement>(selector)),
+          ) ??
+          lines[0] ??
+          null,
         toggle: bubble.querySelector(packaged['sentChips.toggle']),
       };
     });
-  const doc = root instanceof Document ? root : root.ownerDocument;
-  if (
-    !view.remoteKeys.has(key) ||
-    locatorSiteForHost(doc?.defaultView?.location.hostname ?? '') !== 'gemini'
-  )
-    return read(bundle.profiles[key]);
-  const bundled = read(bundle.profiles[key]);
+  if (!view.remoteKeys.has(key)) return read(bundle.profiles[key]);
+  const bundled = read(bundle.profiles[key], bundle);
   const native = Array.from(root.querySelectorAll<HTMLElement>('user-query')).filter(
     (bubble) =>
       !bubble.closest(
@@ -52,14 +87,11 @@ export function readSentChipTargets(root: ParentNode): SentChipTarget[] {
   const expected = bundled.length ? bundled.map(({ bubble }) => bubble) : native;
   return resolveGeminiSelectorOperationInView(
     view,
-    (candidate) => read(candidate.profiles[key]),
+    (candidate) => read(candidate.profiles[key], candidate),
     (targets) =>
       // Missing/reordered bubbles would label only part of the conversation or hide another message.
       targets.length > 0 &&
       targets.length === expected.length &&
-      targets.every(
-        ({ bubble, anchor }, index) =>
-          bubble === expected[index] && (!anchor || bubble.contains(anchor)),
-      ),
+      targets.every(({ bubble }, index) => bubble === expected[index]),
   ).value;
 }

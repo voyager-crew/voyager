@@ -2,14 +2,11 @@ import { hasGeminiCodeFixes, resolveGeminiCodeHosts } from '@/core/gemini/code/h
 import { GEMINI_PACKAGED_CONTENT } from '@/core/gemini/content/packaged';
 import { resolveGeminiAnswerElement, readGeminiUserLines } from '@/core/gemini/content/reads';
 import { getGeminiSelectorView, type GeminiSelectorView } from '@/core/gemini/selectors';
-import {
-  GEMINI_PACKAGED_TITLE_SELECTORS,
-  readCorroboratedGeminiTitle,
-} from '@/core/gemini/sidebarTitles';
+import { geminiTitleSelectors } from '@/core/gemini/sidebar/titleProof';
+import { readCorroboratedGeminiTitle } from '@/core/gemini/sidebarTitles';
 import { DEFAULT_EXPORT_CODE_PROFILE } from '@/features/export/services/exportCodeProfile';
 import { resolveExportMessageContent } from '@/features/export/services/exportContentRoots';
 import { getExportReadProfiles } from '@/features/export/services/exportSiteData';
-import titleData from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar-titles.json';
 import type { SiteAdapter } from '@/features/plugins/types';
 
 import {
@@ -38,8 +35,8 @@ import {
 
 function extractConversationTitle(): string {
   const profile = {
-    heading: GEMINI_PACKAGED_TITLE_SELECTORS.export,
-    active: titleData['title.activeExport'],
+    heading: geminiTitleSelectors('title.export').join(', '),
+    active: geminiTitleSelectors('title.activeExport'),
   };
   return readConversationTitle(profile, (element) =>
     readCorroboratedGeminiTitle((view) =>

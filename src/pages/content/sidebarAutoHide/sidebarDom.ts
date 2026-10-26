@@ -1,3 +1,4 @@
+import { remoteGeminiSidebarToggle } from '@/core/gemini/sidebar/actions';
 import { GEMINI_PACKAGED_SIDEBAR_SELECTORS as SIDEBAR } from '@/core/gemini/sidebar/packaged';
 
 // The 2026 layout keeps an invisible 0×0 toggle sibling around at all times, so visibility
@@ -9,6 +10,8 @@ const SIDEBAR_TOGGLE_MATCH_SELECTOR = `${SIDEBAR.toggleButton}, ${SIDEBAR.toggle
 const TOGGLE_ICON_FONTICONS = ['side_nav', 'side_nav_expand'] as const;
 
 export function findSidebarToggle(): HTMLButtonElement | null {
+  const repaired = remoteGeminiSidebarToggle();
+  if (repaired) return repaired;
   // Two buttons match at any moment in the 2026 layout; walk all of them and skip zero geometry.
   const candidates = Array.from(document.querySelectorAll<HTMLButtonElement>(SIDEBAR.toggleButton));
 
@@ -45,6 +48,8 @@ export function getSidebarAnimationElements(): HTMLElement[] {
 
 function getToggleCollapsedState(button: HTMLButtonElement | null): boolean | null {
   if (!button) return null;
+  if (button === remoteGeminiSidebarToggle())
+    return button.getAttribute('aria-expanded') === 'false';
   const fonticon = button.querySelector(SIDEBAR.toggleIcon)?.getAttribute('fonticon');
   if (fonticon === 'side_nav_expand') return true;
   if (fonticon === 'side_nav') return false;
@@ -96,5 +101,8 @@ export function getSidenavElement(): HTMLElement | null {
 }
 
 export function isSidebarToggleTarget(target: HTMLElement): boolean {
-  return target.closest(SIDEBAR_TOGGLE_MATCH_SELECTOR) !== null;
+  const remote = remoteGeminiSidebarToggle();
+  return (
+    (remote?.contains(target) ?? false) || target.closest(SIDEBAR_TOGGLE_MATCH_SELECTOR) !== null
+  );
 }

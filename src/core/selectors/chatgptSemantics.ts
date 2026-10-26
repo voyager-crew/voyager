@@ -2,6 +2,7 @@ import { hasVoyagerOwner } from '../gemini/composer/ownedInput';
 import { sameItems } from '../utils/array';
 import { getBundledSiteSelectorView } from './bundle';
 import { preservesCompleteContent } from './contentIntegrity';
+import { placementSelector } from './placement';
 import type { SiteSelectorView } from './types';
 
 const TURN_KEYS = ['userTurn', 'assistantTurn'] as const;
@@ -46,24 +47,7 @@ export function guardedChatgptSemanticSelector(
   const bundle = getBundledSiteSelectorView('chatgpt');
   const fallback = bundle.profiles[key]?.join(',');
   if (!doc) return fallback;
-  if (key === 'headerActions' && view.remoteKeys.has(key)) {
-    try {
-      const candidates = Array.from(doc.querySelectorAll(view.profiles[key].join(',')));
-      const native = Array.from(doc.querySelectorAll(fallback!));
-      if (native.length)
-        return sameItems(candidates, native) ? view.profiles[key].join(',') : fallback;
-      const header = candidates[0];
-      return candidates.length === 1 &&
-        !hasVoyagerOwner(header) &&
-        !header.closest(FOREIGN) &&
-        !!header.closest('header, [role="banner"], [data-app-shell-header-obstacle]') &&
-        !!header.querySelector('button, a[href]')
-        ? view.profiles[key].join(',')
-        : fallback;
-    } catch {
-      return fallback;
-    }
-  }
+  if (key === 'headerActions') return placementSelector(view, key, doc);
   if (
     !TURN_KEYS.some((turn) => turn === key) ||
     !TURN_KEYS.some((turn) => view.remoteKeys.has(turn))

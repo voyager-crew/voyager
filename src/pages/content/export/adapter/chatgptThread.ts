@@ -6,6 +6,7 @@ import type {
 
 import { chatgptExportData, chatgptTurnSelector, CHATGPT_USER_BUBBLE } from './chatgptExportData';
 import { chatgptStreamingSelector } from './chatgptExportLocators';
+import { chatgptHistoryPendingSelector, chatgptThreadListSelector } from './chatgptHistoryLocators';
 import { mergeExtractedContent } from './chatgptShared';
 
 /**
@@ -40,9 +41,6 @@ export const TURN_VERSION_ATTRIBUTES: readonly string[] = [
   MESSAGE_IDS_ATTRIBUTE,
   REPLY_ID_ATTRIBUTE,
 ];
-const HISTORY_PENDING_SELECTOR = chatgptExportData['export.historyPending'];
-/** The list's own wrapper: the history spinner and the items, nothing of the page around them. */
-const THREAD_LIST_SELECTOR = chatgptExportData['export.threadList'];
 const ROOT_CANDIDATES = chatgptExportData['export.roots'];
 
 // Unverified on the live DOM: no generated image, upload or streaming reply was
@@ -134,7 +132,7 @@ export function findMountedTurnItem(root: ParentNode, turnKey: string): HTMLElem
  * items lie.
  */
 export function findThreadExtent(item: Element): HTMLElement | null {
-  const list = item.parentElement?.closest(THREAD_LIST_SELECTOR);
+  const list = item.parentElement?.closest(chatgptThreadListSelector(item));
   if (!list) return null;
   let node: Element | null = item.parentElement;
   while (node && node.parentElement !== list) node = node.parentElement;
@@ -181,8 +179,8 @@ export function hasRenderedThread(doc: Document = document): boolean {
  * sr-only live regions or one inside a streaming item, do not count.
  */
 export function hasPendingHistory(root: ParentNode, firstItem: Element | null): boolean {
-  const scope = firstItem?.closest(THREAD_LIST_SELECTOR) ?? root;
-  for (const status of scope.querySelectorAll(HISTORY_PENDING_SELECTOR)) {
+  const scope = firstItem?.closest(chatgptThreadListSelector(root)) ?? root;
+  for (const status of scope.querySelectorAll(chatgptHistoryPendingSelector(scope, firstItem))) {
     if (status.closest(TURN_ITEM_SELECTOR)) continue;
     if (!isRendered(status)) continue;
     if (

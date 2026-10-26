@@ -1,0 +1,64 @@
+{
+  "title.export": [
+    ".gds-label-l",
+    ".conversation-title-text",
+    "[data-test-id=\"conversation-title\"]",
+    "h3"
+  ],
+  "title.active": [
+    "mat-list-item.mdc-list-item--activated [mat-line]",
+    "mat-list-item[aria-current=\"page\"] [mat-line]",
+    ".conversation-list-item.active .conversation-title",
+    ".active-conversation .title"
+  ],
+  "title.activeExport": [
+    "mat-list-item.mdc-list-item--activated [mat-line]",
+    "mat-list-item[aria-current=\"page\"] [mat-line]"
+  ],
+  "title.activeResearch": [
+    "mat-list-item.mdc-list-item--activated [mat-line]",
+    "mat-list-item[aria-current=\"page\"] [mat-line]",
+    ".conversation-list-item.active .conversation-title"
+  ],
+  "conversation.roots": [
+    "#chat-history",
+    "infinite-scroller.chat-history",
+    "chat-window-content",
+    "main"
+  ],
+  "sidebar.pageTitle": [
+    ".conversation-title-container [data-test-id=\"conversation-title\"]",
+    "top-bar-actions [data-test-id=\"conversation-title\"]",
+    ".top-bar-actions [data-test-id=\"conversation-title\"]",
+    ".conversation-title-container .conversation-title.gds-title-m",
+    "top-bar-actions .conversation-title.gds-title-m"
+  ],
+  "sidebar.newChat": [
+    "[data-test-id=\"new-chat-button\"] a[href]",
+    "a[data-test-id=\"new-chat-button\"]",
+    "[data-test-id=\"new-chat-button\"] button",
+    "button[data-test-id=\"new-chat-button\"]"
+  ],
+  "sidebar.actionsContainer": [".conversation-actions-container"],
+  "sidebar.toggleButton": [
+    "button[aria-label=\"Open sidebar\"]",
+    "button[aria-label=\"Close sidebar\"]",
+    "side-nav-sparkle-button button",
+    "button[data-test-id=\"side-nav-menu-button\"]",
+    "side-nav-menu-button button"
+  ],
+  "deepResearch.items": [".item-container"],
+  "deepResearch.reportCandidates": [".markdown, .markdown-main-panel, message-content"],
+  "deepResearch.panel": ["deep-research-immersive-panel"],
+  "deepResearch.thinkingPanels": ["thinking-panel"],
+  "sentChips.lines": [".query-text-line", ".query-text"],
+  "sentChips.anchor": [".query-text"],
+  "project.modelAnchor": [".model-picker-container"],
+  "project.inputAnchor": ["rich-textarea"],
+  "project.fontSource": [".model-picker-container button"],
+  "sidebarWidth.candidates": ["bard-sidenav button"],
+  "code.buttons": [".buttons"],
+  "generatedImage.container": ["generated-image,.generated-image-container"],
+  "canvas.documentEditors": ["immersive-editor"],
+  "canvasEntry.menus": ["gem-menu[role=\"menu\"]"]
+}

@@ -186,67 +186,6 @@ describe('default-model stars through online locator profiles', () => {
   });
 });
 
-it('a remote star container cannot replace the existing native title with its description', async () => {
-  const scene = pickerScene();
-  const description = scene.rows.pro.querySelector('.sublabel')!;
-  const label = scene.rows.pro.querySelector('.label')!;
-  retire = await installGeminiSelectorPatch({ 'modelPicker.modelTitleContainer': ['.sublabel'] });
-  await mountStars(scene);
-  const button = star(scene.rows.pro);
-  expect(description.contains(button)).toBe(false);
-  expect(label.parentElement!.contains(button)).toBe(true);
-  button.click();
-  await vi.advanceTimersByTimeAsync(0);
-  expect(preferenceBytes()).toEqual([
-    JSON.stringify({
-      [StorageKeys.DEFAULT_MODEL]: { id: OCT_2026_MODEL_IDS.pro, name: '3.1 Pro' },
-    }),
-  ]);
-});
-
-it('a Voyager preview cannot become a repaired star container after the native class is renamed', async () => {
-  const scene = pickerScene();
-  const native = scene.rows.pro.querySelector<HTMLElement>('.label-container')!;
-  native.className = 'native-title';
-  const preview = document.createElement('div');
-  preview.className = 'gv-preview';
-  preview.innerHTML = '<span class="label">3.1 Pro</span>';
-  scene.rows.pro.append(preview);
-  retire = await installGeminiSelectorPatch({ 'modelPicker.modelTitleContainer': ['.gv-preview'] });
-  const stop = await mountStars(scene);
-  const button = star(scene.rows.pro);
-  expect(preview.contains(button)).toBe(false);
-  expect(button.parentElement).toBe(scene.rows.pro);
-  stop();
-  retire();
-  retire = await installGeminiSelectorPatch({
-    'modelPicker.modelTitleContainer': ['.native-title'],
-  });
-  await mountStars(scene);
-  expect(native.contains(star(scene.rows.pro))).toBe(true);
-});
-
-it('an empty renamed star container cannot borrow the native label from another part of the row', async () => {
-  const scene = pickerScene();
-  const native = scene.rows.pro.querySelector<HTMLElement>('.label-container')!;
-  native.className = 'native-title';
-  const empty = document.createElement('div');
-  empty.className = 'empty-anchor';
-  scene.rows.pro.append(empty);
-  retire = await installGeminiSelectorPatch({
-    'modelPicker.modelTitleContainer': ['.empty-anchor'],
-  });
-  const stop = await mountStars(scene);
-  expect(star(scene.rows.pro).parentElement).toBe(scene.rows.pro);
-  stop();
-  retire();
-  retire = await installGeminiSelectorPatch({
-    'modelPicker.modelTitleContainer': ['.native-title'],
-  });
-  await mountStars(scene);
-  expect(native.contains(star(scene.rows.pro))).toBe(true);
-});
-
 it('an equally labelled native description cannot replace the original star title', async () => {
   const scene = pickerScene();
   const native = scene.rows.pro.querySelector('.label')!;

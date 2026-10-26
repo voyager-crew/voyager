@@ -7,7 +7,7 @@
  * saved by dragging is theirs.
  */
 
-import { packagedInputSelector } from '@/core/services/composer/siteInputData';
+import { readInputPlacement } from '@/core/services/composer/inputPlacement';
 
 import { findChatInput } from '../chatInput';
 
@@ -62,8 +62,14 @@ function fitsViewport(box: Box): boolean {
 function composerElement(): HTMLElement | null {
   const input = findChatInput();
   return (
-    input?.closest<HTMLElement>(packagedInputSelector('input.clearance', input.ownerDocument)) ??
-    input
+    (input
+      ? readInputPlacement(
+          'input.clearance',
+          (selector) => input.closest<HTMLElement>(selector),
+          input.ownerDocument,
+          false,
+        )
+      : null) ?? input
   );
 }
 

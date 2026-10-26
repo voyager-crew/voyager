@@ -1,11 +1,11 @@
 import { createFolderIcon } from '@/core/icons/folderIcons';
 import type { Folder } from '@/core/types/folder';
-import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/project-packaged.json';
 import { getTranslationSyncUnsafe } from '@/utils/i18n';
 
 import { getFolderColor, isDarkMode } from '../folder/folderColors';
 import { newChatFolderIsFor, pendingNewChatFolder, takeNewChatFolder } from './pendingFolder';
 import { startPickerWork, waitForProjectAnchor } from './pickerWork';
+import { readProjectPlacement } from './placement';
 
 /**
  * Folders and the account they belong to, read together in one step: an
@@ -240,7 +240,7 @@ export function createFolderProjectPicker(options: FolderProjectPickerOptions): 
     chip.textContent = t('folderAsProject_selectFolder');
 
     // Match font-size from the model picker button so it scales with Gemini's CSS
-    const modelBtn = document.querySelector<HTMLElement>(packaged['project.fontSource'].join(', '));
+    const modelBtn = readProjectPlacement('project.fontSource');
     if (modelBtn) {
       chip.style.fontSize = getComputedStyle(modelBtn).fontSize;
     }
@@ -348,13 +348,17 @@ export function createFolderProjectPicker(options: FolderProjectPickerOptions): 
 
   async function mount(signal: AbortSignal, isCurrent: () => boolean): Promise<void> {
     let anchor = await waitForProjectAnchor(
-      packaged['project.modelAnchor'].join(', '),
+      () => readProjectPlacement('project.modelAnchor'),
       5000,
       signal,
     );
     if (!isCurrent() || !options.canMount()) return;
     if (!anchor?.parentElement) {
-      anchor = await waitForProjectAnchor(packaged['project.inputAnchor'].join(', '), 3000, signal);
+      anchor = await waitForProjectAnchor(
+        () => readProjectPlacement('project.inputAnchor'),
+        3000,
+        signal,
+      );
     }
     // Old waits must not attach a picker after a route/account change or an off/on cycle.
     if (

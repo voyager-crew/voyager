@@ -1,5 +1,5 @@
 import { resolveExportAlignmentTarget } from './exportOverlayTargets';
-import { exportLayoutData } from './toolbarTargets';
+import { exportLayoutData, readExportLayout } from './toolbarTargets';
 
 /**
  * Centres the export selection bar over the conversation.
@@ -29,7 +29,7 @@ function isElementVisibleForAlignment(el: HTMLElement): boolean {
 }
 
 function isLikelySidebarElement(el: HTMLElement): boolean {
-  if (el.closest(exportLayoutData().overlaySidebar.join(','))) {
+  if (readExportLayout('overlaySidebar', (selector) => el.closest(selector))) {
     return true;
   }
 

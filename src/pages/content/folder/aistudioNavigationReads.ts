@@ -4,61 +4,26 @@ import {
   resolveSiteSelectorOperationInView,
   type SiteSelectorView,
 } from '@/core/selectors';
+import { resolvePlacementOperation } from '@/core/selectors/placement';
 
-import {
-  aistudioAccountPrefix,
-  isOriginalAIStudioNavigation,
-  nativeAIStudioPromptAnchor,
-} from './aistudioNativeProof';
+import { isOriginalAIStudioNavigation, nativeAIStudioPromptAnchor } from './aistudioNativeProof';
 
 const selector = (view: SiteSelectorView, key: string): string => view.profiles[key].join(',');
 const bundle = () => getBundledSiteSelectorView('aistudio');
 const nativeLinks = (root: ParentNode): HTMLAnchorElement[] =>
   Array.from(root.querySelectorAll('a[href]')).filter(nativeAIStudioPromptAnchor);
 
-function nativeLibraryLink(anchor: Element): boolean {
-  if (!(anchor instanceof HTMLAnchorElement) || !isOriginalAIStudioNavigation(anchor)) return false;
-  const doc = anchor.ownerDocument;
-  const url = new URL(anchor.href, doc.location.href);
-  return (
-    url.origin === doc.location.origin &&
-    aistudioAccountPrefix(url.pathname) === aistudioAccountPrefix(doc.location.pathname) &&
-    /^\/(?:u\/\d+\/)?library\/?$/.test(url.pathname)
-  );
-}
-
-/** The navigation landmark and its current-account Library URL prove the sidebar owner. */
+/** This owner only places Voyager UI; native URL proofs never depend on it. */
 export function readAIStudioSidebar(
   doc: Document = document,
   bundledSelector = selector(bundle(), 'navigation.sidebar'),
 ): HTMLElement | null {
-  const view = getSiteSelectorView('aistudio');
-  const read = (candidate: SiteSelectorView) =>
-    doc.querySelector<HTMLElement>(
-      candidate.remoteKeys.has('navigation.sidebar')
-        ? selector(candidate, 'navigation.sidebar')
-        : bundledSelector,
-    );
-  if (!view.remoteKeys.has('navigation.sidebar')) return read(bundle());
-  const expected = read(bundle());
-  return resolveSiteSelectorOperationInView(view, read, (actual) => {
-    if (expected) return actual === expected;
-    if (!actual || !isOriginalAIStudioNavigation(actual)) return false;
-    const landmarks = Array.from(
-      doc.querySelectorAll<HTMLElement>('nav, [role="navigation"]'),
-    ).filter(
-      (nav) =>
-        isOriginalAIStudioNavigation(nav) &&
-        Array.from(nav.querySelectorAll('a[href]')).some(nativeLibraryLink),
-    );
-    // A remote wrapper cannot absorb an unrelated main panel or a second navigation landmark.
-    return (
-      landmarks.length === 1 &&
-      (actual === landmarks[0] ||
-        (landmarks[0].parentElement === actual &&
-          Array.from(actual.children).filter(isOriginalAIStudioNavigation).length === 1))
-    );
-  }).value;
+  return resolvePlacementOperation(
+    getSiteSelectorView('aistudio'),
+    'navigation.sidebar',
+    (query) => doc.querySelector<HTMLElement>(query),
+    { fallback: [bundledSelector] },
+  );
 }
 
 /** Observer prefilter only; the consumer must call the guarded read before mounting. */
@@ -72,49 +37,29 @@ export function mayContainAIStudioSidebar(node: Element): boolean {
 
 export function readAIStudioNavChild(sidebar: Element | null): HTMLElement | null {
   if (!sidebar) return null;
-  const view = getSiteSelectorView('aistudio');
-  const read = (candidate: SiteSelectorView) =>
-    sidebar.querySelector<HTMLElement>(selector(candidate, 'navigation.navChild'));
-  if (!view.remoteKeys.has('navigation.navChild')) return read(bundle());
-  const expected = read(bundle());
-  return resolveSiteSelectorOperationInView(view, read, (actual) => {
-    if (expected) return actual === expected;
-    const native = Array.from(sidebar.children).filter((child) =>
-      child.matches('nav, [role="navigation"]'),
-    );
-    return native.length === 1 && actual === native[0] && isOriginalAIStudioNavigation(actual);
-  }).value;
+  return resolvePlacementOperation(
+    getSiteSelectorView('aistudio'),
+    'navigation.navChild',
+    (query) => sidebar.querySelector<HTMLElement>(query),
+  );
 }
 
 export function readAIStudioHistoryRoot(doc: Document = document): HTMLElement | null {
-  const view = getSiteSelectorView('aistudio');
-  const read = (candidate: SiteSelectorView) =>
-    doc.querySelector<HTMLElement>(selector(candidate, 'navigation.historyRoot'));
-  if (!view.remoteKeys.has('navigation.historyRoot')) return read(bundle());
-  const expected = read(bundle());
-  return resolveSiteSelectorOperationInView(view, read, (actual) => {
-    if (expected) return actual === expected;
-    const sidebar = readAIStudioSidebar(doc);
-    if (!actual || !sidebar?.contains(actual) || !isOriginalAIStudioNavigation(actual))
-      return false;
-    const lists = Array.from(sidebar.querySelectorAll<HTMLElement>('ul, ol, [role="list"]')).filter(
-      (list) => nativeLinks(list).length > 0,
-    );
-    const links = nativeLinks(sidebar);
-    const owned = nativeLinks(actual);
-    const parent = actual.parentElement;
-    // The legacy insertion moves before the list's wrapper, so that wrapper must own only this list.
-    return (
-      lists.length === 1 &&
-      actual === lists[0] &&
-      links.length > 0 &&
-      owned.length === links.length &&
-      owned.every((link, index) => link === links[index]) &&
-      parent !== sidebar &&
-      parent?.children.length === 1 &&
-      parent.parentElement === sidebar
-    );
-  }).value;
+  // The actual insertion is before the history wrapper; never insert within an editable wrapper.
+  return resolvePlacementOperation(
+    getSiteSelectorView('aistudio'),
+    'navigation.historyRoot',
+    (query) => doc.querySelector<HTMLElement>(query),
+  );
+}
+
+export function readAIStudioNavigationSlot(
+  root: Element,
+  key: 'navigation.anchorSteps' | 'navigation.empty' | 'navigation.bottom',
+): HTMLElement | null {
+  return resolvePlacementOperation(getSiteSelectorView('aistudio'), key, (query) =>
+    root.querySelector<HTMLElement>(query),
+  );
 }
 
 export function readAIStudioPromptLink(
@@ -133,9 +78,8 @@ export function readAIStudioPromptLink(
   const expected = read(bundle());
   return resolveSiteSelectorOperationInView(view, read, (actual) => {
     if (expected) return actual === expected;
-    const sidebar = readAIStudioSidebar(doc);
-    if (!actual || !sidebar || !nativeAIStudioPromptAnchor(actual)) return false;
-    const matches = nativeLinks(sidebar).filter(
+    if (!actual || !nativeAIStudioPromptAnchor(actual)) return false;
+    const matches = nativeLinks(doc).filter(
       (anchor) => new URL(anchor.href).pathname.replace(/\/$/, '').split('/').at(-1) === promptId,
     );
     return matches.length === 1 && actual === matches[0];

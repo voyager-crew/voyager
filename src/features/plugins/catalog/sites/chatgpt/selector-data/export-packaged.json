@@ -1,8 +1,6 @@
 {
   "export.turnItem": "[data-turn-key]",
   "export.userUnit": "[data-chatgpt-search-unit-key]",
-  "export.historyPending": "[role=\"status\"]",
-  "export.threadList": "[data-chatgpt-conversation-selection-target]",
   "export.roots": ["main", "[role=\"main\"]"],
   "export.imageGeneration": "[class*=\"group/imagegen-image\"]",
   "export.legacyContainer": "[data-turn-id-container]",
@@ -21,7 +19,6 @@
   "export.attachmentAction": "[data-default-action] button[aria-label]",
   "export.uploadCandidates": "img, [role=\"group\"][aria-label]",
   "export.copyExcluded": "[data-markdown-copy=\"exclude\"]",
-  "export.codeLanguage": "[data-markdown-copy=\"exclude\"] .truncate",
   "export.mermaidPreview": "[data-chatgpt-mermaid-preview]",
   "export.userBubble": "[data-user-message-bubble]"
 }

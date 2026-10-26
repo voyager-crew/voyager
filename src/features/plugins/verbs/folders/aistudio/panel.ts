@@ -11,9 +11,9 @@ import { AISTUDIO_ROOT_BUCKET_ID } from '@/features/folder/constants';
 import { isLibraryPath } from '@/pages/content/folder/aistudioLibraryTable';
 import {
   aistudioPackagedList,
-  aistudioPackagedSelector,
   readAIStudioHistoryRoot,
 } from '@/pages/content/folder/aistudioLocatorReads';
+import { readAIStudioNavigationSlot } from '@/pages/content/folder/aistudioNavigationReads';
 import {
   readAIStudioNavChild,
   readAIStudioSidebar,
@@ -91,9 +91,14 @@ export function updateLibraryShortcut(root: ParentNode | null): void {
 function findPanelAnchor(nav: string): HTMLElement | null {
   const view = getSiteSelectorView('aistudio');
   if (
-    !['navigation.sidebar', 'navigation.historyRoot', 'navigation.navChild'].some((key) =>
-      view.remoteKeys.has(key),
-    )
+    ![
+      'navigation.sidebar',
+      'navigation.historyRoot',
+      'navigation.navChild',
+      'navigation.anchorSteps',
+      'navigation.empty',
+      'navigation.bottom',
+    ].some((key) => view.remoteKeys.has(key))
   ) {
     // Keep the installed path's single document-order query when there is no online repair.
     return document.querySelector<HTMLElement>(
@@ -104,14 +109,14 @@ function findPanelAnchor(nav: string): HTMLElement | null {
     );
   }
   const history = readAIStudioHistoryRoot();
-  const child = readAIStudioNavChild(readAIStudioSidebar(document, nav));
+  const sidebar = readAIStudioSidebar(document, nav);
+  const child = readAIStudioNavChild(sidebar);
   const anchor =
-    child?.querySelector<HTMLElement>(
-      [
-        aistudioPackagedSelector('navigation.empty'),
-        aistudioPackagedSelector('navigation.bottom'),
-      ].join(', '),
-    ) ?? null;
+    (sidebar ? readAIStudioNavigationSlot(sidebar, 'navigation.anchorSteps') : null) ??
+    (child
+      ? (readAIStudioNavigationSlot(child, 'navigation.empty') ??
+        readAIStudioNavigationSlot(child, 'navigation.bottom'))
+      : null);
   if (!history) return anchor;
   if (!anchor) return history;
   return history.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING
@@ -135,9 +140,16 @@ export function insertFolderPanel(
   }
   const navContent = readAIStudioSidebar(document, nav);
   const navElement = readAIStudioNavChild(navContent);
+  const preferred =
+    navContent && getSiteSelectorView('aistudio').remoteKeys.has('navigation.anchorSteps')
+      ? readAIStudioNavigationSlot(navContent, 'navigation.anchorSteps')
+      : null;
   const anchor =
-    navElement?.querySelector(aistudioPackagedSelector('navigation.empty')) ??
-    navElement?.querySelector(aistudioPackagedSelector('navigation.bottom'));
+    preferred ??
+    (navElement
+      ? (readAIStudioNavigationSlot(navElement, 'navigation.empty') ??
+        readAIStudioNavigationSlot(navElement, 'navigation.bottom'))
+      : null);
   const parent = navElement ?? navContent;
   if (anchor) anchor.insertAdjacentElement('beforebegin', container);
   else if (parent) parent.appendChild(container);

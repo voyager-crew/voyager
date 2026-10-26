@@ -5,6 +5,8 @@
  */
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/deep-research-packaged.json';
 
+import { deepResearchView, findDeepResearchPanel, researchSelector } from './dom';
+
 const GENERIC_TITLES = new Set([
   'Gemini',
   'Google Gemini',
@@ -33,12 +35,13 @@ function scoreCandidate(el: HTMLElement): number {
  * Heuristic: choose the largest markdown-like container that is not inside `thinking-panel`.
  */
 export function findDeepResearchReportRoot(): HTMLElement | null {
-  const panel = document.querySelector(packaged['deepResearch.panel']);
+  const view = deepResearchView();
+  const panel = findDeepResearchPanel(view);
   if (!panel) return null;
 
   const candidates = Array.from(
-    panel.querySelectorAll<HTMLElement>(packaged['deepResearch.reportCandidates'].join(',')),
-  ).filter((element) => !element.closest(packaged['deepResearch.thinkingPanels']));
+    panel.querySelectorAll<HTMLElement>(researchSelector(view, 'deepResearch.reportCandidates')),
+  ).filter((element) => !element.closest(researchSelector(view, 'deepResearch.thinkingPanels')));
 
   let best: { el: HTMLElement; score: number } | null = null;
   for (const el of candidates) {

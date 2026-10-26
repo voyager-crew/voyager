@@ -3,6 +3,7 @@ import type { ExtractedContent } from '@/features/export/services/DOMContentExtr
 import { escapeHtml, escapeHtmlAttribute } from '@/features/export/services/exportDomPolicy';
 import type { SiteAdapter } from '@/features/plugins/types';
 
+import { chatgptCodeLanguageLabel } from '../chatgptCodeLanguage';
 import { chatgptExportData } from '../chatgptExportData';
 import { chatgptLoggedOutAssistantSelector } from '../chatgptExportLocators';
 import {
@@ -198,7 +199,6 @@ export function chatgptExtractFormula(
 
 /** Block chrome ChatGPT leaves out of its own copy: language label, wrap and copy buttons. */
 const COPY_EXCLUDED_SELECTOR = chatgptExportData['export.copyExcluded'];
-const CODE_LANGUAGE_LABEL_SELECTOR = chatgptExportData['export.codeLanguage'];
 /** ChatGPT's own Mermaid drawing; the finished chart keeps no source to export. */
 const MERMAID_PREVIEW_SELECTOR = chatgptExportData['export.mermaidPreview'];
 const LANGUAGE_ID = /^[a-z0-9_+#.-]{1,32}$/i;
@@ -206,7 +206,7 @@ const PLAIN_TEXT_IDS = new Set(['plaintext', 'plain', 'text', 'txt']);
 
 /** The header label names the language, localized: 纯文本 or "Plain text" mean none. */
 function readCodeLanguageLabel(block: Element): string {
-  const label = block.querySelector(CODE_LANGUAGE_LABEL_SELECTOR)?.textContent?.trim() ?? '';
+  const label = chatgptCodeLanguageLabel(block);
   if (!LANGUAGE_ID.test(label)) return '';
   const language = label.toLowerCase();
   return PLAIN_TEXT_IDS.has(language) ? '' : language;

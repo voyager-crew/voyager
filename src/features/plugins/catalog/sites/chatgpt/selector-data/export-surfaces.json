@@ -6,5 +6,8 @@
   ],
   "export.loggedOutStreaming": ["[data-message-streaming]:not([data-message-streaming=\"false\"])"],
   "export.loggedOutThread": ["[data-mobile-thread]"],
-  "export.loggedOutAssistant": ["[data-assistant-markdown-root]"]
+  "export.loggedOutAssistant": ["[data-assistant-markdown-root]"],
+  "export.threadList": ["[data-chatgpt-conversation-selection-target]"],
+  "export.historyPending": ["[role=\"status\"]"],
+  "export.codeLanguage": ["[data-markdown-copy=\"exclude\"] .truncate"]
 }

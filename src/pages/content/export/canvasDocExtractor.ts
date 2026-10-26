@@ -3,9 +3,16 @@ import codeProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/canvas-packaged.json';
 
 import { resolveFirstCanvasCodeRoot } from '../canvasExport/canvasTargets';
+import {
+  resolveCanvasDocumentRoots,
+  resolveFirstCanvasDocumentRoot,
+} from '../canvasExport/documentTargets';
 import { createCanvasContent } from './canvasContent';
 
-const reader = createCanvasContent({ ...packaged, ...codeProfiles }, resolveFirstCanvasCodeRoot);
+const reader = createCanvasContent({ ...packaged, ...codeProfiles }, resolveFirstCanvasCodeRoot, {
+  first: resolveFirstCanvasDocumentRoot,
+  all: resolveCanvasDocumentRoots,
+});
 export const isAnyCanvasOpen = reader.isAnyCanvasOpen;
 export const extractAllCanvasDocs = reader.extractAllCanvasDocs;
 export const assistantHasCanvasDoc = reader.assistantHasCanvasDoc;

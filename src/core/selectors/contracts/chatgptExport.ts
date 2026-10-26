@@ -5,11 +5,17 @@ export const CHATGPT_EXPORT_KEYS = [
   'export.loggedOutStreaming',
   'export.loggedOutThread',
   'export.loggedOutAssistant',
+  'export.threadList',
+  'export.historyPending',
+  'export.codeLanguage',
 ] as const;
 export const CHATGPT_EXPORT_GROUPS = [
   ['export.streaming'],
   ['export.loggedOutStreaming'],
   ['export.loggedOutThread', 'export.loggedOutAssistant'],
+  ['export.threadList'],
+  ['export.historyPending'],
+  ['export.codeLanguage'],
 ] as const;
 export const CHATGPT_EXPORT_PROFILES = profiles;
 export const CHATGPT_EXPORT_FILES = [

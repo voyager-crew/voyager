@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import { installGeminiSelectorPatch } from '@/pages/content/__tests__/geminiOnlineSelectorFixture';
 
-import { getSidebarWidthButtons } from '../buttonTargets';
+import { getSidebarWidthButtons, getSidebarWidthActionButtons } from '../buttonTargets';
 import { installSidebarWidthHitGuards } from '../hitGuards';
 
 let stop = () => {};
@@ -99,7 +99,8 @@ describe('online sidebar width hit targets', () => {
       '<button id="first" aria-label="Close sidebar"></button><button id="second" aria-label="Open sidebar"></button>',
     );
     stop = await installGeminiSelectorPatch({ 'sidebarWidth.buttons': ['#second'] });
-    expect(getSidebarWidthButtons().map((button) => button.id)).toEqual(['first', 'second']);
+    expect(getSidebarWidthButtons().map((button) => button.id)).toEqual(['second']);
+    expect(getSidebarWidthActionButtons().map((button) => button.id)).toEqual(['first', 'second']);
   });
 
   it('waits for an unambiguous replacement when two native toggles overlap', async () => {
@@ -107,9 +108,9 @@ describe('online sidebar width hit targets', () => {
       '<button id="one"><span fonticon="side_nav"></span></button><button id="two"><span fonticon="side_nav"></span></button>',
     );
     stop = await installGeminiSelectorPatch({ 'sidebarWidth.buttons': ['bard-sidenav button'] });
-    expect(getSidebarWidthButtons()).toEqual([]);
+    expect(getSidebarWidthActionButtons()).toEqual([]);
     document.getElementById('two')!.remove();
-    expect(getSidebarWidthButtons()).toEqual([document.getElementById('one')]);
+    expect(getSidebarWidthActionButtons()).toEqual([document.getElementById('one')]);
   });
 
   it.each([
@@ -123,7 +124,7 @@ describe('online sidebar width hit targets', () => {
       fixture(markup);
       stop = await installGeminiSelectorPatch({ 'sidebarWidth.buttons': ['#candidate'] });
       installSidebarWidthHitGuards(scope);
-      expect(getSidebarWidthButtons()).toEqual([]);
+      expect(getSidebarWidthActionButtons()).toEqual([]);
       const clicked: string[] = [];
       document.getElementById('candidate')!.addEventListener('click', () => clicked.push('wrong'));
       hit();

@@ -1,7 +1,8 @@
 import {
-  packagedInputSelector,
-  packagedInputSelectors,
-} from '@/core/services/composer/siteInputData';
+  readInputPlacement,
+  readInputPlacementList,
+} from '@/core/services/composer/inputPlacement';
+import { packagedInputSelector } from '@/core/services/composer/siteInputData';
 
 import type { VimMode } from './vimCommands';
 import { getVimComposerMount } from './vimComposerMount';
@@ -55,20 +56,18 @@ export function createVimPresentation(
   let hudRetryAttempts = 0;
 
   function queryHudMountCandidates(): HTMLElement[] {
-    const selectors = packagedInputSelectors('vim.hud');
-
-    const candidates: HTMLElement[] = [];
-    const seen = new Set<HTMLElement>();
-
-    for (const selector of selectors) {
-      for (const element of Array.from(document.querySelectorAll<HTMLElement>(selector))) {
-        if (seen.has(element)) continue;
-        seen.add(element);
-        candidates.push(element);
+    return readInputPlacementList('vim.hud', (selectors) => {
+      const candidates: HTMLElement[] = [];
+      const seen = new Set<HTMLElement>();
+      for (const selector of selectors) {
+        for (const element of document.querySelectorAll<HTMLElement>(selector)) {
+          if (seen.has(element)) continue;
+          seen.add(element);
+          candidates.push(element);
+        }
       }
-    }
-
-    return candidates;
+      return candidates;
+    });
   }
 
   function getCrossSiteEditMount(input: HTMLElement | null): HTMLElement | null {
@@ -114,7 +113,9 @@ export function createVimPresentation(
       return { element: crossSiteComposer, input, placement: 'floating' };
     }
 
-    const composer = input?.closest<HTMLElement>(packagedInputSelector('vim.host'));
+    const composer = input
+      ? readInputPlacement('vim.host', (selector) => input.closest<HTMLElement>(selector))
+      : null;
 
     if (composer?.isConnected) {
       return { element: composer, input, placement: 'composer' };
@@ -141,9 +142,10 @@ export function createVimPresentation(
       return { element: fallbackCandidate, input, placement: 'inline' };
     }
 
-    const inputFallback = document.querySelector<HTMLElement>(
-      packagedInputSelector('vim.inputFallback'),
-    )?.parentElement;
+    const inputFallback = readInputPlacement(
+      'vim.inputFallback',
+      (selector) => document.querySelector<HTMLElement>(selector)?.parentElement ?? null,
+    );
     return inputFallback instanceof HTMLElement
       ? { element: inputFallback, input, placement: 'inline' }
       : null;

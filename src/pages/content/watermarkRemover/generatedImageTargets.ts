@@ -6,6 +6,8 @@ import {
 import { locatorSiteForHost } from '@/core/selectors/sites';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/generated-image-packaged.json';
 
+import { generatedImageOwner } from './generatedImageOwner';
+
 export const GENERATED_IMAGE_PACKAGED = packaged;
 const NATIVE_DOWNLOAD_ICON = '[fonticon="download"], [data-mat-icon-name="download"]';
 
@@ -17,14 +19,14 @@ export function findGeneratedPreviewImages(doc: Document): HTMLImageElement[] {
 }
 
 export function findGeneratedImageOwner(image: HTMLImageElement): Element | null {
-  return image.closest(packaged['generatedImage.container']);
+  return generatedImageOwner(image);
 }
 
 export function findGeneratedPreviewForButton(button: HTMLButtonElement): HTMLImageElement | null {
   return (
-    button
-      .closest(packaged['generatedImage.container'])
-      ?.querySelector<HTMLImageElement>(packaged['generatedImage.image']) ?? null
+    generatedImageOwner(button)?.querySelector<HTMLImageElement>(
+      packaged['generatedImage.image'],
+    ) ?? null
   );
 }
 

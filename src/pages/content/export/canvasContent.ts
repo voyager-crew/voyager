@@ -23,8 +23,11 @@ export interface CanvasContentReader {
 export function createCanvasContent(
   profiles: CanvasContentProfiles,
   readCodeRoot: (doc: Document) => HTMLElement | null,
+  documentRoots?: {
+    first(doc: Document): HTMLElement | null;
+    all(doc: Document): HTMLElement[];
+  },
 ): CanvasContentReader {
-  // Native document titles do not prove renamed editor ownership, so document roots stay packaged.
   const DOCUMENT_EDITOR = profiles['canvas.documentEditors'].join(', ');
   const CODE_PANEL = profiles['canvas.codePanels'].join(', ');
 
@@ -32,13 +35,18 @@ export function createCanvasContent(
    * Check whether any Canvas panel is open in the document.
    */
   function isAnyCanvasOpen(): boolean {
-    return !!(document.querySelector(DOCUMENT_EDITOR) || readCodeRoot(document));
+    return !!(
+      (documentRoots ? documentRoots.first(document) : document.querySelector(DOCUMENT_EDITOR)) ||
+      readCodeRoot(document)
+    );
   }
 
   // ── Document Canvas (immersive-editor .ProseMirror) ────────────────
 
   function findAllImmersiveEditors(): HTMLElement[] {
-    return Array.from(document.querySelectorAll<HTMLElement>(DOCUMENT_EDITOR));
+    return documentRoots
+      ? documentRoots.all(document)
+      : Array.from(document.querySelectorAll<HTMLElement>(DOCUMENT_EDITOR));
   }
 
   function extractProseMirrorContent(editor: HTMLElement): string | null {

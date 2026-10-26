@@ -3,7 +3,7 @@ import { hasVoyagerOwner } from '../gemini/composer/ownedInput';
 import { sameItems } from '../utils/array';
 import { getBundledSiteSelectorView } from './bundle';
 import { guardedChatgptSemanticSelector } from './chatgptSemantics';
-import { COMMON_CONVERSATION_PATTERNS } from './contracts/commonSemantics';
+import { placementSelector } from './placement';
 import { BUNDLED_LOCATOR_SITES } from './sites';
 import type { SiteSelectorView } from './types';
 
@@ -76,26 +76,6 @@ function nativeTurns(doc: Document, view: SiteSelectorView, assistantOnly = fals
   return Array.from(
     doc.querySelectorAll(roles.map((role) => turnSelector(view, role, doc)).join(',')),
   ).filter((turn) => isOriginalVisible(turn, doc));
-}
-
-function provesSidebar(candidate: Element, doc: Document, view: SiteSelectorView): boolean {
-  const pattern = COMMON_CONVERSATION_PATTERNS[view.siteId];
-  if (!pattern || !candidate.matches(NAVIGATION)) return false;
-  const path = new RegExp(pattern);
-  const account = /^\/u\/[^/]+/.exec(doc.location.pathname)?.[0] ?? '';
-  const turns = nativeTurns(doc, view);
-  const links = Array.from(doc.querySelectorAll<HTMLAnchorElement>('a[href]')).filter((link) => {
-    const url = new URL(link.href, doc.location.href);
-    return (
-      url.origin === doc.location.origin &&
-      path.test(url.pathname) &&
-      (view.siteId !== 'chatgpt' || (/^\/u\/[^/]+/.exec(url.pathname)?.[0] ?? '') === account) &&
-      isOriginalVisible(link, doc) &&
-      !turns.some((turn) => turn.contains(link)) &&
-      !!link.closest(NAVIGATION)
-    );
-  });
-  return links.length > 0 && links.every((link) => candidate.contains(link));
 }
 
 function actuallyScrolls(candidate: Element, doc: Document): candidate is HTMLElement {
@@ -196,6 +176,7 @@ export function guardedSiteStructureSelector(
   view: SiteSelectorView,
   doc: Document,
 ): string | undefined {
+  if (key === 'sidebar') return placementSelector(view, key, doc);
   const bundle = getBundledSiteSelectorView(view.siteId);
   const fallback = bundle.profiles[key]?.join(',');
   const selector = view.profiles[key]?.join(',');
@@ -217,7 +198,6 @@ export function guardedSiteStructureSelector(
     if (key === 'codeBlock') return provesCode(candidates, doc, view) ? selector : fallback;
     if (candidates.length !== 1) return fallback;
     const candidate = candidates[0];
-    if (key === 'sidebar') return provesSidebar(candidate, doc, view) ? selector : fallback;
     if (key === 'scrollContainer') return provesScroll(candidate, doc, view) ? selector : fallback;
   } catch {
     // Invalid syntax and retired page contexts keep the packaged read.

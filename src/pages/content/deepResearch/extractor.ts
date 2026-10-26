@@ -1,11 +1,12 @@
+import type { GeminiSelectorView } from '@/core/gemini/selectors';
+import { readGeminiActiveSidebarTitle } from '@/core/gemini/sidebarTitles';
 /**
  * DOM extraction module for Deep Research thinking content
  */
-
-import { readGeminiActiveSidebarTitle } from '@/core/gemini/sidebarTitles';
 import { logger } from '@/core/services/LoggerService';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/deep-research-packaged.json';
 
+import { deepResearchView, findDeepResearchPanel, researchSelector } from './dom';
 import type { BrowseChip, ThinkingContent, ThinkingItem, ThinkingSection } from './types';
 
 /**
@@ -71,10 +72,15 @@ function extractBrowseChips(browseListElement: Element): BrowseChip[] {
 /**
  * Extract a single thinking section (thoughts + browse chips in order)
  */
-function extractThinkingSection(panelElement: Element): ThinkingSection | null {
+function extractThinkingSection(
+  panelElement: Element,
+  view: GeminiSelectorView,
+): ThinkingSection | null {
   try {
     const items: ThinkingItem[] = [];
-    const itemContainers = panelElement.querySelectorAll(packaged['deepResearch.items'].join(','));
+    const itemContainers = panelElement.querySelectorAll(
+      researchSelector(view, 'deepResearch.items'),
+    );
 
     itemContainers.forEach((container) => {
       // Check if this container has a thought-item
@@ -121,7 +127,8 @@ function extractThinkingSection(panelElement: Element): ThinkingSection | null {
 export function extractThinkingPanels(): ThinkingContent | null {
   try {
     // Check if we're in a Deep Research conversation
-    const deepResearchPanel = document.querySelector(packaged['deepResearch.panel']);
+    const view = deepResearchView();
+    const deepResearchPanel = findDeepResearchPanel(view);
     if (!deepResearchPanel) {
       logger.debug('Not a Deep Research conversation');
       return null;
@@ -131,11 +138,11 @@ export function extractThinkingPanels(): ThinkingContent | null {
 
     // Find all thinking-panel elements
     const thinkingPanels = deepResearchPanel.querySelectorAll(
-      packaged['deepResearch.thinkingPanels'],
+      researchSelector(view, 'deepResearch.thinkingPanels'),
     );
 
     thinkingPanels.forEach((panel) => {
-      const section = extractThinkingSection(panel);
+      const section = extractThinkingSection(panel, view);
       if (section) {
         sections.push(section);
       }

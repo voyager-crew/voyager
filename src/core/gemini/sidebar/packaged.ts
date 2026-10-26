@@ -1,13 +1,8 @@
 import sidebar from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar-packaged.json';
 
-/** Top-menu metadata can enter a stored record or deletion context; it stays packaged. */
-export const GEMINI_PACKAGED_PAGE_TITLE_SELECTORS: readonly string[] = Object.freeze(
-  sidebar.pageTitle,
-);
-
 /**
- * Native controls and hosts whose online match would have to equal the packaged one before a
- * click, a state read or an animation could use it, so an online fix could never change them.
+ * Original fallback values and independent native witnesses. Action aliases use the proofs in
+ * actions.ts; fixed host, icon and state protocols remain here.
  */
 export const GEMINI_PACKAGED_SIDEBAR_SELECTORS = Object.freeze({
   sidenav: sidebar.sidenav.join(', '),

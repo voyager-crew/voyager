@@ -1,6 +1,7 @@
+import { getGeminiSelectorView } from '@/core/gemini/selectors';
 import type { PluginScope } from '@/features/plugins/runtime/pluginScope';
 
-import { getSidebarWidthButtons } from './buttonTargets';
+import { getSidebarWidthButtons, getSidebarWidthActionButtons } from './buttonTargets';
 
 function rectContainsPoint(rect: DOMRect, x: number, y: number): boolean {
   return (
@@ -19,7 +20,16 @@ function setupSidebarToggleHitGuard(scope: PluginScope): void {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
     const { clientX: x, clientY: y } = event;
-    const toggleButton = getSidebarWidthButtons().find((button) =>
+    const view = getGeminiSelectorView();
+    const candidates = getSidebarWidthButtons();
+    if (!candidates.some((region) => rectContainsPoint(region.getBoundingClientRect(), x, y)))
+      return;
+    const buttons =
+      view.remoteKeys.has('sidebarWidth.buttons') || view.remoteKeys.has('sidebarWidth.candidates')
+        ? getSidebarWidthActionButtons()
+        : candidates;
+    // Catalog geometry alone must never forward a click outside the actual native control.
+    const toggleButton = buttons.find((button) =>
       rectContainsPoint(button.getBoundingClientRect(), x, y),
     );
     if (!toggleButton) return;

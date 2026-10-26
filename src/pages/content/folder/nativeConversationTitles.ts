@@ -1,6 +1,6 @@
 import { getBundledGeminiSelectorView, type GeminiSelectorView } from '@/core/gemini/selectors';
-import { GEMINI_PACKAGED_PAGE_TITLE_SELECTORS } from '@/core/gemini/sidebar/packaged';
 import { geminiSidebarSelector } from '@/core/gemini/sidebar/queries';
+import { geminiTitleSelectors } from '@/core/gemini/sidebar/titleProof';
 
 import {
   extractConversationIdFromHref,
@@ -311,7 +311,7 @@ export function extractConversationInfoFromPage(): NativeConversationInfo | null
 }
 
 function readTopBarTitle(): string | null {
-  for (const sel of GEMINI_PACKAGED_PAGE_TITLE_SELECTORS) {
+  for (const sel of geminiTitleSelectors('sidebar.pageTitle')) {
     try {
       const text = document.querySelector(sel)?.textContent?.trim();
       if (text && !DISALLOWED_PAGE_TITLES.has(text)) return text;

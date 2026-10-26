@@ -6,6 +6,7 @@ import { createDownloadIcon } from '@/core/icons/promptManagerIcons';
 
 import {
   exportLayoutData,
+  readExportLayout,
   exportToolbarMutationControls,
   resolveExportToolbarControls,
 } from './toolbarTargets';
@@ -60,7 +61,7 @@ function classifyTopRightElement(
   if (element === toolbarRoot || toolbarRoot.contains(element)) return null;
   // A turn's visible "Copy prompt" scrolled into the top band is not a top-bar
   // control; avoiding it pushed the toolbar over the message text.
-  if (element.closest(exportLayoutData(toolbarRoot).turns)) return null;
+  if (readExportLayout('turns', (selector) => element.closest(selector), toolbarRoot)) return null;
   const rect = element.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) {
     return element.matches(controlSelector) ? 'hidden' : null;
@@ -134,7 +135,13 @@ function findControlUnderToolbar(toolbarRoot: HTMLElement, right: number): HTMLE
       .find(
         (element) => !toolbarRoot.contains(element) && !element.closest(VOYAGER_SURFACE_SELECTOR),
       );
-    const control = topmost?.closest<HTMLElement>(exportLayoutData(toolbarRoot).interactive);
+    const control = topmost
+      ? readExportLayout(
+          'interactive',
+          (selector) => topmost.closest<HTMLElement>(selector),
+          toolbarRoot,
+        )
+      : null;
     if (control) return control;
   }
   return null;
@@ -263,15 +270,21 @@ function installToolbarAvoidance(root: HTMLDivElement): void {
       return;
     }
     const { offset, watched, hidden, canvas } = measureTopRightControls(root);
-    const layout = exportLayoutData(root);
     // Fullscreen Canvas puts Collapse under this pill; its own Export menu remains available.
     root.classList.toggle(
       HIDDEN_CLASS,
-      canvas.some(
-        (editor) =>
-          editor.closest(layout.canvasOwner)?.matches(layout.fullscreenCanvas) &&
-          !editor.closest(layout.inactiveCanvas),
-      ),
+      canvas.some((editor) => {
+        const owner = readExportLayout('canvasOwner', (selector) => editor.closest(selector), root);
+        return (
+          !!owner &&
+          !!readExportLayout(
+            'fullscreenCanvas',
+            (selector) => (owner.matches(selector) ? owner : null),
+            root,
+          ) &&
+          !readExportLayout('inactiveCanvas', (selector) => editor.closest(selector), root)
+        );
+      }),
     );
     measured = indexMeasuredControls(watched, hidden, canvas);
     const next = `${offset}px`;

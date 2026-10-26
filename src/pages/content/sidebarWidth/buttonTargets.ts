@@ -1,10 +1,9 @@
 import {
   getBundledGeminiSelectorView,
   getGeminiSelectorView,
-  resolveGeminiSelectorOperationInView,
   type GeminiSelectorView,
 } from '@/core/gemini/selectors';
-import { sameItems } from '@/core/utils/array';
+import { resolvePlacementOperation } from '@/core/selectors/placement';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar-interaction-packaged.json';
 
 const ICON_NAMES = new Set(['side_nav', 'side_nav_expand']);
@@ -27,36 +26,48 @@ function bundledButtons(view: GeminiSelectorView): HTMLElement[] {
   return Array.from(buttons).filter(isVisible);
 }
 
-/** A changed icon element can be found online; the native ligature and sidebar still prove it. */
+/** Trusted candidates only measure the hit region; they never authorize the forwarded click. */
 export function getSidebarWidthButtons(): HTMLElement[] {
   const view = getGeminiSelectorView();
   const bundle = getBundledGeminiSelectorView();
-  if (!view.remoteKeys.has('sidebarWidth.buttons')) return bundledButtons(bundle);
-  const bundled = bundledButtons(bundle);
-  return resolveGeminiSelectorOperationInView(
+  if (
+    !view.remoteKeys.has('sidebarWidth.buttons') &&
+    !view.remoteKeys.has('sidebarWidth.candidates')
+  )
+    return bundledButtons(bundle);
+  const key = view.remoteKeys.has('sidebarWidth.buttons')
+    ? 'sidebarWidth.buttons'
+    : 'sidebarWidth.candidates';
+  return resolvePlacementOperation(
     view,
-    (accepted) =>
-      accepted === bundle
-        ? bundled
-        : Array.from(
-            document.querySelectorAll<HTMLElement>(
-              accepted.profiles['sidebarWidth.buttons'].join(', '),
-            ),
-          ).filter(isVisible),
-    (buttons) => {
-      // A partial or broader match must not redirect the person's hit to a different control.
-      if (bundled.length > 0) return sameItems(buttons, bundled);
-      const native = Array.from(document.querySelectorAll<HTMLButtonElement>('bard-sidenav button'))
-        .filter(
-          (button) =>
-            !button.closest('[role="dialog"], [role="menu"], [data-gv-layer]') &&
-            !button.disabled &&
-            Array.from(button.querySelectorAll('[fonticon]')).some((icon) =>
-              ICON_NAMES.has(icon.getAttribute('fonticon') ?? ''),
-            ),
-        )
-        .filter(isVisible);
-      return buttons.length === 1 && sameItems(buttons, native);
-    },
-  ).value;
+    key,
+    (selector) =>
+      selector === bundle.profiles[key].join(',')
+        ? bundledButtons(bundle)
+        : Array.from(document.querySelectorAll<HTMLElement>(selector)).filter(isVisible),
+    { mount: false },
+  );
+}
+
+/** The real control stays independently fixed even when catalog geometry moves. */
+export function getSidebarWidthActionButtons(): HTMLElement[] {
+  const view = getGeminiSelectorView();
+  const bundled = bundledButtons(getBundledGeminiSelectorView());
+  if (
+    !view.remoteKeys.has('sidebarWidth.buttons') &&
+    !view.remoteKeys.has('sidebarWidth.candidates')
+  )
+    return bundled;
+  if (bundled.length) return bundled;
+  const native = Array.from(document.querySelectorAll<HTMLButtonElement>('bard-sidenav button'))
+    .filter(
+      (button) =>
+        !button.closest('[role="dialog"], [role="menu"], [data-gv-layer]') &&
+        !button.disabled &&
+        Array.from(button.querySelectorAll('[fonticon]')).some((icon) =>
+          ICON_NAMES.has(icon.getAttribute('fonticon') ?? ''),
+        ),
+    )
+    .filter(isVisible);
+  return native.length === 1 ? native : [];
 }

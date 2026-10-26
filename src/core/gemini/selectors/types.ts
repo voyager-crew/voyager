@@ -1,9 +1,12 @@
+import { PLACEMENT_KEYS, PLACEMENT_GROUPS } from '../../selectors/contracts/placement';
+import { TIMELINE_TEXT_KEYS, TIMELINE_TEXT_GROUPS } from '../../selectors/contracts/timeline';
 import type { SiteSelectorView } from '../../selectors/types';
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
 import { GEMINI_CANVAS_CODE_PROFILE_KEYS } from './canvasKeys';
 import { GEMINI_CODE_PROFILE_KEYS } from './codeKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
 import { GEMINI_CONTENT_PROFILE_KEYS, GEMINI_CONTEXT_IMAGE_PROFILE_KEYS } from './contentKeys';
+import { GEMINI_EXTENDED_KEYS, GEMINI_EXTENDED_GROUPS } from './extendedKeys';
 import { GEMINI_GEMS_NAV_PROFILE_KEYS, GEMINI_GEMS_CATALOG_PROFILE_KEYS } from './gemsKeys';
 import { GEMINI_GENERATED_IMAGE_PROFILE_KEYS } from './generatedImageKeys';
 import { GEMINI_IMAGE_EXPORT_PROFILE_KEYS } from './imageExportKeys';
@@ -39,8 +42,11 @@ export const GEMINI_TURN_PROFILE_KEYS = [
 export type GeminiTurnProfileKey = (typeof GEMINI_TURN_PROFILE_KEYS)[number];
 export type GeminiTurnProfiles = Readonly<Record<GeminiTurnProfileKey, readonly string[]>>;
 
-/** Literal published contract; only consumed, independently checked locators are admitted. */
+/** Published contract: Tier A requires independent proof; Tier B only places Voyager UI. */
 export const GEMINI_SELECTOR_PROFILE_KEYS = [
+  ...GEMINI_EXTENDED_KEYS,
+  ...PLACEMENT_KEYS,
+  ...TIMELINE_TEXT_KEYS,
   'turn.user',
   'turn.userWithHosts',
   'turn.assistant',
@@ -122,6 +128,9 @@ export type GeminiSelectorProfileKey = (typeof GEMINI_SELECTOR_PROFILE_KEYS)[num
 
 /** Each surface adopts or drops its online fixes on its own; one bad group cannot void another. */
 export const GEMINI_SELECTOR_PROFILE_GROUPS: readonly (readonly GeminiSelectorProfileKey[])[] = [
+  ...GEMINI_EXTENDED_GROUPS,
+  ...PLACEMENT_GROUPS,
+  ...TIMELINE_TEXT_GROUPS,
   GEMINI_TURN_PROFILE_KEYS,
   GEMINI_SIDEBAR_PROFILE_KEYS,
   GEMINI_MODEL_PICKER_PROFILE_KEYS,

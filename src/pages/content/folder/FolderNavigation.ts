@@ -1,4 +1,4 @@
-import { GEMINI_PACKAGED_SIDEBAR_SELECTORS } from '@/core/gemini/sidebar/packaged';
+import { findGeminiNewChat } from '@/core/gemini/sidebar/actions';
 import { closestGeminiSidebarElement } from '@/core/gemini/sidebar/queries';
 
 import { handOffNewChatFolder } from '../folderProject/pendingFolder';
@@ -183,7 +183,7 @@ export class FolderNavigation {
       }
     };
     // Gemini's own sidebar control is an in-app route to the new-chat page.
-    const link = document.querySelector<HTMLElement>(GEMINI_PACKAGED_SIDEBAR_SELECTORS.newChat);
+    const link = findGeminiNewChat();
     if (!link) {
       spaNavigate();
       return;

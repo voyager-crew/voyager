@@ -1,6 +1,9 @@
+import type { JSDOM } from 'jsdom';
 // @vitest-environment jsdom
-// @vitest-environment-options { "url": "https://chat.deepseek.com/a/chat/s/work" }
+// @vitest-environment-options { "url": "https://chatgpt.com/c/work" }
 import { afterEach, expect, it, vi } from 'vitest';
+
+import { initializeSiteSelectors, type SiteSelectorLifetime } from '@/core/selectors';
 
 import { requireBundledSiteAdapter } from '../catalog/sites';
 import { sendShortcutPrimitive } from '../verbs/sendShortcut';
@@ -8,11 +11,28 @@ import { vimInputPrimitive } from '../verbs/vimInput';
 import { PluginScope } from './pluginScope';
 
 const scopes: PluginScope[] = [];
+const lifetimes: SiteSelectorLifetime[] = [];
+declare const jsdom: JSDOM;
 afterEach(async () => {
   for (const scope of scopes.splice(0)) await scope.dispose();
+  for (const lifetime of lifetimes.splice(0)) lifetime.stop();
+  jsdom.reconfigure({ url: 'https://chatgpt.com/c/work' });
   document.body.replaceChildren();
   vi.restoreAllMocks();
 });
+async function offline(site: string, hostname: string): Promise<void> {
+  jsdom.reconfigure({ url: `https://${hostname}/c/work` });
+  const lifetime = initializeSiteSelectors(site, {
+    host: hostname,
+    doc: document,
+    lifetime: new AbortController().signal,
+    bundledRevision: 1,
+    read: async () => ({ id: site, catalogRevision: 2, locators: {} }),
+    readOnlineUpdates: async () => false,
+  });
+  lifetimes.push(lifetime);
+  await lifetime.ready;
+}
 function context(site: string, selectors: Record<string, string>) {
   const adapter = requireBundledSiteAdapter(site);
   return {
@@ -45,7 +65,8 @@ function key(field: HTMLElement, name: string, ctrlKey = false) {
   return event;
 }
 
-it('OFF keeps an outside-form upload from sending prematurely through the cached composer root', () => {
+it('OFF keeps an outside-form upload from sending prematurely through the cached composer root', async () => {
+  await offline('chatgpt', 'chatgpt.com');
   document.body.innerHTML =
     '<div class="catalog-root"><progress></progress><form><div id="prompt-textarea" contenteditable="true">draft</div><button type="submit">Send</button></form></div>';
   show();
@@ -68,22 +89,26 @@ it('OFF keeps an outside-form upload from sending prematurely through the cached
 it.each([
   [
     'claude',
+    'claude.ai',
     '<textarea id="catalog-input">draft</textarea>',
     { composer: '#catalog-input', composerRoot: '.catalog-root', sendButton: '.catalog-send' },
   ],
   [
     'deepseek',
+    'chat.deepseek.com',
     '<textarea id="catalog-input">draft</textarea>',
     { composer: '#catalog-input', composerRoot: '.catalog-root', sendButton: '.catalog-send' },
   ],
   [
     'kimi',
+    'www.kimi.com',
     '<div class="chat-input-editor" contenteditable="true" role="textbox">draft</div>',
     { composerRoot: '.catalog-root', sendButton: '.catalog-send' },
   ],
 ] as const)(
   'OFF keeps %s cached input fields sending from the selected draft',
-  (site, fieldHtml, selectors) => {
+  async (site, hostname, fieldHtml, selectors) => {
+    await offline(site, hostname);
     document.body.innerHTML = `<div class="catalog-root">${fieldHtml}<div role="button" class="catalog-send">Send</div></div>`;
     show();
     const field = document.querySelector<HTMLElement>('textarea, [contenteditable]')!;

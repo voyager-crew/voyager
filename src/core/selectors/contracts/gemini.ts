@@ -6,6 +6,7 @@ import {
   GEMINI_CONTENT_PROFILE_KEYS,
   GEMINI_CONTEXT_IMAGE_PROFILE_KEYS,
 } from '../../gemini/selectors/contentKeys';
+import { GEMINI_EXTENDED_KEYS } from '../../gemini/selectors/extendedKeys';
 import { GEMINI_GEMS_PROFILE_KEYS } from '../../gemini/selectors/gemsKeys';
 import { GEMINI_GENERATED_IMAGE_PROFILE_KEYS } from '../../gemini/selectors/generatedImageKeys';
 import { GEMINI_IMAGE_EXPORT_PROFILE_KEYS } from '../../gemini/selectors/imageExportKeys';
@@ -34,8 +35,13 @@ import { GEMINI_SIDEBAR_PROFILE_KEYS } from '../../gemini/selectors/sidebarKeys'
 import { GEMINI_TURN_PROFILE_KEYS } from '../../gemini/selectors/types';
 import { GEMINI_USAGE_PROFILE_KEYS } from '../../gemini/selectors/usageKeys';
 import { GEMINI_VIM_PROFILE_KEYS } from '../../gemini/selectors/vimKeys';
+import { PLACEMENT_FILES } from './placement';
+import { TIMELINE_TEXT_FILES } from './timeline';
 
 export const GEMINI_SELECTOR_FILES = [
+  { file: 'extended.json', keys: GEMINI_EXTENDED_KEYS },
+  ...PLACEMENT_FILES,
+  ...TIMELINE_TEXT_FILES,
   { file: 'turn.json', keys: GEMINI_TURN_PROFILE_KEYS },
   { file: 'sidebar.json', keys: GEMINI_SIDEBAR_PROFILE_KEYS },
   { file: 'model-picker.json', keys: GEMINI_MODEL_PICKER_PROFILE_KEYS },

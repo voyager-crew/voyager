@@ -5,6 +5,8 @@ import { CHATGPT_EXPORT_PROFILES } from './contracts/chatgptExport';
 import { CHATGPT_PICKER_PROFILES } from './contracts/chatgptSemantics';
 import { EXPORT_PROFILES } from './contracts/export';
 import { INPUT_SITE_PROFILES } from './contracts/inputSurfaces';
+import { PLACEMENT_PROFILES } from './contracts/placement';
+import { TIMELINE_TEXT_PROFILES } from './contracts/timeline';
 import { BUNDLED_LOCATOR_SITES, bundledSemanticProfiles } from './sites';
 import type { SiteSelectorView } from './types';
 import { readBundledSelectorProfiles } from './validation';
@@ -25,7 +27,14 @@ const SURFACE_PROFILES: Readonly<Record<string, Readonly<Record<string, readonly
 
 function readBundle(siteId: string): SiteSelectorView {
   if (siteId === 'gemini') return getBundledGeminiSelectorView();
-  const profiles = readBundledSelectorProfiles(SURFACE_PROFILES[siteId]);
+  const extra = Object.hasOwn(PLACEMENT_PROFILES, siteId)
+    ? (siteId as keyof typeof PLACEMENT_PROFILES)
+    : null;
+  const profiles = readBundledSelectorProfiles({
+    ...SURFACE_PROFILES[siteId],
+    ...(extra ? PLACEMENT_PROFILES[extra] : {}),
+    ...(extra ? TIMELINE_TEXT_PROFILES[extra] : {}),
+  });
   if (!profiles) throw new Error(`Invalid bundled locator profiles: ${siteId}`);
   return Object.freeze({
     siteId,

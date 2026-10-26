@@ -1,6 +1,6 @@
 import type { GeminiSelectorView } from '@/core/gemini/selectors';
+import { geminiTitleSelectors } from '@/core/gemini/sidebar/titleProof';
 import {
-  GEMINI_PACKAGED_TITLE_SELECTORS,
   readCorroboratedGeminiTitle,
   readGeminiActiveSidebarTitle,
 } from '@/core/gemini/sidebarTitles';
@@ -134,7 +134,7 @@ function extractTitleFromConversationElement(
   // This scope establishes conversation identity and stays packaged.
   const scope =
     (conversationEl.closest('[data-test-id="conversation"]') as HTMLElement) || conversationEl;
-  const bySelector = scope.querySelector(GEMINI_PACKAGED_TITLE_SELECTORS.export);
+  const bySelector = scope.querySelector(geminiTitleSelectors('title.export', scope).join(', '));
   const selectorTitle = bySelector?.textContent?.trim();
   if (isMeaningfulConversationTitle(selectorTitle) && !isGemLabel(selectorTitle)) {
     return selectorTitle;

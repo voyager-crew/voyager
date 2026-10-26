@@ -84,18 +84,36 @@ describe('online sent prompt chips', () => {
     expect(appearance().map((item) => item.parent)).toEqual(['one']);
   });
 
-  it('a text wrapper outside the native turn cannot receive its chip', async () => {
+  it('a trusted anchor can place chips outside a separately proved user bubble', async () => {
     document.body.innerHTML =
-      '<div class="query-text"><user-query id="one"><p class="query-text-line">Review this carefully. One</p></user-query></div>';
-    retire = await installGeminiSelectorPatch({ 'sentChips.bubbles': ['user-query'] });
+      '<section id="placement"><user-query id="one"><p class="query-text-line">Review this carefully. One</p></user-query></section>';
+    retire = await installGeminiSelectorPatch({
+      'sentChips.bubbles': ['user-query'],
+      'sentChips.anchor': ['#placement'],
+    });
     start();
-    expect(document.body.children).toHaveLength(1);
-    expect(document.querySelector('#one')?.textContent).toBe('Review this carefully. One');
+    expect(
+      document.querySelector('#placement')?.nextElementSibling?.classList.contains('gv-pm-sent'),
+    ).toBe(true);
+    expect(document.querySelector('.gv-pm-sent-chip')?.textContent).toBe('Review');
+  });
+
+  it('a Gemini placement patch cannot change chip placement on another host', async () => {
+    bubbles();
+    retire = await installGeminiSelectorPatch({ 'sentChips.anchor': ['user-query'] });
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { hostname: 'chatgpt.com' },
+    });
+    start();
+    expect(appearance().map((item) => item.parent)).toEqual(['one', 'two']);
     chips!.destroy();
-    const turn = document.querySelector('user-query')!;
-    document.body.append(turn);
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { hostname: 'gemini.google.com' },
+    });
     start();
-    expect(appearance().map((item) => item.parent)).toEqual(['one']);
+    expect(document.body.querySelectorAll(':scope > .gv-pm-sent')).toHaveLength(2);
   });
 
   it('renamed bubbles use every independently native user turn and keep packaged anchors', async () => {

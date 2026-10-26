@@ -1,3 +1,4 @@
+import { remoteGeminiActionsContainer } from '@/core/gemini/sidebar/actions';
 import { GEMINI_PACKAGED_SIDEBAR_SELECTORS } from '@/core/gemini/sidebar/packaged';
 
 import { extractConversationId } from './nativeConversationIds';
@@ -92,6 +93,8 @@ export class NativeArchivedRows {
   }
 
   private actionsContainerOf(conversationEl: HTMLElement): HTMLElement | null {
+    const repaired = remoteGeminiActionsContainer(conversationEl);
+    if (repaired) return repaired;
     // When no legacy actions container exists anywhere under the conversation
     // root, neither the sibling walk nor the parent querySelector below can
     // match — skip both (issue #753).

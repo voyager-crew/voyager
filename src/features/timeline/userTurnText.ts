@@ -1,4 +1,7 @@
+import { getPageSelectorSiteId, getSiteSelectorView } from '@/core/selectors';
+
 import { timelineSiteData } from './siteTextData';
+import { isUserTextSubset, ownsTimelineUserText } from './userTextProof';
 const EXCLUDED_SELECTOR =
   'button, [role="button"], script, style, template, model-response, [data-message-author-role="assistant"], [data-conversation-role="assistant"]';
 const BLOCK_TAGS = new Set([
@@ -75,41 +78,74 @@ export function userTurnText(element: HTMLElement, url?: string): string {
     }
     return true;
   };
-  const content = element.matches(userContentSelector)
+  const bundledContent = element.matches(userContentSelector)
     ? element
     : (Array.from(element.querySelectorAll(userContentSelector)).find(reachable) ?? element);
 
-  let text = '';
-  let syntheticNewline = false;
-  const append = (value: string): void => {
-    text += value;
-    if (value) syntheticNewline = false;
+  const extract = (content: Element): string => {
+    let text = '';
+    let syntheticNewline = false;
+    const append = (value: string): void => {
+      text += value;
+      if (value) syntheticNewline = false;
+    };
+    const newline = () => {
+      if (text && !text.endsWith('\n')) {
+        text += '\n';
+        syntheticNewline = true;
+      }
+    };
+    const visit = (node: Node, root = false): void => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const parent = node.parentElement;
+        if (!parent || !invisible(parent)) append((node.nodeValue ?? '').replace(/\r\n?/g, '\n'));
+        return;
+      }
+      if (!(node instanceof Element) || (!root && excluded(node))) return;
+      if (node.tagName === 'BR') {
+        if (!invisible(node)) append('\n');
+        return;
+      }
+      const block = BLOCK_TAGS.has(node.tagName);
+      if (block) newline();
+      const latex = node.getAttribute(LATEX_ATTRIBUTE);
+      // The rendered formula's own visibility decides whether its source belongs to the prompt.
+      if (latex === null) node.childNodes.forEach((child) => visit(child));
+      else if (!invisible(node)) append(latex.replace(/\r\n?/g, '\n'));
+      if (block) newline();
+    };
+    visit(content, true);
+    return syntheticNewline ? text.slice(0, -1) : text;
   };
-  const newline = () => {
-    if (text && !text.endsWith('\n')) {
-      text += '\n';
-      syntheticNewline = true;
+  const site = getPageSelectorSiteId(element.ownerDocument);
+  const view = site ? getSiteSelectorView(site) : null;
+  let sameSite = true;
+  if (url) {
+    try {
+      sameSite = new URL(url).hostname === element.ownerDocument.location.hostname;
+    } catch {
+      sameSite = false;
     }
-  };
-  const visit = (node: Node, root = false): void => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      const parent = node.parentElement;
-      if (!parent || !invisible(parent)) append((node.nodeValue ?? '').replace(/\r\n?/g, '\n'));
-      return;
+  }
+  if (sameSite && site && view?.remoteKeys.has('timeline.userText')) {
+    try {
+      const selector = view.profiles['timeline.userText'].join(',');
+      const candidate = element.matches(selector)
+        ? element
+        : Array.from(element.querySelectorAll(selector)).find(reachable);
+      if (
+        candidate instanceof HTMLElement &&
+        reachable(candidate) &&
+        !excluded(candidate) &&
+        ownsTimelineUserText(candidate, site)
+      ) {
+        const value = extract(candidate);
+        // A locator cannot turn hidden controls or a clipped word into the saved prompt summary.
+        if (isUserTextSubset(value, extract(element))) return value;
+      }
+    } catch {
+      // Keep the original text preference if this operation cannot prove the new subset.
     }
-    if (!(node instanceof Element) || (!root && excluded(node))) return;
-    if (node.tagName === 'BR') {
-      if (!invisible(node)) append('\n');
-      return;
-    }
-    const block = BLOCK_TAGS.has(node.tagName);
-    if (block) newline();
-    const latex = node.getAttribute(LATEX_ATTRIBUTE);
-    // The rendered formula's own visibility decides whether its source belongs to the prompt.
-    if (latex === null) node.childNodes.forEach((child) => visit(child));
-    else if (!invisible(node)) append(latex.replace(/\r\n?/g, '\n'));
-    if (block) newline();
-  };
-  visit(content, true);
-  return syntheticNewline ? text.slice(0, -1) : text;
+  }
+  return extract(bundledContent);
 }

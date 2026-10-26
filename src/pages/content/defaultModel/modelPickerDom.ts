@@ -1,5 +1,6 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
 import { getBundledGeminiSelectorView, type GeminiSelectorView } from '@/core/gemini/selectors';
+import { resolvePlacementOperation } from '@/core/selectors/placement';
 
 import {
   hasNativeItemRole,
@@ -385,26 +386,13 @@ export class ModelPickerDom {
   public starAnchor(item: HTMLElement, kind: 'model' | 'thinking') {
     const containerKey =
       kind === 'model' ? 'modelPicker.modelTitleContainer' : 'modelPicker.thinkingTitleContainer';
-    const container = item.querySelector<HTMLElement>(this.selector(containerKey));
+    const container = resolvePlacementOperation(this.view, containerKey, (selector) =>
+      item.querySelector<HTMLElement>(selector),
+    );
     const title =
       container?.querySelector<HTMLElement>(
         this.selector(kind === 'model' ? 'modelPicker.modelLabel' : 'modelPicker.thinkingLabel'),
       ) ?? null;
-    if (this.remote && container) {
-      const canonical = item.querySelector(
-        pickerSelector(getBundledGeminiSelectorView(), containerKey),
-      );
-      // A class repair cannot move a star off its native title or into a Voyager preview.
-      if (
-        !(container instanceof HTMLElement) ||
-        !belongsToPickerItem(container, item) ||
-        (canonical && canonical !== container) ||
-        (!canonical && !title)
-      ) {
-        throw new Error('Unrelated star container');
-      }
-    }
-    if (this.remote && title) assertPickerLabel(item, title, kind, this.view);
     return { container, title };
   }
 }

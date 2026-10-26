@@ -1,0 +1,72 @@
+{
+  "exportLayout.controls": [
+    "top-bar-actions",
+    ".top-bar-actions",
+    "[data-test-id=\"top-bar-actions\"]",
+    "side-nav-sparkle-button",
+    "side-nav-menu-button",
+    "[data-test-id*=\"upgrade\" i]",
+    "[aria-label*=\"upgrade\" i]",
+    "#conversation-header-actions",
+    "[data-testid=\"share-chat-button\"]",
+    "[data-testid=\"conversation-options-button\"]"
+  ],
+  "exportLayout.broadControls": ["[aria-label*=\"pro\" i]", "[aria-label*=\"advanced\" i]"],
+  "exportLayout.canvasOwner": ["inline-preview, immersive-panel"],
+  "exportLayout.canvasContent": ["immersive-editor, code-immersive-panel"],
+  "exportLayout.fullscreenCanvas": ["immersive-panel"],
+  "exportLayout.inactiveCanvas": [
+    "deep-research-immersive-panel, [hidden], [aria-hidden=\"true\"]"
+  ],
+  "exportLayout.turns": ["user-query, model-response, [data-message-author-role]"],
+  "exportLayout.interactive": ["button, a[href], [role=\"button\"]"],
+  "exportLayout.overlaySidebar": [
+    "[data-test-id=\"side-nav\"]",
+    "side-navigation",
+    "mat-sidenav",
+    "aside",
+    "nav",
+    ".side-nav",
+    ".sidenav",
+    ".chat-history-nav"
+  ],
+  "exportLayout.fallbackRoot": ["main"],
+  "exportLayout.alignmentCanvas": [
+    "#chat-history",
+    "infinite-scroller.chat-history",
+    ".chat-history-scroll-container",
+    "chat-window-content",
+    "main chat-window-content"
+  ],
+  "exportLayout.alignmentComposer": [
+    "rich-textarea",
+    "[aria-label*=\"Enter a prompt\"]",
+    "[aria-label*=\"prompt\"]",
+    "[aria-label*=\"Gemini\"]",
+    "[contenteditable=\"true\"][aria-label]"
+  ],
+  "input.clearance": [
+    "form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message"
+  ],
+  "input.fab": [":not(*)"],
+  "vim.host": [".text-input-field, input-area-v2, input-container"],
+  "vim.hud": [
+    "toolbox-drawer .toolbox-drawer-button-label-icon-text",
+    "toolbox-drawer .toolbox-drawer-button-label",
+    "toolbox-drawer .toolbox-drawer-button-container",
+    "toolbox-drawer button",
+    "toolbox-drawer .toolbox-drawer-container",
+    "[class*=\"toolbox-drawer\"] .toolbox-drawer-button-label-icon-text",
+    "[class*=\"toolbox-drawer\"] button",
+    "button[aria-label*=\"Tools\"]",
+    "button[aria-label*=\"tools\"]",
+    "button[aria-label*=\"工具\"]",
+    "button[aria-label*=\"ツール\"]",
+    "button[aria-label*=\"도구\"]"
+  ],
+  "vim.inputFallback": ["rich-textarea"],
+  "vim.mountInput": ["#prompt-textarea[contenteditable=\"true\"]"],
+  "vim.mountRoot": ["form"],
+  "vim.mountChatInput": ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"],
+  "vim.mountChatRoot": ["fieldset"]
+}

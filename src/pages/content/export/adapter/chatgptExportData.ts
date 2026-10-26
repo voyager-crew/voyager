@@ -11,6 +11,9 @@ export const chatgptExportData = {
   'export.loggedOutStreaming': remote['export.loggedOutStreaming'].join(','),
   'export.loggedOutThread': remote['export.loggedOutThread'].join(','),
   'export.loggedOutAssistant': remote['export.loggedOutAssistant'].join(','),
+  'export.threadList': remote['export.threadList'].join(','),
+  'export.historyPending': remote['export.historyPending'].join(','),
+  'export.codeLanguage': remote['export.codeLanguage'].join(','),
 };
 // The adapter userTurn also names legacy frames; current-thread reads must keep their inner bubble.
 export const CHATGPT_USER_BUBBLE = packaged['export.userBubble'];

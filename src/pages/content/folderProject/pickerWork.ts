@@ -60,7 +60,7 @@ export function startPickerWork(options: {
 
 /** The aborted phase cancels its frame and resolves immediately, including when the page is hidden. */
 export function waitForProjectAnchor(
-  selector: string,
+  selector: string | (() => HTMLElement | null),
   timeoutMs: number,
   signal: AbortSignal,
 ): Promise<HTMLElement | null> {
@@ -75,7 +75,8 @@ export function waitForProjectAnchor(
     const abort = () => finish(null);
     const check = () => {
       if (signal.aborted) return finish(null);
-      const element = document.querySelector<HTMLElement>(selector);
+      const element =
+        typeof selector === 'function' ? selector() : document.querySelector<HTMLElement>(selector);
       if (element && element.getBoundingClientRect().height > 0) return finish(element);
       if (Date.now() > deadline) return finish(null);
       frame = requestAnimationFrame(check);
