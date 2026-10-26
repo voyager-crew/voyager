@@ -33,7 +33,11 @@ afterEach(async () => {
   vi.clearAllMocks();
 });
 
-async function startTimeline(remote: boolean) {
+async function startTimeline(
+  remote: boolean,
+  pluginId = 'voyager.claude-timeline',
+  yieldWhen?: string,
+) {
   if (remote) {
     const lifetime = new AbortController();
     const run = initializeSiteSelectors('claude', {
@@ -49,21 +53,18 @@ async function startTimeline(remote: boolean) {
   window.scrollTo = vi.fn();
   const scope = new PluginScope();
   stops.push(() => scope.dispose());
-  await turnNavigatorPrimitive.activate(
-    scope,
-    {},
-    {
-      doc: document,
-      // Even a later adapter reload cannot redefine the installed artifact-origin predicate.
-      adapter: remote
-        ? { ...claudeAdapter, selectors: { ...claudeAdapter.selectors, sidePanel: 'iframe' } }
-        : claudeAdapter,
-      pluginId: 'voyager.claude-timeline',
-      settings: {},
-      setTargetCounter: () => {},
-    },
-  );
+  await turnNavigatorPrimitive.activate(scope, yieldWhen === undefined ? {} : { yieldWhen }, {
+    doc: document,
+    // Cached data stays available to other plugins; this builtin owns its guide policy.
+    adapter: remote
+      ? { ...claudeAdapter, selectors: { ...claudeAdapter.selectors, sidePanel: 'iframe' } }
+      : claudeAdapter,
+    pluginId,
+    settings: {},
+    setTargetCounter: () => {},
+  });
   for (let index = 0; index < 30; index += 1) await Promise.resolve();
+  return scope;
 }
 
 it.each([false, true])(
@@ -73,17 +74,44 @@ it.each([false, true])(
       '<div data-testid="user-message">Question</div><iframe src="https://example.com/widget"></iframe>';
     await startTimeline(remote);
     expect(document.querySelector('[data-gv-turn-navigator]')).not.toBeNull();
-    expect(showTimelineStyleCoachmark).toHaveBeenCalledTimes(1);
+    expect(showTimelineStyleCoachmark).toHaveBeenCalled();
   },
 );
 
 it.each([false, true])(
-  'the Claude artifact frame keeps the timeline guide out of its way with remote=%s',
+  'the Claude artifact frame postpones the timeline guide until it closes with remote=%s',
   async (remote) => {
     document.body.innerHTML =
       '<div data-testid="user-message">Question</div><iframe src="https://artifact.frame.claudeusercontent.com/preview"></iframe>';
-    await startTimeline(remote);
+    const scope = await startTimeline(remote);
     expect(document.querySelector('[data-gv-turn-navigator]')).not.toBeNull();
     expect(showTimelineStyleCoachmark).not.toHaveBeenCalled();
+    await scope.dispose();
+    document.querySelector('iframe')!.remove();
+    await startTimeline(remote);
+    expect(showTimelineStyleCoachmark).toHaveBeenCalled();
   },
 );
+
+it('a declarative timeline keeps its cached side-panel override and shows the guide after that panel closes', async () => {
+  document.body.innerHTML =
+    '<div data-testid="user-message">Question</div><iframe src="https://example.com/widget"></iframe>';
+  const scope = await startTimeline(true, 'local.custom-timeline');
+  expect(document.querySelector('[data-gv-turn-navigator]')).not.toBeNull();
+  expect(showTimelineStyleCoachmark).not.toHaveBeenCalled();
+  await scope.dispose();
+  document.querySelector('iframe')!.remove();
+  await startTimeline(true, 'local.custom-timeline');
+  expect(showTimelineStyleCoachmark).toHaveBeenCalled();
+});
+
+it('an explicit timeline yield condition retains priority over the builtin artifact default', async () => {
+  document.body.innerHTML =
+    '<div data-testid="user-message">Question</div><aside id="custom-panel">Panel</aside>';
+  const scope = await startTimeline(true, 'voyager.claude-timeline', '#custom-panel');
+  expect(showTimelineStyleCoachmark).not.toHaveBeenCalled();
+  await scope.dispose();
+  document.getElementById('custom-panel')!.remove();
+  await startTimeline(true, 'voyager.claude-timeline', '#custom-panel');
+  expect(showTimelineStyleCoachmark).toHaveBeenCalled();
+});

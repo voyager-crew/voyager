@@ -14,6 +14,7 @@ import {
 import { siteConversationConfig } from '@/features/timeline/adapters/catalog/conversationId';
 import { activateSharedGeminiTimeline } from '@/features/timeline/adapters/gemini/activateSharedGeminiTimeline';
 
+import claudeSite from '../../catalog/sites/claude/site.json';
 import type { ManifestIssue } from '../../manifest/validate';
 import { sendSiteOf } from '../../sends/trackUserSends';
 import { isSafeRegexSource } from '../../sites/safeRegex';
@@ -212,7 +213,11 @@ export const turnNavigatorPrimitive: Primitive<TurnNavigatorParams> = {
         return params.scrollContainer ?? adapter.selectors.scrollContainer;
       },
       get yieldWhenSelector() {
-        return params.yieldWhen ?? adapter.selectors.sidePanel;
+        if (params.yieldWhen !== undefined) return params.yieldWhen;
+        // This builtin originally supplied its own artifact predicate, independent of catalog overrides.
+        return context.pluginId === 'voyager.claude-timeline' && adapter.id === 'claude'
+          ? claudeSite.selectors.sidePanel
+          : adapter.selectors.sidePanel;
       },
       position: params.position ?? 'right',
       pluginId: context.pluginId,

@@ -42,11 +42,9 @@ function acceptsRepairedComposerGroup(
 ): boolean {
   if (submit.form !== root) return false;
   const source = adapter ?? chatgptAdapter;
-  const owner = pageSemanticSelector(source, 'composerRoot');
   const send = pageSemanticSelector(source, 'sendButton');
   try {
-    if (owner && owner !== site.selectors.composerRoot && field.closest(owner) !== root)
-      return false;
+    // The native form is already proved above; legacy root overrides are not an admitted group member.
     if (send && send !== BUNDLED_SEND) {
       const controls = Array.from(field.ownerDocument.querySelectorAll(send));
       if (controls.length !== 1 || controls[0] !== submit) return false;

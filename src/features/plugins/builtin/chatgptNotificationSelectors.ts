@@ -22,7 +22,8 @@ export function notificationSelectorsOf(adapter: SiteAdapter | null): ChatgptNot
     userTurn: pick('userTurn'),
     assistantTurn: pick('assistantTurn'),
     composer: pick('composer'),
-    composerRoot: pick('composerRoot'),
+    // Notifications follow native composer ownership; legacy roots still pass through to plugins.
+    composerRoot: BUNDLED_NOTIFICATION_SELECTORS.composerRoot,
     sendButton: pick('sendButton'),
   };
 }

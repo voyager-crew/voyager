@@ -77,13 +77,18 @@ describe('ChatGPT notification page reads', () => {
     mount();
     const own = document.createElement('button');
     own.setAttribute('aria-label', 'Stop');
+    Object.defineProperty(own, 'offsetWidth', { value: 100 });
     document.querySelector('form')!.append(own);
     const foreign = document.createElement('button');
     foreign.setAttribute('aria-label', 'Stop');
+    Object.defineProperty(foreign, 'offsetWidth', { value: 100 });
     document.body.append(foreign);
     const page = await online({ composerRoot: 'body' });
     expect(page.isStopControlTarget(own)).toBe(true);
     expect(page.isStopControlTarget(foreign)).toBe(false);
+    expect(page.hasLabelledStopControl()).toBe(true);
+    own.remove();
+    expect(page.hasLabelledStopControl()).toBe(false);
   });
 });
 
