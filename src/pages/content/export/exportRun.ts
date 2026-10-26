@@ -39,6 +39,7 @@ import {
   loadExportDictionaries,
   readExportLanguage,
 } from './exportLocale';
+import { hasExportSearchImages } from './exportSearchImages';
 import {
   type ExportSelectionConfirmation,
   startExportSelectionSession,
@@ -396,10 +397,8 @@ export function createExportRunner(deps: ExportRunnerDeps): ExportRunner {
 
         let includeImageSource = true;
         if (state.format === 'markdown') {
-          const hasSearchImages = turnsForExport.some(
-            (turn) =>
-              turn.assistantContent?.html.includes('attachment-container.search-images') ||
-              turn.assistantElement?.querySelector('.attachment-container.search-images') != null,
+          const hasSearchImages = turnsForExport.some((turn) =>
+            hasExportSearchImages(turn, site.id),
           );
           if (hasSearchImages) {
             const sources = await askConfirm<'include' | 'exclude'>({

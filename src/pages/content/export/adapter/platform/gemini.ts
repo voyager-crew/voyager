@@ -19,6 +19,10 @@ import {
 } from '../../conversationDom';
 import type { ExportPlatformAdapter } from './contract';
 import { checkedGeminiContentView } from './geminiContentView';
+import {
+  bundledGeminiSearchImageSelector,
+  resolveGeminiSearchImageSelector,
+} from './geminiImageRead';
 import { collectGeminiAssistantImages, extractGeminiAssistantImage } from './geminiImages';
 
 function extractConversationId(): string | null {
@@ -203,6 +207,8 @@ export function buildGeminiAdapter(
   acceptedView?: GeminiSelectorView,
 ): ExportPlatformAdapter {
   const current = acceptedView ?? getGeminiSelectorView();
+  // Extraction is synchronous; one probe chooses the image tier before any output is emitted.
+  let imageSearchSelector = bundledGeminiSearchImageSelector();
   const contentView = (element: HTMLElement, role: 'user' | 'assistant') =>
     acceptedView ?? checkedGeminiContentView(element, role, current);
   return {
@@ -212,18 +218,38 @@ export function buildGeminiAdapter(
     extractConversationTitle,
     extractConversationIdFromUrl: extractConversationId,
     resolveConversationRoot: resolveRoot,
-    resolveAssistantContent: (element) =>
-      resolveGeminiAnswerElement(
+    resolveAssistantContent: (element) => {
+      const content = resolveGeminiAnswerElement(
         element,
         () => resolveExportMessageContent(element),
         contentView(element, 'assistant'),
-      ),
+      );
+      if (current.remoteKeys.has('imageExport.searchHosts')) {
+        const imageRoot =
+          content.closest(
+            'model-response, .model-response, .presented-response-container, .response-container, response-container',
+          ) || content;
+        imageSearchSelector = resolveGeminiSearchImageSelector(imageRoot, current);
+      }
+      return content;
+    },
     getUserTextLines: (element) => readGeminiUserLines(element, contentView(element, 'user')),
     extractUserImage,
     extractUserText,
     getUserAttachmentCandidates,
-    extractAssistantImage: extractGeminiAssistantImage,
-    collectAssistantImages: collectGeminiAssistantImages,
+    extractAssistantImage: (child, html, text, flags, tag, debug, processed) =>
+      extractGeminiAssistantImage(
+        child,
+        html,
+        text,
+        flags,
+        tag,
+        debug,
+        processed,
+        imageSearchSelector,
+      ),
+    collectAssistantImages: (root, html, text, flags, processed, skip) =>
+      collectGeminiAssistantImages(root, html, text, flags, processed, skip, imageSearchSelector),
     extractFormula,
     extractCodeBlock,
     extractInlineFormula,

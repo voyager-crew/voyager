@@ -4423,7 +4423,7 @@
     "description": "Switch for Gemini page detection fixes; covered areas are listed in the hint; off by default"
   },
   "geminiSelectorFixesHint": {
-    "message": "voyager.nagi.fun에서 대화, 사이드바, 폴더, 모델 메뉴, 대화 및 내보내기 메뉴, 사이드바 열기·닫기 버튼의 클릭 영역 및 사이드바의 마우스 오버 영역, 내보내기 및 분기에 쓰이는 메시지 본문, 컨텍스트 이미지, 응답 및 리서치 팩 작업, 사용량 표시, 코드 블록과 다이어그램, 내 메시지에서 LaTeX가 포함된 문단, Gems 사이드바, 메시지 입력창, 입력창 접기, Vim 모드, 프롬프트 기록, 슬래시 명령, 폴더를 프로젝트로 사용, 폴더 활동을 위한 인식 수정 정보를 받아옵니다. 확인은 6시간에 한 번까지이며 페이지 내용은 전송하지 않습니다. 기본값은 꺼짐입니다.",
+    "message": "voyager.nagi.fun에서 대화, 사이드바, 폴더, 모델 메뉴, 대화 및 내보내기 메뉴, 사이드바 열기·닫기 버튼의 클릭 영역 및 사이드바의 마우스 오버 영역, 내보내기 및 분기에 쓰이는 메시지 본문, 컨텍스트 이미지, 응답 및 리서치 팩 작업, 사용량 표시, 코드 블록과 다이어그램, 내 메시지에서 LaTeX가 포함된 문단, 내보낼 이미지, 생성 이미지 다운로드 버튼, Canvas 코드 내보내기, Gems 사이드바, 메시지 입력창, 입력창 접기, Vim 모드, 프롬프트 기록, 슬래시 명령, 폴더를 프로젝트로 사용, 폴더 활동을 위한 인식 수정 정보를 받아옵니다. 확인은 6시간에 한 번까지이며 페이지 내용은 전송하지 않습니다. 기본값은 꺼짐입니다.",
     "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
   },
   "geminiSelectorFixesOff": {

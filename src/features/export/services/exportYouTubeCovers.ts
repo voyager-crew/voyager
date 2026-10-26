@@ -1,6 +1,20 @@
 import type { ExtractedContentFlags } from './exportContentDialect';
 import { normalizeText, escapeHtmlAttribute } from './exportDomPolicy';
 
+export interface YouTubeCoverSelectors {
+  thumbnails: string;
+  card: string;
+  title: string;
+}
+
+// Other sites keep the shared extractor's original values, independent of Gemini data.
+const SHARED_YOUTUBE_SELECTORS: YouTubeCoverSelectors = {
+  thumbnails:
+    '.attachment-container.youtube img.thumbnail, youtube-block img.thumbnail, single-video img.thumbnail',
+  card: 'single-video, youtube-block, .attachment-container.youtube',
+  title: '.video-title, [class*="title"]',
+};
+
 /**
  * Extract YouTube video cover thumbnails as clickable cover images.
  *
@@ -19,10 +33,9 @@ export function processYouTubeCovers(
   htmlParts: string[],
   textParts: string[],
   flags: ExtractedContentFlags,
+  selectors: YouTubeCoverSelectors = SHARED_YOUTUBE_SELECTORS,
 ): boolean {
-  const thumbs = scope.querySelectorAll<HTMLImageElement>(
-    '.attachment-container.youtube img.thumbnail, youtube-block img.thumbnail, single-video img.thumbnail',
-  );
+  const thumbs = scope.querySelectorAll<HTMLImageElement>(selectors.thumbnails);
   const videoIdFrom = (u: string | null | undefined): string => {
     const m = (u || '').match(/(?:\/vi\/|[?&]v=|youtu\.be\/|embed\/)([\w-]{11})/);
     return m ? m[1] : '';
@@ -35,10 +48,7 @@ export function processYouTubeCovers(
     if (!src || src === 'about:blank') continue;
     marked.processedByGV = true;
 
-    const card =
-      imgEl.closest('single-video, youtube-block, .attachment-container.youtube') ||
-      imgEl.parentElement ||
-      scope;
+    const card = imgEl.closest(selectors.card) || imgEl.parentElement || scope;
     let videoId = videoIdFrom(src);
     if (!videoId) {
       const ref = card.querySelector('a[href*="youtu"], iframe[src*="youtube"]') as
@@ -56,7 +66,7 @@ export function processYouTubeCovers(
     const watchUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : '';
     const titleRaw =
       (imgEl.alt && imgEl.alt.trim()) ||
-      card.querySelector('.video-title, [class*="title"]')?.textContent?.trim() ||
+      card.querySelector(selectors.title)?.textContent?.trim() ||
       'YouTube video';
     const title = normalizeText(titleRaw);
 

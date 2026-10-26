@@ -1,0 +1,19 @@
+{
+  "imageExport.generatedHosts": [
+    "generated-image",
+    "single-image",
+    ".attachment-container.generated-images"
+  ],
+  "imageExport.preferredImages": ["img.image", "img.hero-image", "img.spark-licensed-portrait"],
+  "imageExport.sourceAnchor": ["a.source"],
+  "imageExport.caption": ["figcaption", ".caption", ".image-caption", ".attribution"],
+  "imageExport.sourceLabel": [".source .label"],
+  "imageExport.sourcePrompt": [".attachment-container.search-images"],
+  "imageExport.youtubeThumbnails": [
+    ".attachment-container.youtube img.thumbnail",
+    "youtube-block img.thumbnail",
+    "single-video img.thumbnail"
+  ],
+  "imageExport.youtubeCard": ["single-video", "youtube-block", ".attachment-container.youtube"],
+  "imageExport.youtubeTitle": [".video-title", "[class*=\"title\"]"]
+}

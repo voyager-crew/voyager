@@ -4423,7 +4423,7 @@
     "description": "Switch for Gemini page detection fixes; covered areas are listed in the hint; off by default"
   },
   "geminiSelectorFixesHint": {
-    "message": "從 voyager.nagi.fun 取得對話、側邊欄、資料夾、模型選單、對話與匯出選單、側邊欄開關按鈕的點擊區域與側邊欄懸停區域、匯出與分支所用的訊息正文、上下文圖片、回覆和研究資料包操作、用量顯示、程式碼區塊和圖表、使用者訊息中含 LaTeX 的段落、Gems 側邊欄、訊息輸入框、輸入框摺疊、Vim 模式、提示詞歷史、斜線指令、資料夾作為專案及資料夾活動的辨識修復，最多每 6 小時檢查一次。不會傳送頁面內容。預設關閉。",
+    "message": "從 voyager.nagi.fun 取得對話、側邊欄、資料夾、模型選單、對話與匯出選單、側邊欄開關按鈕的點擊區域與側邊欄懸停區域、匯出與分支所用的訊息正文、上下文圖片、回覆和研究資料包操作、用量顯示、程式碼區塊和圖表、使用者訊息中含 LaTeX 的段落、匯出圖片、生成圖片下載按鈕、Canvas 程式碼匯出、Gems 側邊欄、訊息輸入框、輸入框摺疊、Vim 模式、提示詞歷史、斜線指令、資料夾作為專案及資料夾活動的辨識修復，最多每 6 小時檢查一次。不會傳送頁面內容。預設關閉。",
     "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
   },
   "geminiSelectorFixesOff": {

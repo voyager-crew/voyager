@@ -10,21 +10,18 @@ import {
   escapeHtmlAttribute,
   normalizeText,
 } from '@/features/export/services/exportDomPolicy';
+import imageSelectors from '@/features/plugins/catalog/sites/gemini/selector-data/image-export-packaged.json';
+
+import { bundledGeminiSearchImageSelector, collectGeminiImageHosts } from './geminiImageRead';
 
 type ImageFlags = Pick<ExtractedContent, 'hasImages' | 'hasFormulas' | 'hasTables' | 'hasCode'>;
 
-const SEARCH_IMAGE_HOST_SELECTOR = [
-  '.attachment-container.search-images',
-  '.image-container[data-full-size-image-uri]',
-].join(', ');
-
-const GENERATED_IMAGE_HOST_SELECTOR = [
-  'generated-image',
-  'single-image',
-  '.attachment-container.generated-images',
-].join(', ');
-
-const IMAGE_HOST_SELECTOR = `${SEARCH_IMAGE_HOST_SELECTOR}, ${GENERATED_IMAGE_HOST_SELECTOR}`;
+const GENERATED_IMAGE_HOST_SELECTOR = imageSelectors['imageExport.generatedHosts'].join(', ');
+const YOUTUBE_SELECTORS = {
+  thumbnails: imageSelectors['imageExport.youtubeThumbnails'].join(', '),
+  card: imageSelectors['imageExport.youtubeCard'].join(', '),
+  title: imageSelectors['imageExport.youtubeTitle'].join(', '),
+};
 
 const SKIP_IMAGE_ANCESTOR_SELECTOR = [
   'model-thoughts',
@@ -79,12 +76,12 @@ export function resolveGeminiImageSrc(image: HTMLImageElement, host?: Element | 
   return candidates.find((src) => !isPlaceholderSrc(src)) || '';
 }
 
-function isImageHost(element: Element): boolean {
-  return element.matches(IMAGE_HOST_SELECTOR);
+function isImageHost(element: Element, searchSelector: string): boolean {
+  return element.matches(`${searchSelector}, ${GENERATED_IMAGE_HOST_SELECTOR}`);
 }
 
-function isNestedImageHost(element: Element): boolean {
-  return !!element.parentElement?.closest(IMAGE_HOST_SELECTOR);
+function isNestedImageHost(element: Element, searchSelector: string): boolean {
+  return !!element.parentElement?.closest(`${searchSelector}, ${GENERATED_IMAGE_HOST_SELECTOR}`);
 }
 
 function isChromeWrappedImage(image: HTMLImageElement): boolean {
@@ -99,7 +96,7 @@ function isChromeWrappedImage(image: HTMLImageElement): boolean {
 function contentImages(host: Element): HTMLImageElement[] {
   const preferred = Array.from(
     host.querySelectorAll<HTMLImageElement>(
-      'img.image, img.hero-image, img.spark-licensed-portrait',
+      imageSelectors['imageExport.preferredImages'].join(', '),
     ),
   );
   const images =
@@ -113,12 +110,16 @@ function contentImages(host: Element): HTMLImageElement[] {
 }
 
 function readAttribution(host: Element): ImageAttribution {
-  const sourceAnchor = host.querySelector<HTMLAnchorElement>('a.source');
+  const sourceAnchor = host.querySelector<HTMLAnchorElement>(
+    imageSelectors['imageExport.sourceAnchor'].join(', '),
+  );
   const caption = normalizeText(
-    host.querySelector('figcaption, .caption, .image-caption, .attribution')?.textContent || '',
+    host.querySelector(imageSelectors['imageExport.caption'].join(', '))?.textContent || '',
   );
   const sourceLabel = normalizeText(
-    host.querySelector('.source .label')?.textContent || sourceAnchor?.textContent || '',
+    host.querySelector(imageSelectors['imageExport.sourceLabel'].join(', '))?.textContent ||
+      sourceAnchor?.textContent ||
+      '',
   );
   const sourceUrl = sourceAnchor?.href || host.getAttribute('data-full-size-image-uri') || '';
   return { caption, sourceLabel, sourceUrl };
@@ -200,8 +201,8 @@ function emitStandaloneImage(
   textParts.push(`\n![${alt.replace(/\]/g, '\\]')}](${src})\n`);
 }
 
-function fallbackAltFor(host: Element): string {
-  if (host.matches(GENERATED_IMAGE_HOST_SELECTOR) && !host.matches(SEARCH_IMAGE_HOST_SELECTOR)) {
+function fallbackAltFor(host: Element, searchSelector: string): string {
+  if (host.matches(GENERATED_IMAGE_HOST_SELECTOR) && !host.matches(searchSelector)) {
     return 'Generated image';
   }
   return 'Search result image';
@@ -215,6 +216,7 @@ export function extractGeminiAssistantImage(
   tagName?: string,
   _DEBUG?: boolean,
   processedImageSrcs?: Set<string>,
+  searchSelector: string = bundledGeminiSearchImageSelector(),
 ): boolean | undefined {
   if (tagName === 'img') {
     if (child.closest(SKIP_IMAGE_ANCESTOR_SELECTOR) || child.classList.contains('katex-svg')) {
@@ -224,36 +226,24 @@ export function extractGeminiAssistantImage(
     return true;
   }
 
-  if (isImageHost(child)) {
-    emitFromHost(child, htmlParts, textParts, flags, processedImageSrcs, fallbackAltFor(child));
+  if (isImageHost(child, searchSelector)) {
+    emitFromHost(
+      child,
+      htmlParts,
+      textParts,
+      flags,
+      processedImageSrcs,
+      fallbackAltFor(child, searchSelector),
+    );
     return true;
   }
 
   if (
-    child.querySelector(
-      '.attachment-container.youtube img.thumbnail, youtube-block img.thumbnail, single-video img.thumbnail',
-    ) &&
-    processYouTubeCovers(child, htmlParts, textParts, flags)
+    child.querySelector(imageSelectors['imageExport.youtubeThumbnails'].join(', ')) &&
+    processYouTubeCovers(child, htmlParts, textParts, flags, YOUTUBE_SELECTORS)
   ) {
     return true;
   }
-}
-
-function collectHostCandidates(root: Element): Element[] {
-  const hosts: Element[] = [];
-  const visit = (node: Element | ShadowRoot): void => {
-    if (node instanceof Element && node.matches(IMAGE_HOST_SELECTOR)) {
-      hosts.push(node);
-    }
-    hosts.push(...Array.from(node.querySelectorAll(IMAGE_HOST_SELECTOR)));
-    const walk = (element: Element): void => {
-      if (element.shadowRoot) visit(element.shadowRoot);
-      Array.from(element.children).forEach(walk);
-    };
-    Array.from(node.children).forEach(walk);
-  };
-  visit(root);
-  return hosts;
 }
 
 export function collectGeminiAssistantImages(
@@ -263,15 +253,26 @@ export function collectGeminiAssistantImages(
   flags: ImageFlags,
   processedImageSrcs?: Set<string>,
   skipInside?: Element | null,
+  searchSelector: string = bundledGeminiSearchImageSelector(),
 ): void {
   const seen = new Set<Element>();
-  for (const host of collectHostCandidates(root)) {
+  for (const host of collectGeminiImageHosts(
+    root,
+    `${searchSelector}, ${GENERATED_IMAGE_HOST_SELECTOR}`,
+  )) {
     if (seen.has(host)) continue;
     seen.add(host);
     if (host.closest('model-thoughts, .thoughts-container, .thoughts-content')) continue;
     if (host.closest('.attachment-container.youtube, youtube-block, single-video')) continue;
     if (skipInside && skipInside !== host && skipInside.contains(host)) continue;
-    if (isNestedImageHost(host)) continue;
-    emitFromHost(host, htmlParts, textParts, flags, processedImageSrcs, fallbackAltFor(host));
+    if (isNestedImageHost(host, searchSelector)) continue;
+    emitFromHost(
+      host,
+      htmlParts,
+      textParts,
+      flags,
+      processedImageSrcs,
+      fallbackAltFor(host, searchSelector),
+    );
   }
 }

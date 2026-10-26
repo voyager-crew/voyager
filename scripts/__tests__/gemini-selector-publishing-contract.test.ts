@@ -136,6 +136,9 @@ const PUBLISHED_KEYS = {
     'usage.root',
     'code.host',
     'userLatex.lines',
+    'imageExport.searchHosts',
+    'generatedImage.downloadIcon',
+    'canvas.codePanels',
   ],
 } as const;
 
@@ -166,6 +169,17 @@ describe('Gemini selector publishing contract', () => {
       'formula.container',
       'deepResearch.items',
       'deepResearch.reportCandidates',
+      'imageExport.caption',
+      'generatedImage.dialog',
+      'generatedImage.container',
+      'canvas.documentEditors',
+      'canvas.proseMirror',
+      'generatedUi.frames',
+      'generatedUi.attachment',
+      'generatedUi.response',
+      'generatedUi.message',
+      'generatedUi.markdown',
+      'generatedUi.container',
     ]) {
       expect(
         readGeminiSelectorFile(

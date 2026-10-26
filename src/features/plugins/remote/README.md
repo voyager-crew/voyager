@@ -146,7 +146,8 @@ The `v3` file (`format: 3`) carries ordered `turn.*`, `sidebar.*`, `modelPicker.
 `composer.*`, `inputCollapse.*`, `vim.*`, `promptHistory.*`, `slash.*`, `sentChips.*`,
 `project.*`, `activity.*`, `menu.*`, `exportOverlay.*`, `sidebarWidth.*`,
 `sidebarHover.*`, `gems.*`, `content.*`, `context.*`,
-`responseActions.*`, `researchPack.*`, `usage.root`, `code.host` and `userLatex.lines`
+`responseActions.*`, `researchPack.*`, `usage.root`, `code.host`, `userLatex.lines`,
+`imageExport.searchHosts`, `generatedImage.downloadIcon` and `canvas.codePanels`
 profiles. The publisher reads the same per-surface
 JSON fragments in `selector-data/` as the bundle. These cover conversation turns,
 sidebar entries/titles and folder display areas, model menu discovery, conversation
@@ -154,7 +155,8 @@ and export menu anchors, the sidebar toggle button’s hit area and sidebar hove
 sidebar, message inputs and their controls, input collapse, Vim, prompt history, slash commands,
 sent prompt previews, Folder as Project, folder activity, message content for export and
 forks, context images, response and research-pack actions, usage displays, code blocks
-and diagrams, and paragraphs containing LaTeX in user messages. Each online surface has its own
+and diagrams, paragraphs containing LaTeX in user messages, images for export, generated image
+download buttons, and Canvas code export. Each online surface has its own
 syntax-fallback group. A remote read must preserve the complete independently
 verified collection and the operation's original input; a miss or mismatch reruns
 the whole read with bundled data. The configured Vim wrapper-to-editable order,
@@ -165,6 +167,24 @@ The dormant Gems hider remains dormant.
 Code collapse, diagram scans, copy and export rechecks use the accepted code-host collection.
 A renamed host needs an independent native code shell; partial lists fall back whole.
 User LaTeX keeps the original paragraph and turn through rendering.
+Image export accepts a repaired search-image owner only when native source evidence proves
+the complete collection before serialization. This mainly repairs the source-picker hint and
+fallback alt text; an outer `single-image` still exports the image itself. Generated image
+download icons are proved by native `[fonticon="download"]` on the original button.
+Generated-image containers stay packaged: the independent image probe excludes the real
+`button.image-button` wrapper, so it cannot prove a renamed container. Canvas documents
+also stay packaged: their real inline `.title-container` and panel `toolbar h2.title-text`
+headers do not satisfy the proposed document-owner proof. Canvas code containers retain
+an independent fallback group, binding title and content to one verified owner.
+Canvas menu association, title/content locators, image source attributes and all image
+algorithms remain packaged.
+
+All six `generatedUi.*` keys stay packaged-only. Remote frame keys first need a
+**remote-path-only, URL-parsed origin check**: the bundled substring locator also accepts
+`https://wrong.example/gemini-code-immersive`, and a looser remote locator could capture
+another site's iframe. This batch preserves packaged behavior. The design's "reject
+wrong-origin frames" requirement remains a separate packaged-policy decision. The online
+channel cannot supply source URLs or origin policy.
 Identity extraction, account controls, delete/rename/confirmation, deletion
 tracking, native menu association, clone sanitizing, ARIA/focus safety and click
 policy remain packaged. Chat width CSS and native health checks remain packaged too.

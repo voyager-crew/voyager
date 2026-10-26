@@ -1,0 +1,22 @@
+{
+  "canvas.documentEditors": ["immersive-editor"],
+  "canvas.proseMirror": ".ProseMirror",
+  "canvas.documentTitles": [
+    "[data-test-id=\"canvas-title\"]",
+    ".canvas-title",
+    ".immersive-editor-header h1",
+    ".immersive-editor-title",
+    "h1",
+    "h2"
+  ],
+  "canvas.documentTitleInputs": [
+    "input[aria-label*=\"title\" i]",
+    "textarea[aria-label*=\"title\" i]"
+  ],
+  "canvas.codeEditor": "xap-code-editor",
+  "canvas.codeLines": ".view-lines",
+  "canvas.codeLine": ".view-line",
+  "canvas.codeTitle": "h2.title-text",
+  "canvas.codeLanguage": ".xap-monaco-container",
+  "canvas.indicators": ["immersive-entry-chip", "canvas-create-button", "[class*=\"canvas\"]"]
+}

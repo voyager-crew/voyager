@@ -14,11 +14,14 @@
  * a list whole, in its own order, and never merges entries.
  */
 import activityProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/activity.json';
+import canvasCodeProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/canvas-code.json';
 import codeProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/code.json';
 import composerProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/composer.json';
 import contentProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/content.json';
 import contextImageProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/context-images.json';
 import gemsProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/gems.json';
+import generatedImageProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/generated-image.json';
+import imageExportProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/image-export.json';
 import inputCollapseProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/input-collapse.json';
 import exportOverlayProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/menu-overlay.json';
 import menuProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/menu.json';
@@ -38,10 +41,13 @@ import userLatexProfiles from '@/features/plugins/catalog/sites/gemini/selector-
 import vimProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/vim.json';
 
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
+import { GEMINI_CANVAS_CODE_PROFILE_KEYS } from './canvasKeys';
 import { GEMINI_CODE_PROFILE_KEYS } from './codeKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
 import { GEMINI_CONTENT_PROFILE_KEYS, GEMINI_CONTEXT_IMAGE_PROFILE_KEYS } from './contentKeys';
 import { GEMINI_GEMS_PROFILE_KEYS } from './gemsKeys';
+import { GEMINI_GENERATED_IMAGE_PROFILE_KEYS } from './generatedImageKeys';
+import { GEMINI_IMAGE_EXPORT_PROFILE_KEYS } from './imageExportKeys';
 import { GEMINI_INPUT_COLLAPSE_PROFILE_KEYS } from './inputCollapseKeys';
 import { GEMINI_USER_LATEX_PROFILE_KEYS } from './mathKeys';
 import { GEMINI_MENU_PROFILE_KEYS, GEMINI_EXPORT_OVERLAY_PROFILE_KEYS } from './menuKeys';
@@ -107,6 +113,9 @@ function readBundle(): GeminiSelectorProfiles {
     ...readGroup(usageProfiles, GEMINI_USAGE_PROFILE_KEYS, 'usage'),
     ...readGroup(codeProfiles, GEMINI_CODE_PROFILE_KEYS, 'code'),
     ...readGroup(userLatexProfiles, GEMINI_USER_LATEX_PROFILE_KEYS, 'user-latex'),
+    ...readGroup(imageExportProfiles, GEMINI_IMAGE_EXPORT_PROFILE_KEYS, 'image-export'),
+    ...readGroup(generatedImageProfiles, GEMINI_GENERATED_IMAGE_PROFILE_KEYS, 'generated-image'),
+    ...readGroup(canvasCodeProfiles, GEMINI_CANVAS_CODE_PROFILE_KEYS, 'canvas-code'),
   };
   const file = readGeminiSelectorFile(
     {

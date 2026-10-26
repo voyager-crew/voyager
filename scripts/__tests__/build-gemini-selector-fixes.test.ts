@@ -53,6 +53,9 @@ function fixtureCatalog(): string {
     'usage.json',
     'code.json',
     'user-latex.json',
+    'image-export.json',
+    'generated-image.json',
+    'canvas-code.json',
   ]) {
     writeFileSync(join(destination, file), readFileSync(join(catalogDir, dataPath, file)));
   }
@@ -147,6 +150,30 @@ describe('Gemini selector publication', () => {
       expect(published(outDir, version).catalogRevision).toBe(42);
     }
     expect(readFileSync(join(outDir, 'hosts/claude.ai.json'), 'utf8')).toBe('{"keep":true}');
+  });
+
+  it('publishes image and Canvas locators that read the same native content as the package', () => {
+    document.body.innerHTML = `
+      <div class="attachment-container search-images" id="search">Search image caption</div>
+      <generated-image id="generated">
+        <img src="https://lh3.googleusercontent.com/generated" alt="Generated image">
+        <button><mat-icon fonticon="download" id="download">download</mat-icon></button>
+      </generated-image>
+      <immersive-editor id="document"><div class="ProseMirror">Canvas text</div></immersive-editor>
+      <code-immersive-panel id="code"><xap-code-editor>const answer = 42;</xap-code-editor></code-immersive-panel>`;
+    const outDir = temp();
+    writeGeminiSelectorFiles({ catalogDir, outDir, catalogRevision: 42 });
+    const current = published(outDir, 'v3');
+    const bundled = getBundledGeminiSelectorView().profiles;
+    for (const [key, id] of [
+      ['imageExport.searchHosts', 'search'],
+      ['generatedImage.downloadIcon', 'download'],
+      ['canvas.codePanels', 'code'],
+    ] as const) {
+      const nodes = readNodes(current.selectors, key);
+      expect(nodes).toEqual(readNodes(bundled, key));
+      expect(nodes.map((node) => node.id)).toEqual([id]);
+    }
   });
 
   it('rejects incomplete or misplaced profile groups and accepts the repaired group', () => {

@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'nod
 import { join } from 'node:path';
 
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from '../../src/core/gemini/selectors/activityKeys';
+import { GEMINI_CANVAS_CODE_PROFILE_KEYS } from '../../src/core/gemini/selectors/canvasKeys';
 import { GEMINI_CODE_PROFILE_KEYS } from '../../src/core/gemini/selectors/codeKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from '../../src/core/gemini/selectors/composerKeys';
 import {
@@ -9,6 +10,8 @@ import {
   GEMINI_CONTEXT_IMAGE_PROFILE_KEYS,
 } from '../../src/core/gemini/selectors/contentKeys';
 import { GEMINI_GEMS_PROFILE_KEYS } from '../../src/core/gemini/selectors/gemsKeys';
+import { GEMINI_GENERATED_IMAGE_PROFILE_KEYS } from '../../src/core/gemini/selectors/generatedImageKeys';
+import { GEMINI_IMAGE_EXPORT_PROFILE_KEYS } from '../../src/core/gemini/selectors/imageExportKeys';
 import { GEMINI_INPUT_COLLAPSE_PROFILE_KEYS } from '../../src/core/gemini/selectors/inputCollapseKeys';
 import { GEMINI_USER_LATEX_PROFILE_KEYS } from '../../src/core/gemini/selectors/mathKeys';
 import {
@@ -77,6 +80,9 @@ const PROFILE_GROUPS = [
   { file: 'usage.json', keys: GEMINI_USAGE_PROFILE_KEYS },
   { file: 'code.json', keys: GEMINI_CODE_PROFILE_KEYS },
   { file: 'user-latex.json', keys: GEMINI_USER_LATEX_PROFILE_KEYS },
+  { file: 'image-export.json', keys: GEMINI_IMAGE_EXPORT_PROFILE_KEYS },
+  { file: 'generated-image.json', keys: GEMINI_GENERATED_IMAGE_PROFILE_KEYS },
+  { file: 'canvas-code.json', keys: GEMINI_CANVAS_CODE_PROFILE_KEYS },
 ] as const;
 
 /** Build from the same locator fragments the package imports; no adapter or plugin enters it. */

@@ -1,0 +1,8 @@
+{
+  "generatedUi.frames": "iframe[src*=\"gemini-code-immersive\"]",
+  "generatedUi.attachment": ".attachment-container",
+  "generatedUi.response": "response-element",
+  "generatedUi.message": "message-content",
+  "generatedUi.markdown": ".markdown, .markdown-main-panel",
+  "generatedUi.container": ".markdown, .markdown-main-panel, message-content"
+}

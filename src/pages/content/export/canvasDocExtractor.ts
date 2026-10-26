@@ -8,45 +8,47 @@
  *   - Document Canvas: content in <immersive-editor> .ProseMirror (HTML → Markdown)
  *   - Code/App Canvas: content in <code-immersive-panel> xap-code-editor .view-lines (code lines)
  */
+import codeProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/canvas-code.json';
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/canvas-packaged.json';
+
 import type { CanvasDoc } from '../../../features/export/types/export';
+import { resolveFirstCanvasCodeRoot } from '../canvasExport/canvasTargets';
 import { convertCanvasDomToMarkdown } from '../canvasExport/markdownConverter';
+
+// Native document titles do not prove renamed editor ownership, so document roots stay packaged.
+const DOCUMENT_EDITOR = packaged['canvas.documentEditors'].join(', ');
+const CODE_PANEL = codeProfiles['canvas.codePanels'].join(', ');
 
 /**
  * Check whether any Canvas panel is open in the document.
  */
 export function isAnyCanvasOpen(): boolean {
-  return !!(
-    document.querySelector('immersive-editor') || document.querySelector('code-immersive-panel')
-  );
+  return !!(document.querySelector(DOCUMENT_EDITOR) || resolveFirstCanvasCodeRoot(document));
 }
 
 // ── Document Canvas (immersive-editor .ProseMirror) ────────────────
 
 function findAllImmersiveEditors(): HTMLElement[] {
-  return Array.from(document.querySelectorAll<HTMLElement>('immersive-editor'));
+  return Array.from(document.querySelectorAll<HTMLElement>(DOCUMENT_EDITOR));
 }
 
 function extractProseMirrorContent(editor: HTMLElement): string | null {
-  const proseMirror = editor.querySelector<HTMLElement>('.ProseMirror');
+  const proseMirror = editor.querySelector<HTMLElement>(packaged['canvas.proseMirror']);
   if (!proseMirror) return null;
   const markdown = convertCanvasDomToMarkdown(proseMirror).trim();
   return markdown || null;
 }
 
 function findProseMirrorTitle(editor: HTMLElement): string {
-  const titleSelectors: Array<{ selector: string; attr?: string }> = [
-    { selector: '[data-test-id="canvas-title"]' },
-    { selector: '.canvas-title' },
-    { selector: '.immersive-editor-header h1' },
-    { selector: '.immersive-editor-title' },
-    { selector: 'h1' },
-    { selector: 'h2' },
-    { selector: 'input[aria-label*="title" i]', attr: 'value' },
-    { selector: 'textarea[aria-label*="title" i]', attr: 'value' },
+  const selectors = [
+    ...packaged['canvas.documentTitles'].map((selector) => ({ selector, value: false })),
+    ...packaged['canvas.documentTitleInputs'].map((selector) => ({ selector, value: true })),
   ];
-  for (const { selector, attr } of titleSelectors) {
-    const el = editor.querySelector<HTMLElement>(selector);
-    const text = (attr ? (el as HTMLInputElement)?.value : el?.textContent)?.trim();
+  for (const { selector, value } of selectors) {
+    const element = editor.querySelector<HTMLElement>(selector);
+    const text = (
+      value ? (element as HTMLInputElement | null)?.value : element?.textContent
+    )?.trim();
     if (text) return text;
   }
   return '';
@@ -74,18 +76,21 @@ function extractDocumentCanvasDocs(): CanvasDoc[] {
  * App Canvas wraps it inside <immersive-panel>, so query by tag directly.
  */
 function findCodeImmersivePanel(): HTMLElement | null {
-  return document.querySelector<HTMLElement>('code-immersive-panel');
+  return resolveFirstCanvasCodeRoot(document);
 }
 
 /**
  * Extract code content from Monaco editor's .view-lines.
  * Each .view-line holds one line of code; join them with \n to preserve line breaks.
  */
-function extractCodeContent(): string | null {
-  const linesContainer = document.querySelector<HTMLElement>('code-immersive-panel .view-lines');
+function extractCodeContent(panel: HTMLElement): string | null {
+  // The bundled path preserves its historical document-wide read. A repaired host owns its source.
+  const linesContainer = panel.matches(CODE_PANEL)
+    ? document.querySelector<HTMLElement>(`${CODE_PANEL} ${packaged['canvas.codeLines']}`)
+    : panel.querySelector<HTMLElement>(packaged['canvas.codeLines']);
   if (!linesContainer) return null;
 
-  const lines = linesContainer.querySelectorAll<HTMLElement>('.view-line');
+  const lines = linesContainer.querySelectorAll<HTMLElement>(packaged['canvas.codeLine']);
   if (lines.length === 0) return null;
 
   const code = Array.from(lines)
@@ -101,15 +106,17 @@ function extractCodeContent(): string | null {
  * The title is in an h2.title-text element.
  */
 function findCodeCanvasTitle(panel: HTMLElement): string {
-  const titleEl = panel.querySelector<HTMLElement>('h2.title-text');
+  const titleEl = panel.querySelector<HTMLElement>(packaged['canvas.codeTitle']);
   return titleEl?.textContent?.trim() || '';
 }
 
 /**
  * Detect language from Monaco editor's data-mode-id attribute.
  */
-function detectCodeLanguage(): string {
-  const editor = document.querySelector<HTMLElement>('code-immersive-panel .xap-monaco-container');
+function detectCodeLanguage(panel: HTMLElement): string {
+  const editor = panel.matches(CODE_PANEL)
+    ? document.querySelector<HTMLElement>(`${CODE_PANEL} ${packaged['canvas.codeLanguage']}`)
+    : panel.querySelector<HTMLElement>(packaged['canvas.codeLanguage']);
   const lang = editor?.getAttribute('data-mode-id') || '';
   return lang;
 }
@@ -118,11 +125,11 @@ function extractCodeCanvasDocs(): CanvasDoc[] {
   const panel = findCodeImmersivePanel();
   if (!panel) return [];
 
-  const content = extractCodeContent();
+  const content = extractCodeContent(panel);
   if (!content) return [];
 
   const rawTitle = findCodeCanvasTitle(panel);
-  const lang = detectCodeLanguage();
+  const lang = detectCodeLanguage(panel);
   const title = rawTitle || (lang ? `${lang} Code` : 'Code Canvas');
 
   // Prepend language annotation as first line so formatted output shows it
@@ -151,11 +158,7 @@ export function extractAllCanvasDocs(): CanvasDoc[] {
 
 // ── Detection helpers ──────────────────────────────────────────────
 
-const CANVAS_DOC_INDICATORS: string[] = [
-  'immersive-entry-chip',
-  'canvas-create-button',
-  '[class*="canvas"]',
-];
+const CANVAS_DOC_INDICATORS = packaged['canvas.indicators'];
 
 /**
  * Check if an assistant response element contains a reference to a Canvas document.
