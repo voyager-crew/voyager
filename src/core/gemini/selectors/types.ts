@@ -1,3 +1,4 @@
+import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
 import { GEMINI_MODEL_PICKER_PROFILE_KEYS } from './modelPickerKeys';
 import { GEMINI_SIDEBAR_PROFILE_KEYS } from './sidebarKeys';
 
@@ -15,12 +16,111 @@ export const GEMINI_TURN_PROFILE_KEYS = [
 export type GeminiTurnProfileKey = (typeof GEMINI_TURN_PROFILE_KEYS)[number];
 export type GeminiTurnProfiles = Readonly<Record<GeminiTurnProfileKey, readonly string[]>>;
 
-/** v1's allowlist stays frozen; v2 adds only the explicitly reviewed locator names. */
-export const GEMINI_SELECTOR_PROFILE_KEYS = [
-  ...GEMINI_TURN_PROFILE_KEYS,
-  ...GEMINI_SIDEBAR_PROFILE_KEYS,
-  ...GEMINI_MODEL_PICKER_PROFILE_KEYS,
+/** Published formats are immutable: adding a group key requires a new format. */
+export const GEMINI_V1_SELECTOR_PROFILE_KEYS = [
+  'turn.user',
+  'turn.userWithHosts',
+  'turn.assistant',
+  'turn.assistantFallback',
+  'turn.assistantWithHosts',
 ] as const;
+
+export const GEMINI_V2_SELECTOR_PROFILE_KEYS = [
+  'turn.user',
+  'turn.userWithHosts',
+  'turn.assistant',
+  'turn.assistantFallback',
+  'turn.assistantWithHosts',
+  'sidebar.overflow',
+  'sidebar.notebooks',
+  'sidebar.recents',
+  'sidebar.allConversations',
+  'sidebar.history',
+  'sidebar.section',
+  'sidebar.row',
+  'sidebar.rowContainer',
+  'sidebar.openHost',
+  'sidebar.host',
+  'sidebar.visibilityHost',
+  'sidebar.links',
+  'sidebar.conversationLinks',
+  'sidebar.title',
+  'sidebar.titleFallback',
+  'sidebar.scroller',
+  'sidebar.interactionButton',
+  'sidebar.forkRoots',
+  'modelPicker.trigger',
+  'modelPicker.legacyPanels',
+  'modelPicker.panelFallback',
+  'modelPicker.overlayPane',
+  'modelPicker.container',
+  'modelPicker.observerRoot',
+  'modelPicker.items',
+  'modelPicker.modelEvidence',
+  'modelPicker.modelIdItem',
+  'modelPicker.modelLabel',
+  'modelPicker.thinkingLabel',
+  'modelPicker.thinkingRow',
+  'modelPicker.thinkingItems',
+  'modelPicker.thinkingContent',
+  'modelPicker.modelTitleContainer',
+  'modelPicker.thinkingTitleContainer',
+  'modelPicker.selectedModel',
+  'modelPicker.selectedThinking',
+  'modelPicker.selectedNestedThinking',
+  'modelPicker.focusInput',
+] as const;
+
+export const GEMINI_V3_SELECTOR_PROFILE_KEYS = [
+  'turn.user',
+  'turn.userWithHosts',
+  'turn.assistant',
+  'turn.assistantFallback',
+  'turn.assistantWithHosts',
+  'sidebar.overflow',
+  'sidebar.notebooks',
+  'sidebar.recents',
+  'sidebar.allConversations',
+  'sidebar.history',
+  'sidebar.section',
+  'sidebar.row',
+  'sidebar.rowContainer',
+  'sidebar.openHost',
+  'sidebar.host',
+  'sidebar.visibilityHost',
+  'sidebar.links',
+  'sidebar.conversationLinks',
+  'sidebar.title',
+  'sidebar.titleFallback',
+  'sidebar.scroller',
+  'sidebar.interactionButton',
+  'sidebar.forkRoots',
+  'modelPicker.trigger',
+  'modelPicker.legacyPanels',
+  'modelPicker.panelFallback',
+  'modelPicker.overlayPane',
+  'modelPicker.container',
+  'modelPicker.observerRoot',
+  'modelPicker.items',
+  'modelPicker.modelEvidence',
+  'modelPicker.modelIdItem',
+  'modelPicker.modelLabel',
+  'modelPicker.thinkingLabel',
+  'modelPicker.thinkingRow',
+  'modelPicker.thinkingItems',
+  'modelPicker.thinkingContent',
+  'modelPicker.modelTitleContainer',
+  'modelPicker.thinkingTitleContainer',
+  'modelPicker.selectedModel',
+  'modelPicker.selectedThinking',
+  'modelPicker.selectedNestedThinking',
+  'modelPicker.focusInput',
+  'composer.candidates',
+  'composer.draftCandidates',
+  'composer.sendContainers',
+] as const;
+
+export const GEMINI_SELECTOR_PROFILE_KEYS = GEMINI_V3_SELECTOR_PROFILE_KEYS;
 export type GeminiSelectorProfileKey = (typeof GEMINI_SELECTOR_PROFILE_KEYS)[number];
 
 /** Each surface adopts or drops its online fixes on its own; one bad group cannot void another. */
@@ -28,12 +128,13 @@ export const GEMINI_SELECTOR_PROFILE_GROUPS: readonly (readonly GeminiSelectorPr
   GEMINI_TURN_PROFILE_KEYS,
   GEMINI_SIDEBAR_PROFILE_KEYS,
   GEMINI_MODEL_PICKER_PROFILE_KEYS,
+  GEMINI_COMPOSER_PROFILE_KEYS,
 ];
 export type GeminiSelectorProfiles = Readonly<Record<GeminiSelectorProfileKey, readonly string[]>>;
 
 export interface GeminiSelectorFile {
-  /** Format 1 is accepted only with the original five turn keys. */
-  readonly format: 1 | 2;
+  /** Each format retains the allowlist shipped with its first client. */
+  readonly format: 1 | 2 | 3;
   readonly site: 'gemini';
   readonly host: GeminiSelectorHost;
   readonly catalogRevision: number;

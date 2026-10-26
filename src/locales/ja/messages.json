@@ -4420,10 +4420,10 @@
   },
   "geminiSelectorFixesTitle": {
     "message": "Gemini ページ認識のオンライン修正",
-    "description": "Switch for Gemini page detection fixes for conversations, sidebar folders and the model menu; off by default"
+    "description": "Switch for Gemini page detection fixes for conversations, sidebar folders, the model menu and message input; off by default"
   },
   "geminiSelectorFixesHint": {
-    "message": "voyager.nagi.fun から、会話、サイドバー、フォルダー、モデルメニューの認識に関する修正を取得します。確認は 6 時間に 1 回までで、ページの内容は送信しません。初期設定はオフです。",
+    "message": "voyager.nagi.fun から、会話、サイドバー、フォルダー、モデルメニュー、メッセージ入力欄の認識に関する修正を取得します。確認は 6 時間に 1 回までで、ページの内容は送信しません。初期設定はオフです。",
     "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
   },
   "geminiSelectorFixesOff": {

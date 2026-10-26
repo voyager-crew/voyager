@@ -1,37 +1,25 @@
-import { findComposer, insertIntoComposer } from '@/core/services/composer';
+import { findGeminiChatInput, readChatInput } from '@/core/gemini/composer/inputs';
+import { getBundledGeminiSelectorView } from '@/core/gemini/selectors';
+import { insertIntoComposer } from '@/core/services/composer';
 
 import { nativeHealthReporter } from '../nativeHealth';
 import { hasRenderedConversationContent } from '../nativeHealth/pageEvidence';
 
-const CHAT_INPUT_SELECTORS = [
-  '[data-testid="chat-input"][contenteditable="true"]',
-  '#prompt-textarea[contenteditable="true"]',
-  '[data-composer-markdown][contenteditable="true"]',
-  'rich-textarea [contenteditable="true"]',
-  'div[contenteditable="true"][role="textbox"]',
-  '.input-area textarea',
-  'textarea[placeholder*="Ask"]',
-  'textarea',
-] as const;
+const CHAT_INPUT_SELECTORS = getBundledGeminiSelectorView().profiles['composer.candidates'];
 
 /** Every chat input candidate as one selector list, for layout-free matching. */
 export const CHAT_INPUT_SELECTOR = CHAT_INPUT_SELECTORS.join(', ');
 
 interface FindChatInputOptions {
   requireVisible?: boolean;
+  /** Explicitly migrated owners only; Vim, prompt and health readers keep the bundle. */
+  online?: boolean;
 }
 
 export function findChatInput(options: FindChatInputOptions = {}): HTMLElement | null {
-  const requireVisible = options.requireVisible ?? true;
-  let fallback: HTMLElement | null = null;
-
-  for (const selector of CHAT_INPUT_SELECTORS) {
-    const visible = findComposer(selector);
-    if (visible) return visible;
-    fallback ??= findComposer(selector, { requireVisible: false });
-  }
-
-  return requireVisible ? null : fallback;
+  return options.online
+    ? findGeminiChatInput(options)
+    : readChatInput(CHAT_INPUT_SELECTORS, options);
 }
 
 /**

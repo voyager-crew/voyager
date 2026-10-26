@@ -1,0 +1,17 @@
+{
+  "composer.draftEditExclusion": ".edit-container, .user-query-container.edit-mode",
+  "composer.draftPlaceholderHost": "rich-textarea",
+  "composer.notificationInteraction": "rich-textarea, textarea, [contenteditable=\"true\"], div[role=\"textbox\"]",
+  "composer.notificationTyping": "[aria-busy=\"true\"]",
+  "composer.notificationGenerating": [
+    "[role=\"progressbar\"]",
+    ".mat-mdc-progress-spinner",
+    ".mat-progress-spinner",
+    "button[aria-label*=\"Stop\"]",
+    "button[aria-label*=\"Cancel\"]",
+    "button[aria-label*=\"停止\"]",
+    "button[aria-label*=\"取消\"]",
+    "button[data-test-id*=\"stop\"]",
+    "button[data-test-id*=\"cancel\"]"
+  ]
+}

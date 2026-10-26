@@ -4420,10 +4420,10 @@
   },
   "geminiSelectorFixesTitle": {
     "message": "Correctifs en ligne pour la détection des pages Gemini",
-    "description": "Switch for Gemini page detection fixes for conversations, sidebar folders and the model menu; off by default"
+    "description": "Switch for Gemini page detection fixes for conversations, sidebar folders, the model menu and message input; off by default"
   },
   "geminiSelectorFixesHint": {
-    "message": "Récupère depuis voyager.nagi.fun des correctifs pour reconnaître les conversations, la barre latérale, les dossiers et le menu des modèles. Vérifie les mises à jour au plus une fois toutes les 6 heures. Aucun contenu de page n’est envoyé. Désactivé par défaut.",
+    "message": "Récupère depuis voyager.nagi.fun des correctifs pour reconnaître les conversations, la barre latérale, les dossiers, le menu des modèles et la zone de saisie des messages. Vérifie les mises à jour au plus une fois toutes les 6 heures. Aucun contenu de page n’est envoyé. Désactivé par défaut.",
     "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
   },
   "geminiSelectorFixesOff": {

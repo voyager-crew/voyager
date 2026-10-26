@@ -11,7 +11,7 @@ export async function installGeminiSelectorPatch(
     lifetime: lifetime.signal,
     bundledRevision: 0,
     read: async () => ({
-      format: 2,
+      format: 3,
       site: 'gemini',
       host: 'gemini.google.com',
       catalogRevision: 1,

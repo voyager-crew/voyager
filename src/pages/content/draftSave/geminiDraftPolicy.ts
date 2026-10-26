@@ -4,8 +4,10 @@
  * instructions stripped at input, store and restore, and the main composer
  * found by Gemini's own four candidates rather than the generic chat finder.
  */
+import { findGeminiDraftInput } from '@/core/gemini/composer/draft';
 import { detectAccountContextFromDocument } from '@/core/services/AccountIsolationService';
 import { isGeminiEnterpriseEnvironment } from '@/core/utils/gemini';
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/composer-draft-packaged.json';
 import type {
   DraftPolicy,
   DraftSanitizeStage,
@@ -17,39 +19,11 @@ import { setInputText } from '../utils/inputHelper';
 /** Storage key prefix for Gemini draft entries in chrome.storage.local */
 export const GEMINI_DRAFT_PREFIX = 'gvDraft_';
 
-/** Selectors for finding the chat input */
-const INPUT_SELECTORS = [
-  'rich-textarea [contenteditable="true"]',
-  'div[contenteditable="true"][role="textbox"]',
-  '.input-area textarea',
-  'textarea[placeholder*="Ask"]',
-] as const;
-export const GEMINI_DRAFT_INPUT_SELECTOR_LIST = INPUT_SELECTORS.join(', ');
-
 /**
  * `stripInstructionBlock` folds every `\n\n` into `\n`, so each stage that runs
  * it changes blank lines again; dropping or adding a stage changes stored drafts.
  */
 const SANITIZE_STAGES: ReadonlySet<DraftSanitizeStage> = new Set(['input', 'store', 'restore']);
-
-/**
- * Find the visible main chat input element.
- */
-function findChatInput(doc: Document): HTMLElement | null {
-  for (const selector of INPUT_SELECTORS) {
-    const els = doc.querySelectorAll(selector);
-    for (const el of Array.from(els)) {
-      // Editing a sent turn must never replace the unsent main-composer draft.
-      if (
-        !el.closest('.edit-container, .user-query-container.edit-mode') &&
-        el.getBoundingClientRect().height > 0
-      ) {
-        return el as HTMLElement;
-      }
-    }
-  }
-  return null;
-}
 
 /**
  * Get the text content of the chat input.
@@ -69,7 +43,7 @@ function isInputEffectivelyEmpty(input: HTMLElement): boolean {
   if (text.length === 0) return true;
 
   // Check if the text is just placeholder text
-  const richTextarea = input.closest('rich-textarea');
+  const richTextarea = input.closest(packaged['composer.draftPlaceholderHost']);
   const placeholders = [
     input.getAttribute('data-placeholder'),
     input.getAttribute('aria-placeholder'),
@@ -89,7 +63,7 @@ export function geminiDraftPolicy(): DraftPolicy {
       loc.hostname === 'gemini.google.com' && !isGeminiEnterpriseEnvironment(loc, doc),
     store: { prefix: GEMINI_DRAFT_PREFIX },
     keyFor: (loc) => loc.pathname,
-    findInput: findChatInput,
+    findInput: findGeminiDraftInput,
     readText: getInputText,
     isEmpty: isInputEffectivelyEmpty,
     write(field, text) {

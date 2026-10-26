@@ -136,16 +136,17 @@ a check is in flight, every other caller shares that one request.
 Only the background fetches:
 
 ```text
-https://voyager.nagi.fun/catalog/gemini-selectors/v2/hosts/gemini.google.com.json
+https://voyager.nagi.fun/catalog/gemini-selectors/v3/hosts/gemini.google.com.json
 ```
 
 Gemini Enterprise is not covered: its pages never start the Gemini turn
 consumers, so a file for it would have no reader.
 
-The `v2` file (`format: 2`) carries ordered `turn.*`, `sidebar.*` and
-`modelPicker.*` profiles. The publisher reads the same `turn.json`, `sidebar.json`
-and `model-picker.json` fragments as the bundle. These cover conversation turns,
-sidebar entries/titles and folder display areas, plus model menu discovery.
+The `v3` file (`format: 3`) carries ordered `turn.*`, `sidebar.*`, `modelPicker.*` and
+`composer.*` profiles. The publisher reads the same `turn.json`, `sidebar.json`,
+`model-picker.json` and `composer.json` fragments as the bundle. These cover
+conversation turns, sidebar entries/titles and folder display areas, model menu
+discovery, and message inputs and their controls.
 Identity extraction, account controls, delete/rename/confirmation, deletion
 tracking and click policy remain packaged. So do locators whose online match would
 have to equal the packaged one before use (sidebar toggle, hosts, new-chat and
@@ -158,14 +159,17 @@ a whole. Missing keys keep their bundled values. An empty patch withdraws all
 online overrides. Roll back by reverting the data and publishing a **higher**
 source revision, not by lowering `catalogRevision`.
 
-The publisher also keeps `/gemini-selectors/v1/hosts/gemini.google.com.json`
-for older extensions: its `format: 1` projection contains only the original five
-`turn.*` profiles. Extra keys would make those clients reject the entire file.
-The current client fetches only v2 and requires format 2 on that response. The
-local cache is bound to `extensionVersion`, so a v1 file cached by an older
-extension is discarded on upgrade: until the next check stores a v2 file, every
-surface, turns included, uses the bundle. Format 1 never accepts v2-only keys. No
-consent or user-record migration is introduced by this protocol change.
+The publisher keeps `/gemini-selectors/v1/hosts/gemini.google.com.json` and
+`/gemini-selectors/v2/hosts/gemini.google.com.json` for older extensions. The
+`format: 1` projection contains only the original five `turn.*` profiles; the
+`format: 2` projection adds the original sidebar and model menu profiles. Neither
+projection gains composer keys: older clients would reject the entire file.
+The current client fetches only v3 and requires format 3 on that response.
+Valid format 1 and 2 caches remain readable, with newer surfaces using bundled
+profiles until a v3 response replaces them. The cache is still bound to
+`extensionVersion`, so an extension upgrade discards another version's cache.
+Each format retains its original key allowlist. No consent or user-record
+migration is introduced by this protocol change.
 
 `gv.geminiSelectors.status`, `gv.geminiSelectors.setEnabled`, and
 `gv.geminiSelectors.refresh` are the popup's background API. Turning the switch

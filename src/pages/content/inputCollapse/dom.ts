@@ -1,3 +1,5 @@
+import composerPackaged from '@/features/plugins/catalog/sites/gemini/selector-data/composer-packaged.json';
+
 import { getTranslationSync } from '../../../utils/i18n';
 
 export const STYLE_ID = 'gemini-voyager-input-collapse';
@@ -218,8 +220,8 @@ export function isInputEmpty(container: HTMLElement): boolean {
 
   // Check for attachments. If attachments exist, the input is not considered empty.
   const attachmentsArea =
-    container.querySelector('uploader-file-preview') ||
-    container.querySelector('.file-preview-wrapper');
+    container.querySelector(composerPackaged['composer.uploadPreview']) ||
+    container.querySelector(composerPackaged['composer.uploadPreviewFallback']);
   if (attachmentsArea) return false;
 
   const text = textarea.textContent?.trim() || '';

@@ -4420,10 +4420,10 @@
   },
   "geminiSelectorFixesTitle": {
     "message": "Онлайн-исправления распознавания страниц Gemini",
-    "description": "Switch for Gemini page detection fixes for conversations, sidebar folders and the model menu; off by default"
+    "description": "Switch for Gemini page detection fixes for conversations, sidebar folders, the model menu and message input; off by default"
   },
   "geminiSelectorFixesHint": {
-    "message": "Загружает с voyager.nagi.fun исправления распознавания диалогов, боковой панели, папок и меню моделей. Проверяет не чаще раза в 6 часов. Содержимое страниц не передаётся. По умолчанию выключено.",
+    "message": "Загружает с voyager.nagi.fun исправления распознавания диалогов, боковой панели, папок, меню моделей и поля ввода сообщений. Проверяет не чаще раза в 6 часов. Содержимое страниц не передаётся. По умолчанию выключено.",
     "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
   },
   "geminiSelectorFixesOff": {

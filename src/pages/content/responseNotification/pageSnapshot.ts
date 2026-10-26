@@ -1,5 +1,6 @@
 import { resolveGeminiTurnOperation, type GeminiTurnView } from '@/core/gemini/selectors';
 import { getAssistantTurnSelectors } from '@/core/utils/selectors';
+import composerPackaged from '@/features/plugins/catalog/sites/gemini/selector-data/composer-draft-packaged.json';
 
 /**
  * Read-only views of the Gemini page that the completion run inspects. Every
@@ -9,7 +10,6 @@ import { getAssistantTurnSelectors } from '@/core/utils/selectors';
 
 const MAX_NOTIFICATION_TITLE_LENGTH = 80;
 const MAX_NOTIFICATION_PROMPT_LENGTH = 140;
-const PROMPT_SELECTORS = 'rich-textarea, textarea, [contenteditable="true"], div[role="textbox"]';
 // Anchored to the start, so it only strips leading invisible characters and can
 // never split an emoji sequence in the label body.
 const TURN_LABEL_PREFIXES =
@@ -20,19 +20,8 @@ const INJECTED_UI_SELECTOR = '.gv-fork-btn, .gv-fork-indicator-group';
 const COMPLETION_ACTION_MAX_PARENT_DEPTH = 4;
 
 // Gemini's typing animation keeps a reply busy until it has played, which a hidden page never does.
-const TYPING_ANIMATION_SELECTOR = '[aria-busy="true"]';
-
-const GENERATING_SELECTORS = [
-  '[role="progressbar"]',
-  '.mat-mdc-progress-spinner',
-  '.mat-progress-spinner',
-  'button[aria-label*="Stop"]',
-  'button[aria-label*="Cancel"]',
-  'button[aria-label*="停止"]',
-  'button[aria-label*="取消"]',
-  'button[data-test-id*="stop"]',
-  'button[data-test-id*="cancel"]',
-] as const;
+const TYPING_ANIMATION_SELECTOR = composerPackaged['composer.notificationTyping'];
+const GENERATING_SELECTORS = composerPackaged['composer.notificationGenerating'];
 
 const COMPLETION_ACTION_SELECTORS = [
   '[data-test-id="copy-button"]',
@@ -59,7 +48,7 @@ const USER_PROMPT_SELECTORS = [
 
 export function isPromptInteractionTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
-  return !!target.closest(PROMPT_SELECTORS);
+  return !!target.closest(composerPackaged['composer.notificationInteraction']);
 }
 
 function isElementVisible(element: Element): boolean {

@@ -72,30 +72,39 @@ describe('Gemini refresh for newly migrated surfaces', () => {
     expect(cachedRows(boundary.values[geminiSelectorCacheKey(HOST)])).toEqual(['existing']);
   });
 
-  it('keeps a valid v1 cache usable until a valid v2 response replaces it', async () => {
-    document.body.innerHTML = `
-      <div id="existing" data-test-id="conversation"></div>
+  it.each([1, 2] as const)(
+    'keeps a valid v%i cache usable until a v3 response replaces it',
+    async (format) => {
+      document.body.innerHTML = `
+      <div id="existing" data-test-id="conversation" class="cached-row"></div>
       <div id="online" class="new-row"></div>`;
-    const legacy: GeminiSelectorFile = { ...selectorFile(), format: 1 };
-    const boundary = memoryStorage({ [geminiSelectorCacheKey(HOST)]: cacheEntry(legacy) });
-    let attempts = 0;
-    const owner = new GeminiSelectorRefresher({
-      storage: boundary.storage,
-      fetchImpl: async () => {
-        attempts += 1;
-        return jsonResponse(
-          attempts === 1 ? legacy : selectorFile(12, { 'sidebar.row': ['.new-row'] }),
-        );
-      },
-      extensionVersion: VERSION,
-      bundledRevision: 10,
-    });
-    expect(await owner.refresh(HOST)).toMatchObject({ result: 'failed', cachedRevision: 11 });
-    expect(cachedRows(boundary.values[geminiSelectorCacheKey(HOST)])).toEqual(['existing']);
-    expect(await owner.refresh(HOST, { force: true })).toMatchObject({
-      result: 'updated',
-      cachedRevision: 12,
-    });
-    expect(cachedRows(boundary.values[geminiSelectorCacheKey(HOST)])).toEqual(['online']);
-  });
+      const legacy: GeminiSelectorFile = {
+        ...selectorFile(
+          11,
+          format === 1 ? { 'turn.user': ['.fixed-user'] } : { 'sidebar.row': ['.cached-row'] },
+        ),
+        format,
+      };
+      const boundary = memoryStorage({ [geminiSelectorCacheKey(HOST)]: cacheEntry(legacy) });
+      let attempts = 0;
+      const owner = new GeminiSelectorRefresher({
+        storage: boundary.storage,
+        fetchImpl: async () => {
+          attempts += 1;
+          return jsonResponse(
+            attempts === 1 ? legacy : selectorFile(12, { 'sidebar.row': ['.new-row'] }),
+          );
+        },
+        extensionVersion: VERSION,
+        bundledRevision: 10,
+      });
+      expect(await owner.refresh(HOST)).toMatchObject({ result: 'failed', cachedRevision: 11 });
+      expect(cachedRows(boundary.values[geminiSelectorCacheKey(HOST)])).toEqual(['existing']);
+      expect(await owner.refresh(HOST, { force: true })).toMatchObject({
+        result: 'updated',
+        cachedRevision: 12,
+      });
+      expect(cachedRows(boundary.values[geminiSelectorCacheKey(HOST)])).toEqual(['online']);
+    },
+  );
 });

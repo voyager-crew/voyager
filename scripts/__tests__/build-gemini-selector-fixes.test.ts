@@ -29,13 +29,13 @@ function fixtureCatalog(): string {
   const path = temp();
   const destination = join(path, dataPath);
   mkdirSync(destination, { recursive: true });
-  for (const file of ['turn.json', 'sidebar.json', 'model-picker.json']) {
+  for (const file of ['turn.json', 'sidebar.json', 'model-picker.json', 'composer.json']) {
     writeFileSync(join(destination, file), readFileSync(join(catalogDir, dataPath, file)));
   }
   return path;
 }
 
-function published(outDir: string, version: 'v1' | 'v2'): GeminiSelectorFile {
+function published(outDir: string, version: 'v1' | 'v2' | 'v3'): GeminiSelectorFile {
   const path = join(outDir, 'gemini-selectors', version, 'hosts', `${host}.json`);
   const file = readGeminiSelectorFile(JSON.parse(readFileSync(path, 'utf8')) as unknown, host);
   if (!file) throw new Error(`Published ${version} file is invalid`);
@@ -58,7 +58,7 @@ afterEach(() => {
 });
 
 describe('Gemini selector publication', () => {
-  it('publishes v1 and v2 files that preserve bundled nodes, order and IDs', () => {
+  it('keeps old clients reading their turns and rows when v3 adds composer fixes', () => {
     document.body.innerHTML = `
       <div id="question-b" class="user-query-container">Second</div>
       <div id="question-a" class="user-query-container">First</div>
@@ -69,37 +69,45 @@ describe('Gemini selector publication', () => {
       <div role="menu">
         <button id="model-fast" data-mode-id="fast">Fast</button>
         <button id="model-pro" data-mode-id="pro">Pro</button>
-      </div>`;
+      </div>
+      <rich-textarea><div id="draft" contenteditable="true" role="textbox">Unsent draft</div></rich-textarea>`;
     const outDir = temp();
     const written = writeGeminiSelectorFiles({ catalogDir, outDir, catalogRevision: 42 });
-    expect(written).toHaveLength(2);
+    expect(written).toHaveLength(3);
     const legacy = published(outDir, 'v1');
-    const current = published(outDir, 'v2');
+    const sidebarClient = published(outDir, 'v2');
+    const current = published(outDir, 'v3');
     expect(legacy.format).toBe(1);
-    expect(current.format).toBe(2);
+    expect(sidebarClient.format).toBe(2);
+    expect(current.format).toBe(3);
     expect(legacy.catalogRevision).toBe(42);
+    expect(sidebarClient.catalogRevision).toBe(42);
     expect(current.catalogRevision).toBe(42);
-    // Released v1 clients read exactly the turn fragment: nothing added, dropped or reordered.
-    expect(legacy.selectors).toEqual(
-      JSON.parse(readFileSync(join(catalogDir, dataPath, 'turn.json'), 'utf8')) as unknown,
-    );
     const bundled = getBundledGeminiSelectorView().profiles;
     expect(readNodes(legacy.selectors, 'turn.user')).toEqual(readNodes(bundled, 'turn.user'));
     const comparableKeys = ['turn.user', 'sidebar.row', 'modelPicker.modelIdItem'] as const;
     for (const key of comparableKeys) {
+      expect(readNodes(sidebarClient.selectors, key)).toEqual(readNodes(bundled, key));
       expect(readNodes(current.selectors, key)).toEqual(readNodes(bundled, key));
     }
+    expect(readNodes(current.selectors, 'composer.candidates')).toEqual(
+      readNodes(bundled, 'composer.candidates'),
+    );
+    expect(readNodes(current.selectors, 'composer.candidates').map((input) => input.text)).toEqual([
+      'Unsent draft',
+    ]);
     expect(readNodes(current.selectors, 'sidebar.row').map((row) => row.id)).toEqual([
       'row-b',
       'row-a',
     ]);
     // v1's frozen guard would reject the expanded payload; its projection must remain readable.
     expect(readGeminiSelectorFile({ ...current, format: 1 }, host)).toBeNull();
+    expect(readGeminiSelectorFile({ ...current, format: 2 }, host)).toBeNull();
   });
 
-  it('removes obsolete hosts in both versions while preserving unrelated catalogs', () => {
+  it('removes obsolete hosts in all versions while preserving unrelated catalogs', () => {
     const outDir = temp();
-    for (const version of ['v1', 'v2']) {
+    for (const version of ['v1', 'v2', 'v3']) {
       const hostsDir = join(outDir, 'gemini-selectors', version, 'hosts');
       mkdirSync(hostsDir, { recursive: true });
       writeFileSync(join(hostsDir, 'aistudio.google.com.json'), '{}');
@@ -108,7 +116,7 @@ describe('Gemini selector publication', () => {
     mkdirSync(join(outDir, 'hosts'));
     writeFileSync(join(outDir, 'hosts/claude.ai.json'), '{"keep":true}');
     writeGeminiSelectorFiles({ catalogDir, outDir, catalogRevision: 42 });
-    for (const version of ['v1', 'v2'] as const) {
+    for (const version of ['v1', 'v2', 'v3'] as const) {
       expect(readdirSync(join(outDir, 'gemini-selectors', version, 'hosts'))).toEqual([
         'gemini.google.com.json',
       ]);
@@ -133,10 +141,10 @@ describe('Gemini selector publication', () => {
     );
     writeFileSync(sidebarPath, JSON.stringify(sidebar));
     const repaired = buildGeminiSelectorFiles({ catalogDir: fixture, catalogRevision: 42 });
-    expect(repaired.get(host)?.format).toBe(2);
+    expect(repaired.get(host)?.format).toBe(3);
   });
 
-  it('leaves the published pair intact when a replacement exceeds the decoded byte budget', () => {
+  it('leaves every published version intact when a replacement exceeds the decoded byte budget', () => {
     const fixture = fixtureCatalog();
     const outDir = temp();
     writeGeminiSelectorFiles({ catalogDir, outDir, catalogRevision: 42 });
@@ -154,5 +162,6 @@ describe('Gemini selector publication', () => {
     ).toThrow();
     expect(published(outDir, 'v1').catalogRevision).toBe(42);
     expect(published(outDir, 'v2').catalogRevision).toBe(42);
+    expect(published(outDir, 'v3').catalogRevision).toBe(42);
   });
 });

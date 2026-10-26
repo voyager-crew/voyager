@@ -1,29 +1,9 @@
 import type { EffectiveSendKey } from '@/core/services/composer/sendKeys/sendKeyCoordinator';
 import { isImeKeyEvent } from '@/core/services/composer/sendKeys/sendKeyIntent';
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/composer-send-packaged.json';
 
 /** Selectors and semantic fallbacks shared by send-related content features. */
-export const SEND_BUTTON_SELECTORS = [
-  '.update-button',
-  'button[aria-label*="Send"]',
-  'button[aria-label*="send"]',
-  'button[aria-label*="Run"]',
-  'button[aria-label*="run"]',
-  'button[data-tooltip*="Send"]',
-  'button[data-tooltip*="send"]',
-  'button[data-tooltip*="Run"]',
-  'button[data-tooltip*="run"]',
-  'button[mattooltip*="Run"]',
-  'button[mattooltip*="run"]',
-  'button[data-testid*="send"]',
-  'button[data-testid*="submit"]',
-  'button mat-icon[fonticon="send"]',
-  'button mat-icon[fonticon="play_arrow"]',
-  '[data-send-button]',
-  '.send-button',
-  'button[aria-label*="Update"]',
-  'button[aria-label*="Save"]',
-  'button[aria-label*="更新"]',
-] as const;
+export const SEND_BUTTON_SELECTORS = packaged['composer.sendCandidates'];
 
 const ACTION_BUTTON_LABEL_ATTRIBUTES = [
   'aria-label',
@@ -35,25 +15,16 @@ const ACTION_BUTTON_LABEL_ATTRIBUTES = [
 const ACTION_BUTTON_LABEL_PATTERN =
   /\b(send|submit|run|update|save|confirm)\b|发送|提交|傳送|送出|送信|전송|enviar|envoyer|senden|отправ|إرسال|运行|執行|実行|실행|更新|保存|修改/i;
 
+// Unknown wrappers may prove a new send, but not a save/confirmation action from another editor.
+const INITIAL_SEND_LABEL_PATTERN =
+  /\b(send|submit|run)\b|发送|提交|傳送|送出|送信|전송|enviar|envoyer|senden|отправ|إرسال|运行|執行|実行|실행/i;
+
 const UPDATE_BUTTON_LABEL_PATTERN =
   /\b(update|save|confirm)\b|更新|保存|actualizar|guardar|mettre à jour|enregistrer|atualizar|salvar|обновить|сохранить|更新する|保存する|업데이트|저장|تحديث|حفظ/i;
 
-const SEND_COMPOSER_SELECTORS = [
-  'form',
-  '.text-input-field',
-  '.user-query-container.edit-mode',
-  '.input-area',
-  'ms-prompt-box',
-  'ms-prompt-input-wrapper',
-  'ms-prompt-input',
-  'ms-chat-turn-input',
-  'chat-message',
-] as const;
+const SEND_COMPOSER_SELECTORS = packaged['composer.actionOwners'];
 
-const SEND_INPUT_SELECTOR =
-  '[data-testid="chat-input"][contenteditable="true"], #prompt-textarea[contenteditable="true"], ' +
-  'rich-textarea [contenteditable="true"], [contenteditable="true"][role="textbox"], ' +
-  '[contenteditable="true"], textarea';
+const SEND_INPUT_SELECTOR = packaged['composer.actionInput'];
 
 function getButtonLabel(button: HTMLButtonElement): string {
   const labels = ACTION_BUTTON_LABEL_ATTRIBUTES.map((attribute) => button.getAttribute(attribute));
@@ -62,22 +33,30 @@ function getButtonLabel(button: HTMLButtonElement): string {
 }
 
 function hasSendActionIcon(button: HTMLButtonElement): boolean {
-  const icon = button.querySelector<HTMLElement>('.material-symbols-outlined, mat-icon');
+  const icon = button.querySelector<HTMLElement>(packaged['composer.actionIcon']);
   const iconName = (icon?.getAttribute('fonticon') || icon?.textContent || '').trim().toLowerCase();
   return iconName === 'send' || iconName === 'play_arrow';
 }
 
 /** Gemini uses the same send-button wrapper for Stop during generation. */
 export function isUnavailableSendControl(control: HTMLElement): boolean {
-  if (control.closest('.stop, .gem-button-disabled, .ds-button--disabled, [aria-disabled="true"]'))
-    return true;
+  if (control.closest(packaged['composer.unavailableAncestors'])) return true;
   const button = control instanceof HTMLButtonElement ? control : control.querySelector('button');
   if (!button) return control.matches(':disabled');
   return (
     button.disabled ||
     button.matches('[aria-disabled="true"]') ||
-    !!button.querySelector('mat-icon[fonticon="stop"], mat-icon[fonticon="stop_circle"]') ||
+    !!button.querySelector(packaged['composer.stopIcons']) ||
     /\b(stop|cancel)\b|停止|取消|중지|отмен|останов|إيقاف/i.test(getButtonLabel(button))
+  );
+}
+
+/** Native labels/icons independently identify a send action when its wrapper was renamed. */
+export function isSemanticSendActionButton(button: HTMLButtonElement): boolean {
+  const label = getButtonLabel(button);
+  return (
+    !isUnavailableSendControl(button) &&
+    (INITIAL_SEND_LABEL_PATTERN.test(label) || hasSendActionIcon(button))
   );
 }
 
@@ -107,7 +86,8 @@ export function findClosestSendActionButton(target: Element): HTMLButtonElement 
 /** Distinguishes an edit submission from the initial Edit action. */
 export function isUpdateActionButton(button: HTMLButtonElement): boolean {
   return (
-    button.matches('.update-button') || UPDATE_BUTTON_LABEL_PATTERN.test(getButtonLabel(button))
+    button.matches(packaged['composer.updateButton']) ||
+    UPDATE_BUTTON_LABEL_PATTERN.test(getButtonLabel(button))
   );
 }
 

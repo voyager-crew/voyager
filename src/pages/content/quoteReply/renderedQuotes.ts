@@ -1,5 +1,7 @@
 // Keep sent quote markers for export, timeline and teardown; repaint after user-LaTeX rendering.
 // Composer classes alone preserve caret, IME and native submitted Markdown.
+import { getGeminiSelectorView } from '@/core/gemini/selectors';
+
 import { CHAT_INPUT_SELECTOR, findChatInput } from '../chatInput/index';
 
 const USER_LINE_SELECTOR = 'p.query-text-line';
@@ -166,7 +168,7 @@ function collectUserLineContainers(): Set<HTMLElement> {
 }
 
 function renderQuotedComposerLines(): void {
-  const input = findChatInput({ requireVisible: false });
+  const input = findChatInput({ requireVisible: false, online: true });
   if (!input || input instanceof HTMLTextAreaElement) return;
 
   const lines = Array.from(input.children).filter(
@@ -204,16 +206,17 @@ export function renderQuotedUserMessages(): void {
 // input measures layout, and doing that per record slows long histories (#1040).
 const QUOTE_RELEVANT_SELECTOR = `${USER_LINE_SELECTOR}, .${QUOTE_WRAPPER_CLASS}, ${CHAT_INPUT_SELECTOR}`;
 
-function mutationMayAffectQuotes(mutation: MutationRecord): boolean {
+const NATIVE_EDITABLE_SELECTOR =
+  'textarea, [contenteditable="true"], [contenteditable="plaintext-only"]';
+
+function mutationMayAffectQuotes(mutation: MutationRecord, selector: string): boolean {
   const targetElement =
     mutation.target instanceof Element ? mutation.target : mutation.target.parentElement;
-  if (targetElement?.closest(QUOTE_RELEVANT_SELECTOR)) return true;
+  if (targetElement?.closest(selector)) return true;
 
   return Array.from(mutation.addedNodes).some(
     (node) =>
-      node instanceof Element &&
-      (node.matches(QUOTE_RELEVANT_SELECTOR) ||
-        node.querySelector(QUOTE_RELEVANT_SELECTOR) !== null),
+      node instanceof Element && (node.matches(selector) || node.querySelector(selector) !== null),
   );
 }
 
@@ -248,7 +251,7 @@ export function startRenderedQuoteStyling(): () => void {
   renderQuotedUserMessages();
 
   const handleInput = (event: Event) => {
-    const input = findChatInput({ requireVisible: false });
+    const input = findChatInput({ requireVisible: false, online: true });
     if (!input || !(event.target instanceof Node) || !input.contains(event.target)) return;
     renderQuotedComposerLines();
   };
@@ -256,7 +259,11 @@ export function startRenderedQuoteStyling(): () => void {
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   const observer = new MutationObserver((mutations) => {
-    if (!mutations.some(mutationMayAffectQuotes)) return;
+    // Renamed composers must reach the guarded read even when the host replaces lines without input.
+    const selector = getGeminiSelectorView().remoteKeys.has('composer.candidates')
+      ? `${QUOTE_RELEVANT_SELECTOR}, ${NATIVE_EDITABLE_SELECTOR}`
+      : QUOTE_RELEVANT_SELECTOR;
+    if (!mutations.some((mutation) => mutationMayAffectQuotes(mutation, selector))) return;
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       debounceTimer = null;

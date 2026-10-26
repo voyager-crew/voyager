@@ -14,6 +14,7 @@
  *
  * Catalog sites never create one; `sendShortcut` keeps its own listener there.
  */
+import { findGeminiSendButton } from '@/core/gemini/composer/send';
 import { LoggerService } from '@/core/services/LoggerService';
 import { StorageKeys } from '@/core/types/common';
 import { isSafari as detectSafari } from '@/core/utils/browser';
@@ -105,7 +106,10 @@ export function createSendKeyCoordinator(
     if (!kind) return;
 
     if (intent === 'send') {
-      const sendButton = findSendButton(target, policy.sendContainerSelectors);
+      const sendButton =
+        site === 'gemini'
+          ? findGeminiSendButton(target)
+          : findSendButton(target, policy.sendContainerSelectors);
       if (!sendButton) return;
       // Element-level and stopPropagation only: document-capture readers have already run.
       event.preventDefault();

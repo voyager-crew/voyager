@@ -1,11 +1,14 @@
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { GEMINI_COMPOSER_PROFILE_KEYS } from '../../src/core/gemini/selectors/composerKeys';
 import { GEMINI_MODEL_PICKER_PROFILE_KEYS } from '../../src/core/gemini/selectors/modelPickerKeys';
 import { GEMINI_SIDEBAR_PROFILE_KEYS } from '../../src/core/gemini/selectors/sidebarKeys';
 import {
   GEMINI_SELECTOR_HOSTS,
   GEMINI_TURN_PROFILE_KEYS,
+  GEMINI_V1_SELECTOR_PROFILE_KEYS,
+  GEMINI_V2_SELECTOR_PROFILE_KEYS,
   type GeminiSelectorFile,
   type GeminiSelectorProfileKey,
 } from '../../src/core/gemini/selectors/types';
@@ -25,6 +28,7 @@ const PROFILE_GROUPS = [
   { file: 'turn.json', keys: GEMINI_TURN_PROFILE_KEYS },
   { file: 'sidebar.json', keys: GEMINI_SIDEBAR_PROFILE_KEYS },
   { file: 'model-picker.json', keys: GEMINI_MODEL_PICKER_PROFILE_KEYS },
+  { file: 'composer.json', keys: GEMINI_COMPOSER_PROFILE_KEYS },
 ] as const;
 
 /** Build from the same locator fragments the package imports; no adapter or plugin enters it. */
@@ -52,7 +56,7 @@ export function buildGeminiSelectorFiles(
   for (const host of GEMINI_SELECTOR_HOSTS) {
     const file = readGeminiSelectorFile(
       {
-        format: 2,
+        format: 3,
         site: 'gemini',
         host,
         catalogRevision: options.catalogRevision,
@@ -66,26 +70,29 @@ export function buildGeminiSelectorFiles(
   return files;
 }
 
-function legacyProjection(file: GeminiSelectorFile): GeminiSelectorFile {
-  const selectors = Object.fromEntries(
-    GEMINI_TURN_PROFILE_KEYS.map((key) => [key, file.selectors[key]] as const),
-  );
-  const legacy = readGeminiSelectorFile({ ...file, format: 1, selectors }, file.host);
-  if (!legacy) throw new Error(`${file.host}: invalid legacy Gemini turn projection`);
+function legacyProjection(file: GeminiSelectorFile, format: 1 | 2): GeminiSelectorFile {
+  const keys = format === 1 ? GEMINI_V1_SELECTOR_PROFILE_KEYS : GEMINI_V2_SELECTOR_PROFILE_KEYS;
+  const selectors = Object.fromEntries(keys.map((key) => [key, file.selectors[key]] as const));
+  const legacy = readGeminiSelectorFile({ ...file, format, selectors }, file.host);
+  if (!legacy) throw new Error(`${file.host}: invalid legacy Gemini v${format} projection`);
   return legacy;
 }
 
-/** v1 remains turn-only so released clients do not reject fixes for keys they do not know. */
+/** Frozen v1/v2 projections keep released clients from rejecting unfamiliar composer keys. */
 export function writeGeminiSelectorFiles(options: GeminiSelectorPublishOptions): readonly string[] {
   const files = buildGeminiSelectorFiles(options);
   const versions = [
     {
       directory: 'v1',
-      files: [...files].map(([host, file]) => [host, legacyProjection(file)] as const),
+      files: [...files].map(([host, file]) => [host, legacyProjection(file, 1)] as const),
     },
-    { directory: 'v2', files: [...files] },
+    {
+      directory: 'v2',
+      files: [...files].map(([host, file]) => [host, legacyProjection(file, 2)] as const),
+    },
+    { directory: 'v3', files: [...files] },
   ];
-  // Validate both versions before writing either: a bad v2 must not leave a half-published pair.
+  // Validate all versions before writing: a bad v3 must leave the previous publication intact.
   const outputs = versions.map(({ directory, files: versionFiles }) => ({
     hostsDir: join(options.outDir, 'gemini-selectors', directory, 'hosts'),
     serialized: versionFiles.map(([host, file]) => {

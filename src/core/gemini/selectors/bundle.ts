@@ -13,10 +13,12 @@
  * (export's readiness wait), so order does not change what they find. An online patch replaces
  * a list whole, in its own order, and never merges entries.
  */
+import composerProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/composer.json';
 import modelPickerProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/model-picker.json';
 import sidebarProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar.json';
 import turnProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/turn.json';
 
+import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
 import { GEMINI_MODEL_PICKER_PROFILE_KEYS } from './modelPickerKeys';
 import { GEMINI_SIDEBAR_PROFILE_KEYS } from './sidebarKeys';
 import {
@@ -43,10 +45,11 @@ function readBundle(): GeminiSelectorProfiles {
     ...readGroup(turnProfiles, GEMINI_TURN_PROFILE_KEYS, 'turn'),
     ...readGroup(sidebarProfiles, GEMINI_SIDEBAR_PROFILE_KEYS, 'sidebar'),
     ...readGroup(modelPickerProfiles, GEMINI_MODEL_PICKER_PROFILE_KEYS, 'model picker'),
+    ...readGroup(composerProfiles, GEMINI_COMPOSER_PROFILE_KEYS, 'composer'),
   };
   const file = readGeminiSelectorFile(
     {
-      format: 2,
+      format: 3,
       site: 'gemini',
       host: 'gemini.google.com',
       catalogRevision: 1,

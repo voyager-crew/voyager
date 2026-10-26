@@ -2,6 +2,8 @@ import {
   GEMINI_SELECTOR_HOSTS,
   GEMINI_SELECTOR_PROFILE_KEYS,
   GEMINI_TURN_PROFILE_KEYS,
+  GEMINI_V1_SELECTOR_PROFILE_KEYS,
+  GEMINI_V2_SELECTOR_PROFILE_KEYS,
   type GeminiSelectorFile,
   type GeminiSelectorHost,
   type GeminiSelectorProfileKey,
@@ -37,7 +39,7 @@ export function readGeminiSelectorFile(
   if (
     Object.keys(value).length !== ENVELOPE_KEYS.length ||
     !Object.keys(value).every((key) => (ENVELOPE_KEYS as readonly string[]).includes(key)) ||
-    (value.format !== 1 && value.format !== 2) ||
+    (value.format !== 1 && value.format !== 2 && value.format !== 3) ||
     value.site !== 'gemini' ||
     value.host !== expectedHost ||
     !(GEMINI_SELECTOR_HOSTS as readonly string[]).includes(expectedHost) ||
@@ -50,7 +52,11 @@ export function readGeminiSelectorFile(
   }
   const format = value.format;
   const allowedKeys: readonly string[] =
-    format === 1 ? GEMINI_TURN_PROFILE_KEYS : GEMINI_SELECTOR_PROFILE_KEYS;
+    format === 1
+      ? GEMINI_V1_SELECTOR_PROFILE_KEYS
+      : format === 2
+        ? GEMINI_V2_SELECTOR_PROFILE_KEYS
+        : GEMINI_SELECTOR_PROFILE_KEYS;
   const entries = Object.entries(value.selectors);
   if (entries.length > allowedKeys.length) return null;
   const selectors: Partial<Record<GeminiSelectorProfileKey, readonly string[]>> = {};
@@ -102,7 +108,7 @@ export function readGeminiSelectorProfileGroup<Key extends GeminiSelectorProfile
 ): Readonly<Record<Key, readonly string[]>> | null {
   const file = readGeminiSelectorFile(
     {
-      format: 2,
+      format: 3,
       site: 'gemini',
       host: 'gemini.google.com',
       catalogRevision: 1,

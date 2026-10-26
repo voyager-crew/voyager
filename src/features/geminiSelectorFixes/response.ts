@@ -46,7 +46,7 @@ export async function readGeminiSelectorResponseBody(
   const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
   const parsed: unknown = JSON.parse(text);
   const file = readGeminiSelectorFile(parsed, host);
-  // v1 remains readable from an existing cache, but the v2 endpoint must serve its own format.
-  if (!file || file.format !== 2) throw new Error('Invalid Gemini selector data');
+  // Old cached fixes remain readable; the v3 endpoint must not silently downgrade coverage.
+  if (!file || file.format !== 3) throw new Error('Invalid Gemini selector data');
   return file;
 }

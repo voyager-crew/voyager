@@ -4420,10 +4420,10 @@
   },
   "geminiSelectorFixesTitle": {
     "message": "Gemini 页面识别在线修复",
-    "description": "Switch for Gemini page detection fixes for conversations, sidebar folders and the model menu; off by default"
+    "description": "Switch for Gemini page detection fixes for conversations, sidebar folders, the model menu and message input; off by default"
   },
   "geminiSelectorFixesHint": {
-    "message": "从 voyager.nagi.fun 获取对话、侧边栏、文件夹和模型菜单的识别修复，最多每 6 小时检查一次。不发送页面内容。默认关闭。",
+    "message": "从 voyager.nagi.fun 获取对话、侧边栏、文件夹、模型菜单和消息输入框的识别修复，最多每 6 小时检查一次。不发送页面内容。默认关闭。",
     "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
   },
   "geminiSelectorFixesOff": {

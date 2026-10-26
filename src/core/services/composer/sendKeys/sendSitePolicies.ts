@@ -7,6 +7,9 @@
  * already run when a send fires. Chosen from the page's own host, never from a
  * manifest.
  */
+import { getBundledGeminiSelectorView } from '@/core/gemini/selectors';
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/composer-send-packaged.json';
+
 import type { SendKeyMode, SendKeyRule } from './sendKeyIntent';
 
 export type SendSiteId = 'gemini' | 'aistudio';
@@ -49,8 +52,8 @@ const LEGACY_SEND_CONTAINER_SELECTORS = [
 export const SEND_SITE_POLICIES: Readonly<Record<SendSiteId, SendSitePolicy>> = {
   gemini: {
     site: 'gemini',
-    editableSelector: EDITABLE_SELECTOR,
-    sendContainerSelectors: LEGACY_SEND_CONTAINER_SELECTORS,
+    editableSelector: packaged['composer.keyEditables'],
+    sendContainerSelectors: getBundledGeminiSelectorView().profiles['composer.sendContainers'],
     mainModes: {
       // Ctrl is read first, so Ctrl+Shift+Enter sends; Alt+Enter is a Voyager newline.
       ctrlEnterSends: {
