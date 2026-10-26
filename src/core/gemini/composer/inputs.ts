@@ -34,10 +34,11 @@ function candidates(doc: Document, selectors: readonly string[]): HTMLElement[] 
 }
 
 /** Read a whole candidate operation before an owner inserts text or attaches a listener. */
-function resolveGeminiInput(
+export function resolveGeminiInput(
   options: FindComposerOptions,
   read: (selectors: readonly string[]) => HTMLElement | null,
   view: GeminiSelectorView = getGeminiSelectorView(),
+  readBundled?: () => HTMLElement | null,
 ): HTMLElement | null {
   const key = 'composer.candidates';
   const bundle = getBundledGeminiSelectorView();
@@ -46,13 +47,16 @@ function resolveGeminiInput(
     !view.remoteKeys.has(key) ||
     locatorSiteForHost(doc.defaultView?.location.hostname ?? '') !== 'gemini'
   )
-    return read(bundle.profiles[key]);
+    return readBundled ? readBundled() : read(bundle.profiles[key]);
   const bundled = candidates(doc, bundle.profiles[key]);
   return resolveGeminiSelectorOperationInView(
     view,
     (candidate) => ({
       elements: candidates(doc, candidate.profiles[key]),
-      field: read(candidate.profiles[key]),
+      field:
+        !candidate.remoteKeys.has(key) && readBundled
+          ? readBundled()
+          : read(candidate.profiles[key]),
     }),
     ({ elements }) => {
       // A partial or reordered candidate list must not select another mounted draft.

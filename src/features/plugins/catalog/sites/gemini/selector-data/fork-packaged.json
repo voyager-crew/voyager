@@ -1,4 +1,5 @@
 {
+  "fork.input": ["rich-textarea [contenteditable=\"true\"]"],
   "fork.userHost": [
     ".user-query-bubble-with-background",
     "user-query-content .user-query-bubble-with-background",

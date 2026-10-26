@@ -172,3 +172,53 @@ it('a composer mounted after send tracking starts can still report a repaired tu
     at: expect.any(Number),
   });
 });
+
+it('bundled and remote send reads record the same prompt and turn on the same DOM', async () => {
+  document.body.innerHTML =
+    '<main></main><form data-chatgpt-composer><div id="prompt-textarea" class="repaired-input" contenteditable="true">Same prompt</div><button type="button" aria-label="Send" class="repaired-send">Send</button></form>';
+  const field = document.getElementById('prompt-textarea')!;
+  const report = vi.fn();
+  const first = new PluginScope();
+  scopes.push(first);
+  trackUserSends(first, sendSiteOf(requireBundledSiteAdapter('chatgpt'))!, report);
+  document.querySelector('button')!.click();
+  const turn = document.createElement('div');
+  turn.setAttribute('data-turn-key', 'sent');
+  turn.innerHTML = '<div data-user-message-bubble class="repaired-turn">Same prompt</div>';
+  document.querySelector('main')!.append(turn);
+  for (let n = 0; n < 5; n++) await Promise.resolve();
+  expect(report).toHaveBeenCalledExactlyOnceWith({
+    conversationKey: 'chatgpt:conv:work',
+    turnKey: 'sent',
+    at: expect.any(Number),
+  });
+  const bundled = report.mock.calls[0][0];
+  await first.dispose();
+  turn.remove();
+  report.mockClear();
+  const session = initializeSiteSelectors('chatgpt', {
+    host: 'chatgpt.com',
+    doc: document,
+    lifetime: new AbortController().signal,
+    bundledRevision: 0,
+    read: async () => ({
+      id: 'chatgpt',
+      catalogRevision: 1,
+      selectors: {
+        composer: '.repaired-input',
+        sendButton: '.repaired-send',
+        userTurn: '.repaired-turn',
+      },
+    }),
+  });
+  selectorStops.push(session.stop);
+  await session.ready;
+  const second = new PluginScope();
+  scopes.push(second);
+  trackUserSends(second, sendSiteOf(requireBundledSiteAdapter('chatgpt'))!, report);
+  document.querySelector('button')!.click();
+  document.querySelector('main')!.append(turn);
+  for (let n = 0; n < 5; n++) await Promise.resolve();
+  expect(document.getElementById('prompt-textarea')).toBe(field);
+  expect(report).toHaveBeenCalledExactlyOnceWith({ ...bundled, at: expect.any(Number) });
+});

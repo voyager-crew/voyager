@@ -4,6 +4,7 @@ import { createToaster } from '@/core/ui/toast/toaster';
 
 import { getTranslationSync } from '../../../utils/i18n';
 import { setInputText } from '../utils/inputHelper';
+import { createForkComposerRead } from './forkComposer';
 import { PENDING_FORK_KEY, type PendingForkData, type PendingForkMode } from './forkLaunch';
 import { handoffPendingForkLink, type ForkLinkReceipt } from './linkFinisher';
 import {
@@ -31,6 +32,7 @@ export function startPendingFork({
 }): () => void {
   // Each run owns its hint, countdown and waits: an older run cleaning up late must
   // never close the upload hint a newer run is showing.
+  const { find: findInput, hasRemote } = createForkComposerRead();
   let stopped = false;
   const receiver = captureForkReceiver();
   let receipt: ForkLinkReceipt | null = null;
@@ -184,9 +186,9 @@ export function startPendingFork({
     }
 
     // Wait for the input field to be available
-    const input = await waitForElement('rich-textarea [contenteditable="true"]', 10000);
+    const input = await waitForInput(10000);
     if (!isCurrent() || getPendingForkRemainingMs(pendingFork) <= 0) return;
-    if (!input?.isConnected) {
+    if (!input?.isConnected || (hasRemote && findInput() !== input)) {
       console.warn('[Fork] Input field not found');
       return;
     }
@@ -197,8 +199,14 @@ export function startPendingFork({
   }
 
   async function prefillManualUploadPrompt(pendingFork: PendingForkData): Promise<void> {
-    const input = await waitForElement('rich-textarea [contenteditable="true"]', 10000);
-    if (!isCurrent() || !receipt?.canPrefill() || !input?.isConnected || getInputText(input).trim())
+    const input = await waitForInput(10000);
+    if (
+      !isCurrent() ||
+      !receipt?.canPrefill() ||
+      !input?.isConnected ||
+      (hasRemote && findInput() !== input) ||
+      getInputText(input).trim()
+    )
       return;
     setInputText(input, buildManualUploadPrompt(pendingFork));
   }
@@ -228,20 +236,13 @@ export function startPendingFork({
     }, 1000);
   }
 
-  function waitForElement(selector: string, timeoutMs: number): Promise<HTMLElement | null> {
-    const find = () =>
-      Array.from(document.querySelectorAll<HTMLElement>(selector)).find(
-        (element) =>
-          !element.closest(
-            '.edit-container, .user-query-container.edit-mode, [role="dialog"], .mat-mdc-dialog-container',
-          ) && element.getBoundingClientRect().height > 0,
-      ) ?? null;
+  function waitForInput(timeoutMs: number): Promise<HTMLElement | null> {
     return new Promise((resolve) => {
       if (!isCurrent()) {
         resolve(null);
         return;
       }
-      const existing = find();
+      const existing = findInput();
       if (existing) {
         resolve(existing);
         return;
@@ -262,7 +263,7 @@ export function startPendingFork({
           finish(null);
           return;
         }
-        const el = find();
+        const el = findInput();
         if (el) {
           finish(el);
           return;

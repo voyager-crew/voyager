@@ -2,6 +2,7 @@
 // @vitest-environment-options { "url": "https://gemini.google.com/app" }
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
+import { getBundledGeminiSelectorView } from '@/core/gemini/selectors';
 import { StorageKeys } from '@/core/types/common';
 import { createToaster } from '@/core/ui/toast/toaster';
 
@@ -117,6 +118,20 @@ it('bundled focus retains its original first-match query cost', () => {
   );
   const field = document.querySelector('[contenteditable]')!;
   const scans = vi.spyOn(document, 'querySelectorAll');
+  // Compare to the original ordered first-match reader, not an implementation call count.
+  const baseline = () => {
+    for (const selector of getBundledGeminiSelectorView().profiles['modelPicker.focusInput']) {
+      for (const candidate of document.querySelectorAll<HTMLElement>(selector)) {
+        if (!candidate.isConnected) continue;
+        if (candidate instanceof HTMLTextAreaElement && candidate.disabled) continue;
+        return candidate;
+      }
+    }
+    return null;
+  };
+  expect(baseline()).toBe(field);
+  const originalQueries = scans.mock.calls.map(([selector]) => selector);
+  scans.mockClear();
   expect(findModelFocusInput()).toBe(field);
-  expect(scans).toHaveBeenCalledTimes(1);
+  expect(scans.mock.calls.map(([selector]) => selector)).toEqual(originalQueries);
 });

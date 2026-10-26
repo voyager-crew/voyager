@@ -153,9 +153,21 @@ it('bundled streaming keeps local host lookup without a complete turn rescan', a
   host().setAttribute('data-user-message-bubble', '');
   activate();
   const scan = vi.spyOn(document.body, 'querySelectorAll');
+  vi.mocked(
+    Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight')!.get!,
+  ).mockReturnValue(100);
+  host().querySelector('p')!.textContent = 'Short prompt';
+  await vi.runAllTimersAsync();
+  expect(toggle()).toBeNull();
+  expect(snapshot().height).not.toBe('320px');
+  vi.mocked(
+    Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight')!.get!,
+  ).mockReturnValue(500);
   host().querySelector('p')!.append(' Continued.');
   await vi.runAllTimersAsync();
   expect(snapshot().height).toBe('320px');
+  expect(toggle()!.getAttribute('aria-expanded')).toBe('false');
+  expect(host().textContent).toBe('Short prompt Continued.');
   expect(
     scan.mock.calls.filter(
       ([query]) => query === requireBundledSiteAdapter('chatgpt').selectors.userTurn,

@@ -1,6 +1,5 @@
 import {
   getBundledSiteSelectorView,
-  getSiteSelectorView,
   getPageSelectorSiteId,
   type SiteSelectorView,
 } from '@/core/selectors';
@@ -15,10 +14,6 @@ export interface SendTargetSource extends SendInputs {
   readonly selectorView?: SiteSelectorView;
 }
 
-function candidateView(site: SendTargetSource, doc: Document): SiteSelectorView | undefined {
-  return site.selectorView?.siteId === getPageSelectorSiteId(doc) ? site.selectorView : undefined;
-}
-
 type TargetSelectors = Pick<SendInputs, 'composer' | 'composerRoot' | 'sendButton' | 'userTurn'>;
 const COMPOSER_KEYS = ['composer', 'composerRoot', 'sendButton'] as const;
 const KEYS = [...COMPOSER_KEYS, 'userTurn'] as const;
@@ -27,11 +22,25 @@ export type TrackingTargets = TargetSelectors & {
   readonly provedRoot: Element | null;
 };
 
-/** Tracking uses the same complete composer/action proof before it can stamp a user turn. */
-export function sendTargets(site: SendTargetSource, doc: Document): TrackingTargets {
-  // Custom adapters have no catalog claim; their installed selectors keep the legacy path.
-  if (!getSiteSelectorContract(site.siteId))
-    return { ...site, remoteComposer: false, provedRoot: null };
+export interface SendTargetReader {
+  readonly bundled: TrackingTargets;
+  readonly candidateSendButton?: string;
+  readonly read?: () => TrackingTargets;
+  readonly readUserTurn?: () => string;
+}
+
+/** Freeze candidate strings once; only a changed profile pays for operation-time proof. */
+export function prepareSendTargets(site: SendTargetSource, doc: Document): SendTargetReader {
+  const original = { ...site, remoteComposer: false, provedRoot: null };
+  const view = site.selectorView;
+  // The bundled path keeps its original event and mutation reads, without URL parsing or joins.
+  if (
+    !view ||
+    !getSiteSelectorContract(site.siteId) ||
+    !KEYS.some((key) => view.remoteKeys.has(key)) ||
+    view.siteId !== getPageSelectorSiteId(doc)
+  )
+    return { bundled: original };
   const profiles = getBundledSiteSelectorView(site.siteId).profiles;
   const bundle: TargetSelectors = {
     composer: profiles.composer?.join(',') ?? site.composer,
@@ -39,20 +48,43 @@ export function sendTargets(site: SendTargetSource, doc: Document): TrackingTarg
     sendButton: profiles.sendButton?.join(',') ?? site.sendButton,
     userTurn: profiles.userTurn?.join(',') ?? site.userTurn,
   };
-  const view = candidateView(site, doc);
-  let selected = {
-    ...bundle,
-    ...Object.fromEntries(
-      KEYS.filter((key) => site[key] !== undefined).map((key) => [
-        key,
-        view?.profiles[key]?.join(',') ?? site[key],
-      ]),
-    ),
-  } as TargetSelectors;
+  const selected: TargetSelectors = {
+    composer: view.profiles.composer?.join(',') ?? site.composer,
+    composerRoot: view.profiles.composerRoot?.join(',') ?? site.composerRoot,
+    sendButton: view.profiles.sendButton?.join(',') ?? site.sendButton,
+    userTurn: view.profiles.userTurn?.join(',') ?? site.userTurn,
+  };
   const bundled = { ...bundle, remoteComposer: false, provedRoot: null };
-  if (KEYS.every((key) => selected[key] === bundle[key])) return bundled;
+  return {
+    bundled,
+    candidateSendButton: selected.sendButton,
+    read: () => readTargets(site, doc, view, selected, bundle, bundled),
+    readUserTurn: view.remoteKeys.has('userTurn')
+      ? () => {
+          try {
+            return (
+              checkedUserTurn(site, doc, view, selected.userTurn, bundle.userTurn) ??
+              bundle.userTurn
+            );
+          } catch {
+            return bundle.userTurn;
+          }
+        }
+      : undefined,
+  };
+}
+
+/** Tracking proves the complete composer/action operation before it can stamp a user turn. */
+function readTargets(
+  site: SendTargetSource,
+  doc: Document,
+  view: SiteSelectorView,
+  selected: TargetSelectors,
+  bundle: TargetSelectors,
+  bundled: TrackingTargets,
+): TrackingTargets {
   try {
-    const userTurn = checkedUserTurn(site, doc, selected.userTurn, bundle.userTurn);
+    const userTurn = checkedUserTurn(site, doc, view, selected.userTurn, bundle.userTurn);
     if (userTurn === null) return bundled;
     selected = { ...selected, userTurn };
     if (COMPOSER_KEYS.every((key) => selected[key] === bundle[key]))
@@ -94,12 +126,12 @@ export function sendTargets(site: SendTargetSource, doc: Document): TrackingTarg
 function checkedUserTurn(
   site: SendTargetSource,
   doc: Document,
+  view: SiteSelectorView,
   selected: string,
   bundle: string,
 ): string | null {
   if (selected === bundle) return bundle;
   if (site.siteId === 'chatgpt') {
-    const view = candidateView(site, doc) ?? getSiteSelectorView('chatgpt');
     return (
       guardedChatgptSemanticSelector(
         'userTurn',
@@ -119,17 +151,4 @@ function checkedUserTurn(
     actual.every((element, index) => element === expected[index])
     ? selected
     : null;
-}
-
-/** Pending sends re-prove newly mounted turns without rescanning the already submitted composer. */
-export function sendUserTurnSelector(site: SendTargetSource, doc: Document): string {
-  if (!getSiteSelectorContract(site.siteId)) return site.userTurn;
-  const bundle =
-    getBundledSiteSelectorView(site.siteId).profiles.userTurn?.join(',') ?? site.userTurn;
-  try {
-    const selected = candidateView(site, doc)?.profiles.userTurn?.join(',') ?? site.userTurn;
-    return checkedUserTurn(site, doc, selected, bundle) ?? bundle;
-  } catch {
-    return bundle;
-  }
 }

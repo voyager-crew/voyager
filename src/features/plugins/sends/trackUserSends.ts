@@ -24,12 +24,7 @@ import { isSendActionButton } from '@/pages/content/sendBehavior/sendButton';
 
 import { startPendingSend } from './pendingSend';
 import { sendInputsOf } from './sendInputs';
-import {
-  sendTargets,
-  sendUserTurnSelector,
-  type TrackingTargets,
-  type SendTargetSource,
-} from './sendTargets';
+import { prepareSendTargets, type TrackingTargets, type SendTargetSource } from './sendTargets';
 
 /** A site's send inputs (`sendInputsOf`), plus how to tell a chat the host keeps nowhere. */
 export interface SendSite extends SendTargetSource {
@@ -98,6 +93,7 @@ export function trackUserSends(
   report: (send: UserSend) => void,
   doc: Document = document,
 ): void {
+  const targetsFor = prepareSendTargets(site, doc);
   let stopPending: (() => void) | null = null;
   scope.effect(() => () => {
     stopPending?.();
@@ -149,7 +145,9 @@ export function trackUserSends(
         conversation: routeConversation,
         report,
         newest: () => {
-          const newest = keyedTurns(sendUserTurnSelector(site, doc)).at(-1);
+          const newest = keyedTurns(targetsFor.readUserTurn?.() ?? targetsFor.bundled.userTurn).at(
+            -1,
+          );
           return newest
             ? { key: newest.key, readPrompt: () => compact(textWithLatexSource(newest.turn)) }
             : null;
@@ -175,7 +173,7 @@ export function trackUserSends(
       if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
       if (!(event.target instanceof Element)) return;
       // One event owns one proof; later DOM mutations only need to prove the resulting turns.
-      const targets = sendTargets(site, doc);
+      const targets = targetsFor.read?.() ?? targetsFor.bundled;
       const field = event.target.closest(targets.composer);
       if (field) {
         onSend(
@@ -191,19 +189,28 @@ export function trackUserSends(
     doc,
     'click',
     (event) => {
-      const targets = sendTargets(site, doc);
+      if (!(event.target instanceof Element)) return;
+      const nativeButton = event.target.closest('button');
+      const isBundledSend =
+        nativeButton instanceof HTMLButtonElement &&
+        !nativeButton.disabled &&
+        isSendActionButton(nativeButton);
+      // Sidebar/menu clicks must never run the remote transcript and composer proofs.
+      if (
+        !isBundledSend &&
+        (!targetsFor.candidateSendButton || !event.target.closest(targetsFor.candidateSendButton))
+      )
+        return;
+      const targets = targetsFor.read?.() ?? targetsFor.bundled;
       const selector = targets.remoteComposer ? targets.sendButton : 'button';
       const button =
-        event.target instanceof Element && selector ? event.target.closest(selector) : null;
+        targets.remoteComposer && selector ? event.target.closest(selector) : nativeButton;
       if (targets.remoteComposer) {
         if (!button || button.matches(':disabled, [aria-disabled="true"]')) return;
-      } else if (
-        !(button instanceof HTMLButtonElement) ||
-        button.disabled ||
-        !isSendActionButton(button)
-      ) {
+      } else if (!isBundledSend) {
         return;
       }
+      if (!button) return;
       const form = composerForm(button, targets);
       if (form) sendFrom(form, targets);
     },
@@ -214,7 +221,7 @@ export function trackUserSends(
     'submit',
     (event) => {
       if (!(event.target instanceof Element)) return;
-      const targets = sendTargets(site, doc);
+      const targets = targetsFor.read?.() ?? targetsFor.bundled;
       const form = composerForm(event.target, targets);
       if (form) sendFrom(form, targets);
     },
