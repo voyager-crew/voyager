@@ -1,0 +1,7 @@
+{
+  "sentChips.bubbles": [
+    ".user-query-bubble-with-background",
+    ".user-query-bubble-container",
+    ".user-query-container"
+  ]
+}

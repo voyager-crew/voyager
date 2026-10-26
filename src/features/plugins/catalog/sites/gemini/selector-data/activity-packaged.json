@@ -1,0 +1,17 @@
+{
+  "activity.send": [
+    "button[aria-label*=\"Send\"]",
+    "button[aria-label*=\"send\"]",
+    "button[data-tooltip*=\"Send\"]",
+    "button[data-tooltip*=\"send\"]",
+    "[data-send-button]",
+    ".send-button"
+  ],
+  "activity.owner": [
+    "form",
+    ".text-input-field",
+    "input-area-v2",
+    "input-container",
+    "ms-prompt-input-wrapper"
+  ]
+}

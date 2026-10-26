@@ -1,0 +1,13 @@
+{
+  "vim.configuredComposer": ["input-area-v2, rich-textarea, .text-input-field"],
+  "vim.candidates": [
+    "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+    "#prompt-textarea[contenteditable=\"true\"]",
+    "[data-composer-markdown][contenteditable=\"true\"]",
+    "rich-textarea [contenteditable=\"true\"]",
+    "div[contenteditable=\"true\"][role=\"textbox\"]",
+    ".input-area textarea",
+    "textarea[placeholder*=\"Ask\"]",
+    "textarea"
+  ]
+}

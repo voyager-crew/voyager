@@ -1,11 +1,13 @@
 /** Which editable elements are prompt inputs, and the text a capture reads from them. */
-import { findChatInput } from '../chatInput/index';
+import { readChatInput } from '@/core/gemini/composer/inputs';
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/prompt-history-packaged.json';
+
+import { resolvePromptInputRead } from '../prompt/selectorInput';
 import type { PromptHistoryType } from './storage';
 
-const PROMPT_INPUT_SELECTOR = '[contenteditable="true"], textarea';
-const EDIT_CONTAINER_SELECTOR = 'chat-message, .query-content.edit-mode, .edit-container';
-const MAIN_COMPOSER_SELECTOR =
-  '.text-input-field, .input-area, ms-prompt-input-wrapper, ms-prompt-input, ms-chat-turn-input';
+const PROMPT_INPUT_SELECTOR = packaged['promptHistory.input'];
+const EDIT_CONTAINER_SELECTOR = packaged['promptHistory.editOwner'];
+const MAIN_COMPOSER_SELECTOR = packaged['promptHistory.mainOwner'];
 const VOYAGER_UI_SELECTOR = '.gv-ph-panel, .gv-pm-panel, [role="dialog"]';
 
 export function readInputText(input: HTMLElement): string {
@@ -21,7 +23,11 @@ export function isPromptInput(input: HTMLElement): boolean {
   if (isVoyagerInput(input)) return false;
   if (input.closest(EDIT_CONTAINER_SELECTOR)) return true;
   if (input.closest(MAIN_COMPOSER_SELECTOR)) return true;
-  return findChatInput({ requireVisible: false }) === input;
+  return (
+    resolvePromptInputRead('promptHistory.candidates', (selectors) =>
+      readChatInput(selectors, { requireVisible: false }),
+    ) === input
+  );
 }
 
 export function promptTypeForInput(input: HTMLElement): PromptHistoryType {

@@ -12,7 +12,7 @@ export const CHAT_INPUT_SELECTOR = CHAT_INPUT_SELECTORS.join(', ');
 
 interface FindChatInputOptions {
   requireVisible?: boolean;
-  /** Explicitly migrated owners only; Vim, prompt and health readers keep the bundle. */
+  /** Explicit composer owners only; Vim and prompt use their own profiles, health keeps the bundle. */
   online?: boolean;
 }
 

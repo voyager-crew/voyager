@@ -29,7 +29,19 @@ function fixtureCatalog(): string {
   const path = temp();
   const destination = join(path, dataPath);
   mkdirSync(destination, { recursive: true });
-  for (const file of ['turn.json', 'sidebar.json', 'model-picker.json', 'composer.json']) {
+  for (const file of [
+    'turn.json',
+    'sidebar.json',
+    'model-picker.json',
+    'composer.json',
+    'input-collapse.json',
+    'vim.json',
+    'prompt-history.json',
+    'slash.json',
+    'sent-chips.json',
+    'project.json',
+    'activity.json',
+  ]) {
     writeFileSync(join(destination, file), readFileSync(join(catalogDir, dataPath, file)));
   }
   return path;

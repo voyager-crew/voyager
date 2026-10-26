@@ -4423,7 +4423,7 @@
     "description": "Switch for Gemini page detection fixes for conversations, sidebar folders, the model menu and message input; off by default"
   },
   "geminiSelectorFixesHint": {
-    "message": "voyager.nagi.fun에서 대화, 사이드바, 폴더, 모델 메뉴, 메시지 입력창을 인식하기 위한 수정 정보를 받아옵니다. 확인은 6시간에 한 번까지이며 페이지 내용은 전송하지 않습니다. 기본값은 꺼짐입니다.",
+    "message": "voyager.nagi.fun에서 대화, 사이드바, 폴더, 모델 메뉴, 메시지 입력창, 입력창 접기, Vim 모드, 프롬프트 기록, 슬래시 명령, 폴더를 프로젝트로 사용, 폴더 활동을 위한 인식 수정 정보를 받아옵니다. 확인은 6시간에 한 번까지이며 페이지 내용은 전송하지 않습니다. 기본값은 꺼짐입니다.",
     "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
   },
   "geminiSelectorFixesOff": {

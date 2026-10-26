@@ -6,8 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { readGeminiSelectorFile } from '../../src/core/gemini/selectors/validation';
 import { writeGeminiSelectorFiles } from '../lib/buildGeminiSelectorFixes';
 
-// These are the released wire contracts, independent of the current source groups.
-// Unknown keys make old clients reject the entire file, so expanding a set needs a new format.
+// Literal wire contracts independent of source groups. The latest format is still unpublished.
 const PUBLISHED_KEYS = {
   1: [
     'turn.user',
@@ -108,6 +107,14 @@ const PUBLISHED_KEYS = {
     'composer.candidates',
     'composer.draftCandidates',
     'composer.sendContainers',
+    'inputCollapse.wrapper',
+    'vim.configuredComposer',
+    'vim.candidates',
+    'promptHistory.candidates',
+    'slash.candidates',
+    'sentChips.bubbles',
+    'project.inputs',
+    'activity.inputs',
   ],
 } as const;
 

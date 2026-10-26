@@ -1,8 +1,14 @@
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { GEMINI_ACTIVITY_PROFILE_KEYS } from '../../src/core/gemini/selectors/activityKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from '../../src/core/gemini/selectors/composerKeys';
+import { GEMINI_INPUT_COLLAPSE_PROFILE_KEYS } from '../../src/core/gemini/selectors/inputCollapseKeys';
 import { GEMINI_MODEL_PICKER_PROFILE_KEYS } from '../../src/core/gemini/selectors/modelPickerKeys';
+import { GEMINI_PROJECT_PROFILE_KEYS } from '../../src/core/gemini/selectors/projectKeys';
+import { GEMINI_PROMPT_HISTORY_PROFILE_KEYS } from '../../src/core/gemini/selectors/promptKeys';
+import { GEMINI_SLASH_PROFILE_KEYS } from '../../src/core/gemini/selectors/promptKeys';
+import { GEMINI_SENT_CHIPS_PROFILE_KEYS } from '../../src/core/gemini/selectors/promptKeys';
 import { GEMINI_SIDEBAR_PROFILE_KEYS } from '../../src/core/gemini/selectors/sidebarKeys';
 import {
   GEMINI_SELECTOR_HOSTS,
@@ -17,6 +23,7 @@ import {
   readGeminiSelectorFile,
   readGeminiSelectorProfileGroup,
 } from '../../src/core/gemini/selectors/validation';
+import { GEMINI_VIM_PROFILE_KEYS } from '../../src/core/gemini/selectors/vimKeys';
 
 export interface GeminiSelectorPublishOptions {
   readonly catalogDir: string;
@@ -29,6 +36,13 @@ const PROFILE_GROUPS = [
   { file: 'sidebar.json', keys: GEMINI_SIDEBAR_PROFILE_KEYS },
   { file: 'model-picker.json', keys: GEMINI_MODEL_PICKER_PROFILE_KEYS },
   { file: 'composer.json', keys: GEMINI_COMPOSER_PROFILE_KEYS },
+  { file: 'input-collapse.json', keys: GEMINI_INPUT_COLLAPSE_PROFILE_KEYS },
+  { file: 'vim.json', keys: GEMINI_VIM_PROFILE_KEYS },
+  { file: 'prompt-history.json', keys: GEMINI_PROMPT_HISTORY_PROFILE_KEYS },
+  { file: 'slash.json', keys: GEMINI_SLASH_PROFILE_KEYS },
+  { file: 'sent-chips.json', keys: GEMINI_SENT_CHIPS_PROFILE_KEYS },
+  { file: 'project.json', keys: GEMINI_PROJECT_PROFILE_KEYS },
+  { file: 'activity.json', keys: GEMINI_ACTIVITY_PROFILE_KEYS },
 ] as const;
 
 /** Build from the same locator fragments the package imports; no adapter or plugin enters it. */

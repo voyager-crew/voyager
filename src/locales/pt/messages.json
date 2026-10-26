@@ -4423,7 +4423,7 @@
     "description": "Switch for Gemini page detection fixes for conversations, sidebar folders, the model menu and message input; off by default"
   },
   "geminiSelectorFixesHint": {
-    "message": "Obtém de voyager.nagi.fun correções para reconhecer conversas, a barra lateral, as pastas, o menu de modelos e a caixa de mensagens. Verifica no máximo uma vez a cada 6 horas. Nenhum conteúdo da página é enviado. Desativado por padrão.",
+    "message": "Obtém de voyager.nagi.fun correções de reconhecimento para conversas, a barra lateral, as pastas, o menu de modelos, a caixa de mensagens, o recolhimento da caixa de entrada, o modo Vim, o histórico de prompts, os comandos com barra, Pasta como Projeto e a atividade das pastas. Verifica no máximo uma vez a cada 6 horas. Nenhum conteúdo da página é enviado. Desativado por padrão.",
     "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
   },
   "geminiSelectorFixesOff": {

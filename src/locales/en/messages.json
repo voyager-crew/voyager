@@ -4423,7 +4423,7 @@
     "description": "Switch for Gemini page detection fixes for conversations, sidebar folders, the model menu and message input; off by default"
   },
   "geminiSelectorFixesHint": {
-    "message": "Gets detection fixes for conversations, the sidebar, folders, the model menu and message input from voyager.nagi.fun. Checks at most once every 6 hours. No page content is sent. Off by default.",
+    "message": "Gets detection fixes for conversations, the sidebar, folders, the model menu, message input, input collapse, Vim mode, prompt history, slash commands, Folder as Project and folder activity from voyager.nagi.fun. Checks at most once every 6 hours. No page content is sent. Off by default.",
     "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
   },
   "geminiSelectorFixesOff": {

@@ -13,13 +13,28 @@
  * (export's readiness wait), so order does not change what they find. An online patch replaces
  * a list whole, in its own order, and never merges entries.
  */
+import activityProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/activity.json';
 import composerProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/composer.json';
+import inputCollapseProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/input-collapse.json';
 import modelPickerProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/model-picker.json';
+import projectProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/project.json';
+import promptHistoryProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/prompt-history.json';
+import sentChipsProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/sent-chips.json';
 import sidebarProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar.json';
+import slashProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/slash.json';
 import turnProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/turn.json';
+import vimProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/vim.json';
 
+import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
+import { GEMINI_INPUT_COLLAPSE_PROFILE_KEYS } from './inputCollapseKeys';
 import { GEMINI_MODEL_PICKER_PROFILE_KEYS } from './modelPickerKeys';
+import { GEMINI_PROJECT_PROFILE_KEYS } from './projectKeys';
+import {
+  GEMINI_PROMPT_HISTORY_PROFILE_KEYS,
+  GEMINI_SENT_CHIPS_PROFILE_KEYS,
+  GEMINI_SLASH_PROFILE_KEYS,
+} from './promptKeys';
 import { GEMINI_SIDEBAR_PROFILE_KEYS } from './sidebarKeys';
 import {
   GEMINI_TURN_PROFILE_KEYS,
@@ -29,6 +44,7 @@ import {
   type GeminiTurnView,
 } from './types';
 import { readGeminiSelectorFile, readGeminiSelectorProfileGroup } from './validation';
+import { GEMINI_VIM_PROFILE_KEYS } from './vimKeys';
 
 function readGroup<Key extends GeminiSelectorProfileKey>(
   value: unknown,
@@ -46,6 +62,13 @@ function readBundle(): GeminiSelectorProfiles {
     ...readGroup(sidebarProfiles, GEMINI_SIDEBAR_PROFILE_KEYS, 'sidebar'),
     ...readGroup(modelPickerProfiles, GEMINI_MODEL_PICKER_PROFILE_KEYS, 'model picker'),
     ...readGroup(composerProfiles, GEMINI_COMPOSER_PROFILE_KEYS, 'composer'),
+    ...readGroup(inputCollapseProfiles, GEMINI_INPUT_COLLAPSE_PROFILE_KEYS, 'input-collapse'),
+    ...readGroup(vimProfiles, GEMINI_VIM_PROFILE_KEYS, 'vim'),
+    ...readGroup(promptHistoryProfiles, GEMINI_PROMPT_HISTORY_PROFILE_KEYS, 'prompt-history'),
+    ...readGroup(slashProfiles, GEMINI_SLASH_PROFILE_KEYS, 'slash'),
+    ...readGroup(sentChipsProfiles, GEMINI_SENT_CHIPS_PROFILE_KEYS, 'sent-chips'),
+    ...readGroup(projectProfiles, GEMINI_PROJECT_PROFILE_KEYS, 'project'),
+    ...readGroup(activityProfiles, GEMINI_ACTIVITY_PROFILE_KEYS, 'activity'),
   };
   const file = readGeminiSelectorFile(
     {

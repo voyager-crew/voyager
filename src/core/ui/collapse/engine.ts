@@ -11,6 +11,8 @@ export interface CollapseSite {
   root(): HTMLElement;
   /** One host element carrying the collapsed state. */
   readonly hostSelector: string;
+  /** One accepted locator view for an entire scan or observer flush. */
+  resolveHosts?(ownerRoot: ParentNode): CollapseReadSession;
   /** Whether a matched block is one this site collapses (scope, diagrams, …). */
   accepts(host: HTMLElement): boolean;
   /**
@@ -38,6 +40,16 @@ export interface CollapseSite {
    */
   claim?(host: HTMLElement): boolean;
   release?(host: HTMLElement): void;
+}
+
+export interface CollapseReadSession {
+  readonly hosts: readonly HTMLElement[];
+  closest(element: Element): HTMLElement | null;
+  matches(element: Element): boolean;
+  accepts(host: HTMLElement): boolean;
+  content(host: HTMLElement): HTMLElement | null;
+  actions(host: HTMLElement): HTMLElement | null;
+  clip?(host: HTMLElement, content: HTMLElement): HTMLElement | null;
 }
 
 export interface CollapseEngine {
@@ -70,6 +82,7 @@ interface Measurement {
   host: HTMLElement;
   content: HTMLElement | null;
   actions: HTMLElement | null;
+  clip: HTMLElement | null;
   shouldEnhance: boolean;
 }
 
@@ -83,6 +96,7 @@ export function createCollapseEngine(
   const decisions = new WeakMap<HTMLElement, boolean>();
   const observed = new Set<HTMLElement>();
   const pending = new Set<HTMLElement>();
+  const pendingMutations: MutationRecord[] = [];
   let defaultCollapsed = site.collapseByDefault ?? false;
   let observer: MutationObserver | null = null;
   let resizeObserver: ResizeObserver | null = null;
@@ -112,19 +126,40 @@ export function createCollapseEngine(
     observed.add(host);
   };
 
-  const measure = (host: HTMLElement): Measurement => {
+  const readSession = (ownerRoot: ParentNode): CollapseReadSession =>
+    site.resolveHosts?.(ownerRoot) ?? {
+      // Bundled mutation/resize reads only need local matches, not a full-page scan.
+      get hosts() {
+        return Array.from(ownerRoot.querySelectorAll<HTMLElement>(site.hostSelector));
+      },
+      closest: (element) => element.closest<HTMLElement>(site.hostSelector),
+      matches: (element) => element.matches(site.hostSelector),
+      accepts: (host) => site.accepts(host),
+      content: (host) => site.content(host),
+      actions: (host) => site.actions(host),
+      clip: site.clip ? (host, content) => site.clip!(host, content) : undefined,
+    };
+
+  const measure = (host: HTMLElement, read: CollapseReadSession): Measurement => {
     observeBlock(host);
-    const content = site.content(host);
-    const actions = content ? site.actions(host) : null;
+    const content = read.content(host);
+    const actions = content ? read.actions(host) : null;
     return {
       host,
       content,
       actions,
-      shouldEnhance: Boolean(content && actions && site.accepts(host) && site.isLong(content)),
+      clip: site.resolveHosts && content ? (read.clip?.(host, content) ?? null) : null,
+      shouldEnhance: Boolean(content && actions && read.accepts(host) && site.isLong(content)),
     };
   };
 
-  const apply = ({ host, content, actions, shouldEnhance }: Measurement): void => {
+  const apply = ({
+    host,
+    content,
+    actions,
+    clip: measuredClip,
+    shouldEnhance,
+  }: Measurement): void => {
     if (!shouldEnhance || !actions || !content) {
       // With ownership, the shared classes on a block this engine never took are another engine's.
       if (!site.claim || managed.has(host)) removeEnhancement(host);
@@ -151,7 +186,7 @@ export function createCollapseEngine(
       block.button = button;
     }
 
-    const clip = site.clip?.(host, content) ?? null;
+    const clip = site.resolveHosts ? measuredClip : (site.clip?.(host, content) ?? null);
     if (block.clip !== clip) {
       if (block.clip) removeClasses(block.clip, presentation.clipClass);
       if (clip) addClass(clip, presentation.clipClass);
@@ -173,21 +208,51 @@ export function createCollapseEngine(
     }
   };
 
-  const enhance = (host: HTMLElement): void => apply(measure(host));
+  const enhance = (host: HTMLElement): void => {
+    const read = readSession(site.root());
+    if (site.resolveHosts && !read.hosts.includes(host)) {
+      if (managed.has(host)) removeEnhancement(host);
+      return;
+    }
+    apply(measure(host, read));
+  };
+
+  const releaseRejectedHosts = (read: CollapseReadSession, ownerRoot: ParentNode): void => {
+    if (!site.resolveHosts) return;
+    for (const host of managed.keys()) {
+      if (
+        ownerRoot instanceof Node &&
+        ownerRoot !== host &&
+        ownerRoot.contains(host) &&
+        !read.hosts.includes(host)
+      )
+        removeEnhancement(host);
+    }
+  };
 
   const process = (root: ParentNode = site.root()): void => {
-    root.querySelectorAll<HTMLElement>(site.hostSelector).forEach(enhance);
+    const read = readSession(root);
+    read.hosts.forEach((host) => apply(measure(host, read)));
+    releaseRejectedHosts(read, root);
     cleanupDisconnectedBlocks();
     site.onChange?.();
   };
 
   const flushPending = (): void => {
-    const measurements = [...pending].filter((host) => host.isConnected).map(measure);
+    const read = readSession(site.root());
+    for (const record of pendingMutations.splice(0)) {
+      collectContaining(record.target, read);
+      record.addedNodes.forEach((node) => collectAdded(node, read));
+    }
+    const measurements = [...pending]
+      .filter((host) => host.isConnected && (!site.resolveHosts || read.matches(host)))
+      .map((host) => measure(host, read));
     pending.clear();
 
     // Finish every layout read before adding/removing buttons and classes. This
     // prevents one block's DOM write from forcing the next block's measurement.
     measurements.forEach(apply);
+    releaseRejectedHosts(read, site.root());
     cleanupDisconnectedBlocks();
     site.onChange?.();
   };
@@ -202,22 +267,29 @@ export function createCollapseEngine(
     }, SCAN_DEBOUNCE_MS);
   };
 
-  const collectContaining = (node: Node): void => {
+  const collectContaining = (node: Node, read: CollapseReadSession): void => {
     const element = node instanceof Element ? node : node.parentElement;
-    const host = element?.closest<HTMLElement>(site.hostSelector);
+    const host = element ? read.closest(element) : null;
     if (host) pending.add(host);
   };
 
-  const collectAdded = (node: Node): void => {
+  const collectAdded = (node: Node, read: CollapseReadSession): void => {
     if (!(node instanceof Element)) return;
-    if (node.matches(site.hostSelector)) pending.add(node as HTMLElement);
-    node.querySelectorAll<HTMLElement>(site.hostSelector).forEach((host) => pending.add(host));
+    if (read.matches(node)) pending.add(node as HTMLElement);
+    if (site.resolveHosts)
+      read.hosts.filter((host) => node.contains(host)).forEach((host) => pending.add(host));
+    else node.querySelectorAll<HTMLElement>(site.hostSelector).forEach((host) => pending.add(host));
   };
 
   const onMutations = (records: MutationRecord[]): void => {
-    for (const record of records) {
-      collectContaining(record.target);
-      record.addedNodes.forEach(collectAdded);
+    // Resolve after the whole mutation burst, so a rejected tier never leaves queued hosts behind.
+    if (site.resolveHosts) pendingMutations.push(...records);
+    else {
+      const read = readSession(site.root());
+      for (const record of records) {
+        collectContaining(record.target, read);
+        record.addedNodes.forEach((node) => collectAdded(node, read));
+      }
     }
     schedulePendingFlush();
   };
@@ -234,6 +306,7 @@ export function createCollapseEngine(
       scanTimer = null;
     }
     pending.clear();
+    pendingMutations.length = 0;
     observed.clear();
     for (const host of Array.from(managed.keys())) removeEnhancement(host);
   };
@@ -246,7 +319,10 @@ export function createCollapseEngine(
         resizeObserver = new ResizeObserver((entries) => {
           if (currentGeneration !== generation) return;
           for (const entry of entries) {
-            if (entry.target instanceof HTMLElement && entry.target.matches(site.hostSelector)) {
+            if (
+              entry.target instanceof HTMLElement &&
+              (site.resolveHosts || entry.target.matches(site.hostSelector))
+            ) {
               pending.add(entry.target);
             }
           }

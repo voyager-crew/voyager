@@ -33,6 +33,7 @@ function unclippedMount(mount: HTMLElement | null): HTMLElement | null {
 export function getVimComposerMount(
   input: HTMLElement | null,
   configuredSelector: string | null,
+  acceptWrapper = false,
 ): HTMLElement | null {
   if (!input) return null;
   if (input.matches('#prompt-textarea[contenteditable="true"]')) {
@@ -42,12 +43,17 @@ export function getVimComposerMount(
     return unclippedMount(input.closest('fieldset'));
   }
   if (!configuredSelector) return null;
+  let composer = input;
   try {
-    if (!input.matches(configuredSelector)) return null;
+    if (!input.matches(configuredSelector)) {
+      const wrapper = acceptWrapper ? input.closest<HTMLElement>(configuredSelector) : null;
+      if (!wrapper) return null;
+      composer = wrapper;
+    }
   } catch {
     return null;
   }
-  const parent = input.parentElement;
+  const parent = composer.parentElement;
   return parent &&
     parent !== input.ownerDocument.body &&
     parent !== input.ownerDocument.documentElement

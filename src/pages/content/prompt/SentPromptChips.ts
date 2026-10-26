@@ -28,6 +28,8 @@ import {
 } from '@/features/prompt/model/promptTextMatch';
 import { getTranslationSync } from '@/utils/i18n';
 
+import { readSentChipTargets } from './sentChipTargets';
+
 const ROOT_CLASS = 'gv-pm-sent';
 const CHIP_CLASS = 'gv-pm-sent-chip';
 const BODY_CLASS = 'gv-pm-sent-body';
@@ -36,29 +38,7 @@ const REST_CLASS = 'gv-pm-sent-rest';
 const LINE_CLASS = 'gv-pm-sent-line';
 const MARKED_ATTR = 'data-gv-pm-sent';
 
-/**
- * Gemini's own show-more control. It governs lines this feature keeps hidden,
- * so leaving it visible offers a control that does nothing a reader can see.
- */
-const GEMINI_TOGGLE_SELECTOR = '.luminous-toggle-container';
 const TOGGLE_HIDDEN_CLASS = 'gv-pm-sent-toggle-hidden';
-
-/**
- * Where Gemini keeps the message text itself, in preference order. Reading the
- * bubble wholesale instead picks up a `cdk-visually-hidden` "You said" prefix,
- * the text a second time, and the copy, edit and expand controls - and those
- * render through a Material Symbols icon font whose glyph *is* the element's
- * text, so the string gains literal words like `content_copy`.
- * `DOMContentExtractor` reads user turns through the same selector.
- */
-const TEXT_SELECTORS = ['.query-text-line', '.query-text'];
-
-/** Ordered by how tightly each wraps the text; the first that resolves wins. */
-const BUBBLE_SELECTORS = [
-  '.user-query-bubble-with-background',
-  '.user-query-bubble-container',
-  '.user-query-container',
-];
 
 export interface SentPromptChipsOptions {
   /** Saved prompts to recognise. Replaced wholesale by `setPrompts`. */
@@ -73,30 +53,6 @@ export interface SentPromptChipsController {
   /** Re-scan now. Called by the observer; exposed for tests and navigation. */
   refresh: () => void;
   destroy: () => void;
-}
-
-/**
- * The first selector that resolves wins, as elsewhere in this codebase. An
- * earlier version kept whichever match contained no other match, to land on the
- * innermost bubble - but Gemini nests these containers in an order this code
- * does not control, and one unexpected descendant made every candidate look
- * like an outer wrapper and skipped them all.
- */
-function bubblesIn(root: ParentNode): HTMLElement[] {
-  for (const selector of BUBBLE_SELECTORS) {
-    const found = [...root.querySelectorAll<HTMLElement>(selector)];
-    if (found.length > 0) return found;
-  }
-  return [];
-}
-
-/** The message's own line elements, or an empty list if this layout is new. */
-function lineElementsOf(bubble: HTMLElement): HTMLElement[] {
-  for (const selector of TEXT_SELECTORS) {
-    const found = [...bubble.querySelectorAll<HTMLElement>(selector)];
-    if (found.length > 0) return found;
-  }
-  return [];
 }
 
 export function startSentPromptChips(options: SentPromptChipsOptions): SentPromptChipsController {
@@ -178,6 +134,7 @@ export function startSentPromptChips(options: SentPromptChipsOptions): SentPromp
     match: SentPromptMatch,
     lineEls: HTMLElement[],
     key: string,
+    toggle: Element | null,
   ): void {
     const container = document.createElement('div');
     container.className = ROOT_CLASS;
@@ -225,7 +182,7 @@ export function startSentPromptChips(options: SentPromptChipsOptions): SentPromp
     });
 
     for (const line of lineEls) line.classList.add(LINE_CLASS);
-    bubble.querySelector(GEMINI_TOGGLE_SELECTOR)?.classList.add(TOGGLE_HIDDEN_CLASS);
+    toggle?.classList.add(TOGGLE_HIDDEN_CLASS);
     bubble.setAttribute(MARKED_ATTR, match.name);
     bubble.setAttribute('data-gv-theme', options.scheme());
     anchor.after(container);
@@ -235,8 +192,7 @@ export function startSentPromptChips(options: SentPromptChipsOptions): SentPromp
 
   function refresh(): void {
     if (destroyed) return;
-    for (const bubble of bubblesIn(root)) {
-      const lineEls = lineElementsOf(bubble);
+    for (const { bubble, lines: lineEls, anchor, toggle } of readSentChipTargets(root)) {
       const message = lineEls.map((line) => line.textContent ?? '').join('\n');
       const match = lineEls.length > 0 ? matchCompiledPrompt(message, compiled) : null;
       const already = bubble.getAttribute(MARKED_ATTR);
@@ -250,8 +206,7 @@ export function startSentPromptChips(options: SentPromptChipsOptions): SentPromp
       if (already === match.name && mounted.get(bubble)?.isConnected) continue;
 
       release(bubble);
-      const anchor = lineEls[0].closest<HTMLElement>('.query-text') ?? lineEls[0];
-      mount(bubble, anchor, message, match, lineEls, message);
+      if (anchor) mount(bubble, anchor, message, match, lineEls, message, toggle);
     }
   }
 

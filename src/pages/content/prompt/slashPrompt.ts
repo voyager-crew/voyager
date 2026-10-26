@@ -17,31 +17,32 @@ import type { PromptScheme } from '@/features/prompt/PromptSiteAdapter';
 import { isPromptTemplate } from '@/features/prompt/model/promptTemplate';
 import { getTranslationSync } from '@/utils/i18n';
 
-import { CHAT_INPUT_SELECTOR, findChatInput } from '../chatInput/index';
 import { followGeminiSendKey } from '../sendBehavior/followSendKey';
 import { findClosestSendActionButton, isSendKeyboardEvent } from '../sendBehavior/sendButton';
 import { type TemplateFillHandle, openTemplateFill } from './PromptTemplateFill';
+import { createPromptSendReplay, promptPageScope, watchPromptPageScope } from './promptPageScope';
 import {
   type PromptQuery,
   TOKEN_CLASS,
   completeQuery,
-  createQueryRange,
   getPromptQuery,
   getQueryAnchorRect,
   placeCaretAtInputStart,
   readText,
 } from './slashComposerText';
-import { syncMarkerTypography } from './slashMarkers';
+import {
+  inputFromTarget,
+  findPromptInputForSendButton,
+  findSlashFormInput,
+  isInsideSlashInput,
+} from './slashInputTargets';
 import { ghostSuffix, isPromptItem, matchSlashPrompts } from './slashMatch';
 import { createPromptPlacements, syncEditedPromptText } from './slashPlacements';
 import { SLASH_PREVIEW_ID, createSlashPreview } from './slashPreview';
+import { GHOST_ID, hideGhost, showGhost } from './slashPromptView';
 
 const ROOT_ID = 'gv-pm-slash-root';
 const LIST_ID = 'gv-pm-slash-list';
-const GHOST_ID = 'gv-pm-slash-ghost';
-
-const SEND_COMPOSER_SELECTOR =
-  'form, .text-input-field, .input-area, ms-prompt-input-wrapper, chat-message';
 
 export interface SlashPromptController {
   destroy: () => void;
@@ -52,73 +53,6 @@ interface SlashPromptOptions {
   scheme: () => PromptScheme;
   initialItems?: PromptItem[];
   initialCtrlEnterSend?: boolean;
-}
-
-function ghostElement(): HTMLElement {
-  const existing = document.getElementById(GHOST_ID);
-  if (existing) return existing;
-  const ghost = document.createElement('span');
-  ghost.id = GHOST_ID;
-  ghost.className = GHOST_ID;
-  ghost.setAttribute('aria-hidden', 'true');
-  document.body.appendChild(ghost);
-  return ghost;
-}
-
-function hideGhost(): void {
-  document.getElementById(GHOST_ID)?.classList.remove('gv-pm-slash-ghost-visible');
-}
-
-function showGhost(query: PromptQuery, name: string, scheme: PromptScheme): void {
-  const suffix = ghostSuffix(query.query, name);
-  const range = createQueryRange(query);
-  // A textarea has no range to measure against, and the query may be scrolled
-  // out of view inside the composer.
-  if (!suffix || !range || typeof range.getBoundingClientRect !== 'function') {
-    hideGhost();
-    return;
-  }
-  const rect = range.getBoundingClientRect();
-  if (rect.height <= 0) {
-    hideGhost();
-    return;
-  }
-  const ghost = ghostElement();
-  ghost.textContent = suffix;
-  ghost.dataset.gvTheme = scheme;
-  syncMarkerTypography(ghost, query.input, null);
-  ghost.style.left = `${Math.round(rect.right)}px`;
-  ghost.style.top = `${Math.round(rect.top)}px`;
-  ghost.style.height = `${Math.round(rect.height)}px`;
-  ghost.classList.add('gv-pm-slash-ghost-visible');
-}
-
-function inputFromTarget(target: EventTarget | null): HTMLElement | null {
-  if (!(target instanceof Element)) return null;
-  if (target.closest('.gv-pm-panel, .gv-pm-slash-root, .gv-pm-slash-tooltip')) return null;
-  const input = target.closest<HTMLElement>(CHAT_INPUT_SELECTOR);
-  if (!input) return null;
-  if (findChatInput({ requireVisible: false }) !== input) return null;
-  if (input instanceof HTMLTextAreaElement) return input;
-  if (input.isContentEditable || input.getAttribute('contenteditable') === 'true') return input;
-  return null;
-}
-
-function findPromptInputForSendButton(
-  button: HTMLElement,
-  hasPrompt: (input: HTMLElement) => boolean,
-): HTMLElement | null {
-  let ancestor = button.parentElement;
-  while (ancestor && ancestor !== document.body) {
-    if (ancestor.matches(SEND_COMPOSER_SELECTOR)) {
-      const input = Array.from(ancestor.querySelectorAll<HTMLElement>(CHAT_INPUT_SELECTOR)).find(
-        (candidate) => hasPrompt(candidate),
-      );
-      if (input) return input;
-    }
-    ancestor = ancestor.parentElement;
-  }
-  return null;
 }
 
 export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromptController {
@@ -157,8 +91,15 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
 
   /* Outlives `close()` on purpose: accepting a template closes the result list
    * and then opens this, so tearing it down here would dismiss it instantly.
-   * Only `destroy` owns its lifetime. */
+   * Page/account changes and `destroy` close it. */
   let templateFill: TemplateFillHandle | null = null;
+  const sendReplay = createPromptSendReplay();
+  const stopPageScope = watchPromptPageScope(() => {
+    sendReplay.destroy();
+    templateFill?.close();
+    templateFill = null;
+    close();
+  });
 
   function close(): void {
     root.hidden = true;
@@ -213,6 +154,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
     prompt: PromptItem,
     hideInputValue: boolean,
   ): void {
+    const identity = promptPageScope();
     templateFill?.close();
     templateFill = openTemplateFill({
       text: prompt.text,
@@ -228,6 +170,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
       },
       onSubmit: (filled) => {
         templateFill = null;
+        if (identity !== promptPageScope()) return;
         try {
           query.input.focus?.();
         } catch {}
@@ -450,7 +393,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
       event.stopPropagation();
       event.stopImmediatePropagation();
       expandTokensForSend(input);
-      window.setTimeout(() => {
+      sendReplay.schedule(() => {
         input.dispatchEvent(
           new KeyboardEvent('keydown', {
             key: 'Enter',
@@ -462,7 +405,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
             shiftKey: event.shiftKey,
           }),
         );
-      }, 0);
+      });
     }
   }
 
@@ -478,26 +421,26 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
   function onPointerDown(event: Event): void {
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest(`#${ROOT_ID}, #${SLASH_PREVIEW_ID}`)) return;
-    if (!target?.closest(CHAT_INPUT_SELECTOR)) close();
+    if (!target || !isInsideSlashInput(target)) close();
   }
 
   function onSubmit(event: Event): void {
     const form = event.target instanceof HTMLFormElement ? event.target : null;
     if (!form) return;
-    const input = form.querySelector<HTMLElement>(CHAT_INPUT_SELECTOR);
+    const input = findSlashFormInput(form);
     if (!input || !placements.has(input)) return;
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
     expandTokensForSend(input);
     const submitter = event instanceof SubmitEvent ? event.submitter : null;
-    window.setTimeout(() => {
+    sendReplay.schedule(() => {
       if (submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement) {
         form.requestSubmit(submitter);
       } else {
         form.requestSubmit();
       }
-    }, 0);
+    });
   }
 
   function onClick(event: Event): void {
@@ -510,7 +453,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
     event.stopPropagation();
     event.stopImmediatePropagation();
     expandTokensForSend(input);
-    window.setTimeout(() => button.click(), 0);
+    sendReplay.schedule(() => button.click());
   }
 
   function onPointerOver(event: PointerEvent): void {
@@ -557,6 +500,8 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
 
   return {
     destroy: () => {
+      stopPageScope();
+      sendReplay.destroy();
       effectiveSendKey.stop();
       templateFill?.close();
       templateFill = null;

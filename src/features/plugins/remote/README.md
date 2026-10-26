@@ -142,16 +142,25 @@ https://voyager.nagi.fun/catalog/gemini-selectors/v3/hosts/gemini.google.com.jso
 Gemini Enterprise is not covered: its pages never start the Gemini turn
 consumers, so a file for it would have no reader.
 
-The `v3` file (`format: 3`) carries ordered `turn.*`, `sidebar.*`, `modelPicker.*` and
-`composer.*` profiles. The publisher reads the same `turn.json`, `sidebar.json`,
-`model-picker.json` and `composer.json` fragments as the bundle. These cover
-conversation turns, sidebar entries/titles and folder display areas, model menu
-discovery, and message inputs and their controls.
+The `v3` file (`format: 3`) carries ordered `turn.*`, `sidebar.*`, `modelPicker.*`,
+`composer.*`, `inputCollapse.*`, `vim.*`, `promptHistory.*`, `slash.*`, `sentChips.*`,
+`project.*` and `activity.*` profiles. The publisher reads the same per-surface
+JSON fragments in `selector-data/` as the bundle. These cover conversation turns,
+sidebar entries/titles and folder display areas, model menu discovery, message
+inputs and their controls, input collapse, Vim, prompt history, slash commands,
+sent prompt previews, Folder as Project and folder activity. Each surface has its own
+syntax-fallback group. A remote read must preserve the complete independently
+verified collection and the operation's original input; a miss or mismatch reruns
+the whole read with bundled data. The configured Vim wrapper-to-editable order,
+hidden fallback and accepted HUD selector are preserved; collapse scans, mutation
+flushes and resize measurements each use one read session.
 Identity extraction, account controls, delete/rename/confirmation, deletion
 tracking and click policy remain packaged. So do locators whose online match would
 have to equal the packaged one before use (sidebar toggle, hosts, new-chat and
 actions containers in `sidebar-packaged.json`; saved, exported and printed
-conversation titles in `sidebar-titles.json`): neither file is published. The files contain no plugins,
+conversation titles in `sidebar-titles.json`): neither file is published. Edit/send protocols, attachment/related-UI checks, HUD
+anchors, chip text and mount points, and project insertion/removal rules also stay
+packaged; `*-packaged.json` fragments never enter publication. The files contain no plugins,
 CSS, actions, JavaScript, matches, capabilities or theme. The bundle and remote
 files use the same selector-data guard. A newer accepted revision
 replaces the previous patch; each supplied list replaces that bundled list as
@@ -168,8 +177,9 @@ The current client fetches only v3 and requires format 3 on that response.
 Valid format 1 and 2 caches remain readable, with newer surfaces using bundled
 profiles until a v3 response replaces them. The cache is still bound to
 `extensionVersion`, so an extension upgrade discards another version's cache.
-Each format retains its original key allowlist. No consent or user-record
-migration is introduced by this protocol change.
+New profiles extend only the latest format’s literal allowlist and its contract test.
+Earlier projections retain their existing lists. Profile additions require no consent
+or user-record migration.
 
 `gv.geminiSelectors.status`, `gv.geminiSelectors.setEnabled`, and
 `gv.geminiSelectors.refresh` are the popup's background API. Turning the switch

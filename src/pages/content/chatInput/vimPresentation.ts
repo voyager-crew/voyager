@@ -1,3 +1,5 @@
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/vim-packaged.json';
+
 import type { VimMode } from './vimCommands';
 import { getVimComposerMount } from './vimComposerMount';
 import { getCaretOffset } from './vimDomEditor';
@@ -11,6 +13,7 @@ interface DisplayContext {
   mode: VimMode;
   buffer: string;
   composerSelector: string | null;
+  acceptedComposerSelector?: (input: HTMLElement | null) => string | null;
 }
 
 interface HudMountTarget {
@@ -49,20 +52,7 @@ export function createVimPresentation(
   let hudRetryAttempts = 0;
 
   function queryHudMountCandidates(): HTMLElement[] {
-    const selectors = [
-      'toolbox-drawer .toolbox-drawer-button-label-icon-text',
-      'toolbox-drawer .toolbox-drawer-button-label',
-      'toolbox-drawer .toolbox-drawer-button-container',
-      'toolbox-drawer button',
-      'toolbox-drawer .toolbox-drawer-container',
-      '[class*="toolbox-drawer"] .toolbox-drawer-button-label-icon-text',
-      '[class*="toolbox-drawer"] button',
-      'button[aria-label*="Tools"]',
-      'button[aria-label*="tools"]',
-      'button[aria-label*="工具"]',
-      'button[aria-label*="ツール"]',
-      'button[aria-label*="도구"]',
-    ];
+    const selectors = packaged['vim.hud'];
 
     const candidates: HTMLElement[] = [];
     const seen = new Set<HTMLElement>();
@@ -102,7 +92,7 @@ export function createVimPresentation(
       findVimInput({ requireVisible: false });
     const editForm =
       input && isEditPromptInput(input)
-        ? input.closest<HTMLElement>('mat-form-field.edit-form, .edit-form')
+        ? input.closest<HTMLElement>(packaged['vim.editForm'].join(','))
         : null;
 
     if (editForm?.isConnected) {
@@ -114,17 +104,27 @@ export function createVimPresentation(
       return { element: crossSiteEdit, input, placement: 'edit-floating' };
     }
 
-    const crossSiteComposer = getVimComposerMount(input, readContext().composerSelector);
+    const context = readContext();
+    const crossSiteComposer = getVimComposerMount(input, context.composerSelector);
+
     if (crossSiteComposer?.isConnected) {
       return { element: crossSiteComposer, input, placement: 'floating' };
     }
 
-    const composer = input?.closest<HTMLElement>(
-      '.text-input-field, input-area-v2, input-container',
-    );
+    const composer = input?.closest<HTMLElement>(packaged['vim.host'].join(','));
 
     if (composer?.isConnected) {
       return { element: composer, input, placement: 'composer' };
+    }
+
+    // Existing mounts keep parity; only a repaired composer needs its accepted new wrapper.
+    const repairedMount = getVimComposerMount(
+      input,
+      context.acceptedComposerSelector?.(input) ?? null,
+      true,
+    );
+    if (repairedMount?.isConnected) {
+      return { element: repairedMount, input, placement: 'floating' };
     }
 
     const candidates = queryHudMountCandidates();
@@ -138,7 +138,9 @@ export function createVimPresentation(
       return { element: fallbackCandidate, input, placement: 'inline' };
     }
 
-    const inputFallback = document.querySelector<HTMLElement>('rich-textarea')?.parentElement;
+    const inputFallback = document.querySelector<HTMLElement>(
+      packaged['vim.inputFallback'].join(','),
+    )?.parentElement;
     return inputFallback instanceof HTMLElement
       ? { element: inputFallback, input, placement: 'inline' }
       : null;

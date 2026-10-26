@@ -1,6 +1,13 @@
+import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
+import { GEMINI_INPUT_COLLAPSE_PROFILE_KEYS } from './inputCollapseKeys';
 import { GEMINI_MODEL_PICKER_PROFILE_KEYS } from './modelPickerKeys';
+import { GEMINI_PROJECT_PROFILE_KEYS } from './projectKeys';
+import { GEMINI_PROMPT_HISTORY_PROFILE_KEYS } from './promptKeys';
+import { GEMINI_SLASH_PROFILE_KEYS } from './promptKeys';
+import { GEMINI_SENT_CHIPS_PROFILE_KEYS } from './promptKeys';
 import { GEMINI_SIDEBAR_PROFILE_KEYS } from './sidebarKeys';
+import { GEMINI_VIM_PROFILE_KEYS } from './vimKeys';
 
 /** Locator data only; query algorithms, identity and actions remain packaged. */
 export const GEMINI_SELECTOR_HOSTS = ['gemini.google.com'] as const;
@@ -16,7 +23,7 @@ export const GEMINI_TURN_PROFILE_KEYS = [
 export type GeminiTurnProfileKey = (typeof GEMINI_TURN_PROFILE_KEYS)[number];
 export type GeminiTurnProfiles = Readonly<Record<GeminiTurnProfileKey, readonly string[]>>;
 
-/** Published formats are immutable: adding a group key requires a new format. */
+/** Literal format contracts; the latest, still-unpublished format includes this batch. */
 export const GEMINI_V1_SELECTOR_PROFILE_KEYS = [
   'turn.user',
   'turn.userWithHosts',
@@ -118,6 +125,14 @@ export const GEMINI_V3_SELECTOR_PROFILE_KEYS = [
   'composer.candidates',
   'composer.draftCandidates',
   'composer.sendContainers',
+  'inputCollapse.wrapper',
+  'vim.configuredComposer',
+  'vim.candidates',
+  'promptHistory.candidates',
+  'slash.candidates',
+  'sentChips.bubbles',
+  'project.inputs',
+  'activity.inputs',
 ] as const;
 
 export const GEMINI_SELECTOR_PROFILE_KEYS = GEMINI_V3_SELECTOR_PROFILE_KEYS;
@@ -129,11 +144,18 @@ export const GEMINI_SELECTOR_PROFILE_GROUPS: readonly (readonly GeminiSelectorPr
   GEMINI_SIDEBAR_PROFILE_KEYS,
   GEMINI_MODEL_PICKER_PROFILE_KEYS,
   GEMINI_COMPOSER_PROFILE_KEYS,
+  GEMINI_INPUT_COLLAPSE_PROFILE_KEYS,
+  GEMINI_VIM_PROFILE_KEYS,
+  GEMINI_PROMPT_HISTORY_PROFILE_KEYS,
+  GEMINI_SLASH_PROFILE_KEYS,
+  GEMINI_SENT_CHIPS_PROFILE_KEYS,
+  GEMINI_PROJECT_PROFILE_KEYS,
+  GEMINI_ACTIVITY_PROFILE_KEYS,
 ];
 export type GeminiSelectorProfiles = Readonly<Record<GeminiSelectorProfileKey, readonly string[]>>;
 
 export interface GeminiSelectorFile {
-  /** Each format retains the allowlist shipped with its first client. */
+  /** Earlier formats retain their literal allowlists until the planned format cleanup. */
   readonly format: 1 | 2 | 3;
   readonly site: 'gemini';
   readonly host: GeminiSelectorHost;

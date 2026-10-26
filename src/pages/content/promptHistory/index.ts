@@ -18,6 +18,7 @@ import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContex
 import { getTranslationSync } from '@/utils/i18n';
 
 import { stripInstructionBlockPreservingWhitespace } from '../folderProject/instructionBlock';
+import { startPromptScopedRead } from '../prompt/promptPageScope';
 import { followGeminiSendKey } from '../sendBehavior/followSendKey';
 import {
   findClosestSendActionButton,
@@ -26,6 +27,7 @@ import {
   isUpdateActionButton,
 } from '../sendBehavior/sendButton';
 import { watchRouteChanges } from '../utils/routeWatcher';
+import { isCurrentCapture, watchCaptureNavigation } from './captureNavigation';
 import { createEl, createHistoryIcon, renderHistoryItems } from './historyList';
 import {
   findFormPromptInput,
@@ -74,6 +76,7 @@ let confirmOwner: AbortController | null = null;
 const notices = createToaster();
 let renderRevision = 0;
 const recentCaptures = new Map<string, number>();
+const pendingCaptures = new Set<{ stop: () => Promise<void> }>();
 
 function getConversationPath(): string {
   return window.location.pathname;
@@ -135,8 +138,12 @@ function capturePrompt(input: HTMLElement, type = promptTypeForInput(input)): vo
   const content = stripInstructionBlockPreservingWhitespace(readInputText(input)).trim();
   if (!content) return;
   const path = getConversationPath();
-  void resolveCurrentAccountScope()
-    .then(({ accountScope }) => {
+  const account = getCurrentAccountIdentity();
+  const capture = startPromptScopedRead({
+    read: resolveCurrentAccountScope,
+    invalidatedBy: watchCaptureNavigation,
+    isCurrent: () => isCurrentCapture(path, account),
+    accept: ({ accountScope }) => {
       const fingerprint = `${accountScope}\u0000${path}\u0000${type}\u0000${content}`;
       const now = Date.now();
       const previousCapture = recentCaptures.get(fingerprint);
@@ -151,12 +158,15 @@ function capturePrompt(input: HTMLElement, type = promptTypeForInput(input)): vo
       for (const [key, timestamp] of recentCaptures) {
         if (now - timestamp >= CAPTURE_DEDUPLICATION_WINDOW_MS) recentCaptures.delete(key);
       }
-      return addPromptHistory(content, type, path, accountScope).catch((error) => {
+      void addPromptHistory(content, type, path, accountScope).catch((error) => {
         if (recentCaptures.get(fingerprint) === now) recentCaptures.delete(fingerprint);
-        throw error;
+        reportStorageError(error);
       });
-    })
-    .catch(reportStorageError);
+    },
+    failed: reportStorageError,
+  });
+  pendingCaptures.add(capture);
+  capture.subscribe(() => pendingCaptures.delete(capture));
 }
 
 function startCaptureListeners(): void {
@@ -387,6 +397,8 @@ function disableFeature(): void {
   isEnabled = false;
   stopCaptureListeners();
   teardownPanel();
+  for (const capture of pendingCaptures) void capture.stop();
+  pendingCaptures.clear();
   recentCaptures.clear();
   renderRevision++;
 }

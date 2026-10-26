@@ -261,11 +261,17 @@ it("never owns one account's options by the account that took the page while the
     return listed;
   });
 
-  await pick('Work');
+  chip()!.click();
+  await pass();
+  expect(option('Work')).toBeUndefined();
+  // The new account can still load and choose its own options after the old load was dropped.
+  vi.mocked(session!.getFolders).mockRestore();
+  chip()!.click();
+  await pick('Home');
+  expect(chip()?.dataset.selected).toBe('home');
   await send(input, 'hello');
 
   expect(input.textContent).toBe('hello');
-  expect(chip()?.dataset.selected).toBeUndefined();
 });
 
 it("never sends one account's instructions when a retried send finds the account unreadable", async () => {

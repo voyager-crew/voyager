@@ -1,0 +1,16 @@
+{
+  "inputCollapse.emptyInputs": ["rich-textarea", "textarea", "[contenteditable=\"true\"]"],
+  "inputCollapse.focus": [".ql-editor", "[contenteditable]", "rich-textarea"],
+  "inputCollapse.related": [
+    ".cdk-overlay-container",
+    ".mat-mdc-menu-panel",
+    ".mat-mdc-dialog-container",
+    ".ng-trigger",
+    "[role=\"listbox\"]",
+    "[role=\"option\"]",
+    "[role=\"combobox\"]",
+    "[data-test-id*=\"attachment\"]",
+    "[data-test-id*=\"upload\"]",
+    "[data-test-id*=\"file\"]"
+  ]
+}
