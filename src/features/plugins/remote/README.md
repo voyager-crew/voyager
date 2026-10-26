@@ -144,18 +144,24 @@ consumers, so a file for it would have no reader.
 
 The `v3` file (`format: 3`) carries ordered `turn.*`, `sidebar.*`, `modelPicker.*`,
 `composer.*`, `inputCollapse.*`, `vim.*`, `promptHistory.*`, `slash.*`, `sentChips.*`,
-`project.*` and `activity.*` profiles. The publisher reads the same per-surface
+`project.*`, `activity.*`, `menu.*`, `exportOverlay.*`, `sidebarWidth.*`,
+`sidebarHover.*` and `gems.*` profiles. The publisher reads the same per-surface
 JSON fragments in `selector-data/` as the bundle. These cover conversation turns,
-sidebar entries/titles and folder display areas, model menu discovery, message
-inputs and their controls, input collapse, Vim, prompt history, slash commands,
+sidebar entries/titles and folder display areas, model menu discovery, conversation
+and export menu anchors, the sidebar toggle button’s hit area and sidebar hover areas, the active Gems
+sidebar, message inputs and their controls, input collapse, Vim, prompt history, slash commands,
 sent prompt previews, Folder as Project and folder activity. Each surface has its own
 syntax-fallback group. A remote read must preserve the complete independently
 verified collection and the operation's original input; a miss or mismatch reruns
 the whole read with bundled data. The configured Vim wrapper-to-editable order,
 hidden fallback and accepted HUD selector are preserved; collapse scans, mutation
-flushes and resize measurements each use one read session.
+flushes and resize measurements each use one read session. Gems scraping also reads
+one view; Gem identity, pins, MRU and descriptions retain their existing meaning.
+The dormant Gems hider remains dormant.
 Identity extraction, account controls, delete/rename/confirmation, deletion
-tracking and click policy remain packaged. So do locators whose online match would
+tracking, native menu association, clone sanitizing, ARIA/focus safety and click
+policy remain packaged. Chat width CSS and native health checks remain packaged too.
+So do locators whose online match would
 have to equal the packaged one before use (sidebar toggle, hosts, new-chat and
 actions containers in `sidebar-packaged.json`; saved, exported and printed
 conversation titles in `sidebar-titles.json`): neither file is published. Edit/send protocols, attachment/related-UI checks, HUD

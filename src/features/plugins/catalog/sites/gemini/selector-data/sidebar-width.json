@@ -1,0 +1,7 @@
+{
+  "sidebarWidth.buttons": [
+    "bard-sidenav .close-sidenav-button",
+    "bard-sidenav button[aria-label=\"Close sidebar\"]",
+    "bard-sidenav button[aria-label=\"Open sidebar\"]"
+  ]
+}

@@ -1,5 +1,12 @@
+import { getBundledGeminiSelectorView, getGeminiSelectorView } from '@/core/gemini/selectors';
+
+import { gemsSelector, isNativeGemsNavEntry } from './selectorQueries';
+
 /** Gemini's native Gems entry in the sidebar nav. */
-export const GEMS_NAV_ENTRY_SELECTOR = '[data-test-id="gems-side-nav-entry-button"]';
+export const GEMS_NAV_ENTRY_SELECTOR = gemsSelector(
+  'gems.navEntry',
+  getBundledGeminiSelectorView(),
+);
 
 /** Attributes Gemini uses to show or hide one of its mounted sidebar layouts. */
 const VISIBILITY_ATTRIBUTES = ['class', 'style', 'hidden', 'aria-hidden'];
@@ -16,8 +23,14 @@ export interface GemsAnchor {
 /** Whether `node` is or holds a native Gems entry. Selector checks only. Pure. */
 export function containsGemsNavEntry(node: Node): boolean {
   if (!(node instanceof Element)) return false;
+  if (node.matches(GEMS_NAV_ENTRY_SELECTOR) || node.querySelector(GEMS_NAV_ENTRY_SELECTOR))
+    return true;
+  const view = getGeminiSelectorView();
+  if (!view.remoteKeys.has('gems.navEntry')) return false;
+  const selector = gemsSelector('gems.navEntry', view);
   return (
-    node.matches(GEMS_NAV_ENTRY_SELECTOR) || node.querySelector(GEMS_NAV_ENTRY_SELECTOR) !== null
+    (node.matches(selector) && isNativeGemsNavEntry(node)) ||
+    Array.from(node.querySelectorAll(selector)).some(isNativeGemsNavEntry)
   );
 }
 

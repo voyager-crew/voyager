@@ -15,11 +15,16 @@
  */
 import activityProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/activity.json';
 import composerProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/composer.json';
+import gemsProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/gems.json';
 import inputCollapseProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/input-collapse.json';
+import exportOverlayProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/menu-overlay.json';
+import menuProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/menu.json';
 import modelPickerProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/model-picker.json';
 import projectProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/project.json';
 import promptHistoryProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/prompt-history.json';
 import sentChipsProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/sent-chips.json';
+import sidebarHoverProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar-hover.json';
+import sidebarWidthProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar-width.json';
 import sidebarProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar.json';
 import slashProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/slash.json';
 import turnProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/turn.json';
@@ -27,7 +32,9 @@ import vimProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/v
 
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
+import { GEMINI_GEMS_PROFILE_KEYS } from './gemsKeys';
 import { GEMINI_INPUT_COLLAPSE_PROFILE_KEYS } from './inputCollapseKeys';
+import { GEMINI_MENU_PROFILE_KEYS, GEMINI_EXPORT_OVERLAY_PROFILE_KEYS } from './menuKeys';
 import { GEMINI_MODEL_PICKER_PROFILE_KEYS } from './modelPickerKeys';
 import { GEMINI_PROJECT_PROFILE_KEYS } from './projectKeys';
 import {
@@ -35,6 +42,10 @@ import {
   GEMINI_SENT_CHIPS_PROFILE_KEYS,
   GEMINI_SLASH_PROFILE_KEYS,
 } from './promptKeys';
+import {
+  GEMINI_SIDEBAR_WIDTH_PROFILE_KEYS,
+  GEMINI_SIDEBAR_HOVER_PROFILE_KEYS,
+} from './sidebarInteractionKeys';
 import { GEMINI_SIDEBAR_PROFILE_KEYS } from './sidebarKeys';
 import {
   GEMINI_TURN_PROFILE_KEYS,
@@ -69,6 +80,11 @@ function readBundle(): GeminiSelectorProfiles {
     ...readGroup(sentChipsProfiles, GEMINI_SENT_CHIPS_PROFILE_KEYS, 'sent-chips'),
     ...readGroup(projectProfiles, GEMINI_PROJECT_PROFILE_KEYS, 'project'),
     ...readGroup(activityProfiles, GEMINI_ACTIVITY_PROFILE_KEYS, 'activity'),
+    ...readGroup(gemsProfiles, GEMINI_GEMS_PROFILE_KEYS, 'gems'),
+    ...readGroup(sidebarHoverProfiles, GEMINI_SIDEBAR_HOVER_PROFILE_KEYS, 'sidebar-hover'),
+    ...readGroup(sidebarWidthProfiles, GEMINI_SIDEBAR_WIDTH_PROFILE_KEYS, 'sidebar-width'),
+    ...readGroup(exportOverlayProfiles, GEMINI_EXPORT_OVERLAY_PROFILE_KEYS, 'menu-overlay'),
+    ...readGroup(menuProfiles, GEMINI_MENU_PROFILE_KEYS, 'menu'),
   };
   const file = readGeminiSelectorFile(
     {

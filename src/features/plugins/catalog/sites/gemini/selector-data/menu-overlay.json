@@ -1,0 +1,16 @@
+{
+  "exportOverlay.canvas": [
+    "#chat-history",
+    "infinite-scroller.chat-history",
+    ".chat-history-scroll-container",
+    "chat-window-content",
+    "main chat-window-content"
+  ],
+  "exportOverlay.composer": [
+    "rich-textarea",
+    "[aria-label*=\"Enter a prompt\"]",
+    "[aria-label*=\"prompt\"]",
+    "[aria-label*=\"Gemini\"]",
+    "[contenteditable=\"true\"][aria-label]"
+  ]
+}

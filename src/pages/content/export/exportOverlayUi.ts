@@ -1,3 +1,7 @@
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/menu-overlay-packaged.json';
+
+import { resolveExportAlignmentTarget } from './exportOverlayTargets';
+
 /**
  * Centres the export selection bar over the conversation.
  *
@@ -26,20 +30,7 @@ function isElementVisibleForAlignment(el: HTMLElement): boolean {
 }
 
 function isLikelySidebarElement(el: HTMLElement): boolean {
-  if (
-    el.closest(
-      [
-        '[data-test-id="side-nav"]',
-        'side-navigation',
-        'mat-sidenav',
-        'aside',
-        'nav',
-        '.side-nav',
-        '.sidenav',
-        '.chat-history-nav',
-      ].join(','),
-    )
-  ) {
+  if (el.closest(packaged['exportOverlay.sidebar'].join(','))) {
     return true;
   }
 
@@ -51,7 +42,7 @@ function isLikelySidebarElement(el: HTMLElement): boolean {
 }
 
 function pickBestVisibleAlignmentTarget(
-  selectors: string[],
+  selectors: readonly string[],
   options?: {
     minWidth?: number;
     minHeight?: number;
@@ -89,39 +80,22 @@ function pickBestVisibleAlignmentTarget(
 function resolveConversationCanvasCenterX(anchors: ConversationAnchors): number {
   const viewportCenter = window.innerWidth / 2;
 
-  const canvasTarget = pickBestVisibleAlignmentTarget(
-    [
-      '#chat-history',
-      'infinite-scroller.chat-history',
-      '.chat-history-scroll-container',
-      'chat-window-content',
-      'main chat-window-content',
-    ],
-    {
-      minWidth: Math.min(420, Math.max(280, window.innerWidth * 0.42)),
-      minHeight: 80,
-    },
+  const target = resolveExportAlignmentTarget(anchors, (selectors, surface) =>
+    pickBestVisibleAlignmentTarget(
+      selectors,
+      surface === 'canvas'
+        ? {
+            minWidth: Math.min(420, Math.max(280, window.innerWidth * 0.42)),
+            minHeight: 80,
+          }
+        : {
+            minWidth: Math.min(460, Math.max(240, window.innerWidth * 0.28)),
+            minHeight: 28,
+          },
+    ),
   );
-  if (canvasTarget) {
-    const rect = canvasTarget.getBoundingClientRect();
-    return rect.left + rect.width / 2;
-  }
-
-  const composerTarget = pickBestVisibleAlignmentTarget(
-    [
-      'rich-textarea',
-      '[aria-label*="Enter a prompt"]',
-      '[aria-label*="prompt"]',
-      '[aria-label*="Gemini"]',
-      '[contenteditable="true"][aria-label]',
-    ],
-    {
-      minWidth: Math.min(460, Math.max(240, window.innerWidth * 0.28)),
-      minHeight: 28,
-    },
-  );
-  if (composerTarget) {
-    const rect = composerTarget.getBoundingClientRect();
+  if (target) {
+    const rect = target.getBoundingClientRect();
     return rect.left + rect.width / 2;
   }
 

@@ -1,11 +1,17 @@
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
+import { GEMINI_GEMS_NAV_PROFILE_KEYS, GEMINI_GEMS_CATALOG_PROFILE_KEYS } from './gemsKeys';
 import { GEMINI_INPUT_COLLAPSE_PROFILE_KEYS } from './inputCollapseKeys';
+import { GEMINI_MENU_PROFILE_KEYS, GEMINI_EXPORT_OVERLAY_PROFILE_KEYS } from './menuKeys';
 import { GEMINI_MODEL_PICKER_PROFILE_KEYS } from './modelPickerKeys';
 import { GEMINI_PROJECT_PROFILE_KEYS } from './projectKeys';
 import { GEMINI_PROMPT_HISTORY_PROFILE_KEYS } from './promptKeys';
 import { GEMINI_SLASH_PROFILE_KEYS } from './promptKeys';
 import { GEMINI_SENT_CHIPS_PROFILE_KEYS } from './promptKeys';
+import {
+  GEMINI_SIDEBAR_WIDTH_PROFILE_KEYS,
+  GEMINI_SIDEBAR_HOVER_PROFILE_KEYS,
+} from './sidebarInteractionKeys';
 import { GEMINI_SIDEBAR_PROFILE_KEYS } from './sidebarKeys';
 import { GEMINI_VIM_PROFILE_KEYS } from './vimKeys';
 
@@ -133,6 +139,19 @@ export const GEMINI_V3_SELECTOR_PROFILE_KEYS = [
   'sentChips.bubbles',
   'project.inputs',
   'activity.inputs',
+  'menu.panels',
+  'menu.content',
+  'exportOverlay.canvas',
+  'exportOverlay.composer',
+  'sidebarWidth.buttons',
+  'sidebarHover.dialogs',
+  'sidebarHover.menus',
+  'gems.navEntry',
+  'gems.list',
+  'gems.row',
+  'gems.title',
+  'gems.description',
+  'gems.icon',
 ] as const;
 
 export const GEMINI_SELECTOR_PROFILE_KEYS = GEMINI_V3_SELECTOR_PROFILE_KEYS;
@@ -151,6 +170,12 @@ export const GEMINI_SELECTOR_PROFILE_GROUPS: readonly (readonly GeminiSelectorPr
   GEMINI_SENT_CHIPS_PROFILE_KEYS,
   GEMINI_PROJECT_PROFILE_KEYS,
   GEMINI_ACTIVITY_PROFILE_KEYS,
+  GEMINI_MENU_PROFILE_KEYS,
+  GEMINI_EXPORT_OVERLAY_PROFILE_KEYS,
+  GEMINI_SIDEBAR_WIDTH_PROFILE_KEYS,
+  GEMINI_SIDEBAR_HOVER_PROFILE_KEYS,
+  GEMINI_GEMS_NAV_PROFILE_KEYS,
+  GEMINI_GEMS_CATALOG_PROFILE_KEYS,
 ];
 export type GeminiSelectorProfiles = Readonly<Record<GeminiSelectorProfileKey, readonly string[]>>;
 

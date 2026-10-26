@@ -1,6 +1,7 @@
 import { LAYER_ATTR } from '@/core/ui/layer';
 import { POPOVER_LAYER_HOST_CLASS } from '@/pages/content/folder/floatingTree/popoverLayer';
 
+import { getSidebarHoverPopups } from './popupTargets';
 import { getSidenavElement, isSidebarCollapsed, isSidebarVisible } from './sidebarDom';
 
 const LEAVE_DELAY_MS = 400;
@@ -91,12 +92,11 @@ export function createHoverIntent(callbacks: HoverIntentCallbacks) {
   }
 
   function isPopupOrDialogOpen(): boolean {
-    const matDialogs = document.querySelectorAll<HTMLElement>('.mat-mdc-dialog-container');
+    const { dialogs: matDialogs, menus: matMenus } = getSidebarHoverPopups();
     for (const dialog of matDialogs) {
       if (isElementVisible(dialog)) return true;
     }
 
-    const matMenus = document.querySelectorAll<HTMLElement>('.mat-mdc-menu-panel');
     for (const menu of matMenus) {
       if (isElementVisible(menu)) return true;
     }
@@ -115,12 +115,11 @@ export function createHoverIntent(callbacks: HoverIntentCallbacks) {
     if (callbacks.isEdgeHovered()) return true;
     if (sidenavElement?.matches(':hover')) return true;
 
-    const matDialogs = document.querySelectorAll<HTMLElement>('.mat-mdc-dialog-container');
+    const { dialogs: matDialogs, menus: matMenus } = getSidebarHoverPopups();
     for (const dialog of matDialogs) {
       if (dialog.matches(':hover')) return true;
     }
 
-    const matMenus = document.querySelectorAll<HTMLElement>('.mat-mdc-menu-panel');
     for (const menu of matMenus) {
       if (menu.matches(':hover')) return true;
     }

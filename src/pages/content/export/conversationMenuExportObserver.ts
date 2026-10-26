@@ -7,13 +7,14 @@
  * the trigger's `aria-controls` link on click/pointerdown.
  */
 import {
-  MENU_PANEL_SELECTOR,
   getConversationMenuContext,
   getResponseMenuContext,
   injectConversationMenuExportButton,
   injectResponseMenuExportButton,
   removeExportMenuItems,
 } from './conversationMenuInjection';
+import { createMenuTaskQueue } from './menuLifetime';
+import { collectMenuPanels, getMenuPanels, isMenuPanel } from './menuTargets';
 
 const CONVERSATION_MENU_TRIGGER_TEST_IDS = [
   'actions-menu-button',
@@ -35,15 +36,6 @@ export interface ConversationMenuExportOptions {
 }
 
 let stopActiveWatcher: (() => void) | null = null;
-
-function getConversationMenuPanelsFromNode(node: HTMLElement): HTMLElement[] {
-  const panels: HTMLElement[] = [];
-  if (node.matches(MENU_PANEL_SELECTOR)) {
-    panels.push(node);
-  }
-  panels.push(...Array.from(node.querySelectorAll<HTMLElement>(MENU_PANEL_SELECTOR)));
-  return panels;
-}
 
 function parseMenuTriggerPanelIds(trigger: HTMLElement): string[] {
   const raw = `${trigger.getAttribute('aria-controls') || ''} ${
@@ -68,14 +60,8 @@ export function watchConversationMenusForExport(
 
   const { label: readLabel, onExport } = options;
   let stopped = false;
-  const timers = new Set<number>();
-  const later = (run: () => void, delayMs: number) => {
-    const id = window.setTimeout(() => {
-      timers.delete(id);
-      run();
-    }, delayMs);
-    timers.add(id);
-  };
+  const tasks = createMenuTaskQueue();
+  const later = tasks.schedule;
 
   const tryInjectOnPanel = (
     menuPanel: HTMLElement,
@@ -124,11 +110,7 @@ export function watchConversationMenusForExport(
     for (const mutation of mutations) {
       mutation.addedNodes.forEach((node) => {
         if (!(node instanceof HTMLElement)) return;
-        const panelSet = new Set<HTMLElement>();
-        const panels = getConversationMenuPanelsFromNode(node);
-        panels.forEach((panel) => panelSet.add(panel));
-        const closestPanel = node.closest(MENU_PANEL_SELECTOR) as HTMLElement | null;
-        if (closestPanel) panelSet.add(closestPanel);
+        const panelSet = collectMenuPanels(node);
         panelSet.forEach((panel) => {
           later(() => tryInjectOnPanel(panel), 30);
         });
@@ -138,7 +120,7 @@ export function watchConversationMenusForExport(
 
   observer.observe(document.body, { childList: true, subtree: true });
 
-  const existingPanels = document.querySelectorAll<HTMLElement>(MENU_PANEL_SELECTOR);
+  const existingPanels = getMenuPanels();
   existingPanels.forEach((panel) => later(() => tryInjectOnPanel(panel), 30));
 
   const triggerSelector = [...CONVERSATION_MENU_TRIGGER_TEST_IDS, RESPONSE_MENU_TRIGGER_TEST_ID]
@@ -158,7 +140,7 @@ export function watchConversationMenusForExport(
         panelIds.forEach((id) => {
           const panel = document.getElementById(id);
           if (!(panel instanceof HTMLElement)) return;
-          if (!panel.matches(MENU_PANEL_SELECTOR)) return;
+          if (!isMenuPanel(panel)) return;
           tryInjectOnPanel(panel);
         });
       }, attempt * MENU_INJECTION_RETRY_DELAY_MS);
@@ -172,8 +154,7 @@ export function watchConversationMenusForExport(
     if (stopped) return;
     stopped = true;
     window.removeEventListener('beforeunload', stop);
-    for (const id of timers) window.clearTimeout(id);
-    timers.clear();
+    tasks.stop();
     removeExportMenuItems();
     try {
       observer.disconnect();

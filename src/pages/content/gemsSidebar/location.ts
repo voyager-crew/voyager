@@ -1,10 +1,15 @@
 import {
+  getBundledGeminiSelectorView,
+  getGeminiSelectorView,
+  type GeminiSelectorView,
+} from '@/core/gemini/selectors';
+import {
   geminiSidebarSelector,
   resolveGeminiSidebarOperation,
 } from '@/core/gemini/sidebar/queries';
 
-import { GEMS_NAV_ENTRY_SELECTOR } from './anchorGuard';
 import { findGemsSectionNav } from './section';
+import { gemsPackagedSelectors, gemsSelector, isNativeGemsNavEntry } from './selectorQueries';
 
 export interface GemsSidebarLocation {
   overflow: HTMLElement;
@@ -12,20 +17,45 @@ export interface GemsSidebarLocation {
   nav: HTMLElement | null;
 }
 
-/** P2a relocates the sidebar root; Gems catalog/entry identity remains packaged (P8). */
+function readLocation(view: GeminiSelectorView): GemsSidebarLocation | null {
+  const overflow = document.querySelector(geminiSidebarSelector('sidebar.overflow', view));
+  if (!(overflow instanceof HTMLElement)) return null;
+  const entry = Array.from(overflow.querySelectorAll(gemsSelector('gems.navEntry', view))).find(
+    (element) => element instanceof HTMLElement && element.getBoundingClientRect().height > 0,
+  );
+  return {
+    overflow,
+    entry: entry instanceof HTMLElement ? entry : null,
+    nav: entry ? null : findGemsSectionNav(overflow),
+  };
+}
+
+/** Select the sidebar root and Gems entry together before inserting anything. */
 export function findGemsSidebarLocation(): GemsSidebarLocation | null {
+  const active = getGeminiSelectorView();
+  const bundle = getBundledGeminiSelectorView();
   return resolveGeminiSidebarOperation(
     (view) => {
-      const overflow = document.querySelector(geminiSidebarSelector('sidebar.overflow', view));
-      if (!(overflow instanceof HTMLElement)) return null;
-      const entry = Array.from(overflow.querySelectorAll(GEMS_NAV_ENTRY_SELECTOR)).find(
-        (element) => element instanceof HTMLElement && element.getBoundingClientRect().height > 0,
-      );
-      return {
-        overflow,
-        entry: entry instanceof HTMLElement ? entry : null,
-        nav: entry ? null : findGemsSectionNav(overflow),
-      };
+      const location = readLocation(view);
+      if (view !== active || !active.remoteKeys.has('gems.navEntry')) return location;
+      const original = readLocation(bundle);
+      if (!location?.entry || (original?.entry && original.entry !== location.entry)) return null;
+      // A broad online nav locator must not move Gems into Settings or the More popover.
+      if (
+        !original?.entry &&
+        (!isNativeGemsNavEntry(location.entry) ||
+          !location.entry.closest(gemsPackagedSelectors.navHost))
+      )
+        return null;
+      if (!original?.entry) {
+        const nativeEntries = Array.from(
+          location.overflow.querySelectorAll(gemsPackagedSelectors.nativeLink),
+        ).filter(
+          (entry) => isNativeGemsNavEntry(entry) && entry.getBoundingClientRect().height > 0,
+        );
+        if (nativeEntries.length !== 1 || !location.entry.contains(nativeEntries[0])) return null;
+      }
+      return location;
     },
     (location) => location !== null && (location.entry !== null || location.nav !== null),
   ).value;

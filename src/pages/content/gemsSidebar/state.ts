@@ -19,6 +19,7 @@ import {
   selectVisibleGems,
   upsertMru,
 } from './catalog';
+import type { GemsListSource } from './selectorQueries';
 
 interface GemMruEnvelope {
   entries: GemMruEntry[];
@@ -56,7 +57,10 @@ export function createGemsState(
    * envelope (new cachedAt) to all tabs every time. `cachedAt` has no TTL
    * consumer, so not refreshing it is safe.
    */
-  async function saveCache(items: GemMetadata[]): Promise<void> {
+  async function saveCache(
+    items: GemMetadata[],
+    source: GemsListSource = 'bundled',
+  ): Promise<void> {
     if (isStopped()) return;
     const accountSegment = currentAccountSegment();
     if (
@@ -66,9 +70,11 @@ export function createGemsState(
       return;
     }
     const envelope: GemCacheEnvelope = { items, cachedAt: Date.now(), accountSegment };
-    const deletedIds = canPruneCatalogDeletes(currentCache.accountSegment, accountSegment)
-      ? deletedCatalogGemIds(currentCache.items, items)
-      : new Set();
+    // A complete remotely located list can still be premade Gems, not the user's catalog.
+    const deletedIds =
+      source === 'bundled' && canPruneCatalogDeletes(currentCache.accountSegment, accountSegment)
+        ? deletedCatalogGemIds(currentCache.items, items)
+        : new Set();
     try {
       await browser.storage.local.set({ [StorageKeys.GV_GEMS_LIST_CACHE]: envelope });
       // An accepted storage write cannot be cancelled; never start its follow-up pruning after off.

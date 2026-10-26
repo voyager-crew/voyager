@@ -1,4 +1,5 @@
-import { isGemsViewPathname, scrapeGemsFromDocument, type GemMetadata } from './catalog';
+import { isGemsViewPathname, type GemMetadata } from './catalog';
+import { readGemsList, type GemsListSource } from './selectorQueries';
 
 /** Does this element (or any ancestor) carry one of our injected gv- classes? */
 function isInsideGvNode(node: Node): boolean {
@@ -32,7 +33,7 @@ export function isSelfInflictedMutation(mutations: MutationRecord[]): boolean {
 
 /** Owns the management-page list observer, retry and scrape debounce lifetime. */
 export function createGemsScraper(
-  saveCache: (items: GemMetadata[]) => Promise<void>,
+  saveCache: (items: GemMetadata[], source: GemsListSource) => Promise<void>,
   injectPins: () => Promise<void>,
 ) {
   let active = false;
@@ -46,9 +47,10 @@ export function createGemsScraper(
     scrapeTimer = window.setTimeout(() => {
       scrapeTimer = null;
       if (!active) return;
-      const items = scrapeGemsFromDocument();
+      const read = readGemsList();
+      const items = read.rows.flatMap(({ metadata }) => (metadata ? [metadata] : []));
       if (items.length === 0) return; // don't clobber cache on transient empty render
-      void saveCache(items);
+      void saveCache(items, read.source);
       // Re-inject pin buttons after the cache is updated — the scraped
       // rows may have been re-rendered or reordered by the user.
       void injectPins();
@@ -60,7 +62,7 @@ export function createGemsScraper(
 
     // Re-scrape whenever the visible gem list changes — covers reorder, rename,
     // create, delete. Cheap because we debounce + early-exit on empty matches.
-    const list = document.querySelector('[data-test-id="your-gems-list"]');
+    const list = readGemsList().list;
     if (!list) {
       // The list isn't mounted yet; retry shortly. Gemini's gems page lazy-loads
       // its content after a brief Angular bootstrap.

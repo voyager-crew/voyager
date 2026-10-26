@@ -11,6 +11,7 @@
  */
 
 import { closestGeminiSidebarElement } from '@/core/gemini/sidebar/queries';
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar-interaction-packaged.json';
 import { type Dispose, PluginScope } from '@/features/plugins/runtime/pluginScope';
 
 import { createFullHide } from './fullHide';
@@ -102,9 +103,7 @@ export function createSidebarHideController(isLocked: () => boolean) {
 
     if (!enabled) return;
 
-    const menuItem = target.closest(
-      '[role="menuitem"], [role="menuitemradio"], .mat-mdc-menu-item',
-    );
+    const menuItem = target.closest(packaged.menuItem.join(', '));
     if (menuItem) {
       hover.pause(MENU_CLICK_PAUSE_MS);
       return;
@@ -116,9 +115,7 @@ export function createSidebarHideController(isLocked: () => boolean) {
       return;
     }
 
-    const optionsButton = target.closest(
-      '[data-test-id*="options"], [aria-label*="选项"], [aria-label*="Options"], [aria-label*="More"]',
-    );
+    const optionsButton = target.closest(packaged.optionsButton.join(', '));
     if (optionsButton) {
       hover.pause(MENU_CLICK_PAUSE_MS);
       return;

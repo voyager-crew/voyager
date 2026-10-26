@@ -3,12 +3,21 @@ import { join } from 'node:path';
 
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from '../../src/core/gemini/selectors/activityKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from '../../src/core/gemini/selectors/composerKeys';
+import { GEMINI_GEMS_PROFILE_KEYS } from '../../src/core/gemini/selectors/gemsKeys';
 import { GEMINI_INPUT_COLLAPSE_PROFILE_KEYS } from '../../src/core/gemini/selectors/inputCollapseKeys';
+import {
+  GEMINI_MENU_PROFILE_KEYS,
+  GEMINI_EXPORT_OVERLAY_PROFILE_KEYS,
+} from '../../src/core/gemini/selectors/menuKeys';
 import { GEMINI_MODEL_PICKER_PROFILE_KEYS } from '../../src/core/gemini/selectors/modelPickerKeys';
 import { GEMINI_PROJECT_PROFILE_KEYS } from '../../src/core/gemini/selectors/projectKeys';
 import { GEMINI_PROMPT_HISTORY_PROFILE_KEYS } from '../../src/core/gemini/selectors/promptKeys';
 import { GEMINI_SLASH_PROFILE_KEYS } from '../../src/core/gemini/selectors/promptKeys';
 import { GEMINI_SENT_CHIPS_PROFILE_KEYS } from '../../src/core/gemini/selectors/promptKeys';
+import {
+  GEMINI_SIDEBAR_WIDTH_PROFILE_KEYS,
+  GEMINI_SIDEBAR_HOVER_PROFILE_KEYS,
+} from '../../src/core/gemini/selectors/sidebarInteractionKeys';
 import { GEMINI_SIDEBAR_PROFILE_KEYS } from '../../src/core/gemini/selectors/sidebarKeys';
 import {
   GEMINI_SELECTOR_HOSTS,
@@ -43,6 +52,11 @@ const PROFILE_GROUPS = [
   { file: 'sent-chips.json', keys: GEMINI_SENT_CHIPS_PROFILE_KEYS },
   { file: 'project.json', keys: GEMINI_PROJECT_PROFILE_KEYS },
   { file: 'activity.json', keys: GEMINI_ACTIVITY_PROFILE_KEYS },
+  { file: 'menu.json', keys: GEMINI_MENU_PROFILE_KEYS },
+  { file: 'menu-overlay.json', keys: GEMINI_EXPORT_OVERLAY_PROFILE_KEYS },
+  { file: 'sidebar-width.json', keys: GEMINI_SIDEBAR_WIDTH_PROFILE_KEYS },
+  { file: 'sidebar-hover.json', keys: GEMINI_SIDEBAR_HOVER_PROFILE_KEYS },
+  { file: 'gems.json', keys: GEMINI_GEMS_PROFILE_KEYS },
 ] as const;
 
 /** Build from the same locator fragments the package imports; no adapter or plugin enters it. */

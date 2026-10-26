@@ -41,6 +41,11 @@ function fixtureCatalog(): string {
     'sent-chips.json',
     'project.json',
     'activity.json',
+    'menu.json',
+    'menu-overlay.json',
+    'sidebar-width.json',
+    'sidebar-hover.json',
+    'gems.json',
   ]) {
     writeFileSync(join(destination, file), readFileSync(join(catalogDir, dataPath, file)));
   }

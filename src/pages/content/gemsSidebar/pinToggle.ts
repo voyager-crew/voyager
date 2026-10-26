@@ -14,6 +14,9 @@
 import { StorageKeys } from '@/core/types/common';
 import { getTranslationSync } from '@/utils/i18n';
 
+import { readPinsForPage } from './pinRead';
+import { readGemsList } from './selectorQueries';
+
 const PIN_BTN_CLASS = 'gv-gem-pin-toggle';
 const PIN_STYLE_ID = 'gv-gem-pin-style';
 
@@ -95,16 +98,6 @@ export function createGemsPinControls(signal: AbortSignal) {
     }
   }
 
-  /** Extract gem id from a row's anchor href. */
-  function gemIdFromRow(row: Element): string | null {
-    const anchor = row.querySelector<HTMLAnchorElement>('a.bot-row, a[href*="/gem/"]');
-    if (!anchor) return null;
-    const href = anchor.getAttribute('href');
-    if (!href) return null;
-    const match = href.match(/\/gem\/([^/?#]+)/);
-    return match?.[1] ?? null;
-  }
-
   const SVG_FILLED =
     '<path d="m640-480 80 80v80H520v240l-40 40-40-40v-240H240v-80l80-80v-280h-40v-80h400v80h-40v280Z"/>';
   const SVG_OUTLINE =
@@ -169,7 +162,10 @@ export function createGemsPinControls(signal: AbortSignal) {
    */
   async function injectPinButtons(): Promise<void> {
     if (isStopped()) return;
-    const pinned = await loadPinned();
+    return readPinsForPage(signal, loadPinned, applyPinButtons);
+  }
+
+  function applyPinButtons(pinned: string[]): void {
     // The sidebar stopped during the read: the style would stay behind with nothing to clean it.
     if (isStopped()) return;
     for (const [button, remove] of buttons) {
@@ -182,14 +178,11 @@ export function createGemsPinControls(signal: AbortSignal) {
     currentPinned = pinned;
     const pinnedSet = new Set(currentPinned);
 
-    const list = document.querySelector('[data-test-id="your-gems-list"]');
-    if (!list) return;
-
-    const rows = list.querySelectorAll('bot-list-row');
-    for (const row of rows) {
+    const read = readGemsList();
+    for (const { row, anchor } of read.rows) {
       if (row.querySelector(`.${PIN_BTN_CLASS}`)) continue;
 
-      const id = gemIdFromRow(row);
+      const id = anchor.getAttribute('href')?.match(/\/gem\/([^/?#]+)/)?.[1];
       if (!id) continue;
 
       const btn = createPinButton(id, pinnedSet.has(id));
@@ -197,7 +190,6 @@ export function createGemsPinControls(signal: AbortSignal) {
       // Insert the pin button as a sibling of the anchor, before the
       // native action bar.  The anchor is a flex container so the button
       // naturally aligns to the right when its parent is flex.
-      const anchor = row.querySelector<HTMLAnchorElement>('a.bot-row, a[href*="/gem/"]');
       if (anchor?.parentElement) {
         // Insert right after the anchor's own content wrapper
         anchor.parentElement.insertBefore(btn, anchor.nextElementSibling);

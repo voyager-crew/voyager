@@ -1,3 +1,4 @@
+import menuPackaged from '@/features/plugins/catalog/sites/gemini/selector-data/menu-packaged.json';
 import { getTranslationSyncUnsafe } from '@/utils/i18n';
 
 import {
@@ -6,6 +7,14 @@ import {
   getConversationMenuContext,
   injectConversationMenuMoveToFolderButton,
 } from '../export/conversationMenuInjection';
+import { createMenuTaskQueue, retireOnlineMenuActions } from '../export/menuLifetime';
+import {
+  collectMenuPanels,
+  containsRemovedOnlineMenuPanel,
+  getMenuPanels,
+  hasOnlineMenuTargets,
+  isMenuPanel,
+} from '../export/menuTargets';
 import { normalizeConversationId } from './folderConversationIdentity';
 import {
   type NativeConversationInfo,
@@ -51,11 +60,9 @@ const CONVERSATION_MENU_TRIGGER_SELECTOR =
   '[data-test-id="actions-menu-button"], [data-test-id="conversation-actions-menu-icon-button"]';
 
 /**
- * Cheap gate before the matches/querySelectorAll/closest triple: menu panels
- * only ever live inside a CDK overlay (or are a <gem-menu> themselves), while
- * the overwhelming majority of body mutations are sidebar/chat re-renders that
- * can't contain one. Missed edge cases are covered by the click-tracking
- * fallback in startTracking.
+ * Keep the bundled overlay gate cheap during chat re-renders. Online repairs
+ * add only a local native-menu check before validating a complete panel list.
+ * Missed edge cases are covered by the click-tracking fallback in startTracking.
  */
 function mayHostMenuPanel(node: HTMLElement): boolean {
   const className = typeof node.className === 'string' ? node.className : '';
@@ -63,23 +70,20 @@ function mayHostMenuPanel(node: HTMLElement): boolean {
     node.tagName === 'GEM-MENU' ||
     className.includes('mat-mdc-menu-panel') ||
     className.includes('cdk-overlay') ||
-    node.parentElement?.closest('.cdk-overlay-container') != null
+    node.parentElement?.closest('.cdk-overlay-container') != null ||
+    (hasOnlineMenuTargets() &&
+      (node.closest(menuPackaged['menu.nativePanels']) !== null ||
+        node.querySelector(menuPackaged['menu.nativePanels']) !== null))
   );
 }
 
-/** The conversation menu panels an added node is, contains, or sits inside. */
-function collectAddedMenuPanels(node: HTMLElement): Set<HTMLElement> {
-  const panels = new Set<HTMLElement>();
-  if (node.matches(CONVERSATION_MENU_PANEL_SELECTOR)) panels.add(node);
-  node
-    .querySelectorAll<HTMLElement>(CONVERSATION_MENU_PANEL_SELECTOR)
-    .forEach((panel) => panels.add(panel));
-  const closest = node.closest(CONVERSATION_MENU_PANEL_SELECTOR) as HTMLElement | null;
-  if (closest) panels.add(closest);
-  return panels;
-}
-
 function wasInjectedConversationMenu(node: HTMLElement): boolean {
+  if (
+    hasOnlineMenuTargets() &&
+    node.querySelector('.gv-move-to-folder-btn') &&
+    containsRemovedOnlineMenuPanel(node)
+  )
+    return true;
   return !!(
     (node.matches?.(CONVERSATION_MENU_PANEL_SELECTOR) &&
       node.querySelector('.gv-move-to-folder-btn')) ||
@@ -114,6 +118,7 @@ export class NativeConversationMenus {
   private lastInputModality: 'pointer' | 'keyboard' = 'pointer';
 
   private menuTimers = new Set<number>();
+  private readonly injectionTasks = createMenuTaskQueue();
   private activeDeletes = new Set<AbortController>();
   private readonly deleteTracker: NativeDeleteTracker;
 
@@ -135,6 +140,8 @@ export class NativeConversationMenus {
     for (const controller of this.activeDeletes) controller.abort();
     this.activeDeletes.clear();
     this.disconnectPanels();
+    this.injectionTasks.stop();
+    retireOnlineMenuActions('.gv-move-to-folder-btn');
     this.teardownMoveMenuTriggerListener();
     this.deleteTracker.stop();
     this.menuTimers.forEach((timerId) => window.clearTimeout(timerId));
@@ -168,15 +175,13 @@ export class NativeConversationMenus {
     this.nativeMenuObserver = observer;
 
     // Catch any menu already open at setup time.
-    document
-      .querySelectorAll<HTMLElement>(CONVERSATION_MENU_PANEL_SELECTOR)
-      .forEach((panel) => this.scheduleInjection(panel));
+    getMenuPanels().forEach((panel) => this.scheduleInjection(panel));
   }
 
   private handlePanelMutation(mutation: MutationRecord): void {
     mutation.addedNodes.forEach((node) => {
       if (!(node instanceof HTMLElement) || !mayHostMenuPanel(node)) return;
-      collectAddedMenuPanels(node).forEach((panel) => this.scheduleInjection(panel));
+      collectMenuPanels(node).forEach((panel) => this.scheduleInjection(panel));
     });
 
     // When a conversation menu we injected into closes, mat-menu restores
@@ -191,7 +196,7 @@ export class NativeConversationMenus {
   }
 
   private scheduleInjection(panel: HTMLElement): void {
-    this.scheduleMenuTask(() => this.tryInjectMoveToFolderOnPanel(panel), 30);
+    this.injectionTasks.schedule(() => this.tryInjectMoveToFolderOnPanel(panel), 30);
   }
 
   // Inject the "Move to folder" item into a native conversation menu panel,
@@ -223,7 +228,7 @@ export class NativeConversationMenus {
     });
 
     if (!injected && retriesLeft > 0) {
-      this.scheduleMenuTask(
+      this.injectionTasks.schedule(
         () => this.tryInjectMoveToFolderOnPanel(panel, retriesLeft - 1),
         MOVE_MENU_INJECTION_RETRY_DELAY_MS,
       );
@@ -314,19 +319,17 @@ export class NativeConversationMenus {
   private injectIntoTriggerPanels(trigger: HTMLElement): void {
     const panelIds = parseMenuTriggerPanelIds(trigger);
     for (let attempt = 0; attempt <= MOVE_MENU_INJECTION_RETRY_LIMIT; attempt++) {
-      this.scheduleMenuTask(() => {
+      this.injectionTasks.schedule(() => {
         if (this.callbacks.getContext().isDestroyed) return;
         if (panelIds.length > 0) {
           panelIds.forEach((id) => {
             const panel = document.getElementById(id);
-            if (panel instanceof HTMLElement && panel.matches(CONVERSATION_MENU_PANEL_SELECTOR)) {
+            if (panel instanceof HTMLElement && isMenuPanel(panel)) {
               this.tryInjectMoveToFolderOnPanel(panel);
             }
           });
         } else {
-          document
-            .querySelectorAll<HTMLElement>(CONVERSATION_MENU_PANEL_SELECTOR)
-            .forEach((panel) => this.tryInjectMoveToFolderOnPanel(panel));
+          getMenuPanels().forEach((panel) => this.tryInjectMoveToFolderOnPanel(panel));
         }
       }, attempt * MOVE_MENU_INJECTION_RETRY_DELAY_MS);
     }

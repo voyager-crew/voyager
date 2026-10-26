@@ -1,0 +1,12 @@
+{
+  "exportOverlay.sidebar": [
+    "[data-test-id=\"side-nav\"]",
+    "side-navigation",
+    "mat-sidenav",
+    "aside",
+    "nav",
+    ".side-nav",
+    ".sidenav",
+    ".chat-history-nav"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "gems.navEntry": ["[data-test-id=\"gems-side-nav-entry-button\"]"],
+  "gems.list": ["[data-test-id=\"your-gems-list\"]"],
+  "gems.row": ["bot-list-row"],
+  "gems.title": [".title-container", ".bot-title-inner"],
+  "gems.description": [".bot-desc"],
+  "gems.icon": [".bot-logo-text"]
+}
