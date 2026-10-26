@@ -12,8 +12,13 @@ Each site's `catalog/sites/<site>/selector-data/` directory owns its locator
 fragments. [`contracts/`](contracts/) declares literal remote keys, rejection
 groups and publication files. [`bundle.ts`](bundle.ts) and the catalog publisher
 read those same fragments. Existing semantic keys keep `site.json` as their
-single source. Packaged fragments hold locators whose only available proof
-would confirm the bundled result, along with the site's fixed protocols.
+single source. Packaged fragments hold the site's fixed protocols and locators
+without an independent proof that could admit a useful replacement.
+
+The [complete packaged-data ledger](PACKAGED_DATA.md) lists every retained key
+and its reason. Some renamable classes have **no independent proof** of a safe
+replacement; those remain packaged until a new proof is implemented. They are
+not immutable protocols, and a class rename may still require an extension release.
 
 | Site                         | Online page detection coverage                                                                                                                                                                                                       |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -42,7 +47,15 @@ parameters.
 and `retired` states. The host and adapter ID must identify the same packaged
 site, and the catalog revision must exceed the bundle. Settings changes,
 timeouts and retirement settle pending work without accepting late results.
-The first adapter and settings reads are shared with PluginHost. With no newer remote adapter, startup does not wait for the settings read. Once ready, the snapshot stays fixed until the user refreshes the page; consumer proofs still run against the current DOM.
+The first adapter and settings reads are shared with PluginHost. Cached adapter
+selection uses the same revision/identity rule at first mount and later reloads,
+regardless of Online updates; only page-locator hydration follows that switch.
+Native features add no catalog wait. At their first mount, after the existing
+settings/coverage reads, they fix the snapshot already available. If cache
+hydration is still pending, that page keeps the bundle and later catalog results
+cannot switch it; a subsequent page load can try again. A timely eligible cache
+supplies the first mount. Once ready, the snapshot stays fixed until the user
+refreshes the page; consumer proofs still run against the current DOM.
 
 Validation caps each site's profiles at 65,536 UTF-8 bytes, each ordered list at
 32 entries and each locator at 2,048 UTF-16 code units. Empty strings and unsafe
@@ -74,6 +87,8 @@ runs.
 5. A build with `VOYAGER_PLUGIN_CATALOG_REMOTE=off` disables the whole channel.
 
 Locally, turn **Online updates** off and refresh the page to restore bundled
-reads. This stops automatic requests; manual checks remain available. It does not clear folders,
-drafts, highlights or other user data. The local catalog cache is retained.
+page-locator reads. This stops automatic requests; manual checks remain available.
+Cached plugins and unrelated site-adapter data remain usable, including at the
+first mount. It does not clear folders, drafts, highlights or other user data.
+The local catalog cache is retained.
 Withdrawal cannot undo an action already completed.

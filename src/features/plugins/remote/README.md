@@ -67,8 +67,10 @@ without an extension release.
 default) and `gvPluginCatalogCheckInterval` (`1h` / `6h` / `24h` / `manual`,
 default `6h`). The popup surfaces both on every supported site.
 Opening it reads the cache. Manual checks bypass the switch and interval.
-Turning updates off stops automatic requests. Cached data remains
-local; page hydration uses the bundle while updates are off.
+Turning updates off stops automatic requests. Cached plugin manifests and site
+adapter data remain usable under the same revision and identity rules at first
+mount and on catalog reload. The guarded page-locator snapshot uses the bundle
+while updates are off; it does not discard unrelated cached adapter fields.
 
 **Message**: a content script or the popup sends `gv.pluginCatalog.refresh`
 (`PLUGIN_CATALOG_REFRESH_MESSAGE` in `runtime/messages.ts`) with
@@ -155,11 +157,17 @@ only its namespaced profiles on the next page load. A complete withdrawal also
 restores admitted `site.selectors` values to their packaged values. No second
 setting, cache, endpoint or publisher is involved.
 
-Shared per-site hydration is a `startMachine` flow. It reuses PluginHost’s first adapter and settings reads; when the cache has no newer adapter, startup does not wait for settings. It reads resolved catalog site data once per content-script claim. Changes to
-update settings during that read settle on the bundle; an error, timeout or
-page teardown cannot adopt late data. After readiness, the snapshot stays fixed
-until the page is loaded again. New fixes, withdrawals and switching updates off
-therefore take effect after a user refresh, with no automatic reload or remount.
+Shared per-site hydration is a `startMachine` flow. It shares PluginHost’s first
+adapter and settings reads, but adapter precedence does not depend on the
+online-updates switch or the locator snapshot's settlement. Native startup adds
+no catalog wait: after its existing settings/coverage reads, the first native
+mount fixes whichever snapshot is already available. If catalog storage has not
+settled by then, that page keeps bundled profiles; a later page load can try
+again. A timely eligible cache still supplies the first native mount. Changes to
+update settings during hydration, an error, timeout or page teardown cannot adopt
+late data. After readiness, the snapshot stays fixed until the page is loaded
+again. New page-locator fixes, withdrawals and switching updates off therefore
+take effect after a user refresh, with no automatic reload or native remount.
 The page requests a due catalog check after hydration; opening the popup only
 reads the cache, and its refresh button requests a manual check.
 

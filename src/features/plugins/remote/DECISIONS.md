@@ -32,18 +32,12 @@ D15 原方案未使用。
 
 ### 1.1 D14 细则：一个目录通道
 
-- 每个具体 host 使用 `/catalog/hosts/<host>.json`。Gemini、AI Studio、ChatGPT、Claude、DeepSeek、Kimi 各读自己的 `site.locators` 及获准的 `site.selectors`，在 `core/selectors/contracts/` 定义 literal allowlist 与 groups。Gemini Enterprise 与 consumer Gemini 共享 Gemini 数据和守卫；两个 AI Studio host 共享 AI Studio 数据。
-- `validateSiteAdapterData` 独立校验 locators。未知 key 或超限 section 只丢弃 locators；单个 locator 的 shape 或语法错误只丢弃所属 group，不影响其余 site data、插件列表或 kill switch。
-- 现有「在线更新」`gvPluginOnlineUpdatesEnabled` 默认开启，间隔默认 6 小时，可选 1h / 6h / 24h / manual。两项设置都在 sync 并参与备份。OFF 阻止自动目录请求；手动 `force` 可跳过开关、间隔及 enabled-plugin gate。页面启动可请求 due check，打开 popup 只读缓存，按钮触发手动检查。
-- 只有比 bundle 更新的 site data 才能提供修复；revision、缓存及版本策略沿用 catalog。清空 `site.locators` 只撤回 namespaced profiles；完整撤回还须把允许远程更新的 `site.selectors` 恢复为包内值。OFF 不清缓存或用户数据。
-- Gemini 与 AI Studio 的官方插件、CSS 和 native 协议继续留在包内。所有站点的 host admission、账号、ID、删除/重命名、点击与输入协议、模型元数据、ARIA 关联和 clone sanitizer 不由定位更新改变。只能确认 bundled 结果的定位项仍为 packaged-only；本地插件不能绕过这些边界。
-- 每个 surface 独立拒绝语法错误；集合不完整、与独立 native/bundled 检查冲突或不属于原操作元素时，整次读取回到 bundle。`remoteKeys` 与 consumer guards 由包内代码控制；新增检查不进入 bundled path。
-- 共用的 per-site hydration 使用 `startMachine`，从同一 resolved catalog site data 建立 snapshot。snapshot 固定到用户自行刷新；新数据、撤回和关闭更新不自动重载页面，也不重挂 native 功能。
+完整的 [页面定位分发细则](PAGE_LOCATOR_DECISIONS.md) 列出站点覆盖、校验、OFF 行为、缓存 adapter 优先级、native 启动截止点及操作守卫。
 
 ## 10. 回滚
 
 - 远程内容：revert 主仓提交，Pages 重新部署并 purge CDN，客户端下次检查即采用回退后的远程条目（D6 不按版本高者胜）。插件若已随 bundle 发布，新客户端不会因 revert 后目录里缺席而移除它，必须把旧 id 加入站点的 `revoked.json`；重新发布已撤回的 id 时，必须先从 `revoked.json` 移除它。
-- 客户端：关掉「在线更新」后，各站点在用户刷新时回到打包快照；任一阶段可以单独 revert，不触及用户存储。
+- 客户端：关掉「在线更新」后，各站点的受守卫页面定位在用户刷新时回到打包快照；缓存插件及其他 adapter 字段保留；任一阶段可以单独 revert，不触及用户存储。
 - 站点定位数据：按 [rollback runbook](../../../core/selectors/README.md#rollback-runbook) 用更高 `catalogRevision` 发布修正，或清空 `site.locators` 并将允许远程更新的 `site.selectors` 恢复为包内值。
 - 商店审核兜底：`VOYAGER_PLUGIN_CATALOG_REMOTE=off` 编出从不连接目录的构建（C6）。
 

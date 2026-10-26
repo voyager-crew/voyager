@@ -69,11 +69,14 @@ The source directory is
 
 ## Page and operation ownership
 
-The content-script claim starts hydration before send-key coordination, PluginHost
-or native features. Hydration is a `startMachine` flow with a 250 ms deadline.
-Catalog settings changes during a pending read, an error or the deadline settle on the
-bundle; late results cannot replace that decision. Once ready, the page snapshot
-stays fixed until its claim ends. New downloads and turning the switch off take
+The content-script claim starts hydration alongside PluginHost, before native
+feature mounts. Hydration is a `startMachine` flow with a 250 ms deadline.
+Native features do not wait for it: after their existing setting reads, the first
+mount fixes the snapshot already available. A pending cache read then settles on
+the bundle; a subsequent page load can try again. A timely eligible cache can
+supply the first mount. Catalog settings changes during a pending read, an error
+or the deadline also settle on the bundle; late results cannot replace that
+decision. Once ready, the page snapshot stays fixed until its claim ends. New downloads and turning the switch off take
 effect after a user refresh, without automatic reload or remount.
 
 Reads are pure until the consumer accepts a complete operation. A nonempty result
@@ -95,6 +98,9 @@ retains the last verified cache. Route, account and operation cancellation remai
 owned by the packaged flows in the [state-machine registry](../../../../.github/docs/STATE_MACHINE_PLAN.md#3-阶段-a已做的改造).
 
 ## Packaged-only boundaries
+
+The [complete packaged-data ledger](PACKAGED_DATA.md) names every retained
+fragment and key, including locators with no independent proof of a safe repair.
 
 A key is published only when a repair can work on Gemini's real markup and the
 page can independently prove its target. A key that can only confirm the bundled
@@ -169,7 +175,8 @@ virtualization or image-algorithm changes can still require an extension release
 5. If the channel itself is faulty, ship with `VOYAGER_PLUGIN_CATALOG_REMOTE=off`.
 
 The local emergency path is to turn **Online updates** off and refresh Gemini.
-This blocks further catalog requests, including manual checks, and restores
-bundled reads without clearing folders, drafts, highlights or other user data.
-The catalog cache remains on the device. Withdrawal cannot reverse an action
+This stops automatic catalog requests; manual checks remain available. It restores
+bundled page-locator reads without clearing folders, drafts, highlights or other
+user data. Cached plugins and unrelated site-adapter data remain usable. The
+catalog cache remains on the device. Withdrawal cannot reverse an action
 already completed.
