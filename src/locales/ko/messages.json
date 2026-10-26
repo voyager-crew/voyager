@@ -2962,8 +2962,8 @@
     "description": "Shown when no plugins are available"
   },
   "pluginsRefresh": {
-    "message": "지금 플러그인 업데이트 확인",
-    "description": "Tooltip for the manual plugin-update check button"
+    "message": "지금 업데이트 확인",
+    "description": "Label and tooltip for the manual catalog update check button"
   },
   "pluginSourceBuiltin": {
     "message": "내장",
@@ -3302,12 +3302,12 @@
     "description": "Note shown when a plugin update is held back because it needs a newer Voyager; {version} is the held-back version"
   },
   "pluginsOnlineUpdates": {
-    "message": "플러그인 온라인 업데이트",
-    "description": "Label for the switch that allows online plugin update checks for this site"
+    "message": "온라인 업데이트",
+    "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "이 사이트의 플러그인 업데이트를 voyager.nagi.fun에서 확인합니다. 사이트 이름만 전송하며 쿠키나 페이지 내용은 보내지 않습니다. 끄면 위의 새로고침 버튼만 연결합니다.",
-    "description": "Explains what the online plugin update check sends and when it runs"
+    "message": "voyager.nagi.fun에서 플러그인 업데이트와 Gemini 페이지 인식 수정을 확인합니다. 사이트 이름만 전송하며 쿠키나 페이지 내용은 보내지 않습니다. 끄면 자동 및 수동 확인이 모두 중지됩니다.",
+    "description": "Explains catalog updates, Gemini page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {
     "message": "확인 주기",
@@ -4417,49 +4417,5 @@
   },
   "export_read_history_unavailable": {
     "message": "전체 대화 기록을 읽지 못했습니다. 위로 스크롤해 이전 메시지를 불러온 후 다시 시도하세요."
-  },
-  "geminiSelectorFixesTitle": {
-    "message": "Gemini 페이지 인식 온라인 수정",
-    "description": "Switch for Gemini page detection fixes; covered areas are listed in the hint; off by default"
-  },
-  "geminiSelectorFixesHint": {
-    "message": "voyager.nagi.fun에서 대화, 사이드바, 폴더, 모델 메뉴, 대화 및 내보내기 메뉴, 내보내기 선택 막대, 사이드바 열기·닫기 버튼의 클릭 영역 및 사이드바의 마우스 오버 영역, 내보내기 및 분기에 쓰이는 메시지 본문, 컨텍스트 이미지, 응답 및 리서치 팩 작업, 사용량 표시, 코드 블록과 다이어그램, 내 메시지에서 LaTeX가 포함된 문단, 내보내기에 포함되는 검색 결과 이미지, 생성 이미지 다운로드 버튼, Canvas 코드 내보내기, Gems 사이드바, 메시지 입력창, 입력창 접기, Vim 모드, 프롬프트 기록, 슬래시 명령, 전송한 프롬프트 미리보기, 폴더를 프로젝트로 사용, 폴더 활동을 위한 인식 수정 정보를 받아옵니다. 확인은 6시간에 한 번까지이며 페이지 내용은 전송하지 않습니다. 기본값은 꺼짐입니다.",
-    "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
-  },
-  "geminiSelectorFixesOff": {
-    "message": "꺼짐: 수동 확인을 포함해 수정을 확인하지 않습니다. 열려 있는 Gemini 페이지는 새로고침할 때까지 현재 규칙을 사용합니다.",
-    "description": "Off blocks all selector requests; open pages keep their snapshot until refreshed"
-  },
-  "geminiSelectorFixesCheckNow": {
-    "message": "지금 확인",
-    "description": "Manual selector check, available only with explicit consent enabled"
-  },
-  "geminiSelectorFixesChecking": {
-    "message": "확인 중…",
-    "description": "A Gemini selector check is in progress"
-  },
-  "geminiSelectorFixesUpdated": {
-    "message": "새 수정을 다운로드했습니다. Gemini를 새로고침하면 적용됩니다.",
-    "description": "Downloaded selector data is used on the next full page load"
-  },
-  "geminiSelectorFixesUpToDate": {
-    "message": "최신 상태입니다. 새 수정이 없습니다.",
-    "description": "Successful check without new selector fixes; do not ask the user to refresh"
-  },
-  "geminiSelectorFixesFailed": {
-    "message": "확인하지 못했습니다. 현재 규칙을 계속 사용합니다.",
-    "description": "A check failed; Voyager keeps the rules it already uses, which may be only the bundled ones"
-  },
-  "geminiSelectorFixesUnavailable": {
-    "message": "이 버전에서는 온라인 수정을 사용할 수 없습니다.",
-    "description": "Online selector fixes are disabled at build time"
-  },
-  "geminiSelectorFixesSaveFailed": {
-    "message": "변경 사항을 저장하지 못했습니다. 다시 시도하세요.",
-    "description": "Consent or cache cleanup failed; show the setting confirmed by the background"
-  },
-  "geminiSelectorFixesTurnOnInGemini": {
-    "message": "켜려면 Gemini를 여세요.",
-    "description": "Shown on a non-Gemini tab after the user turned the online fixes off there; turning on needs a Gemini tab"
   }
 }

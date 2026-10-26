@@ -1,8 +1,8 @@
-import { initializeGeminiSelectors, type GeminiSelectorFile } from '@/core/gemini/selectors';
+import { initializeGeminiSelectors, type GeminiSelectorPatch } from '@/core/gemini/selectors';
 
 /** Real shared guard and page hydration; tests retire their snapshot after use. */
 export async function installGeminiSelectorPatch(
-  selectors: GeminiSelectorFile['selectors'],
+  selectors: GeminiSelectorPatch,
 ): Promise<() => void> {
   const lifetime = new AbortController();
   const initialized = initializeGeminiSelectors({
@@ -11,11 +11,9 @@ export async function installGeminiSelectorPatch(
     lifetime: lifetime.signal,
     bundledRevision: 0,
     read: async () => ({
-      format: 1,
-      site: 'gemini',
-      host: 'gemini.google.com',
+      id: 'gemini',
       catalogRevision: 1,
-      selectors,
+      locators: selectors,
     }),
   });
   await initialized.ready;

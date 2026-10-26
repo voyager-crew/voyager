@@ -59,11 +59,9 @@ export function hostCatalogBackoffMs(failureCount: number): number {
  * anything with a path are rejected so the file name is a plain
  * `<host>.json` and per-artifact frame subdomains never cause a lookup each.
  *
- * Voyager's native surfaces (Gemini, AI Studio) are never catalog hosts, even
- * when a user's local plugin or a packaged official plugin runs there
- * (`hostPolicy.allowsRemoteCatalog`, D14): Gemini pages make zero requests to
- * the catalog, and this one rule covers the page, the popup and a forced
- * background check alike.
+ * Gemini consumer pages use the shared catalog for locator profiles only.
+ * Gemini Business and AI Studio remain outside this channel (D14).
+ * The same host rule covers pages, popup and background checks.
  */
 export function isEligibleCatalogHost(host: string): boolean {
   if (typeof host !== 'string' || host.length === 0 || host.length > 253) return false;
@@ -94,8 +92,8 @@ export function hostCatalogFileUrl(baseUrl: string, host: string): string {
 
 /**
  * D4 trigger: a page may ask for a catalog check only when at least one
- * ENABLED plugin targets it. Gemini / AI Studio are not catalog hosts at all
- * (`isEligibleCatalogHost`), so they never produce a request. A user-imported (`local.*`) plugin
+ * ENABLED plugin targets it. Native Gemini locator updates have their own
+ * eligibility in the refresher. A user-imported (`local.*`) plugin
  * never counts: the catalog cannot update it, so enabling one must not make
  * Voyager contact the catalog host about that site. Only an explicit
  * `enabled: true` counts, deliberately not `isPluginEnabled`: a builtin that is

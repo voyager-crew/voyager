@@ -3,8 +3,8 @@ import type { SiteAdapter } from '../../types';
 
 /**
  * Thin shell over `catalog/sites/gemini/site.json`. Gemini ships with the
- * extension, so this data is packaged only: no remote catalog ever replaces it
- * (`hostPolicy.allowsRemoteCatalog`). Edit the JSON, not this file.
+ * extension; native adapter fields remain packaged while the shared catalog
+ * may add guarded locator profiles. Edit the JSON, not this file.
  *
  * `userTurn` and `assistantTurn` are the membership lists
  * `getUserTurnSelectors()` / `getAssistantTurnSelectors()` join; a parity test

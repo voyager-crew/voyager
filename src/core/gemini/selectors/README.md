@@ -1,34 +1,34 @@
 # Gemini page detection data
 
-This resolver serves `https://gemini.google.com` only. The optional online channel
-is off by default and is separate from the plugin catalog. AI Studio and Gemini
-Enterprise stay packaged-only. Transport, consent and cache ownership are described
-in the [remote catalog README](../../../features/plugins/remote/README.md#separate-opt-in-gemini-selector-file).
+This resolver serves `https://gemini.google.com` only. Its online profiles come
+from the existing plugin catalog, governed by **Online updates** (on by default).
+Gemini Enterprise and AI Studio stay packaged-only. Transport, settings and cache
+ownership are described in the [remote catalog README](../../../features/plugins/remote/README.md#page-locator-profiles-in-site-data).
 
-## One published format
+## Catalog site data
 
-The single published file is
-`https://voyager.nagi.fun/catalog/gemini-selectors/v1/hosts/gemini.google.com.json`.
-Its five fields are `format: 1`, `site: "gemini"`, `host: "gemini.google.com"`, a
-positive safe-integer `catalogRevision`, and `selectors`. Every selector value is
-a nonempty ordered string array. Missing keys use the bundle; a supplied array
-replaces the whole profile, preserving order. An empty `selectors` object withdraws
-all online overrides.
+The host file is
+`https://voyager.nagi.fun/catalog/hosts/gemini.google.com.json`.
+Its optional `site.locators` section is a map of profile keys to nonempty ordered
+string arrays. Missing keys use the bundle; supplied arrays replace their entire
+profiles, preserving order. A newer host file with no `site.locators`, or an empty
+map, withdraws the profiles on the next page load.
 
-[`types.ts`](types.ts) owns the literal `GEMINI_SELECTOR_PROFILE_KEYS` allowlist.
-The publisher and reader use that same contract, checked by
-[`gemini-selector-publishing-contract.test.ts`](../../../../scripts/__tests__/gemini-selector-publishing-contract.test.ts).
-Unknown keys and envelope fields are rejected. The shared shape guard limits the
-decoded file to 65,536 UTF-8 bytes, each profile to 32 entries and each string to
-2,048 UTF-16 code units, rejecting empty strings and non-whitespace C0 controls.
-The response reader also rejects invalid UTF-8 and stops reading at the byte limit.
-Native browser syntax is checked during page hydration.
+[`types.ts`](types.ts) owns the literal 75-key `GEMINI_SELECTOR_PROFILE_KEYS`
+allowlist. The catalog publisher and site-data validator use the same contract,
+checked by [`catalog-locator-publishing.test.ts`](../../../../scripts/__tests__/catalog-locator-publishing.test.ts).
+The locator section retains the Gemini limits: 65,536 UTF-8 bytes, at most 32
+entries per profile and 2,048 UTF-16 code units per string, with empty strings and
+non-whitespace C0 controls rejected. Unknown keys and malformed sections fall
+back to the bundle without invalidating the adapter, plugins or kill switch.
+An unparsable locator drops only its surface’s group.
 
-The builder reads the same source fragments as [`bundle.ts`](bundle.ts). Publication
-uses the main lineage's first-parent commit count, never a timestamp. A lower
-revision is rejected; the same revision must have identical data; a higher revision
-replaces the entire previous patch. Page hydration adopts only revisions newer than
-its bundle. Cache entries are tied to the running extension version.
+The builder reads the same selected non-`*-packaged.json` source fragments as
+[`bundle.ts`](bundle.ts). Catalog publication uses the main lineage’s first-parent
+commit count. The resolved remote adapter wins only if its `catalogRevision` is
+strictly newer than the bundle. Cache writer-version checks, refresh, withdrawal
+and account boundaries use the catalog’s existing machinery. There is no separate
+fetcher, opt-in setting or selector cache.
 
 ## Groups and consumers
 
@@ -70,7 +70,7 @@ The source directory is
 
 The content-script claim starts hydration before send-key coordination, PluginHost
 or native features. Hydration is a `startMachine` flow with a 250 ms deadline.
-Consent/cache changes during a pending read, an error or the deadline settle on the
+Catalog settings changes during a pending read, an error or the deadline settle on the
 bundle; late results cannot replace that decision. Once ready, the page snapshot
 stays fixed until its claim ends. New downloads and turning the switch off take
 effect after a user refresh, without automatic reload or remount.
@@ -97,8 +97,10 @@ owned by the packaged flows in the [state-machine registry](../../../../.github/
 
 A key is published only when a repair can work on Gemini's real markup and the
 page can independently prove its target. A key that can only confirm the bundled
-result remains packaged. The filename suffix is not the authority: the publisher
-explicitly selects fragments, and the literal allowlist limits their keys.
+result remains packaged. The publisher explicitly selects remote fragments,
+excludes `*-packaged.json`, and limits their keys with the literal allowlist.
+Some packaged fragments also have names without that suffix; they are never
+selected for publication.
 
 - Host admission, permissions, account controls/exclusions, conversation/turn/Gem
   identity, parsed-ID equality, storage formats and all destructive actions stay
@@ -149,24 +151,22 @@ virtualization or image-algorithm changes can still require an extension release
 
 ## Rollback runbook
 
-1. Revert the bad selector-data change on main and retain the failing DOM fixture.
-   The new commit must produce a higher first-parent `catalogRevision`.
-2. Run the affected behavior tests and `bun run catalog:build`. Inspect the single
-   generated file's host, format, revision, keys and byte limit before publishing.
-3. Publish that commit through the normal Pages workflow and purge the CDN entry
-   for `https://voyager.nagi.fun/catalog/gemini-selectors/v1/hosts/gemini.google.com.json`.
-   Fetch that exact URL to verify host, revision, body and absence of redirects.
-4. Enabled clients get it on their next due check or **Check now**, then apply it
-   after a user refresh. If the bad key cannot be isolated promptly, set
-   [`selector-publication.json`](../../../features/plugins/catalog/sites/gemini/selector-publication.json)
-   to `{"publication":"withdrawn"}` in a new commit. The builder then keeps
-   publishing a higher-revision empty `selectors` patch until a reviewed commit
-   restores `"full"`.
-5. If the channel itself is faulty, ship with `VOYAGER_GEMINI_SELECTOR_REMOTE=off`.
-   `VOYAGER_PLUGIN_CATALOG_REMOTE=off` disables both remote data channels.
+1. Revert the bad locator data on main and retain the failing DOM fixture. The new
+   commit must produce a higher first-parent `catalogRevision`.
+2. Run affected behavior tests and `bun run catalog:build`. Inspect the Gemini
+   host file’s revision, `site.locators`, keys and byte limits before publishing.
+3. Publish through the normal Pages workflow and purge the CDN entry for
+   `https://voyager.nagi.fun/catalog/hosts/gemini.google.com.json`. Fetch that
+   exact URL to verify the host, revision and body.
+4. Enabled clients receive it on their next due or manual catalog check and
+   apply the profiles after a user refresh. To withdraw all profiles, publish a
+   higher-revision host file with `site.locators` omitted or `{}` while retaining
+   the rest of its site data. Keep that withdrawal in subsequent publications
+   until a reviewed fix restores the profiles.
+5. If the channel itself is faulty, ship with `VOYAGER_PLUGIN_CATALOG_REMOTE=off`.
 
-Keep the endpoint available. Do not lower revisions, change a published revision's
-contents or rely on a 404 to clear accepted data. The local emergency path is to
-turn the switch off and refresh Gemini. This stops further requests and restores
-bundled behavior without clearing folders, drafts, highlights or other user data.
-Withdrawal cannot reverse an action already completed.
+The local emergency path is to turn **Online updates** off and refresh Gemini.
+This blocks further catalog requests, including manual checks, and restores
+bundled reads without clearing folders, drafts, highlights or other user data.
+The catalog cache remains on the device. Withdrawal cannot reverse an action
+already completed.

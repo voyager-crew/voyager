@@ -16,7 +16,6 @@ import { createCloudSyncMessageHandler } from './cloudSyncMessages';
 import { startDevAutoReload } from './devAutoReload';
 import { guardDriveWithoutSignIn } from './driveDeviceGuard';
 import { createForkMessagesOwner } from './forkMessages';
-import { startGeminiSelectorBackgroundService } from './geminiSelectorMessages';
 import { createGeneratedUiCapture } from './generatedUiCapture';
 import { createMainWorldRegistration } from './mainWorldRegistration';
 import { createNotificationEnablement } from './notificationEnablement';
@@ -45,7 +44,6 @@ if (import.meta.env.VOYAGER_DEV_AUTO_RELOAD) startDevAutoReload();
 // Remote plugin catalog: the only network writer. Content scripts and the popup
 // only ever ask; this decides (interval, switch, backoff, single flight).
 const hostCatalogRefresher = new HostCatalogRefresher();
-startGeminiSelectorBackgroundService();
 startChatGptTemporaryHandoffBackgroundService();
 startStorageQuotaWarningBackgroundService();
 startResearchPackOwner();

@@ -1,9 +1,9 @@
-import type { GeminiSelectorFile } from '@/core/gemini/selectors';
+import type { GeminiSelectorPatch } from '@/core/gemini/selectors';
 
 import { buildOct2026Menu, buildOct2026Trigger } from './geminiOct2026Menu';
 
 /** Different locator spellings over the same native nodes, including document-order rows. */
-export const PICKER_ALIASES: GeminiSelectorFile['selectors'] = {
+export const PICKER_ALIASES: GeminiSelectorPatch = {
   'modelPicker.trigger': ['[data-fixture-trigger]'],
   'modelPicker.legacyPanels': ['[data-fixture-pane]'],
   'modelPicker.panelFallback': ['[data-fixture-pane]'],

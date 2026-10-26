@@ -32,6 +32,7 @@ import {
 } from './sections/bridgePolicyData';
 import { type SiteExportConfig, readExportConfig } from './sections/exportData';
 import { type FoldersSection, readFoldersSection } from './sections/foldersData';
+import { type SiteLocatorProfiles, readSiteLocators } from './sections/locatorData';
 import { type ModelPickerSection, readModelPickerSection } from './sections/modelPickerData';
 import { type PageHooksSection, readPageHooksSection } from './sections/pageHooksData';
 import { type ProjectsSection, readProjectsSection } from './sections/projectsData';
@@ -56,6 +57,7 @@ export interface SiteAdapterData {
   readonly pageHooks?: PageHooksSection;
   readonly bridge?: BridgePolicySection;
   readonly folders?: FoldersSection;
+  readonly locators?: SiteLocatorProfiles;
 }
 
 const SITE_CAPABILITIES = ['chat', 'sidebar', 'composer', 'darkMode'] as const;
@@ -249,6 +251,7 @@ function parseSiteAdapterData(input: unknown): SiteAdapterDataParse {
   const pageHooksRead = readPageHooksSection(input.pageHooks, isValidSelectorSyntax);
   const bridgeRead = readBridgePolicySection(input.bridge);
   const foldersRead = readFoldersSection(input.folders, isValidSelectorSyntax);
+  const locatorsRead = readSiteLocators(input.locators, input.id, isValidSelectorSyntax);
 
   if (!nonEmptyString(input.id) || !SITE_ID_PATTERN.test(input.id)) {
     issues.push({ path: 'id', message: 'must match ^[a-z][a-z0-9-]*$' });
@@ -283,6 +286,7 @@ function parseSiteAdapterData(input: unknown): SiteAdapterDataParse {
     ...pageHooksRead.issues,
     ...bridgeRead.issues,
     ...foldersRead.issues,
+    ...locatorsRead.issues,
   ];
 
   if (input.brandColor !== undefined && !isHexColor(input.brandColor)) {
@@ -377,6 +381,7 @@ function parseSiteAdapterData(input: unknown): SiteAdapterDataParse {
         ...(bridgeRead.policy ? { bridge: bridgeRead.policy } : {}),
         ...(foldersRead.folders ? { folders: foldersRead.folders } : {}),
         ...(exportConfig ? { export: exportConfig } : {}),
+        ...(locatorsRead.locators ? { locators: locatorsRead.locators } : {}),
       },
     },
   };
@@ -405,5 +410,6 @@ export function siteAdapterToData(adapter: SiteAdapter): SiteAdapterData {
     ...(adapter.pageHooks ? { pageHooks: { ...adapter.pageHooks } } : {}),
     ...(adapter.bridge ? { bridge: bridgePolicySectionToData(adapter.bridge) } : {}),
     ...(adapter.folders ? { folders: { ...adapter.folders } } : {}),
+    ...(adapter.locators ? { locators: { ...adapter.locators } } : {}),
   };
 }

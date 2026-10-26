@@ -2962,8 +2962,8 @@
     "description": "Shown when no plugins are available"
   },
   "pluginsRefresh": {
-    "message": "Check for plugin updates now",
-    "description": "Tooltip for the manual plugin-update check button"
+    "message": "Check for updates now",
+    "description": "Label and tooltip for the manual catalog update check button"
   },
   "pluginSourceBuiltin": {
     "message": "Built in",
@@ -3302,12 +3302,12 @@
     "description": "Note shown when a plugin update is held back because it needs a newer Voyager; {version} is the held-back version"
   },
   "pluginsOnlineUpdates": {
-    "message": "Plugin online updates",
-    "description": "Label for the switch that allows online plugin update checks for this site"
+    "message": "Online updates",
+    "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "Checks voyager.nagi.fun for plugin updates for this site — only the site name is sent, no cookies or page content. When off, only the refresh button above connects.",
-    "description": "Explains what the online plugin update check sends and when it runs"
+    "message": "Checks voyager.nagi.fun for plugin updates and Gemini page detection fixes. Sends the site name, no cookies or page content. Off blocks automatic and manual checks.",
+    "description": "Explains catalog updates, Gemini page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {
     "message": "Check every",
@@ -4417,49 +4417,5 @@
   },
   "export_read_history_unavailable": {
     "message": "Couldn't read the full conversation history. Scroll up to load earlier messages, then try again."
-  },
-  "geminiSelectorFixesTitle": {
-    "message": "Online fixes for Gemini page detection",
-    "description": "Switch for Gemini page detection fixes; covered areas are listed in the hint; off by default"
-  },
-  "geminiSelectorFixesHint": {
-    "message": "Gets detection fixes for conversations, the sidebar, folders, the model menu, conversation and export menus, the export selection bar, the sidebar toggle button’s clickable area and sidebar hover areas, message content for export and forks, context images, response and research-pack actions, usage displays, code blocks and diagrams, paragraphs containing LaTeX in your messages, search result images in exports, generated image download buttons, Canvas code export, the Gems sidebar, message input, input collapse, Vim mode, prompt history, slash commands, sent prompt previews, Folder as Project and folder activity from voyager.nagi.fun. Checks at most once every 6 hours. No page content is sent. Off by default.",
-    "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
-  },
-  "geminiSelectorFixesOff": {
-    "message": "Off: no checks, even manual ones. Open Gemini pages keep their current rules until you refresh them.",
-    "description": "Off blocks all selector requests; open pages keep their snapshot until refreshed"
-  },
-  "geminiSelectorFixesCheckNow": {
-    "message": "Check now",
-    "description": "Manual selector check, available only with explicit consent enabled"
-  },
-  "geminiSelectorFixesChecking": {
-    "message": "Checking…",
-    "description": "A Gemini selector check is in progress"
-  },
-  "geminiSelectorFixesUpdated": {
-    "message": "New fixes downloaded. Refresh Gemini to apply them.",
-    "description": "Downloaded selector data is used on the next full page load"
-  },
-  "geminiSelectorFixesUpToDate": {
-    "message": "Up to date. No new fixes.",
-    "description": "Successful check without new selector fixes; do not ask the user to refresh"
-  },
-  "geminiSelectorFixesFailed": {
-    "message": "Couldn’t check. Voyager keeps using its current rules.",
-    "description": "A check failed; Voyager keeps the rules it already uses, which may be only the bundled ones"
-  },
-  "geminiSelectorFixesUnavailable": {
-    "message": "Online fixes are unavailable in this version.",
-    "description": "Online selector fixes are disabled at build time"
-  },
-  "geminiSelectorFixesSaveFailed": {
-    "message": "Couldn’t save the change. Try again.",
-    "description": "Consent or cache cleanup failed; show the setting confirmed by the background"
-  },
-  "geminiSelectorFixesTurnOnInGemini": {
-    "message": "Open Gemini to turn this on.",
-    "description": "Shown on a non-Gemini tab after the user turned the online fixes off there; turning on needs a Gemini tab"
   }
 }

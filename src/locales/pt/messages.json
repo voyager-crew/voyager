@@ -2962,8 +2962,8 @@
     "description": "Shown when no plugins are available"
   },
   "pluginsRefresh": {
-    "message": "Verificar atualizações de plugins agora",
-    "description": "Tooltip for the manual plugin-update check button"
+    "message": "Verificar atualizações agora",
+    "description": "Label and tooltip for the manual catalog update check button"
   },
   "pluginSourceBuiltin": {
     "message": "Integrado",
@@ -3302,12 +3302,12 @@
     "description": "Note shown when a plugin update is held back because it needs a newer Voyager; {version} is the held-back version"
   },
   "pluginsOnlineUpdates": {
-    "message": "Atualizações online de plugins",
-    "description": "Label for the switch that allows online plugin update checks for this site"
+    "message": "Atualizações online",
+    "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "Consulta o voyager.nagi.fun em busca de atualizações de plugins para este site — só o nome do site é enviado, sem cookies nem conteúdo da página. Se desativar, apenas o botão de atualizar acima se conecta.",
-    "description": "Explains what the online plugin update check sends and when it runs"
+    "message": "Verifica atualizações de plugins e correções de reconhecimento das páginas do Gemini em voyager.nagi.fun. Envia o nome do site, sem cookies nem conteúdo da página. Desativar bloqueia as verificações automáticas e manuais.",
+    "description": "Explains catalog updates, Gemini page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {
     "message": "Verificar a cada",
@@ -4417,49 +4417,5 @@
   },
   "export_read_history_unavailable": {
     "message": "Não foi possível ler o histórico completo da conversa. Role para cima para carregar as mensagens anteriores e tente novamente."
-  },
-  "geminiSelectorFixesTitle": {
-    "message": "Correções online para a detecção de páginas do Gemini",
-    "description": "Switch for Gemini page detection fixes; covered areas are listed in the hint; off by default"
-  },
-  "geminiSelectorFixesHint": {
-    "message": "Obtém de voyager.nagi.fun correções de reconhecimento para conversas, a barra lateral, as pastas, o menu de modelos, os menus de conversa e exportação, a barra de seleção para exportação, a área de clique do botão de abrir e fechar a barra lateral e suas áreas sensíveis ao cursor, o conteúdo das mensagens para exportação e ramificações, as imagens de contexto, as ações de resposta e do pacote de pesquisa, os indicadores de uso, os blocos de código e diagramas, os parágrafos com LaTeX nas suas mensagens, as imagens dos resultados de busca nas exportações, os botões de download de imagens geradas, a exportação de código do Canvas, a barra lateral de Gems, a caixa de mensagens, o recolhimento da caixa de entrada, o modo Vim, o histórico de prompts, os comandos com barra, as prévias dos prompts enviados, Pasta como Projeto e a atividade das pastas. Verifica no máximo uma vez a cada 6 horas. Nenhum conteúdo da página é enviado. Desativado por padrão.",
-    "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
-  },
-  "geminiSelectorFixesOff": {
-    "message": "Desativado: nenhuma verificação, nem manual. As páginas do Gemini abertas mantêm as regras atuais até você recarregá-las.",
-    "description": "Off blocks all selector requests; open pages keep their snapshot until refreshed"
-  },
-  "geminiSelectorFixesCheckNow": {
-    "message": "Verificar agora",
-    "description": "Manual selector check, available only with explicit consent enabled"
-  },
-  "geminiSelectorFixesChecking": {
-    "message": "Verificando…",
-    "description": "A Gemini selector check is in progress"
-  },
-  "geminiSelectorFixesUpdated": {
-    "message": "Novas correções baixadas. Recarregue o Gemini para aplicá-las.",
-    "description": "Downloaded selector data is used on the next full page load"
-  },
-  "geminiSelectorFixesUpToDate": {
-    "message": "Tudo em dia. Nenhuma correção nova.",
-    "description": "Successful check without new selector fixes; do not ask the user to refresh"
-  },
-  "geminiSelectorFixesFailed": {
-    "message": "Não foi possível verificar. O Voyager continua usando as regras atuais.",
-    "description": "A check failed; Voyager keeps the rules it already uses, which may be only the bundled ones"
-  },
-  "geminiSelectorFixesUnavailable": {
-    "message": "As correções online não estão disponíveis nesta versão.",
-    "description": "Online selector fixes are disabled at build time"
-  },
-  "geminiSelectorFixesSaveFailed": {
-    "message": "Não foi possível salvar a alteração. Tente novamente.",
-    "description": "Consent or cache cleanup failed; show the setting confirmed by the background"
-  },
-  "geminiSelectorFixesTurnOnInGemini": {
-    "message": "Abra o Gemini para ativar.",
-    "description": "Shown on a non-Gemini tab after the user turned the online fixes off there; turning on needs a Gemini tab"
   }
 }

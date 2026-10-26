@@ -75,7 +75,7 @@ import {
   type GeminiTurnView,
 } from './types';
 import { GEMINI_USAGE_PROFILE_KEYS } from './usageKeys';
-import { readGeminiSelectorFile, readGeminiSelectorProfileGroup } from './validation';
+import { readGeminiSelectorProfiles, readGeminiSelectorProfileGroup } from './validation';
 import { GEMINI_VIM_PROFILE_KEYS } from './vimKeys';
 
 function readGroup<Key extends GeminiSelectorProfileKey>(
@@ -117,18 +117,9 @@ function readBundle(): GeminiSelectorProfiles {
     ...readGroup(generatedImageProfiles, GEMINI_GENERATED_IMAGE_PROFILE_KEYS, 'generated-image'),
     ...readGroup(canvasCodeProfiles, GEMINI_CANVAS_CODE_PROFILE_KEYS, 'canvas-code'),
   };
-  const file = readGeminiSelectorFile(
-    {
-      format: 1,
-      site: 'gemini',
-      host: 'gemini.google.com',
-      catalogRevision: 1,
-      selectors: profiles,
-    },
-    'gemini.google.com',
-  );
-  if (!file) throw new Error('Combined bundled Gemini profiles exceed the shared contract');
-  return file.selectors as GeminiSelectorProfiles;
+  const validated = readGeminiSelectorProfiles(profiles);
+  if (!validated) throw new Error('Combined bundled Gemini profiles exceed the shared contract');
+  return validated as GeminiSelectorProfiles;
 }
 
 const BUNDLED_VIEW: GeminiSelectorView = Object.freeze({

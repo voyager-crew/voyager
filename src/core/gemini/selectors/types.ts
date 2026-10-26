@@ -155,13 +155,9 @@ export const GEMINI_SELECTOR_PROFILE_GROUPS: readonly (readonly GeminiSelectorPr
 ];
 export type GeminiSelectorProfiles = Readonly<Record<GeminiSelectorProfileKey, readonly string[]>>;
 
-export interface GeminiSelectorFile {
-  readonly format: 1;
-  readonly site: 'gemini';
-  readonly host: GeminiSelectorHost;
-  readonly catalogRevision: number;
-  readonly selectors: Readonly<Partial<Record<GeminiSelectorProfileKey, readonly string[]>>>;
-}
+export type GeminiSelectorPatch = Readonly<
+  Partial<Record<GeminiSelectorProfileKey, readonly string[]>>
+>;
 
 export interface GeminiSelectorView {
   readonly profiles: GeminiSelectorProfiles;

@@ -17,8 +17,8 @@ on the light or dark theme.
 ## Delivery and control
 
 - Ships inside the extension and updates only with a Voyager release. It is
-  never published to or replaced by the online plugin catalog, and Gemini pages
-  make no catalog request for it.
+  never published to or replaced by the online plugin catalog. Consumer Gemini
+  can receive page-locator fixes through the shared Online updates setting.
 - Controlled by the existing "Hide input box halo" switch in Voyager's Gemini
   settings (`gvInputHaloHidden`, off by default). It has no switch or settings
   of its own.

@@ -59,7 +59,11 @@
           "sendButton"
         ]
       },
-      "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 2000 }
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2000
+      }
     },
     "theme": {
       "type": "object",
@@ -95,7 +99,10 @@
     "capabilities": {
       "type": "array",
       "description": "Coarse flags describing what the site exposes, so a contribution the site cannot support is skipped.",
-      "items": { "type": "string", "enum": ["chat", "sidebar", "composer", "darkMode"] }
+      "items": {
+        "type": "string",
+        "enum": ["chat", "sidebar", "composer", "darkMode"]
+      }
     },
     "conversationIdPattern": {
       "type": "string",
@@ -108,7 +115,10 @@
     "routeWords": {
       "type": "array",
       "maxItems": 64,
-      "items": { "type": "string", "pattern": "^[a-z0-9-]{1,64}$" },
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]{1,64}$"
+      },
       "description": "Static router segments site-check reports may retain. Every other path segment is redacted; queries and hashes are always omitted. Only lower-case letters, digits and hyphens are allowed; never put conversation or account identifiers here.",
       "examples": [["chat", "new", "library"]]
     },
@@ -116,7 +126,10 @@
       "type": "array",
       "minItems": 1,
       "maxItems": 8,
-      "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]{0,63}$"
+      },
       "description": "Attributes that keep one user message's identity across re-renders and remounts, read from the `userTurn` element or its nearest ancestor carrying one; the first present wins. Send tracking (folder Activity, timeline timestamps) needs them to tell the message a send produced from older ones mounting. Omit where the site has none: those features then stay off there.",
       "examples": [["data-turn-key", "data-message-id"]]
     },
@@ -124,11 +137,25 @@
       "type": "object",
       "required": ["version", "read"],
       "description": "Page facts for conversationExport. Messages and scroll container use the site's semantic selectors. Virtual reads require messageKey; mounted reads snapshot only currently mounted messages. Omit to leave generic export unavailable.",
-      "if": { "properties": { "read": { "const": "virtual" } }, "required": ["read"] },
-      "then": { "required": ["messageKey"] },
+      "if": {
+        "properties": {
+          "read": {
+            "const": "virtual"
+          }
+        },
+        "required": ["read"]
+      },
+      "then": {
+        "required": ["messageKey"]
+      },
       "properties": {
-        "version": { "const": 1 },
-        "read": { "type": "string", "enum": ["mounted", "virtual"] },
+        "version": {
+          "const": 1
+        },
+        "read": {
+          "type": "string",
+          "enum": ["mounted", "virtual"]
+        },
         "messageKey": {
           "type": "string",
           "pattern": "^[a-z][a-z0-9-]{0,63}$",
@@ -148,10 +175,18 @@
         }
       }
     },
-    "modelPicker": { "$ref": "site-sections/model-picker.schema.json" },
-    "projects": { "$ref": "site-sections/projects.schema.json" },
-    "pageHooks": { "$ref": "site-sections/page-hooks.schema.json" },
-    "folders": { "$ref": "site-sections/folders.schema.json" },
+    "modelPicker": {
+      "$ref": "site-sections/model-picker.schema.json"
+    },
+    "projects": {
+      "$ref": "site-sections/projects.schema.json"
+    },
+    "pageHooks": {
+      "$ref": "site-sections/page-hooks.schema.json"
+    },
+    "folders": {
+      "$ref": "site-sections/folders.schema.json"
+    },
     "bridge": {
       "type": "object",
       "description": "Local Bridge kill switch: the ops the extension may run for `voyager serve` on this site. A missing or invalid section denies every op, and only a fresh remote catalog newer than the packaged one can allow them. Removing an op from `allow` revokes it at the next catalog revision.",
@@ -187,6 +222,100 @@
             ]
           },
           "description": "Allowed op names. Every op, including the ones the service worker runs itself, must be listed."
+        }
+      }
+    },
+    "locators": {
+      "type": "object",
+      "description": "Ordered page locator profiles admitted by a packaged per-site allowlist. Gemini currently admits the 75 profiles below. Invalid locators are discarded separately from the adapter; native identity and action policies remain packaged.",
+      "maxProperties": 75,
+      "propertyNames": {
+        "enum": [
+          "turn.user",
+          "turn.userWithHosts",
+          "turn.assistant",
+          "turn.assistantFallback",
+          "turn.assistantWithHosts",
+          "sidebar.overflow",
+          "sidebar.notebooks",
+          "sidebar.recents",
+          "sidebar.allConversations",
+          "sidebar.history",
+          "sidebar.section",
+          "sidebar.row",
+          "sidebar.rowContainer",
+          "sidebar.openHost",
+          "sidebar.host",
+          "sidebar.visibilityHost",
+          "sidebar.links",
+          "sidebar.conversationLinks",
+          "sidebar.title",
+          "sidebar.titleFallback",
+          "sidebar.scroller",
+          "sidebar.interactionButton",
+          "sidebar.forkRoots",
+          "modelPicker.trigger",
+          "modelPicker.legacyPanels",
+          "modelPicker.panelFallback",
+          "modelPicker.overlayPane",
+          "modelPicker.container",
+          "modelPicker.observerRoot",
+          "modelPicker.items",
+          "modelPicker.modelEvidence",
+          "modelPicker.modelIdItem",
+          "modelPicker.modelLabel",
+          "modelPicker.thinkingLabel",
+          "modelPicker.thinkingRow",
+          "modelPicker.thinkingItems",
+          "modelPicker.thinkingContent",
+          "modelPicker.modelTitleContainer",
+          "modelPicker.thinkingTitleContainer",
+          "modelPicker.focusInput",
+          "composer.candidates",
+          "composer.draftCandidates",
+          "composer.sendContainers",
+          "inputCollapse.wrapper",
+          "vim.configuredComposer",
+          "vim.candidates",
+          "promptHistory.candidates",
+          "slash.candidates",
+          "sentChips.bubbles",
+          "project.inputs",
+          "activity.inputs",
+          "menu.panels",
+          "menu.content",
+          "exportOverlay.canvas",
+          "exportOverlay.composer",
+          "sidebarWidth.buttons",
+          "sidebarHover.dialogs",
+          "sidebarHover.menus",
+          "gems.navEntry",
+          "gems.list",
+          "gems.row",
+          "gems.title",
+          "gems.description",
+          "gems.icon",
+          "content.answer",
+          "content.userLines",
+          "context.images",
+          "responseActions.bars",
+          "researchPack.actionBars",
+          "usage.root",
+          "code.host",
+          "userLatex.lines",
+          "imageExport.searchHosts",
+          "generatedImage.downloadIcon",
+          "canvas.codePanels"
+        ]
+      },
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 32,
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
         }
       }
     }

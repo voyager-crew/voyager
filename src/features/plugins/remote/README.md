@@ -29,14 +29,18 @@ without an extension release.
   version.
 - **`remote/hostCatalogRefresh.ts`** — the only network writer, and it runs in
   the background only. Single flight per host, so concurrent tabs share one
-  pass. Gates in order: the build flag; the host shape (plain hostnames, no
+  pass. Each pass runs on `hostCatalogCheckMachine.ts` (`hostCatalogCheck`):
+  turning updates off cancels preparation and fetch, while an already-started
+  cache write settles before the host is freed. A timeout aborts the fetch and
+  records the failed attempt; late responses cannot write over a later check.
+  Gates in order: the build flag; the host shape (plain hostnames, no
   wildcards or ports); the user settings (online-updates switch, check interval
   counted from the last attempt, failure backoff, writer-version staleness); and
   page eligibility, meaning at least one **enabled** plugin targets the host.
-  Gemini and AI Studio are never catalog hosts (`isEligibleCatalogHost`), even
-  with a local plugin enabled there, so they never produce a plugin catalog
-  request. A manual check sends `force` and skips settings, due-time and enabled-plugin gates,
-  but never the build flag or host eligibility.
+  `gemini.google.com` is also eligible for page-locator fixes without an enabled
+  plugin. Gemini Enterprise and AI Studio remain ineligible. A manual check sends
+  `force` and skips due-time and enabled-plugin gates, but never the online-updates
+  switch, build flag or host eligibility.
 - **`remote/hostCatalogPolicy.ts`** — the pure rules the background and the
   content script must agree on (which hosts may be looked up, when a check is
   due, the backoff curve, when a cached entry may be used at all), each one
@@ -61,8 +65,10 @@ without an extension release.
 **Settings** live in `chrome.storage.sync` and are covered by
 `SettingsBackupService`: `gvPluginOnlineUpdatesEnabled` (master switch, on by
 default) and `gvPluginCatalogCheckInterval` (`1h` / `6h` / `24h` / `manual`,
-default `6h`). The popup surfaces both on plugin sites, plus a manual check that
-works even when the switch is off.
+default `6h`). The popup surfaces both on plugin sites and consumer Gemini.
+Opening it reads the cache; its manual check works only while updates are on.
+Turning updates off blocks automatic and manual requests. Cached data remains
+local; Gemini page hydration uses the bundle while updates are off.
 
 **Message**: a content script or the popup sends `gv.pluginCatalog.refresh`
 (`PLUGIN_CATALOG_REFRESH_MESSAGE` in `runtime/messages.ts`) with
@@ -105,8 +111,8 @@ namespace, a non-empty reason and no live plugin with the same id. It publishes
 only the ids as an optional top-level `"revoked": ["voyager.deepseek-retired"]`
 in every concrete host file of that site, even after its last plugin is removed.
 The build fails if a plugin directory lacks `plugin.json`, or if `revoked.json`
-has no concrete host that can publish it (including packaged-only Gemini and
-AI Studio sites).
+has no concrete host that can publish it. Gemini and AI Studio official plugins
+remain build-only and cannot be revoked remotely.
 Each host file also revokes the site's live plugin ids whose `matches` no longer
 cover that host. Narrowing a plugin to one host therefore stops its older bundled
 copy on the site's other hosts. When renaming a plugin id, add the old id to
@@ -114,79 +120,55 @@ copy on the site's other hosts. When renaming a plugin id, add the old id to
 The additive field keeps `format: 1`; older clients ignore it and still revoke
 through absence from `plugins`. The reason stays in the source file.
 
-## Separate opt-in Gemini selector file
+## Page-locator profiles in site data
 
-Gemini keeps **zero plugin catalog requests**. Its optional **Online fixes for
-Gemini page detection** switch is a separate channel in
-`src/features/geminiSelectorFixes/`; it neither adds a `PluginSource` nor replaces
-`site.json`. `allowsRemoteCatalog` and `isEligibleCatalogHost` still exclude Gemini
-and AI Studio. AI Studio and Gemini Enterprise have no selector channel.
+The optional `site.locators` section maps namespaced profile keys to ordered
+string arrays. Site-specific policy owns each literal allowlist and fallback
+group. Gemini reuses `GEMINI_SELECTOR_PROFILE_KEYS` (75 keys) and
+`GEMINI_SELECTOR_PROFILE_GROUPS` from `core/gemini/selectors/types.ts`.
+`validateSiteAdapterData` validates this section independently: a malformed or
+over-limit section is omitted, and an unparsable locator drops only its surface’s
+group. The host’s plugin list, other adapter data and kill switch still work.
 
-The switch defaults to **off**. Its strict boolean
-`StorageKeys.GEMINI_SELECTOR_ONLINE_FIXES` (`gvGeminiSelectorOnlineFixes`) lives in
-`chrome.storage.local`, outside settings backup and sync. Off blocks **all**
-selector requests, including manual checks, `force` and requests with an old
-cache. Turning it off aborts in-flight checks and removes the selector cache.
-The separate last-attempt record survives toggles, so turning it back on does
-not reset the six-hour automatic interval. Only completed attempts are persisted;
-an extension restart may therefore retry an interrupted check. Concurrent callers
-share the same in-flight request. Manual checks bypass only the interval and
-require the switch to remain on.
-
-Only the background fetches the single `format: 1` file:
+Consumer Gemini uses the same host file as the rest of the catalog:
 
 ```text
-https://voyager.nagi.fun/catalog/gemini-selectors/v1/hosts/gemini.google.com.json
+https://voyager.nagi.fun/catalog/hosts/gemini.google.com.json
 ```
 
-The file contains only validated ordered locator lists. The literal allowlist in
-`src/core/gemini/selectors/types.ts` covers conversation turns, sidebar entries and
-folder display areas, model menus, message inputs, input collapse, Vim, prompt
-history, slash commands, sent prompt previews, Folder as Project, folder activity,
-conversation/export menus, the export selection bar, sidebar hit and hover areas, the active Gems sidebar,
-message content for export/forks, context images, response/research-pack actions,
-usage displays, code blocks/diagrams, user LaTeX paragraphs, search result images in exports, generated-image download icons and Canvas code panels. It contains no
-plugins, CSS, actions, JavaScript, matches, capabilities or theme.
+Only locator profiles travel remotely for Gemini. Its official plugins, semantic
+adapter fields, CSS, host admission, identity and interaction protocols stay
+packaged. Gemini Enterprise and AI Studio use only packaged data. The
+[resolver README](../../../core/gemini/selectors/README.md) maps profiles to their
+consumers and describes the independent checks that protect each operation.
+A key whose repair can only confirm the bundle stays packaged-only.
 
-The [selector resolver README](../../../core/gemini/selectors/README.md) maps each
-surface to its group and consumers. An unparsable locator drops only its surface's
-group. A partial collection, conflict with an independent bundled/native check or
-a target other than the operation's original element reruns the entire read with
-the bundle, before any side effect. Remote-only checks stay off the bundled path.
-A key whose repair can only confirm the bundled result stays packaged-only.
+The catalog builder reads the same selected non-`*-packaged.json` fragments as
+`bundle.ts`. Revision, cache writer version, refresh timing and withdrawal use
+this channel’s existing machinery. A resolved adapter must be newer than the
+bundle before its profiles can apply. Missing or empty `site.locators` restores
+the bundle on the next page load. No second setting, cache, endpoint or publisher
+is involved.
 
-Identity/account/destructive-action policies, native menu association, clone
-sanitizing, ARIA/focus safety, input and click protocols, source attributes, URL
-and origin policy, CSS and independent native health stay packaged. So do the
-unreachable repairs listed in the selector README, including scroll targets,
-formula and Deep Research content, generated-image containers and Canvas document
-editors. `generatedUi.*` frame keys require a **remote-path-only, URL-parsed origin
-check** before they could become remote; this migration preserves the existing
-packaged frame behavior. No remote locator can change that origin policy.
+Gemini hydration remains a `startMachine` flow before native features start. It
+reads the resolved catalog site data once per content-script claim. Changes to
+update settings during that read settle on the bundle; an error, timeout or
+page teardown cannot adopt late data. After readiness, the snapshot stays fixed
+until the page is loaded again. New fixes, withdrawals and switching updates off
+therefore take effect after a user refresh, with no automatic reload or remount.
+The page requests a due catalog check after hydration; opening the popup only
+reads the cache, and its refresh button requests a manual check.
 
-The builder reads the same selected `selector-data/` fragments as the bundle and
-publishes one file with the full allowlist. Missing keys use the bundle; supplied
-lists replace their whole profiles. A higher accepted revision replaces the entire
-patch, and an empty patch withdraws all overrides. The cache is bound to the running
-extension version. The [rollback runbook](../../../core/gemini/selectors/README.md#rollback-runbook)
-covers higher-revision fixes, persistent withdrawal, CDN purge and build flags.
+Every consumer guard and `remoteKeys` decision remains packaged. A partial
+collection, conflict with an independent native/bundled check or target other
+than the operation’s original element falls back for the whole operation before
+any side effect. These checks remain off the bundled path.
 
-`gv.geminiSelectors.status`, `gv.geminiSelectors.setEnabled`, and
-`gv.geminiSelectors.refresh` are the popup's background API. Turning the switch on
-and checking identify the inspected tab; the background resolves its actual HTTPS
-URL and admits only `gemini.google.com`. Reading status and turning the switch off
-need no Gemini tab. Opening Gemini or its popup can request a due check; there is
-no polling alarm. The options page uses the same popup with an explicit
-`sourceTabId`; closing that source does not authorize a check for another active
-tab. Page hydration, the background check and the popup run on `startMachine`.
-The page snapshot is fixed for its content-script claim, so new downloads and
-turning the switch off affect an open page only after a user refresh. No automatic
-reload or PluginHost remount occurs.
-
-GET requests omit cookies and referrers, reject redirects, and send no page or
-conversation content or account identifiers. The URL exposes only the fixed host
-name; the static host sees normal metadata such as IP address and User-Agent.
-Announcements and plugin catalog settings remain separate.
-`VOYAGER_GEMINI_SELECTOR_REMOTE=off` disables this channel, including cache use;
-`VOYAGER_PLUGIN_CATALOG_REMOTE=off` disables both remote data channels. D13/D14
-require the disclosure in all privacy locales and the store-listing reference.
+The [rollback runbook](../../../core/gemini/selectors/README.md#rollback-runbook)
+covers higher-revision fixes and withdrawing locators in the host file.
+`VOYAGER_PLUGIN_CATALOG_REMOTE=off` disables the single catalog channel,
+including cached Gemini profiles. Requests omit cookies and send no page or
+conversation content or account identifiers. Hosting providers see ordinary
+connection metadata such as IP address, User-Agent and the hostname in the URL.
+Announcement and cloud-sync settings remain separate. D13/D14 require the same
+coverage and request disclosure in every privacy locale and store-listing draft.

@@ -63,6 +63,8 @@ export interface SiteThemeDescriptor {
  * URL and hands it to the engine so `semantic` selector refs can be resolved.
  */
 export interface SiteAdapter {
+  /** Ordered, site-scoped page locators; query logic and safety guards stay packaged. */
+  readonly locators?: import('./sites/sections/locatorData').SiteLocatorProfiles;
   /** Catalog source revision, stamped by the shared bundle/publishing pipeline. */
   readonly catalogRevision?: number;
   readonly id: SiteId;

@@ -9,8 +9,8 @@ primitive through a `native` op.
 ## Delivery and control
 
 - Ships inside the extension and updates only with a Voyager release. It is
-  never published to or replaced by the online plugin catalog, and Gemini pages
-  make no catalog request for it.
+  never published to or replaced by the online plugin catalog. Consumer Gemini
+  can receive page-locator fixes through the shared Online updates setting.
 - Controlled by the "Collapse long code blocks" switch in Voyager's Gemini
   settings (`gvCodeBlockCollapseEnabled`, on by default). It has no switch or
   settings of its own; the native module reads the same key.

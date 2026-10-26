@@ -23,11 +23,9 @@ async function hydrate(selectors: unknown) {
     lifetime: new AbortController().signal,
     bundledRevision: 1,
     read: async () => ({
-      format: 1,
-      site: 'gemini',
-      host: 'gemini.google.com',
+      id: 'gemini',
       catalogRevision: 2,
-      selectors,
+      locators: selectors,
     }),
   });
   lifetimes.push(lifetime);

@@ -10,7 +10,7 @@
 import { logger } from '@/core/services/LoggerService';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 
-import { allowsRemoteCatalog } from '../sites/hostPolicy';
+import { allowsRemoteCatalog, isGeminiSelectorHost, packagedSiteForUrl } from '../sites/hostPolicy';
 import { matchesAnyPattern } from '../sites/matchPattern';
 import type { SiteRegistry } from '../sites/registry';
 import type { PluginSource, PluginSourceContext, SiteAdapter } from '../types';
@@ -46,7 +46,19 @@ export function resolveSiteAdapterForUrl(
   if (override && matchesAnyPattern(url, override.matches)) {
     const bundled = registry.all().find((adapter) => adapter.id === override.id);
     // A later fetch of stale published data must not replace newer packaged selectors.
-    if ((override.catalogRevision ?? 0) > (bundled?.catalogRevision ?? 0)) return override;
+    if ((override.catalogRevision ?? 0) > (bundled?.catalogRevision ?? 0)) {
+      if (packagedSiteForUrl(url) !== null) {
+        if (!bundled || bundled.id !== 'gemini' || !isGeminiSelectorHost(new URL(url).host)) {
+          return registry.resolveByUrl(url);
+        }
+        return {
+          ...bundled,
+          catalogRevision: override.catalogRevision,
+          locators: override.locators,
+        };
+      }
+      return override;
+    }
   }
   return registry.resolveByUrl(url);
 }

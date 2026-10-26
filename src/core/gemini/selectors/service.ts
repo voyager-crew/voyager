@@ -10,6 +10,7 @@ import {
   hydrationTransition,
 } from './hydration';
 import {
+  GEMINI_SELECTOR_HOSTS,
   GEMINI_SELECTOR_PROFILE_GROUPS,
   GEMINI_TURN_PROFILE_KEYS,
   type GeminiSelectorOperation,
@@ -18,7 +19,7 @@ import {
   type GeminiTurnOperation,
   type GeminiTurnView,
 } from './types';
-import { readGeminiSelectorFile } from './validation';
+import { readGeminiSelectorProfiles } from './validation';
 
 export interface GeminiSelectorInitialization {
   readonly host: string;
@@ -153,16 +154,20 @@ function toRemoteView(
   raw: unknown,
   input: GeminiSelectorInitialization,
 ): GeminiSelectorView | null {
-  const file = readGeminiSelectorFile(raw, input.host);
+  if (!(GEMINI_SELECTOR_HOSTS as readonly string[]).includes(input.host)) return null;
+  if (!raw || typeof raw !== 'object' || !('id' in raw) || raw.id !== 'gemini') return null;
+  if (!('catalogRevision' in raw) || typeof raw.catalogRevision !== 'number') return null;
+  const revision = raw.catalogRevision;
+  const patch = 'locators' in raw ? readGeminiSelectorProfiles(raw.locators) : null;
   const floor = input.bundledRevision ?? getGeminiBundledRevision();
-  if (!file || file.catalogRevision <= floor) return null;
+  if (!patch || !Number.isSafeInteger(revision) || revision <= floor) return null;
   const profiles = { ...getBundledGeminiSelectorView().profiles };
   const remoteKeys = new Set<GeminiSelectorProfileKey>();
   for (const group of GEMINI_SELECTOR_PROFILE_GROUPS) {
     const changed: Array<readonly [GeminiSelectorProfileKey, readonly string[]]> = [];
     try {
       for (const key of group) {
-        const list = file.selectors[key];
+        const list = patch[key];
         if (!list) continue;
         for (const selector of list) input.doc.querySelector(selector);
         if (JSON.stringify(list) !== JSON.stringify(profiles[key])) changed.push([key, list]);
@@ -179,6 +184,6 @@ function toRemoteView(
   return Object.freeze({
     profiles: Object.freeze(profiles),
     remoteKeys,
-    revision: file.catalogRevision,
+    revision,
   });
 }

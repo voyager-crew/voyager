@@ -171,7 +171,9 @@ export function PluginManager({
           <button
             type="button"
             onClick={onRefresh}
-            disabled={refreshing}
+            disabled={
+              refreshing || (Boolean(catalogHost) && !catalog.catalogSettings.onlineUpdatesEnabled)
+            }
             className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             title={t('pluginsRefresh')}
             aria-label={t('pluginsRefresh')}
@@ -348,7 +350,7 @@ export function PluginManager({
         })}
 
         {/* Online-catalog controls. Hidden on hosts that can never have a
-            catalog (Gemini, AI Studio, anything with a port or wildcard), where
+            catalog (AI Studio, anything with a port or wildcard), where
             the switch would promise a check that never runs. */}
         <PluginCatalogControls catalogHost={catalogHost} {...catalog} />
       </CardContent>

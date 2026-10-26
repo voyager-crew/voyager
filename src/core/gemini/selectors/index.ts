@@ -19,7 +19,7 @@ export {
   GEMINI_TURN_PROFILE_KEYS,
 } from './types';
 export type {
-  GeminiSelectorFile,
+  GeminiSelectorPatch,
   GeminiSelectorHost,
   GeminiSelectorOperation,
   GeminiSelectorProfileKey,

@@ -6,9 +6,8 @@
  *   - static injection: the main content script is declared for these hosts in
  *     `manifest.json`, with matching `host_permissions`, so they never need a
  *     dynamic registration or an optional host grant;
- *   - remote plugin catalog: never. No plugin catalog file is looked up or
- *     published for these hosts (D14). Gemini's opt-in selector-only channel
- *     has a separate exact-host predicate and cannot change this answer;
+ *   - remote catalog: Gemini consumer pages may read locator profiles through
+ *     the shared channel. Native plugins, identity and theme stay packaged;
  *   - plugin theme: never. Gemini and AI Studio keep Voyager's own accent;
  *   - catalog data stores (catalog outline, send times, ...): not theirs.
  *     Voyager's native timeline owns that data here, whether or not the site
@@ -123,12 +122,12 @@ export function isStaticallyInjectedHost(host: string): boolean {
   return policyForHost(host) !== undefined;
 }
 
-/** False for every packaged host, always: they never touch the remote catalog. */
+/** The shared channel serves Gemini locator profiles; other native hosts stay packaged. */
 export function allowsRemoteCatalog(host: string): boolean {
-  return policyForHost(host) === undefined;
+  return isGeminiSelectorHost(host) || policyForHost(host) === undefined;
 }
 
-/** Separate opt-in selector data only; this never admits a plugin catalog host. */
+/** Native host whose catalog may carry independently guarded locator profiles. */
 export function isGeminiSelectorHost(host: string): host is GeminiSelectorHost {
   return (GEMINI_SELECTOR_HOSTS as readonly string[]).includes(host);
 }

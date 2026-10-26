@@ -92,7 +92,7 @@ describe('catalog revocations', () => {
   });
 
   it.each(PACKAGED_SITES)(
-    'refuses revocations that cannot reach packaged-only $id clients',
+    'refuses revocations of $id plugins that retain packaged authority',
     async ({ id }) => {
       const catalogDir = makePackagedFixtureCatalog();
       writeJson(join(catalogDir, `sites/${id}/revoked.json`), [

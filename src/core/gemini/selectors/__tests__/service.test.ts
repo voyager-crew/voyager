@@ -4,11 +4,9 @@ import { getBundledGeminiTurnView } from '../bundle';
 import { GeminiSelectorService } from '../service';
 
 const patch = (selectors: unknown, catalogRevision = 2) => ({
-  format: 1,
-  site: 'gemini',
-  host: 'gemini.google.com',
+  id: 'gemini',
   catalogRevision,
-  selectors,
+  locators: selectors,
 });
 
 function mount(service: GeminiSelectorService, read: () => Promise<unknown>, signal?: AbortSignal) {

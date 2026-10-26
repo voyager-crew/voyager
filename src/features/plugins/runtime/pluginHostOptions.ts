@@ -6,6 +6,7 @@
 import type { FormFactor } from '@/core/types/formFactor';
 
 import { hasEnabledPluginForUrl } from '../remote/hostCatalogPolicy';
+import { isStaticallyInjectedHost } from '../sites/hostPolicy';
 import type { SiteRegistry } from '../sites/registry';
 import type { PluginStateMap } from '../storage/pluginState';
 import type { EntitlementProvider, PluginManifest, PluginSource } from '../types';
@@ -69,8 +70,8 @@ export function detectTopFrame(): boolean {
 
 /**
  * D4 trigger. Only the top frame of a page that an ENABLED plugin targets
- * may ask for a check; embedded companion frames and pages without an
- * enabled plugin (all of Gemini / AI Studio) stay silent.
+ * may ask for a check. Native Gemini locator checks belong to page startup;
+ * embedded companion frames and pages without an enabled plugin stay silent.
  */
 export function maybeRequestCatalogRefresh(
   page: { readonly host?: string; readonly url: string; readonly isTopFrame: boolean },
@@ -79,6 +80,8 @@ export function maybeRequestCatalogRefresh(
   request: (host: string) => void,
 ): void {
   if (!page.host || !page.isTopFrame) return;
+  // Gemini startup already requests its locator check; plugin reconciliation must not duplicate it.
+  if (isStaticallyInjectedHost(page.host)) return;
   if (!hasEnabledPluginForUrl(manifests, state, page.url)) return;
   request(page.host);
 }

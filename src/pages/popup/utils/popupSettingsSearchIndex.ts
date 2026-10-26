@@ -142,9 +142,9 @@ export const POPUP_SETTINGS_SEARCH_ITEMS = [
   popupSectionSearchTarget('general', ['generalOptions']),
   popupSearchTarget(
     'general',
-    'geminiSelectorFixes',
-    ['geminiSelectorFixesTitle', 'geminiSelectorFixesHint'],
-    ['selector page detection online fix repair Gemini 选择器 页面识别 在线 修复'],
+    'onlineUpdates',
+    ['pluginsOnlineUpdates', 'pluginsOnlineUpdatesHint', 'pluginsCheckInterval', 'pluginsRefresh'],
+    ['online updates page detection fix repair Gemini 在线 更新 页面识别 修复'],
   ),
   popupSearchTarget('general', 'enableTabTitleUpdate', [
     'enableTabTitleUpdate',

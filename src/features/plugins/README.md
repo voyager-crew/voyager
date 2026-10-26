@@ -51,12 +51,13 @@ EntitlementProvider  ─► entitled?         │  styles + domOps, reversible, 
   `adapters/claude.ts`, `adapters/chatgpt.ts` and `adapters/deepseek.ts` are
   one-line shells over their `site.json`: edit the JSON, not the TS. Gemini and
   AI Studio stay native surfaces (`NATIVE_SITE_IDS`, `sites/hostPolicy.ts`); their
-  `site.json` is packaged with the extension and never published remotely.
+  native adapter fields remain packaged. Consumer Gemini can receive ordered
+  page-locator profiles through the catalog host file’s optional `site.locators`.
   Gemini's packaged `userTurn`/`assistantTurn` are the joined bundled membership lists from
   `core/gemini/turnSelectors.ts`, bound by `adapters/gemini.parity.test.ts`;
   Gemini native turn consumers read ordered profiles through
-  `core/gemini/selectors/`; the independent, default-off selector channel can
-  update those profiles without changing this packaged adapter or any plugin.
+  `core/gemini/selectors/`; the shared online-updates setting governs those
+  profiles without changing packaged identity rules, CSS or official plugins.
   Draft deletion keeps using the bundled turn profiles.
   `sites/siteAdapterData.ts` holds
   `validateSiteAdapterData`, the one validator for the bundled `site.json`, the
@@ -114,12 +115,11 @@ because `import.meta.glob` does not exist under Bun.) Sites today are
 `aistudio`, `chatgpt`, `claude`, `deepseek` and `gemini`. A plugin's `matches`
 must stay inside its site's `matches` (plan D18) or the build fails, and
 `bun run catalog:build` validates every site and plugin before publishing.
-Gemini and AI Studio plugin catalogs are validated like the rest but never published: the host
-policy (`allowsRemoteCatalog`) keeps their four hosts out of the per-host
-catalog, and their plugins stay out of `marketplace.json`.
-Gemini's separate opt-in selector file is described in
-[remote/README.md](remote/README.md#separate-opt-in-gemini-selector-file); AI Studio
-remains entirely packaged-only.
+Gemini and AI Studio official plugins are validated like the rest but stay
+packaged and outside `marketplace.json`. The consumer Gemini host file publishes
+only the admitted page-locator profiles in `site.locators`; its other adapter
+fields stay packaged. Gemini Enterprise and AI Studio have no remote host file.
+See [remote/README.md](remote/README.md#page-locator-profiles-in-site-data).
 
 `catalog/marketplace.json` is **not** that mapping table, and no page reads it:
 the site's plugin table is built from the manifests themselves

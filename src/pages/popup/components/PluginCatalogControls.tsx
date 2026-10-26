@@ -132,11 +132,15 @@ export function PluginCatalogControls({
   catalogStatusText,
   handleOnlineUpdatesToggle,
   handleCheckIntervalChange,
-}: ReturnType<typeof usePluginCatalog> & { readonly catalogHost?: string }) {
+  separator = true,
+}: ReturnType<typeof usePluginCatalog> & {
+  readonly catalogHost?: string;
+  readonly separator?: boolean;
+}) {
   const { t } = useLanguage();
   if (!catalogHost) return null;
   return (
-    <div className="border-border/60 space-y-2 border-t pt-3">
+    <div className={separator ? 'border-border/60 space-y-2 border-t pt-3' : 'space-y-2'}>
       <div className="flex items-center justify-between gap-3">
         <span className="text-xs font-medium">{t('pluginsOnlineUpdates')}</span>
         <Switch

@@ -191,8 +191,5 @@
   "BRIDGE_PARALLEL": "gvBridgeParallel",
   "BRIDGE_PARALLEL_JOBS": "gvBridgeParallelJobs",
   "BRIDGE_ACCOUNT_PLANS": "gvBridgeAccountPlans",
-  "SITE_CHECK_ENABLED": "gvSiteCheckEnabled",
-  "GEMINI_SELECTOR_ONLINE_FIXES": "gvGeminiSelectorOnlineFixes",
-  "GEMINI_SELECTOR_CACHE_PREFIX": "gvGeminiSelectorCache:",
-  "GEMINI_SELECTOR_ATTEMPT_PREFIX": "gvGeminiSelectorAttempt:"
+  "SITE_CHECK_ENABLED": "gvSiteCheckEnabled"
 }

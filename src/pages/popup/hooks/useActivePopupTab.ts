@@ -16,19 +16,12 @@ export function useActivePopupTab(sourceTabId?: number) {
     'gemini',
   );
   const [activeTabContextLoaded, setActiveTabContextLoaded] = useState(false);
-  const [activeTabContextResolved, setActiveTabContextResolved] = useState(false);
   const [resolvedSourceTabId, setResolvedSourceTabId] = useState<number | undefined>(undefined);
   // Older reads must not replace the context after another read or source-tab change.
   const requestVersion = useRef(0);
-  const contextSource = useRef(sourceTabId);
 
   const refreshActiveTabContext = useCallback(async () => {
     const version = ++requestVersion.current;
-    // Re-reading the same tab keeps dependent cards mounted; only a new source starts unresolved.
-    if (contextSource.current !== sourceTabId) {
-      contextSource.current = sourceTabId;
-      setActiveTabContextResolved(false);
-    }
     try {
       let tab =
         typeof sourceTabId === 'number'
@@ -40,10 +33,8 @@ export function useActivePopupTab(sourceTabId?: number) {
       setActiveUrl(url);
       setActiveTabId(typeof tab?.id === 'number' ? tab.id : null);
       setActiveAccountPlatform(detectAccountPlatformFromUrl(url));
-      setActiveTabContextResolved(tab !== null);
     } catch {
-      // Keep the previous context when tab inspection fails, but no longer vouch for it.
-      if (version === requestVersion.current) setActiveTabContextResolved(false);
+      // Keep the previous context when tab inspection fails.
     } finally {
       if (version === requestVersion.current) {
         setResolvedSourceTabId(sourceTabId);
@@ -65,7 +56,6 @@ export function useActivePopupTab(sourceTabId?: number) {
     activeAccountPlatform,
     // A newly supplied options source is unresolved even while the previous tab is still cached.
     activeTabContextLoaded: activeTabContextLoaded && resolvedSourceTabId === sourceTabId,
-    activeTabContextResolved: activeTabContextResolved && resolvedSourceTabId === sourceTabId,
     refreshActiveTabContext,
   };
 }

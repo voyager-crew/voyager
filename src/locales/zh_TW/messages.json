@@ -2962,8 +2962,8 @@
     "description": "Shown when no plugins are available"
   },
   "pluginsRefresh": {
-    "message": "立即檢查外掛更新",
-    "description": "Tooltip for the manual plugin-update check button"
+    "message": "立即檢查更新",
+    "description": "Label and tooltip for the manual catalog update check button"
   },
   "pluginSourceBuiltin": {
     "message": "內建",
@@ -3302,12 +3302,12 @@
     "description": "Note shown when a plugin update is held back because it needs a newer Voyager; {version} is the held-back version"
   },
   "pluginsOnlineUpdates": {
-    "message": "外掛線上更新",
-    "description": "Label for the switch that allows online plugin update checks for this site"
+    "message": "線上更新",
+    "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "會向 voyager.nagi.fun 查詢此網站的外掛更新。只傳送網站名稱，不傳送 Cookie 或頁面內容。關閉後，只有上方的重新整理按鈕會連線。",
-    "description": "Explains what the online plugin update check sends and when it runs"
+    "message": "向 voyager.nagi.fun 檢查外掛更新及 Gemini 頁面辨識修復。只傳送網站名稱，不傳送 Cookie 或頁面內容。關閉後停止自動與手動檢查。",
+    "description": "Explains catalog updates, Gemini page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {
     "message": "檢查頻率",
@@ -4417,49 +4417,5 @@
   },
   "export_read_history_unavailable": {
     "message": "無法讀取完整的對話紀錄。請向上捲動載入較早的訊息後重試。"
-  },
-  "geminiSelectorFixesTitle": {
-    "message": "Gemini 頁面辨識線上修復",
-    "description": "Switch for Gemini page detection fixes; covered areas are listed in the hint; off by default"
-  },
-  "geminiSelectorFixesHint": {
-    "message": "從 voyager.nagi.fun 取得對話、側邊欄、資料夾、模型選單、對話與匯出選單、匯出選取列、側邊欄開關按鈕的點擊區域與側邊欄懸停區域、匯出與分支所用的訊息正文、上下文圖片、回覆和研究資料包操作、用量顯示、程式碼區塊和圖表、使用者訊息中含 LaTeX 的段落、匯出中的搜尋結果圖片、生成圖片下載按鈕、Canvas 程式碼匯出、Gems 側邊欄、訊息輸入框、輸入框摺疊、Vim 模式、提示詞歷史、斜線指令、已傳送提示詞預覽、資料夾作為專案及資料夾活動的辨識修復，最多每 6 小時檢查一次。不會傳送頁面內容。預設關閉。",
-    "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
-  },
-  "geminiSelectorFixesOff": {
-    "message": "已關閉：不檢查修復，也無法手動檢查。已開啟的 Gemini 頁面在重新整理前會繼續使用目前的規則。",
-    "description": "Off blocks all selector requests; open pages keep their snapshot until refreshed"
-  },
-  "geminiSelectorFixesCheckNow": {
-    "message": "立即檢查",
-    "description": "Manual selector check, available only with explicit consent enabled"
-  },
-  "geminiSelectorFixesChecking": {
-    "message": "正在檢查…",
-    "description": "A Gemini selector check is in progress"
-  },
-  "geminiSelectorFixesUpdated": {
-    "message": "已下載新的修復，重新整理 Gemini 後生效。",
-    "description": "Downloaded selector data is used on the next full page load"
-  },
-  "geminiSelectorFixesUpToDate": {
-    "message": "已是最新，沒有新的修復。",
-    "description": "Successful check without new selector fixes; do not ask the user to refresh"
-  },
-  "geminiSelectorFixesFailed": {
-    "message": "檢查失敗，繼續使用目前的規則。",
-    "description": "A check failed; Voyager keeps the rules it already uses, which may be only the bundled ones"
-  },
-  "geminiSelectorFixesUnavailable": {
-    "message": "此版本不提供線上修復。",
-    "description": "Online selector fixes are disabled at build time"
-  },
-  "geminiSelectorFixesSaveFailed": {
-    "message": "無法儲存變更，請再試一次。",
-    "description": "Consent or cache cleanup failed; show the setting confirmed by the background"
-  },
-  "geminiSelectorFixesTurnOnInGemini": {
-    "message": "請在 Gemini 頁面中開啟。",
-    "description": "Shown on a non-Gemini tab after the user turned the online fixes off there; turning on needs a Gemini tab"
   }
 }

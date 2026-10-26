@@ -10,8 +10,8 @@ the timeline and copy, and turning the feature off puts the original text back.
 ## Delivery and control
 
 - Ships inside the extension and updates only with a Voyager release. It is
-  never published to or replaced by the online plugin catalog, and Gemini pages
-  make no catalog request for it.
+  never published to or replaced by the online plugin catalog. Consumer Gemini
+  can receive page-locator fixes through the shared Online updates setting.
 - Controlled by the "Render LaTeX in my messages" switch in Voyager's Gemini
   settings (`gvUserLatexEnabled`, on by default). It has no switch or settings
   of its own; the native module reads the same key.

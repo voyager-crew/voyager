@@ -15,7 +15,10 @@ import { logger } from '@/core/services/LoggerService';
 import { StorageKeys } from '@/core/types/common';
 import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContext';
 
+import { requireBundledSiteAdapter } from '../catalog/sites';
 import { validateManifest } from '../manifest/validate';
+import { isGeminiSelectorHost, isStaticallyInjectedHost } from '../sites/hostPolicy';
+import { matchesAnyPattern } from '../sites/matchPattern';
 import { type SiteAdapterData, readSiteAdapterData } from '../sites/siteAdapterData';
 import type { PluginManifest, SiteAdapter } from '../types';
 import { readCatalogRevocations } from './catalogRevocations';
@@ -120,7 +123,21 @@ export function siteAdapterFromEntry(
   if (!entry || entry.status !== 'ok' || entry.extensionVersion !== extensionVersion) return null;
   if (!entry.site) return null;
   const { result } = readSiteAdapterData(entry.site);
-  return result.success ? result.data : null;
+  if (!result.success) return null;
+  if (!isStaticallyInjectedHost(entry.host)) return result.data;
+  if (
+    !isGeminiSelectorHost(entry.host) ||
+    result.data.id !== 'gemini' ||
+    !matchesAnyPattern(`https://${entry.host}/`, result.data.matches)
+  )
+    return null;
+  // A locator update cannot change native routing, identity, theme or feature admission.
+  const bundled = requireBundledSiteAdapter('gemini');
+  return {
+    ...bundled,
+    catalogRevision: result.data.catalogRevision,
+    ...(result.data.locators ? { locators: result.data.locators } : {}),
+  };
 }
 
 export async function loadHostCatalogCache(host: string): Promise<HostCatalogCacheEntry | null> {

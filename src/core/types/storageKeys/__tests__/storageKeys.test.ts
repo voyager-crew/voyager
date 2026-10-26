@@ -23,7 +23,7 @@ describe('StorageKeys', () => {
   it('keeps every group key after the merge, so no spread overwrote another', () => {
     const groupKeyCount = GROUPS.reduce((count, group) => count + Object.keys(group).length, 0);
 
-    expect(Object.keys(StorageKeys)).toHaveLength(196);
+    expect(Object.keys(StorageKeys)).toHaveLength(193);
     expect(groupKeyCount).toBe(Object.keys(StorageKeys).length);
   });
 

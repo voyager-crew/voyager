@@ -141,9 +141,9 @@ export function usePopupPlugins({
   const refresh = useCallback(async () => {
     setPluginsRefreshing(true);
     try {
-      // Manual check (plan D4): always allowed, bypasses the interval, the
-      // online-update switch and any failure backoff. The background fetches;
-      // the popup only re-reads the cache afterwards.
+      // Manual checks bypass the interval and backoff; the background still
+      // enforces the shared online-updates switch. The popup only re-reads
+      // the cache afterwards.
       if (pluginCatalogHost) {
         try {
           await browser.runtime.sendMessage({

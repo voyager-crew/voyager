@@ -12,7 +12,7 @@ on:
       - 'scripts/build-plugin-catalog.ts'
       - 'scripts/lib/catalogRevision.ts'
       - 'scripts/lib/buildPluginCatalog.ts'
-      - 'scripts/lib/buildGeminiSelectorFixes.ts'
+      - 'scripts/lib/buildSiteLocators.ts'
       - 'src/core/gemini/selectors/**'
       - 'src/features/plugins/catalog/**'
       - 'src/features/plugins/sites/**'
@@ -142,7 +142,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      # Writes plugin host files plus the separate Gemini selector-only files.
+      # Writes one catalog host file per supported host, including Gemini locator profiles.
       # VitePress copies docs/public/ to the dist root under /catalog/.
       - name: Build plugin catalog
         run: bun run catalog:build

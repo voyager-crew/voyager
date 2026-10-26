@@ -1,22 +1,25 @@
 import type { TranslationKey } from '@/utils/translations';
 
-import type { GeminiSelectorFixesControl } from '../hooks/useGeminiSelectorFixes';
 import type { GeneralPopupSettings } from '../hooks/useGeneralPopupSettings';
-import { GeminiSelectorFixesCard } from './GeminiSelectorFixesCard';
 import { GeneralSettingsCard } from './GeneralSettingsCard';
+import { NativeCatalogUpdatesCard } from './NativeCatalogUpdatesCard';
 
 interface PopupGeneralSettingsProps {
   settings: GeneralPopupSettings;
-  selectorFixes: GeminiSelectorFixesControl;
+  catalogHost?: string;
+  refreshing: boolean;
+  onRefresh: () => void;
   canUseSystemNotifications: boolean;
   isVisible: (settingId: string) => boolean;
   t: (key: TranslationKey) => string;
 }
 
-/** Keep the new control beside General without changing the user's saved section order. */
+/** Native sites share the catalog controls in their existing General section. */
 export function PopupGeneralSettings({
   settings,
-  selectorFixes,
+  catalogHost,
+  refreshing,
+  onRefresh,
   canUseSystemNotifications,
   isVisible,
   t,
@@ -36,7 +39,12 @@ export function PopupGeneralSettings({
         isVisible={isVisible}
         t={t}
       />
-      <GeminiSelectorFixesCard control={selectorFixes} isVisible={isVisible} t={t} />
+      <NativeCatalogUpdatesCard
+        catalogHost={catalogHost}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        visible={isVisible('onlineUpdates')}
+      />
     </div>
   );
 }

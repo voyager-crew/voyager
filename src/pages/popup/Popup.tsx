@@ -44,7 +44,6 @@ import {
 } from './hooks/useCatalogTimelineSettings';
 import { useFolderPopupSettings } from './hooks/useFolderPopupSettings';
 import { useFolderStructureCopy } from './hooks/useFolderStructureCopy';
-import { useGeminiSelectorFixes } from './hooks/useGeminiSelectorFixes';
 import { useGeneralPopupSettings } from './hooks/useGeneralPopupSettings';
 import { useNativeHealth } from './hooks/useNativeHealth';
 import { usePopupBrandTheme } from './hooks/usePopupBrandTheme';
@@ -147,7 +146,6 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
       ? plugins.legacySettings[StorageKeys.RESPONSE_COMPLETE_NOTIFICATION_ENABLED] === true
       : undefined,
   });
-  const selectorFixes = useGeminiSelectorFixes(tab, sourceTabId);
   const layout = usePopupLayoutSettings({ isAIStudio });
   const promptManager = usePromptManagerSettings({
     t,
@@ -390,7 +388,9 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
           'general',
           <PopupGeneralSettings
             settings={general}
-            selectorFixes={selectorFixes}
+            catalogHost={tab.activeTabContextLoaded ? plugins.pluginCatalogHost : undefined}
+            refreshing={plugins.pluginsRefreshing}
+            onRefresh={plugins.refresh}
             canUseSystemNotifications={canUseSystemNotifications}
             isVisible={(settingId) => sections.shouldShowSetting('general', settingId)}
             t={t}

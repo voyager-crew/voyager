@@ -33,11 +33,9 @@
  * silently discarded by every client.
  *
  * Gemini and AI Studio (`sites/gemini`, `sites/aistudio`) are read and checked
- * like every site, so a broken manifest there still fails the build, but no
- * plugin catalog host file is written for their hosts: `hostPolicy.allowsRemoteCatalog`
- * keeps them packaged only (D14), and the stale-file sweep removes any left behind.
- * `main` also invokes the separate Gemini selector-only publisher; it never adds
- * Gemini to this plugin catalog or changes an adapter remotely.
+ * like every site, so a broken manifest there still fails the build. Gemini consumer
+ * pages receive locator profiles in their host file; native plugins stay packaged.
+ * AI Studio and Gemini Business still have no published host file (D14).
  *
  * Output is deterministic — sites, hosts and plugin ids are sorted — so a re-run
  * with the same `generatedAt` produces byte-identical files.
@@ -54,7 +52,10 @@ import {
   HOST_CATALOG_FORMAT,
   validateHostCatalogFile,
 } from '../../src/features/plugins/remote/hostCatalogFile';
-import { allowsRemoteCatalog } from '../../src/features/plugins/sites/hostPolicy';
+import {
+  allowsRemoteCatalog,
+  isStaticallyInjectedHost,
+} from '../../src/features/plugins/sites/hostPolicy';
 import { matchesAnyPattern } from '../../src/features/plugins/sites/matchPattern';
 import {
   OLDEST_REMOTE_SITE_CONSUMER_VERSION,
@@ -68,7 +69,7 @@ import {
 } from '../../src/features/plugins/sites/siteAdapterData';
 import { resolveStyleFileContributions } from '../../src/features/plugins/sources/styleFiles';
 import type { PluginManifest, SiteAdapter } from '../../src/features/plugins/types';
-import { writeGeminiSelectorFiles } from './buildGeminiSelectorFixes';
+import { readPublishedSiteLocators } from './buildSiteLocators';
 import { getCatalogRevision } from './catalogRevision';
 import { pluginCoversHost, readSiteRevocations } from './catalogRevocations';
 import {
@@ -187,7 +188,9 @@ async function readCatalogSites(catalogDir: string): Promise<readonly CatalogSit
 
   const sites: CatalogSite[] = [];
   for (const dir of listSubdirectories(sitesRoot)) {
-    const adapter = readSiteAdapter(catalogDir, dir);
+    const base = readSiteAdapter(catalogDir, dir);
+    const locators = readPublishedSiteLocators(catalogDir, dir);
+    const adapter = locators ? { ...base, locators } : base;
     const plugins = await readSitePlugins(catalogDir, { dir, adapter });
     const revoked = readSiteRevocations(catalogDir, dir, plugins);
     sites.push({ dir, adapter, plugins, revoked });
@@ -250,21 +253,25 @@ export async function buildHostCatalogs(
         ...site.plugins.flatMap((plugin) => concreteHosts(plugin.matches)),
       ].filter(allowsRemoteCatalog),
     );
-    if (existsSync(join(options.catalogDir, 'sites', site.dir, 'revoked.json')) && !hosts.size) {
+    // A locator-only native host has no remote plugin authority, including revocations.
+    if (
+      existsSync(join(options.catalogDir, 'sites', site.dir, 'revoked.json')) &&
+      ![...hosts].some((host) => !isStaticallyInjectedHost(host))
+    ) {
       throw new Error(
         `sites/${site.dir}/revoked.json: no concrete host allows remote catalog publication; revocations would never reach clients`,
       );
     }
     // A narrowed matches list must also stop bundled copies on the site's other hosts.
-    if (site.plugins.length || site.revoked?.length) {
+    if (site.plugins.length || site.revoked?.length || site.adapter.locators) {
       for (const host of hosts) {
         if (!byHost.has(host)) byHost.set(host, []);
       }
     }
     for (const manifest of site.plugins) {
       for (const host of concreteHosts(manifest.matches)) {
-        // Gemini and AI Studio data is packaged only (D14): validated above, never published.
-        if (!allowsRemoteCatalog(host)) continue;
+        // Native official plugins are validated above but remain packaged.
+        if (!allowsRemoteCatalog(host) || isStaticallyInjectedHost(host)) continue;
         const bucket = byHost.get(host);
         if (bucket) bucket.push(manifest);
         else byHost.set(host, [manifest]);
@@ -285,14 +292,16 @@ export async function buildHostCatalogs(
       throw new Error(`${host}: no site.json under sites/ covers this host`);
     }
     assertPublishableSemanticKeys(host, site);
-    const revoked = [
-      ...new Set([
-        ...(site.revoked ?? []),
-        ...site.plugins
-          .filter((plugin) => !pluginCoversHost(plugin.matches, host))
-          .map((plugin) => plugin.id),
-      ]),
-    ].sort(compareStrings);
+    const revoked = isStaticallyInjectedHost(host)
+      ? []
+      : [
+          ...new Set([
+            ...(site.revoked ?? []),
+            ...site.plugins
+              .filter((plugin) => !pluginCoversHost(plugin.matches, host))
+              .map((plugin) => plugin.id),
+          ]),
+        ].sort(compareStrings);
     files.set(host, {
       format: HOST_CATALOG_FORMAT,
       host,
@@ -397,11 +406,6 @@ export async function main(): Promise<void> {
     catalogDir: DEFAULT_CATALOG_DIR,
     outDir: options.outDir,
     generatedAt: options.now,
-    catalogRevision,
-  });
-  writeGeminiSelectorFiles({
-    catalogDir: DEFAULT_CATALOG_DIR,
-    outDir: options.outDir,
     catalogRevision,
   });
 

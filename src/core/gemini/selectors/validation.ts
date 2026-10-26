@@ -1,16 +1,12 @@
 import {
-  GEMINI_SELECTOR_HOSTS,
   GEMINI_SELECTOR_PROFILE_KEYS,
-  type GeminiSelectorFile,
-  type GeminiSelectorHost,
+  type GeminiSelectorPatch,
   type GeminiSelectorProfileKey,
 } from './types';
 
 export const MAX_GEMINI_SELECTOR_BYTES = 65_536;
 export const MAX_GEMINI_SELECTOR_LENGTH = 2_048;
 export const MAX_GEMINI_SELECTOR_LIST_LENGTH = 32;
-
-const ENVELOPE_KEYS = ['format', 'site', 'host', 'catalogRevision', 'selectors'] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -22,28 +18,10 @@ export function isGeminiSelectorProfileKey(key: string): key is GeminiSelectorPr
   return (GEMINI_SELECTOR_PROFILE_KEYS as readonly string[]).includes(key);
 }
 
-/** Shared shape/size guard; the page checks native syntax before adopting any patch. */
-export function readGeminiSelectorFile(
-  value: unknown,
-  expectedHost: string,
-): GeminiSelectorFile | null {
+/** Catalog site data and bundled fragments share this shape/size guard. */
+export function readGeminiSelectorProfiles(value: unknown): GeminiSelectorPatch | null {
   if (!isRecord(value)) return null;
-  if (
-    Object.keys(value).length !== ENVELOPE_KEYS.length ||
-    !Object.keys(value).every((key) => (ENVELOPE_KEYS as readonly string[]).includes(key)) ||
-    value.format !== 1 ||
-    value.site !== 'gemini' ||
-    value.host !== expectedHost ||
-    !(GEMINI_SELECTOR_HOSTS as readonly string[]).includes(expectedHost) ||
-    typeof value.catalogRevision !== 'number' ||
-    !Number.isSafeInteger(value.catalogRevision) ||
-    value.catalogRevision <= 0 ||
-    !isRecord(value.selectors)
-  ) {
-    return null;
-  }
-  const format = value.format;
-  const entries = Object.entries(value.selectors);
+  const entries = Object.entries(value);
   if (entries.length > GEMINI_SELECTOR_PROFILE_KEYS.length) return null;
   const selectors: Partial<Record<GeminiSelectorProfileKey, readonly string[]>> = {};
   for (const [key, list] of entries) {
@@ -77,13 +55,7 @@ export function readGeminiSelectorFile(
   } catch {
     return null;
   }
-  return Object.freeze({
-    format,
-    site: 'gemini',
-    host: expectedHost as GeminiSelectorHost,
-    catalogRevision: value.catalogRevision,
-    selectors: Object.freeze(selectors),
-  });
+  return Object.freeze(selectors);
 }
 
 /** Each bundled fragment owns exactly its declared keys, including before fragments are merged. */
@@ -91,24 +63,15 @@ export function readGeminiSelectorProfileGroup<Key extends GeminiSelectorProfile
   value: unknown,
   keys: readonly Key[],
 ): Readonly<Record<Key, readonly string[]>> | null {
-  const file = readGeminiSelectorFile(
-    {
-      format: 1,
-      site: 'gemini',
-      host: 'gemini.google.com',
-      catalogRevision: 1,
-      selectors: value,
-    },
-    'gemini.google.com',
-  );
+  const profiles = readGeminiSelectorProfiles(value);
   if (
-    !file ||
-    Object.keys(file.selectors).length !== keys.length ||
-    keys.some((key) => !file.selectors[key])
+    !profiles ||
+    Object.keys(profiles).length !== keys.length ||
+    keys.some((key) => !profiles[key])
   ) {
     return null;
   }
-  return file.selectors as Readonly<Record<Key, readonly string[]>>;
+  return profiles as Readonly<Record<Key, readonly string[]>>;
 }
 
 /** C0 control characters other than tab, line feed, form feed and carriage return. */

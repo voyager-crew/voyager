@@ -440,9 +440,11 @@ describe('plugin setting writes checked against the real plugin listing', () => 
     expect(response).toEqual({ ok: true });
   });
 
-  it('never reads a catalog for a native surface', async () => {
+  it('refuses settings for a remote plugin on Gemini while preserving installed settings', async () => {
     const timeline = await bundledTimeline();
     const gemini = 'https://gemini.google.com/app';
+    const installed = { 'local.me.gemini': { enabled: true, installedAt: 1 } };
+    memory[STATE] = installed;
     cacheCatalog('gemini.google.com', [
       { ...timeline, id: 'voyager.gemini-remote', matches: ['https://gemini.google.com/*'] },
     ]);
@@ -452,9 +454,6 @@ describe('plugin setting writes checked against the real plugin listing', () => 
       noFinder(),
     );
     expect(response).toEqual({ ok: false, error: 'invalid_payload' });
-    const reads = (chrome.storage.local.get as unknown as Mock).mock.calls.flatMap(([keys]) =>
-      Object.keys(keys as Record<string, unknown>),
-    );
-    expect(reads).not.toContain(hostCatalogStorageKey('gemini.google.com'));
+    expect(memory[STATE]).toEqual(installed);
   });
 });

@@ -94,9 +94,8 @@ export function makeFixtureCatalog(overrides: FixtureOverrides = {}): string {
   return catalogDir;
 }
 
-/** Hosts Voyager ships with; no catalog file may ever be published for them (D14). */
+/** Native hosts outside the catalog channel (D14). */
 export const PACKAGED_HOSTS = [
-  'gemini.google.com',
   'business.gemini.google',
   'aistudio.google.com',
   'aistudio.google.cn',

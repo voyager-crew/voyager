@@ -14,11 +14,9 @@ describe('online turn profile getter', () => {
       lifetime: new AbortController().signal,
       bundledRevision: 0,
       read: async () => ({
-        format: 1,
-        site: 'gemini',
-        host: 'gemini.google.com',
+        id: 'gemini',
         catalogRevision: 1,
-        selectors: {
+        locators: {
           'turn.user': ['.online-user'],
           'turn.userWithHosts': ['.online-user-host'],
           'turn.assistant': ['.online-answer'],

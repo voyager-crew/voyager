@@ -2962,8 +2962,8 @@
     "description": "Shown when no plugins are available"
   },
   "pluginsRefresh": {
-    "message": "التحقق من تحديثات الإضافات الآن",
-    "description": "Tooltip for the manual plugin-update check button"
+    "message": "التحقق من التحديثات الآن",
+    "description": "Label and tooltip for the manual catalog update check button"
   },
   "pluginSourceBuiltin": {
     "message": "مدمجة",
@@ -3302,12 +3302,12 @@
     "description": "Note shown when a plugin update is held back because it needs a newer Voyager; {version} is the held-back version"
   },
   "pluginsOnlineUpdates": {
-    "message": "تحديثات الإضافات عبر الإنترنت",
-    "description": "Label for the switch that allows online plugin update checks for this site"
+    "message": "التحديثات عبر الإنترنت",
+    "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "يبحث في voyager.nagi.fun عن تحديثات الإضافات لهذا الموقع — يُرسَل اسم الموقع فقط، دون ملفات ارتباط أو محتوى الصفحة. عند الإيقاف، لا يتصل سوى زر التحديث أعلاه.",
-    "description": "Explains what the online plugin update check sends and when it runs"
+    "message": "يتحقق من تحديثات الإضافات وإصلاحات التعرّف على صفحات Gemini عبر voyager.nagi.fun. يرسل اسم الموقع فقط، دون ملفات ارتباط أو محتوى الصفحة. إيقافه يمنع التحقق التلقائي واليدوي.",
+    "description": "Explains catalog updates, Gemini page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {
     "message": "التحقق كل",
@@ -4417,49 +4417,5 @@
   },
   "export_read_history_unavailable": {
     "message": "تعذّرت قراءة سجل المحادثة كاملًا. مرّر لأعلى لتحميل الرسائل الأقدم، ثم حاول مرة أخرى."
-  },
-  "geminiSelectorFixesTitle": {
-    "message": "إصلاحات التعرّف على صفحات Gemini عبر الإنترنت",
-    "description": "Switch for Gemini page detection fixes; covered areas are listed in the hint; off by default"
-  },
-  "geminiSelectorFixesHint": {
-    "message": "يجلب من voyager.nagi.fun إصلاحات للتعرّف على عناصر الصفحة للمحادثات والشريط الجانبي والمجلدات وقائمة النماذج وقوائم المحادثات والتصدير وشريط تحديد الرسائل للتصدير ومنطقة النقر على زر فتح الشريط الجانبي وإغلاقه ومناطق تمرير المؤشر على الشريط الجانبي ومحتوى الرسائل للتصدير والتفرّع وصور السياق وإجراءات الردود وحزمة البحث وعرض الاستخدام وكتل الشيفرة والمخططات والفقرات التي تحتوي على LaTeX في رسائلك وصور نتائج البحث في الملفات المصدَّرة وأزرار تنزيل الصور المُنشأة وتصدير شيفرة Canvas والشريط الجانبي لـ Gems وحقل كتابة الرسائل وطيّ حقل الإدخال ووضع Vim وسجل المطالبات وأوامر الشرطة المائلة ومعاينات المطالبات المرسلة وميزة «المجلد كمشروع» ونشاط المجلدات، مع التحقق مرة كل 6 ساعات على الأكثر. لا يُرسَل أي محتوى من الصفحة. متوقف افتراضيًا.",
-    "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
-  },
-  "geminiSelectorFixesOff": {
-    "message": "متوقف: لا يتم البحث عن إصلاحات، حتى يدويًا. تواصل صفحات Gemini المفتوحة استخدام قواعدها الحالية حتى تعيد تحميلها.",
-    "description": "Off blocks all selector requests; open pages keep their snapshot until refreshed"
-  },
-  "geminiSelectorFixesCheckNow": {
-    "message": "التحقق الآن",
-    "description": "Manual selector check, available only with explicit consent enabled"
-  },
-  "geminiSelectorFixesChecking": {
-    "message": "جارٍ التحقق…",
-    "description": "A Gemini selector check is in progress"
-  },
-  "geminiSelectorFixesUpdated": {
-    "message": "تم تنزيل إصلاحات جديدة. أعد تحميل Gemini لتطبيقها.",
-    "description": "Downloaded selector data is used on the next full page load"
-  },
-  "geminiSelectorFixesUpToDate": {
-    "message": "محدّث. لا توجد إصلاحات جديدة.",
-    "description": "Successful check without new selector fixes; do not ask the user to refresh"
-  },
-  "geminiSelectorFixesFailed": {
-    "message": "تعذّر التحقق. يواصل Voyager استخدام قواعده الحالية.",
-    "description": "A check failed; Voyager keeps the rules it already uses, which may be only the bundled ones"
-  },
-  "geminiSelectorFixesUnavailable": {
-    "message": "الإصلاحات عبر الإنترنت غير متاحة في هذا الإصدار.",
-    "description": "Online selector fixes are disabled at build time"
-  },
-  "geminiSelectorFixesSaveFailed": {
-    "message": "تعذّر حفظ التغيير. حاول مجددًا.",
-    "description": "Consent or cache cleanup failed; show the setting confirmed by the background"
-  },
-  "geminiSelectorFixesTurnOnInGemini": {
-    "message": "افتح Gemini لتفعيل هذا الخيار.",
-    "description": "Shown on a non-Gemini tab after the user turned the online fixes off there; turning on needs a Gemini tab"
   }
 }

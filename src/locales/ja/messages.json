@@ -2962,8 +2962,8 @@
     "description": "Shown when no plugins are available"
   },
   "pluginsRefresh": {
-    "message": "プラグインの更新を今すぐ確認",
-    "description": "Tooltip for the manual plugin-update check button"
+    "message": "今すぐ更新を確認",
+    "description": "Label and tooltip for the manual catalog update check button"
   },
   "pluginSourceBuiltin": {
     "message": "内蔵",
@@ -3302,12 +3302,12 @@
     "description": "Note shown when a plugin update is held back because it needs a newer Voyager; {version} is the held-back version"
   },
   "pluginsOnlineUpdates": {
-    "message": "プラグインのオンライン更新",
-    "description": "Label for the switch that allows online plugin update checks for this site"
+    "message": "オンライン更新",
+    "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "このサイト向けのプラグイン更新を voyager.nagi.fun で確認します。送信するのはサイト名だけで、Cookie やページ内容は送りません。オフにすると、上の更新ボタンだけが通信します。",
-    "description": "Explains what the online plugin update check sends and when it runs"
+    "message": "voyager.nagi.fun でプラグインの更新と Gemini のページ認識の修正を確認します。送信するのはサイト名のみで、Cookie やページの内容は送りません。オフにすると自動・手動の確認が停止します。",
+    "description": "Explains catalog updates, Gemini page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {
     "message": "確認する間隔",
@@ -4417,49 +4417,5 @@
   },
   "export_read_history_unavailable": {
     "message": "会話の履歴をすべて読み込めませんでした。上にスクロールして以前のメッセージを読み込んでから、もう一度お試しください。"
-  },
-  "geminiSelectorFixesTitle": {
-    "message": "Gemini ページ認識のオンライン修正",
-    "description": "Switch for Gemini page detection fixes; covered areas are listed in the hint; off by default"
-  },
-  "geminiSelectorFixesHint": {
-    "message": "voyager.nagi.fun から、会話、サイドバー、フォルダー、モデルメニュー、会話・エクスポートメニュー、エクスポートの選択バー、サイドバー開閉ボタンのクリック領域とサイドバーのホバー領域、エクスポートと分岐に使うメッセージ本文、コンテキスト画像、返信とリサーチパックの操作、使用量表示、コードブロックと図、自分のメッセージ内の LaTeX を含む段落、エクスポートに含まれる検索結果の画像、生成画像のダウンロードボタン、Canvas のコードのエクスポート、Gems サイドバー、メッセージ入力欄、入力欄の折りたたみ、Vim モード、プロンプト履歴、スラッシュコマンド、送信済みプロンプトのプレビュー、「フォルダをプロジェクトとして」、フォルダーのアクティビティの認識に関する修正を取得します。確認は 6 時間に 1 回までで、ページの内容は送信しません。初期設定はオフです。",
-    "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
-  },
-  "geminiSelectorFixesOff": {
-    "message": "オフ：手動を含め、修正を確認しません。開いている Gemini ページは、再読み込みするまで現在のルールを使います。",
-    "description": "Off blocks all selector requests; open pages keep their snapshot until refreshed"
-  },
-  "geminiSelectorFixesCheckNow": {
-    "message": "今すぐ確認",
-    "description": "Manual selector check, available only with explicit consent enabled"
-  },
-  "geminiSelectorFixesChecking": {
-    "message": "確認中…",
-    "description": "A Gemini selector check is in progress"
-  },
-  "geminiSelectorFixesUpdated": {
-    "message": "新しい修正をダウンロードしました。Gemini を再読み込みすると反映されます。",
-    "description": "Downloaded selector data is used on the next full page load"
-  },
-  "geminiSelectorFixesUpToDate": {
-    "message": "最新です。新しい修正はありません。",
-    "description": "Successful check without new selector fixes; do not ask the user to refresh"
-  },
-  "geminiSelectorFixesFailed": {
-    "message": "確認できませんでした。現在のルールを引き続き使用します。",
-    "description": "A check failed; Voyager keeps the rules it already uses, which may be only the bundled ones"
-  },
-  "geminiSelectorFixesUnavailable": {
-    "message": "このバージョンではオンライン修正を利用できません。",
-    "description": "Online selector fixes are disabled at build time"
-  },
-  "geminiSelectorFixesSaveFailed": {
-    "message": "変更を保存できませんでした。もう一度お試しください。",
-    "description": "Consent or cache cleanup failed; show the setting confirmed by the background"
-  },
-  "geminiSelectorFixesTurnOnInGemini": {
-    "message": "オンにするには Gemini を開いてください。",
-    "description": "Shown on a non-Gemini tab after the user turned the online fixes off there; turning on needs a Gemini tab"
   }
 }

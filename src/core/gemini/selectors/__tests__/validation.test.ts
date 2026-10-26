@@ -1,72 +1,41 @@
 import { describe, expect, it } from 'vitest';
 
-import { readGeminiSelectorFile } from '../validation';
+import { readGeminiSelectorProfiles } from '../validation';
 
-function file(selectors: unknown): Record<string, unknown> {
-  return {
-    format: 1,
-    site: 'gemini',
-    host: 'gemini.google.com',
-    catalogRevision: 20,
-    selectors,
-  };
-}
-
-describe('Gemini selector file validation', () => {
-  it('preserves list order and accepts an empty withdrawal patch', () => {
+describe('Gemini catalog locator validation', () => {
+  it('preserves list order and accepts an empty withdrawal', () => {
     expect(
-      readGeminiSelectorFile(file({ 'turn.user': ['.second', '.first'] }), 'gemini.google.com')
-        ?.selectors['turn.user'],
+      readGeminiSelectorProfiles({ 'turn.user': ['.second', '.first'] })?.['turn.user'],
     ).toEqual(['.second', '.first']);
-    expect(readGeminiSelectorFile(file({}), 'gemini.google.com')?.selectors).toEqual({});
+    expect(readGeminiSelectorProfiles({})).toEqual({});
   });
 
-  it('rejects capabilities, CSS and unknown profile keys instead of carrying them through', () => {
-    expect(
-      readGeminiSelectorFile({ ...file({}), capabilities: [] }, 'gemini.google.com'),
-    ).toBeNull();
-    expect(readGeminiSelectorFile({ ...file({}), css: 'body{}' }, 'gemini.google.com')).toBeNull();
-    expect(
-      readGeminiSelectorFile(file({ 'chatWidth.userTurn': ['.user'] }), 'gemini.google.com'),
-    ).toBeNull();
-    expect(
-      readGeminiSelectorFile(file({ 'turn.future': ['.user'] }), 'gemini.google.com'),
-    ).toBeNull();
-  });
+  it.each(['capabilities', 'css', 'chatWidth.userTurn', 'turn.future'])(
+    'rejects %s while accepting the consumed turn profile',
+    (key) => {
+      expect(readGeminiSelectorProfiles({ [key]: ['.user'] })).toBeNull();
+      expect(readGeminiSelectorProfiles({ 'turn.user': ['.user'] })).toEqual({
+        'turn.user': ['.user'],
+      });
+    },
+  );
 
-  it('rejects the wrong host, AI Studio and non-integer revisions', () => {
-    expect(readGeminiSelectorFile(file({}), 'business.gemini.google')).toBeNull();
-    expect(
-      readGeminiSelectorFile({ ...file({}), host: 'aistudio.google.com' }, 'aistudio.google.com'),
-    ).toBeNull();
-    for (const revision of [0, -1, 1.5, Infinity, Number.MAX_SAFE_INTEGER + 1, '20']) {
-      expect(
-        readGeminiSelectorFile({ ...file({}), catalogRevision: revision }, 'gemini.google.com'),
-      ).toBeNull();
-    }
-  });
+  it.each([[], [''], ['  '], [null], ['.a\u0000'], ['a'.repeat(2049)], Array(33).fill('.a'), '.a'])(
+    'rejects malformed lists while leaving a valid profile readable: %j',
+    (value) => {
+      expect(readGeminiSelectorProfiles({ 'turn.user': value })).toBeNull();
+      expect(readGeminiSelectorProfiles({ 'turn.user': ['.valid'] })?.['turn.user']).toEqual([
+        '.valid',
+      ]);
+    },
+  );
 
-  it('rejects empty, oversized, non-string and control-character entries', () => {
-    for (const value of [
-      [],
-      [''],
-      ['  '],
-      [null],
-      ['.a\u0000'],
-      ['a'.repeat(2049)],
-      Array(33).fill('.a'),
-    ]) {
-      expect(readGeminiSelectorFile(file({ 'turn.user': value }), 'gemini.google.com')).toBeNull();
-    }
-    expect(readGeminiSelectorFile(file({ 'turn.user': '.a' }), 'gemini.google.com')).toBeNull();
-  });
-
-  it('bounds cached UTF-8 bytes as well as individual UTF-16 strings', () => {
+  it('bounds UTF-8 bytes as well as individual UTF-16 strings', () => {
     expect(
-      readGeminiSelectorFile(
-        file({ 'turn.user': Array(32).fill('界'.repeat(2048)) }),
-        'gemini.google.com',
-      ),
+      readGeminiSelectorProfiles({ 'turn.user': Array(32).fill('界'.repeat(2048)) }),
     ).toBeNull();
+    expect(readGeminiSelectorProfiles({ 'turn.user': ['界'.repeat(2048)] })?.['turn.user']).toEqual(
+      ['界'.repeat(2048)],
+    );
   });
 });

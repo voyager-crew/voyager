@@ -4,28 +4,36 @@ import { getGeminiTurnView } from '@/core/gemini/selectors';
 import { getGeminiBundledRevision } from '@/core/gemini/selectors/bundle';
 import { StorageKeys } from '@/core/types/common';
 import { EXTENSION_VERSION } from '@/core/utils/version';
-import { geminiSelectorCacheKey } from '@/features/geminiSelectorFixes/cache';
+import geminiSite from '@/features/plugins/catalog/sites/gemini/site.json';
+import { hostCatalogStorageKey } from '@/features/plugins/remote/hostCatalogCache';
 
 import { startPageGeminiSelectors } from '../pageSelectorStartup';
 
 const stops: Array<() => void> = [];
 const host = 'gemini.google.com';
-const consentKey = StorageKeys.GEMINI_SELECTOR_ONLINE_FIXES;
+const updatesKey = StorageKeys.PLUGIN_ONLINE_UPDATES_ENABLED;
 
-function stored(enabled: boolean): Record<string, unknown> {
+function userTexts(): Array<string | null> {
+  return Array.from(
+    document.querySelectorAll(getGeminiTurnView().profiles['turn.user'].join(',')),
+    (node) => node.textContent,
+  );
+}
+
+function stored(): Record<string, unknown> {
   return {
-    [consentKey]: enabled,
-    [geminiSelectorCacheKey(host)]: {
-      format: 1,
+    [hostCatalogStorageKey(host)]: {
       host,
+      status: 'ok',
+      manifests: [],
       extensionVersion: EXTENSION_VERSION,
       fetchedAt: 10,
-      file: {
-        format: 1,
-        site: 'gemini',
-        host,
+      lastAttemptAt: 10,
+      failureCount: 0,
+      site: {
+        ...geminiSite,
         catalogRevision: getGeminiBundledRevision() + 1,
-        selectors: { 'turn.user': ['.new-user'] },
+        locators: { 'turn.user': ['.new-user'] },
       },
     },
   };
@@ -42,41 +50,49 @@ function start(
 
 beforeEach(() => {
   vi.clearAllMocks();
+  document.body.innerHTML =
+    '<div class="user-query-container">Bundled turn</div><div class="new-user">Catalog turn</div>';
   vi.stubEnv('VOYAGER_PLUGIN_CATALOG_REMOTE', 'on');
-  vi.stubEnv('VOYAGER_GEMINI_SELECTOR_REMOTE', 'on');
+  vi.mocked(chrome.storage.sync.get).mockResolvedValue({ [updatesKey]: true } as never);
 });
 
 afterEach(() => {
   for (const stop of stops.splice(0)) stop();
   vi.unstubAllEnvs();
   vi.useRealTimers();
+  document.body.replaceChildren();
 });
 
 describe('Gemini startup hydration', () => {
   it('finishes OFF without a timer wait, cache adoption or a due-check message', async () => {
     vi.useFakeTimers();
-    vi.mocked(chrome.storage.local.get).mockResolvedValue(stored(false) as never);
+    vi.mocked(chrome.storage.sync.get).mockResolvedValue({ [updatesKey]: false } as never);
+    vi.mocked(chrome.storage.local.get).mockResolvedValue(stored() as never);
     await start().ready;
-    expect(chrome.storage.local.get).toHaveBeenCalledTimes(1);
+    expect(chrome.storage.local.get).not.toHaveBeenCalled();
     expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
+    expect(userTexts()).toEqual(['Bundled turn']);
     expect(getGeminiTurnView().remoteKeys.size).toBe(0);
     expect(vi.getTimerCount()).toBe(0);
   });
 
   it('starts the due check after one cached snapshot without waiting for its response', async () => {
-    vi.mocked(chrome.storage.local.get).mockResolvedValue(stored(true) as never);
+    vi.mocked(chrome.storage.local.get).mockResolvedValue(stored() as never);
     vi.mocked(chrome.runtime.sendMessage).mockImplementation(() => new Promise(() => undefined));
     await start().ready;
+    expect(userTexts()).toEqual(['Catalog turn']);
     expect(getGeminiTurnView().profiles['turn.user']).toEqual(['.new-user']);
     expect(chrome.storage.local.get).toHaveBeenCalledTimes(1);
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-      type: 'gv.geminiSelectors.refresh',
-      host,
-      force: false,
-    });
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
+      {
+        type: 'gv.pluginCatalog.refresh',
+        payload: { host },
+      },
+      expect.any(Function),
+    );
   });
 
-  it('does not adopt an old ON read if consent changed while storage was pending', async () => {
+  it('does not adopt an old ON read if online updates changed while storage was pending', async () => {
     let finish: (value: Record<string, unknown>) => void = () => undefined;
     vi.mocked(chrome.storage.local.get).mockImplementationOnce(
       () =>
@@ -85,11 +101,12 @@ describe('Gemini startup hydration', () => {
         }) as never,
     );
     const startup = start();
-    await Promise.resolve();
+    await vi.waitFor(() => expect(chrome.storage.local.get).toHaveBeenCalledTimes(1));
     const listener = vi.mocked(chrome.storage.onChanged.addListener).mock.calls.at(-1)?.[0];
-    listener?.({ [consentKey]: { oldValue: true, newValue: false } }, 'local');
-    finish(stored(true));
+    listener?.({ [updatesKey]: { oldValue: true, newValue: false } }, 'sync');
+    finish(stored());
     await startup.ready;
+    expect(userTexts()).toEqual(['Bundled turn']);
     expect(getGeminiTurnView().remoteKeys.size).toBe(0);
     expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
   });
@@ -104,11 +121,12 @@ describe('Gemini startup hydration', () => {
     );
     const lifetime = new AbortController();
     const startup = start(lifetime.signal);
-    await Promise.resolve();
+    await vi.waitFor(() => expect(chrome.storage.local.get).toHaveBeenCalledTimes(1));
     lifetime.abort();
     await startup.ready;
-    finish(stored(true));
+    finish(stored());
     await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(userTexts()).toEqual(['Bundled turn']);
     expect(getGeminiTurnView().remoteKeys.size).toBe(0);
     expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
   });
@@ -123,13 +141,14 @@ describe('Gemini startup hydration', () => {
     );
     const lifetime = new AbortController();
     const startup = start(lifetime.signal);
-    await Promise.resolve();
-    finish(stored(true));
+    await vi.waitFor(() => expect(chrome.storage.local.get).toHaveBeenCalledTimes(1));
+    finish(stored());
     startup.stop();
     await startup.ready;
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(lifetime.signal.aborted).toBe(false);
     expect(startup.isCurrent()).toBe(false);
+    expect(userTexts()).toEqual(['Bundled turn']);
     expect(getGeminiTurnView().remoteKeys.size).toBe(0);
     expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
   });
@@ -146,9 +165,10 @@ describe('Gemini startup hydration', () => {
     const startup = start();
     await vi.advanceTimersByTimeAsync(250);
     await startup.ready;
-    finish(stored(true));
+    finish(stored());
     await vi.advanceTimersByTimeAsync(0);
     expect(startup.isCurrent()).toBe(true);
+    expect(userTexts()).toEqual(['Bundled turn']);
     expect(getGeminiTurnView().remoteKeys.size).toBe(0);
     expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();
     const listener = vi.mocked(chrome.storage.onChanged.addListener).mock.calls.at(-1)?.[0];
@@ -163,7 +183,7 @@ describe('Gemini startup hydration', () => {
     ]) {
       await start(undefined, url).ready;
     }
-    vi.stubEnv('VOYAGER_GEMINI_SELECTOR_REMOTE', 'off');
+    vi.stubEnv('VOYAGER_PLUGIN_CATALOG_REMOTE', 'off');
     await start().ready;
     expect(chrome.storage.local.get).not.toHaveBeenCalled();
     expect(chrome.runtime.sendMessage).not.toHaveBeenCalled();

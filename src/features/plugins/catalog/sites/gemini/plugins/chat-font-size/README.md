@@ -19,8 +19,8 @@ or dark theme.
 ## Delivery and control
 
 - Ships inside the extension and updates only with a Voyager release. It is
-  never published to or replaced by the online plugin catalog, and Gemini pages
-  make no catalog request for it.
+  never published to or replaced by the online plugin catalog. Consumer Gemini
+  can receive page-locator fixes through the shared Online updates setting.
 - Controlled by the existing chat font size switch and slider in Voyager's
   Gemini settings (`gvChatFontSizeEnabled`, off by default; `gvChatFontSize`,
   80–150 %, default 100). Its `fontSize` setting is read from that slider; the
