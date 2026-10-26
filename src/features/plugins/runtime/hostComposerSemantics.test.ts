@@ -206,23 +206,28 @@ it('a Voyager component marker cannot be used as a repaired native composer', as
   expect(document.querySelector('.send')?.className).toBe('send');
 });
 
-it('an unsupported remote semantic field cannot escape through the raw cached adapter', () => {
-  document.body.innerHTML = '<textarea class="private">Private draft</textarea>';
+it('an admitted remote composer cannot bypass the frozen OFF view through the cached adapter', () => {
+  page();
+  document.body.insertAdjacentHTML(
+    'beforeend',
+    '<textarea class="private">Private draft</textarea>',
+  );
   const native = requireBundledSiteAdapter('chatgpt');
   mount(
-    { ...native, selectors: { ...native.selectors, thinkingBlock: '.private' } },
+    { ...native, selectors: { ...native.selectors, composer: '.private' } },
     {
       ...manifest,
       contributes: {
         domOps: [
-          { op: 'addClass', target: semanticRef('thinkingBlock'), className: 'gv-wrong-target' },
+          { op: 'addClass', target: semanticRef('composer'), className: 'gv-original-target' },
         ],
       },
     },
   );
-  expect(document.querySelector('textarea')?.outerHTML).toBe(
-    '<textarea class="private">Private draft</textarea>',
-  );
+  expect(
+    Array.from(document.querySelectorAll('.gv-original-target')).map((node) => node.textContent),
+  ).toEqual(['Original draft']);
+  expect(document.querySelector('.private')?.textContent).toBe('Private draft');
 });
 
 it('bundled class operations keep the baseline DOM scan cost and the same visible classes', () => {

@@ -25,7 +25,8 @@ export function captureExportSite(
   site: SiteAdapter,
   doc: Document | undefined = typeof document === 'undefined' ? undefined : document,
 ): ExportSiteRead {
-  if (!getSiteSelectorContract(site.id)) return { site, remoteKeys: new Set<string>() };
+  const contract = getSiteSelectorContract(site.id);
+  if (!contract) return { site, remoteKeys: new Set<string>() };
   const view = getSiteSelectorView(site.id);
   if (!doc || !EXPORT_KEYS.some((key) => view.remoteKeys.has(key))) {
     return { site: withPageSemanticSelectors(site, EXPORT_KEYS), remoteKeys: view.remoteKeys };
@@ -33,6 +34,8 @@ export function captureExportSite(
   const original = { ...site.selectors };
   const selectors: Record<string, string> = { ...original };
   for (const key of EXPORT_KEYS) {
+    // Catalog semantics outside the guarded migration retain their resolved override in both paths.
+    if (!contract.keys.includes(key)) continue;
     Object.defineProperty(selectors, key, {
       enumerable: true,
       get: () => pageSemanticSelectorInView(key, view, doc) ?? original[key],

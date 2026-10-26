@@ -33,26 +33,31 @@ export interface SendTargetReader {
 export function prepareSendTargets(site: SendTargetSource, doc: Document): SendTargetReader {
   const original = { ...site, remoteComposer: false, provedRoot: null };
   const view = site.selectorView;
+  const contract = getSiteSelectorContract(site.siteId);
   // The bundled path keeps its original event and mutation reads, without URL parsing or joins.
   if (
     !view ||
-    !getSiteSelectorContract(site.siteId) ||
+    !contract ||
     !KEYS.some((key) => view.remoteKeys.has(key)) ||
     view.siteId !== getPageSelectorSiteId(doc)
   )
     return { bundled: original };
   const profiles = getBundledSiteSelectorView(site.siteId).profiles;
+  const profile = <K extends keyof TargetSelectors>(
+    key: K,
+    source: SiteSelectorView['profiles'],
+  ) => (contract.keys.includes(key) ? (source[key]?.join(',') ?? site[key]) : site[key]);
   const bundle: TargetSelectors = {
-    composer: profiles.composer?.join(',') ?? site.composer,
-    composerRoot: profiles.composerRoot?.join(',') ?? site.composerRoot,
-    sendButton: profiles.sendButton?.join(',') ?? site.sendButton,
-    userTurn: profiles.userTurn?.join(',') ?? site.userTurn,
+    composer: profile('composer', profiles),
+    composerRoot: profile('composerRoot', profiles),
+    sendButton: profile('sendButton', profiles),
+    userTurn: profile('userTurn', profiles),
   };
   const selected: TargetSelectors = {
-    composer: view.profiles.composer?.join(',') ?? site.composer,
-    composerRoot: view.profiles.composerRoot?.join(',') ?? site.composerRoot,
-    sendButton: view.profiles.sendButton?.join(',') ?? site.sendButton,
-    userTurn: view.profiles.userTurn?.join(',') ?? site.userTurn,
+    composer: profile('composer', view.profiles),
+    composerRoot: profile('composerRoot', view.profiles),
+    sendButton: profile('sendButton', view.profiles),
+    userTurn: profile('userTurn', view.profiles),
   };
   const bundled = { ...bundle, remoteComposer: false, provedRoot: null };
   return {

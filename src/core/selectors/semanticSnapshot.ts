@@ -1,3 +1,4 @@
+import { isSemanticSelectorKey } from '@/features/plugins/sites/semanticKeys';
 import type { SiteAdapter } from '@/features/plugins/types';
 
 import { guardedChatgptSemanticSelector } from './chatgptSemantics';
@@ -14,7 +15,10 @@ export function pageSemanticSelector(
   key: string,
   doc: Document | undefined = typeof document === 'undefined' ? undefined : document,
 ): string | undefined {
-  if (!getSiteSelectorContract(adapter.id)) return adapter.selectors[key];
+  const contract = getSiteSelectorContract(adapter.id);
+  // Existing catalog semantics outside this migration still belong to the resolved adapter.
+  if (!contract || (isSemanticSelectorKey(key) && !contract.keys.includes(key)))
+    return adapter.selectors[key];
   const view = getSiteSelectorView(adapter.id);
   return doc ? pageSemanticSelectorInView(key, view, doc) : view.profiles[key]?.join(',');
 }
@@ -58,7 +62,13 @@ export function withGuardedPageAdapter(
   if (!adapter || adapter.id === 'gemini' || getPageSelectorSiteId(doc) !== adapter.id)
     return adapter;
   const selectors: Record<string, string> = {};
+  const guardedKeys = getSiteSelectorContract(adapter.id)?.keys ?? [];
   for (const key of Object.keys(adapter.selectors)) {
+    // Unmigrated catalog semantics must retain the override accepted before page guards existed.
+    if (!guardedKeys.includes(key)) {
+      selectors[key] = adapter.selectors[key];
+      continue;
+    }
     Object.defineProperty(selectors, key, {
       enumerable: true,
       get: () => pageSemanticSelector(adapter, key, doc) ?? ':not(*)',

@@ -1,5 +1,6 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
 import { getBundledSiteSelectorView } from '@/core/selectors';
+import { getSiteSelectorContract } from '@/core/selectors/contracts';
 import type { SiteAdapter } from '@/features/plugins/types';
 
 import { hasSiteContentOwner, nativeSiteComposerRoot } from './siteInputReads';
@@ -25,11 +26,16 @@ export function resolveComposerOperation<T extends ComposerRead>(
   selectors: ComposerSelectors,
   read: (selectors: ComposerSelectors, requiresProof: boolean) => T,
 ): T {
+  const contract = getSiteSelectorContract(adapter.id);
+  if (!contract) return read(selectors, false);
   const profiles = getBundledSiteSelectorView(adapter.id).profiles;
+  // Noncontract fields retain the pre-migration catalog override, including the upload owner.
+  const baseline = (key: keyof ComposerSelectors): string =>
+    contract.keys.includes(key) ? (profiles[key]?.join(',') ?? selectors[key]) : selectors[key];
   const bundle: ComposerSelectors = {
-    composer: profiles.composer?.join(',') ?? selectors.composer,
-    composerRoot: profiles.composerRoot?.join(',') ?? selectors.composerRoot,
-    sendButton: profiles.sendButton?.join(',') ?? selectors.sendButton,
+    composer: baseline('composer'),
+    composerRoot: baseline('composerRoot'),
+    sendButton: baseline('sendButton'),
   };
   if (
     Object.keys(bundle).every(

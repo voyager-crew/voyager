@@ -5,6 +5,7 @@ import { StorageKeys } from '@/core/types/common';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 import { requireBundledSiteAdapter } from '@/features/plugins/catalog/sites';
 import chatgptSite from '@/features/plugins/catalog/sites/chatgpt/site.json';
+import { HostCatalogSource } from '@/features/plugins/remote/HostCatalogSource';
 import { hostCatalogStorageKey } from '@/features/plugins/remote/hostCatalogCache';
 import { PluginHost } from '@/features/plugins/runtime/PluginHost';
 import type { PluginManifest } from '@/features/plugins/types';
@@ -42,10 +43,10 @@ afterEach(() => {
 });
 
 it('OFF keeps cached adapter data on first paint and does not remount it on a catalog reload', async () => {
-  const cached = {
+  let cached = {
     host,
     status: 'ok',
-    manifests: [],
+    manifests: [plugin],
     extensionVersion: EXTENSION_VERSION,
     fetchedAt: 1,
     lastAttemptAt: 1,
@@ -57,10 +58,27 @@ it('OFF keeps cached adapter data on first paint and does not remount it on a ca
       projects: { ...chatgptSite.projects, createButton: '#repaired-project-button' },
     },
   };
-  vi.mocked(chrome.storage.local.get).mockResolvedValue({
+  const arriving: PluginManifest = {
+    ...plugin,
+    id: 'voyager.reload-parity',
+    contributes: {
+      domOps: [
+        {
+          op: 'setAttribute',
+          target: { kind: 'css', selector: 'body' },
+          name: 'data-reload-parity',
+          value: 'applied',
+        },
+      ],
+    },
+  };
+  vi.mocked(chrome.storage.local.get).mockImplementation(async () => ({
     [cacheKey]: cached,
-    [StorageKeys.PLUGINS_STATE]: { [plugin.id]: { enabled: true, installedAt: 1 } },
-  } as never);
+    [StorageKeys.PLUGINS_STATE]: {
+      [plugin.id]: { enabled: true, installedAt: 1 },
+      [arriving.id]: { enabled: true, installedAt: 1 },
+    },
+  }));
   const startup = startPageSelectors({
     url: 'https://chatgpt.com/c/test',
     doc: document,
@@ -78,9 +96,7 @@ it('OFF keeps cached adapter data on first paint and does not remount it on a ca
     doc: document,
     initialAdapter: startup.initialAdapter,
     legacySettings: startup.legacySettings,
-    sources: [
-      { id: 'fixture', list: async () => [plugin], siteOverride: async () => adapter ?? null },
-    ],
+    sources: [new HostCatalogSource()],
     formFactor: async () => 'desktop',
     requestCatalogRefresh: () => {},
   });
@@ -90,16 +106,13 @@ it('OFF keeps cached adapter data on first paint and does not remount it on a ca
     node.textContent?.includes('.gv-startup-parity'),
   );
   expect(style?.isConnected).toBe(true);
+  const previous = cached;
+  cached = { ...cached, manifests: [plugin, arriving] };
   for (const [listener] of vi.mocked(chrome.storage.onChanged.addListener).mock.calls) {
-    listener(
-      { [cacheKey]: { oldValue: cached, newValue: { ...cached, manifests: [plugin] } } },
-      'local',
-    );
+    listener({ [cacheKey]: { oldValue: previous, newValue: cached } }, 'local');
   }
-  await vi.waitFor(() =>
-    expect(pluginHost.activeAdapter?.projects?.createButton).toBe('#repaired-project-button'),
-  );
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await vi.waitFor(() => expect(document.body.dataset.reloadParity).toBe('applied'));
+  expect(pluginHost.activeAdapter?.projects?.createButton).toBe('#repaired-project-button');
   expect(style?.isConnected).toBe(true);
   expect(pluginHost.activeAdapter).toEqual(adapter);
 });

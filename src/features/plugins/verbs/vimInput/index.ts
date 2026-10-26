@@ -54,15 +54,19 @@ export const vimInputPrimitive: Primitive<VimInputParams> = {
     const siteId = context.adapter?.id;
     const resolveComposer =
       !params.composer && siteId && BUNDLED_LOCATOR_SITES.some((site) => site.id === siteId)
-        ? createGeminiVimComposerResolver(
-            () =>
-              (siteId === 'gemini'
-                ? getBundledSiteSelectorView(siteId).profiles['vim.configuredComposer']
-                : getBundledSiteSelectorView(siteId).profiles.composer
-              )?.join(',') ??
-              composer ??
-              null,
-          )
+        ? createGeminiVimComposerResolver(() => {
+            if (siteId === 'gemini')
+              return (
+                getBundledSiteSelectorView(siteId).profiles['vim.configuredComposer']?.join(',') ??
+                composer ??
+                null
+              );
+            // Unmigrated adapter composers remain catalog-configurable, as before page profiles.
+            return (
+              (context.adapter ? pageSemanticSelector(context.adapter, 'composer') : composer) ??
+              null
+            );
+          })
         : undefined;
     context.setTargetCounter(() => {
       const current =
