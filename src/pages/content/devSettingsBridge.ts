@@ -19,14 +19,21 @@
  * makes this desktop act as a phone (`core/utils/formFactor.ts`) from the next
  * page load; `remove` it to go back.
  *
+ * In `area: 'local'`, `gvPluginHostCatalog:<host>` reads, writes or removes one host's
+ * plugin catalog cache (`features/plugins/remote/hostCatalogCache.ts`), so a
+ * live check can inject a catalog entry.
+ *
  * Any script on the page can post here, so only `StorageKeys` values (and the
- * dev form-factor key) are accepted, and callers must guard
+ * dev form-factor key) are accepted, plus, in `local` only, the catalog prefix
+ * followed by a host the extension keeps a catalog for
+ * (`isEligibleCatalogHost`); nothing else under the prefix. Callers must guard
  * `startDevSettingsBridge()` with `import.meta.env.VOYAGER_DEV_SETTINGS_BRIDGE`
  * so production bundles drop it.
  */
 import { StorageKeys } from '@/core/types/common';
 import { hasValidExtensionContext } from '@/core/utils/extensionContext';
 import { DEV_FORM_FACTOR_KEY } from '@/core/utils/formFactor';
+import { isEligibleCatalogHost } from '@/features/plugins/remote/hostCatalogPolicy';
 
 export const DEV_SETTINGS_REQUEST_SOURCE = 'gv-dev-settings';
 export const DEV_SETTINGS_RESULT_SOURCE = 'gv-dev-settings-result';
@@ -44,8 +51,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function unknownKeys(keys: string[]): string[] {
-  return keys.filter((key) => !KNOWN_KEYS.includes(key));
+/** One host's plugin catalog cache key, which only `chrome.storage.local` holds. */
+function isHostCatalogKey(key: string): boolean {
+  const prefix = StorageKeys.PLUGIN_HOST_CATALOG_PREFIX;
+  return key.startsWith(prefix) && isEligibleCatalogHost(key.slice(prefix.length));
+}
+
+function unknownKeys(keys: string[], area: Area): string[] {
+  return keys.filter(
+    (key) => !KNOWN_KEYS.includes(key) && !(area === 'local' && isHostCatalogKey(key)),
+  );
 }
 
 export async function handleDevSettingsRequest(
@@ -69,7 +84,7 @@ export async function handleDevSettingsRequest(
           ? request.keys
           : null;
     if (!keys) return { ok: false, error: 'keys must be a list of setting names' };
-    const rejected = unknownKeys(keys);
+    const rejected = unknownKeys(keys, area);
     if (rejected.length) return { ok: false, error: `unknown keys: ${rejected.join(', ')}` };
     if (!removing) return { ok: true, values: await storage.get<Record<string, unknown>>(keys) };
     await storage.remove(keys);
@@ -78,7 +93,7 @@ export async function handleDevSettingsRequest(
 
   if (request.action === 'set') {
     if (!isRecord(request.values)) return { ok: false, error: 'values must be an object' };
-    const rejected = unknownKeys(Object.keys(request.values));
+    const rejected = unknownKeys(Object.keys(request.values), area);
     if (rejected.length) return { ok: false, error: `unknown keys: ${rejected.join(', ')}` };
     await storage.set(request.values);
     return { ok: true };
