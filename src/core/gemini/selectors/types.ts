@@ -1,18 +1,26 @@
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
+import { GEMINI_CONTENT_PROFILE_KEYS, GEMINI_CONTEXT_IMAGE_PROFILE_KEYS } from './contentKeys';
 import { GEMINI_GEMS_NAV_PROFILE_KEYS, GEMINI_GEMS_CATALOG_PROFILE_KEYS } from './gemsKeys';
 import { GEMINI_INPUT_COLLAPSE_PROFILE_KEYS } from './inputCollapseKeys';
 import { GEMINI_MENU_PROFILE_KEYS, GEMINI_EXPORT_OVERLAY_PROFILE_KEYS } from './menuKeys';
 import { GEMINI_MODEL_PICKER_PROFILE_KEYS } from './modelPickerKeys';
 import { GEMINI_PROJECT_PROFILE_KEYS } from './projectKeys';
-import { GEMINI_PROMPT_HISTORY_PROFILE_KEYS } from './promptKeys';
-import { GEMINI_SLASH_PROFILE_KEYS } from './promptKeys';
-import { GEMINI_SENT_CHIPS_PROFILE_KEYS } from './promptKeys';
+import {
+  GEMINI_PROMPT_HISTORY_PROFILE_KEYS,
+  GEMINI_SLASH_PROFILE_KEYS,
+  GEMINI_SENT_CHIPS_PROFILE_KEYS,
+} from './promptKeys';
+import {
+  GEMINI_RESPONSE_ACTION_PROFILE_KEYS,
+  GEMINI_RESEARCH_PACK_PROFILE_KEYS,
+} from './responseSurfaceKeys';
 import {
   GEMINI_SIDEBAR_WIDTH_PROFILE_KEYS,
   GEMINI_SIDEBAR_HOVER_PROFILE_KEYS,
 } from './sidebarInteractionKeys';
 import { GEMINI_SIDEBAR_PROFILE_KEYS } from './sidebarKeys';
+import { GEMINI_USAGE_PROFILE_KEYS } from './usageKeys';
 import { GEMINI_VIM_PROFILE_KEYS } from './vimKeys';
 
 /** Locator data only; query algorithms, identity and actions remain packaged. */
@@ -152,6 +160,12 @@ export const GEMINI_V3_SELECTOR_PROFILE_KEYS = [
   'gems.title',
   'gems.description',
   'gems.icon',
+  'content.answer',
+  'content.userLines',
+  'context.images',
+  'responseActions.bars',
+  'researchPack.actionBars',
+  'usage.root',
 ] as const;
 
 export const GEMINI_SELECTOR_PROFILE_KEYS = GEMINI_V3_SELECTOR_PROFILE_KEYS;
@@ -176,6 +190,11 @@ export const GEMINI_SELECTOR_PROFILE_GROUPS: readonly (readonly GeminiSelectorPr
   GEMINI_SIDEBAR_HOVER_PROFILE_KEYS,
   GEMINI_GEMS_NAV_PROFILE_KEYS,
   GEMINI_GEMS_CATALOG_PROFILE_KEYS,
+  GEMINI_CONTENT_PROFILE_KEYS,
+  GEMINI_CONTEXT_IMAGE_PROFILE_KEYS,
+  GEMINI_RESPONSE_ACTION_PROFILE_KEYS,
+  GEMINI_RESEARCH_PACK_PROFILE_KEYS,
+  GEMINI_USAGE_PROFILE_KEYS,
 ];
 export type GeminiSelectorProfiles = Readonly<Record<GeminiSelectorProfileKey, readonly string[]>>;
 

@@ -1,3 +1,5 @@
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/export-entry-packaged.json';
+
 /**
  * Export button in a hover dropdown under Gemini's logo (pre-lr26 layout).
  *
@@ -8,7 +10,7 @@
  */
 
 const REINJECT_DEBOUNCE_MS = 800;
-const LOGO_SELECTORS = ['[data-test-id="logo"]', '.logo'];
+const LOGO_SELECTORS = packaged['exportEntry.logo'];
 const SWALLOWED_PRESS_EVENTS = ['pointerdown', 'mousedown', 'pointerup', 'mouseup'];
 
 type BindableButton = HTMLButtonElement & { _gvBound?: boolean };

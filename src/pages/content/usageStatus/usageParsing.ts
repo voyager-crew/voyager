@@ -1,5 +1,6 @@
 import { decodeBatchExecute } from '@/core/utils/batchexecute';
 
+import { GEMINI_USAGE_CONTENT, resolveGeminiUsageRoot } from './usageDom';
 import type { RawMetric, UsageMetric, UsageSnapshot } from './usageSnapshot';
 
 interface ParsedMetric {
@@ -23,7 +24,7 @@ function parsePercent(text: string): number | null {
  * while leaving other languages untouched so we still show *something*.
  */
 function parseResetLabel(block: Element): string {
-  const resetEl = block.querySelector('[class*="reset-time"]');
+  const resetEl = block.querySelector(GEMINI_USAGE_CONTENT.reset);
   const raw = (resetEl?.textContent ?? '').trim();
   if (!raw) return '';
   return raw.replace(/^resets?\b[\s:]*(?:at\b[\s:]*)?/i, '').trim() || raw;
@@ -163,7 +164,7 @@ function parseMetric(block: Element | null, now: number): UsageMetric | null {
   if (!block) return null;
   const percent = parsePercent(block.textContent ?? '');
   if (percent === null) return null;
-  const resetText = (block.querySelector('[class*="reset-time"]')?.textContent ?? '').trim();
+  const resetText = (block.querySelector(GEMINI_USAGE_CONTENT.reset)?.textContent ?? '').trim();
   const resetEpoch = parseResetEpoch(
     resetText,
     now,
@@ -179,7 +180,7 @@ function parseMetric(block: Element | null, now: number): UsageMetric | null {
 function parseTier(root: Element): string | undefined {
   // Tier badge ("PRO") renders near the header, before the body copy. Match a
   // known tier token in the header region to avoid grabbing stray words.
-  const header = root.querySelector('.usage-metrics-header') ?? root;
+  const header = root.querySelector(GEMINI_USAGE_CONTENT.header) ?? root;
   const match = (header.textContent ?? '').match(KNOWN_TIERS);
   return match ? match[0].replace(/\s+/g, ' ').trim().toUpperCase() : undefined;
 }
@@ -194,12 +195,11 @@ export function scrapeUsageFromDocument(
   doc: Document = document,
   now: number = Date.now(),
 ): UsageSnapshot | null {
-  const root =
-    doc.querySelector('usage-metrics-window') ?? doc.querySelector('.usage-metrics-container');
+  const root = resolveGeminiUsageRoot(doc);
   if (!root) return null;
 
-  const daily = parseMetric(root.querySelector('.gxu-currently'), now);
-  const weekly = parseMetric(root.querySelector('.gxu-weekly'), now);
+  const daily = parseMetric(root.querySelector(GEMINI_USAGE_CONTENT.daily), now);
+  const weekly = parseMetric(root.querySelector(GEMINI_USAGE_CONTENT.weekly), now);
   if (!daily && !weekly) return null;
 
   return { daily, weekly, tier: parseTier(root), updatedAt: now };

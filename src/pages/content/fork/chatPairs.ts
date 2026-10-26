@@ -1,5 +1,6 @@
 import { createContentExtractor } from '@/features/export/services/DOMContentExtractor';
 
+import { buildGeminiAdapter } from '../export/adapter/platform/gemini';
 import { resolveExportAdapter } from '../export/adapter/platformAdapters';
 import { findAssistantForTurn, pickAssistantExportElement } from '../export/conversationDom';
 import { resolveConversationTurnOperation } from '../export/conversationTurnOperation';
@@ -19,15 +20,18 @@ function normalizeText(text: string | null): string {
 
 export function collectForkChatPairs(): ForkChatPair[] {
   const adapter = resolveExportAdapter();
-  const { users, assistants, userSelector, assistantSelector } = resolveConversationTurnOperation(
-    adapter,
-    (turns) => turns,
-    ({ users }) => users.length > 0,
-  );
+  const { users, assistants, userSelector, assistantSelector, view } =
+    resolveConversationTurnOperation(
+      adapter,
+      (turns) => turns,
+      ({ users }) => users.length > 0,
+    );
   if (users.length === 0) return [];
 
   // Rich extraction marks live code/images. Run it only after choosing the whole turn view.
-  const extractor = createContentExtractor(adapter);
+  const extractor = createContentExtractor(
+    adapter.site.id === 'gemini' ? buildGeminiAdapter(adapter.site, view) : adapter,
+  );
   const pairs: ForkChatPair[] = [];
   for (let i = 0; i < users.length; i++) {
     const userEl = users[i];
@@ -46,7 +50,7 @@ export function collectForkChatPairs(): ForkChatPair[] {
 
     let assistantText = '';
     if (assistantHost) {
-      const assistantExportEl = pickAssistantExportElement(assistantHost);
+      const assistantExportEl = pickAssistantExportElement(assistantHost, view);
       const extracted = extractor.extractAssistantContent(assistantExportEl).text;
       assistantText =
         extracted ||

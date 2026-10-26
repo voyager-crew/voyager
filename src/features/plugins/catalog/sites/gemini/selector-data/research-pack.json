@@ -1,0 +1,8 @@
+{
+  "researchPack.actionBars": [
+    ".buttons-container-v2",
+    ".actions-container-v2",
+    "message-actions",
+    ".message-actions"
+  ]
+}

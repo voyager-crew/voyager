@@ -1,4 +1,6 @@
-import type { GeminiSelectorView } from '@/core/gemini/selectors';
+import { GEMINI_PACKAGED_CONTENT } from '@/core/gemini/content/packaged';
+import { resolveGeminiAnswerElement, readGeminiUserLines } from '@/core/gemini/content/reads';
+import { getGeminiSelectorView, type GeminiSelectorView } from '@/core/gemini/selectors';
 import {
   GEMINI_PACKAGED_TITLE_SELECTORS,
   readCorroboratedGeminiTitle,
@@ -6,6 +8,7 @@ import {
 } from '@/core/gemini/sidebarTitles';
 import type { ExtractedContent } from '@/features/export/services/DOMContentExtractor';
 import { extractExportCodeBlock } from '@/features/export/services/exportCodeBlocks';
+import { resolveExportMessageContent } from '@/features/export/services/exportContentRoots';
 import { normalizeText } from '@/features/export/services/exportDomPolicy';
 import type { SiteAdapter } from '@/features/plugins/types';
 
@@ -15,6 +18,7 @@ import {
   resolveConversationRoot,
 } from '../../conversationDom';
 import type { ExportPlatformAdapter } from './contract';
+import { checkedGeminiContentView } from './geminiContentView';
 import { collectGeminiAssistantImages, extractGeminiAssistantImage } from './geminiImages';
 
 function extractConversationId(): string | null {
@@ -110,7 +114,7 @@ function resolveRoot(userSelectors: string[], doc: Document = document): HTMLEle
 }
 
 function extractUserImage(element: HTMLElement): NodeListOf<HTMLImageElement> {
-  return element.querySelectorAll('user-query-file-preview img, .preview-image');
+  return element.querySelectorAll(GEMINI_PACKAGED_CONTENT['export.userImages'].join(','));
 }
 
 function extractUserText(textLines: NodeListOf<HTMLElement>, textParts: string[]): void {
@@ -123,12 +127,14 @@ function extractUserText(textLines: NodeListOf<HTMLElement>, textParts: string[]
 
 function getUserAttachmentCandidates(element: HTMLElement): HTMLElement[] | undefined {
   const uploadedFiles = Array.from(
-    element.querySelectorAll<HTMLElement>('user-query-file-preview [data-test-id="uploaded-file"]'),
+    element.querySelectorAll<HTMLElement>(
+      GEMINI_PACKAGED_CONTENT['export.uploadedFiles'].join(','),
+    ),
   );
   if (uploadedFiles.length > 0) return uploadedFiles;
 
   const filePreviews = Array.from(
-    element.querySelectorAll<HTMLElement>('user-query-file-preview .new-file-preview-file'),
+    element.querySelectorAll<HTMLElement>(GEMINI_PACKAGED_CONTENT['export.filePreviews'].join(',')),
   );
   return filePreviews.length > 0 ? filePreviews : undefined;
 }
@@ -192,7 +198,13 @@ function extractInlineFormula(
   return true;
 }
 
-export function buildGeminiAdapter(site: SiteAdapter): ExportPlatformAdapter {
+export function buildGeminiAdapter(
+  site: SiteAdapter,
+  acceptedView?: GeminiSelectorView,
+): ExportPlatformAdapter {
+  const current = acceptedView ?? getGeminiSelectorView();
+  const contentView = (element: HTMLElement, role: 'user' | 'assistant') =>
+    acceptedView ?? checkedGeminiContentView(element, role, current);
   return {
     site,
     getUserSelectors: geminiUserTurnSelectors,
@@ -200,6 +212,13 @@ export function buildGeminiAdapter(site: SiteAdapter): ExportPlatformAdapter {
     extractConversationTitle,
     extractConversationIdFromUrl: extractConversationId,
     resolveConversationRoot: resolveRoot,
+    resolveAssistantContent: (element) =>
+      resolveGeminiAnswerElement(
+        element,
+        () => resolveExportMessageContent(element),
+        contentView(element, 'assistant'),
+      ),
+    getUserTextLines: (element) => readGeminiUserLines(element, contentView(element, 'user')),
     extractUserImage,
     extractUserText,
     getUserAttachmentCandidates,

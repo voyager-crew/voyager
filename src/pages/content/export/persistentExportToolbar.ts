@@ -3,6 +3,9 @@
 // inline export dropdown) is absent — e.g. after the lr26 UI refresh removed
 // [data-test-id="logo"]. Calls back into showExportDialog when clicked.
 import { createDownloadIcon } from '@/core/icons/promptManagerIcons';
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/export-entry-packaged.json';
+
+import { exportToolbarMutationControls, resolveExportToolbarControls } from './toolbarTargets';
 
 export type PersistentExportToolbarOptions = {
   label: string;
@@ -15,36 +18,22 @@ const BUTTON_CLASS = 'gv-persistent-export-btn';
 const ICON_CLASS = 'gv-persistent-export-icon';
 const LABEL_CLASS = 'gv-persistent-export-label';
 const HIDDEN_CLASS = 'gv-hidden';
-const CANVAS_OWNER_SELECTOR = 'inline-preview, immersive-panel';
-const CANVAS_CONTENT_SELECTOR = 'immersive-editor, code-immersive-panel';
+const CANVAS_OWNER_SELECTOR = packaged['exportToolbar.canvasOwner'];
+const CANVAS_CONTENT_SELECTOR = packaged['exportToolbar.canvasContent'];
 const CANVAS_STRUCTURE_SELECTOR = `${CANVAS_OWNER_SELECTOR}, ${CANVAS_CONTENT_SELECTOR}`;
-const INACTIVE_CANVAS_SELECTOR = 'deep-research-immersive-panel, [hidden], [aria-hidden="true"]';
+const INACTIVE_CANVAS_SELECTOR = packaged['exportToolbar.inactiveCanvas'];
 const DEFAULT_RIGHT_OFFSET_PX = 84;
 const TOP_RIGHT_GAP_PX = 12;
 const TOP_RIGHT_MAX_Y_PX = 96;
 const TOP_RIGHT_MIN_LEFT_RATIO = 0.45;
 /** Selectors specific to top-bar controls. */
-const TOP_RIGHT_CONTROL_SELECTORS = [
-  'top-bar-actions',
-  '.top-bar-actions',
-  '[data-test-id="top-bar-actions"]',
-  'side-nav-sparkle-button',
-  'side-nav-menu-button',
-  '[data-test-id*="upgrade" i]',
-  '[aria-label*="upgrade" i]',
-  // ChatGPT conversation header: Share / more sit in the same top-right cluster.
-  '#conversation-header-actions',
-  '[data-testid="share-chat-button"]',
-  '[data-testid="conversation-options-button"]',
-].join(',');
 /**
  * Broad substring selectors that also match per-message buttons such as
  * "Copy prompt". Tracking hidden matches of these would put every chat turn's
  * ancestry under watch, so only visible ones count, and never ones inside a
  * conversation turn.
  */
-const TOP_RIGHT_BROAD_SELECTORS = ['[aria-label*="pro" i]', '[aria-label*="advanced" i]'].join(',');
-const TOP_RIGHT_AVOIDANCE_SELECTORS = `${TOP_RIGHT_CONTROL_SELECTORS},${TOP_RIGHT_BROAD_SELECTORS}`;
+const TOP_RIGHT_BROAD_SELECTORS = packaged['exportToolbar.broadControls'].join(',');
 /** Conversation turns on Gemini (Angular hosts) and ChatGPT (role attribute). */
 const CONVERSATION_TURN_SELECTOR = 'user-query, model-response, [data-message-author-role]';
 const INTERACTIVE_SELECTOR = 'button, a[href], [role="button"]';
@@ -78,6 +67,7 @@ const RIGHT_OFFSET_PROPERTY = '--gv-persistent-export-right';
 function classifyTopRightElement(
   element: Element,
   toolbarRoot: HTMLElement,
+  controlSelector: string,
 ): number | 'host' | 'hidden' | null {
   if (!(element instanceof HTMLElement)) return null;
   if (element === toolbarRoot || toolbarRoot.contains(element)) return null;
@@ -86,7 +76,7 @@ function classifyTopRightElement(
   if (element.closest(CONVERSATION_TURN_SELECTOR)) return null;
   const rect = element.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) {
-    return element.matches(TOP_RIGHT_CONTROL_SELECTORS) ? 'hidden' : null;
+    return element.matches(controlSelector) ? 'hidden' : null;
   }
   if (rect.bottom <= 0 || rect.top >= TOP_RIGHT_MAX_Y_PX) return null;
   // Some Gemini top-bar hosts span the full viewport. Treating those as
@@ -110,13 +100,14 @@ function measureTopRightControls(toolbarRoot: HTMLElement): TopRightMeasurement 
   const hidden: HTMLElement[] = [];
   const canvas: HTMLElement[] = [];
   let leftMost: number | null = null;
-  const selector = `${TOP_RIGHT_AVOIDANCE_SELECTORS},${CANVAS_CONTENT_SELECTOR}`;
+  const { selector: controls } = resolveExportToolbarControls();
+  const selector = `${controls},${TOP_RIGHT_BROAD_SELECTORS},${CANVAS_CONTENT_SELECTOR}`;
   for (const element of Array.from(document.querySelectorAll<HTMLElement>(selector))) {
     if (element.matches(CANVAS_CONTENT_SELECTOR)) {
       canvas.push(element);
       continue;
     }
-    const left = classifyTopRightElement(element, toolbarRoot);
+    const left = classifyTopRightElement(element, toolbarRoot, controls);
     if (left === null) continue;
     if (left === 'hidden') {
       hidden.push(element as HTMLElement);
@@ -239,9 +230,10 @@ function mutationsMayMoveTopRightControls(
   // Let the next update notice the detached toolbar and tear itself down.
   if (!toolbarRoot.isConnected) return true;
   // Row avoidance hit-tests unlabeled controls, so any new one may land under the toolbar.
+  const avoidanceSelector = `${exportToolbarMutationControls()},${TOP_RIGHT_BROAD_SELECTORS}`;
   const addedSelector = usesRowAvoidance(toolbarRoot)
-    ? `${TOP_RIGHT_AVOIDANCE_SELECTORS},${CANVAS_STRUCTURE_SELECTOR},${INTERACTIVE_SELECTOR}`
-    : `${TOP_RIGHT_AVOIDANCE_SELECTORS},${CANVAS_STRUCTURE_SELECTOR}`;
+    ? `${avoidanceSelector},${CANVAS_STRUCTURE_SELECTOR},${INTERACTIVE_SELECTOR}`
+    : `${avoidanceSelector},${CANVAS_STRUCTURE_SELECTOR}`;
   for (const mutation of mutations) {
     const target = mutation.target;
     // The toolbar's own offset writes and label updates.
@@ -251,7 +243,7 @@ function mutationsMayMoveTopRightControls(
       if (measured.hiddenAndAncestors.has(target)) return true;
       if (measured.canvasAndAncestors.has(target)) return true;
       if (isInsideWatchedElement(target, measured)) return true;
-      if (target instanceof Element && target.matches(TOP_RIGHT_AVOIDANCE_SELECTORS)) return true;
+      if (target instanceof Element && target.matches(avoidanceSelector)) return true;
       continue;
     }
     if (isInsideWatchedElement(target, measured)) return true;

@@ -26,7 +26,9 @@ export function extractUserContent(
   // Extract user message text. Each platform exposes its own DOM shape
   // (Gemini's .query-text-line paragraphs vs. ChatGPT's plain text node),
   // so the actual extraction strategy is delegated to the platform adapter.
-  const textLines = element.querySelectorAll<HTMLElement>('.query-text-line');
+  const textLines =
+    adapter.getUserTextLines?.(element) ??
+    element.querySelectorAll<HTMLElement>('.query-text-line');
   const textParts: string[] = [];
   adapter.extractUserText(textLines, textParts, element);
 

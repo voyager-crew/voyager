@@ -1,11 +1,14 @@
+import menus from '@/features/plugins/catalog/sites/gemini/selector-data/canvas-entry.json';
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/export-entry-packaged.json';
+
 import {
   createMenuItemFromNativeTemplate,
   updateMenuItemTemplateLabel,
 } from '../shared/nativeMenuItemTemplate';
 
-export const CANVAS_MENU_SELECTOR = 'gem-menu[role="menu"]';
-const DOWNLOAD_ITEM_SELECTOR = 'gem-menu-item[value="download_md"]';
-const CANVAS_OWNER_SELECTOR = 'inline-preview, immersive-panel';
+export const CANVAS_MENU_SELECTOR = menus['canvasEntry.menus'].join(',');
+const DOWNLOAD_ITEM_SELECTOR = packaged['canvasEntry.downloadItem'];
+const CANVAS_OWNER_SELECTOR = packaged['canvasEntry.owner'];
 export const CANVAS_MARKDOWN_BUTTON_CLASS = 'gv-canvas-copy-markdown-btn';
 
 export type CanvasMenuInjectionOptions = {
@@ -25,7 +28,7 @@ export function findCanvasProseMirrorRoot(menuPanel: HTMLElement): HTMLElement |
     : null;
   // Inline and expanded Canvas editors coexist; a document-wide query copies the wrong one.
   const owner = (trigger || menuPanel).closest(CANVAS_OWNER_SELECTOR);
-  return owner?.querySelector<HTMLElement>('immersive-editor .ProseMirror') ?? null;
+  return owner?.querySelector<HTMLElement>(packaged['canvasEntry.editor']) ?? null;
 }
 
 export function isCanvasExportMenuPanel(menuPanel: HTMLElement): boolean {
@@ -109,6 +112,7 @@ function focusMenuItem(items: HTMLElement[], target: HTMLElement): void {
 }
 
 export function removeCanvasCopyMarkdownButton(button: HTMLElement): void {
+  // Inner menu wrappers do not own the native items that receive focus on removal.
   const panel = button.closest<HTMLElement>(CANVAS_MENU_SELECTOR);
   if (panel && button.contains(document.activeElement)) {
     const items = menuItems(panel);
@@ -134,4 +138,15 @@ export function navigateCanvasMenu(menuPanel: HTMLElement, event: KeyboardEvent)
   event.preventDefault();
   event.stopImmediatePropagation();
   focusMenuItem(items, items[next]);
+}
+
+/** Discovery is pure; retries and DOM insertion start only after the whole local scan is accepted. */
+export function resolveCanvasEntryPanels(root: ParentNode): HTMLElement[] {
+  const panels: HTMLElement[] = [];
+  if (root instanceof HTMLElement) {
+    const closest = root.closest<HTMLElement>(CANVAS_MENU_SELECTOR);
+    if (closest) panels.push(closest);
+  }
+  panels.push(...root.querySelectorAll<HTMLElement>(CANVAS_MENU_SELECTOR));
+  return [...new Set(panels)];
 }

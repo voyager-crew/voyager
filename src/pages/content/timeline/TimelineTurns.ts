@@ -1,3 +1,4 @@
+import { GEMINI_PACKAGED_CONTENT } from '@/core/gemini/content/packaged';
 import { getGeminiTurnView, type GeminiTurnView } from '@/core/gemini/selectors';
 import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
 import type { TimelineMarker } from '@/features/timeline/types';
@@ -27,7 +28,7 @@ const TURN_LABEL_PREFIXES =
 const VISUALLY_HIDDEN_CLASS_FRAGMENT = 'visually-hidden';
 const INJECTED_UI_SELECTOR = '.gv-fork-btn, .gv-fork-indicator-group';
 const ASSISTANT_PREVIEW_CONTENT_SELECTOR =
-  'message-content, .markdown, .markdown-main-panel, .presented-response-container, .response-content, response-element';
+  GEMINI_PACKAGED_CONTENT['content.timelinePreview'].join(',');
 const ASSISTANT_PREVIEW_EXCLUDED_SELECTOR =
   'model-thoughts, .thoughts-container, .thoughts-content, deep-research-immersive-panel';
 

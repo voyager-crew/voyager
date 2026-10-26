@@ -1,0 +1,8 @@
+{
+  "conversation.roots": [
+    "#chat-history",
+    "infinite-scroller.chat-history",
+    "chat-window-content",
+    "main"
+  ]
+}

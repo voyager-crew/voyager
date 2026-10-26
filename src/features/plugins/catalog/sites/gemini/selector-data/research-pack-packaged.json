@@ -1,0 +1,8 @@
+{
+  "researchPack.host": "model-response",
+  "researchPack.thoughts": "model-thoughts, .thoughts-container, .thoughts-content",
+  "researchPack.actionLinkScope": "message-actions, .message-actions",
+  "researchPack.conversation": ".conversation-container",
+  "researchPack.user": "user-query",
+  "researchPack.deepResearch": "deep-research-immersive-panel"
+}

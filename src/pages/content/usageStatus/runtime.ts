@@ -16,6 +16,7 @@ import { getCurrentLanguage, initI18n } from '@/utils/i18n';
 import { localeFromLanguage } from '@/utils/language';
 
 import { watchRouteChanges } from '../utils/routeWatcher';
+import { rememberGeminiUsageRootAtStartup, resolveGeminiUsageRoot } from './usageDom';
 import { formatResetLabel, hydrateUsageResetEpochs, scrapeUsageFromDocument } from './usageParsing';
 import { createUsagePill } from './usagePill';
 import { createUsageRefresh } from './usageRefresh';
@@ -103,6 +104,7 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
     logger.error('Usage status is already running; the second start is ignored');
     return Promise.resolve();
   }
+  rememberGeminiUsageRootAtStartup();
   const run = {};
   activeRun = run;
   const serial = ++runSerial;
@@ -183,7 +185,7 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
   function setupScrapeObserver(epoch: number, accountKey: string): void {
     if (!collecting || !isCurrentRoute(epoch, accountKey) || !isOnUsagePage()) return;
 
-    const root = document.querySelector('usage-metrics-window, .usage-metrics-container');
+    const root = resolveGeminiUsageRoot(document, 'observe');
     if (!root) {
       // Angular hasn't mounted the usage component yet; retry shortly.
       if (scrapeRetryTimer === null) {

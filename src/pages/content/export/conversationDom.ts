@@ -1,3 +1,6 @@
+import { resolveGeminiConversationRoot } from '@/core/gemini/content/conversation';
+import { GEMINI_PACKAGED_CONTENT } from '@/core/gemini/content/packaged';
+import { resolveGeminiAnswerElement } from '@/core/gemini/content/reads';
 import { getGeminiTurnView, type GeminiTurnView } from '@/core/gemini/selectors';
 import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
 import { queryOutsideThoughts } from '@/features/export/services/exportDomPolicy';
@@ -6,13 +9,6 @@ type ResolveConversationRootOptions = {
   userSelectors: string[];
   doc?: Document;
 };
-
-const CONVERSATION_ROOT_CANDIDATES = [
-  '#chat-history',
-  'infinite-scroller.chat-history',
-  'chat-window-content',
-  'main',
-];
 
 export function filterOutDeepResearchImmersiveNodes<T extends HTMLElement>(elements: T[]): T[] {
   return elements.filter((element) => !element.closest('deep-research-immersive-panel'));
@@ -67,16 +63,35 @@ export function findAssistantForTurn(
 }
 
 /** The element inside a Gemini response host that holds the answer itself. */
-export function pickAssistantExportElement(assistantHost: HTMLElement): HTMLElement {
+export function pickAssistantExportElement(
+  assistantHost: HTMLElement,
+  view?: GeminiTurnView,
+): HTMLElement {
+  return resolveGeminiAnswerElement(
+    assistantHost,
+    () => pickBundledAssistantExportElement(assistantHost),
+    view,
+  );
+}
+
+function pickBundledAssistantExportElement(assistantHost: HTMLElement): HTMLElement {
   return (
     queryOutsideThoughts<HTMLElement>(assistantHost, 'message-content') ||
-    queryOutsideThoughts<HTMLElement>(assistantHost, '.markdown, .markdown-main-panel') ||
-    (assistantHost.closest('.presented-response-container') as HTMLElement | null) ||
     queryOutsideThoughts<HTMLElement>(
       assistantHost,
-      '.presented-response-container, .response-content',
+      GEMINI_PACKAGED_CONTENT['export.markdown'].join(','),
     ) ||
-    queryOutsideThoughts<HTMLElement>(assistantHost, 'response-element') ||
+    (assistantHost.closest(
+      GEMINI_PACKAGED_CONTENT['export.presentedAncestor'].join(','),
+    ) as HTMLElement | null) ||
+    queryOutsideThoughts<HTMLElement>(
+      assistantHost,
+      GEMINI_PACKAGED_CONTENT['export.presentedContent'].join(','),
+    ) ||
+    queryOutsideThoughts<HTMLElement>(
+      assistantHost,
+      GEMINI_PACKAGED_CONTENT['export.responseElement'].join(','),
+    ) ||
     assistantHost
   );
 }
@@ -110,27 +125,9 @@ export function geminiAssistantTurnSelectors(view: GeminiTurnView = getGeminiTur
   ];
 }
 
-function hasVisibleUserTurns(root: HTMLElement, userSelectors: string[]): boolean {
-  if (userSelectors.length === 0) return false;
-  const nodes = filterOutDeepResearchImmersiveNodes(
-    Array.from(root.querySelectorAll<HTMLElement>(userSelectors.join(','))),
-  );
-  return nodes.length > 0;
-}
-
 export function resolveConversationRoot({
   userSelectors,
   doc = document,
 }: ResolveConversationRootOptions): HTMLElement {
-  const body = doc.body as HTMLElement;
-  let firstCandidate: HTMLElement | null = null;
-
-  for (const selector of CONVERSATION_ROOT_CANDIDATES) {
-    const candidate = doc.querySelector(selector) as HTMLElement | null;
-    if (!candidate) continue;
-    if (!firstCandidate) firstCandidate = candidate;
-    if (hasVisibleUserTurns(candidate, userSelectors)) return candidate;
-  }
-
-  return firstCandidate || body;
+  return resolveGeminiConversationRoot(userSelectors, doc);
 }

@@ -1,0 +1,10 @@
+{
+  "exportEntry.logo": ["[data-test-id=\"logo\"]", ".logo"],
+  "exportToolbar.broadControls": ["[aria-label*=\"pro\" i]", "[aria-label*=\"advanced\" i]"],
+  "exportToolbar.canvasOwner": "inline-preview, immersive-panel",
+  "exportToolbar.canvasContent": "immersive-editor, code-immersive-panel",
+  "exportToolbar.inactiveCanvas": "deep-research-immersive-panel, [hidden], [aria-hidden=\"true\"]",
+  "canvasEntry.downloadItem": "gem-menu-item[value=\"download_md\"]",
+  "canvasEntry.owner": "inline-preview, immersive-panel",
+  "canvasEntry.editor": "immersive-editor .ProseMirror"
+}

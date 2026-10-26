@@ -46,6 +46,11 @@ function fixtureCatalog(): string {
     'sidebar-width.json',
     'sidebar-hover.json',
     'gems.json',
+    'content.json',
+    'context-images.json',
+    'response-actions.json',
+    'research-pack.json',
+    'usage.json',
   ]) {
     writeFileSync(join(destination, file), readFileSync(join(catalogDir, dataPath, file)));
   }

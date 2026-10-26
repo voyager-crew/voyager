@@ -128,6 +128,12 @@ const PUBLISHED_KEYS = {
     'gems.title',
     'gems.description',
     'gems.icon',
+    'content.answer',
+    'content.userLines',
+    'context.images',
+    'responseActions.bars',
+    'researchPack.actionBars',
+    'usage.root',
   ],
 } as const;
 

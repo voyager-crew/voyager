@@ -1,3 +1,4 @@
+import { GEMINI_PACKAGED_FORK } from '@/core/gemini/content/packaged';
 import { type GeminiTurnView, resolveGeminiTurnOperation } from '@/core/gemini/selectors';
 import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
 import { logger } from '@/core/services/LoggerService';
@@ -40,7 +41,7 @@ export interface ForkLinkReceipt {
 const normalize = (text: string): string => text.replace(/\s+/g, ' ').trim();
 
 function turnText(turn: Element): string {
-  const lines = turn.querySelectorAll('.query-text-line');
+  const lines = turn.querySelectorAll(GEMINI_PACKAGED_FORK['fork.sentTextLines'].join(','));
   if (lines.length) return Array.from(lines, (line) => line.textContent ?? '').join('\n');
   const clone = turn.cloneNode(true) as Element;
   clone

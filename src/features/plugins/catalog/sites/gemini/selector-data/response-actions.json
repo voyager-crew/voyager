@@ -1,0 +1,5 @@
+{
+  "responseActions.bars": [
+    "message-actions, .message-actions, .actions-container-v2, .buttons-container-v2"
+  ]
+}

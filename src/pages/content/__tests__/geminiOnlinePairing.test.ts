@@ -72,23 +72,27 @@ describe('native pair readers with online Gemini turn profiles', () => {
     ]);
   });
 
-  it('reads online-only turns when no bundled user or assistant host remains', async () => {
+  it('exports and forks complete native pairs after Gemini renames both turn hosts', async () => {
+    document.querySelectorAll('.user-query-container, .response-container').forEach((element) => {
+      element.classList.remove('user-query-container', 'response-container');
+    });
     await useAliases();
-    document.querySelectorAll('.user-query-container').forEach((element) => {
-      element.classList.remove('user-query-container');
-    });
-    document.querySelectorAll('.response-container').forEach((element) => {
-      element.classList.remove('response-container');
-    });
 
-    const expectedIds = ['s-1111111111111111', 's-2222222222222222'];
+    const expected = [
+      { turnId: 's-1111111111111111', user: 'First question', assistant: 'First answer' },
+      { turnId: 's-2222222222222222', user: 'Second question', assistant: 'Second answer' },
+    ];
     expect(
       createConversationCollector(resolveExportAdapter())
         .collectChatPairs()
-        .map(({ turnId }) => turnId),
-    ).toEqual(expectedIds);
-    expect(collectForkChatPairs().map(({ turnId }) => turnId)).toEqual(expectedIds);
-    expect(collectHighlightTurns().map(({ turnId }) => turnId)).toEqual(expectedIds);
+        .map(({ turnId, user, assistant }) => ({ turnId, user, assistant })),
+    ).toEqual(expected);
+    expect(
+      collectForkChatPairs().map(({ turnId, user, assistant }) => ({ turnId, user, assistant })),
+    ).toEqual(expected);
+    expect(collectHighlightTurns().map(({ turnId }) => turnId)).toEqual(
+      expected.map(({ turnId }) => turnId),
+    );
   });
 
   it('ignores stale Auto nodes in highlight and export while an online user profile is active', async () => {
@@ -113,7 +117,7 @@ describe('native pair readers with online Gemini turn profiles', () => {
     expect(localStorage.getItem('geminiTimelineUserTurnSelectorAuto')).toBe('.stale-user');
   });
 
-  it('keeps a readable online user-only turn without mixing in bundled assistants', async () => {
+  it('keeps both complete bundled responses when an online assistant list is partial', async () => {
     stopSelectors = await installGeminiTurnPatch({
       'turn.user': ['.online-user'],
       'turn.assistant': ['.missing-assistant'],
@@ -122,10 +126,13 @@ describe('native pair readers with online Gemini turn profiles', () => {
 
     const pairs = createConversationCollector(resolveExportAdapter()).collectChatPairs();
     expect(pairs.map(({ user, assistant }) => ({ user, assistant }))).toEqual([
-      { user: 'First question', assistant: '' },
-      { user: 'Second question', assistant: '' },
+      { user: 'First question', assistant: 'First answer' },
+      { user: 'Second question', assistant: 'Second answer' },
     ]);
-    expect(collectForkChatPairs().map(({ assistant }) => assistant)).toEqual(['', '']);
+    expect(collectForkChatPairs().map(({ assistant }) => assistant)).toEqual([
+      'First answer',
+      'Second answer',
+    ]);
     // Highlight needs a complete pair, so its entire operation uses the bundled view.
     expect(collectHighlightTurns().map(({ assistantRoot }) => assistantRoot.textContent)).toEqual([
       'First answer',
@@ -133,7 +140,7 @@ describe('native pair readers with online Gemini turn profiles', () => {
     ]);
   });
 
-  it('falls back export content but keeps a structurally accepted empty fork user host', async () => {
+  it('falls back the whole export and fork before assigning an empty foreign host an ID', async () => {
     document
       .querySelector('main')!
       .insertAdjacentHTML('afterbegin', '<div class="empty-online-user"></div>');
@@ -148,8 +155,13 @@ describe('native pair readers with online Gemini turn profiles', () => {
       'First answer',
       'Second answer',
     ]);
-    expect(collectForkChatPairs()).toEqual([]);
-    expect(document.querySelector<HTMLElement>('.empty-online-user')!.dataset.turnId).toBe('u-0');
+    expect(collectForkChatPairs().map(({ assistant }) => assistant)).toEqual([
+      'First answer',
+      'Second answer',
+    ]);
+    expect(
+      document.querySelector<HTMLElement>('.empty-online-user')!.dataset.turnId,
+    ).toBeUndefined();
   });
 
   it('leaves rejected online code untouched before extracting the accepted bundled fork', async () => {

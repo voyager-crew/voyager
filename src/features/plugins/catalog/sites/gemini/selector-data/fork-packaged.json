@@ -1,0 +1,12 @@
+{
+  "fork.userHost": [
+    ".user-query-bubble-with-background",
+    "user-query-content .user-query-bubble-with-background",
+    ".user-query-bubble-container"
+  ],
+  "fork.copyButton": ["button[data-test-id=\"copy-button\"]"],
+  "fork.copyIcon": [
+    "button mat-icon[fonticon=\"content_copy\"], button mat-icon[data-mat-icon-name=\"content_copy\"]"
+  ],
+  "fork.sentTextLines": [".query-text-line"]
+}

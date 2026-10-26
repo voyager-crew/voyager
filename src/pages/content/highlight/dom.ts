@@ -1,3 +1,4 @@
+import { GEMINI_PACKAGED_CONTENT } from '@/core/gemini/content/packaged';
 import {
   getGeminiTurnView,
   resolveGeminiTurnOperation,
@@ -16,13 +17,7 @@ import {
 import { getLegacyTurnIndex, makeTurnId, normalizeTurnId } from '../fork/turnId';
 import { historyTimestampStore } from '../timestamp/historyTimestamps';
 
-const ASSISTANT_CONTENT_SELECTORS = [
-  'message-content',
-  '.markdown-main-panel',
-  '.markdown',
-  '.response-content',
-  'response-element',
-] as const;
+const ASSISTANT_CONTENT_SELECTORS = GEMINI_PACKAGED_CONTENT['content.highlightRoot'];
 
 const THOUGHTS_SELECTOR = 'model-thoughts, .thoughts-container, .thoughts-content';
 

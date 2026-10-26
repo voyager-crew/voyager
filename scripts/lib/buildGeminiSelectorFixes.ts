@@ -3,6 +3,10 @@ import { join } from 'node:path';
 
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from '../../src/core/gemini/selectors/activityKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from '../../src/core/gemini/selectors/composerKeys';
+import {
+  GEMINI_CONTENT_PROFILE_KEYS,
+  GEMINI_CONTEXT_IMAGE_PROFILE_KEYS,
+} from '../../src/core/gemini/selectors/contentKeys';
 import { GEMINI_GEMS_PROFILE_KEYS } from '../../src/core/gemini/selectors/gemsKeys';
 import { GEMINI_INPUT_COLLAPSE_PROFILE_KEYS } from '../../src/core/gemini/selectors/inputCollapseKeys';
 import {
@@ -11,9 +15,15 @@ import {
 } from '../../src/core/gemini/selectors/menuKeys';
 import { GEMINI_MODEL_PICKER_PROFILE_KEYS } from '../../src/core/gemini/selectors/modelPickerKeys';
 import { GEMINI_PROJECT_PROFILE_KEYS } from '../../src/core/gemini/selectors/projectKeys';
-import { GEMINI_PROMPT_HISTORY_PROFILE_KEYS } from '../../src/core/gemini/selectors/promptKeys';
-import { GEMINI_SLASH_PROFILE_KEYS } from '../../src/core/gemini/selectors/promptKeys';
-import { GEMINI_SENT_CHIPS_PROFILE_KEYS } from '../../src/core/gemini/selectors/promptKeys';
+import {
+  GEMINI_PROMPT_HISTORY_PROFILE_KEYS,
+  GEMINI_SLASH_PROFILE_KEYS,
+  GEMINI_SENT_CHIPS_PROFILE_KEYS,
+} from '../../src/core/gemini/selectors/promptKeys';
+import {
+  GEMINI_RESPONSE_ACTION_PROFILE_KEYS,
+  GEMINI_RESEARCH_PACK_PROFILE_KEYS,
+} from '../../src/core/gemini/selectors/responseSurfaceKeys';
 import {
   GEMINI_SIDEBAR_WIDTH_PROFILE_KEYS,
   GEMINI_SIDEBAR_HOVER_PROFILE_KEYS,
@@ -27,6 +37,7 @@ import {
   type GeminiSelectorFile,
   type GeminiSelectorProfileKey,
 } from '../../src/core/gemini/selectors/types';
+import { GEMINI_USAGE_PROFILE_KEYS } from '../../src/core/gemini/selectors/usageKeys';
 import {
   MAX_GEMINI_SELECTOR_BYTES,
   readGeminiSelectorFile,
@@ -57,6 +68,11 @@ const PROFILE_GROUPS = [
   { file: 'sidebar-width.json', keys: GEMINI_SIDEBAR_WIDTH_PROFILE_KEYS },
   { file: 'sidebar-hover.json', keys: GEMINI_SIDEBAR_HOVER_PROFILE_KEYS },
   { file: 'gems.json', keys: GEMINI_GEMS_PROFILE_KEYS },
+  { file: 'content.json', keys: GEMINI_CONTENT_PROFILE_KEYS },
+  { file: 'context-images.json', keys: GEMINI_CONTEXT_IMAGE_PROFILE_KEYS },
+  { file: 'response-actions.json', keys: GEMINI_RESPONSE_ACTION_PROFILE_KEYS },
+  { file: 'research-pack.json', keys: GEMINI_RESEARCH_PACK_PROFILE_KEYS },
+  { file: 'usage.json', keys: GEMINI_USAGE_PROFILE_KEYS },
 ] as const;
 
 /** Build from the same locator fragments the package imports; no adapter or plugin enters it. */

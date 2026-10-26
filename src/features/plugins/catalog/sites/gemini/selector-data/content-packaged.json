@@ -1,0 +1,19 @@
+{
+  "export.markdown": [".markdown, .markdown-main-panel"],
+  "export.presentedAncestor": [".presented-response-container"],
+  "export.presentedContent": [".presented-response-container, .response-content"],
+  "export.responseElement": ["response-element"],
+  "export.userImages": ["user-query-file-preview img, .preview-image"],
+  "export.uploadedFiles": ["user-query-file-preview [data-test-id=\"uploaded-file\"]"],
+  "export.filePreviews": ["user-query-file-preview .new-file-preview-file"],
+  "content.timelinePreview": [
+    "message-content, .markdown, .markdown-main-panel, .presented-response-container, .response-content, response-element"
+  ],
+  "content.highlightRoot": [
+    "message-content",
+    ".markdown-main-panel",
+    ".markdown",
+    ".response-content",
+    "response-element"
+  ]
+}

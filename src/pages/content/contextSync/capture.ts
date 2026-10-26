@@ -1,7 +1,16 @@
+import { acceptsGeminiContextImages, readGeminiContextImages } from '@/core/gemini/content/reads';
+import { getBundledGeminiSelectorView, getGeminiSelectorView } from '@/core/gemini/selectors';
+import { logger } from '@/core/services/LoggerService';
 import { getMatchedAdapter } from '@/features/contextSync/adapters';
 import { DialogNode } from '@/features/contextSync/types';
 
 import { getBrowserName } from '../../../core/utils/browser';
+
+interface PreparedContextNode {
+  readonly element: HTMLElement;
+  readonly clone: HTMLElement;
+  readonly role: 'user' | 'assistant';
+}
 
 export class ContextCaptureService {
   private static instance: ContextCaptureService;
@@ -32,19 +41,53 @@ export class ContextCaptureService {
         : [];
     }
 
-    console.log(`[ContextSync] Found ${queries.length} queries and ${responses.length} responses.`);
+    logger.debug(
+      `[ContextSync] Found ${queries.length} queries and ${responses.length} responses.`,
+    );
 
-    const maxLength = Math.max(queries.length, responses.length);
-
-    for (let i = 0; i < maxLength; i++) {
-      if (i < queries.length) {
-        const info = await this.extractNodeInfo(queries[i], 'user');
+    const ordered = Array.from(
+      { length: Math.max(queries.length, responses.length) },
+      (_, index) => [
+        ...(queries[index] ? [{ element: queries[index], role: 'user' as const }] : []),
+        ...(responses[index] ? [{ element: responses[index], role: 'assistant' as const }] : []),
+      ],
+    ).flat();
+    const collect = () =>
+      ordered.flatMap(({ element, role }) => {
+        const prepared = this.prepareNode(element, role);
+        return prepared ? [prepared] : [];
+      });
+    const bundle = getBundledGeminiSelectorView();
+    let view = host === 'gemini.google.com' ? getGeminiSelectorView() : bundle;
+    if (!view.remoteKeys.has('context.images')) {
+      // OFF retains the original per-message prepare/await ordering.
+      for (const { element, role } of ordered) {
+        const node = this.prepareNode(element, role);
+        if (!node) continue;
+        const info = await this.extractNodeInfo({
+          ...node,
+          images: readGeminiContextImages(node.clone, bundle),
+        });
         if (info) messages.push(info);
       }
-      if (i < responses.length) {
-        const info = await this.extractNodeInfo(responses[i], 'assistant');
-        if (info) messages.push(info);
-      }
+      return messages;
+    }
+    let prepared = collect();
+    // No image request starts until every message agrees with the same captured profile.
+    if (
+      view.remoteKeys.has('context.images') &&
+      !prepared.every(({ clone }) => acceptsGeminiContextImages(clone, view))
+    ) {
+      view = bundle;
+      prepared = collect();
+    }
+    const captures = prepared.map((node) => ({
+      ...node,
+      images: readGeminiContextImages(node.clone, view),
+    }));
+    for (const node of captures) {
+      const info = await this.extractNodeInfo(node);
+      if (info) messages.push(info);
     }
 
     return messages;
@@ -62,13 +105,13 @@ export class ContextCaptureService {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
           reader.onerror = () => {
-            console.error('[ContextSync] FileReader error for blob');
+            logger.error('[ContextSync] FileReader error for blob');
             resolve(null);
           };
           reader.readAsDataURL(blob);
         });
       } catch (e) {
-        console.error('[ContextSync] Failed to fetch blob URL:', e);
+        logger.error('[ContextSync] Failed to fetch blob URL:', { error: e });
         return null;
       }
     }
@@ -123,7 +166,9 @@ export class ContextCaptureService {
         });
         if (resp.ok) return await resp.blob();
       } catch (e) {
-        console.error('[ContextSync] Image fetch failed (all content-script attempts):', e);
+        logger.error('[ContextSync] Image fetch failed (all content-script attempts):', {
+          error: e,
+        });
       }
       return null;
     };
@@ -140,7 +185,7 @@ export class ContextCaptureService {
         });
       }
     } catch (e) {
-      console.warn('[ContextSync] Strategy 1 (Direct) exception:', e);
+      logger.warn('[ContextSync] Strategy 1 (Direct) exception:', { error: e });
     }
 
     // Strategy 2: Background fetch
@@ -156,7 +201,7 @@ export class ContextCaptureService {
               if (pageResponse && pageResponse.ok) {
                 resolve(pageResponse.data);
               } else {
-                console.error('[ContextSync] Image fetch failed (all methods):', targetUrl);
+                logger.error('[ContextSync] Image fetch failed (all methods):', { targetUrl });
                 resolve(null);
               }
             },
@@ -197,41 +242,33 @@ export class ContextCaptureService {
 
       return md + '\n';
     } catch (e) {
-      console.error('Table conversion failed', e);
+      logger.error('Table conversion failed', { error: e });
       return table.innerText;
     }
   }
 
-  private async extractNodeInfo(
-    el: HTMLElement,
-    forceRole: 'user' | 'assistant' | null = null,
-  ): Promise<DialogNode | null> {
+  private prepareNode(el: HTMLElement, role: 'user' | 'assistant'): PreparedContextNode | null {
     if (el.offsetParent === null) return null;
     if (['SCRIPT', 'STYLE', 'NAV', 'HEADER', 'FOOTER', 'SVG', 'PATH'].includes(el.tagName))
       return null;
-
     const clone = el.cloneNode(true) as HTMLElement;
-
-    // 处理表格
     const tables = Array.from(clone.querySelectorAll('table')).reverse();
     tables.forEach((table) => {
       const md = this.convertTableToMarkdown(table as HTMLTableElement);
       table.replaceWith(document.createTextNode(md));
     });
+    return { element: el, clone, role };
+  }
 
-    // 处理图片：复用导出功能的全面选择器逻辑
+  private async extractNodeInfo({
+    element: el,
+    clone,
+    role: forceRole,
+    images: imgElements,
+  }: PreparedContextNode & { images: HTMLImageElement[] }): Promise<DialogNode | null> {
     const imgBase64List: string[] = [];
-    const imageSelectors = [
-      'user-query-file-preview img',
-      '.preview-image',
-      'generated-image img',
-      'single-image img',
-      '.attachment-container.generated-images img',
-    ].join(',');
-
-    const imgElements = Array.from(clone.querySelectorAll(imageSelectors)) as HTMLImageElement[];
     if (imgElements.length > 0) {
-      console.log(`[ContextSync] Found ${imgElements.length} image(s)`);
+      logger.debug(`[ContextSync] Found ${imgElements.length} image(s)`);
       for (const imgEl of imgElements) {
         // Use attribute if available, otherwise fallback to property
         let src = imgEl.getAttribute('src') || imgEl.src || '';
@@ -245,10 +282,12 @@ export class ContextCaptureService {
         const base64 = await ContextCaptureService.getBase64Safe(src);
         if (base64) {
           imgBase64List.push(base64);
-          console.log('[ContextSync] Converted image to Base64 (length):', base64.length);
+          logger.debug('[ContextSync] Converted image to Base64 (length):', {
+            length: base64.length,
+          });
         }
       }
-      console.log(
+      logger.debug(
         `[ContextSync] Successfully converted ${imgBase64List.length} image(s) to Base64`,
       );
     }

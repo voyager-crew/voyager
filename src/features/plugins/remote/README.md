@@ -145,12 +145,14 @@ consumers, so a file for it would have no reader.
 The `v3` file (`format: 3`) carries ordered `turn.*`, `sidebar.*`, `modelPicker.*`,
 `composer.*`, `inputCollapse.*`, `vim.*`, `promptHistory.*`, `slash.*`, `sentChips.*`,
 `project.*`, `activity.*`, `menu.*`, `exportOverlay.*`, `sidebarWidth.*`,
-`sidebarHover.*` and `gems.*` profiles. The publisher reads the same per-surface
+`sidebarHover.*`, `gems.*`, `content.*`, `context.*`,
+`responseActions.*`, `researchPack.*` and `usage.root` profiles. The publisher reads the same per-surface
 JSON fragments in `selector-data/` as the bundle. These cover conversation turns,
 sidebar entries/titles and folder display areas, model menu discovery, conversation
 and export menu anchors, the sidebar toggle button’s hit area and sidebar hover areas, the active Gems
 sidebar, message inputs and their controls, input collapse, Vim, prompt history, slash commands,
-sent prompt previews, Folder as Project and folder activity. Each surface has its own
+sent prompt previews, Folder as Project, folder activity, message content for export and
+forks, context images, response and research-pack actions, and usage displays. Each surface has its own
 syntax-fallback group. A remote read must preserve the complete independently
 verified collection and the operation's original input; a miss or mismatch reruns
 the whole read with bundled data. The configured Vim wrapper-to-editable order,
@@ -166,13 +168,24 @@ have to equal the packaged one before use (sidebar toggle, hosts, new-chat and
 actions containers in `sidebar-packaged.json`; saved, exported and printed
 conversation titles in `sidebar-titles.json`): neither file is published. Edit/send protocols, attachment/related-UI checks, HUD
 anchors, chip text and mount points, and project insertion/removal rules also stay
-packaged; `*-packaged.json` fragments never enter publication. The files contain no plugins,
+packaged. Conversation roots (`conversation.json`), toolbar controls (`export-toolbar.json`)
+and Canvas menus (`canvas-entry.json`) also stay packaged: their independent page
+checks can only confirm the bundled result, so these fragments are not published.
+Fork copy controls, export logo identity, source attributes and URL checks,
+MathML/KaTeX and HTML serialization, export DOM policy, and usage values/reset/tier
+locators also remain packaged; `*-packaged.json` fragments never enter publication. The files contain no plugins,
 CSS, actions, JavaScript, matches, capabilities or theme. The bundle and remote
 files use the same selector-data guard. A newer accepted revision
 replaces the previous patch; each supplied list replaces that bundled list as
 a whole. Missing keys keep their bundled values. An empty patch withdraws all
 online overrides. Roll back by reverting the data and publishing a **higher**
 source revision, not by lowering `catalogRevision`.
+
+A remote `usage.root` must point at the **direct container of the usage header**
+(`.usage-metrics-header`). That same element must contain all native daily and
+weekly buckets; an outer ancestor or the buckets alone is not a repair witness.
+The accepted root is bound to its account. A failed query or transient empty
+render retains the last verified usage cache.
 
 The publisher keeps `/gemini-selectors/v1/hosts/gemini.google.com.json` and
 `/gemini-selectors/v2/hosts/gemini.google.com.json` for older extensions. The

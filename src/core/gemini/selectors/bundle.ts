@@ -15,6 +15,8 @@
  */
 import activityProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/activity.json';
 import composerProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/composer.json';
+import contentProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/content.json';
+import contextImageProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/context-images.json';
 import gemsProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/gems.json';
 import inputCollapseProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/input-collapse.json';
 import exportOverlayProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/menu-overlay.json';
@@ -22,16 +24,20 @@ import menuProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/
 import modelPickerProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/model-picker.json';
 import projectProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/project.json';
 import promptHistoryProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/prompt-history.json';
+import researchPackProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/research-pack.json';
+import responseActionProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/response-actions.json';
 import sentChipsProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/sent-chips.json';
 import sidebarHoverProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar-hover.json';
 import sidebarWidthProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar-width.json';
 import sidebarProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar.json';
 import slashProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/slash.json';
 import turnProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/turn.json';
+import usageProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/usage.json';
 import vimProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/vim.json';
 
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
+import { GEMINI_CONTENT_PROFILE_KEYS, GEMINI_CONTEXT_IMAGE_PROFILE_KEYS } from './contentKeys';
 import { GEMINI_GEMS_PROFILE_KEYS } from './gemsKeys';
 import { GEMINI_INPUT_COLLAPSE_PROFILE_KEYS } from './inputCollapseKeys';
 import { GEMINI_MENU_PROFILE_KEYS, GEMINI_EXPORT_OVERLAY_PROFILE_KEYS } from './menuKeys';
@@ -42,6 +48,10 @@ import {
   GEMINI_SENT_CHIPS_PROFILE_KEYS,
   GEMINI_SLASH_PROFILE_KEYS,
 } from './promptKeys';
+import {
+  GEMINI_RESPONSE_ACTION_PROFILE_KEYS,
+  GEMINI_RESEARCH_PACK_PROFILE_KEYS,
+} from './responseSurfaceKeys';
 import {
   GEMINI_SIDEBAR_WIDTH_PROFILE_KEYS,
   GEMINI_SIDEBAR_HOVER_PROFILE_KEYS,
@@ -54,6 +64,7 @@ import {
   type GeminiSelectorView,
   type GeminiTurnView,
 } from './types';
+import { GEMINI_USAGE_PROFILE_KEYS } from './usageKeys';
 import { readGeminiSelectorFile, readGeminiSelectorProfileGroup } from './validation';
 import { GEMINI_VIM_PROFILE_KEYS } from './vimKeys';
 
@@ -85,6 +96,11 @@ function readBundle(): GeminiSelectorProfiles {
     ...readGroup(sidebarWidthProfiles, GEMINI_SIDEBAR_WIDTH_PROFILE_KEYS, 'sidebar-width'),
     ...readGroup(exportOverlayProfiles, GEMINI_EXPORT_OVERLAY_PROFILE_KEYS, 'menu-overlay'),
     ...readGroup(menuProfiles, GEMINI_MENU_PROFILE_KEYS, 'menu'),
+    ...readGroup(contentProfiles, GEMINI_CONTENT_PROFILE_KEYS, 'content'),
+    ...readGroup(contextImageProfiles, GEMINI_CONTEXT_IMAGE_PROFILE_KEYS, 'context-images'),
+    ...readGroup(responseActionProfiles, GEMINI_RESPONSE_ACTION_PROFILE_KEYS, 'response-actions'),
+    ...readGroup(researchPackProfiles, GEMINI_RESEARCH_PACK_PROFILE_KEYS, 'research-pack'),
+    ...readGroup(usageProfiles, GEMINI_USAGE_PROFILE_KEYS, 'usage'),
   };
   const file = readGeminiSelectorFile(
     {

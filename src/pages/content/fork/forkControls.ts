@@ -1,3 +1,4 @@
+import { GEMINI_PACKAGED_FORK } from '@/core/gemini/content/packaged';
 import { askConfirm } from '@/core/ui/confirm';
 
 import { getTranslationSync } from '../../../utils/i18n';
@@ -186,11 +187,9 @@ body.dark-theme .gv-fork-indicator-delete {
 
 function findUserCopyButtonAnchor(userEl: HTMLElement): HTMLElement | null {
   const copyButton =
-    userEl.querySelector<HTMLElement>('button[data-test-id="copy-button"]') ||
+    userEl.querySelector<HTMLElement>(GEMINI_PACKAGED_FORK['fork.copyButton'].join(',')) ||
     userEl
-      .querySelector<HTMLElement>(
-        'button mat-icon[fonticon="content_copy"], button mat-icon[data-mat-icon-name="content_copy"]',
-      )
+      .querySelector<HTMLElement>(GEMINI_PACKAGED_FORK['fork.copyIcon'].join(','))
       ?.closest<HTMLElement>('button');
 
   if (!copyButton) return null;

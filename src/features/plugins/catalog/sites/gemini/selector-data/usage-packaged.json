@@ -1,0 +1,6 @@
+{
+  "daily": ".gxu-currently",
+  "weekly": ".gxu-weekly",
+  "reset": "[class*=\"reset-time\"]",
+  "header": ".usage-metrics-header"
+}

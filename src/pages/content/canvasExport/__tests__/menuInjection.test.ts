@@ -5,8 +5,10 @@ import {
   findCanvasProseMirrorRoot,
   injectCanvasCopyMarkdownButton,
   isCanvasExportMenuPanel,
+  removeCanvasCopyMarkdownButton,
+  resolveCanvasEntryPanels,
 } from '../menuInjection';
-import { canvasFixture, setup } from './fixtures';
+import { canvasFixture, fillMenu, setup } from './fixtures';
 
 const labels = { label: 'Copy as Markdown', tooltip: 'Copy Canvas content as Markdown' };
 
@@ -87,5 +89,41 @@ describe('Canvas Export menu', () => {
     expect(second?.getAttribute('aria-label')).toBe('Copier le Canvas');
     expect(second?.getAttribute('arialabel')).toBe('Copier le Canvas');
     expect(second?.querySelector('.label')?.textContent).toBe('Copier');
+  });
+
+  it('discovers both Canvas menus in document order and inserts into each owning menu', () => {
+    const first = setup();
+    document.body.insertAdjacentHTML('beforeend', canvasFixture('immersive-panel', 'second-menu'));
+    const second = document.createElement('gem-menu');
+    second.id = 'second-menu';
+    second.setAttribute('role', 'menu');
+    fillMenu(second);
+    document.body.append(second);
+    const panels = resolveCanvasEntryPanels(document);
+    expect(panels).toEqual([first, second]);
+    const buttons = panels.map((panel) => injectCanvasCopyMarkdownButton(panel, labels)!);
+    expect(buttons.map((button) => button.parentElement)).toEqual([first, second]);
+    expect(buttons.map((button) => button.previousElementSibling?.getAttribute('value'))).toEqual([
+      'download_md',
+      'download_md',
+    ]);
+  });
+
+  it('removing focused Copy returns focus to the owning Canvas menu across an inner menu', () => {
+    const panel = setup();
+    const download = panel.querySelector<HTMLElement>('[value="download_md"]')!;
+    const button = injectCanvasCopyMarkdownButton(panel, labels)!;
+    const inner = document.createElement('div');
+    inner.setAttribute('role', 'menu');
+    button.before(inner);
+    inner.append(button);
+    button.focus();
+    expect(document.activeElement).toBe(button);
+
+    removeCanvasCopyMarkdownButton(button);
+
+    expect(document.activeElement).toBe(download);
+    expect(download.tabIndex).toBe(0);
+    expect(panel.querySelectorAll(`.${CANVAS_MARKDOWN_BUTTON_CLASS}`)).toHaveLength(0);
   });
 });
