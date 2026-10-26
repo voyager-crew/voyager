@@ -19,8 +19,7 @@
 | `src/features/folder/owner/`                  | 已是 command + 纯 reducer（`applyFolderOp.ts`），并由 background 作为唯一写入方                                                            |
 | `src/features/plugins/verbs/` 其余 primitive  | 只是挂载/拆除加去抖，或状态本就写在 DOM 属性上（`userLatex`）。图表绘制后续接入的两阶段机器见 §3；DOM 连接和跨 activation 所有权仍独立检查 |
 | `src/pages/content/` 其余模块                 | 挂载/拆除、正交的开关，或已有 generation/revision 守卫。`sidebarAutoHide`、`timestamp` 的计时器每次事件都要重新计时，不适合                |
-
-| `builtin/` 其余官方插件、`usageStatus` | 句柄都由 `scope.effect` 管理；`chatgptTemporaryHandoff` 是三条正交的轴；`claudeUsage` 已退役 |
+| `builtin/` 其余官方插件、`usageStatus`        | 句柄都由 `scope.effect` 管理；`chatgptTemporaryHandoff` 是三条正交的轴；`claudeUsage` 已退役                                               |
 
 ## 2. 运行时契约
 
