@@ -1,6 +1,8 @@
 import { getBundledGeminiSelectorView } from '../gemini/selectors/bundle';
 import { AISTUDIO_SURFACE_PROFILES } from './contracts/aistudioSurfaces';
 import { CHATGPT_ACTION_PROFILES } from './contracts/chatgptActions';
+import { CHATGPT_EXPORT_PROFILES } from './contracts/chatgptExport';
+import { CHATGPT_PICKER_PROFILES } from './contracts/chatgptSemantics';
 import { EXPORT_PROFILES } from './contracts/export';
 import { INPUT_SITE_PROFILES } from './contracts/inputSurfaces';
 import { BUNDLED_LOCATOR_SITES, bundledSemanticProfiles } from './sites';
@@ -13,6 +15,8 @@ const SURFACE_PROFILES: Readonly<Record<string, Readonly<Record<string, readonly
     ...INPUT_SITE_PROFILES.chatgpt,
     ...EXPORT_PROFILES.chatgpt,
     ...CHATGPT_ACTION_PROFILES,
+    ...CHATGPT_PICKER_PROFILES,
+    ...CHATGPT_EXPORT_PROFILES,
   },
   claude: { ...INPUT_SITE_PROFILES.claude, ...EXPORT_PROFILES.claude },
   deepseek: { ...INPUT_SITE_PROFILES.deepseek, ...EXPORT_PROFILES.deepseek },

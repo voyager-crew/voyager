@@ -1,7 +1,7 @@
 /** Which editable elements are prompt inputs, and the text a capture reads from them. */
 import { readChatInput } from '@/core/gemini/composer/inputs';
-import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/prompt-history-packaged.json';
 
+import packaged from '../prompt/prompt-input-protocol.json';
 import { resolvePromptInputRead } from '../prompt/selectorInput';
 import type { PromptHistoryType } from './storage';
 

@@ -11,6 +11,7 @@ import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
  */
 import type { SiteAdapter } from '@/features/plugins/types';
 
+import { touchesRepairedChatgptReplyContent } from '../../chatgptReplyContent';
 import {
   USER_UNIT_SELECTOR,
   hasStopControl,
@@ -35,6 +36,7 @@ const OWN_TEXT_SELECTOR = `${USER_UNIT_SELECTOR}, ${REPLY_BODY_SELECTOR}`;
 /** A short element that opens with the copy and holds none of the prompt's or the reply's text. */
 function isNotice(element: Element): boolean {
   if (element.closest(OWN_TEXT_SELECTOR) || element.querySelector(OWN_TEXT_SELECTOR)) return false;
+  if (touchesRepairedChatgptReplyContent(element)) return false;
   const text = flat(element.textContent);
   return (
     text.length > 0 &&

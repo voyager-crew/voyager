@@ -1,9 +1,4 @@
-import aistudio from '@/features/plugins/catalog/sites/aistudio/selector-data/content-packaged.json';
-import chatgpt from '@/features/plugins/catalog/sites/chatgpt/selector-data/content-packaged.json';
-import claude from '@/features/plugins/catalog/sites/claude/selector-data/content-packaged.json';
-import deepseek from '@/features/plugins/catalog/sites/deepseek/selector-data/content-packaged.json';
-import gemini from '@/features/plugins/catalog/sites/gemini/selector-data/content-packaged.json';
-import kimi from '@/features/plugins/catalog/sites/kimi/selector-data/content-packaged.json';
+import shared from './shared-content.json';
 
 export type ExportReadProfiles = Readonly<
   Record<
@@ -24,15 +19,7 @@ export type ExportReadProfiles = Readonly<
   >
 >;
 
-const PROFILES: Readonly<Record<string, ExportReadProfiles>> = {
-  gemini,
-  aistudio,
-  chatgpt,
-  claude,
-  deepseek,
-  kimi,
-};
-
-export function getExportReadProfiles(siteId: string = 'gemini'): ExportReadProfiles {
-  return Object.hasOwn(PROFILES, siteId) ? PROFILES[siteId] : gemini;
+/** Baseline shared serialization grammar, independent of every site's locator catalog. */
+export function getExportReadProfiles(_siteId?: string): ExportReadProfiles {
+  return shared;
 }

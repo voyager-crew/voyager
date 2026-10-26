@@ -1,3 +1,4 @@
+// @vitest-environment-options { "url": "https://gemini.google.com/app/test" }
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { resolveExportAdapter } from '../export/adapter/platformAdapters';

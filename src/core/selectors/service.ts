@@ -2,6 +2,7 @@ import { type Machine, startMachine } from '@/features/plugins/runtime/stateMach
 
 import { getBundledSiteSelectorView, getSiteBundledRevision } from './bundle';
 import { SITE_SELECTOR_CONTRACTS } from './contracts';
+import { CHATGPT_PAGE_HOOK_KEYS } from './contracts/chatgptSemantics';
 import {
   type SiteSelectorSettlement,
   type HydrationEvent,
@@ -133,6 +134,44 @@ export function resolveSiteSelectorOperation<T>(
   return SERVICES[siteId].resolve(read, isUsable);
 }
 
+/** One source mapping serves startup's no-op check and the validated hydration read. */
+function siteSelectorCandidates(
+  siteId: string,
+  raw: Record<string, unknown>,
+): Record<string, unknown> {
+  const contract = SITE_SELECTOR_CONTRACTS[siteId];
+  const semantic = BUNDLED_LOCATOR_SITES.find((site) => site.id === siteId)?.selectors ?? {};
+  const candidates: Record<string, unknown> = isSelectorRecord(raw.locators)
+    ? { ...raw.locators }
+    : {};
+  // Semantic keys have one source, site.selectors; a duplicate locator must not override it.
+  for (const key of contract.keys) {
+    if (!Object.hasOwn(semantic, key)) continue;
+    delete candidates[key];
+    if (isSelectorRecord(raw.selectors) && Object.hasOwn(raw.selectors, key))
+      candidates[key] = [raw.selectors[key]];
+  }
+  if (siteId === 'chatgpt') {
+    for (const [key, field] of Object.entries(CHATGPT_PAGE_HOOK_KEYS)) {
+      delete candidates[key];
+      if (isSelectorRecord(raw.pageHooks) && Object.hasOwn(raw.pageHooks, field))
+        candidates[key] = [raw.pageHooks[field]];
+    }
+  }
+  return candidates;
+}
+
+export function hasSiteSelectorChanges(siteId: string, raw: unknown): boolean {
+  if (!isSelectorRecord(raw)) return false;
+  const candidates = siteSelectorCandidates(siteId, raw);
+  const bundle = getBundledSiteSelectorView(siteId).profiles;
+  return SITE_SELECTOR_CONTRACTS[siteId].keys.some(
+    (key) =>
+      Object.hasOwn(candidates, key) &&
+      JSON.stringify(candidates[key]) !== JSON.stringify(bundle[key]),
+  );
+}
+
 function toRemoteView(
   siteId: string,
   raw: unknown,
@@ -147,18 +186,7 @@ function toRemoteView(
     revision <= (input.bundledRevision ?? getSiteBundledRevision())
   )
     return null;
-  const contract = SITE_SELECTOR_CONTRACTS[siteId];
-  const semantic = BUNDLED_LOCATOR_SITES.find((site) => site.id === siteId)?.selectors ?? {};
-  const candidates: Record<string, unknown> = isSelectorRecord(raw.locators)
-    ? { ...raw.locators }
-    : {};
-  // Semantic keys have one source, site.selectors; a duplicate locator must not override it.
-  for (const key of contract.keys) {
-    if (!Object.hasOwn(semantic, key)) continue;
-    delete candidates[key];
-    if (isSelectorRecord(raw.selectors) && Object.hasOwn(raw.selectors, key))
-      candidates[key] = [raw.selectors[key]];
-  }
+  const candidates = siteSelectorCandidates(siteId, raw);
   if (raw.locators !== undefined && !isSelectorRecord(raw.locators)) return null;
   const accepted = readSiteSelectorGroups(siteId, candidates, (selector) => {
     input.doc.querySelector(selector);

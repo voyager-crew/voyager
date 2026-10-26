@@ -3306,7 +3306,7 @@
     "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "向 voyager.nagi.fun 检查插件更新及受支持网站的页面识别修复。只发送网站名称，不发送 Cookie 或页面内容。关闭后停止自动和手动检查。",
+    "message": "向 voyager.nagi.fun 检查插件更新及受支持网站的页面识别修复。只发送网站名称，不发送 Cookie 或页面内容。关闭后停止自动检查，仍可手动检查。",
     "description": "Explains shared catalog updates, supported-site page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {

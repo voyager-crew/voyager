@@ -40,6 +40,7 @@ export function receiverTransition(state: ReceiverState, event: ReceiverEvent): 
 export interface ReceiverPorts {
   readonly pollMs: number;
   readonly timeoutMs: number;
+  readonly requireOriginalComposer: boolean;
   peek(): Promise<boolean>;
   find(): HTMLElement | null;
   empty(input: HTMLElement): boolean;
@@ -90,12 +91,13 @@ export function receiverEffects(ports: ReceiverPorts): StateEffects<ReceiverStat
           if (stay.signal.aborted) return;
           if (markdown === null) return stay.send({ type: 'finish', result: 'silent' });
           const composer = ports.find();
-          // A claim round trip cannot insert into a different editor mounted in its place.
+          // Only a remote locator needs to bind the claim to the original proved editor.
           const ready =
             ports.current() &&
-            composer === original &&
-            ports.empty(original) &&
-            ports.insert(markdown, original);
+            composer !== null &&
+            (!ports.requireOriginalComposer || composer === original) &&
+            ports.empty(composer) &&
+            ports.insert(markdown, composer);
           stay.send({ type: 'finish', result: ready ? 'ready' : 'failed' });
         })
         .catch(() => stay.send({ type: 'finish', result: 'silent' }));

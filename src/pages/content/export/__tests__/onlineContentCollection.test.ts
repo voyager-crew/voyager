@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// @vitest-environment-options { "url": "https://gemini.google.com/app/test" }
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {

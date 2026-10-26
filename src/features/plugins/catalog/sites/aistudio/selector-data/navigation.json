@@ -1,5 +1,16 @@
 {
   "navigation.libraryLink": [
     ".nav-content a[href=\"/library\"], .nav-content a[href$=\"aistudio.google.com/library\"]"
-  ]
+  ],
+  "history.dragHosts": [
+    "[data-test-id^=\"history-item\"]",
+    "[role=\"listitem\"]",
+    ".mat-mdc-list-item",
+    "li"
+  ],
+  "history.click": ["a.prompt-link"],
+  "navigation.promptLink": ["ms-prompt-history-v3 a.prompt-link"],
+  "navigation.navChild": [":scope > nav"],
+  "navigation.historyRoot": ["ms-prompt-history-v3"],
+  "navigation.sidebar": [".nav-content.v3-left-nav"]
 }

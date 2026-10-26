@@ -66,6 +66,8 @@ interface ActivePlugin extends PrimitiveSlot {
 }
 
 export interface DeclarativeEngineOptions {
+  /** Only an installed remote page profile needs to distinguish native decorations from our UI. */
+  readonly trackNativeDecorations?: boolean;
   /** Document to operate on. Defaults to ambient `document` (override in tests). */
   readonly doc?: Document;
   /** Adapter used to resolve `semantic` selector refs. May be null (unknown site). */
@@ -110,7 +112,7 @@ export class DeclarativeEngine {
     this.adapter = options.adapter ?? null;
     this.shouldTrackHealth = options.shouldTrackHealth ?? (() => true);
     this.onRelease = options.onRelease;
-    this.ledger = new DomEffectLedger(this.doc);
+    this.ledger = new DomEffectLedger(this.doc, options.trackNativeDecorations);
     this.primitiveEnv = {
       doc: this.doc,
       adapter: this.adapter,

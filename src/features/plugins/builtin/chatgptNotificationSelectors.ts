@@ -1,5 +1,4 @@
 import { pageSemanticSelector } from '@/core/selectors';
-import { sameItems } from '@/core/utils/array';
 import site from '@/features/plugins/catalog/sites/chatgpt/site.json';
 import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
 import type { SiteAdapter } from '@/features/plugins/types';
@@ -36,9 +35,8 @@ export function acceptsNotificationSelectors(
   try {
     for (const key of KEYS) {
       if (selected[key] === site.selectors[key]) continue;
-      const candidates = Array.from(doc.querySelectorAll(selected[key]));
-      const bundled = Array.from(doc.querySelectorAll(site.selectors[key]));
-      if (!sameItems(candidates, bundled)) return false;
+      // Every consumer uses the shared turn/composer proof, including repairs with no bundled match.
+      if (selected[key] !== pageSemanticSelector(chatgptAdapter, key, doc)) return false;
     }
     return true;
   } catch {

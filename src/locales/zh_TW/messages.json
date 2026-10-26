@@ -3306,7 +3306,7 @@
     "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "向 voyager.nagi.fun 檢查外掛更新及支援網站的頁面辨識修復。只傳送網站名稱，不傳送 Cookie 或頁面內容。關閉後停止自動與手動檢查。",
+    "message": "向 voyager.nagi.fun 檢查外掛更新及支援網站的頁面辨識修復。只傳送網站名稱，不傳送 Cookie 或頁面內容。關閉後停止自動檢查，仍可手動檢查。",
     "description": "Explains shared catalog updates, supported-site page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {

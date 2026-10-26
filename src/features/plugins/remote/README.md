@@ -39,8 +39,8 @@ without an extension release.
   page eligibility: a supported site has packaged page-locator data, or at least
   one **enabled** plugin targets its host. This includes Gemini Enterprise and
   both AI Studio hosts. A manual check sends
-  `force` and skips due-time and enabled-plugin gates, but never the online-updates
-  switch, build flag or host eligibility.
+  `force` and bypasses the automatic-update switch, due-time and enabled-plugin
+  gates; build-time disabling and hostname validation still apply.
 - **`remote/hostCatalogPolicy.ts`** — the pure rules the background and the
   content script must agree on (which hosts may be looked up, when a check is
   due, the backoff curve, when a cached entry may be used at all), each one
@@ -66,8 +66,8 @@ without an extension release.
 `SettingsBackupService`: `gvPluginOnlineUpdatesEnabled` (master switch, on by
 default) and `gvPluginCatalogCheckInterval` (`1h` / `6h` / `24h` / `manual`,
 default `6h`). The popup surfaces both on every supported site.
-Opening it reads the cache; its manual check works only while updates are on.
-Turning updates off blocks automatic and manual requests. Cached data remains
+Opening it reads the cache. Manual checks bypass the switch and interval.
+Turning updates off stops automatic requests. Cached data remains
 local; page hydration uses the bundle while updates are off.
 
 **Message**: a content script or the popup sends `gv.pluginCatalog.refresh`
@@ -128,7 +128,7 @@ string arrays. Site-specific policy owns each literal allowlist and fallback
 group. `core/selectors/contracts/` registers each site; Gemini retains its
 domain vocabulary in `core/gemini/selectors/types.ts`.
 `validateSiteAdapterData` validates this section independently: an over-limit
-section or unknown key omits the section, while a malformed or unparsable
+section is omitted and an unknown key is reported and ignored, while a malformed or unparsable
 locator drops only its surface’s group. The host’s plugin list, other adapter data and kill switch still work.
 
 Every supported host uses the same channel, for example:
@@ -155,8 +155,7 @@ only its namespaced profiles on the next page load. A complete withdrawal also
 restores admitted `site.selectors` values to their packaged values. No second
 setting, cache, endpoint or publisher is involved.
 
-Shared per-site hydration is a `startMachine` flow before features start. It
-reads the resolved catalog site data once per content-script claim. Changes to
+Shared per-site hydration is a `startMachine` flow. It reuses PluginHost’s first adapter and settings reads; when the cache has no newer adapter, startup does not wait for settings. It reads resolved catalog site data once per content-script claim. Changes to
 update settings during that read settle on the bundle; an error, timeout or
 page teardown cannot adopt late data. After readiness, the snapshot stays fixed
 until the page is loaded again. New fixes, withdrawals and switching updates off

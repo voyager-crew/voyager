@@ -6,6 +6,8 @@ import deepseek from '@/features/plugins/catalog/sites/deepseek/selector-data/ti
 import gemini from '@/features/plugins/catalog/sites/gemini/selector-data/timeline-packaged.json';
 import kimi from '@/features/plugins/catalog/sites/kimi/selector-data/timeline-packaged.json';
 
+import generic from './generic-text.json';
+
 const PROFILES: Readonly<Record<string, typeof gemini>> = {
   gemini,
   aistudio,
@@ -24,5 +26,5 @@ export function timelineSiteData(doc?: Document, url?: string): typeof gemini {
       /* Keep the current page. */
     }
   }
-  return siteId && Object.hasOwn(PROFILES, siteId) ? PROFILES[siteId] : gemini;
+  return siteId && Object.hasOwn(PROFILES, siteId) ? PROFILES[siteId] : generic;
 }

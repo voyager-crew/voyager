@@ -1,37 +1,3 @@
 {
-  "composer.keyEditables": "[contenteditable=\"true\"], [role=\"textbox\"], textarea",
-  "composer.sendCandidates": [
-    ".update-button",
-    "button[aria-label*=\"Send\"]",
-    "button[aria-label*=\"send\"]",
-    "button[aria-label*=\"Run\"]",
-    "button[aria-label*=\"run\"]",
-    "button[data-tooltip*=\"Send\"]",
-    "button[data-tooltip*=\"send\"]",
-    "button[data-tooltip*=\"Run\"]",
-    "button[data-tooltip*=\"run\"]",
-    "button[mattooltip*=\"Run\"]",
-    "button[mattooltip*=\"run\"]",
-    "button[data-testid*=\"send\"]",
-    "button[data-testid*=\"submit\"]",
-    "button mat-icon[fonticon=\"send\"]",
-    "button mat-icon[fonticon=\"play_arrow\"]",
-    "[data-send-button]",
-    ".send-button",
-    "button[aria-label*=\"Update\"]",
-    "button[aria-label*=\"Save\"]",
-    "button[aria-label*=\"更新\"]"
-  ],
-  "composer.actionOwners": [
-    "form",
-    ".text-input-field",
-    ".user-query-container.edit-mode",
-    ".input-area",
-    "chat-message"
-  ],
-  "composer.actionInput": "rich-textarea [contenteditable=\"true\"], [contenteditable=\"true\"][role=\"textbox\"], [contenteditable=\"true\"], textarea",
-  "composer.unavailableAncestors": ".stop, .gem-button-disabled, [aria-disabled=\"true\"]",
-  "composer.stopIcons": "mat-icon[fonticon=\"stop\"], mat-icon[fonticon=\"stop_circle\"]",
-  "composer.updateButton": ".update-button",
-  "composer.actionIcon": ".material-symbols-outlined, mat-icon"
+  "composer.keyEditables": "[contenteditable=\"true\"], [role=\"textbox\"], textarea"
 }

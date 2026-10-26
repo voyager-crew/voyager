@@ -4,7 +4,6 @@ import { isUserEvent } from '@/core/utils/userEvent';
 import { createContentExtractor } from '@/features/export/services/DOMContentExtractor';
 import type { ChatTurn } from '@/features/export/types/export';
 import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
-import chatgptSite from '@/features/plugins/catalog/sites/chatgpt/site.json';
 import { type Dispose, PluginScope } from '@/features/plugins/runtime/pluginScope';
 import type { PluginSettings } from '@/features/plugins/types';
 import {
@@ -18,7 +17,9 @@ import { resolveExportAdapter } from '@/pages/content/export/adapter/platformAda
 import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 import { getCurrentLanguage } from '@/utils/i18n';
 
+import { chatgptActionSelector } from '../chatgptActionTargets';
 import { chatgptComposerRootOf } from '../chatgptComposerTargets';
+import { findButtonTarget, headerSelector } from './buttonTarget';
 import {
   hasCurrentComposerAttachments,
   isCurrentComposerAttachmentRemovalControl,
@@ -37,39 +38,15 @@ import {
 import { buildHandoffBackup, downloadHandoffBackup, planHandoff } from './handoffPlan';
 import { type TemporaryHandoffCopy, getTemporaryHandoffCopy } from './i18n';
 import { discardPendingHandoff } from './pendingHandoff';
-import {
-  CHATGPT_COMPOSER_SELECTOR,
-  CHATGPT_NEW_CHAT_SELECTOR,
-  CHATGPT_SEND_CONTROL_SELECTOR,
-  CHATGPT_TEMP_TOGGLE_SELECTOR,
-} from './selectors';
+import { CHATGPT_COMPOSER_SELECTOR, CHATGPT_SEND_CONTROL_SELECTOR } from './selectors';
 import { CHATGPT_TEMPORARY_HANDOFF_CSS } from './styles';
 import { showHandoffConfirmation, showHandoffProgress } from './ui';
 
 const BUTTON_MARKER = 'data-gv-chatgpt-handoff-button';
-const HEADER_SELECTOR = chatgptSite.selectors.headerActions;
-const SHARE_SELECTOR = chatgptPageData.shareButton;
 const REFRESH_DELAY_MS = 80;
 const TOAST_MS = 4_500;
 /** Each outcome replaces the previous one: they report the same handoff. */
 const TOAST_CHANNEL = 'handoff';
-
-interface ButtonMountTarget {
-  readonly parent: HTMLElement;
-  readonly anchor: Element | null;
-  readonly floating: boolean;
-}
-
-function findButtonTarget(): ButtonMountTarget {
-  const header = document.querySelector<HTMLElement>(HEADER_SELECTOR);
-  if (header) return { parent: header, anchor: header.firstElementChild, floating: false };
-
-  const share = document.querySelector<HTMLElement>(SHARE_SELECTOR);
-  const wrapper = share?.parentElement;
-  const parent = wrapper?.parentElement;
-  if (wrapper && parent) return { parent, anchor: wrapper, floating: false };
-  return { parent: document.body, anchor: null, floating: true };
-}
 
 function handoffIcon(): SVGSVGElement {
   const namespace = 'http://www.w3.org/2000/svg';
@@ -205,7 +182,7 @@ class ChatGptTemporaryHandoffPlugin {
         const target = event.target instanceof Element ? event.target : null;
         if (
           target?.closest(CHATGPT_SEND_CONTROL_SELECTOR) ||
-          target?.closest(CHATGPT_NEW_CHAT_SELECTOR) ||
+          target?.closest(chatgptActionSelector('actions.newChat')) ||
           (target && isCurrentComposerAttachmentRemovalControl(target))
         ) {
           cancelPendingHandoffRecovery();
@@ -333,7 +310,11 @@ class ChatGptTemporaryHandoffPlugin {
 
   private mutationsTouchButtonMount(records: readonly MutationRecord[]): boolean {
     if (this.button && !this.button.isConnected) return true;
-    const selector = [HEADER_SELECTOR, SHARE_SELECTOR, CHATGPT_TEMP_TOGGLE_SELECTOR].join(',');
+    const selector = [
+      headerSelector(),
+      chatgptActionSelector('actions.shareButton'),
+      chatgptActionSelector('actions.temporaryToggle'),
+    ].join(',');
     return records.some((record) => {
       const nodes =
         record.type === 'attributes'

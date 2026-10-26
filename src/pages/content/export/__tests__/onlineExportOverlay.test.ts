@@ -1,3 +1,4 @@
+// @vitest-environment-options { "url": "https://gemini.google.com/app/test" }
 import { afterEach, expect, it } from 'vitest';
 
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';

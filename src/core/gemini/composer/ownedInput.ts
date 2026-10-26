@@ -1,3 +1,4 @@
+import { nativeDomDecorations } from '@/core/services/NativeDomDecorationService';
 import { isEditable } from '@/core/services/composer/find';
 
 // Native ownership and Voyager's own decorations are packaged protocol, never remote aliases.
@@ -27,8 +28,12 @@ export function hasVoyagerOwner(input: Element, host?: Element): boolean {
     node = node.parentElement
   ) {
     if (
+      node.matches('[data-gv-component], [data-gv-layer], [data-gv-plugin]') ||
       Array.from(node.classList).some(
-        (name) => name.startsWith('gv-') && !NATIVE_DECORATIONS.has(name),
+        (name) =>
+          name.startsWith('gv-') &&
+          !NATIVE_DECORATIONS.has(name) &&
+          !nativeDomDecorations.has(node!, name),
       )
     )
       return true;

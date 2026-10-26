@@ -7,10 +7,10 @@ import {
 import { preservesCompleteContent } from '@/core/selectors/contentIntegrity';
 import { EXPORT_PROFILES } from '@/core/selectors/contracts/export';
 import { logger } from '@/core/services/LoggerService';
-import geminiContent from '@/features/plugins/catalog/sites/gemini/selector-data/content-packaged.json';
 
 import { queryOutsideThoughts, shouldSkipElement } from './exportDomPolicy';
 import { getExportReadProfiles } from './exportSiteData';
+import sharedContent from './shared-content.json';
 
 function bundledMessageContent(element: HTMLElement, siteId: string): HTMLElement {
   const data = getExportReadProfiles(siteId);
@@ -30,7 +30,7 @@ function bundledMessageContent(element: HTMLElement, siteId: string): HTMLElemen
       element,
       Object.hasOwn(EXPORT_PROFILES, siteId)
         ? getBundledSiteSelectorView(siteId).profiles['export.assistantContent'].join(',')
-        : geminiContent['export.assistantFallback'].join(','),
+        : sharedContent['export.assistantFallback'].join(','),
     );
   }
 

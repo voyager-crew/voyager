@@ -1,4 +1,5 @@
 import { chatgptExportData } from './chatgptExportData';
+import { chatgptLoggedOutThreadSelector } from './chatgptExportLocators';
 import { isRendered } from './chatgptThread';
 
 /**
@@ -16,8 +17,9 @@ export const DESKTOP_TURN_SELECTOR = chatgptExportData['export.desktopTurns'].jo
 /** Keep page detection independent of the reader's Library and export services. */
 export function resolveChatGptLoggedOutThread(doc: Document = document): HTMLElement | null {
   return (
-    Array.from(doc.querySelectorAll<HTMLElement>(LOGGED_OUT_THREAD_SELECTOR)).find(isRendered) ??
-    null
+    Array.from(doc.querySelectorAll<HTMLElement>(chatgptLoggedOutThreadSelector(doc))).find(
+      isRendered,
+    ) ?? null
   );
 }
 

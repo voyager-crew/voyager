@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// @vitest-environment-options { "url": "https://gemini.google.com/app/test" }
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { installGeminiTurnPatch } from '../../__tests__/geminiOnlineTurnFixture';

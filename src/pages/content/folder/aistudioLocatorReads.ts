@@ -7,37 +7,25 @@ import {
 import packaged from '@/features/plugins/catalog/sites/aistudio/selector-data/navigation-packaged.json';
 import { aistudioAdapter } from '@/features/plugins/sites/adapters/aistudio';
 
+import {
+  aistudioAccountPrefix,
+  isOriginalAIStudioNavigation,
+  nativeAIStudioLibraryAnchor as nativePromptAnchor,
+} from './aistudioNativeProof';
+
+export { readAIStudioHistoryRoot } from './aistudioNavigationReads';
+
 const packagedData = {
   ...packaged,
   'history.links': [aistudioAdapter.folders!.rows.row],
   'history.popovers': [aistudioAdapter.folders!.rows.portaled!],
-  'navigation.sidebar': [aistudioAdapter.folders!.sidebar],
 };
-
-function accountPrefix(pathname: string): string {
-  return /^\/u\/\d+(?=\/)/.exec(pathname)?.[0] ?? '';
-}
 
 /** Only changed online navigation adds account-prefix protection; the installed path is unchanged. */
 export function aistudioLibraryFallbackPath(doc: Document = document): string {
   return getSiteSelectorView('aistudio').remoteKeys.has('navigation.libraryLink')
-    ? `${accountPrefix(doc.location.pathname)}/library`
+    ? `${aistudioAccountPrefix(doc.location.pathname)}/library`
     : '/library';
-}
-
-/** Identity and URL checks do not use the remote locator's spelling. */
-function nativePromptAnchor(anchor: Element): anchor is HTMLAnchorElement {
-  if (!(anchor instanceof HTMLAnchorElement)) return false;
-  try {
-    const url = new URL(anchor.href, anchor.ownerDocument.location.href);
-    return (
-      url.origin === anchor.ownerDocument.location.origin &&
-      accountPrefix(url.pathname) === accountPrefix(anchor.ownerDocument.location.pathname) &&
-      /\/prompts\/[^/?#]+/.test(url.pathname)
-    );
-  } catch {
-    return false;
-  }
 }
 
 export const aistudioPackagedSelector = (key: keyof typeof packagedData): string =>
@@ -56,7 +44,9 @@ function readRows(doc: Document, view: SiteSelectorView, archive: boolean): Libr
   const rows = doc.querySelectorAll<HTMLElement>(
     view.profiles[archive ? 'library.archivableRows' : 'library.rows'].join(','),
   );
-  const link = aistudioPackagedSelector(archive ? 'library.archivableLink' : 'history.links');
+  const link = archive
+    ? view.profiles['library.archivableLink'].join(',')
+    : aistudioPackagedSelector('history.links');
   const values = Array.from(rows, (row) => ({
     row,
     anchor: row.querySelector<HTMLAnchorElement>(link),
@@ -73,8 +63,8 @@ export function readAIStudioLibraryRows(
   const view = getSiteSelectorView('aistudio');
   const read = (candidate: SiteSelectorView) => readRows(doc, candidate, archive);
   if (
-    !['library.rows', 'library.archivableRows', 'library.table'].some((key) =>
-      view.remoteKeys.has(key),
+    !['library.rows', 'library.archivableRows', 'library.table', 'library.archivableLink'].some(
+      (key) => view.remoteKeys.has(key),
     )
   )
     return read(bundle);
@@ -86,10 +76,14 @@ export function readAIStudioLibraryRows(
           actual.map((entry) => entry.row),
           expected.map((entry) => entry.row),
         ) &&
-        same(
-          actual.map((entry) => entry.anchor),
-          expected.map((entry) => entry.anchor),
-        )
+        actual.every((entry, index) => {
+          if (expected[index].anchor || !entry.anchor)
+            return entry.anchor === expected[index].anchor;
+          const native = Array.from(entry.row.querySelectorAll('a[href]')).filter(
+            nativePromptAnchor,
+          );
+          return native.length === 1 && entry.anchor === native[0];
+        })
       );
     const native = Array.from(
       doc.querySelectorAll<HTMLElement>(
@@ -116,11 +110,6 @@ export function readAIStudioLibraryRows(
   }).value;
 }
 
-/** Exact history mount ancestry has no independent page proof; this anchor stays installed. */
-export function readAIStudioHistoryRoot(doc: Document = document): HTMLElement | null {
-  return doc.querySelector<HTMLElement>(aistudioPackagedSelector('navigation.historyRoot'));
-}
-
 export function readAIStudioLibraryLink(doc: Document = document): HTMLAnchorElement | null {
   const bundle = getBundledSiteSelectorView('aistudio');
   const view = getSiteSelectorView('aistudio');
@@ -130,14 +119,20 @@ export function readAIStudioLibraryLink(doc: Document = document): HTMLAnchorEle
   const expected = read(bundle);
   return resolveSiteSelectorOperationInView(view, read, (link) => {
     if (expected) return link === expected;
-    if (!(link instanceof HTMLAnchorElement) || !link.closest('nav')) return false;
+    if (
+      !(link instanceof HTMLAnchorElement) ||
+      !link.closest('nav') ||
+      !isOriginalAIStudioNavigation(link)
+    )
+      return false;
     const candidates = Array.from(doc.querySelectorAll<HTMLAnchorElement>('nav a[href]')).filter(
       (anchor) => {
         try {
           const url = new URL(anchor.href, doc.location.href);
           return (
+            isOriginalAIStudioNavigation(anchor) &&
             url.origin === doc.location.origin &&
-            accountPrefix(url.pathname) === accountPrefix(doc.location.pathname) &&
+            aistudioAccountPrefix(url.pathname) === aistudioAccountPrefix(doc.location.pathname) &&
             /^\/(?:u\/\d+\/)?library\/?$/.test(url.pathname)
           );
         } catch {
@@ -169,8 +164,14 @@ export function readAIStudioLibraryTableSelector(doc: Document = document): stri
 
 export function isAIStudioLibraryRowDrag(target: Element): boolean {
   const view = getSiteSelectorView('aistudio');
-  if (!view.remoteKeys.has('library.rows') && !view.remoteKeys.has('library.archivableRows')) {
-    const row = target.closest(aistudioPackagedSelector('library.dropRows'));
+  if (
+    !view.remoteKeys.has('library.rows') &&
+    !view.remoteKeys.has('library.archivableRows') &&
+    !view.remoteKeys.has('library.archivableLink')
+  ) {
+    const row = target.closest(
+      getBundledSiteSelectorView('aistudio').profiles['library.archivableRows'].join(','),
+    );
     return Boolean(row?.querySelector(aistudioPackagedSelector('library.dropLink')));
   }
   return readAIStudioLibraryRows(true, target.ownerDocument).some(

@@ -77,7 +77,7 @@ export function readSiteSelectorGroups(
   const profiles: Record<string, readonly string[]> = {};
   const rejected: string[] = [];
   for (const group of contract.groups) {
-    const present = group.filter((key) => Object.hasOwn(value, key));
+    const present = group.filter((key) => contract.keys.includes(key) && Object.hasOwn(value, key));
     if (present.length === 0) continue;
     const valid = present.every((key) => {
       const list = value[key];

@@ -9,6 +9,9 @@ import {
   AISTUDIO_SURFACE_KEYS,
 } from './aistudioSurfaces';
 import { CHATGPT_ACTION_GROUPS, CHATGPT_ACTION_KEYS } from './chatgptActions';
+import { CHATGPT_EXPORT_KEYS, CHATGPT_EXPORT_GROUPS, CHATGPT_EXPORT_FILES } from './chatgptExport';
+import { CHATGPT_SEMANTIC_KEYS, CHATGPT_SEMANTIC_GROUPS } from './chatgptSemantics';
+import { COMMON_SEMANTIC_KEYS, commonSemanticGroups } from './commonSemantics';
 import { EXPORT_GROUPS, EXPORT_KEYS } from './export';
 import { GEMINI_SELECTOR_FILES } from './gemini';
 import {
@@ -41,33 +44,70 @@ export const SITE_SELECTOR_CONTRACTS: Readonly<Record<string, SiteSelectorContra
       ...INPUT_SITE_KEYS.chatgpt,
       ...INPUT_SEMANTIC_KEYS.chatgpt,
       ...CHATGPT_ACTION_KEYS,
+      ...CHATGPT_SEMANTIC_KEYS,
+      ...COMMON_SEMANTIC_KEYS.chatgpt,
+      ...CHATGPT_EXPORT_KEYS,
       ...EXPORT_KEYS,
     ],
     groups: [
       ...INPUT_SITE_GROUPS.chatgpt,
       ...INPUT_SEMANTIC_GROUPS.chatgpt,
       ...CHATGPT_ACTION_GROUPS,
+      ...CHATGPT_SEMANTIC_GROUPS,
+      ...commonSemanticGroups('chatgpt'),
+      ...CHATGPT_EXPORT_GROUPS,
       ...EXPORT_GROUPS,
     ],
     files: [
       ...INPUT_SITE_FILES.chatgpt,
       { file: 'actions.json', keys: CHATGPT_ACTION_KEYS },
+      ...CHATGPT_EXPORT_FILES,
       EXPORT_FILE,
     ],
   },
   claude: {
-    keys: [...INPUT_SITE_KEYS.claude, ...INPUT_SEMANTIC_KEYS.claude, ...EXPORT_KEYS],
-    groups: [...INPUT_SITE_GROUPS.claude, ...INPUT_SEMANTIC_GROUPS.claude, ...EXPORT_GROUPS],
+    keys: [
+      ...COMMON_SEMANTIC_KEYS.claude,
+      ...INPUT_SITE_KEYS.claude,
+      ...INPUT_SEMANTIC_KEYS.claude,
+      ...EXPORT_KEYS,
+    ],
+    groups: [
+      ...commonSemanticGroups('claude'),
+      ...INPUT_SITE_GROUPS.claude,
+      ...INPUT_SEMANTIC_GROUPS.claude,
+      ...EXPORT_GROUPS,
+    ],
     files: [...INPUT_SITE_FILES.claude, EXPORT_FILE],
   },
   deepseek: {
-    keys: [...INPUT_SITE_KEYS.deepseek, ...INPUT_SEMANTIC_KEYS.deepseek, ...EXPORT_KEYS],
-    groups: [...INPUT_SITE_GROUPS.deepseek, ...INPUT_SEMANTIC_GROUPS.deepseek, ...EXPORT_GROUPS],
+    keys: [
+      ...COMMON_SEMANTIC_KEYS.deepseek,
+      ...INPUT_SITE_KEYS.deepseek,
+      ...INPUT_SEMANTIC_KEYS.deepseek,
+      ...EXPORT_KEYS,
+    ],
+    groups: [
+      ...commonSemanticGroups('deepseek'),
+      ...INPUT_SITE_GROUPS.deepseek,
+      ...INPUT_SEMANTIC_GROUPS.deepseek,
+      ...EXPORT_GROUPS,
+    ],
     files: [...INPUT_SITE_FILES.deepseek, EXPORT_FILE],
   },
   kimi: {
-    keys: [...INPUT_SITE_KEYS.kimi, ...INPUT_SEMANTIC_KEYS.kimi, ...EXPORT_KEYS],
-    groups: [...INPUT_SITE_GROUPS.kimi, ...INPUT_SEMANTIC_GROUPS.kimi, ...EXPORT_GROUPS],
+    keys: [
+      ...COMMON_SEMANTIC_KEYS.kimi,
+      ...INPUT_SITE_KEYS.kimi,
+      ...INPUT_SEMANTIC_KEYS.kimi,
+      ...EXPORT_KEYS,
+    ],
+    groups: [
+      ...commonSemanticGroups('kimi'),
+      ...INPUT_SITE_GROUPS.kimi,
+      ...INPUT_SEMANTIC_GROUPS.kimi,
+      ...EXPORT_GROUPS,
+    ],
     files: [...INPUT_SITE_FILES.kimi, EXPORT_FILE],
   },
 };

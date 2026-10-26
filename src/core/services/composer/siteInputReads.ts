@@ -12,7 +12,7 @@ import { packagedSiteInputSelectors, type InputSiteId } from './siteInputData';
 
 const NATIVE_EDITABLE = 'textarea, [contenteditable="true"], [contenteditable="plaintext-only"]';
 const OTHER_OWNER =
-  '[role="dialog"], dialog, [data-message-author-role], [data-conversation-role], [data-gv-plugin], [data-turn-role], nav, aside';
+  '[role="dialog"], dialog, [data-message-author-role], [data-conversation-role], [data-gv-plugin], [data-turn-role], [data-turn-key], [data-chatgpt-search-unit-key], nav, aside';
 
 export function inputCandidates(doc: Document, selectors: readonly string[]): HTMLElement[] {
   return [

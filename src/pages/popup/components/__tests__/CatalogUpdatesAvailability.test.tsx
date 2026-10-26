@@ -10,7 +10,7 @@ import { container, flushEffects, renderManager, root } from './pluginManagerHar
 
 describe('the shared online updates controls', () => {
   it.each(['native', 'plugin'] as const)(
-    '%s settings keep manual checks disabled until online updates are enabled',
+    '%s settings allow a manual check while automatic updates are off',
     async (surface) => {
       vi.mocked(chrome.storage.sync.get).mockResolvedValue({
         [StorageKeys.PLUGIN_ONLINE_UPDATES_ENABLED]: false,
@@ -42,9 +42,9 @@ describe('the shared online updates controls', () => {
       );
       if (!button || !toggle) throw new Error('Expected shared catalog controls');
       expect(toggle.checked).toBe(false);
-      expect(button.disabled).toBe(true);
+      expect(button.disabled).toBe(false);
       act(() => button.click());
-      expect(refresh).not.toHaveBeenCalled();
+      expect(refresh).toHaveBeenCalledOnce();
 
       await act(async () => toggle.click());
       expect(chrome.storage.sync.set).toHaveBeenCalledWith({
@@ -52,7 +52,7 @@ describe('the shared online updates controls', () => {
       });
       expect(button.disabled).toBe(false);
       act(() => button.click());
-      expect(refresh).toHaveBeenCalledOnce();
+      expect(refresh).toHaveBeenCalledTimes(2);
     },
   );
 });

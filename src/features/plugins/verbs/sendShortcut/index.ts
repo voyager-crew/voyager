@@ -5,6 +5,7 @@ import { getSendKeyCoordinator } from '@/core/services/composer/sendKeys/sendKey
 import { isImeKeyEvent, type SendKeyMode } from '@/core/services/composer/sendKeys/sendKeyIntent';
 import { SEND_SITE_POLICIES } from '@/core/services/composer/sendKeys/sendSitePolicies';
 import { resolveComposerOperation } from '@/core/services/composer/siteComposerOperation';
+import { nativeSiteComposerRoot } from '@/core/services/composer/siteInputReads';
 import { isGeminiEnterpriseEnvironment } from '@/core/utils/gemini';
 
 import { claimComposerEnter } from '../composerEnterOwner';
@@ -88,9 +89,11 @@ export const sendShortcutPrimitive: Primitive<SendShortcutParams> = {
 
   activate(scope, params, context) {
     const { doc } = context;
-    const adapter = context.adapter
-      ? withPageSemanticSelectors(context.adapter, ['composer', 'composerRoot', 'sendButton'])
-      : null;
+    const readAdapter = () =>
+      context.adapter
+        ? withPageSemanticSelectors(context.adapter, ['composer', 'composerRoot', 'sendButton'])
+        : null;
+    const adapter = readAdapter();
     const mode = params.mode ?? 'ctrlEnterSends';
     const host = doc.location.hostname;
     const site =
@@ -132,7 +135,11 @@ export const sendShortcutPrimitive: Primitive<SendShortcutParams> = {
         if (event.shiftKey || event.altKey) return;
         const target = event.target;
         if (!(target instanceof Element)) return;
-        if (!adapter) return;
+        // Ownership may become valid only after a native composer remount; prove at the event.
+        const current = readAdapter();
+        if (!current) return;
+        const { composer, composerRoot, sendButton } = current.selectors;
+        if (!composer || !composerRoot || !sendButton) return;
         const ctrl = event.ctrlKey || event.metaKey;
         const sending = mode === 'enterSends' ? !ctrl : ctrl;
         const accepted = resolveComposerOperation(
@@ -146,7 +153,11 @@ export const sendShortcutPrimitive: Primitive<SendShortcutParams> = {
               field !== findComposer(selectors.composer, { doc })
             )
               return { field: null, root: null, control: null };
-            const root = sending || requiresProof ? field.closest(selectors.composerRoot) : null;
+            const root =
+              sending || requiresProof
+                ? (field.closest(selectors.composerRoot) ??
+                  (requiresProof ? nativeSiteComposerRoot(adapter.id, field) : null))
+                : null;
             if (!sending) return { field, root, control: null };
             if (!root || hasPendingComposerUpload(root)) return { field, root, control: null };
             const control = root

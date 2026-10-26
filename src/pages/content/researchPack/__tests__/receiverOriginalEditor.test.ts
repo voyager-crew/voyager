@@ -2,11 +2,13 @@
 // @vitest-environment-options { "url": "https://chatgpt.com/" }
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { initializeSiteSelectors } from '@/core/selectors';
 import { HANDOFF_MESSAGES, type HandoffMessage } from '@/features/researchPack/services/handoff';
 
 import { startResearchPackReceiver } from '../receiver';
 
 let stop = () => {};
+let stopSelectors = () => {};
 beforeEach(() => {
   vi.useFakeTimers();
   document.body.innerHTML = '<form><div id="prompt-textarea" contenteditable="true"></div></form>';
@@ -17,15 +19,36 @@ beforeEach(() => {
 });
 afterEach(() => {
   stop();
+  stopSelectors();
   document.body.replaceChildren();
   vi.restoreAllMocks();
   vi.useRealTimers();
 });
 
 describe('handoff editor ownership', () => {
-  it.each([false, true])(
-    'a claimed pack stays with its original editor (remounted: %s)',
-    async (remounted) => {
+  it.each([
+    { remote: false, remounted: false },
+    { remote: false, remounted: true },
+    { remote: true, remounted: false },
+    { remote: true, remounted: true },
+  ])(
+    'a remounted bundled editor receives its pack while remote claims keep their owner ($remote / $remounted)',
+    async ({ remote, remounted }) => {
+      if (remote) {
+        const session = initializeSiteSelectors('chatgpt', {
+          host: 'chatgpt.com',
+          doc: document,
+          lifetime: new AbortController().signal,
+          bundledRevision: 0,
+          read: async () => ({
+            id: 'chatgpt',
+            catalogRevision: 1,
+            locators: { 'input.handoff': ['#prompt-textarea'] },
+          }),
+        });
+        stopSelectors = session.stop;
+        await session.ready;
+      }
       let finish!: (value: unknown) => void;
       const claim = new Promise<unknown>((resolve) => {
         finish = resolve;
@@ -43,9 +66,9 @@ describe('handoff editor ownership', () => {
       finish({ ok: true, markdown: 'The claimed pack' });
       await vi.advanceTimersByTimeAsync(0);
       expect(document.getElementById('prompt-textarea')!.textContent).toBe(
-        remounted ? '' : 'The claimed pack',
+        remote && remounted ? '' : 'The claimed pack',
       );
-      expect(insert).toHaveBeenCalledTimes(remounted ? 0 : 1);
+      expect(insert).toHaveBeenCalledTimes(remote && remounted ? 0 : 1);
       expect(original.textContent).toBe(remounted ? '' : 'The claimed pack');
     },
   );

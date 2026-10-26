@@ -11,5 +11,6 @@
   "export.collectorAnswer": "message-content, .markdown, .markdown-main-panel",
   "export.menuResponseOwner": ".response-container, response-container, .model-response, model-response",
   "export.userLinesFallback": ".query-text-line",
-  "export.attachmentPreviewOwner": "user-query-file-preview"
+  "export.attachmentPreviewOwner": "user-query-file-preview",
+  "export.assistantFallback": [".markdown-main-panel, .markdown, .model-response-text"]
 }

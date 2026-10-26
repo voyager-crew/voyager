@@ -88,7 +88,6 @@ describe('catalog-backed Gemini page reads', () => {
   it.each([
     undefined,
     [],
-    { 'turn.user': ['.foreign'], 'account.identity': ['.account'] },
     { 'turn.user': Array(33).fill('.foreign') },
     { 'turn.user': Array(32).fill('界'.repeat(2048)) },
   ])('a missing or malformed locators section keeps bundled page reads: %j', async (locators) => {
@@ -96,6 +95,15 @@ describe('catalog-backed Gemini page reads', () => {
     const view = await start();
     expect(users().map((node) => node.id)).toEqual(['same']);
     expect(view.remoteKeys.size).toBe(0);
+  });
+
+  it('a future key does not withdraw the repaired turn snapshot at page startup', async () => {
+    vi.mocked(chrome.storage.local.get).mockResolvedValue(
+      cache({ 'turn.user': ['.repaired-user'], 'future.turn': ['.future'] }) as never,
+    );
+    const view = await start();
+    expect(users().map((node) => node.id)).toEqual(['same']);
+    expect(view.remoteKeys.has('turn.user')).toBe(true);
   });
 
   it('a cache from another extension version cannot retarget the page', async () => {

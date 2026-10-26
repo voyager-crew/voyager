@@ -200,6 +200,7 @@ export function startResearchPackReceiver(deps: ResearchPackReceiverDeps = {}): 
       effects: receiverEffects({
         pollMs: RECEIVER_POLL_MS,
         timeoutMs: RECEIVER_COMPOSER_TIMEOUT_MS,
+        requireOriginalComposer: getSiteSelectorView(target).remoteKeys.has('input.handoff'),
         peek: async () => {
           const peek = await send({ type: HANDOFF_MESSAGES.peek });
           return Boolean(

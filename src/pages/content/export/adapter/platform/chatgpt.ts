@@ -4,9 +4,9 @@ import { escapeHtml, escapeHtmlAttribute } from '@/features/export/services/expo
 import type { SiteAdapter } from '@/features/plugins/types';
 
 import { chatgptExportData, CHATGPT_CODE_BLOCK } from '../chatgptExportData';
+import { chatgptLoggedOutAssistantSelector } from '../chatgptExportLocators';
 import {
   DESKTOP_TURN_SELECTOR,
-  LOGGED_OUT_ASSISTANT_SELECTOR,
   LOGGED_OUT_MESSAGE_SELECTOR,
   isChatGptLoggedOutConversation,
   resolveChatGptLoggedOutThread,
@@ -277,7 +277,10 @@ export function buildChatGptAdapter(provided: SiteAdapter): ExportPlatformAdapte
     site,
     siteId: site.id,
     getUserSelectors: () => [site.selectors.userTurn],
-    getAssistantSelectors: () => [site.selectors.assistantTurn, LOGGED_OUT_ASSISTANT_SELECTOR],
+    getAssistantSelectors: () => [
+      site.selectors.assistantTurn,
+      chatgptLoggedOutAssistantSelector(),
+    ],
     extractConversationTitle: extractTitle,
     extractConversationIdFromUrl: extractId,
     resolveConversationRoot: resolveRoot,

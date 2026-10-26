@@ -2,6 +2,7 @@
 // @vitest-environment-options { "url": "https://chatgpt.com/" }
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { initializeSiteSelectors, type SiteSelectorLifetime } from '@/core/selectors';
 import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
 
 import {
@@ -23,6 +24,7 @@ vi.mock('@/utils/i18n', () => ({ getCurrentLanguage: vi.fn(async () => 'en') }))
 let page: ChatGptPageFixture;
 let picker: LiveModelPicker;
 let bridge: Harness;
+let locatorLifetime: SiteSelectorLifetime | undefined;
 
 function mount(options: PickerOptions = {}, pageOptions: PageOptions = {}): void {
   page = mountChatGptPage(pageOptions);
@@ -46,6 +48,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  locatorLifetime?.stop();
   const running = bridge?.runtime.runningTaskId;
   if (running) bridge.runtime.abort(running);
   vi.useRealTimers();
@@ -197,22 +200,30 @@ describe('Local Bridge model.select: UI languages the site data does not name', 
     expect(bridge.outcome()).toMatchObject({ ok: true, data: { observed: { effortIndex: 4 } } });
   });
 
-  it('an unproven online picker marker preserves the selected effort instead of clicking a guess', async () => {
+  it('a renamed picker still applies Pro through its native accessible name and menu', async () => {
     mount({ ...german, marked: false, effort: 1 });
-    page.form
-      .querySelector('button[aria-haspopup="menu"]')!
-      .setAttribute('data-composer-picker', 'reasoning');
-    bridge = createHarness(undefined, {
-      ...chatgptAdapter,
-      pageHooks: {
-        ...chatgptAdapter.pageHooks!,
-        modelPickerTrigger: 'button[aria-haspopup="menu"][data-composer-picker="reasoning"]',
-      },
+    picker.trigger.setAttribute('data-composer-picker', 'reasoning');
+    picker.trigger.removeAttribute('aria-label');
+    picker.trigger.setAttribute('aria-labelledby', 'model-label');
+    page.form.insertAdjacentHTML('beforeend', '<span id="model-label">Select ChatGPT model</span>');
+    locatorLifetime = initializeSiteSelectors('chatgpt', {
+      host: 'chatgpt.com',
+      doc: document,
+      lifetime: new AbortController().signal,
+      bundledRevision: 1,
+      read: async () => ({
+        id: 'chatgpt',
+        catalogRevision: 2,
+        pageHooks: {
+          modelPickerTrigger: '[data-composer-picker="reasoning"]',
+        },
+      }),
     });
+    await locatorLifetime.ready;
     await select({ target: { preset: 'pro' } });
 
-    expect(bridge.outcome()).toMatchObject({ ok: false, error: { code: 'selector-missing' } });
-    expect(picker.state()).toMatchObject({ effort: 1, pointerdowns: 0 });
+    expect(bridge.outcome()).toMatchObject({ ok: true, data: { observed: { effortIndex: 4 } } });
+    expect(picker.state()).toMatchObject({ effort: 4, open: false, pointerdowns: 1 });
   });
 
   it('finds no trigger when it carries neither the marker nor a known label', async () => {

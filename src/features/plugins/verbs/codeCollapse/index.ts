@@ -22,6 +22,8 @@
  * a second code collapse on the same page, another plugin or the native
  * module, leaves a block the first holds alone until it lets go.
  */
+import { getPageSelectorSiteId, getSiteSelectorView } from '@/core/selectors';
+import type { CollapseReadSession } from '@/core/ui/collapse/engine';
 import {
   type CodeBlockCollapse,
   type CodeBlockCollapseSite,
@@ -125,7 +127,7 @@ export const codeCollapsePrimitive: Primitive<CodeCollapseParams> = {
     const { doc, adapter } = context;
     const turn = adapter?.selectors.assistantTurn;
     const hostSelector = adapter?.selectors.codeBlock;
-    if (!turn || !hostSelector) return;
+    if (!adapter || !turn || !hostSelector) return;
     const thinking = adapter?.selectors.thinkingBlock;
     context.setTargetCounter(() => doc.querySelectorAll(turn).length);
 
@@ -136,19 +138,52 @@ export const codeCollapsePrimitive: Primitive<CodeCollapseParams> = {
 
     let engine: CodeBlockCollapse | null = null;
     const bar = createCollapseAllBar(doc, () => engine!);
+    const code = (host: HTMLElement) => first(host, params.code ?? DEFAULT_CODE) ?? host;
+    const actions = (host: HTMLElement) => {
+      const action = params.action ? first(host, params.action) : null;
+      if (action?.parentElement) return action.parentElement;
+      // No button row: the toggle goes at the end of the block, never inside the code itself.
+      return first(host, params.code ?? DEFAULT_CODE) ? host : null;
+    };
+    const accepts = (host: HTMLElement, assistant: string, excluded: string | undefined) =>
+      within(host, assistant) && !(excluded && within(host, excluded)) && !host.isContentEditable;
+    const remote =
+      getPageSelectorSiteId(doc) === adapter.id &&
+      ['codeBlock', 'assistantTurn'].some((key) =>
+        getSiteSelectorView(adapter.id).remoteKeys.has(key),
+      );
+    if (remote)
+      context.setTargetCounter(
+        () => doc.querySelectorAll(adapter.selectors.assistantTurn ?? turn).length,
+      );
     engine = createCodeBlockCollapse({
       root: () => doc.body,
       hostSelector,
-      accepts: (host) =>
-        within(host, turn) && !(thinking && within(host, thinking)) && !host.isContentEditable,
-      code: (host) => first(host, params.code ?? DEFAULT_CODE) ?? host,
-      actions(host) {
-        const action = params.action ? first(host, params.action) : null;
-        if (action?.parentElement) return action.parentElement;
-        // No button row: the toggle goes at the end of the block, never inside the code itself.
-        return first(host, params.code ?? DEFAULT_CODE) ? host : null;
-      },
-      clip: (_host, code) => code,
+      ...(remote
+        ? {
+            resolveHosts(ownerRoot: ParentNode): CollapseReadSession {
+              // A valid alias can later match a foreign editor; re-prove it before each scan writes.
+              const currentHost = adapter.selectors.codeBlock ?? hostSelector;
+              const currentTurn = adapter.selectors.assistantTurn ?? turn;
+              const currentThinking = adapter.selectors.thinkingBlock;
+              const hosts = Array.from(ownerRoot.querySelectorAll<HTMLElement>(currentHost));
+              return {
+                hosts,
+                closest: (element) =>
+                  hosts.find((host) => host === element || host.contains(element)) ?? null,
+                matches: (element) => hosts.includes(element as HTMLElement),
+                accepts: (host) => accepts(host, currentTurn, currentThinking),
+                content: code,
+                actions,
+                clip: (_host, content) => content,
+              };
+            },
+          }
+        : {}),
+      accepts: (host) => accepts(host, turn, thinking),
+      code,
+      actions,
+      clip: (_host, content) => content,
       collapseByDefault: true,
       onChange: () => bar.sync(),
     });

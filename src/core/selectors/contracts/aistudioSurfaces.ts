@@ -6,13 +6,38 @@ export const AISTUDIO_SURFACE_KEYS = [
   'library.rows',
   'library.archivableRows',
   'library.table',
+  'library.archivableLink',
   'navigation.libraryLink',
+  'history.dragHosts',
+  'history.click',
+  'navigation.promptLink',
+  'navigation.navChild',
+  'navigation.historyRoot',
+  'navigation.sidebar',
 ] as const;
 export const AISTUDIO_SURFACE_GROUPS = [
-  ['library.rows', 'library.archivableRows', 'library.table'],
+  ['library.rows', 'library.archivableRows', 'library.table', 'library.archivableLink'],
   ['navigation.libraryLink'],
+  ['history.dragHosts'],
+  ['history.click'],
+  ['navigation.promptLink'],
+  ['navigation.navChild', 'navigation.historyRoot', 'navigation.sidebar'],
 ] as const;
 export const AISTUDIO_SURFACE_FILES = [
-  { file: 'library.json', keys: ['library.rows', 'library.archivableRows', 'library.table'] },
-  { file: 'navigation.json', keys: ['navigation.libraryLink'] },
+  {
+    file: 'library.json',
+    keys: ['library.rows', 'library.archivableRows', 'library.table', 'library.archivableLink'],
+  },
+  {
+    file: 'navigation.json',
+    keys: [
+      'navigation.libraryLink',
+      'history.dragHosts',
+      'history.click',
+      'navigation.promptLink',
+      'navigation.navChild',
+      'navigation.historyRoot',
+      'navigation.sidebar',
+    ],
+  },
 ] as const;

@@ -33,9 +33,9 @@
  * silently discarded by every client.
  *
  * Gemini and AI Studio (`sites/gemini`, `sites/aistudio`) are read and checked
- * like every site, so a broken manifest there still fails the build. Gemini consumer
- * pages receive locator profiles in their host file; native plugins stay packaged.
- * AI Studio and Gemini Business still have no published host file (D14).
+ * like every site, so a broken manifest there still fails the build. Every supported
+ * host, including AI Studio and Gemini Enterprise, receives its own locator profiles;
+ * native plugins stay packaged (D14).
  *
  * Output is deterministic — sites, hosts and plugin ids are sorted — so a re-run
  * with the same `generatedAt` produces byte-identical files.
@@ -52,10 +52,7 @@ import {
   HOST_CATALOG_FORMAT,
   validateHostCatalogFile,
 } from '../../src/features/plugins/remote/hostCatalogFile';
-import {
-  allowsRemoteCatalog,
-  isStaticallyInjectedHost,
-} from '../../src/features/plugins/sites/hostPolicy';
+import { isStaticallyInjectedHost } from '../../src/features/plugins/sites/hostPolicy';
 import { matchesAnyPattern } from '../../src/features/plugins/sites/matchPattern';
 import {
   OLDEST_REMOTE_SITE_CONSUMER_VERSION,
@@ -247,12 +244,10 @@ export async function buildHostCatalogs(
 
   const byHost = new Map<string, PluginManifest[]>();
   for (const site of sites) {
-    const hosts = new Set(
-      [
-        ...concreteHosts(site.adapter.matches),
-        ...site.plugins.flatMap((plugin) => concreteHosts(plugin.matches)),
-      ].filter(allowsRemoteCatalog),
-    );
+    const hosts = new Set([
+      ...concreteHosts(site.adapter.matches),
+      ...site.plugins.flatMap((plugin) => concreteHosts(plugin.matches)),
+    ]);
     // A locator-only native host has no remote plugin authority, including revocations.
     if (
       existsSync(join(options.catalogDir, 'sites', site.dir, 'revoked.json')) &&
@@ -271,7 +266,7 @@ export async function buildHostCatalogs(
     for (const manifest of site.plugins) {
       for (const host of concreteHosts(manifest.matches)) {
         // Native official plugins are validated above but remain packaged.
-        if (!allowsRemoteCatalog(host) || isStaticallyInjectedHost(host)) continue;
+        if (isStaticallyInjectedHost(host)) continue;
         const bucket = byHost.get(host);
         if (bucket) bucket.push(manifest);
         else byHost.set(host, [manifest]);

@@ -14,6 +14,7 @@ import { buildCatalogExportAdapter, hasCatalogExport } from './platform/catalog'
 import { buildChatGptAdapter } from './platform/chatgpt';
 import type { ExportPlatformAdapter } from './platform/contract';
 import { buildGeminiAdapter } from './platform/gemini';
+import { buildGenericExportAdapter } from './platform/generic';
 
 export type { ExportPlatformAdapter } from './platform/contract';
 
@@ -23,6 +24,7 @@ const EXPORT_ADAPTER_FACTORIES = {
   gemini: buildGeminiAdapter,
   chatgpt: buildChatGptAdapter,
   catalog: buildCatalogExportAdapter,
+  generic: buildGenericExportAdapter,
 } satisfies Record<string, ExportAdapterFactory>;
 
 /** A site id with a registered exporter. */
@@ -34,7 +36,6 @@ export interface ExportHost {
 }
 
 const siteRegistry = SiteRegistry.createDefault();
-const GEMINI_FALLBACK_URL = 'https://gemini.google.com/';
 
 function isExportHostId(id: string): id is ExportHostId {
   return Object.hasOwn(EXPORT_ADAPTER_FACTORIES, id);
@@ -84,10 +85,8 @@ export function resolveExportHost(url = window.location.href): ExportHost {
 
   // A catalog site without an exporter must not read its page with Gemini's rules.
   if (site) throw new Error('Conversation export is unavailable on this site');
-  // Hosts the registry does not know keep the native Gemini entry point's historical fallback.
-  const geminiSite = siteRegistry.resolveByUrl(GEMINI_FALLBACK_URL);
-  if (!geminiSite) throw new Error('Gemini site adapter is unavailable');
-  return { id: 'gemini', adapter: buildGeminiAdapter(geminiSite) };
+  // Unknown hosts retain the historical reader without borrowing another site's online snapshot.
+  return { id: 'generic', adapter: buildGenericExportAdapter() };
 }
 
 /** Resolve the export implementation for the current site. */

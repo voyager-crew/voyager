@@ -5,6 +5,7 @@ import type {
 
 import { computeConversationFingerprint } from '../topNodePreload';
 import { chatgptExportData } from './chatgptExportData';
+import { chatgptStreamingSelector } from './chatgptExportLocators';
 import { assertActive, wait } from './chatgptShared';
 import type { ChatGptTurnContainer, ChatGptTurnRole, ExportSelectionOptions } from './type';
 
@@ -24,14 +25,16 @@ const STOP_GENERATING_SELECTOR = [
   'button[aria-label*="stop generating" i]',
   'button[aria-label*="停止生成"]',
 ].join(',');
-const STREAMING_TURN_SELECTOR = chatgptExportData['export.streaming'].join(',');
 const MATERIALIZATION_TIMEOUT_MS = 3000;
 const MATERIALIZATION_POLL_MS = 80;
 const MATERIALIZATION_IDLE_MS = 240;
 const MATERIALIZATION_REPOSITION_MS = 160;
 
 export function isChatGptResponseGenerating(root: ParentNode = document): boolean {
-  return root.querySelector(`${STOP_GENERATING_SELECTOR},${STREAMING_TURN_SELECTOR}`) !== null;
+  return (
+    root.querySelector(`${STOP_GENERATING_SELECTOR},${chatgptStreamingSelector(false, root)}`) !==
+    null
+  );
 }
 
 function resolveTurnRole(container: HTMLElement): ChatGptTurnRole {
@@ -176,8 +179,8 @@ function isRenderedWithoutMessage(turn: ChatGptTurnContainer): boolean {
 
 function isGeneratingTurn(turn: ChatGptTurnContainer): boolean {
   if (
-    turn.container.matches(STREAMING_TURN_SELECTOR) ||
-    turn.container.querySelector(STREAMING_TURN_SELECTOR)
+    turn.container.matches(chatgptStreamingSelector(false, turn.container)) ||
+    turn.container.querySelector(chatgptStreamingSelector(false, turn.container))
   ) {
     return true;
   }

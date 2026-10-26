@@ -11,7 +11,7 @@ import { overlayPublishedSemanticSelectors } from '@/core/selectors/semanticProf
 import { logger } from '@/core/services/LoggerService';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 
-import { allowsRemoteCatalog, packagedSiteForUrl } from '../sites/hostPolicy';
+import { packagedSiteForUrl } from '../sites/hostPolicy';
 import { matchesAnyPattern } from '../sites/matchPattern';
 import type { SiteRegistry } from '../sites/registry';
 import type { PluginSource, PluginSourceContext, SiteAdapter } from '../types';
@@ -81,7 +81,7 @@ export async function loadSiteOverrideForHost(
   extensionVersion: string = EXTENSION_VERSION,
 ): Promise<SiteAdapter | null> {
   // A stale legacy cache must never open the packaged sites' adapter boundary.
-  if (!host || !allowsRemoteCatalog(host) || !isRemotePluginCatalogEnabledAtBuild()) return null;
+  if (!host || !isRemotePluginCatalogEnabledAtBuild()) return null;
   return siteAdapterFromEntry(await loadHostCatalogCache(host), extensionVersion);
 }
 

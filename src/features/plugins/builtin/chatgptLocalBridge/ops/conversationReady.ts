@@ -31,6 +31,7 @@ import type {
   ConversationReadyResult,
   SwitchableMode,
 } from '@/features/bridge/protocol';
+import { chatgptActionSelector } from '@/features/plugins/builtin/chatgptActionTargets';
 import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 import type { LocalizedLabels } from '@/features/plugins/sites/sections/modelPickerData';
 import type { SiteAdapter } from '@/features/plugins/types';
@@ -45,7 +46,6 @@ const SHELL_TIMEOUT_MS = 30_000;
 const MODE_SWITCH_TIMEOUT_MS = 5_000;
 const SURFACE_MODE_STORAGE_KEY = 'oai/apps/tpp/chat-surface-mode';
 /** Measured on 2026-10-18: the sidebar's home link, an in-app route to the new-chat page. */
-const HOME_LINK_SELECTOR = chatgptPageData.homeLink;
 // Structural first; ChatGPT's earlier test ids as a fallback. Unverified on the current DOM.
 const LOGIN_CONTROL_SELECTOR = [
   'a[href*="/auth/login"]',
@@ -231,7 +231,9 @@ export async function runConversationReady(
     // The switch exists on the new-chat page only: a tab left on a conversation
     // (the restore before close) goes home through the page's own link first.
     if (location.pathname !== '/') {
-      const home = document.querySelector<HTMLAnchorElement>(HOME_LINK_SELECTOR);
+      const home = document.querySelector<HTMLAnchorElement>(
+        chatgptActionSelector('actions.homeLink'),
+      );
       if (home && isRendered(home)) {
         ctx.allowRoute('/');
         ctx.click(home);

@@ -13,6 +13,7 @@
  * - Earlier conversations of the tab stay in the DOM under `display: none`.
  */
 import { withPageSemanticSelectors } from '@/core/selectors';
+import { chatgptSignalSelector } from '@/core/selectors/chatgptSignals';
 import { findComposer } from '@/core/services/composer';
 import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 import {
@@ -49,7 +50,6 @@ const REPLY_ID_ATTRIBUTE = 'data-chatgpt-selection-message-id';
 const ASSISTANT_HEADING_SELECTOR = chatgptPageData.assistantHeading;
 const TURN_STATE_ATTRIBUTE = chatgptPageData.turnStateAttribute;
 const TURN_STATE_COMPLETE = chatgptPageData.turnStateComplete;
-const THINKING_SELECTOR = chatgptPageData.thinking;
 const SUBMIT_SELECTOR = chatgptPageData.submit;
 
 export function siteOf(adapter: SiteAdapter | null): SiteAdapter {
@@ -199,14 +199,16 @@ export function isCompleteTurnState(state: string | null): boolean {
 }
 
 export function hasThinkingSignal(item: HTMLElement): boolean {
-  return queryAll<HTMLElement>(item, THINKING_SELECTOR).some(isRendered);
+  return queryAll<HTMLElement>(item, chatgptSignalSelector('actions.thinking', item)).some(
+    isRendered,
+  );
 }
 
 /** Which thinking or streaming markers show in the item, for a failure's evidence. */
 export function thinkingSignalsOf(item: HTMLElement): string[] {
-  return THINKING_SELECTOR.split(', ').filter((selector) =>
-    queryAll<HTMLElement>(item, selector).some(isRendered),
-  );
+  return chatgptSignalSelector('actions.thinking', item)
+    .split(', ')
+    .filter((selector) => queryAll<HTMLElement>(item, selector).some(isRendered));
 }
 
 /** Small, stable string hash for change detection (not for integrity). */

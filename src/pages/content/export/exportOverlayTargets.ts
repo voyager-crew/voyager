@@ -24,7 +24,7 @@ export function resolveExportAlignmentTarget(
   pick: (selectors: readonly string[], surface: Surface) => HTMLElement | null,
 ): HTMLElement | null {
   const siteId = getPageSelectorSiteId();
-  if (siteId && siteId !== 'gemini') {
+  if (siteId !== 'gemini') {
     const layout = exportLayoutData();
     // Preserve the original ordered alignment probes; a scrollContainer is not the same anchor.
     return pick(layout.alignmentCanvas, 'canvas') ?? pick(layout.alignmentComposer, 'composer');

@@ -75,8 +75,9 @@ export function createVimInputTargets(
     if (!editable) {
       // OFF keeps unrelated focus and key events out of composer style/layout queries.
       const site = inputSiteId(element.ownerDocument);
+      if (!site) return null;
       const view: { readonly remoteKeys: ReadonlySet<string> } =
-        site && site !== 'gemini' ? getSiteSelectorView(site) : getGeminiSelectorView();
+        site !== 'gemini' ? getSiteSelectorView(site) : getGeminiSelectorView();
       if (
         !GEMINI_VIM_PROFILE_KEYS.some((key) => view.remoteKeys.has(key)) &&
         !view.remoteKeys.has('composer')

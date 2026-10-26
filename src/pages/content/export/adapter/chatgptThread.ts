@@ -6,9 +6,11 @@ import type {
 
 import {
   chatgptExportData,
+  chatgptTurnSelector,
   CHATGPT_USER_BUBBLE,
   CHATGPT_ASSISTANT_TURN,
 } from './chatgptExportData';
+import { chatgptStreamingSelector } from './chatgptExportLocators';
 import { mergeExtractedContent } from './chatgptShared';
 
 /**
@@ -58,7 +60,6 @@ const STOP_GENERATING_SELECTOR = [
   'button[aria-label*="stop generating" i]',
   'button[aria-label*="停止生成"]',
 ].join(',');
-const STREAMING_SELECTOR = chatgptExportData['export.streaming'].join(',');
 const RENDERED_CONTENT_SELECTOR =
   'img, svg, canvas, pre, table, [data-math-source], [role="math"], .katex';
 
@@ -166,7 +167,7 @@ export function readTurnFingerprint(item: Element): string {
       if (id) ids.add(id);
     }
   }
-  for (const reply of item.querySelectorAll(ASSISTANT_REPLY_SELECTOR)) {
+  for (const reply of item.querySelectorAll(chatgptTurnSelector('assistantTurn'))) {
     const id = reply.getAttribute(REPLY_ID_ATTRIBUTE)?.trim();
     if (id) ids.add(id);
   }
@@ -201,15 +202,18 @@ export function hasPendingHistory(root: ParentNode, firstItem: Element | null): 
 }
 
 export function isChatGptThreadGenerating(root: ParentNode = document): boolean {
-  return root.querySelector(`${STOP_GENERATING_SELECTOR},${STREAMING_SELECTOR}`) !== null;
+  return (
+    root.querySelector(`${STOP_GENERATING_SELECTOR},${chatgptStreamingSelector(false, root)}`) !==
+    null
+  );
 }
 
 export function findUserBubble(item: Element): HTMLElement | null {
-  return item.querySelector<HTMLElement>(USER_BUBBLE_SELECTOR);
+  return item.querySelector<HTMLElement>(chatgptTurnSelector('userTurn'));
 }
 
 export function findAssistantReply(item: Element): HTMLElement | null {
-  return item.querySelector<HTMLElement>(ASSISTANT_REPLY_SELECTOR);
+  return item.querySelector<HTMLElement>(chatgptTurnSelector('assistantTurn'));
 }
 
 /** Where a prompt's selection checkbox goes: its whole block, not just the bubble. */
@@ -230,7 +234,11 @@ export function hasRenderedContent(element: Element): boolean {
  * marker, or the composer shows a stop button (a reply started mid-crawl).
  */
 export function isItemGenerating(root: ParentNode, item: Element): boolean {
-  if (item.matches(STREAMING_SELECTOR) || item.querySelector(STREAMING_SELECTOR)) return true;
+  if (
+    item.matches(chatgptStreamingSelector(false, item)) ||
+    item.querySelector(chatgptStreamingSelector(false, item))
+  )
+    return true;
   return isChatGptThreadGenerating(root);
 }
 

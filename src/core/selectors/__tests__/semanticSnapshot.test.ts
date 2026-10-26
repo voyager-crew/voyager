@@ -27,7 +27,7 @@ it('cached remote adapter fields cannot redirect an OFF composer read', () => {
 it('a later adapter reload cannot change the frozen page read while an admitted profile stays usable', async () => {
   const bundle = requireBundledSiteAdapter('claude');
   document.body.innerHTML =
-    '<section class="online-composer" contenteditable="true">Original draft</section><section class="repaired">Complete reply</section><textarea class="later">Other draft</textarea>';
+    '<div data-composer-card-holder><div><section class="online-composer" contenteditable="true">Original draft</section><button type="submit">Send</button></div></div><section class="repaired">Complete reply</section><textarea class="later">Other draft</textarea>';
   lifetime = initializeSiteSelectors('claude', {
     host: 'claude.ai',
     doc: document,

@@ -1,24 +1,12 @@
 {
   "input.candidates": [
+    "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+    "#prompt-textarea[contenteditable=\"true\"]",
+    "[data-composer-markdown][contenteditable=\"true\"]",
+    "rich-textarea [contenteditable=\"true\"]",
     "div[contenteditable=\"true\"][role=\"textbox\"]",
     ".input-area textarea",
     "textarea[placeholder*=\"Ask\"]",
     "textarea"
-  ],
-  "input.sendContainers": [
-    ".text-input-field",
-    "ms-prompt-box",
-    "ms-prompt-input-wrapper",
-    "ms-prompt-input",
-    "ms-chat-turn-input",
-    "ms-autosize-textarea",
-    ".prompt-input-wrapper",
-    ".prompt-input-container",
-    ".user-query-container.edit-mode",
-    ".edit-container",
-    "chat-message",
-    "form",
-    "[role=\"dialog\"]",
-    ".mat-mdc-dialog-container"
   ]
 }

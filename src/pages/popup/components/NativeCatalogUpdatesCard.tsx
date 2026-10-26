@@ -24,13 +24,7 @@ export function NativeCatalogUpdatesCard({
   return (
     <Card className="space-y-3 p-4">
       <PluginCatalogControls catalogHost={catalogHost} separator={false} {...catalog} />
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        disabled={refreshing || !catalog.catalogSettings.onlineUpdatesEnabled}
-        onClick={onRefresh}
-      >
+      <Button type="button" variant="secondary" size="sm" disabled={refreshing} onClick={onRefresh}>
         {t('pluginsRefresh')}
       </Button>
     </Card>

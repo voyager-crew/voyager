@@ -1,0 +1,10 @@
+{
+  "export.streaming": [
+    "[data-message-streaming=\"true\"]",
+    "[data-is-streaming=\"true\"]",
+    ".result-streaming"
+  ],
+  "export.loggedOutStreaming": ["[data-message-streaming]:not([data-message-streaming=\"false\"])"],
+  "export.loggedOutThread": ["[data-mobile-thread]"],
+  "export.loggedOutAssistant": ["[data-assistant-markdown-root]"]
+}

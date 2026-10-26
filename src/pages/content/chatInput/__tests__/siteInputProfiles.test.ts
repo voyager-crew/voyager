@@ -2,7 +2,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { getBundledSiteSelectorView, initializeSiteSelectors } from '@/core/selectors';
-import { findAIStudioSendButton } from '@/core/services/composer/sendKeys/aistudioSendRead';
 import { findSiteChatInput } from '@/core/services/composer/siteInputReads';
 
 import { findHandoffComposer } from '../../researchPack/receiver';
@@ -176,50 +175,5 @@ describe('site-owned input profiles', () => {
     await patch('chatgpt', { 'input.handoff': ['#decoy'] });
     expect(findHandoffComposer('chatgpt')).toBeNull();
     expect(input('decoy').textContent).toBe('history');
-  });
-
-  it('a renamed AI Studio send wrapper cannot borrow the next prompt’s Run button', async () => {
-    document.body.innerHTML =
-      '<section id="own"><ms-chunk-input><textarea id="draft">draft</textarea></ms-chunk-input><button id="run" aria-label="Run">Run</button></section><section><textarea>other</textarea><button aria-label="Run">Run</button></section>';
-    show();
-    await patch('aistudio', { 'input.sendContainers': ['#own'] });
-    expect(findAIStudioSendButton(input('draft'))).toBe(input('run'));
-    await patch('aistudio', { 'input.sendContainers': ['body'] });
-    expect(findAIStudioSendButton(input('draft'))).toBeNull();
-    expect((input('draft') as HTMLTextAreaElement).value).toBe('draft');
-  });
-
-  it('an AI Studio profile editor with Run is refused until a native prompt owner proves it', async () => {
-    document.body.innerHTML =
-      '<section id="unit"><textarea id="draft">bio</textarea><button id="run" aria-label="Run">Run</button></section>';
-    show();
-    await patch('aistudio', { 'input.sendContainers': ['#unit'] });
-    expect(findAIStudioSendButton(input('draft'))).toBeNull();
-    const native = document.createElement('ms-chunk-input');
-    input('draft').replaceWith(native);
-    native.appendChild(document.createElement('textarea'));
-    native.firstElementChild!.id = 'draft';
-    show();
-    expect(findAIStudioSendButton(input('draft'))).toBe(input('run'));
-  });
-
-  it('an AI Studio response editor cannot supply a repaired Run unit', async () => {
-    document.body.innerHTML =
-      '<section class="model-prompt-container"><section id="unit"><ms-chunk-input><textarea id="draft">reply draft</textarea></ms-chunk-input><button id="run" aria-label="Run">Run</button></section></section>';
-    show();
-    await patch('aistudio', { 'input.sendContainers': ['#unit'] });
-    expect(findAIStudioSendButton(input('draft'))).toBeNull();
-    document.body.appendChild(input('unit'));
-    expect(findAIStudioSendButton(input('draft'))).toBe(input('run'));
-  });
-
-  it('a smaller AI Studio wrapper cannot hide an upload that blocks Run', async () => {
-    document.body.innerHTML =
-      '<ms-prompt-box><span role="progressbar"></span><section id="inner"><textarea id="draft">draft</textarea><button id="run" aria-label="Run">Run</button></section></ms-prompt-box>';
-    show();
-    await patch('aistudio', { 'input.sendContainers': ['#inner'] });
-    expect(findAIStudioSendButton(input('draft'))).toBeNull();
-    input('inner').closest('ms-prompt-box')!.querySelector('[role="progressbar"]')!.remove();
-    expect(findAIStudioSendButton(input('draft'))).toBe(input('run'));
   });
 });

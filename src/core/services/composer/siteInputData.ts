@@ -7,6 +7,8 @@ import geminiInput from '@/features/plugins/catalog/sites/gemini/selector-data/i
 import geminiVim from '@/features/plugins/catalog/sites/gemini/selector-data/vim-packaged.json';
 import kimi from '@/features/plugins/catalog/sites/kimi/selector-data/input-packaged.json';
 
+import generic from './generic-input.json';
+
 export type InputSiteId = 'gemini' | 'aistudio' | 'chatgpt' | 'claude' | 'deepseek' | 'kimi';
 const INPUT_DATA = {
   gemini: { ...geminiVim, ...geminiInput },
@@ -23,19 +25,12 @@ export function inputSiteId(doc: Document = document): InputSiteId | null {
   return site && Object.hasOwn(INPUT_DATA, site) ? (site as InputSiteId) : null;
 }
 
-const STANDARD_INPUTS = ['[contenteditable="true"][role="textbox"]', 'textarea'];
-const STANDARD_EDITABLE = ['input, textarea, select, [contenteditable="true"], [role="textbox"]'];
-
 export function packagedSiteInputSelectors(
   site: InputSiteId | null,
   key: string,
 ): readonly string[] {
-  if (!site) {
-    if (key === 'vim.editable') return STANDARD_EDITABLE;
-    if (key === 'input.candidates') return STANDARD_INPUTS;
-    return [':not(*)'];
-  }
-  const data: Readonly<Record<string, unknown>> = INPUT_DATA[site];
+  // Custom hosts retain the shared ordered fallbacks without borrowing another site's profile.
+  const data: Readonly<Record<string, unknown>> = site ? INPUT_DATA[site] : generic;
   const list = data[key];
   return Array.isArray(list) ? (list as readonly string[]) : [':not(*)'];
 }

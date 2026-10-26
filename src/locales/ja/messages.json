@@ -3306,7 +3306,7 @@
     "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "voyager.nagi.fun でプラグインの更新と対応サイトのページ認識の修正を確認します。送信するのはサイト名のみで、Cookie やページの内容は送りません。オフにすると自動・手動の確認が停止します。",
+    "message": "voyager.nagi.funでプラグインの更新と対応サイトのページ認識の修正を確認します。送信するのはサイト名のみで、Cookieやページの内容は送りません。オフにすると自動確認を停止します。手動では引き続き確認できます。",
     "description": "Explains shared catalog updates, supported-site page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {

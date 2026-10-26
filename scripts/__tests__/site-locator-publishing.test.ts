@@ -10,11 +10,17 @@ import { build, makeTempDir, readHostFile, removeTempDirs } from './buildPluginC
 const PUBLISHED_KEYS = {
   aistudio: [
     'input.candidates',
-    'input.sendContainers',
     'library.rows',
     'library.archivableRows',
     'library.table',
     'navigation.libraryLink',
+    'library.archivableLink',
+    'history.dragHosts',
+    'history.click',
+    'navigation.promptLink',
+    'navigation.navChild',
+    'navigation.historyRoot',
+    'navigation.sidebar',
   ],
   chatgpt: [
     'input.candidates',
@@ -22,6 +28,15 @@ const PUBLISHED_KEYS = {
     'vim.candidates',
     'export.assistantContent',
     'bridge.replyContent',
+    'actions.temporaryToggle',
+    'actions.newChat',
+    'actions.homeLink',
+    'actions.shareButton',
+    'actions.thinking',
+    'export.streaming',
+    'export.loggedOutStreaming',
+    'export.loggedOutThread',
+    'export.loggedOutAssistant',
   ],
   claude: ['input.candidates', 'input.handoff', 'vim.candidates', 'export.assistantContent'],
   deepseek: ['export.assistantContent'],
@@ -30,10 +45,19 @@ const PUBLISHED_KEYS = {
 
 const SEMANTIC_KEYS = {
   aistudio: [],
-  chatgpt: ['composer', 'composerRoot', 'sendButton'],
-  claude: ['composer', 'sendButton'],
-  deepseek: [],
-  kimi: ['composer'],
+  chatgpt: [
+    'composer',
+    'sendButton',
+    'userTurn',
+    'assistantTurn',
+    'headerActions',
+    'codeBlock',
+    'sidebar',
+    'scrollContainer',
+  ],
+  claude: ['composer', 'sendButton', 'sidebar', 'scrollContainer'],
+  deepseek: ['codeBlock', 'sidebar', 'scrollContainer'],
+  kimi: ['composer', 'sidebar', 'scrollContainer'],
 } as const;
 
 const HOSTS = {
@@ -60,8 +84,15 @@ describe('all-site locator publication', () => {
     await build(out);
     for (const siteId of Object.keys(PUBLISHED_KEYS) as Array<keyof typeof PUBLISHED_KEYS>) {
       const keys = PUBLISHED_KEYS[siteId];
+      const hooks =
+        siteId === 'chatgpt'
+          ? ([
+              ['modelPicker.trigger', 'modelPickerTrigger'],
+              ['modelPicker.effort', 'effortControl'],
+            ] as const)
+          : [];
       expect([...SITE_SELECTOR_CONTRACTS[siteId].keys].sort()).toEqual(
-        [...keys, ...SEMANTIC_KEYS[siteId]].sort(),
+        [...keys, ...SEMANTIC_KEYS[siteId], ...hooks.map(([key]) => key)].sort(),
       );
       for (const host of HOSTS[siteId]) {
         const published = validateHostCatalogFile(readHostFile(out, host), host);
@@ -70,6 +101,12 @@ describe('all-site locator publication', () => {
         const bundle = getBundledSiteSelectorView(siteId);
         for (const key of SEMANTIC_KEYS[siteId]) {
           const actual = published!.site!.selectors[key];
+          expect(Array.from(document.querySelectorAll(actual))).toEqual(
+            Array.from(document.querySelectorAll(bundle.profiles[key].join(','))),
+          );
+        }
+        for (const [key, field] of hooks) {
+          const actual = published!.site!.pageHooks![field];
           expect(Array.from(document.querySelectorAll(actual))).toEqual(
             Array.from(document.querySelectorAll(bundle.profiles[key].join(','))),
           );

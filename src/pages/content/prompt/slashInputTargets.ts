@@ -1,6 +1,6 @@
 import { readChatInput } from '@/core/gemini/composer/inputs';
-import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/slash-packaged.json';
 
+import packaged from './prompt-input-protocol.json';
 import { resolvePromptInputRead } from './selectorInput';
 const SEND_COMPOSER_SELECTOR = packaged['slash.sendOwner'];
 

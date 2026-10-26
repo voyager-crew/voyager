@@ -1,0 +1,47 @@
+{
+  "controls": [
+    "top-bar-actions",
+    ".top-bar-actions",
+    "[data-test-id=\"top-bar-actions\"]",
+    "side-nav-sparkle-button",
+    "side-nav-menu-button",
+    "[data-test-id*=\"upgrade\" i]",
+    "[aria-label*=\"upgrade\" i]",
+    "#conversation-header-actions",
+    "[data-testid=\"share-chat-button\"]",
+    "[data-testid=\"conversation-options-button\"]"
+  ],
+  "broadControls": ["[aria-label*=\"pro\" i]", "[aria-label*=\"advanced\" i]"],
+  "canvasOwner": "inline-preview, immersive-panel",
+  "canvasContent": "immersive-editor, code-immersive-panel",
+  "fullscreenCanvas": "immersive-panel",
+  "inactiveCanvas": "deep-research-immersive-panel, [hidden], [aria-hidden=\"true\"]",
+  "turns": "user-query, model-response, [data-message-author-role]",
+  "interactive": "button, a[href], [role=\"button\"]",
+  "avoidRow": false,
+  "overlaySidebar": [
+    "[data-test-id=\"side-nav\"]",
+    "side-navigation",
+    "mat-sidenav",
+    "aside",
+    "nav",
+    ".side-nav",
+    ".sidenav",
+    ".chat-history-nav"
+  ],
+  "fallbackRoot": "main",
+  "alignmentCanvas": [
+    "#chat-history",
+    "infinite-scroller.chat-history",
+    ".chat-history-scroll-container",
+    "chat-window-content",
+    "main chat-window-content"
+  ],
+  "alignmentComposer": [
+    "rich-textarea",
+    "[aria-label*=\"Enter a prompt\"]",
+    "[aria-label*=\"prompt\"]",
+    "[aria-label*=\"Gemini\"]",
+    "[contenteditable=\"true\"][aria-label]"
+  ]
+}

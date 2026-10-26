@@ -104,7 +104,13 @@ describe('native popup catalog updates', () => {
       expect(extensionApi.storage.sync.set).toHaveBeenCalledWith({
         [StorageKeys.PLUGIN_ONLINE_UPDATES_ENABLED]: false,
       });
-      expect(button!.disabled).toBe(true);
+      expect(button!.disabled).toBe(false);
+      extensionApi.runtime.sendMessage.mockClear();
+      await act(async () => button!.click());
+      expect(extensionApi.runtime.sendMessage).toHaveBeenCalledWith({
+        type: PLUGIN_CATALOG_REFRESH_MESSAGE,
+        payload: { host: new URL(url).hostname, force: true },
+      });
     },
   );
 });

@@ -118,11 +118,6 @@ export function isStaticallyInjectedHost(host: string): boolean {
   return policyForHost(host) !== undefined;
 }
 
-/** Every packaged host can receive locator data through the one catalog channel. */
-export function allowsRemoteCatalog(_host: string): boolean {
-  return true;
-}
-
 function siteAllowsPluginTheme(siteId: string): boolean {
   return !isPackagedSiteId(siteId);
 }

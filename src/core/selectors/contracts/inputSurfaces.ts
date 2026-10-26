@@ -6,14 +6,14 @@ import kimi from '../../../features/plugins/catalog/sites/kimi/selector-data/inp
 
 export const INPUT_SITE_PROFILES = { aistudio, chatgpt, claude, deepseek, kimi };
 export const INPUT_SITE_KEYS = {
-  aistudio: ['input.candidates', 'input.sendContainers'],
+  aistudio: ['input.candidates'],
   chatgpt: ['input.candidates', 'vim.candidates', 'input.handoff'],
   claude: ['input.candidates', 'vim.candidates', 'input.handoff'],
   deepseek: [],
   kimi: ['input.candidates', 'vim.candidates'],
 } as const;
 export const INPUT_SITE_GROUPS = {
-  aistudio: [['input.candidates'], ['input.sendContainers']],
+  aistudio: [['input.candidates']],
   chatgpt: [['input.candidates'], ['vim.candidates'], ['input.handoff']],
   claude: [['input.candidates'], ['vim.candidates'], ['input.handoff']],
   deepseek: [],
@@ -30,14 +30,14 @@ export const INPUT_SITE_FILES = {
 /** Semantic values have exactly one source, site.json's selectors; they are not copied into fragments. */
 export const INPUT_SEMANTIC_KEYS = {
   aistudio: [],
-  chatgpt: ['composer', 'composerRoot', 'sendButton'],
+  chatgpt: ['composer', 'sendButton'],
   claude: ['composer', 'sendButton'],
   deepseek: [],
   kimi: ['composer'],
 } as const;
 export const INPUT_SEMANTIC_GROUPS = {
   aistudio: [],
-  chatgpt: [['composer', 'composerRoot', 'sendButton']],
+  chatgpt: [['composer', 'sendButton']],
   claude: [['composer', 'sendButton']],
   deepseek: [],
   kimi: [['composer']],

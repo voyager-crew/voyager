@@ -1,16 +1,11 @@
 import type { EffectiveSendKey } from '@/core/services/composer/sendKeys/sendKeyCoordinator';
 import { isImeKeyEvent } from '@/core/services/composer/sendKeys/sendKeyIntent';
-import { inputSiteId } from '@/core/services/composer/siteInputData';
-import aistudioPackaged from '@/features/plugins/catalog/sites/aistudio/selector-data/input-packaged.json';
-import geminiPackaged from '@/features/plugins/catalog/sites/gemini/selector-data/composer-send-packaged.json';
 
-function sendData(doc: Document = document): typeof geminiPackaged {
-  return inputSiteId(doc) === 'aistudio' ? aistudioPackaged : geminiPackaged;
-}
+import sendProtocol from './send-protocol.json';
 
 /** Selectors and semantic fallbacks shared by send-related content features. */
-export function sendButtonSelectors(doc: Document): readonly string[] {
-  return sendData(doc)['composer.sendCandidates'];
+export function sendButtonSelectors(_doc: Document): readonly string[] {
+  return sendProtocol['composer.sendCandidates'];
 }
 
 const ACTION_BUTTON_LABEL_ATTRIBUTES = [
@@ -37,23 +32,20 @@ function getButtonLabel(button: HTMLButtonElement): string {
 }
 
 function hasSendActionIcon(button: HTMLButtonElement): boolean {
-  const icon = button.querySelector<HTMLElement>(
-    sendData(button.ownerDocument)['composer.actionIcon'],
-  );
+  const icon = button.querySelector<HTMLElement>(sendProtocol['composer.actionIcon']);
   const iconName = (icon?.getAttribute('fonticon') || icon?.textContent || '').trim().toLowerCase();
   return iconName === 'send' || iconName === 'play_arrow';
 }
 
 /** Gemini uses the same send-button wrapper for Stop during generation. */
 export function isUnavailableSendControl(control: HTMLElement): boolean {
-  if (control.closest(sendData(control.ownerDocument)['composer.unavailableAncestors']))
-    return true;
+  if (control.closest(sendProtocol['composer.unavailableAncestors'])) return true;
   const button = control instanceof HTMLButtonElement ? control : control.querySelector('button');
   if (!button) return control.matches(':disabled');
   return (
     button.disabled ||
     button.matches('[aria-disabled="true"]') ||
-    !!button.querySelector(sendData(control.ownerDocument)['composer.stopIcons']) ||
+    !!button.querySelector(sendProtocol['composer.stopIcons']) ||
     /\b(stop|cancel)\b|停止|取消|중지|отмен|останов|إيقاف/i.test(getButtonLabel(button))
   );
 }
@@ -93,14 +85,14 @@ export function findClosestSendActionButton(target: Element): HTMLButtonElement 
 /** Distinguishes an edit submission from the initial Edit action. */
 export function isUpdateActionButton(button: HTMLButtonElement): boolean {
   return (
-    button.matches(sendData(button.ownerDocument)['composer.updateButton']) ||
+    button.matches(sendProtocol['composer.updateButton']) ||
     UPDATE_BUTTON_LABEL_PATTERN.test(getButtonLabel(button))
   );
 }
 
 /** Finds the editable input owned by a recognized send/update button. */
 export function findInputForSendActionButton(button: HTMLButtonElement): HTMLElement | null {
-  const data = sendData(button.ownerDocument);
+  const data = sendProtocol;
   const inputSelector = data['composer.actionInput'];
   let ancestor = button.parentElement;
   while (ancestor && ancestor !== document.body) {

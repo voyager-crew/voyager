@@ -43,6 +43,11 @@ export function getVimComposerMount(
       input.closest(packagedInputSelector('vim.mountRoot', input.ownerDocument)),
     );
   }
+  if (input.matches(packagedInputSelector('vim.mountChatInput', input.ownerDocument))) {
+    return unclippedMount(
+      input.closest(packagedInputSelector('vim.mountChatRoot', input.ownerDocument)),
+    );
+  }
   if (!configuredSelector) return null;
   let composer = input;
   try {

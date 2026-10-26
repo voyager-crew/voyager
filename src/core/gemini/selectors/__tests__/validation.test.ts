@@ -13,8 +13,7 @@ describe('Gemini catalog locator validation', () => {
   it.each(['capabilities', 'css', 'chatWidth.userTurn', 'turn.future'])(
     'rejects %s while accepting the consumed turn profile',
     (key) => {
-      expect(readGeminiSelectorProfiles({ [key]: ['.user'] })).toBeNull();
-      expect(readGeminiSelectorProfiles({ 'turn.user': ['.user'] })).toEqual({
+      expect(readGeminiSelectorProfiles({ 'turn.user': ['.user'], [key]: ['.ignored'] })).toEqual({
         'turn.user': ['.user'],
       });
     },

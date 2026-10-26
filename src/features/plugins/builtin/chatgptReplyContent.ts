@@ -44,3 +44,17 @@ export function resolveChatgptReplyContent(
     return fallback();
   }
 }
+
+/** Readiness notices must not reinterpret the repaired answer's own words as a page failure. */
+export function touchesRepairedChatgptReplyContent(element: Element): boolean {
+  const view = getSiteSelectorView('chatgpt');
+  if (!view.remoteKeys.has(KEY)) return false;
+  const owners = element.ownerDocument.querySelectorAll<HTMLElement>(
+    '[data-chatgpt-selection-message-id], [data-chatgpt-search-unit-key$=":assistant"]',
+  );
+  for (const owner of owners) {
+    const content = resolveChatgptReplyContent(owner, view);
+    if (content.contains(element) || element.contains(content)) return true;
+  }
+  return false;
+}

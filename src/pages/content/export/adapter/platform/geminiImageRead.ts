@@ -1,3 +1,5 @@
+import { collectImageHosts as collectGeminiImageHosts } from './imageHosts';
+export { collectImageHosts as collectGeminiImageHosts } from './imageHosts';
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
 import { getBundledGeminiSelectorView, type GeminiSelectorView } from '@/core/gemini/selectors';
 import { sameItems } from '@/core/utils/array';
@@ -15,22 +17,6 @@ const ATTRIBUTION = [
 
 export function bundledGeminiSearchImageSelector(): string {
   return getBundledGeminiSelectorView().profiles['imageExport.searchHosts'].join(', ');
-}
-
-/** Keep the existing light/shadow ordering for both the probe and the later image sweep. */
-export function collectGeminiImageHosts(root: Element, selector: string): Element[] {
-  const hosts: Element[] = [];
-  const visit = (node: Element | ShadowRoot): void => {
-    if (node instanceof Element && node.matches(selector)) hosts.push(node);
-    hosts.push(...Array.from(node.querySelectorAll(selector)));
-    const walk = (element: Element): void => {
-      if (element.shadowRoot) visit(element.shadowRoot);
-      Array.from(element.children).forEach(walk);
-    };
-    Array.from(node.children).forEach(walk);
-  };
-  visit(root);
-  return hosts;
 }
 
 function isNativeSourceOwner(host: Element, root: Element): boolean {

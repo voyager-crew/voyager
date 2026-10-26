@@ -88,7 +88,6 @@ describe('BUILTIN_PLUGINS', () => {
         op: 'native',
         handler: 'turnNavigator',
         params: {
-          yieldWhen: 'iframe[src*="claudeusercontent.com"]',
           conversationIdAttribute: 'data-conv-id',
         },
       },

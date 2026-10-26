@@ -8,8 +8,11 @@ import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContex
 import { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import type { PluginSettings } from '@/features/plugins/types';
 import { aistudioPackagedSelector } from '@/pages/content/folder/aistudioLocatorReads';
+import {
+  mayContainAIStudioSidebar,
+  readAIStudioSidebar,
+} from '@/pages/content/folder/aistudioNavigationReads';
 
-const NAV_SELECTOR = aistudioPackagedSelector('navigation.sidebar');
 const WIDTH_PROPERTIES = [
   'width',
   'min-width',
@@ -150,7 +153,7 @@ export function activateAIStudioSidebarWidth(scope: PluginScope, settings: Plugi
 
   const reconcile = () => {
     if (scope.isDisposed) return;
-    const nav = document.querySelector<HTMLElement>(NAV_SELECTOR);
+    const nav = readAIStudioSidebar();
     if (mounted?.nav === nav && mounted?.handle.isConnected) return;
     mounted?.stop();
     mounted = nav ? mount(nav) : null;
@@ -169,10 +172,7 @@ export function activateAIStudioSidebarWidth(scope: PluginScope, settings: Plugi
   }, 'aistudio-sidebar-width:layout');
   const affectsLayout = (node: Node): boolean => {
     if (mounted && (node.contains(mounted.nav) || node.contains(mounted.handle))) return true;
-    return (
-      node instanceof Element &&
-      (node.matches(NAV_SELECTOR) || node.querySelector(NAV_SELECTOR) !== null)
-    );
+    return node instanceof Element && mayContainAIStudioSidebar(node);
   };
   scope.observe(document.documentElement, { childList: true, subtree: true }, (records) => {
     // Chat streaming must not rescan the document; nav/ancestor rebuilds still need remounting.

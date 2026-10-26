@@ -13,16 +13,14 @@
  * closed: a missed send is fine, a send pinned to the wrong turn is not.
  */
 import { withPageSemanticSelectors } from '@/core/selectors';
+import { hasComposerAttachments, readComposerText } from '@/core/services/composer/draft';
 import { textWithLatexSource } from '@/core/utils/userLatexSource';
-import {
-  hasComposerAttachments,
-  readComposerText,
-} from '@/features/plugins/builtin/chatgptTemporaryHandoff/composerDelivery';
 import { isTemporaryChat } from '@/features/plugins/builtin/chatgptTemporaryHandoff/handoff';
 import type { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import { matchesAnyPattern } from '@/features/plugins/sites/matchPattern';
 import { parseSiteConversation } from '@/features/plugins/sites/siteConversation';
 import type { SiteAdapter } from '@/features/plugins/types';
+import { isSendActionButton } from '@/pages/content/sendBehavior/sendButton';
 
 import { startPendingSend } from './pendingSend';
 import { type SendInputs, sendInputsOf } from './sendInputs';
@@ -142,7 +140,7 @@ export function trackUserSends(
         newest: () => {
           const newest = keyedTurns().at(-1);
           return newest
-            ? { key: newest.key, prompt: compact(textWithLatexSource(newest.turn)) }
+            ? { key: newest.key, readPrompt: () => compact(textWithLatexSource(newest.turn)) }
             : null;
         },
       },
@@ -151,7 +149,9 @@ export function trackUserSends(
 
   const composerForm = (target: Element): Element | null => {
     const selectors = sendTargets(site, doc);
-    const form = selectors.composerRoot ? target.closest(selectors.composerRoot) : null;
+    // A repaired editor may no longer match the bundled root selector; keep its proved owner.
+    const form = selectors.remoteComposer ? selectors.provedRoot : target.closest('form');
+    if (selectors.remoteComposer && !form?.contains(target)) return null;
     return form?.querySelector(selectors.composer) ? form : null;
   };
   const sendFrom = (form: Element): void =>
@@ -167,7 +167,10 @@ export function trackUserSends(
         event.target instanceof Element
           ? event.target.closest(sendTargets(site, doc).composer)
           : null;
-      if (field) onSend([field], composerForm(field));
+      if (field) {
+        const targets = sendTargets(site, doc);
+        onSend([field], targets.remoteComposer ? composerForm(field) : field.closest('form'));
+      }
     },
     { capture: true },
   );
@@ -175,10 +178,20 @@ export function trackUserSends(
     doc,
     'click',
     (event) => {
-      const sendButton = sendTargets(site, doc).sendButton;
+      const targets = sendTargets(site, doc);
+      const selector = targets.remoteComposer ? targets.sendButton : 'button';
       const button =
-        event.target instanceof Element && sendButton ? event.target.closest(sendButton) : null;
-      if (!button || button.matches(':disabled, [aria-disabled="true"]')) return;
+        event.target instanceof Element && selector ? event.target.closest(selector) : null;
+      if (targets.remoteComposer) {
+        if (!button || button.matches(':disabled, [aria-disabled="true"]')) return;
+      } else if (
+        !(button instanceof HTMLButtonElement) ||
+        button.disabled ||
+        !isSendActionButton(button)
+      ) {
+        return;
+      }
+      if (!button) return;
       const form = composerForm(button);
       if (form) sendFrom(form);
     },

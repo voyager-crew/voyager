@@ -92,8 +92,8 @@ describe('Gemini page profiles', () => {
   });
 
   it.each([
-    { extra: { 'sidebar.deleteButton': ['button'] }, expected: 'Bundled question' },
-    { extra: { 'account.identity': ['.account'] }, expected: 'Bundled question' },
+    { extra: { 'sidebar.deleteButton': ['button'] }, expected: 'Turn repair' },
+    { extra: { 'account.identity': ['.account'] }, expected: 'Turn repair' },
     { extra: { 'sidebar.row': '.wrong-row' }, expected: 'Turn repair' },
     {
       extra: { 'sidebar.row': Array.from({ length: 33 }, () => '.wrong-row') },
@@ -102,7 +102,7 @@ describe('Gemini page profiles', () => {
     { extra: { 'sidebar.row': ['x'.repeat(2049)] }, expected: 'Turn repair' },
     { extra: { 'sidebar.row': ['.row\u0000'] }, expected: 'Turn repair' },
   ])(
-    'falls back at the declared boundary when a profile is invalid: $extra',
+    'keeps the usable turn repair when another profile is invalid or unknown: $extra',
     async ({ extra, expected }) => {
       document.body.innerHTML = `
       <div class="user-query-container">Bundled question</div>

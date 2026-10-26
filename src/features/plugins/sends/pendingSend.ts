@@ -57,7 +57,7 @@ export function startPendingSend(
   ports: {
     readonly doc: Document;
     readonly signal: AbortSignal;
-    newest(): TurnSnapshot | null;
+    newest(): { readonly key: string; readPrompt(): string } | null;
     conversation(): string | null;
     report(sent: {
       readonly turnKey: string;
@@ -74,13 +74,15 @@ export function startPendingSend(
         pending: (stay) => {
           const scan = () => {
             const newest = ports.newest();
-            if (
-              !newest ||
-              data.known.has(newest.key) ||
-              (data.prompt !== '' && newest.prompt !== data.prompt)
-            )
-              return;
-            stay.send({ type: 'observed', conversationKey: ports.conversation(), newest });
+            if (!newest || data.known.has(newest.key)) return;
+            // Streaming elsewhere cannot make a known user turn worth serializing again.
+            const prompt = data.prompt === '' ? '' : newest.readPrompt();
+            if (data.prompt !== '' && prompt !== data.prompt) return;
+            stay.send({
+              type: 'observed',
+              conversationKey: ports.conversation(),
+              newest: { key: newest.key, prompt },
+            });
           };
           const route = () => {
             if (ports.conversation() !== data.conversationKey) stay.send({ type: 'retire' });

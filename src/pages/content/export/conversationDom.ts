@@ -5,6 +5,8 @@ import { getGeminiTurnView, type GeminiTurnView } from '@/core/gemini/selectors'
 import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
 import { queryOutsideThoughts } from '@/features/export/services/exportDomPolicy';
 
+import { readConfiguredExportUserSelector } from './configuredUserSelector';
+
 type ResolveConversationRootOptions = {
   userSelectors: string[];
   doc?: Document;
@@ -98,20 +100,9 @@ function pickBundledAssistantExportElement(assistantHost: HTMLElement): HTMLElem
 
 /** Gemini prompt selectors, led by the one the timeline configured or detected. */
 export function geminiUserTurnSelectors(view: GeminiTurnView = getGeminiTurnView()): string[] {
-  const configured = (() => {
-    try {
-      return (
-        localStorage.getItem('geminiTimelineUserTurnSelector') ||
-        // Auto belongs to bundled discovery. It cannot add stale nodes to an online profile.
-        (!getGeminiTurnView().remoteKeys.has('turn.user')
-          ? localStorage.getItem('geminiTimelineUserTurnSelectorAuto')
-          : '') ||
-        ''
-      );
-    } catch {
-      return '';
-    }
-  })();
+  const configured = readConfiguredExportUserSelector(
+    !getGeminiTurnView().remoteKeys.has('turn.user'),
+  );
   const defaults = getGeminiTurnSelectors('turn.user', view);
   return configured
     ? [configured, ...defaults.filter((selector) => selector !== configured)]

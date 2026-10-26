@@ -11,7 +11,6 @@
  */
 import { isLocalPluginId } from '../local/localPluginId';
 import { OFFICIAL_PLUGIN_IDS } from '../sites/featureOwners';
-import { allowsRemoteCatalog } from '../sites/hostPolicy';
 import { matchesAnyPattern } from '../sites/matchPattern';
 import type { PluginStateMap } from '../storage/pluginState';
 import type { PluginManifest } from '../types';
@@ -68,7 +67,7 @@ export function isEligibleCatalogHost(host: string): boolean {
     !/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/.test(host)
   )
     return false;
-  return allowsRemoteCatalog(host);
+  return true;
 }
 
 /** `location.host` of a page URL when it is a catalog-eligible https host. */

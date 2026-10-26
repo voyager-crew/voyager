@@ -1,4 +1,5 @@
 import { initializeSiteSelectors, locatorSiteForHost } from '@/core/selectors';
+import { hasSiteSelectorChanges } from '@/core/selectors/service';
 import { StorageKeys } from '@/core/types/common';
 import { isRemotePluginCatalogEnabledAtBuild } from '@/features/plugins/remote/config';
 import {
@@ -62,7 +63,10 @@ export function startPageSelectors(input: PageSelectorStartupInput): PageSelecto
       const override = await loadSiteOverrideForHost(host);
       const candidate = resolveSiteAdapterForUrl(input.url, registry, override);
       // A missing/stale cache needs no switch read before starting the page.
-      if (candidate === bundle) return null;
+      if (candidate === bundle || !hasSiteSelectorChanges(locatorSiteForHost(host)!, candidate)) {
+        resolved = candidate;
+        return null;
+      }
       const settings = await legacySettings.load();
       if (settings[StorageKeys.PLUGIN_ONLINE_UPDATES_ENABLED] === false) return null;
       resolved = candidate;
@@ -80,10 +84,13 @@ export function startPageSelectors(input: PageSelectorStartupInput): PageSelecto
   const ready = hydration.ready.then((settlement) => {
     if (settlement !== 'read' || !hydration.isCurrent()) return;
     // Reuse the host's switch read, but never hold bundled feature startup behind it.
-    void legacySettings.load().then((settings) => {
-      if (settings[StorageKeys.PLUGIN_ONLINE_UPDATES_ENABLED] !== false && hydration.isCurrent())
-        sendCatalogRefreshRequest(host);
-    });
+    void legacySettings.load().then(
+      (settings) => {
+        if (settings[StorageKeys.PLUGIN_ONLINE_UPDATES_ENABLED] !== false && hydration.isCurrent())
+          sendCatalogRefreshRequest(host);
+      },
+      () => {}, // A retired extension cannot request a refresh; the host owns read diagnostics.
+    );
   });
   const initialAdapter = hydration.ready.then((settlement) =>
     settlement === 'read' && hydration.isCurrent() ? resolved : bundle,

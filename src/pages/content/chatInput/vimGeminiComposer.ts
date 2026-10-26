@@ -8,7 +8,7 @@ import {
 } from '@/core/gemini/selectors';
 import { GEMINI_VIM_PROFILE_KEYS } from '@/core/gemini/selectors/vimKeys';
 import { isEditable } from '@/core/services/composer/find';
-import { inputSiteId } from '@/core/services/composer/siteInputData';
+import { inputSiteId, packagedInputSelectors } from '@/core/services/composer/siteInputData';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/vim-packaged.json';
 
 import { resolveConfiguredComposer } from './vimConfiguredComposer';
@@ -57,7 +57,18 @@ export function createGeminiVimComposerResolver(
 ): ResolveVimComposer {
   return ({ doc, requireVisible }) => {
     const site = inputSiteId(doc);
-    if (site && site !== 'gemini')
+    if (!site) {
+      const configured = getConfiguredSelector();
+      return {
+        element:
+          (configured ? resolveConfiguredComposer(configured, { requireVisible }, doc) : null) ??
+          readChatInput(packagedInputSelectors('input.candidates', doc), { doc, requireVisible }),
+        view: { remoteKeys: new Set<string>() },
+        composerSelector: configured,
+        repaired: false,
+      };
+    }
+    if (site !== 'gemini')
       return resolveSiteVimComposer(site, getConfiguredSelector(), doc, requireVisible);
     const bundle = getBundledGeminiSelectorView();
     const view = getGeminiSelectorView();

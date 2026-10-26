@@ -1,13 +1,16 @@
 import { findGeminiChatInput, readChatInput } from '@/core/gemini/composer/inputs';
-import { getBundledGeminiSelectorView } from '@/core/gemini/selectors';
 import { insertIntoComposer } from '@/core/services/composer';
-import { inputSiteId, packagedInputSelectors } from '@/core/services/composer/siteInputData';
+import {
+  inputSiteId,
+  packagedInputSelectors,
+  packagedSiteInputSelectors,
+} from '@/core/services/composer/siteInputData';
 import { findSiteChatInput } from '@/core/services/composer/siteInputReads';
 
 import { nativeHealthReporter } from '../nativeHealth';
 import { hasRenderedConversationContent } from '../nativeHealth/pageEvidence';
 
-const CHAT_INPUT_SELECTORS = getBundledGeminiSelectorView().profiles['composer.candidates'];
+const CHAT_INPUT_SELECTORS = packagedSiteInputSelectors(null, 'input.candidates');
 
 /** Every chat input candidate as one selector list, for layout-free matching. */
 export const CHAT_INPUT_SELECTOR = CHAT_INPUT_SELECTORS.join(', ');

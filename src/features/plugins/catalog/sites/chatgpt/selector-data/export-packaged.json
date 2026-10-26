@@ -5,25 +5,17 @@
   "export.threadList": "[data-chatgpt-conversation-selection-target]",
   "export.roots": ["main", "[role=\"main\"]"],
   "export.imageGeneration": "[class*=\"group/imagegen-image\"]",
-  "export.streaming": [
-    "[data-message-streaming=\"true\"]",
-    "[data-is-streaming=\"true\"]",
-    ".result-streaming"
-  ],
   "export.legacyContainer": "[data-turn-id-container]",
   "export.legacyFrame": "[data-turn]",
   "export.legacyUser": "[data-message-author-role=\"user\"]",
   "export.legacyAssistant": "[data-message-author-role=\"assistant\"]",
-  "export.loggedOutThread": "[data-mobile-thread]",
   "export.loggedOutMessages": "[data-message-role=\"user\"], [data-message-role=\"assistant\"]",
-  "export.loggedOutAssistant": "[data-assistant-markdown-root]",
   "export.desktopTurns": [
     "[data-turn-key]",
     "[data-turn-id-container] [data-message-author-role]",
     "[data-turn-id-container][data-turn]",
     "section[data-turn]"
   ],
-  "export.loggedOutStreaming": "[data-message-streaming]:not([data-message-streaming=\"false\"])",
   "export.activeConversation": "nav a[aria-current=\"page\"], #stage-slideover-sidebar a[aria-current=\"page\"]",
   "export.userAttachments": "[role=\"group\"][aria-label]",
   "export.attachmentAction": "[data-default-action] button[aria-label]",

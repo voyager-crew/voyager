@@ -16,6 +16,7 @@ on:
       - 'src/core/gemini/selectors/**'
       - 'src/features/plugins/catalog/**'
       - 'src/features/plugins/sites/**'
+      - 'src/core/selectors/**'
       # The guide's plugin table lists the builtins and marks the default-on ones.
       - 'src/features/plugins/builtin/**'
       - 'src/features/plugins/storage/pluginDefaults.ts'
@@ -142,7 +143,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      # Writes one catalog host file per supported host, including Gemini locator profiles.
+      # Writes one catalog host file per supported host, including every site’s locator profiles.
       # VitePress copies docs/public/ to the dist root under /catalog/.
       - name: Build plugin catalog
         run: bun run catalog:build

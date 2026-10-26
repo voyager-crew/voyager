@@ -87,6 +87,20 @@ describe('Gemini startup hydration', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('a newer catalog without changed locators does not delay bundled startup on settings', async () => {
+    vi.useFakeTimers();
+    const cached = stored();
+    const entry = cached[hostCatalogStorageKey(host)] as { site: { locators: object } };
+    entry.site.locators = {};
+    vi.mocked(chrome.storage.local.get).mockResolvedValue(cached as never);
+    vi.mocked(chrome.storage.sync.get).mockImplementation(() => new Promise(() => {}) as never);
+    const startup = start();
+    await startup.ready;
+    expect(userTexts()).toEqual(['Bundled turn']);
+    expect((await startup.initialAdapter)?.id).toBe('gemini');
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it('the host reuses the adapter and switch reads that installed its page snapshot', async () => {
     vi.mocked(chrome.storage.local.get).mockResolvedValue(stored() as never);
     const startup = start();

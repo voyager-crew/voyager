@@ -4,10 +4,10 @@
  */
 import { logger } from '@/core/services/LoggerService';
 import {
-  aistudioPackagedSelector,
   aistudioLibraryFallbackPath,
   readAIStudioLibraryLink,
 } from '@/pages/content/folder/aistudioLocatorReads';
+import { readAIStudioPromptLink } from '@/pages/content/folder/aistudioNavigationReads';
 
 /** Opens /library: the nav's own Library link, else the History API. */
 export function openLibraryInApp(): void {
@@ -33,9 +33,7 @@ export function openPromptInApp(promptId: string, url: string): boolean {
       ? `\\${code.toString(16)} `
       : character;
   }).join('');
-  const link = document.querySelector<HTMLAnchorElement>(
-    `${aistudioPackagedSelector('navigation.promptLink')}[href*="/prompts/${escapedId}"]`,
-  );
+  const link = readAIStudioPromptLink(promptId, escapedId);
   if (link) {
     link.click();
     return true;

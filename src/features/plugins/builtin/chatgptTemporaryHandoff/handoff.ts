@@ -1,3 +1,4 @@
+import { chatgptActionSelector } from '@/features/plugins/builtin/chatgptActionTargets';
 import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 import type { PluginScope } from '@/features/plugins/runtime/pluginScope';
 
@@ -22,7 +23,6 @@ import {
   readPending,
   writePending,
 } from './pendingHandoff';
-import { CHATGPT_NEW_CHAT_SELECTOR, CHATGPT_TEMP_TOGGLE_SELECTOR } from './selectors';
 import { PENDING_HANDOFF_TTL_MS } from './storage';
 
 export type HandoffResult =
@@ -62,7 +62,9 @@ export function isTemporaryChat(): boolean {
   } catch {
     // A malformed host URL is not evidence of temporary mode.
   }
-  const toggle = document.querySelector<HTMLElement>(CHATGPT_TEMP_TOGGLE_SELECTOR);
+  const toggle = document.querySelector<HTMLElement>(
+    chatgptActionSelector('actions.temporaryToggle'),
+  );
   if (!toggle) return false;
   const label =
     `${toggle.getAttribute('aria-label') || ''} ${toggle.textContent || ''}`.toLowerCase();
@@ -129,14 +131,16 @@ async function waitForNormalComposer(
 }
 
 export async function leaveTemporaryChat(scope: PluginScope): Promise<HTMLElement | null> {
-  const toggle = document.querySelector<HTMLElement>(CHATGPT_TEMP_TOGGLE_SELECTOR);
+  const toggle = document.querySelector<HTMLElement>(
+    chatgptActionSelector('actions.temporaryToggle'),
+  );
   if (toggle) {
     clickForHandoffNavigation(toggle);
     const composer = await waitForNormalComposer(scope, 16);
     if (composer) return composer;
   }
 
-  const newChat = document.querySelector<HTMLElement>(CHATGPT_NEW_CHAT_SELECTOR);
+  const newChat = document.querySelector<HTMLElement>(chatgptActionSelector('actions.newChat'));
   const newChatPath = getChatGptNewChatPath();
   if (newChat && newChatPath === '/') clickForHandoffNavigation(newChat);
   else location.assign(newChatPath);

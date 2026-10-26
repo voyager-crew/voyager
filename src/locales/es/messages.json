@@ -3306,7 +3306,7 @@
     "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "Busca actualizaciones de plugins y correcciones de detección de páginas de los sitios compatibles en voyager.nagi.fun. Envía el nombre del sitio, sin cookies ni contenido de la página. Al desactivarlo se detienen las comprobaciones automáticas y manuales.",
+    "message": "Busca actualizaciones de plugins y correcciones de detección de páginas de los sitios compatibles en voyager.nagi.fun. Envía el nombre del sitio, sin cookies ni contenido de la página. Al desactivarlo se detienen las comprobaciones automáticas. Puedes seguir comprobando manualmente.",
     "description": "Explains shared catalog updates, supported-site page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {

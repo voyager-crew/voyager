@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// @vitest-environment-options { "url": "https://gemini.google.com/app/test" }
 import { afterEach, expect, it } from 'vitest';
 
 import { createContentExtractor } from '@/features/export/services/DOMContentExtractor';

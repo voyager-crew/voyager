@@ -34,10 +34,10 @@ export function buildCatalogExportAdapter(provided: SiteAdapter): ExportPlatform
       (site.export?.title ? document.querySelector(site.export.title)?.textContent?.trim() : '') ||
       document.title.trim() ||
       site.label,
-    resolveConversationRoot: (_selectors, doc) =>
-      (site.selectors.scrollContainer
-        ? doc.querySelector<HTMLElement>(site.selectors.scrollContainer)
-        : null) ?? doc.body,
+    resolveConversationRoot: (_selectors, doc) => {
+      const selector = site.selectors.scrollContainer;
+      return (selector ? doc.querySelector<HTMLElement>(selector) : null) ?? doc.body;
+    },
     extractUserImage: (element) => element.querySelectorAll('img'),
     extractUserText: (_lines, parts, element) => {
       const text = (element.innerText || element.textContent || '').trim();

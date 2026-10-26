@@ -14,15 +14,7 @@
     "form[data-chatgpt-composer] button[type=\"submit\"]"
   ],
   "submit": "button[type=\"submit\"]",
-  "temporaryToggle": [
-    "[data-testid=\"temporary-chat-toggle\"]",
-    "button[aria-label*=\"temporary chat\" i]",
-    "button[aria-label*=\"临时聊天\"]",
-    "button[aria-label*=\"暫時聊天\"]"
-  ],
   "temporaryOffLabels": ["close temporary", "turn off temporary", "关闭临时", "關閉暫時"],
-  "newChat": "a[data-testid=\"create-new-chat-button\"], a[href=\"/\"], a[href^=\"/u/\"][href$=\"/\"]",
-  "homeLink": "nav a[href=\"/\"]",
   "composerPlaceholder": "[data-placeholder]",
   "composerLabelAttributes": ["aria-label", "aria-placeholder", "placeholder"],
   "handoffObservedAttributes": ["aria-label", "aria-pressed", "data-testid", "title"],
@@ -33,7 +25,6 @@
   "turnItem": "[data-turn-key]",
   "turnStateAttribute": "data-talvt-turn-state",
   "turnStateComplete": "complete",
-  "thinking": "span.loading-shimmer, [aria-busy=\"true\"], [role=\"progressbar\"], progress, .result-streaming, [data-message-streaming=\"true\"], [data-is-streaming=\"true\"]",
   "replyActions": "button",
   "replyNotice": "[role=\"alert\"], [role=\"status\"], [aria-live]",
   "replyAlert": "[role=\"alert\"], [aria-live=\"assertive\"]",
@@ -61,7 +52,6 @@
   "sourceUploadedAt": "time[datetime]",
   "sourceBusy": "[aria-busy=\"true\"], [role=\"progressbar\"], progress",
   "pickerLabelledTrigger": "button[aria-haspopup=\"menu\"][aria-label]",
-  "shareButton": "[data-testid=\"share-chat-button\"]",
   "composerNativeRoot": "form[data-chatgpt-composer]",
   "composerNativeEditable": "textarea, [contenteditable=\"true\"], [contenteditable=\"plaintext-only\"]"
 }

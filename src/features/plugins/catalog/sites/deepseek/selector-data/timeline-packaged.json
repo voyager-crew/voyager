@@ -1,4 +1,4 @@
 {
-  "timeline.userText": ".ds-collapsible-text",
+  "timeline.userText": "[data-user-message-bubble], .query-text, .ds-collapsible-text",
   "guide.overlays": ["[role=\"menu\"]", "[role=\"dialog\"]", "[role=\"alertdialog\"]"]
 }

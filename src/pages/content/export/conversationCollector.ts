@@ -226,6 +226,7 @@ function buildTurnsForSelectedMessages(
 export function createConversationCollector(adapter: ExportPlatformAdapter): ConversationCollector {
   const extractor = createContentExtractor(adapter);
   const profiles = getExportReadProfiles(adapter.site.id);
+  const canvas = adapter.canvas ?? { assistantHasCanvasDoc, extractAllCanvasDocs, isAnyCanvasOpen };
   let cachedCanvasDocs: CanvasDoc[] | null = null;
 
   const conversationRoot = (): HTMLElement =>
@@ -273,7 +274,9 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
             : [];
       const starred = turnIdAliases.some((alias) => starredIds.has(alias));
       if (uText || aText) {
-        const finalAssistantEl = aEl ? pickAssistantExportElement(aEl, view) : undefined;
+        const finalAssistantEl = aEl
+          ? (adapter.selectAssistantExportElement?.(aEl) ?? pickAssistantExportElement(aEl, view))
+          : undefined;
         pairs.push({
           turnId,
           user: uText,
@@ -299,12 +302,12 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
       if (
         !host ||
         !target ||
-        !assistantHasCanvasDoc(host) ||
-        !(isAnyCanvasOpen() || (cachedCanvasDocs && cachedCanvasDocs.length > 0)) ||
+        !canvas.assistantHasCanvasDoc(host) ||
+        !(canvas.isAnyCanvasOpen() || (cachedCanvasDocs && cachedCanvasDocs.length > 0)) ||
         target.querySelector(`.${CANVAS_EXPORT_SECTION_CLASS}`)
       )
         continue;
-      const docs = cachedCanvasDocs?.length ? cachedCanvasDocs : extractAllCanvasDocs();
+      const docs = cachedCanvasDocs?.length ? cachedCanvasDocs : canvas.extractAllCanvasDocs();
       if (docs.length > 0) {
         appendCanvasDocSections(
           target.querySelector(profiles['export.walkMarkdown']) || target,
@@ -371,7 +374,7 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
     topUserElement,
     conversationRoot,
     snapshotOpenCanvasDocs: () => {
-      if (isAnyCanvasOpen()) cachedCanvasDocs = extractAllCanvasDocs();
+      if (canvas.isAnyCanvasOpen()) cachedCanvasDocs = canvas.extractAllCanvasDocs();
     },
     releaseCanvasDocs: () => {
       cachedCanvasDocs = null;

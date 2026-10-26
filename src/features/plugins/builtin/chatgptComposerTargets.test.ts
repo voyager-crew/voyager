@@ -9,10 +9,7 @@ import { chatgptComposerRootOf } from './chatgptComposerTargets';
 import { findComposerField, findSendButton } from './chatgptLocalBridge/ops/pageReaders';
 
 const lifetimes: SiteSelectorLifetime[] = [];
-const INVALID_GROUP_MEMBERS: Readonly<Record<string, string>>[] = [
-  { composerRoot: 'body' },
-  { sendButton: '#foreign-send' },
-];
+const INVALID_GROUP_MEMBERS: Readonly<Record<string, string>>[] = [{ sendButton: '#foreign-send' }];
 
 function adapter(selectors: Readonly<Record<string, string>>): SiteAdapter {
   return { ...chatgptAdapter, selectors: { ...chatgptAdapter.selectors, ...selectors } };
@@ -139,6 +136,15 @@ describe('ChatGPT composer ownership', () => {
       expect(document.querySelector('#renamed-editor')?.textContent).toBe('Unsent draft');
     },
   );
+
+  it('a packaged composer owner ignores a remote root while the original editor repair still works', async () => {
+    document.body.innerHTML =
+      '<form data-chatgpt-composer><section id="renamed-editor" contenteditable="true">Draft</section><button type="submit">Send</button></form>';
+    const source = await online({ composer: '#renamed-editor', composerRoot: 'body' });
+    const field = findComposerField(source);
+    expect(field).toBe(document.querySelector('#renamed-editor'));
+    expect(chatgptComposerRootOf(field!, source)).toBe(document.querySelector('form'));
+  });
 
   it('a profile editor with Submit cannot become the repaired chat composer', async () => {
     document.body.innerHTML =
