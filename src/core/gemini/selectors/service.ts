@@ -1,5 +1,6 @@
 import { type Machine, startMachine } from '@/features/plugins/runtime/stateMachine';
 
+import { acceptsGeminiTurnView } from '../turnIntegrity';
 import { getBundledGeminiSelectorView, getGeminiBundledRevision } from './bundle';
 import {
   type GeminiSelectorSettlement,
@@ -135,13 +136,17 @@ export function resolveGeminiSelectorOperation<T>(
 export function resolveGeminiTurnOperation<T>(
   read: (view: GeminiTurnView) => T,
   isUsable: (value: T) => boolean,
+  view: GeminiTurnView = service.getView(),
 ): GeminiTurnOperation<T> {
-  const view = service.getView();
   if (!GEMINI_TURN_PROFILE_KEYS.some((key) => view.remoteKeys.has(key))) {
     const bundle = getBundledGeminiSelectorView();
     return { value: read(bundle), view: bundle };
   }
-  return service.resolve(read, isUsable);
+  if (!acceptsGeminiTurnView(view)) {
+    const bundle = getBundledGeminiSelectorView();
+    return { value: read(bundle), view: bundle };
+  }
+  return resolveGeminiSelectorOperationInView(view, read, isUsable);
 }
 
 function toRemoteView(

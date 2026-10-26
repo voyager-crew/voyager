@@ -5,6 +5,7 @@ import {
 import { type Machine, startMachine } from '@/features/plugins/runtime/stateMachine';
 
 import { watchRouteChanges } from '../utils/routeWatcher';
+import { PROMPT_ACCOUNT_ATTRIBUTES, promptAccountMutation } from './promptAccountMutation';
 
 export function promptPageScope(): string {
   const pageUrl = window.location.href;
@@ -24,10 +25,19 @@ export function watchPromptPageScope(onChange: () => void): () => void {
     onChange();
   };
   const stopRoute = watchRouteChanges(check);
-  const observer = detectAccountPlatformFromUrl(window.location.href)
-    ? new MutationObserver(check)
+  const platform = detectAccountPlatformFromUrl(window.location.href);
+  const observer = platform
+    ? new MutationObserver((records) => {
+        if (records.some((record) => promptAccountMutation(record, platform))) check();
+      })
     : null;
-  observer?.observe(document.documentElement, { subtree: true, childList: true, attributes: true });
+  observer?.observe(document.documentElement, {
+    subtree: true,
+    childList: true,
+    characterData: platform === 'aistudio',
+    attributeOldValue: true,
+    attributeFilter: PROMPT_ACCOUNT_ATTRIBUTES,
+  });
   return () => {
     stopRoute();
     observer?.disconnect();

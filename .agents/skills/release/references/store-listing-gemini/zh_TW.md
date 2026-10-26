@@ -1,0 +1,5 @@
+# Gemini page detection listing: 繁體中文
+
+> Draft for maintainer review; not submitted to a store. See the [listing reference](../store-listing-plugin-catalog.md) for the separate plugin-catalog paragraph and store-specific notes.
+
+**Gemini 頁面辨識線上修復（選用，預設關閉）**：只有在「一般選項」中開啟這個獨立開關後，Voyager 才可能取得 `https://voyager.nagi.fun/catalog/gemini-selectors/v1/hosts/gemini.google.com.json`。檔案只含經過驗證、用於識別對話輪次、側邊欄項目和標題、資料夾顯示區域、模型選單控制項、對話與匯出選單、匯出選取列、側邊欄開關按鈕的點擊區域與側邊欄懸停區域、匯出與分支所用的訊息正文、上下文圖片、回覆和研究資料包操作、用量顯示、程式碼區塊和圖表、使用者訊息中含 LaTeX 的段落、匯出中的搜尋結果圖片、生成圖片下載按鈕、Canvas 程式碼匯出、Gems 側邊欄、訊息輸入框和相關控制項，以及輸入框摺疊、Vim 模式、提示詞歷史、斜線指令、已傳送提示詞預覽、資料夾作為專案及資料夾活動所用頁面元素的規則，不含程式碼、CSS 或外掛。開啟 Gemini 或其擴充功能視窗時可能自動檢查，從上次嘗試起最多每 6 小時一次，關閉再開啟不會重設間隔。因擴充功能重新啟動而中斷的檢查可能重試。「立即檢查」僅在開啟時可用，只跳過時間間隔。開啟需要在 Gemini 分頁中操作，關閉可以在任何分頁的擴充功能視窗裡完成。關閉後禁止這類請求，包括手動檢查；取消進行中的檢查並刪除已下載的資料，但在本機保留上次嘗試時間。授權選擇與下載的資料僅保存在目前裝置，不參與瀏覽器同步或設定備份。新修復及關閉操作在你自行重新整理頁面後生效；已開啟的頁面繼續使用目前快照，不會自動重新載入。GET 請求不攜帶 Cookie、Referrer、識別碼或頁面、對話內容；伺服器可見 IP 位址、User-Agent 和請求的主機名稱，託管方處理方式同上。AI Studio 仍只使用包內資料。外掛更新與公告保留各自獨立的開關。

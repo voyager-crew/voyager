@@ -16,9 +16,6 @@ export const GEMINI_MODEL_PICKER_PROFILE_KEYS = [
   'modelPicker.thinkingContent',
   'modelPicker.modelTitleContainer',
   'modelPicker.thinkingTitleContainer',
-  'modelPicker.selectedModel',
-  'modelPicker.selectedThinking',
-  'modelPicker.selectedNestedThinking',
   'modelPicker.focusInput',
 ] as const;
 

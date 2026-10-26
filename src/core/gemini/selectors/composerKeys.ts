@@ -4,5 +4,3 @@ export const GEMINI_COMPOSER_PROFILE_KEYS = [
   'composer.draftCandidates',
   'composer.sendContainers',
 ] as const;
-
-export type GeminiComposerProfileKey = (typeof GEMINI_COMPOSER_PROFILE_KEYS)[number];

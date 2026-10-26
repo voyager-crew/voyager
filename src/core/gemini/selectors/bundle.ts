@@ -119,7 +119,7 @@ function readBundle(): GeminiSelectorProfiles {
   };
   const file = readGeminiSelectorFile(
     {
-      format: 3,
+      format: 1,
       site: 'gemini',
       host: 'gemini.google.com',
       catalogRevision: 1,

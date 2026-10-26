@@ -1,5 +1,7 @@
 import { isEditable } from '@/core/services/composer/find';
 
+import { hasVoyagerOwner } from './ownedInput';
+
 // Independent native ownership and editing protocols, never downloaded locator data.
 const MAIN_OWNER = '.text-input-field, .input-area, input-area, input-area-v2, input-container';
 const OTHER_OWNER =
@@ -23,10 +25,8 @@ export function isNativeComposerElementVisible(element: HTMLElement): boolean {
 
 /** Only remote proofs use these checks; bundled readers retain their original behavior. */
 export function isNativeComposerInput(element: HTMLElement): boolean {
-  if (!isEditable(element) || element.closest(OTHER_OWNER)) return false;
-  for (let node: HTMLElement | null = element; node; node = node.parentElement) {
-    if (Array.from(node.classList).some((name) => name.startsWith('gv-'))) return false;
-  }
+  if (!isEditable(element) || element.closest(OTHER_OWNER) || hasVoyagerOwner(element))
+    return false;
   return isNativeComposerElementVisible(element) && element.getBoundingClientRect().height > 0;
 }
 

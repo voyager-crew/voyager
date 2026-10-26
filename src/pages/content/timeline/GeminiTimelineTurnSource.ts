@@ -4,6 +4,7 @@ import {
   resolveGeminiTurnOperation,
   type GeminiTurnView,
 } from '@/core/gemini/selectors';
+import { acceptsGeminiTurnView } from '@/core/gemini/turnIntegrity';
 import {
   getGeminiTurnSelectors,
   getGeminiUserTurnObserverScope,
@@ -42,7 +43,7 @@ export class GeminiTimelineTurnSource implements TimelineTurnSource {
     if (!this.selection) return 0;
     const { value: selection } = resolveGeminiTurnOperation(
       (view) => this.select(view),
-      (candidate) => !!candidate.root.querySelector(candidate.selector),
+      (candidate) => this.acceptsSelection(candidate),
     );
     this.acceptSelection(selection);
     return document.querySelectorAll(selection.selector).length;
@@ -57,7 +58,7 @@ export class GeminiTimelineTurnSource implements TimelineTurnSource {
           plan: this.text.plan(selection.root, selection.selector, previous, view),
         };
       },
-      ({ plan }) => plan.markers.length > 0,
+      ({ selection, plan }) => plan.markers.length > 0 && this.acceptsSelection(selection),
     );
     this.acceptSelection(accepted.selection);
     const { mountedCount } = accepted.plan;
@@ -74,7 +75,7 @@ export class GeminiTimelineTurnSource implements TimelineTurnSource {
     if (!this.selection) return false;
     const { value: selection } = resolveGeminiTurnOperation(
       (view) => this.select(view, true),
-      (candidate) => !!candidate.root.querySelector(candidate.selector),
+      (candidate) => this.acceptsSelection(candidate),
     );
     if (!document.querySelector(selection.selector)) return false;
     this.acceptSelection(selection);
@@ -149,6 +150,14 @@ export class GeminiTimelineTurnSource implements TimelineTurnSource {
     };
   }
 
+  private acceptsSelection(selection: TurnSelection): boolean {
+    return (
+      !!selection.root.querySelector(selection.selector) &&
+      (selection.selector === this.userOverride ||
+        acceptsGeminiTurnView(selection.view, document, [selection.selector]))
+    );
+  }
+
   private acceptSelection(selection: TurnSelection): void {
     const changedRoot = this.root !== selection.root;
     this.selection = selection;
@@ -162,7 +171,7 @@ export class GeminiTimelineTurnSource implements TimelineTurnSource {
     const find = () =>
       resolveGeminiTurnOperation(
         (view) => this.findFirst(view),
-        (selection) => selection !== null,
+        (selection) => selection !== null && this.acceptsSelection(selection),
       ).value;
     const found = find();
     if (found || signal.aborted) return Promise.resolve(found);

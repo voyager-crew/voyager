@@ -1,3 +1,5 @@
+import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
+import { sameItems } from '@/core/utils/array';
 import {
   queryOutsideThoughts,
   shouldSkipElement,
@@ -11,10 +13,6 @@ import {
 
 const THOUGHTS_AND_ACTIONS =
   'model-thoughts, .thoughts-container, .thoughts-content, message-actions, .message-actions';
-
-function sameNodes<T extends Node>(left: readonly T[], right: readonly T[]): boolean {
-  return left.length === right.length && left.every((node, index) => node === right[index]);
-}
 
 /** The native content leaves are independent of every online locator. */
 function contentLeaves(root: Element): Node[] {
@@ -102,7 +100,7 @@ export function resolveGeminiAnswerElement(
     const native = contentLeaves(host);
     return native.length > 0 &&
       preservesGeminiContentFrames(candidate, host) &&
-      sameNodes(contentLeaves(candidate), native)
+      sameItems(contentLeaves(candidate), native)
       ? candidate
       : fallback();
   } catch {
@@ -122,21 +120,23 @@ export function readGeminiUserLines(
   try {
     const candidates = read(view);
     if (bundled.length > 0)
-      return sameNodes(Array.from(candidates), Array.from(bundled)) ? candidates : bundled;
+      return sameItems(Array.from(candidates), Array.from(bundled)) ? candidates : bundled;
     // Native paragraphs preserve line boundaries; text-equivalent wrappers could change Markdown.
     const native = Array.from(host.querySelectorAll<HTMLElement>('p')).filter(
       (line) =>
         belongsToHost(line, host) &&
-        !line.closest('button, user-query-file-preview, [class*="gv-"]'),
+        !line.closest('button, user-query-file-preview') &&
+        !hasVoyagerOwner(line, host),
     );
     const text = (nodes: readonly Node[]) =>
       nodes.filter(
         (node) =>
           node.nodeType === Node.TEXT_NODE &&
-          !node.parentElement?.closest('user-query-file-preview, [class*="gv-"]'),
+          !node.parentElement?.closest('user-query-file-preview') &&
+          (!node.parentElement || !hasVoyagerOwner(node.parentElement, host)),
       );
-    const complete = sameNodes(text(native.flatMap(contentLeaves)), text(contentLeaves(host)));
-    return native.length > 0 && complete && sameNodes(Array.from(candidates), native)
+    const complete = sameItems(text(native.flatMap(contentLeaves)), text(contentLeaves(host)));
+    return native.length > 0 && complete && sameItems(Array.from(candidates), native)
       ? candidates
       : bundled;
   } catch {
@@ -158,17 +158,18 @@ export function readGeminiContextImages(
   if (!view.remoteKeys.has('context.images')) return bundled;
   try {
     const candidates = read(view);
-    if (bundled.length > 0) return sameNodes(candidates, bundled) ? candidates : bundled;
+    if (bundled.length > 0) return sameItems(candidates, bundled) ? candidates : bundled;
     const native = Array.from(host.querySelectorAll<HTMLImageElement>('img')).filter(
       (image) =>
         belongsToHost(image, host) &&
-        !image.closest('button, mat-icon, message-actions, [class*="gv-"]'),
+        !image.closest('button, mat-icon, message-actions') &&
+        !hasVoyagerOwner(image, host),
     );
     // A plain img can be an avatar or decorative icon; only the native full-size source
     // attribute proves a renamed content image, and every eligible image must be accounted for.
     return native.length > 0 &&
       native.every((image) => image.closest('[data-full-size-image-uri]')) &&
-      sameNodes(candidates, native)
+      sameItems(candidates, native)
       ? candidates
       : bundled;
   } catch {
@@ -197,7 +198,7 @@ export function acceptsGeminiContentCollection(
       const candidate = Array.from(
         host.querySelectorAll<HTMLElement>(view.profiles['content.userLines'].join(',')),
       );
-      if (!sameNodes(candidate, Array.from(readGeminiUserLines(host, view)))) return false;
+      if (!sameItems(candidate, Array.from(readGeminiUserLines(host, view)))) return false;
     }
   }
   return true;
@@ -210,7 +211,7 @@ export function acceptsGeminiContextImages(host: HTMLElement, view: GeminiSelect
     const raw = Array.from(
       host.querySelectorAll<HTMLImageElement>(view.profiles['context.images'].join(',')),
     );
-    return sameNodes(raw, readGeminiContextImages(host, view));
+    return sameItems(raw, readGeminiContextImages(host, view));
   } catch {
     return false;
   }

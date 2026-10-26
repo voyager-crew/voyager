@@ -200,7 +200,7 @@ describe('native pair readers with online Gemini turn profiles', () => {
     );
   });
 
-  it('keeps highlight selector-priority collection and specific-assistant preference', async () => {
+  it('a remote turn order cannot assign one questions ID to another answer', async () => {
     document
       .querySelectorAll<HTMLElement>('.online-user')[1]
       .classList.add('preferred-online-user');
@@ -213,12 +213,15 @@ describe('native pair readers with online Gemini turn profiles', () => {
       .querySelector('.online-user')!
       .insertAdjacentHTML('afterend', '<div role="listitem">Generic fallback</div>');
 
-    // The highlight reader has always kept selector-priority order, not a DOM sort.
+    // Remote ordering must fall back before assigning a question to a different answer.
     expect(
       collectHighlightTurns().map(({ userElement, assistantRoot }) => [
         userElement.textContent,
         assistantRoot.textContent,
       ]),
-    ).toEqual([['First question', 'Second answer']]);
+    ).toEqual([
+      ['First question', 'First answer'],
+      ['Second question', 'Second answer'],
+    ]);
   });
 });

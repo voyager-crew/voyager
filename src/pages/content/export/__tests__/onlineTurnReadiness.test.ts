@@ -52,7 +52,8 @@ describe('Gemini export readiness with online turn profiles', () => {
     const site = createGeminiExportSite(resolveExportAdapter());
     const pending = waitForAnyElement(site.history!.userSelectors, 1000);
     await vi.advanceTimersByTimeAsync(500);
-    document.querySelector('main')!.innerHTML = '<div class="online-user" id="late">Question</div>';
+    document.querySelector('main')!.innerHTML =
+      '<section class="conversation-container"><div class="online-user" id="late">Question</div></section>';
 
     await expect(pending).resolves.toBe(document.getElementById('late'));
     expect(vi.getTimerCount()).toBe(0);

@@ -230,6 +230,28 @@ describe('the page-owned fork first-send finisher', () => {
     },
   );
 
+  it('a remote host added after send cannot link the fork to an unrelated turn', async () => {
+    const earlier = sentTurn('Earlier request', 'aaaaaaaaaaaaaaaa');
+    earlier.firstElementChild!.classList.add('online-host');
+    stopSelectors = await installGeminiTurnPatch({ 'turn.userWithHosts': ['.online-host'] });
+    handoff();
+    send();
+    go('/app/branch');
+    document
+      .querySelector('main')!
+      .insertAdjacentHTML(
+        'beforeend',
+        '<div class="conversation-container" id="cccccccccccccccc"><div class="online-host">First request</div></div>',
+      );
+    sentTurn();
+    await flush();
+    expect(ForkNodesService.addForkNode).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ turnId: 's-b7603911375615a5', conversationId: 'branch' }),
+    );
+    expect(linked).toHaveBeenCalledOnce();
+  });
+
   it('does not link an earlier identical prompt that only the bundled profile would find', async () => {
     stopSelectors = await installGeminiTurnPatch({ 'turn.userWithHosts': ['.online-host'] });
     // An earlier turn with the same text and no server id, matched online by its host element.

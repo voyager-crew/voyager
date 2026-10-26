@@ -191,22 +191,6 @@ describe('model picker online locator behavior', () => {
     expect(scene.rows.high.click).not.toHaveBeenCalled();
   });
 
-  it('a selected-state alias cannot treat an unselected model as confirmed', async () => {
-    const scene = pickerScene();
-    retire = await installGeminiSelectorPatch({
-      ...PICKER_ALIASES,
-      'modelPicker.selectedModel': ['[data-fixture-row]'],
-    });
-    const picker = new ModelPicker(new DefaultModelPreferences());
-    expect(await picker.selectModel(PRO, interaction())).toBe('switched');
-    expect(scene.rows.pro.click).toHaveBeenCalledTimes(1);
-    expect(
-      vi.mocked(chrome.storage.sync.set).mock.calls.map(([value]) => value),
-    ).not.toContainEqual(
-      expect.objectContaining({ [StorageKeys.DEFAULT_MODEL]: expect.anything() }),
-    );
-  });
-
   it('an empty remote model label rereads the bundle and still chooses Pro', async () => {
     const scene = pickerScene();
     retire = await installGeminiSelectorPatch({
@@ -341,7 +325,6 @@ describe('model picker online locator behavior', () => {
     scene.trigger.click.mockImplementation(() => {
       void Promise.resolve().then(() => {
         scene.rows.high.classList.add('selected');
-        scene.rows.high.dataset.fixtureSelected = '';
       });
     });
     retire = await installGeminiSelectorPatch(PICKER_ALIASES);
@@ -361,7 +344,6 @@ describe('model picker online locator behavior', () => {
     scene.trigger.click.mockImplementation(() => {
       void Promise.resolve().then(() => {
         scene.rows.pro.classList.add('selected');
-        scene.rows.pro.dataset.fixtureSelected = '';
       });
     });
     retire = await installGeminiSelectorPatch(PICKER_ALIASES);

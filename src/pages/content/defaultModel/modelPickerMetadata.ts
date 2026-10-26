@@ -33,6 +33,7 @@ function readJslogMetadata(jslog: string): string {
   }
 }
 
+// A remote alias cannot repair selected state; rejecting one would also discard valid menu repairs.
 export function hasNativeSelectedState(
   item: HTMLElement,
   kind: 'model' | 'thinking' | 'nested',

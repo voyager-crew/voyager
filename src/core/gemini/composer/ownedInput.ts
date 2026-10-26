@@ -18,12 +18,12 @@ const NATIVE_DECORATIONS = new Set([
   'gv-pm-slash-contenteditable-hide-value',
 ]);
 
-function hasVoyagerOwner(input: HTMLElement): boolean {
+export function hasVoyagerOwner(input: Element, host?: Element): boolean {
   const doc = input.ownerDocument;
-  // Page-wide theme/RTL markers describe all native content, not a Voyager editor.
+  // Page markers and wrappers outside a proved host must not turn its native content into Voyager UI.
   for (
-    let node: HTMLElement | null = input;
-    node && node !== doc.body && node !== doc.documentElement;
+    let node: Element | null = input;
+    node && node !== host && node !== doc.body && node !== doc.documentElement;
     node = node.parentElement
   ) {
     if (

@@ -5,6 +5,7 @@ import {
   resolveGeminiSelectorOperationInView,
 } from '@/core/gemini/selectors';
 import { GEMINI_MENU_PROFILE_KEYS } from '@/core/gemini/selectors/menuKeys';
+import { sameItems } from '@/core/utils/array';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/menu-packaged.json';
 
 export const MENU_PANEL_SELECTOR = '.mat-mdc-menu-panel[role="menu"], gem-menu';
@@ -101,13 +102,13 @@ function readMenuSurface(panel: HTMLElement) {
     read,
     ({ panels, content }) =>
       panels.includes(panel) &&
-      sameNodes(
+      sameItems(
         panels,
         Array.from(
           panel.ownerDocument.querySelectorAll<HTMLElement>(packaged['menu.nativePanels']),
         ),
       ) &&
-      (read(bundled).panels.length === 0 || sameNodes(panels, read(bundled).panels)) &&
+      (read(bundled).panels.length === 0 || sameItems(panels, read(bundled).panels)) &&
       provesContent(panel, content) &&
       associatedMenuTrigger(panel) !== null,
   );
@@ -131,10 +132,6 @@ export function usesOnlineMenuPanel(panel: HTMLElement): boolean {
   return GEMINI_MENU_PROFILE_KEYS.some((key) => view.remoteKeys.has(key));
 }
 
-function sameNodes(left: readonly HTMLElement[], right: readonly HTMLElement[]): boolean {
-  return left.length === right.length && left.every((node, index) => node === right[index]);
-}
-
 /** Discovery reads one complete collection; a narrowed online list cannot hide another menu. */
 export function getMenuPanels(root: ParentNode = document): HTMLElement[] {
   const view = getGeminiSelectorView();
@@ -148,8 +145,8 @@ export function getMenuPanels(root: ParentNode = document): HTMLElement[] {
     const native = Array.from(root.querySelectorAll<HTMLElement>(packaged['menu.nativePanels']));
     return (
       panels.length > 0 &&
-      (bundled.length === 0 || sameNodes(panels, bundled)) &&
-      sameNodes(panels, native)
+      (bundled.length === 0 || sameItems(panels, bundled)) &&
+      sameItems(panels, native)
     );
   }).value;
 }

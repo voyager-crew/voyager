@@ -15,7 +15,7 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-async function hydrate(selectors: unknown, format: 1 | 2 = 2) {
+async function hydrate(selectors: unknown) {
   const service = new GeminiSelectorService();
   const lifetime = service.initialize({
     host: 'gemini.google.com',
@@ -23,7 +23,7 @@ async function hydrate(selectors: unknown, format: 1 | 2 = 2) {
     lifetime: new AbortController().signal,
     bundledRevision: 1,
     read: async () => ({
-      format,
+      format: 1,
       site: 'gemini',
       host: 'gemini.google.com',
       catalogRevision: 2,
@@ -51,7 +51,7 @@ function usableRows(value: ReturnType<typeof readRows>): boolean {
   return value.rows.length > 0 && value.rows.every((row) => row.id && row.title.trim());
 }
 
-describe('Gemini v2 page profiles', () => {
+describe('Gemini page profiles', () => {
   it('keeps sidebar nodes, order and IDs identical through both profiles', async () => {
     document.body.innerHTML = `
       <nav data-test-id="overflow-container" class="online-sidebar">
@@ -95,38 +95,22 @@ describe('Gemini v2 page profiles', () => {
     expect(result.value.root).toBe(document.querySelector('nav'));
   });
 
-  it('keeps a cached v1 turn fix while new surfaces use packaged profiles', async () => {
-    document.body.innerHTML = `
-      <div class="cached-user">Question</div>
-      <nav data-test-id="overflow-container">
-        <a data-test-id="conversation" data-conversation-id="old">
-          <span class="title-text">Existing chat</span>
-        </a>
-      </nav>`;
-    const service = await hydrate({ 'turn.user': ['.cached-user'] }, 1);
-    const user = document.querySelector(service.getView().profiles['turn.user'].join(','));
-    expect(user?.textContent).toBe('Question');
-    expect(service.resolve(readRows, usableRows).value.rows[0]?.id).toBe('old');
-  });
-
   it.each([
-    { format: 1 as const, extra: { 'sidebar.row': ['.wrong-row'] } },
-    { format: 2 as const, extra: { 'sidebar.deleteButton': ['button'] } },
-    { format: 2 as const, extra: { 'account.identity': ['.account'] } },
-    { format: 2 as const, extra: { 'sidebar.row': '.wrong-row' } },
+    { extra: { 'sidebar.deleteButton': ['button'] } },
+    { extra: { 'account.identity': ['.account'] } },
+    { extra: { 'sidebar.row': '.wrong-row' } },
     {
-      format: 2 as const,
       extra: { 'sidebar.row': Array.from({ length: 33 }, () => '.wrong-row') },
     },
-    { format: 2 as const, extra: { 'sidebar.row': ['x'.repeat(2049)] } },
-    { format: 2 as const, extra: { 'sidebar.row': ['.row\u0000'] } },
+    { extra: { 'sidebar.row': ['x'.repeat(2049)] } },
+    { extra: { 'sidebar.row': ['.row\u0000'] } },
   ])(
     'keeps bundled turns usable when an invalid patch carries a new locator: $extra',
-    async ({ format, extra }) => {
+    async ({ extra }) => {
       document.body.innerHTML = `
       <div class="user-query-container">Bundled question</div>
       <div class="remote-user">Unaccepted question</div>`;
-      const service = await hydrate({ 'turn.user': ['.remote-user'], ...extra }, format);
+      const service = await hydrate({ 'turn.user': ['.remote-user'], ...extra });
       const users = service.resolve(
         (view) => Array.from(document.querySelectorAll(view.profiles['turn.user'].join(','))),
         (nodes) => nodes.length > 0,

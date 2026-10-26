@@ -33,10 +33,10 @@ D15 原方案未使用。
 ### 1.1 D14 细则：Gemini 页面识别在线修复
 
 - 插件目录不放开：`sites/hostPolicy.ts` 的 `allowsRemoteCatalog`（远程侧 `isEligibleCatalogHost`）在页面、popup、后台三处守住，`catalog:build` 不为 Gemini / AI Studio 生成 `/catalog/hosts/` 插件文件。两站的包内 `site.json` 与官方插件只随本体发版。零目录请求不等于页面零请求：公告、云同步各有规则。
-- 独立开关「Gemini 页面识别在线修复」：local boolean `gvGeminiSelectorOnlineFixes`，默认关闭，不参与同步或设置备份。
-- 只为 `gemini.google.com` 获取 `/catalog/gemini-selectors/v3/hosts/gemini.google.com.json`。Enterprise 不进入 Gemini 页面启动。文件只含经同一 guard 校验的对话、侧栏/文件夹显示、模型菜单、对话/导出菜单、侧栏开关按钮点击区域/侧栏悬停区域、导出/分支消息正文、上下文图片、回复/研究资料包操作、用量显示、代码块和图表、用户消息中含 LaTeX 的段落、导出图片、生成图片下载按钮、Canvas 代码导出、Gems 侧栏、消息输入框、输入框折叠、Vim、提示词历史/斜杠命令/已发送提示词预览、文件夹作为项目和文件夹活动定位数据，不传插件、CSS、代码、行为或身份规则。
-- v3 使用 `format:3`；v1 保留 `format:1` 五个 `turn.*` 键的投影，v2 保留 `format:2` 对话、侧栏及模型菜单键的投影，继续服务旧客户端。缓存仍按扩展版本隔离，各格式只接受当时的键。删除、重命名、账号、ID 与点击策略仍属包内代码。
-- 自动检查至多每 6 小时一次；独立的 `lastAttemptAt` 跨开关保留，关了再开不会重置间隔；扩展重启中断的检查可能重试。手动检查只在 ON 时跳过间隔。
+- 独立开关「Gemini 页面识别在线修复」：local boolean `gvGeminiSelectorOnlineFixes`，默认关闭，不同步、不备份。
+- 只为 `gemini.google.com` 获取 `/catalog/gemini-selectors/v1/hosts/gemini.google.com.json`。Enterprise 不进入 Gemini 页面启动。文件只含经同一 guard 校验的对话、侧栏/文件夹显示、模型菜单、对话/导出菜单、导出选择栏、侧栏开关按钮点击区域/侧栏悬停区域、导出/分支消息正文、上下文图片、回复/研究资料包操作、用量显示、代码块和图表、用户消息中含 LaTeX 的段落、导出中的搜索结果图片、生成图片下载按钮、Canvas 代码导出、Gems 侧栏、消息输入框、输入框折叠、Vim、提示词历史/斜杠命令/已发送提示词预览、文件夹作为项目和文件夹活动定位数据，不传插件、CSS、代码、行为或身份规则。
+- 只发布一份 `format:1` 文件；literal allowlist 与校验由客户端、缓存和 publisher 共用。缓存按扩展版本隔离。每个 surface 独立回退；完整集合、原操作元素或独立 native 检查不一致时，整次读取改用 bundle。删除、重命名、账号、ID 与点击策略仍属包内代码。
+- 自动检查至多每 6 小时一次；`lastAttemptAt` 跨开关保留，重开不重置间隔；重启中断的检查可能重试。手动检查只在 ON 时跳过间隔。
 - OFF 禁止所有选择器请求，包括手动、`force` 和旧缓存触发，取消在途请求并清除下载缓存。打开开关和手动检查需要当前标签页是 Gemini；关闭在 popup 里从任何标签页都能做。
 - 页内 snapshot 冻结到用户自行刷新，关闭也不热切换或自动重载。AI Studio 没有此例外。
 
@@ -44,7 +44,7 @@ D15 原方案未使用。
 
 - 远程内容：revert 主仓提交，Pages 重新部署并 purge CDN，客户端下次检查即采用回退后的远程条目（D6 不按版本高者胜）。插件若已随 bundle 发布，新客户端不会因 revert 后目录里缺席而移除它，必须把旧 id 加入站点的 `revoked.json`；重新发布已撤回的 id 时，必须先从 `revoked.json` 移除它。
 - 客户端：关掉「插件在线更新」即回到打包快照；任一阶段可以单独 revert，不触及用户存储。
-- Gemini selector-only 数据：revert 后用更高 `catalogRevision` 重新发布；空 `selectors` 撤回全部覆盖。客户端关闭独立开关会停止请求并删除下载缓存，已打开页面保留原 snapshot，用户刷新后回到 bundle；保留独立的上次尝试时间。此规则不沿用插件条目 D6 的版本合并语义。
+- Gemini selector-only 数据：按 [rollback runbook](../../../core/gemini/selectors/README.md#rollback-runbook) 用更高 `catalogRevision` 发布修正或空 patch。关闭独立开关会停止请求、删除下载缓存，保留上次尝试时间；用户自行刷新后回到 bundle，不修改用户数据。此规则不沿用 D6。
 - 商店审核兜底：`VOYAGER_PLUGIN_CATALOG_REMOTE=off` 编出从不连接目录的构建（C6）。
 
 ## 11. 商店政策结论（2026-09-07 调研，含原文出处）

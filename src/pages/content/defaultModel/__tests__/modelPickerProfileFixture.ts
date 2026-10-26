@@ -20,9 +20,6 @@ export const PICKER_ALIASES: GeminiSelectorFile['selectors'] = {
   'modelPicker.thinkingContent': ['[data-fixture-thinking-content]'],
   'modelPicker.modelTitleContainer': ['[data-fixture-title]'],
   'modelPicker.thinkingTitleContainer': ['[data-fixture-title]'],
-  'modelPicker.selectedModel': ['[data-fixture-selected]'],
-  'modelPicker.selectedThinking': ['[data-fixture-selected]'],
-  'modelPicker.selectedNestedThinking': ['[data-fixture-selected]'],
   'modelPicker.focusInput': ['[data-fixture-composer]'],
 };
 
@@ -37,7 +34,6 @@ export function pickerScene() {
     item.dataset.fixtureRow = '';
     if (item.hasAttribute('data-mode-id')) item.dataset.fixtureModel = '';
     else item.dataset.fixtureThinkingOption = '';
-    if (item.classList.contains('selected')) item.dataset.fixtureSelected = '';
     item.querySelector<HTMLElement>('.label')!.dataset.fixtureLabel = '';
     item.querySelector<HTMLElement>('.label')!.dataset.fixtureThinkingLabel = '';
     item.querySelector<HTMLElement>('.label-container')!.dataset.fixtureTitle = '';

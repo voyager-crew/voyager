@@ -1,5 +1,9 @@
 import { GEMINI_PACKAGED_FORK } from '@/core/gemini/content/packaged';
-import { type GeminiTurnView, resolveGeminiTurnOperation } from '@/core/gemini/selectors';
+import {
+  type GeminiTurnView,
+  getBundledGeminiTurnView,
+  resolveGeminiTurnOperation,
+} from '@/core/gemini/selectors';
 import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
 import { logger } from '@/core/services/LoggerService';
 import { getSendKeyCoordinator } from '@/core/services/composer/sendKeys/sendKeyCoordinator';
@@ -131,6 +135,9 @@ class PendingForkLink implements ForkLinkReceipt {
       return;
     const existing = resolveGeminiTurnOperation(userTurns, (matches) => matches.length > 0);
     const turns = new Set(existing.value);
+    // Keep pre-send bundled evidence too: a later rejected repair cannot pass an older prompt off as new.
+    if (existing.view.remoteKeys.size)
+      userTurns(getBundledGeminiTurnView()).forEach((turn) => turns.add(turn));
     this.intent = {
       text: normalize(this.policy.readText(field)),
       turns,
@@ -228,9 +235,11 @@ class PendingForkLink implements ForkLinkReceipt {
         const id = makeTurnId(turn, 0);
         return !intent.ids.has(id) && normalize(turnText(turn)) === intent.text;
       });
-    const firstUser = intent.view
-      ? findSent(intent.view)
-      : resolveGeminiTurnOperation(findSent, (turn) => turn !== undefined).value;
+    const firstUser = resolveGeminiTurnOperation(
+      findSent,
+      (turn) => turn !== undefined,
+      intent.view ?? undefined,
+    ).value;
     if (!firstUser) return;
 
     const { pendingFork, getConversationTitle } = this.handoff;

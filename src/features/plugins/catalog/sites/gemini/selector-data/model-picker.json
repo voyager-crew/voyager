@@ -28,9 +28,6 @@
   "modelPicker.thinkingContent": ["gem-menu-item-content, .label-container"],
   "modelPicker.modelTitleContainer": [".title-and-description, .label-container"],
   "modelPicker.thinkingTitleContainer": [".label-container"],
-  "modelPicker.selectedModel": ["[aria-checked=\"true\"], .is-selected, .selected"],
-  "modelPicker.selectedThinking": [".selected, [aria-checked=\"true\"], [aria-selected=\"true\"]"],
-  "modelPicker.selectedNestedThinking": [".selected"],
   "modelPicker.focusInput": [
     "main rich-textarea [contenteditable=\"true\"]",
     "rich-textarea [contenteditable=\"true\"]",

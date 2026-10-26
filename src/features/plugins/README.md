@@ -117,8 +117,8 @@ must stay inside its site's `matches` (plan D18) or the build fails, and
 Gemini and AI Studio plugin catalogs are validated like the rest but never published: the host
 policy (`allowsRemoteCatalog`) keeps their four hosts out of the per-host
 catalog, and their plugins stay out of `marketplace.json`.
-Gemini's separate opt-in selector files are described in
-[remote/README.md](remote/README.md#separate-opt-in-gemini-selector-files); AI Studio
+Gemini's separate opt-in selector file is described in
+[remote/README.md](remote/README.md#separate-opt-in-gemini-selector-file); AI Studio
 remains entirely packaged-only.
 
 `catalog/marketplace.json` is **not** that mapping table, and no page reads it:

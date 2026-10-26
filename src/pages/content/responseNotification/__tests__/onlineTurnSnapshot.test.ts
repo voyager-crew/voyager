@@ -40,6 +40,14 @@ describe('notification page snapshots with online host profiles', () => {
     expect(before.map(({ id }) => id)).toEqual(['outer', 'inner']);
   });
 
+  it('a partial remote host list cannot replace the latest nested response', async () => {
+    stopSelectors = await installGeminiTurnPatch({
+      'turn.assistantWithHosts': ['#outer'],
+    });
+    expect(getAssistantResponses().map(({ id }) => id)).toEqual(['outer', 'inner']);
+    expect(getLatestAssistantResponse()?.id).toBe('inner');
+  });
+
   it('uses bundled nonempty responses when the online hosts have no readable response', async () => {
     document
       .querySelector('main')!
@@ -52,18 +60,20 @@ describe('notification page snapshots with online host profiles', () => {
     expect(getLatestAssistantResponse()?.id).toBe('inner');
   });
 
-  it('keeps user-like descendants of an empty assistant host out of prompt evidence', async () => {
+  it('an unverified remote assistant cannot change packaged prompt evidence', async () => {
     document
       .querySelector('main')!
       .insertAdjacentHTML(
         'beforeend',
         '<div class="empty-online-response"><div data-test-id="user-placeholder" id="false-prompt"></div></div>',
       );
+    const before = getUserPromptElements();
     stopSelectors = await installGeminiTurnPatch({
       'turn.assistantWithHosts': ['.online-assistant', '.empty-online-response'],
     });
 
-    expect(getUserPromptElements().map(({ id }) => id)).toEqual(['prompt']);
+    expect(getUserPromptElements()).toEqual(before);
+    expect(before.map(({ id }) => id)).toEqual(['prompt', 'false-prompt']);
   });
 
   it('lets shared selector readers use one explicit bundled view or the effective host view', async () => {

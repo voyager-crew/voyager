@@ -1,3 +1,4 @@
+import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
 import {
   getBundledGeminiSelectorView,
   getGeminiSelectorView,
@@ -8,6 +9,7 @@ import {
   GEMINI_GEMS_CATALOG_PROFILE_KEYS,
   type GeminiGemsProfileKey,
 } from '@/core/gemini/selectors/gemsKeys';
+import { sameItems } from '@/core/utils/array';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/gems-packaged.json';
 
 import { parseGemHref, type GemMetadata } from './catalog';
@@ -54,20 +56,8 @@ function nativeLinks(root: ParentNode): HTMLAnchorElement[] {
   );
 }
 
-function sameNodes(a: readonly Element[], b: readonly Element[]): boolean {
-  return a.length === b.length && a.every((node, index) => node === b[index]);
-}
-
 function nativeNode(element: Element): boolean {
-  for (let node: Element | null = element; node; node = node.parentElement) {
-    if (
-      node.matches(packaged.excluded) ||
-      Array.from(node.classList).some((name) => name.startsWith('gv-'))
-    ) {
-      return false;
-    }
-  }
-  return true;
+  return !element.closest(packaged.excluded) && !hasVoyagerOwner(element);
 }
 
 function readList(doc: Document, view: GeminiSelectorView, remote: boolean): GemsListRead | null {
@@ -83,17 +73,17 @@ function readList(doc: Document, view: GeminiSelectorView, remote: boolean): Gem
       const nativeRows = Array.from(doc.querySelectorAll(packaged.nativeRow)).filter(nativeNode);
       if (
         !nativeRows.length ||
-        !sameNodes(nativeRows, Array.from(list.querySelectorAll(packaged.nativeRow)))
+        !sameItems(nativeRows, Array.from(list.querySelectorAll(packaged.nativeRow)))
       )
         return null;
     }
     const bundledRows = Array.from(list.querySelectorAll(gemsSelector('gems.row', bundle)));
-    if (bundledRows.length && !sameNodes(rows, bundledRows)) return null;
+    if (bundledRows.length && !sameItems(rows, bundledRows)) return null;
     const expectedLinks = nativeLinks(list);
     const rowLinks = rows.flatMap(nativeLinks);
     if (
       !expectedLinks.length ||
-      !sameNodes(rowLinks, expectedLinks) ||
+      !sameItems(rowLinks, expectedLinks) ||
       rows.some((row) => nativeLinks(row).length !== 1)
     )
       return null;

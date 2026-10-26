@@ -78,9 +78,6 @@ export class ModelPickerDom {
         ) {
           throw new Error('Unreadable model row');
         }
-        this.selected(item, 'model');
-        this.selected(item, 'thinking');
-        this.selected(item, 'nested');
         this.starAnchor(item, 'model');
         this.starAnchor(item, 'thinking');
       }
@@ -228,11 +225,11 @@ export class ModelPickerDom {
   }
 
   public isThinkingItemSelected(item: HTMLElement): boolean {
-    return this.selected(item, 'thinking');
+    return hasNativeSelectedState(item, 'thinking');
   }
 
   public isNestedThinkingItemSelected(item: HTMLElement): boolean {
-    return this.selected(item, 'nested');
+    return hasNativeSelectedState(item, 'nested');
   }
 
   public getThinkingLevelLabel(item: HTMLElement): string {
@@ -262,22 +259,7 @@ export class ModelPickerDom {
   }
 
   public isModelItemSelected(item: HTMLElement): boolean {
-    return this.selected(item, 'model');
-  }
-
-  private selected(item: HTMLElement, kind: 'model' | 'thinking' | 'nested'): boolean {
-    const key =
-      kind === 'model'
-        ? 'modelPicker.selectedModel'
-        : kind === 'thinking'
-          ? 'modelPicker.selectedThinking'
-          : 'modelPicker.selectedNestedThinking';
-    const truth = hasNativeSelectedState(item, kind);
-    // A wrong alias must not manufacture (or hide) selected state before a click or write.
-    if (this.view.remoteKeys.has(key) && item.matches(this.selector(key)) !== truth) {
-      throw new Error('Uncorroborated model selection state');
-    }
-    return truth;
+    return hasNativeSelectedState(item, 'model');
   }
 
   // ==================== Thinking level helpers (2026 redesign) ====================

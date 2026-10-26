@@ -27,11 +27,6 @@ export interface AddButtonOptions {
   onAdd: (host: HTMLElement, selectedText: string, button: HTMLButtonElement) => void;
 }
 
-/** Gemini's action bar for one answer, ignoring any inside the thinking panel. */
-export function findActionBar(host: HTMLElement): HTMLElement | null {
-  return resolveResearchActionBars([host])[0];
-}
-
 function createAddButton(options: AddButtonOptions): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';

@@ -4,6 +4,7 @@ import {
   resolveGeminiSelectorOperationInView,
   type GeminiSelectorView,
 } from '@/core/gemini/selectors';
+import { sameItems } from '@/core/utils/array';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar-interaction-packaged.json';
 
 const ICON_NAMES = new Set(['side_nav', 'side_nav_expand']);
@@ -26,10 +27,6 @@ function bundledButtons(view: GeminiSelectorView): HTMLElement[] {
   return Array.from(buttons).filter(isVisible);
 }
 
-function sameElements(left: readonly HTMLElement[], right: readonly HTMLElement[]): boolean {
-  return left.length === right.length && left.every((element, index) => element === right[index]);
-}
-
 /** A changed icon element can be found online; the native ligature and sidebar still prove it. */
 export function getSidebarWidthButtons(): HTMLElement[] {
   const view = getGeminiSelectorView();
@@ -48,7 +45,7 @@ export function getSidebarWidthButtons(): HTMLElement[] {
           ).filter(isVisible),
     (buttons) => {
       // A partial or broader match must not redirect the person's hit to a different control.
-      if (bundled.length > 0) return sameElements(buttons, bundled);
+      if (bundled.length > 0) return sameItems(buttons, bundled);
       const native = Array.from(document.querySelectorAll<HTMLButtonElement>('bard-sidenav button'))
         .filter(
           (button) =>
@@ -59,7 +56,7 @@ export function getSidebarWidthButtons(): HTMLElement[] {
             ),
         )
         .filter(isVisible);
-      return buttons.length === 1 && sameElements(buttons, native);
+      return buttons.length === 1 && sameItems(buttons, native);
     },
   ).value;
 }

@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { getBundledGeminiSelectorView } from '../../src/core/gemini/selectors/bundle';
+import { GeminiSelectorService } from '../../src/core/gemini/selectors/service';
 import type {
   GeminiSelectorFile,
   GeminiSelectorProfileKey,
@@ -29,6 +30,10 @@ function fixtureCatalog(): string {
   const path = temp();
   const destination = join(path, dataPath);
   mkdirSync(destination, { recursive: true });
+  writeFileSync(
+    join(path, 'sites/gemini/selector-publication.json'),
+    readFileSync(join(catalogDir, 'sites/gemini/selector-publication.json')),
+  );
   for (const file of [
     'turn.json',
     'sidebar.json',
@@ -62,10 +67,10 @@ function fixtureCatalog(): string {
   return path;
 }
 
-function published(outDir: string, version: 'v1' | 'v2' | 'v3'): GeminiSelectorFile {
-  const path = join(outDir, 'gemini-selectors', version, 'hosts', `${host}.json`);
+function published(outDir: string): GeminiSelectorFile {
+  const path = join(outDir, 'gemini-selectors', 'v1', 'hosts', `${host}.json`);
   const file = readGeminiSelectorFile(JSON.parse(readFileSync(path, 'utf8')) as unknown, host);
-  if (!file) throw new Error(`Published ${version} file is invalid`);
+  if (!file) throw new Error('Published file is invalid');
   return file;
 }
 
@@ -85,7 +90,7 @@ afterEach(() => {
 });
 
 describe('Gemini selector publication', () => {
-  it('keeps old clients reading their turns and rows when v3 adds composer fixes', () => {
+  it('publishes one file with matching turn, row, picker and composer reads', () => {
     document.body.innerHTML = `
       <div id="question-b" class="user-query-container">Second</div>
       <div id="question-a" class="user-query-container">First</div>
@@ -100,21 +105,13 @@ describe('Gemini selector publication', () => {
       <rich-textarea><div id="draft" contenteditable="true" role="textbox">Unsent draft</div></rich-textarea>`;
     const outDir = temp();
     const written = writeGeminiSelectorFiles({ catalogDir, outDir, catalogRevision: 42 });
-    expect(written).toHaveLength(3);
-    const legacy = published(outDir, 'v1');
-    const sidebarClient = published(outDir, 'v2');
-    const current = published(outDir, 'v3');
-    expect(legacy.format).toBe(1);
-    expect(sidebarClient.format).toBe(2);
-    expect(current.format).toBe(3);
-    expect(legacy.catalogRevision).toBe(42);
-    expect(sidebarClient.catalogRevision).toBe(42);
+    expect(written).toEqual([join(outDir, 'gemini-selectors', 'v1', 'hosts', `${host}.json`)]);
+    const current = published(outDir);
+    expect(current.format).toBe(1);
     expect(current.catalogRevision).toBe(42);
     const bundled = getBundledGeminiSelectorView().profiles;
-    expect(readNodes(legacy.selectors, 'turn.user')).toEqual(readNodes(bundled, 'turn.user'));
     const comparableKeys = ['turn.user', 'sidebar.row', 'modelPicker.modelIdItem'] as const;
     for (const key of comparableKeys) {
-      expect(readNodes(sidebarClient.selectors, key)).toEqual(readNodes(bundled, key));
       expect(readNodes(current.selectors, key)).toEqual(readNodes(bundled, key));
     }
     expect(readNodes(current.selectors, 'composer.candidates')).toEqual(
@@ -127,28 +124,23 @@ describe('Gemini selector publication', () => {
       'row-b',
       'row-a',
     ]);
-    // v1's frozen guard would reject the expanded payload; its projection must remain readable.
-    expect(readGeminiSelectorFile({ ...current, format: 1 }, host)).toBeNull();
-    expect(readGeminiSelectorFile({ ...current, format: 2 }, host)).toBeNull();
   });
 
-  it('removes obsolete hosts in all versions while preserving unrelated catalogs', () => {
+  it('replaces stale outputs with one publication while preserving unrelated catalogs', () => {
     const outDir = temp();
-    for (const version of ['v1', 'v2', 'v3']) {
-      const hostsDir = join(outDir, 'gemini-selectors', version, 'hosts');
-      mkdirSync(hostsDir, { recursive: true });
-      writeFileSync(join(hostsDir, 'aistudio.google.com.json'), '{}');
-      writeFileSync(join(hostsDir, 'business.gemini.google.json'), '{}');
-    }
+    const hostsDir = join(outDir, 'gemini-selectors', 'v1', 'hosts');
+    mkdirSync(hostsDir, { recursive: true });
+    writeFileSync(join(hostsDir, 'aistudio.google.com.json'), '{}');
+    writeFileSync(join(hostsDir, 'business.gemini.google.json'), '{}');
+    const staleDir = join(outDir, 'gemini-selectors', 'v99', 'hosts');
+    mkdirSync(staleDir, { recursive: true });
+    writeFileSync(join(staleDir, `${host}.json`), '{}');
     mkdirSync(join(outDir, 'hosts'));
     writeFileSync(join(outDir, 'hosts/claude.ai.json'), '{"keep":true}');
     writeGeminiSelectorFiles({ catalogDir, outDir, catalogRevision: 42 });
-    for (const version of ['v1', 'v2', 'v3'] as const) {
-      expect(readdirSync(join(outDir, 'gemini-selectors', version, 'hosts'))).toEqual([
-        'gemini.google.com.json',
-      ]);
-      expect(published(outDir, version).catalogRevision).toBe(42);
-    }
+    expect(readdirSync(hostsDir)).toEqual(['gemini.google.com.json']);
+    expect(readdirSync(join(outDir, 'gemini-selectors'))).toEqual(['v1']);
+    expect(published(outDir).catalogRevision).toBe(42);
     expect(readFileSync(join(outDir, 'hosts/claude.ai.json'), 'utf8')).toBe('{"keep":true}');
   });
 
@@ -163,7 +155,7 @@ describe('Gemini selector publication', () => {
       <code-immersive-panel id="code"><xap-code-editor>const answer = 42;</xap-code-editor></code-immersive-panel>`;
     const outDir = temp();
     writeGeminiSelectorFiles({ catalogDir, outDir, catalogRevision: 42 });
-    const current = published(outDir, 'v3');
+    const current = published(outDir);
     const bundled = getBundledGeminiSelectorView().profiles;
     for (const [key, id] of [
       ['imageExport.searchHosts', 'search'],
@@ -175,6 +167,61 @@ describe('Gemini selector publication', () => {
       expect(nodes.map((node) => node.id)).toEqual([id]);
     }
   });
+
+  it('keeps fixes withdrawn across later builds and restores the packaged page read', async () => {
+    document.body.innerHTML = `
+      <div class="user-query-container" id="bundled">Original question</div>
+      <div class="repaired-user" id="remote">Repaired question</div>`;
+    const fixture = fixtureCatalog();
+    const turnPath = join(fixture, dataPath, 'turn.json');
+    const turns: Record<string, unknown> = JSON.parse(readFileSync(turnPath, 'utf8'));
+    writeFileSync(turnPath, JSON.stringify({ ...turns, 'turn.user': ['.repaired-user'] }));
+    const outDir = temp();
+    mkdirSync(join(outDir, 'hosts'));
+    writeFileSync(join(outDir, 'hosts/claude.ai.json'), '{"keep":true}');
+    const service = new GeminiSelectorService();
+    const readQuestion = async (file: GeminiSelectorFile) => {
+      const lifetime = service.initialize({
+        host,
+        doc: document,
+        lifetime: new AbortController().signal,
+        bundledRevision: 1,
+        read: async () => file,
+      });
+      await lifetime.ready;
+      const ids = readNodes(service.getView().profiles, 'turn.user').map(({ id }) => id);
+      lifetime.stop();
+      return ids;
+    };
+    writeGeminiSelectorFiles({ catalogDir: fixture, outDir, catalogRevision: 42 });
+    expect(await readQuestion(published(outDir))).toEqual(['remote']);
+    writeFileSync(
+      join(fixture, 'sites/gemini/selector-publication.json'),
+      JSON.stringify({ publication: 'withdrawn' }),
+    );
+    for (const catalogRevision of [43, 44]) {
+      writeGeminiSelectorFiles({ catalogDir: fixture, outDir, catalogRevision });
+      const withdrawal = published(outDir);
+      expect(withdrawal.catalogRevision).toBe(catalogRevision);
+      expect(withdrawal.selectors).toEqual({});
+      expect(await readQuestion(withdrawal)).toEqual(['bundled']);
+    }
+    expect(readFileSync(join(outDir, 'hosts/claude.ai.json'), 'utf8')).toBe('{"keep":true}');
+  });
+
+  it.each([null, [], {}, { publication: 'typo' }, { publication: 'full', extra: true }])(
+    'leaves an accepted publication readable when the publication mode is invalid: %j',
+    (mode) => {
+      const fixture = fixtureCatalog();
+      const outDir = temp();
+      writeGeminiSelectorFiles({ catalogDir: fixture, outDir, catalogRevision: 42 });
+      writeFileSync(join(fixture, 'sites/gemini/selector-publication.json'), JSON.stringify(mode));
+      expect(() =>
+        writeGeminiSelectorFiles({ catalogDir: fixture, outDir, catalogRevision: 43 }),
+      ).toThrow('publication must be full or withdrawn');
+      expect(published(outDir).catalogRevision).toBe(42);
+    },
+  );
 
   it('rejects incomplete or misplaced profile groups and accepts the repaired group', () => {
     const fixture = fixtureCatalog();
@@ -192,10 +239,10 @@ describe('Gemini selector publication', () => {
     );
     writeFileSync(sidebarPath, JSON.stringify(sidebar));
     const repaired = buildGeminiSelectorFiles({ catalogDir: fixture, catalogRevision: 42 });
-    expect(repaired.get(host)?.format).toBe(3);
+    expect(repaired.get(host)?.format).toBe(1);
   });
 
-  it('leaves every published version intact when a replacement exceeds the decoded byte budget', () => {
+  it('leaves the published file intact when a replacement exceeds the decoded byte budget', () => {
     const fixture = fixtureCatalog();
     const outDir = temp();
     writeGeminiSelectorFiles({ catalogDir, outDir, catalogRevision: 42 });
@@ -211,8 +258,6 @@ describe('Gemini selector publication', () => {
     expect(() =>
       writeGeminiSelectorFiles({ catalogDir: fixture, outDir, catalogRevision: 43 }),
     ).toThrow();
-    expect(published(outDir, 'v1').catalogRevision).toBe(42);
-    expect(published(outDir, 'v2').catalogRevision).toBe(42);
-    expect(published(outDir, 'v3').catalogRevision).toBe(42);
+    expect(published(outDir).catalogRevision).toBe(42);
   });
 });

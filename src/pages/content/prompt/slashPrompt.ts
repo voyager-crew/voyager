@@ -19,8 +19,9 @@ import { getTranslationSync } from '@/utils/i18n';
 
 import { followGeminiSendKey } from '../sendBehavior/followSendKey';
 import { findClosestSendActionButton, isSendKeyboardEvent } from '../sendBehavior/sendButton';
-import { type TemplateFillHandle, openTemplateFill } from './PromptTemplateFill';
-import { createPromptSendReplay, promptPageScope, watchPromptPageScope } from './promptPageScope';
+import { type TemplateFillHandle } from './PromptTemplateFill';
+import { createPromptSendReplay } from './promptPageScope';
+import { openScopedTemplateFill } from './scopedTemplateFill';
 import {
   type PromptQuery,
   TOKEN_CLASS,
@@ -94,12 +95,6 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
    * Page/account changes and `destroy` close it. */
   let templateFill: TemplateFillHandle | null = null;
   const sendReplay = createPromptSendReplay();
-  const stopPageScope = watchPromptPageScope(() => {
-    sendReplay.destroy();
-    templateFill?.close();
-    templateFill = null;
-    close();
-  });
 
   function close(): void {
     root.hidden = true;
@@ -154,9 +149,8 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
     prompt: PromptItem,
     hideInputValue: boolean,
   ): void {
-    const identity = promptPageScope();
     templateFill?.close();
-    templateFill = openTemplateFill({
+    templateFill = openScopedTemplateFill({
       text: prompt.text,
       name: prompt.name?.trim() || undefined,
       // Anchored to the composer, not to the result list: the list has just
@@ -170,7 +164,6 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
       },
       onSubmit: (filled) => {
         templateFill = null;
-        if (identity !== promptPageScope()) return;
         try {
           query.input.focus?.();
         } catch {}
@@ -500,7 +493,6 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
 
   return {
     destroy: () => {
-      stopPageScope();
       sendReplay.destroy();
       effectiveSendKey.stop();
       templateFill?.close();

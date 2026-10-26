@@ -53,7 +53,7 @@ describe('timeline turn discovery with online profiles', () => {
     expect(localStorage.getItem('geminiTimelineUserTurnSelectorAuto')).toBe('.stale-user');
   });
 
-  it('keeps first-selector priority instead of collecting every online profile entry', async () => {
+  it('a partial remote first selector cannot hide earlier timeline turns', async () => {
     const users = document.querySelectorAll<HTMLElement>('.online-user');
     users[0].classList.add('earlier');
     users[1].classList.add('preferred');
@@ -61,8 +61,8 @@ describe('timeline turn discovery with online profiles', () => {
 
     const timeline = await start();
 
-    expect(timeline.read([]).markers.map(({ element }) => element)).toEqual([users[1]]);
-    expect(timeline.count()).toBe(1);
+    expect(timeline.read([]).markers.map(({ element }) => element)).toEqual([...users]);
+    expect(timeline.count()).toBe(2);
   });
 
   it('observes the conversation for an unfamiliar online selector and follows later sibling turns', async () => {
@@ -76,6 +76,7 @@ describe('timeline turn discovery with online profiles', () => {
       changes += 1;
     });
     const section = document.createElement('section');
+    section.className = 'conversation-container';
     section.innerHTML = '<div class="online-user">Third question</div>';
     document.querySelector('main')!.append(section);
     await Promise.resolve();
@@ -181,13 +182,16 @@ describe('timeline turn discovery with online profiles', () => {
     );
   });
 
-  it('keeps usable user markers when the online assistant preview matches nothing', async () => {
+  it('a missing remote assistant cannot erase bundled timeline previews', async () => {
     stopSelectors = await installGeminiTurnPatch({ 'turn.assistant': ['.missing-preview'] });
     const timeline = await start();
     const markers = timeline.read([]).markers;
 
     expect(markers.map(({ id }) => id)).toEqual(['s-1111111111111111', 's-2222222222222222']);
-    expect(markers.map(({ assistantSummary }) => assistantSummary)).toEqual(['', '']);
+    expect(markers.map(({ assistantSummary }) => assistantSummary)).toEqual([
+      'First answer',
+      'Second answer',
+    ]);
   });
 
   it('does not let an uncommitted identity plan change the next positional allocation', () => {

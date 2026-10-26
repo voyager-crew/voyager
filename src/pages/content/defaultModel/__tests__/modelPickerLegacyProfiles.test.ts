@@ -84,7 +84,6 @@ function nestedScene() {
     item.dataset.fixtureThinkingOption = '';
     if (selected) {
       item.classList.add('selected');
-      item.dataset.fixtureSelected = '';
     }
     item.innerHTML = `<div class="label-container" data-fixture-title><span class="label" data-fixture-label data-fixture-thinking-label>${label}</span></div>`;
     list.appendChild(item);

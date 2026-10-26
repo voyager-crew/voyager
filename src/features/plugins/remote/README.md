@@ -114,139 +114,79 @@ copy on the site's other hosts. When renaming a plugin id, add the old id to
 The additive field keeps `format: 1`; older clients ignore it and still revoke
 through absence from `plugins`. The reason stays in the source file.
 
-## Separate opt-in Gemini selector files
+## Separate opt-in Gemini selector file
 
 Gemini keeps **zero plugin catalog requests**. Its optional **Online fixes for
-Gemini page detection** switch is a separate data channel, implemented in
-`src/features/geminiSelectorFixes/`; it does not add a `PluginSource` or replace
-`site.json`. `allowsRemoteCatalog` and `isEligibleCatalogHost` still exclude
-Gemini and AI Studio. AI Studio has no selector channel either.
+Gemini page detection** switch is a separate channel in
+`src/features/geminiSelectorFixes/`; it neither adds a `PluginSource` nor replaces
+`site.json`. `allowsRemoteCatalog` and `isEligibleCatalogHost` still exclude Gemini
+and AI Studio. AI Studio and Gemini Enterprise have no selector channel.
 
 The switch defaults to **off**. Its strict boolean
-`StorageKeys.GEMINI_SELECTOR_ONLINE_FIXES` (`gvGeminiSelectorOnlineFixes`) lives
-in `chrome.storage.local`, outside settings backup and sync. Off blocks **all**
-selector requests, including `force`, manual checks and requests with an old
+`StorageKeys.GEMINI_SELECTOR_ONLINE_FIXES` (`gvGeminiSelectorOnlineFixes`) lives in
+`chrome.storage.local`, outside settings backup and sync. Off blocks **all**
+selector requests, including manual checks, `force` and requests with an old
 cache. Turning it off aborts in-flight checks and removes the selector cache.
 The separate last-attempt record survives toggles, so turning it back on does
-not reset the six-hour automatic interval. Manual checks bypass only the
-interval and require consent to remain on. Only completed attempts are
-persisted, so a check interrupted by an extension restart may be retried; while
-a check is in flight, every other caller shares that one request.
+not reset the six-hour automatic interval. Only completed attempts are persisted;
+an extension restart may therefore retry an interrupted check. Concurrent callers
+share the same in-flight request. Manual checks bypass only the interval and
+require the switch to remain on.
 
-Only the background fetches:
+Only the background fetches the single `format: 1` file:
 
 ```text
-https://voyager.nagi.fun/catalog/gemini-selectors/v3/hosts/gemini.google.com.json
+https://voyager.nagi.fun/catalog/gemini-selectors/v1/hosts/gemini.google.com.json
 ```
 
-Gemini Enterprise is not covered: its pages never start the Gemini turn
-consumers, so a file for it would have no reader.
+The file contains only validated ordered locator lists. The literal allowlist in
+`src/core/gemini/selectors/types.ts` covers conversation turns, sidebar entries and
+folder display areas, model menus, message inputs, input collapse, Vim, prompt
+history, slash commands, sent prompt previews, Folder as Project, folder activity,
+conversation/export menus, the export selection bar, sidebar hit and hover areas, the active Gems sidebar,
+message content for export/forks, context images, response/research-pack actions,
+usage displays, code blocks/diagrams, user LaTeX paragraphs, search result images in exports, generated-image download icons and Canvas code panels. It contains no
+plugins, CSS, actions, JavaScript, matches, capabilities or theme.
 
-The `v3` file (`format: 3`) carries ordered `turn.*`, `sidebar.*`, `modelPicker.*`,
-`composer.*`, `inputCollapse.*`, `vim.*`, `promptHistory.*`, `slash.*`, `sentChips.*`,
-`project.*`, `activity.*`, `menu.*`, `exportOverlay.*`, `sidebarWidth.*`,
-`sidebarHover.*`, `gems.*`, `content.*`, `context.*`,
-`responseActions.*`, `researchPack.*`, `usage.root`, `code.host`, `userLatex.lines`,
-`imageExport.searchHosts`, `generatedImage.downloadIcon` and `canvas.codePanels`
-profiles. The publisher reads the same per-surface
-JSON fragments in `selector-data/` as the bundle. These cover conversation turns,
-sidebar entries/titles and folder display areas, model menu discovery, conversation
-and export menu anchors, the sidebar toggle button’s hit area and sidebar hover areas, the active Gems
-sidebar, message inputs and their controls, input collapse, Vim, prompt history, slash commands,
-sent prompt previews, Folder as Project, folder activity, message content for export and
-forks, context images, response and research-pack actions, usage displays, code blocks
-and diagrams, paragraphs containing LaTeX in user messages, images for export, generated image
-download buttons, and Canvas code export. Each online surface has its own
-syntax-fallback group. A remote read must preserve the complete independently
-verified collection and the operation's original input; a miss or mismatch reruns
-the whole read with bundled data. The configured Vim wrapper-to-editable order,
-hidden fallback and accepted HUD selector are preserved; collapse scans, mutation
-flushes and resize measurements each use one read session. Gems scraping also reads
-one view; Gem identity, pins, MRU and descriptions retain their existing meaning.
-The dormant Gems hider remains dormant.
-Code collapse, diagram scans, copy and export rechecks use the accepted code-host collection.
-A renamed host needs an independent native code shell; partial lists fall back whole.
-User LaTeX keeps the original paragraph and turn through rendering.
-Image export accepts a repaired search-image owner only when native source evidence proves
-the complete collection before serialization. This mainly repairs the source-picker hint and
-fallback alt text; an outer `single-image` still exports the image itself. Generated image
-download icons are proved by native `[fonticon="download"]` on the original button.
-Generated-image containers stay packaged: the independent image probe excludes the real
-`button.image-button` wrapper, so it cannot prove a renamed container. Canvas documents
-also stay packaged: their real inline `.title-container` and panel `toolbar h2.title-text`
-headers do not satisfy the proposed document-owner proof. Canvas code containers retain
-an independent fallback group, binding title and content to one verified owner.
-Canvas menu association, title/content locators, image source attributes and all image
-algorithms remain packaged.
+The [selector resolver README](../../../core/gemini/selectors/README.md) maps each
+surface to its group and consumers. An unparsable locator drops only its surface's
+group. A partial collection, conflict with an independent bundled/native check or
+a target other than the operation's original element reruns the entire read with
+the bundle, before any side effect. Remote-only checks stay off the bundled path.
+A key whose repair can only confirm the bundled result stays packaged-only.
 
-All six `generatedUi.*` keys stay packaged-only. Remote frame keys first need a
-**remote-path-only, URL-parsed origin check**: the bundled substring locator also accepts
-`https://wrong.example/gemini-code-immersive`, and a looser remote locator could capture
-another site's iframe. This batch preserves packaged behavior. The design's "reject
-wrong-origin frames" requirement remains a separate packaged-policy decision. The online
-channel cannot supply source URLs or origin policy.
-Identity extraction, account controls, delete/rename/confirmation, deletion
-tracking, native menu association, clone sanitizing, ARIA/focus safety and click
-policy remain packaged. Chat width CSS and native health checks remain packaged too.
-So do locators whose online match would
-have to equal the packaged one before use (sidebar toggle, hosts, new-chat and
-actions containers in `sidebar-packaged.json`; saved, exported and printed
-conversation titles in `sidebar-titles.json`): neither file is published. Edit/send protocols, attachment/related-UI checks, HUD
-anchors, chip text and mount points, and project insertion/removal rules also stay
-packaged. Conversation roots (`conversation.json`), toolbar controls (`export-toolbar.json`)
-and Canvas menus (`canvas-entry.json`) also stay packaged: their independent page
-checks can only confirm the bundled result, so these fragments are not published.
-Fork copy controls, export logo identity, source attributes and URL checks,
-MathML/KaTeX and HTML serialization, export DOM policy, and usage values/reset/tier
-locators also remain packaged. Code source, language and button locators, diagram
-parameters and every formula and Deep Research locator stay packaged too.
-The observed formula container itself carries `data-math`, so a container override
-would only reconfirm the bundled source lookup. Deep Research item and report repairs
-lack live evidence for independent native boundaries; fixture-only row-parent and
-article/document assumptions do not justify publishing them. Their packaged reads
-preserve item order, report scoring, titles, source URLs and menu association.
-`*-packaged.json` fragments never enter publication. The files contain no plugins,
-CSS, actions, JavaScript, matches, capabilities or theme. The bundle and remote
-files use the same selector-data guard. A newer accepted revision
-replaces the previous patch; each supplied list replaces that bundled list as
-a whole. Missing keys keep their bundled values. An empty patch withdraws all
-online overrides. Roll back by reverting the data and publishing a **higher**
-source revision, not by lowering `catalogRevision`.
+Identity/account/destructive-action policies, native menu association, clone
+sanitizing, ARIA/focus safety, input and click protocols, source attributes, URL
+and origin policy, CSS and independent native health stay packaged. So do the
+unreachable repairs listed in the selector README, including scroll targets,
+formula and Deep Research content, generated-image containers and Canvas document
+editors. `generatedUi.*` frame keys require a **remote-path-only, URL-parsed origin
+check** before they could become remote; this migration preserves the existing
+packaged frame behavior. No remote locator can change that origin policy.
 
-A remote `usage.root` must point at the **direct container of the usage header**
-(`.usage-metrics-header`). That same element must contain all native daily and
-weekly buckets; an outer ancestor or the buckets alone is not a repair witness.
-The accepted root is bound to its account. A failed query or transient empty
-render retains the last verified usage cache.
-
-The publisher keeps `/gemini-selectors/v1/hosts/gemini.google.com.json` and
-`/gemini-selectors/v2/hosts/gemini.google.com.json` for older extensions. The
-`format: 1` projection contains only the original five `turn.*` profiles; the
-`format: 2` projection adds the original sidebar and model menu profiles. Neither
-projection gains composer keys: older clients would reject the entire file.
-The current client fetches only v3 and requires format 3 on that response.
-Valid format 1 and 2 caches remain readable, with newer surfaces using bundled
-profiles until a v3 response replaces them. The cache is still bound to
-`extensionVersion`, so an extension upgrade discards another version's cache.
-New profiles extend only the latest format’s literal allowlist and its contract test.
-Earlier projections retain their existing lists. Profile additions require no consent
-or user-record migration.
+The builder reads the same selected `selector-data/` fragments as the bundle and
+publishes one file with the full allowlist. Missing keys use the bundle; supplied
+lists replace their whole profiles. A higher accepted revision replaces the entire
+patch, and an empty patch withdraws all overrides. The cache is bound to the running
+extension version. The [rollback runbook](../../../core/gemini/selectors/README.md#rollback-runbook)
+covers higher-revision fixes, persistent withdrawal, CDN purge and build flags.
 
 `gv.geminiSelectors.status`, `gv.geminiSelectors.setEnabled`, and
-`gv.geminiSelectors.refresh` are the popup's background API. Turning the switch
-on and checking identify the inspected tab; the background resolves its actual
-HTTPS URL and admits only `gemini.google.com`. Reading the status and turning
-the switch off need no Gemini tab, so the popup on any tab can turn it off.
-Opening Gemini or its popup can request a due check; there is no polling alarm.
-The options page uses the same popup with its explicit `sourceTabId`; a closed
-source does not authorize checks for a different active tab. Selectors
-are snapshotted once per page, so new data and turning the switch off affect
-open pages only after the user refreshes. There is no automatic reload.
+`gv.geminiSelectors.refresh` are the popup's background API. Turning the switch on
+and checking identify the inspected tab; the background resolves its actual HTTPS
+URL and admits only `gemini.google.com`. Reading status and turning the switch off
+need no Gemini tab. Opening Gemini or its popup can request a due check; there is
+no polling alarm. The options page uses the same popup with an explicit
+`sourceTabId`; closing that source does not authorize a check for another active
+tab. Page hydration, the background check and the popup run on `startMachine`.
+The page snapshot is fixed for its content-script claim, so new downloads and
+turning the switch off affect an open page only after a user refresh. No automatic
+reload or PluginHost remount occurs.
 
 GET requests omit cookies and referrers, reject redirects, and send no page or
-conversation content or account identifiers. The URL exposes only the fixed
-host name; normal network metadata such as IP address and User-Agent is visible
-to the static host. Announcements and plugin catalog settings remain separate.
-`VOYAGER_GEMINI_SELECTOR_REMOTE=off` disables this channel at build time;
-`VOYAGER_PLUGIN_CATALOG_REMOTE=off` also disables it. The disclosure is kept in
-all privacy locales and the store-listing reference, as required by D13/D14.
+conversation content or account identifiers. The URL exposes only the fixed host
+name; the static host sees normal metadata such as IP address and User-Agent.
+Announcements and plugin catalog settings remain separate.
+`VOYAGER_GEMINI_SELECTOR_REMOTE=off` disables this channel, including cache use;
+`VOYAGER_PLUGIN_CATALOG_REMOTE=off` disables both remote data channels. D13/D14
+require the disclosure in all privacy locales and the store-listing reference.

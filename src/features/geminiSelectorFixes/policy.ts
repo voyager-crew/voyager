@@ -3,7 +3,7 @@ import { isGeminiSelectorHost } from '@/features/plugins/sites/hostPolicy';
 
 export const GEMINI_SELECTOR_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 export const GEMINI_SELECTOR_TIMEOUT_MS = 15_000;
-const GEMINI_SELECTOR_BASE_URL = 'https://voyager.nagi.fun/catalog/gemini-selectors/v3/hosts';
+const GEMINI_SELECTOR_BASE_URL = 'https://voyager.nagi.fun/catalog/gemini-selectors/v1/hosts';
 
 export function geminiSelectorHostFromUrl(url: string | undefined): GeminiSelectorHost | undefined {
   if (!url) return undefined;

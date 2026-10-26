@@ -4423,7 +4423,7 @@
     "description": "Switch for Gemini page detection fixes; covered areas are listed in the hint; off by default"
   },
   "geminiSelectorFixesHint": {
-    "message": "Gets detection fixes for conversations, the sidebar, folders, the model menu, conversation and export menus, the sidebar toggle button’s clickable area and sidebar hover areas, message content for export and forks, context images, response and research-pack actions, usage displays, code blocks and diagrams, paragraphs containing LaTeX in your messages, images for export, generated image download buttons, Canvas code export, the Gems sidebar, message input, input collapse, Vim mode, prompt history, slash commands, Folder as Project and folder activity from voyager.nagi.fun. Checks at most once every 6 hours. No page content is sent. Off by default.",
+    "message": "Gets detection fixes for conversations, the sidebar, folders, the model menu, conversation and export menus, the export selection bar, the sidebar toggle button’s clickable area and sidebar hover areas, message content for export and forks, context images, response and research-pack actions, usage displays, code blocks and diagrams, paragraphs containing LaTeX in your messages, search result images in exports, generated image download buttons, Canvas code export, the Gems sidebar, message input, input collapse, Vim mode, prompt history, slash commands, sent prompt previews, Folder as Project and folder activity from voyager.nagi.fun. Checks at most once every 6 hours. No page content is sent. Off by default.",
     "description": "Covered page areas, endpoint, automatic check interval, privacy and default setting"
   },
   "geminiSelectorFixesOff": {

@@ -5,6 +5,7 @@ import {
   type GeminiSelectorView,
 } from '@/core/gemini/selectors';
 import { GEMINI_SIDEBAR_HOVER_PROFILE_KEYS } from '@/core/gemini/selectors/sidebarInteractionKeys';
+import { sameItems } from '@/core/utils/array';
 
 interface Popups {
   readonly dialogs: readonly HTMLElement[];
@@ -22,10 +23,6 @@ function read(view: GeminiSelectorView): Popups {
   };
 }
 
-function same(left: readonly HTMLElement[], right: readonly HTMLElement[]): boolean {
-  return left.length === right.length && left.every((element, index) => element === right[index]);
-}
-
 /** Dialog/menu roles are native evidence, never supplied by the online profile itself. */
 export function getSidebarHoverPopups(): Popups {
   const view = getGeminiSelectorView();
@@ -39,8 +36,8 @@ export function getSidebarHoverPopups(): Popups {
       previous: readonly HTMLElement[],
       role: string,
     ): boolean => {
-      if (previous.length > 0) return same(nodes, previous);
-      return same(nodes, Array.from(document.querySelectorAll<HTMLElement>(role)));
+      if (previous.length > 0) return sameItems(nodes, previous);
+      return sameItems(nodes, Array.from(document.querySelectorAll<HTMLElement>(role)));
     };
     // One rejected collection reruns both reads, so a menu cannot hide a dialog from the guard.
     return (

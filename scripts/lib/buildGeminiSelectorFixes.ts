@@ -37,8 +37,6 @@ import { GEMINI_SIDEBAR_PROFILE_KEYS } from '../../src/core/gemini/selectors/sid
 import {
   GEMINI_SELECTOR_HOSTS,
   GEMINI_TURN_PROFILE_KEYS,
-  GEMINI_V1_SELECTOR_PROFILE_KEYS,
-  GEMINI_V2_SELECTOR_PROFILE_KEYS,
   type GeminiSelectorFile,
   type GeminiSelectorProfileKey,
 } from '../../src/core/gemini/selectors/types';
@@ -85,6 +83,23 @@ const PROFILE_GROUPS = [
   { file: 'canvas-code.json', keys: GEMINI_CANVAS_CODE_PROFILE_KEYS },
 ] as const;
 
+/** Kept in source control so a later docs build cannot accidentally restore withdrawn fixes. */
+function readPublicationMode(catalogDir: string): 'full' | 'withdrawn' {
+  const path = join(catalogDir, 'sites/gemini/selector-publication.json');
+  const value: unknown = JSON.parse(readFileSync(path, 'utf8'));
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    Array.isArray(value) ||
+    Object.keys(value).length !== 1 ||
+    !('publication' in value) ||
+    (value.publication !== 'full' && value.publication !== 'withdrawn')
+  ) {
+    throw new Error(`${path}: publication must be full or withdrawn`);
+  }
+  return value.publication;
+}
+
 /** Build from the same locator fragments the package imports; no adapter or plugin enters it. */
 export function buildGeminiSelectorFiles(
   options: Pick<GeminiSelectorPublishOptions, 'catalogDir' | 'catalogRevision'>,
@@ -92,8 +107,9 @@ export function buildGeminiSelectorFiles(
   if (!Number.isSafeInteger(options.catalogRevision) || options.catalogRevision <= 0) {
     throw new Error('Gemini selector publication requires a positive source revision');
   }
+  const publication = readPublicationMode(options.catalogDir);
   const selectors: Partial<Record<GeminiSelectorProfileKey, readonly string[]>> = {};
-  for (const group of PROFILE_GROUPS) {
+  for (const group of publication === 'withdrawn' ? [] : PROFILE_GROUPS) {
     const path = join(options.catalogDir, 'sites/gemini/selector-data', group.file);
     const raw = readFileSync(path, 'utf8');
     if (Buffer.byteLength(raw, 'utf8') > MAX_GEMINI_SELECTOR_BYTES) {
@@ -110,7 +126,7 @@ export function buildGeminiSelectorFiles(
   for (const host of GEMINI_SELECTOR_HOSTS) {
     const file = readGeminiSelectorFile(
       {
-        format: 3,
+        format: 1,
         site: 'gemini',
         host,
         catalogRevision: options.catalogRevision,
@@ -124,53 +140,35 @@ export function buildGeminiSelectorFiles(
   return files;
 }
 
-function legacyProjection(file: GeminiSelectorFile, format: 1 | 2): GeminiSelectorFile {
-  const keys = format === 1 ? GEMINI_V1_SELECTOR_PROFILE_KEYS : GEMINI_V2_SELECTOR_PROFILE_KEYS;
-  const selectors = Object.fromEntries(keys.map((key) => [key, file.selectors[key]] as const));
-  const legacy = readGeminiSelectorFile({ ...file, format, selectors }, file.host);
-  if (!legacy) throw new Error(`${file.host}: invalid legacy Gemini v${format} projection`);
-  return legacy;
-}
-
-/** Frozen v1/v2 projections keep released clients from rejecting unfamiliar composer keys. */
+/** Validate the complete publication before replacing any accepted output. */
 export function writeGeminiSelectorFiles(options: GeminiSelectorPublishOptions): readonly string[] {
   const files = buildGeminiSelectorFiles(options);
-  const versions = [
-    {
-      directory: 'v1',
-      files: [...files].map(([host, file]) => [host, legacyProjection(file, 1)] as const),
-    },
-    {
-      directory: 'v2',
-      files: [...files].map(([host, file]) => [host, legacyProjection(file, 2)] as const),
-    },
-    { directory: 'v3', files: [...files] },
-  ];
-  // Validate all versions before writing: a bad v3 must leave the previous publication intact.
-  const outputs = versions.map(({ directory, files: versionFiles }) => ({
-    hostsDir: join(options.outDir, 'gemini-selectors', directory, 'hosts'),
-    serialized: versionFiles.map(([host, file]) => {
-      const json = `${JSON.stringify(file, null, 2)}\n`;
-      if (Buffer.byteLength(json, 'utf8') > MAX_GEMINI_SELECTOR_BYTES) {
-        throw new Error(`${host}: published Gemini selector file exceeds the decoded byte limit`);
-      }
-      if (!readGeminiSelectorFile(JSON.parse(json) as unknown, host)) {
-        throw new Error(`${host}: serialized Gemini selector file was rejected`);
-      }
-      return { name: `${host}.json`, json };
-    }),
-  }));
-  const written: string[] = [];
-  for (const { hostsDir, serialized } of outputs) {
-    mkdirSync(hostsDir, { recursive: true });
-    for (const { name, json } of serialized) {
-      const path = join(hostsDir, name);
-      writeFileSync(path, json, 'utf8');
-      written.push(path);
+  const publicationDir = join(options.outDir, 'gemini-selectors');
+  const hostsDir = join(publicationDir, 'v1', 'hosts');
+  const serialized = [...files].map(([host, file]) => {
+    const json = `${JSON.stringify(file, null, 2)}\n`;
+    if (Buffer.byteLength(json, 'utf8') > MAX_GEMINI_SELECTOR_BYTES) {
+      throw new Error(`${host}: published Gemini selector file exceeds the decoded byte limit`);
     }
-    const names = new Set(serialized.map(({ name }) => name));
-    for (const name of readdirSync(hostsDir)) {
-      if (name.endsWith('.json') && !names.has(name)) rmSync(join(hostsDir, name), { force: true });
+    if (!readGeminiSelectorFile(JSON.parse(json) as unknown, host)) {
+      throw new Error(`${host}: serialized Gemini selector file was rejected`);
+    }
+    return { name: `${host}.json`, json };
+  });
+  mkdirSync(hostsDir, { recursive: true });
+  const written = serialized.map(({ name, json }) => {
+    const path = join(hostsDir, name);
+    writeFileSync(path, json, 'utf8');
+    return path;
+  });
+  const names = new Set(serialized.map(({ name }) => name));
+  for (const name of readdirSync(hostsDir)) {
+    if (name.endsWith('.json') && !names.has(name)) rmSync(join(hostsDir, name), { force: true });
+  }
+  // Reusing a local docs output must still publish only the current format.
+  for (const name of readdirSync(publicationDir)) {
+    if (/^v[0-9]+$/.test(name) && name !== 'v1') {
+      rmSync(join(publicationDir, name), { recursive: true, force: true });
     }
   }
   return written;

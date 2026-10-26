@@ -1,13 +1,9 @@
 import {
   GEMINI_SELECTOR_HOSTS,
   GEMINI_SELECTOR_PROFILE_KEYS,
-  GEMINI_TURN_PROFILE_KEYS,
-  GEMINI_V1_SELECTOR_PROFILE_KEYS,
-  GEMINI_V2_SELECTOR_PROFILE_KEYS,
   type GeminiSelectorFile,
   type GeminiSelectorHost,
   type GeminiSelectorProfileKey,
-  type GeminiTurnProfileKey,
 } from './types';
 
 export const MAX_GEMINI_SELECTOR_BYTES = 65_536;
@@ -20,10 +16,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const prototype: unknown = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
-}
-
-export function isGeminiTurnProfileKey(key: string): key is GeminiTurnProfileKey {
-  return (GEMINI_TURN_PROFILE_KEYS as readonly string[]).includes(key);
 }
 
 export function isGeminiSelectorProfileKey(key: string): key is GeminiSelectorProfileKey {
@@ -39,7 +31,7 @@ export function readGeminiSelectorFile(
   if (
     Object.keys(value).length !== ENVELOPE_KEYS.length ||
     !Object.keys(value).every((key) => (ENVELOPE_KEYS as readonly string[]).includes(key)) ||
-    (value.format !== 1 && value.format !== 2 && value.format !== 3) ||
+    value.format !== 1 ||
     value.site !== 'gemini' ||
     value.host !== expectedHost ||
     !(GEMINI_SELECTOR_HOSTS as readonly string[]).includes(expectedHost) ||
@@ -51,19 +43,12 @@ export function readGeminiSelectorFile(
     return null;
   }
   const format = value.format;
-  const allowedKeys: readonly string[] =
-    format === 1
-      ? GEMINI_V1_SELECTOR_PROFILE_KEYS
-      : format === 2
-        ? GEMINI_V2_SELECTOR_PROFILE_KEYS
-        : GEMINI_SELECTOR_PROFILE_KEYS;
   const entries = Object.entries(value.selectors);
-  if (entries.length > allowedKeys.length) return null;
+  if (entries.length > GEMINI_SELECTOR_PROFILE_KEYS.length) return null;
   const selectors: Partial<Record<GeminiSelectorProfileKey, readonly string[]>> = {};
   for (const [key, list] of entries) {
     if (
       !isGeminiSelectorProfileKey(key) ||
-      !allowedKeys.includes(key) ||
       !Array.isArray(list) ||
       list.length === 0 ||
       list.length > MAX_GEMINI_SELECTOR_LIST_LENGTH
@@ -108,7 +93,7 @@ export function readGeminiSelectorProfileGroup<Key extends GeminiSelectorProfile
 ): Readonly<Record<Key, readonly string[]>> | null {
   const file = readGeminiSelectorFile(
     {
-      format: 3,
+      format: 1,
       site: 'gemini',
       host: 'gemini.google.com',
       catalogRevision: 1,

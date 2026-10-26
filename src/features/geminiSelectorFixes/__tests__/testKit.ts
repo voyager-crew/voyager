@@ -12,7 +12,7 @@ export function selectorFile(
   selectors: GeminiSelectorFile['selectors'] = { 'turn.user': ['.fixed-user'] },
   host: GeminiSelectorHost = HOST,
 ): GeminiSelectorFile {
-  return { format: 3, site: 'gemini', host, catalogRevision, selectors };
+  return { format: 1, site: 'gemini', host, catalogRevision, selectors };
 }
 
 export function cacheEntry(file = selectorFile()): GeminiSelectorCacheEntry {

@@ -1,3 +1,4 @@
+import { sameItems } from '@/core/utils/array';
 import { USER_LATEX_ORIGINAL_ATTRIBUTE, hasUserLatexRendering } from '@/core/utils/userLatexSource';
 
 import {
@@ -27,10 +28,6 @@ function preservesLineContent(line: HTMLElement): boolean {
       !Array.from(child.classList).some((name) => name.startsWith('gv-'))
     );
   });
-}
-
-function sameLines(left: readonly HTMLElement[], right: readonly HTMLElement[]): boolean {
-  return left.length === right.length && left.every((line, index) => line === right[index]);
 }
 
 /** Native paragraphs prove line boundaries independently of the online class name. */
@@ -68,7 +65,7 @@ export function resolveGeminiUserLatexLines(
   try {
     const candidates = read(view);
     const expected = bundled.length > 0 ? bundled : nativeLines(doc);
-    if (expected && expected.length > 0 && sameLines(candidates, expected)) {
+    if (expected && expected.length > 0 && sameItems(candidates, expected)) {
       return { value: candidates, view };
     }
   } catch {
