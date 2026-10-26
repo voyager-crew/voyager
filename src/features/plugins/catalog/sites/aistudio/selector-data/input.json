@@ -1,11 +1,9 @@
 {
   "input.candidates": [
-    "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
-    "#prompt-textarea[contenteditable=\"true\"]",
-    "[data-composer-markdown][contenteditable=\"true\"]",
-    "rich-textarea [contenteditable=\"true\"]",
+    "ms-prompt-box textarea[formcontrolname=promptText]",
+    "ms-chunk-input textarea",
+    "textarea[aria-label]",
     "div[contenteditable=\"true\"][role=\"textbox\"]",
-    ".input-area textarea",
     "textarea[placeholder*=\"Ask\"]",
     "textarea"
   ]

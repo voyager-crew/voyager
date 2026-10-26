@@ -1,21 +1,13 @@
 {
   "input.candidates": [
-    "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
-    "#prompt-textarea[contenteditable=\"true\"]",
-    "[data-composer-markdown][contenteditable=\"true\"]",
-    "rich-textarea [contenteditable=\"true\"]",
+    ".chat-input-editor[contenteditable=\"true\"][role=\"textbox\"]",
     "div[contenteditable=\"true\"][role=\"textbox\"]",
-    ".input-area textarea",
     "textarea[placeholder*=\"Ask\"]",
     "textarea"
   ],
   "vim.candidates": [
-    "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
-    "#prompt-textarea[contenteditable=\"true\"]",
-    "[data-composer-markdown][contenteditable=\"true\"]",
-    "rich-textarea [contenteditable=\"true\"]",
+    ".chat-input-editor[contenteditable=\"true\"][role=\"textbox\"]",
     "div[contenteditable=\"true\"][role=\"textbox\"]",
-    ".input-area textarea",
     "textarea[placeholder*=\"Ask\"]",
     "textarea"
   ]

@@ -1,12 +1,10 @@
 {
-  "input.clearance": [
-    "form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message"
-  ],
+  "input.clearance": ["form, .text-input-field, input-area-v2, input-container, .input-area"],
   "input.fab": ["span.mat-mdc-button-touch-target"],
-  "vim.mountInput": ["#prompt-textarea[contenteditable=\"true\"]"],
-  "vim.mountRoot": ["form"],
-  "vim.crossSiteEdit": ["textarea[aria-label=\"Edit message\"]"],
+  "vim.mountInput": [":not(*)"],
+  "vim.mountRoot": [":not(*)"],
+  "vim.crossSiteEdit": [":not(*)"],
   "vim.editActions": ["button"],
-  "vim.mountChatInput": ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"],
-  "vim.mountChatRoot": ["fieldset"]
+  "vim.mountChatInput": [":not(*)"],
+  "vim.mountChatRoot": [":not(*)"]
 }

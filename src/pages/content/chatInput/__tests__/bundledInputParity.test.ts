@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 // Reverse DOM order distinguishes candidate precedence from a single combined selector.
-const CANDIDATES = [
+const GENERIC_CANDIDATES = [
   '<div data-testid="chat-input" contenteditable="true"></div>',
   '<div id="prompt-textarea" contenteditable="true"></div>',
   '<div data-composer-markdown contenteditable="true"></div>',
@@ -42,27 +42,44 @@ const CANDIDATES = [
   '<textarea></textarea>',
 ];
 
+const COMMON_CANDIDATES = [GENERIC_CANDIDATES[4], ...GENERIC_CANDIDATES.slice(6)];
+const CANDIDATES: Record<string, string[]> = {
+  'custom.example': GENERIC_CANDIDATES,
+  'gemini.google.com': GENERIC_CANDIDATES,
+  'chatgpt.com': [GENERIC_CANDIDATES[1], GENERIC_CANDIDATES[2], ...COMMON_CANDIDATES],
+  'claude.ai': [GENERIC_CANDIDATES[0], ...COMMON_CANDIDATES],
+  'aistudio.google.com': [
+    '<ms-prompt-box><textarea formcontrolname="promptText"></textarea></ms-prompt-box>',
+    '<ms-chunk-input><textarea></textarea></ms-chunk-input>',
+    '<textarea aria-label="Prompt"></textarea>',
+    ...COMMON_CANDIDATES,
+  ],
+  'chat.deepseek.com': ['<textarea class="ds-scroll-area"></textarea>', ...COMMON_CANDIDATES],
+  'www.kimi.com': [
+    '<div class="chat-input-editor" contenteditable="true" role="textbox"></div>',
+    ...COMMON_CANDIDATES,
+  ],
+};
+
 describe('bundled input parity', () => {
-  it.each(HOSTS)(
-    '%s still selects the original ordered composer before a search textarea',
-    (hostname) => {
-      host(hostname);
-      for (let index = 0; index < CANDIDATES.length - 1; index++) {
-        document.body.innerHTML = CANDIDATES.slice(index).reverse().join('');
-        for (const element of document.querySelectorAll<HTMLElement>('textarea, [contenteditable]'))
-          show(element);
-        const expected = document.body.lastElementChild!;
-        const field = expected.matches('textarea, [contenteditable]')
-          ? expected
-          : expected.querySelector('textarea, [contenteditable]');
-        expect(findChatInput()).toBe(field);
-        expect(
-          createGeminiVimComposerResolver(() => null)({ doc: document, requireVisible: true })
-            .element,
-        ).toBe(field);
-      }
-    },
-  );
+  it.each(HOSTS)('%s selects its own ordered composer before a search textarea', (hostname) => {
+    host(hostname);
+    const candidates = CANDIDATES[hostname];
+    for (let index = 0; index < candidates.length - 1; index++) {
+      document.body.innerHTML = candidates.slice(index).reverse().join('');
+      for (const element of document.querySelectorAll<HTMLElement>('textarea, [contenteditable]'))
+        show(element);
+      const expected = document.body.lastElementChild!;
+      const field = expected.matches('textarea, [contenteditable]')
+        ? expected
+        : expected.querySelector('textarea, [contenteditable]');
+      expect(findChatInput()).toBe(field);
+      expect(
+        createGeminiVimComposerResolver(() => null)({ doc: document, requireVisible: true })
+          .element,
+      ).toBe(field);
+    }
+  });
 
   it.each(HOSTS)(
     '%s keeps Save, Update and wrapped send controls as Vim submission targets',
