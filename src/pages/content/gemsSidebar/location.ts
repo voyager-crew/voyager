@@ -3,6 +3,7 @@ import {
   getGeminiSelectorView,
   type GeminiSelectorView,
 } from '@/core/gemini/selectors';
+import { acceptsGeminiSidebarElement } from '@/core/gemini/sidebar/proof';
 import {
   geminiSidebarSelector,
   resolveGeminiSidebarOperation,
@@ -37,6 +38,15 @@ export function findGemsSidebarLocation(): GemsSidebarLocation | null {
   return resolveGeminiSidebarOperation(
     (view) => {
       const location = readLocation(view);
+      if (
+        view.remoteKeys.has('sidebar.overflow') &&
+        !acceptsGeminiSidebarElement(
+          'sidebar.overflow',
+          location?.overflow ?? null,
+          readLocation(bundle)?.overflow ?? null,
+        )
+      )
+        return null;
       if (view !== active || !active.remoteKeys.has('gems.navEntry')) return location;
       const original = readLocation(bundle);
       if (!location?.entry || (original?.entry && original.entry !== location.entry)) return null;

@@ -7,6 +7,7 @@ import {
   type GeminiSelectorView,
 } from '../selectors';
 import type { GeminiSidebarProfileKey } from '../selectors/sidebarKeys';
+import { acceptsGeminiSidebarElement } from './proof';
 
 /** A joined query preserves DOM order; ordered fallbacks iterate `profiles[key]` instead. */
 export function geminiSidebarSelector(
@@ -45,7 +46,12 @@ export function closestGeminiSidebarElement(
   return resolveGeminiSidebarOperation(
     (selected) => {
       const match = element.closest(geminiSidebarSelector(key, selected));
-      return match instanceof HTMLElement ? match : null;
+      if (!(match instanceof HTMLElement)) return null;
+      if (!selected.remoteKeys.has(key)) return match;
+      const original = element.closest<HTMLElement>(
+        geminiSidebarSelector(key, getBundledGeminiSelectorView()),
+      );
+      return acceptsGeminiSidebarElement(key, match, original) ? match : null;
     },
     (match) => match !== null,
     view,

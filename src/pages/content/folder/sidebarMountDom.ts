@@ -1,5 +1,6 @@
 /** Read-only Gemini sidebar queries that decide where the folder panel mounts. */
-import type { GeminiSelectorView } from '@/core/gemini/selectors';
+import { getBundledGeminiSelectorView, type GeminiSelectorView } from '@/core/gemini/selectors';
+import { acceptsGeminiSidebarElement } from '@/core/gemini/sidebar/proof';
 import {
   firstVisibleSidebar,
   geminiSidebarSelector,
@@ -41,6 +42,10 @@ function readSidebar(view: GeminiSelectorView): HTMLElement | null {
   ) {
     return null;
   }
+  if (sidebar && view.remoteKeys.has('sidebar.overflow')) {
+    const original = readSidebar(getBundledGeminiSelectorView());
+    if (!acceptsGeminiSidebarElement('sidebar.overflow', sidebar, original)) return null;
+  }
   return sidebar;
 }
 
@@ -52,7 +57,17 @@ function readNotebooks(sidebar: HTMLElement | null, view: GeminiSelectorView): H
   const candidate = sidebar?.querySelector(geminiSidebarSelector('sidebar.notebooks', view));
   if (!(candidate instanceof HTMLElement)) return null;
   if (!needsNativeProof(view, ['sidebar.overflow', 'sidebar.notebooks'])) return candidate;
-  return isNativeMountElement(candidate) ? candidate : null;
+  if (!isNativeMountElement(candidate)) return null;
+  const original = sidebar?.querySelector<HTMLElement>(
+    geminiSidebarSelector('sidebar.notebooks', getBundledGeminiSelectorView()),
+  );
+  return original
+    ? candidate === original
+      ? candidate
+      : null
+    : candidate.matches('[storagekey="notebooks"]')
+      ? candidate
+      : null;
 }
 
 export function findSidebarNotebooks(
@@ -82,9 +97,12 @@ function readAnchor(
   const { candidate, keys } = readAnchorCandidate(sidebar, view);
   if (!(candidate instanceof HTMLElement)) return null;
   if (!needsNativeProof(view, ['sidebar.overflow', ...keys])) return candidate;
-  return candidate !== sidebar && sidebar.contains(candidate) && isNativeMountElement(candidate)
-    ? candidate
-    : null;
+  if (candidate === sidebar || !sidebar.contains(candidate) || !isNativeMountElement(candidate))
+    return null;
+  const original = readAnchorCandidate(sidebar, getBundledGeminiSelectorView()).candidate;
+  if (original) return candidate === original ? candidate : null;
+  // A renamed section needs its native storage role; a random wrapper cannot claim the mount.
+  return candidate.matches('[storagekey="chats"], [storagekey="notebooks"]') ? candidate : null;
 }
 
 /** The first anchor strategy that matches, with the locators that chose it. */
@@ -135,7 +153,15 @@ export function findSidebarVisibilityHost(): HTMLElement | null {
     (view) => {
       for (const selector of view.profiles['sidebar.visibilityHost']) {
         const host = document.querySelector(selector);
-        if (host instanceof HTMLElement) return host;
+        if (!(host instanceof HTMLElement)) continue;
+        if (!view.remoteKeys.has('sidebar.visibilityHost')) return host;
+        const original =
+          getBundledGeminiSelectorView()
+            .profiles['sidebar.visibilityHost'].map((selector) =>
+              document.querySelector<HTMLElement>(selector),
+            )
+            .find(Boolean) ?? null;
+        if (acceptsGeminiSidebarElement('sidebar.visibilityHost', host, original)) return host;
       }
       return null;
     },
@@ -146,10 +172,22 @@ export function findSidebarVisibilityHost(): HTMLElement | null {
 export function isSidebarOpen(): boolean {
   return resolveGeminiSidebarOperation(
     (view) => {
-      const open = document.querySelector(geminiSidebarSelector('sidebar.openHost', view));
-      const sidebar = document.querySelector(geminiSidebarSelector('sidebar.host', view));
+      // One rejected state member must restore the whole bundled open/host read.
+      let valid = true;
+      const read = (key: 'sidebar.openHost' | 'sidebar.host') => {
+        const candidate = document.querySelector<HTMLElement>(geminiSidebarSelector(key, view));
+        if (!view.remoteKeys.has(key)) return candidate;
+        const original = document.querySelector<HTMLElement>(
+          geminiSidebarSelector(key, getBundledGeminiSelectorView()),
+        );
+        if (acceptsGeminiSidebarElement(key, candidate, original)) return candidate;
+        valid = false;
+        return null;
+      };
+      const open = read('sidebar.openHost');
+      const sidebar = read('sidebar.host');
       return {
-        found: open !== null || sidebar instanceof HTMLElement,
+        found: valid && (open !== null || sidebar instanceof HTMLElement),
         open: open !== null || (sidebar instanceof HTMLElement && sidebar.offsetWidth > 120),
       };
     },

@@ -1,3 +1,5 @@
+import { getBundledGeminiSelectorView, getGeminiSelectorView } from '@/core/gemini/selectors';
+import { acceptsGeminiSidebarScroller } from '@/core/gemini/sidebar/proof';
 import {
   geminiSidebarSelector,
   resolveGeminiSidebarOperation,
@@ -8,6 +10,19 @@ function findNativeListScroller(row: HTMLElement): HTMLElement | null {
   return resolveGeminiSidebarOperation(
     (view) => {
       const candidate = row.closest(geminiSidebarSelector('sidebar.scroller', view));
+      if (view.remoteKeys.has('sidebar.scroller')) {
+        const original = row.closest<HTMLElement>(
+          geminiSidebarSelector('sidebar.scroller', getBundledGeminiSelectorView()),
+        );
+        if (
+          !acceptsGeminiSidebarScroller(
+            row,
+            candidate instanceof HTMLElement ? candidate : null,
+            original,
+          )
+        )
+          return null;
+      }
       return candidate instanceof HTMLElement &&
         candidate !== document.body &&
         candidate !== document.documentElement
@@ -71,6 +86,11 @@ export function createNativePaginationNudge(): NativePaginationNudge {
   let frame: number | null = null;
   let layoutObserver: ResizeObserver | null = null;
   const retries = new Map<HTMLElement, number>();
+  const remoteRows = new WeakMap<HTMLElement, HTMLElement>();
+  const stillOwned = (scroller: HTMLElement): boolean => {
+    const row = remoteRows.get(scroller);
+    return !row || (row.isConnected && findNativeListScroller(row) === scroller);
+  };
 
   const stopRetry = (scroller: HTMLElement): void => {
     const timer = retries.get(scroller);
@@ -83,7 +103,7 @@ export function createNativePaginationNudge(): NativePaginationNudge {
     if (attempt >= RETRY_DELAYS_MS.length) return;
     const timer = window.setTimeout(() => {
       retries.delete(scroller);
-      if (!scroller.isConnected) return;
+      if (!scroller.isConnected || !stillOwned(scroller)) return;
       // Collapsed before Gemini took a request: its rows stay hidden, so only reopening can ask.
       if (!hasLayout(scroller)) return waitForLayout(scroller);
       if (hasGrown(scroller, before) || !wouldRequestNextPage(scroller)) return;
@@ -95,7 +115,7 @@ export function createNativePaginationNudge(): NativePaginationNudge {
 
   const request = (scroller: HTMLElement): void => {
     stopRetry(scroller);
-    if (!wouldRequestNextPage(scroller)) return;
+    if (!stillOwned(scroller) || !wouldRequestNextPage(scroller)) return;
     const before = listExtent(scroller);
     scroller.dispatchEvent(new Event('scroll'));
     retryUntilGrown(scroller, before, 0);
@@ -158,6 +178,7 @@ export function createNativePaginationNudge(): NativePaginationNudge {
     rowHidden: (row) => {
       const scroller = findNativeListScroller(row);
       if (!scroller) return;
+      if (getGeminiSelectorView().remoteKeys.has('sidebar.scroller')) remoteRows.set(scroller, row);
       scrollers.add(scroller);
       frame ??= window.requestAnimationFrame(flush);
     },

@@ -5,6 +5,9 @@
  * section of `site.json` when one of its primitives reads it. Counting only
  * calls `querySelectorAll`, so the check writes nothing and reads no text.
  */
+import { pageSemanticSelector } from '@/core/selectors';
+import { hasPageSemanticFixes } from '@/core/selectors/semanticSnapshot';
+
 import { isLocalPluginId } from '../../local/localPluginId';
 import { requiredSemanticKeys, requiredSiteSections } from '../../runtime/pluginStatus';
 import { resolveSemanticElements } from '../../runtime/semanticElements';
@@ -57,6 +60,14 @@ export interface ProbeResult extends Probe {
 
 const RUNNING = new Set(['mounted', 'no-effect']);
 
+function semanticElements(doc: Document, adapter: SiteAdapter | null, key: string) {
+  const native = resolveSemanticElements(doc, adapter, key);
+  if (native !== null || !hasPageSemanticFixes(adapter, [key], doc)) return native;
+  // Picking happens after the report: a captured alias must not label a later dialog as native UI.
+  const selector = adapter && pageSemanticSelector(adapter, key, doc);
+  return selector ? Array.from(doc.querySelectorAll(selector)) : [];
+}
+
 function siteProbes(adapter: SiteAdapter): Probe[] {
   return SEMANTIC_SELECTOR_KEYS.flatMap((key) => {
     const selector = adapter.selectors[key];
@@ -67,7 +78,7 @@ function siteProbes(adapter: SiteAdapter): Probe[] {
             name: key,
             selector,
             expect: SEMANTIC_KEY_PRESENCE[key],
-            resolveElements: (doc: Document) => resolveSemanticElements(doc, adapter, key),
+            resolveElements: (doc: Document) => semanticElements(doc, adapter, key),
           },
         ]
       : [];
@@ -134,7 +145,7 @@ function pluginProbes(manifest: PluginManifest, adapter: SiteAdapter | null): Pr
     name: key,
     selector: adapter?.selectors[key] ?? null,
     expect: isSemanticSelectorKey(key) ? SEMANTIC_KEY_PRESENCE[key] : 'unknown',
-    resolveElements: (doc) => resolveSemanticElements(doc, adapter, key),
+    resolveElements: (doc) => semanticElements(doc, adapter, key),
     ...local,
   }));
   (manifest.contributes.domOps ?? []).forEach((op, index) => {
