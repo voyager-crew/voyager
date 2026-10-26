@@ -3,6 +3,8 @@ import { getBundledSiteSelectorView } from '@/core/selectors';
 import { getSiteSelectorContract } from '@/core/selectors/contracts';
 import type { SiteAdapter } from '@/features/plugins/types';
 
+import { provesChatgptComposerRoot } from './chatgptRootProof';
+import { hasPendingComposerUpload } from './sendGuards';
 import { hasSiteContentOwner, nativeSiteComposerRoot } from './siteInputReads';
 
 export interface ComposerSelectors {
@@ -57,13 +59,17 @@ export function resolveComposerOperation<T extends ComposerRead>(
       actual.field.closest('[role="dialog"], dialog, [data-gv-plugin]')
     )
       return fallback;
+    const repairedRoot =
+      adapter.id === 'chatgpt' &&
+      selectors.composerRoot !== bundle.composerRoot &&
+      provesChatgptComposerRoot(doc, selectors.composerRoot, actual.field, actual.root);
     if (
       hasSiteContentOwner(adapter.id, actual.field) ||
-      actual.root !== nativeSiteComposerRoot(adapter.id, actual.field)
+      (!repairedRoot && actual.root !== nativeSiteComposerRoot(adapter.id, actual.field))
     )
       return fallback;
     if (fallback.field && actual.field !== fallback.field) return fallback;
-    if (fallback.root && actual.root !== fallback.root) return fallback;
+    if (!repairedRoot && fallback.root && actual.root !== fallback.root) return fallback;
     const nativeInputs = Array.from(
       actual.root.querySelectorAll(
         'textarea, [contenteditable="true"], [contenteditable="plaintext-only"]',
@@ -79,6 +85,8 @@ export function resolveComposerOperation<T extends ComposerRead>(
       actual.control.form !== actual.field.closest('form')
     )
       return fallback;
+    // A proved enclosing owner may hold an upload that the old form cannot see.
+    if (repairedRoot && !actual.control && hasPendingComposerUpload(actual.root)) return actual;
     if (fallback.control) return actual.control === fallback.control ? actual : fallback;
     if (!actual.control) return actual;
     const installedControls = Array.from(doc.querySelectorAll(bundle.sendButton)).filter(

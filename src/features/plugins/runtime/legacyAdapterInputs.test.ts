@@ -2,13 +2,18 @@
 // @vitest-environment-options { "url": "https://chat.deepseek.com/a/chat/s/work" }
 import { afterEach, expect, it, vi } from 'vitest';
 
+import { initializeSiteSelectors, type SiteSelectorLifetime } from '@/core/selectors';
+
 import { requireBundledSiteAdapter } from '../catalog/sites';
 import { sendShortcutPrimitive } from '../verbs/sendShortcut';
 import { vimInputPrimitive } from '../verbs/vimInput';
 import { PluginScope } from './pluginScope';
 
 const scopes: PluginScope[] = [];
+let lifetime: SiteSelectorLifetime | undefined;
 afterEach(async () => {
+  lifetime?.stop();
+  lifetime = undefined;
   for (const scope of scopes.splice(0)) await scope.dispose();
   document.body.replaceChildren();
   vi.restoreAllMocks();
@@ -45,10 +50,22 @@ function key(field: HTMLElement, name: string, ctrlKey = false) {
   return event;
 }
 
-it('a catalog composer-root repair keeps an outside-form upload from sending prematurely', () => {
+it('a catalog composer-root repair keeps an outside-form upload from sending prematurely', async () => {
   document.body.innerHTML =
     '<div class="catalog-root"><progress></progress><form><div id="prompt-textarea" contenteditable="true">draft</div><button type="submit">Send</button></form></div>';
   show();
+  lifetime = initializeSiteSelectors('chatgpt', {
+    host: 'chatgpt.com',
+    doc: document,
+    lifetime: new AbortController().signal,
+    bundledRevision: 0,
+    read: async () => ({
+      id: 'chatgpt',
+      catalogRevision: 1,
+      selectors: { composerRoot: '.catalog-root' },
+    }),
+  });
+  await lifetime.ready;
   const field = document.getElementById('prompt-textarea')!;
   const clicks = vi.fn((event: Event) => event.preventDefault());
   document.querySelector('button')!.addEventListener('click', clicks);

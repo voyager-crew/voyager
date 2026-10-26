@@ -91,14 +91,16 @@ export interface ChatGptPage {
 
 function readPage(selectors: ChatgptNotificationSelectors): ChatGptPage {
   const repairedComposer = selectors.composer !== BUNDLED_NOTIFICATION_SELECTORS.composer;
+  const repairedRoot = selectors.composerRoot !== BUNDLED_NOTIFICATION_SELECTORS.composerRoot;
   /** The roots of the rendered composers; a hidden earlier conversation keeps its own. */
   const composerRoots = (): Element[] => {
     const roots = new Set<Element>();
     for (const composer of queryAll(selectors.composer)) {
       if (!(composer instanceof HTMLElement)) continue;
-      const root = repairedComposer
-        ? nativeSiteComposerRoot('chatgpt', composer)
-        : closest(composer, selectors.composerRoot);
+      const root =
+        repairedComposer && !repairedRoot
+          ? nativeSiteComposerRoot('chatgpt', composer)
+          : closest(composer, selectors.composerRoot);
       if (root && isRendered(composer)) roots.add(root);
     }
     return [...roots];
@@ -140,7 +142,7 @@ function readPage(selectors: ChatgptNotificationSelectors): ChatGptPage {
       const button = target.closest('button');
       if (
         !button ||
-        (repairedComposer
+        (repairedComposer || repairedRoot
           ? !composerRoots().some((root) => root.contains(button))
           : !closest(button, selectors.composerRoot))
       )

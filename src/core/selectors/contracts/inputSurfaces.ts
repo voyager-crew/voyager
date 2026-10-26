@@ -30,14 +30,14 @@ export const INPUT_SITE_FILES = {
 /** Semantic values have exactly one source, site.json's selectors; they are not copied into fragments. */
 export const INPUT_SEMANTIC_KEYS = {
   aistudio: [],
-  chatgpt: ['composer', 'sendButton'],
+  chatgpt: ['composer', 'composerRoot', 'sendButton'],
   claude: ['composer', 'sendButton'],
   deepseek: [],
   kimi: ['composer'],
 } as const;
 export const INPUT_SEMANTIC_GROUPS = {
   aistudio: [],
-  chatgpt: [['composer', 'sendButton']],
+  chatgpt: [['composer', 'sendButton'], ['composerRoot']],
   claude: [['composer', 'sendButton']],
   deepseek: [],
   kimi: [['composer']],

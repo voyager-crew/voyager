@@ -24,7 +24,7 @@ not immutable protocols, and a class rename may still require an extension relea
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Gemini, including Enterprise | Conversation turns and content; sidebar and Gems; composer and prompt tools; menus; export and image surfaces; code and Canvas panels. The [Gemini registry](../gemini/selectors/README.md#groups-and-consumers) lists each surface. |
 | AI Studio                    | Composer candidates; complete library rows and drag targets; prompt history, sidebar and navigation children. Placement slots remain packaged.                                                                                       |
-| ChatGPT                      | Composer and handoff candidates, Vim input, turns, model controls, header actions, temporary-chat navigation, export/streaming roots, code hosts, sidebar and scroll owners.                                                         |
+| ChatGPT                      | Composer and handoff candidates, composer owners, Vim input, turns, model controls, header actions, temporary-chat navigation, export/streaming roots, code hosts, sidebar and scroll owners.                                        |
 | Claude                       | Composer and handoff candidates, Vim input, complete reply roots for export, sidebar and scroll owners.                                                                                                                              |
 | Kimi                         | Composer candidates, Vim input, complete reply roots for export, sidebar and scroll owners.                                                                                                                                          |
 | DeepSeek                     | Complete reply roots for export, code hosts, sidebar and scroll owners. Input profiles remain packaged because their proof can only confirm the existing read.                                                                       |
@@ -71,6 +71,15 @@ element reruns the entire operation against the bundle. Rejected candidates
 never contribute descendants or side effects. These checks stay off the
 bundled path: without remote changes, the reader runs once and no remote guard
 runs.
+
+ChatGPT's `composerRoot` is admitted separately from its composer/send group.
+A repair must identify exactly one owner containing the independently proven
+editor and one native submit button with the same form association. This permits
+an owner outside `<form>` while rejecting duplicate roots, other editors,
+conversation content, dialogs and Voyager UI. Notifications recheck this owner
+for each operation; enclosing upload owners also retain their pending-upload
+check. The proof lives in
+[`chatgptRootProof.ts`](../services/composer/chatgptRootProof.ts).
 
 Existing `site.selectors` fields outside a site’s guarded contract retain their
 earlier catalog override behavior in declarative DOM operations and native

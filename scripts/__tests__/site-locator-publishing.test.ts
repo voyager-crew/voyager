@@ -47,6 +47,7 @@ const SEMANTIC_KEYS = {
   aistudio: [],
   chatgpt: [
     'composer',
+    'composerRoot',
     'sendButton',
     'userTurn',
     'assistantTurn',
@@ -78,6 +79,7 @@ describe('all-site locator publication', () => {
     document.body.innerHTML = `
       <div contenteditable="true" role="textbox" data-testid="chat-input" class="chat-input-editor">Draft</div>
       <textarea class="ds-scroll-area" aria-label="Prompt">Prompt</textarea>
+      <form><div id="prompt-textarea" contenteditable="true">ChatGPT draft</div><button type="submit">Send</button></form>
       <main><div data-message-author-role="assistant"><article class="answer"><p>Complete reply</p></article></div></main>
       <ms-prompt-history-v3><a href="/library">Library</a></ms-prompt-history-v3>`;
     const out = makeTempDir();
@@ -121,7 +123,7 @@ describe('all-site locator publication', () => {
             Array.from(
               document.querySelectorAll(published!.site!.locators!['input.candidates'].join(',')),
             ).map((node) => node.textContent),
-          ).toEqual(['Draft', 'Prompt']);
+          ).toEqual(['Draft', 'Prompt', 'ChatGPT draft']);
         }
       }
     }

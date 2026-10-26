@@ -25,9 +25,8 @@ export function chatgptComposerRootOf(
   }
   const bundled = field.closest<HTMLElement>(BUNDLED_ROOT);
   try {
-    // A remote root may never move an operation to a sibling form or a broad ancestor.
-    const candidate = field.closest<HTMLElement>(selector);
-    return candidate === bundled ? candidate : bundled;
+    // The semantic read already proved one root around the original editor and submit.
+    return field.closest<HTMLElement>(selector) ?? bundled;
   } catch {
     return bundled;
   }
@@ -44,7 +43,7 @@ function acceptsRepairedComposerGroup(
   const source = adapter ?? chatgptAdapter;
   const send = pageSemanticSelector(source, 'sendButton');
   try {
-    // The native form is already proved above; legacy root overrides are not an admitted group member.
+    // The native form is already proved above; send aliases must still identify its submit.
     if (send && send !== BUNDLED_SEND) {
       const controls = Array.from(field.ownerDocument.querySelectorAll(send));
       if (controls.length !== 1 || controls[0] !== submit) return false;

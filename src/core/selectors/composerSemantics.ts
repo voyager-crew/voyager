@@ -1,3 +1,4 @@
+import { provesChatgptComposerRoot } from '../services/composer/chatgptRootProof';
 import { isEditable } from '../services/composer/find';
 import {
   resolveComposerOperation,
@@ -23,6 +24,22 @@ export function guardedComposerSemanticSelector(
   const bundle = getBundledSiteSelectorView(view.siteId);
   const fallback = bundle.profiles[key]?.join(',');
   if (!KEYS.some((candidate) => view.remoteKeys.has(candidate))) return fallback;
+  if (key === 'composerRoot' && view.siteId === 'chatgpt' && view.remoteKeys.has(key)) {
+    try {
+      const selector = view.profiles[key].join(',');
+      const composer = guardedComposerSemanticSelector('composer', view, doc);
+      const fields = composer ? Array.from(doc.querySelectorAll<HTMLElement>(composer)) : [];
+      const root = fields[0]?.closest(selector);
+      return fields.length === 1 &&
+        root &&
+        provesChatgptComposerRoot(doc, selector, fields[0], root)
+        ? selector
+        : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
   const select = (source: SiteSelectorView): ComposerSelectors => ({
     composer: source.profiles.composer?.join(',') ?? ':not(*)',
     composerRoot: bundle.profiles.composerRoot?.join(',') ?? ':not(*)',
