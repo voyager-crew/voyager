@@ -11,24 +11,27 @@
  *
  * Content scripts use `chrome.storage` directly per the content-script rules.
  */
+import { overlayPublishedSemanticSelectors } from '@/core/selectors/semanticProfiles';
+import { locatorSiteForHost } from '@/core/selectors/sites';
 import { logger } from '@/core/services/LoggerService';
 import { StorageKeys } from '@/core/types/common';
 import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContext';
 
 import { requireBundledSiteAdapter } from '../catalog/sites';
 import { validateManifest } from '../manifest/validate';
-import { isGeminiSelectorHost, isStaticallyInjectedHost } from '../sites/hostPolicy';
+import { packagedSiteForUrl, isStaticallyInjectedHost } from '../sites/hostPolicy';
 import { matchesAnyPattern } from '../sites/matchPattern';
 import { type SiteAdapterData, readSiteAdapterData } from '../sites/siteAdapterData';
 import type { PluginManifest, SiteAdapter } from '../types';
 import { readCatalogRevocations } from './catalogRevocations';
-
 /**
  * `ok`      a valid catalog file was fetched; its explicit revocations apply to the host.
  * `missing` the server answered 404: no catalog exists for this host. Treated
  *           like "no remote information" — the bundled snapshot stays in force.
  * `unknown` no successful fetch yet (only failed attempts recorded).
  */
+import { protectSiteAdapterIdentity } from './siteIdentity';
+
 export type HostCatalogStatus = 'ok' | 'missing' | 'unknown';
 
 export interface HostCatalogCacheEntry {
@@ -124,18 +127,31 @@ export function siteAdapterFromEntry(
   if (!entry.site) return null;
   const { result } = readSiteAdapterData(entry.site);
   if (!result.success) return null;
-  if (!isStaticallyInjectedHost(entry.host)) return result.data;
+  const siteId = locatorSiteForHost(entry.host);
+  if (!isStaticallyInjectedHost(entry.host)) {
+    if (!siteId) return result.data;
+    if (
+      result.data.id !== siteId ||
+      !matchesAnyPattern(`https://${entry.host}/`, result.data.matches)
+    )
+      return null;
+    return protectSiteAdapterIdentity(requireBundledSiteAdapter(siteId), result.data);
+  }
   if (
-    !isGeminiSelectorHost(entry.host) ||
-    result.data.id !== 'gemini' ||
+    result.data.id !== packagedSiteForUrl(`https://${entry.host}/`) ||
     !matchesAnyPattern(`https://${entry.host}/`, result.data.matches)
   )
     return null;
   // A locator update cannot change native routing, identity, theme or feature admission.
-  const bundled = requireBundledSiteAdapter('gemini');
+  const bundled = requireBundledSiteAdapter(result.data.id);
   return {
     ...bundled,
     catalogRevision: result.data.catalogRevision,
+    selectors: overlayPublishedSemanticSelectors(
+      bundled.id,
+      bundled.selectors,
+      result.data.selectors,
+    ),
     ...(result.data.locators ? { locators: result.data.locators } : {}),
   };
 }

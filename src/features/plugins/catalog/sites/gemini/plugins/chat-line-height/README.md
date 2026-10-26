@@ -20,7 +20,7 @@ tracking to the page. The rules do not depend on the light or dark theme.
 ## Delivery and control
 
 - Ships inside the extension and updates only with a Voyager release. It is
-  never published to or replaced by the online plugin catalog. Consumer Gemini
+  never published to or replaced by the online plugin catalog. Gemini, including Enterprise,
   can receive page-locator fixes through the shared Online updates setting.
 - Controlled by the existing chat spacing switch and sliders in Voyager's
   Gemini settings (`gvChatLineHeightEnabled`, off by default;

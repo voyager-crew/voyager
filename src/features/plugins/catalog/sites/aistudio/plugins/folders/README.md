@@ -10,8 +10,8 @@ Studio's folder session in core.
 ## Delivery and control
 
 - Ships inside the extension and updates only with a Voyager release. It is
-  never published to or replaced by the online plugin catalog, and AI Studio
-  pages make no catalog request for it. A local plugin cannot call `folders`
+  never published to or replaced by the online plugin catalog. AI Studio pages
+  can receive page-locator fixes through the shared Online updates setting. A local plugin cannot call `folders`
   on AI Studio.
 - Controlled by the existing folders switch in Voyager's settings
   (`geminiFolderEnabled`, on unless turned off), shared with Gemini's folders.

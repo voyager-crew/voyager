@@ -197,7 +197,7 @@ describe('Local Bridge model.select: UI languages the site data does not name', 
     expect(bridge.outcome()).toMatchObject({ ok: true, data: { observed: { effortIndex: 4 } } });
   });
 
-  it('finds the picker by the marker the site data names once ChatGPT renamed its own', async () => {
+  it('an unproven online picker marker preserves the selected effort instead of clicking a guess', async () => {
     mount({ ...german, marked: false, effort: 1 });
     page.form
       .querySelector('button[aria-haspopup="menu"]')!
@@ -211,7 +211,8 @@ describe('Local Bridge model.select: UI languages the site data does not name', 
     });
     await select({ target: { preset: 'pro' } });
 
-    expect(bridge.outcome()).toMatchObject({ ok: true, data: { observed: { effortIndex: 4 } } });
+    expect(bridge.outcome()).toMatchObject({ ok: false, error: { code: 'selector-missing' } });
+    expect(picker.state()).toMatchObject({ effort: 1, pointerdowns: 0 });
   });
 
   it('finds no trigger when it carries neither the marker nor a known label', async () => {

@@ -15,7 +15,7 @@
  * Gemini and AI Studio live here as data too, but they are not plugin
  * platforms: `NATIVE_SITE_IDS` and `hostPolicy` decide what runs there, and
  * their official plugins remain packaged and are not listed in the store.
- * Gemini consumer pages can receive guarded locators through the shared catalog.
+ * Every site receives its own guarded locators through the shared catalog.
  *
  * Vite-only: `import.meta.glob` is not available under Bun or Node, so this
  * module stays a thin shell over `loadBundledSites.ts`.

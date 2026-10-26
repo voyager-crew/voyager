@@ -7,7 +7,7 @@ import { EXTENSION_VERSION } from '@/core/utils/version';
 import geminiSite from '@/features/plugins/catalog/sites/gemini/site.json';
 import { hostCatalogStorageKey } from '@/features/plugins/remote/hostCatalogCache';
 
-import { startPageGeminiSelectors } from '../pageSelectorStartup';
+import { startPageSelectors } from '../pageSelectorStartup';
 
 const stops: Array<() => void> = [];
 const host = 'gemini.google.com';
@@ -43,7 +43,7 @@ function start(
   lifetime = new AbortController().signal,
   url = 'https://gemini.google.com/app/test',
 ) {
-  const startup = startPageGeminiSelectors({ url, doc: document, lifetime });
+  const startup = startPageSelectors({ url, doc: document, lifetime });
   stops.push(startup.stop);
   return startup;
 }
@@ -175,12 +175,8 @@ describe('Gemini startup hydration', () => {
     expect(chrome.storage.onChanged.removeListener).toHaveBeenCalledWith(listener);
   });
 
-  it('does not read this channel for AI Studio, arbitrary hosts or build-off', async () => {
-    for (const url of [
-      'https://aistudio.google.com/',
-      'https://chatgpt.com/',
-      'http://gemini.google.com/',
-    ]) {
+  it('does not read this channel for unknown hosts, insecure pages or build-off', async () => {
+    for (const url of ['https://unknown.example/', 'http://gemini.google.com/']) {
       await start(undefined, url).ready;
     }
     vi.stubEnv('VOYAGER_PLUGIN_CATALOG_REMOTE', 'off');

@@ -1,5 +1,6 @@
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { requireBundledSiteAdapter } from '../catalog/sites';
 import type { PluginManifest } from '../types';
 import {
   type HostCatalogCacheEntry,
@@ -70,6 +71,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  document.body.replaceChildren();
   (chrome.storage.local.get as unknown as Mock).mockReset?.();
   (chrome.storage.local.set as unknown as Mock).mockReset?.();
 });
@@ -221,10 +223,14 @@ describe('site override on the entry', () => {
   });
 
   it('exposes the site only for a usable entry', () => {
-    expect(siteAdapterFromEntry(entry({ site: SITE }), '1.8.3')?.brandColor).toBe('#abcdef');
-    expect(siteAdapterFromEntry(entry({ site: SITE }), '1.8.3')?.capabilities).toEqual(
-      new Set(['chat']),
+    const accepted = siteAdapterFromEntry(entry({ site: SITE }), '1.8.3')!;
+    document.body.innerHTML = '<div class="ds-message user">Repaired question</div>';
+    expect(document.querySelector(accepted.selectors.userTurn)?.textContent).toBe(
+      'Repaired question',
     );
+    expect(accepted.brandColor).toBe('#abcdef');
+    // A usable location/theme update cannot change which packaged features the site admits.
+    expect(accepted.capabilities).toBe(requireBundledSiteAdapter('deepseek').capabilities);
     expect(
       siteAdapterFromEntry(entry({ site: SITE, extensionVersion: '1.8.2' }), '1.8.3'),
     ).toBeNull();

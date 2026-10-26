@@ -3,10 +3,12 @@ import { escapeHtmlAttribute } from '@/features/export/services/exportDomPolicy'
 import { extractLatexSource, isDisplayMode } from '@/features/formulaCopy/formulaSource';
 import type { SiteAdapter } from '@/features/plugins/types';
 
+import { exportSiteSnapshot } from '../exportSiteSnapshot';
 import type { ExportPlatformAdapter } from './contract';
 
 /** Site facts stay in site.json; the shared extractor owns rich-text conversion. */
-export function buildCatalogExportAdapter(site: SiteAdapter): ExportPlatformAdapter {
+export function buildCatalogExportAdapter(provided: SiteAdapter): ExportPlatformAdapter {
+  const site = exportSiteSnapshot(provided);
   const formula: ExportPlatformAdapter['extractInlineFormula'] = (element, html, text) => {
     if (!element.matches('.katex, .katex-display, [data-math]')) return;
     const source = extractLatexSource(element as HTMLElement);
@@ -20,6 +22,7 @@ export function buildCatalogExportAdapter(site: SiteAdapter): ExportPlatformAdap
   };
   return {
     site,
+    siteId: site.id,
     getUserSelectors: () => (site.selectors.userTurn ? [site.selectors.userTurn] : []),
     getAssistantSelectors: () =>
       site.selectors.assistantTurn ? [site.selectors.assistantTurn] : [],

@@ -22,6 +22,7 @@ import {
 } from './exportDomPolicy';
 import { processInlineContent, extractTable, extractList } from './exportRichText';
 import type { ProcessedInlineContent } from './exportRichText';
+import { getExportReadProfiles } from './exportSiteData';
 import { extractUserContent } from './exportUserContent';
 import { processYouTubeCovers } from './exportYouTubeCovers';
 
@@ -52,6 +53,7 @@ function hasBlocksBesideTable(container: Element): boolean {
 }
 
 export function createContentExtractor(dialect: ExportContentDialect): ContentExtractor {
+  const readProfiles = getExportReadProfiles(dialect.siteId);
   function extractAssistantContent(element: HTMLElement): ExtractedContent {
     const result: ExtractedContent = {
       text: '',
@@ -64,7 +66,8 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     };
 
     const messageContent =
-      dialect.resolveAssistantContent?.(element) ?? resolveExportMessageContent(element);
+      dialect.resolveAssistantContent?.(element) ??
+      resolveExportMessageContent(element, dialect.siteId);
 
     // Don't clone! Angular custom elements may lose content when cloned
     // Instead, skip model-thoughts during processNodes
@@ -72,7 +75,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     const textParts: string[] = [];
     const processedImageSrcs = new Set<string>();
 
-    const markdownDiv = messageContent.querySelector('.markdown, .markdown-main-panel');
+    const markdownDiv = messageContent.querySelector(readProfiles['export.walkMarkdown']);
     processNodes(markdownDiv || messageContent, htmlParts, textParts, result, processedImageSrcs);
 
     // Helper function to search in both light DOM and shadow DOM
@@ -99,12 +102,12 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     };
 
     // Also search for raw code elements regardless of presence of code-block
-    const altCodeBlocks = searchAll(messageContent, 'pre > code, [data-test-id="code-content"]');
+    const altCodeBlocks = searchAll(messageContent, readProfiles['export.rawCode']);
     altCodeBlocks.forEach((codeEl) => {
       // Avoid duplicates if already processed
       if ((codeEl as Element & { processedByGV?: boolean }).processedByGV) return;
       // Skip if inside a code-block (already handled by processNodes)
-      if (codeEl.closest && codeEl.closest('code-block')) return;
+      if (codeEl.closest && codeEl.closest(readProfiles['export.codeOwner'])) return;
       const extracted = extractCodeFromCodeElement(codeEl as HTMLElement);
       if (extracted.text) {
         (codeEl as Element & { processedByGV?: boolean }).processedByGV = true;
@@ -116,9 +119,8 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     // Note: tables and code-blocks were already processed via processNodes()
 
     const leftoverRoot =
-      (messageContent.closest(
-        'model-response, .model-response, .presented-response-container, .response-container, response-container',
-      ) as HTMLElement | null) || messageContent;
+      (messageContent.closest(readProfiles['export.responseOwner']) as HTMLElement | null) ||
+      messageContent;
     processYouTubeCovers(leftoverRoot, htmlParts, textParts, result);
     if (markdownDiv) {
       dialect.collectAssistantImages?.(
@@ -141,7 +143,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     if (!combinedText) {
       const fallbackContainer =
         (messageContent as HTMLElement) ||
-        queryOutsideThoughts<HTMLElement>(element, 'message-content') ||
+        queryOutsideThoughts<HTMLElement>(element, readProfiles['export.messageContent']) ||
         (element as HTMLElement);
       try {
         const plain =

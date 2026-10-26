@@ -1,6 +1,7 @@
 import { getGeminiSelectorView } from '@/core/gemini/selectors';
 import { GEMINI_VIM_PROFILE_KEYS } from '@/core/gemini/selectors/vimKeys';
-import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/vim-packaged.json';
+import { getSiteSelectorView } from '@/core/selectors';
+import { packagedInputSelector, inputSiteId } from '@/core/services/composer/siteInputData';
 
 import { resolveConfiguredComposer, isVisibleHudMount } from './vimConfiguredComposer';
 import type { ResolveVimComposer } from './vimGeminiComposer';
@@ -13,23 +14,22 @@ interface FindVimInputOptions {
   target?: HTMLElement | null;
 }
 
-const EDITABLE_SELECTOR = packaged['vim.editable'].join(',');
-const EDIT_PROMPT_SELECTOR = packaged['vim.editInputs'].join(',');
-const SEND_BUTTON_SELECTOR = packaged['vim.sendTarget'].join(',');
-
 export function isEditableTarget(element: HTMLElement | null): boolean {
   if (!element) return false;
-  return element.matches(EDITABLE_SELECTOR) || Boolean(element.closest(EDITABLE_SELECTOR));
+  return (
+    element.matches(packagedInputSelector('vim.editable')) ||
+    Boolean(element.closest(packagedInputSelector('vim.editable')))
+  );
 }
 
 export function isEditPromptInput(element: HTMLElement): boolean {
-  return element.matches(EDIT_PROMPT_SELECTOR);
+  return element.matches(packagedInputSelector('vim.editInputs'));
 }
 
 export function getSendButtonTarget(element: HTMLElement | null): HTMLElement | null {
   if (!element) return null;
 
-  const matched = element.closest(SEND_BUTTON_SELECTOR);
+  const matched = element.closest(packagedInputSelector('vim.sendTarget'));
   if (!(matched instanceof HTMLElement)) return null;
 
   const button = matched.closest('button');
@@ -57,7 +57,7 @@ export function createVimInputTargets(
     let fallback: HTMLElement | null = null;
 
     for (const element of Array.from(
-      document.querySelectorAll<HTMLElement>(EDIT_PROMPT_SELECTOR),
+      document.querySelectorAll<HTMLElement>(packagedInputSelector('vim.editInputs')),
     )) {
       if (!fallback && element.isConnected) fallback = element;
       if (isVisibleHudMount(element)) return element;
@@ -69,19 +69,26 @@ export function createVimInputTargets(
   function findVimInputFromTarget(element: HTMLElement | null): HTMLElement | null {
     if (!element) return null;
 
-    const editable = element.matches(EDITABLE_SELECTOR)
+    const editable = element.matches(packagedInputSelector('vim.editable'))
       ? element
-      : element.closest<HTMLElement>(EDITABLE_SELECTOR);
+      : element.closest<HTMLElement>(packagedInputSelector('vim.editable'));
     if (!editable) {
       // OFF keeps unrelated focus and key events out of composer style/layout queries.
-      const view = getGeminiSelectorView();
-      if (!GEMINI_VIM_PROFILE_KEYS.some((key) => view.remoteKeys.has(key))) return null;
+      const site = inputSiteId(element.ownerDocument);
+      const view: { readonly remoteKeys: ReadonlySet<string> } =
+        site && site !== 'gemini' ? getSiteSelectorView(site) : getGeminiSelectorView();
+      if (
+        !GEMINI_VIM_PROFILE_KEYS.some((key) => view.remoteKeys.has(key)) &&
+        !view.remoteKeys.has('composer')
+      )
+        return null;
       const accepted = resolveComposer?.({ doc: element.ownerDocument, requireVisible: false });
       // A repaired native editable still owns its events when its new markup misses the legacy union.
       if (
         accepted &&
         (accepted.view.remoteKeys.has('vim.candidates') ||
-          accepted.view.remoteKeys.has('vim.configuredComposer')) &&
+          accepted.view.remoteKeys.has('vim.configuredComposer') ||
+          accepted.view.remoteKeys.has('composer')) &&
         accepted.element &&
         (accepted.element === element || accepted.element.contains(element))
       )

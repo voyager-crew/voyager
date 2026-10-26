@@ -15,7 +15,7 @@ import {
   makeTempDir,
   build,
   readHostFile,
-  PACKAGED_HOSTS,
+  NATIVE_HOSTS,
   makePackagedFixtureCatalog,
   removeTempDirs,
 } from './buildPluginCatalogFixtures';
@@ -30,6 +30,9 @@ describe('build-plugin-catalog', () => {
     const names = readdirSync(join(outDir, 'hosts')).sort();
     expect(names).toEqual(
       [
+        'aistudio.google.cn',
+        'aistudio.google.com',
+        'business.gemini.google',
         'chat.deepseek.com',
         'chat.openai.com',
         'chatgpt.com',
@@ -41,24 +44,27 @@ describe('build-plugin-catalog', () => {
     // Wildcard patterns (https://*.frame.claudeusercontent.com/*) have no host
     // a client could derive from location.host, so they publish nothing.
     expect(names.some((name) => name.includes('*'))).toBe(false);
-    for (const host of PACKAGED_HOSTS) expect(names).not.toContain(`${host}.json`);
+    for (const host of NATIVE_HOSTS)
+      expect(readHostFile(outDir, host)).toMatchObject({
+        plugins: [],
+        site: { id: host.startsWith('aistudio') ? 'aistudio' : 'gemini' },
+      });
   });
 
-  it('checks native plugins and publishes the Gemini host without shipping native plugins', async () => {
+  it('checks native plugins and publishes every native host with locator-only authority', async () => {
     const outDir = makeTempDir();
     const catalogDir = makePackagedFixtureCatalog();
 
     const written = await build(outDir, catalogDir);
 
-    expect(written.map((entry) => entry.host)).toEqual(['demo.example', 'gemini.google.com']);
+    expect(written.map((entry) => entry.host)).toEqual([...NATIVE_HOSTS, 'demo.example'].sort());
     expect(readHostFile(outDir, 'gemini.google.com')).toMatchObject({
       plugins: [],
       site: { id: 'gemini' },
     });
-    expect(readdirSync(join(outDir, 'hosts')).sort()).toEqual([
-      'demo.example.json',
-      'gemini.google.com.json',
-    ]);
+    expect(readdirSync(join(outDir, 'hosts')).sort()).toEqual(
+      [...NATIVE_HOSTS, 'demo.example'].map((host) => `${host}.json`).sort(),
+    );
   });
 
   it('fails the build on an invalid Gemini plugin, though it is never published', async () => {
@@ -74,17 +80,20 @@ describe('build-plugin-catalog', () => {
     expect(existsSync(join(outDir, 'hosts', 'demo.example.json'))).toBe(false);
   });
 
-  it('removes host files for the native hosts outside the catalog', async () => {
+  it('replaces an older native host file with the current validated site data', async () => {
     const outDir = makeTempDir();
     const hostsDir = join(outDir, 'hosts');
     mkdirSync(hostsDir, { recursive: true });
-    for (const host of PACKAGED_HOSTS) {
+    for (const host of NATIVE_HOSTS) {
       writeFileSync(join(hostsDir, `${host}.json`), `{"format":1,"host":"${host}","plugins":[]}\n`);
     }
 
     await build(outDir, makePackagedFixtureCatalog());
 
-    expect(readdirSync(hostsDir).sort()).toEqual(['demo.example.json', 'gemini.google.com.json']);
+    expect(readdirSync(hostsDir).sort()).toEqual(
+      [...NATIVE_HOSTS, 'demo.example'].map((host) => `${host}.json`).sort(),
+    );
+    for (const host of NATIVE_HOSTS) expect(readHostFile(outDir, host).site).toBeDefined();
   });
 
   it('writes files the runtime validator accepts, with the site adapter attached', async () => {

@@ -5,6 +5,7 @@ import {
   getGeminiSelectorView,
   resolveGeminiSelectorOperationInView,
 } from '@/core/gemini/selectors';
+import { locatorSiteForHost } from '@/core/selectors/sites';
 import { isEditable } from '@/core/services/composer/find';
 
 type PromptInputKey = 'promptHistory.candidates' | 'slash.candidates';
@@ -17,7 +18,10 @@ export function resolvePromptInputOperation(
 ): GeminiSelectorOperation<HTMLElement | null> {
   const bundle = getBundledGeminiSelectorView();
   const view = getGeminiSelectorView();
-  if (doc.defaultView?.location.hostname !== 'gemini.google.com' || !view.remoteKeys.has(key)) {
+  if (
+    !view.remoteKeys.has(key) ||
+    locatorSiteForHost(doc.defaultView?.location.hostname ?? '') !== 'gemini'
+  ) {
     return { value: read(bundle.profiles[key]), view: bundle };
   }
   const candidates = (selectors: readonly string[]): HTMLElement[] => [

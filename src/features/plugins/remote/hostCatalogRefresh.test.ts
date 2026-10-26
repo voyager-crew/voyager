@@ -177,15 +177,26 @@ describe('HostCatalogRefresher', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('keeps Gemini Business and AI Studio excluded even on a forced check', async () => {
-    const { refresher, fetchImpl } = harness({ eligible: true });
-    for (const host of ['business.gemini.google', 'aistudio.google.com', 'aistudio.google.cn']) {
-      expect(await refresher.refresh(host, { force: true })).toEqual({
-        ok: true,
-        status: 'invalid-host',
-      });
+  it('fetches and stores each native host in the shared catalog channel', async () => {
+    const { refresher, fetchImpl, saved } = harness({
+      eligible: true,
+      respond: (url) => ({
+        status: 200,
+        body: {
+          ...catalogFile([]),
+          host: new URL(url).pathname
+            .split('/')
+            .at(-1)!
+            .replace(/\.json$/, ''),
+        },
+      }),
+    });
+    const hosts = ['business.gemini.google', 'aistudio.google.com', 'aistudio.google.cn'];
+    for (const host of hosts) {
+      expect((await refresher.refresh(host, { force: true })).status).toBe('updated');
     }
-    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(fetchImpl).toHaveBeenCalledTimes(hosts.length);
+    expect(saved.map((entry) => entry.host)).toEqual(hosts);
   });
 
   it('rejects hosts that cannot name a file and a build with the channel off', async () => {

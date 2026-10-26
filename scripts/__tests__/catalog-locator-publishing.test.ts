@@ -99,7 +99,11 @@ describe('catalog locator publishing contract', () => {
     const raw = readHostFile(out, 'gemini.google.com');
     const host = validateHostCatalogFile(raw, 'gemini.google.com');
     expect(host?.siteIssues).toEqual([]);
-    expect(host?.site?.locators).toEqual(getBundledGeminiSelectorView().profiles);
+    expect(host?.site?.locators).toEqual(
+      Object.fromEntries(
+        PUBLISHED_KEYS.map((key) => [key, getBundledGeminiSelectorView().profiles[key]]),
+      ),
+    );
     expect(Object.keys(host!.site!.locators!).sort()).toEqual([...PUBLISHED_KEYS].sort());
     expect([...GEMINI_SELECTOR_PROFILE_KEYS].sort()).toEqual([...PUBLISHED_KEYS].sort());
     expect(host?.site?.catalogRevision).toBe(42);

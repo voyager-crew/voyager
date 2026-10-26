@@ -9,7 +9,7 @@ primitive through a `native` op.
 ## Delivery and control
 
 - Ships inside the extension and updates only with a Voyager release. It is
-  never published to or replaced by the online plugin catalog. Consumer Gemini
+  never published to or replaced by the online plugin catalog. Gemini, including Enterprise,
   can receive page-locator fixes through the shared Online updates setting.
 - Controlled by the "Collapse long code blocks" switch in Voyager's Gemini
   settings (`gvCodeBlockCollapseEnabled`, on by default). It has no switch or

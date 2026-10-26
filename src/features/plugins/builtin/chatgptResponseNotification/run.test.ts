@@ -261,7 +261,7 @@ describe('ChatGPT response completion notification', () => {
     expect(notifyCalls()).toHaveLength(0);
   });
 
-  it('reads replies through the site adapter it is given', async () => {
+  it('cached remote reply identity cannot replace the installed notification protocol', async () => {
     const page = mountPage();
     const adapter = {
       ...chatgptAdapter,
@@ -274,7 +274,7 @@ describe('ChatGPT response completion notification', () => {
     const stop = showStop(page.form);
     await settle(1000);
     const reply = rendered(document.createElement('div'));
-    reply.setAttribute('data-redesigned-reply', '');
+    reply.setAttribute('data-chatgpt-selection-message-id', 'verified-reply');
     reply.textContent = 'OK';
     turn.append(reply);
     showActions(turn);

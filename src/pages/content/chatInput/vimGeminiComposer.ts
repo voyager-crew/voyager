@@ -8,13 +8,15 @@ import {
 } from '@/core/gemini/selectors';
 import { GEMINI_VIM_PROFILE_KEYS } from '@/core/gemini/selectors/vimKeys';
 import { isEditable } from '@/core/services/composer/find';
+import { inputSiteId } from '@/core/services/composer/siteInputData';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/vim-packaged.json';
 
 import { resolveConfiguredComposer } from './vimConfiguredComposer';
+import { resolveSiteVimComposer } from './vimSiteComposer';
 
 export interface VimComposerResolution {
   readonly element: HTMLElement | null;
-  readonly view: GeminiSelectorView;
+  readonly view: { readonly remoteKeys: ReadonlySet<string> };
   readonly composerSelector: string | null;
   readonly repaired: boolean;
 }
@@ -54,6 +56,9 @@ export function createGeminiVimComposerResolver(
   getConfiguredSelector: () => string | null,
 ): ResolveVimComposer {
   return ({ doc, requireVisible }) => {
+    const site = inputSiteId(doc);
+    if (site && site !== 'gemini')
+      return resolveSiteVimComposer(site, getConfiguredSelector(), doc, requireVisible);
     const bundle = getBundledGeminiSelectorView();
     const view = getGeminiSelectorView();
     const configured = getConfiguredSelector();
@@ -81,10 +86,7 @@ export function createGeminiVimComposerResolver(
             : composerSelector,
       };
     };
-    if (
-      doc.defaultView?.location.hostname !== 'gemini.google.com' ||
-      !GEMINI_VIM_PROFILE_KEYS.some((key) => view.remoteKeys.has(key))
-    )
+    if (site !== 'gemini' || !GEMINI_VIM_PROFILE_KEYS.some((key) => view.remoteKeys.has(key)))
       return read(bundle);
 
     const expectedConfigured = configuredInputs(doc, configured);

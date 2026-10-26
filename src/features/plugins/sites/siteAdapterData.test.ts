@@ -113,14 +113,24 @@ describe('validateSiteAdapterData', () => {
     ]);
   });
 
-  it('still drops the whole adapter for a known key whose selector does not parse', () => {
+  it('a broken known locator falls back without discarding the other site data', () => {
+    document.body.innerHTML =
+      '<div class="ds-message"><div class="ds-collapsible-text">Question</div></div><textarea class="ds-scroll-area">Draft</textarea>';
     const read = readSiteAdapterData({
       ...VALID,
       selectors: { ...VALID.selectors, messageBubble: '.x', userTurn: '[' },
     });
-    expect(read.result.success).toBe(false);
-    if (read.result.success) return;
-    expect(read.result.error.map((issue) => issue.path)).toEqual(['selectors.userTurn']);
+    expect(read.result.success).toBe(true);
+    if (!read.result.success) throw new Error('Expected the surviving adapter');
+    expect(document.querySelector(read.result.data.selectors.userTurn)?.textContent).toBe(
+      'Question',
+    );
+    expect(document.querySelector(read.result.data.selectors.composer)?.textContent).toBe('Draft');
+    expect(read.sectionIssues.map((issue) => issue.path)).toEqual([
+      'selectors.messageBubble',
+      'selectors.userTurn',
+    ]);
+    document.body.replaceChildren();
   });
 
   it('rejects malformed ids, labels, matches, colours, capabilities and patterns', () => {

@@ -1,11 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { SiteSelectorService } from '../../../selectors/service';
 import { getBundledGeminiSelectorView } from '../bundle';
-import {
-  GeminiSelectorService,
-  type GeminiSelectorLifetime,
-  resolveGeminiSelectorOperationInView,
-} from '../service';
+import { type GeminiSelectorLifetime, resolveGeminiSelectorOperationInView } from '../service';
+import type { GeminiSelectorProfileKey } from '../types';
 import type { GeminiSelectorView } from '../types';
 
 const lifetimes: GeminiSelectorLifetime[] = [];
@@ -16,7 +14,7 @@ afterEach(() => {
 });
 
 async function hydrate(selectors: unknown) {
-  const service = new GeminiSelectorService();
+  const service = new SiteSelectorService<GeminiSelectorProfileKey>('gemini');
   const lifetime = service.initialize({
     host: 'gemini.google.com',
     doc: document,
@@ -94,26 +92,27 @@ describe('Gemini page profiles', () => {
   });
 
   it.each([
-    { extra: { 'sidebar.deleteButton': ['button'] } },
-    { extra: { 'account.identity': ['.account'] } },
-    { extra: { 'sidebar.row': '.wrong-row' } },
+    { extra: { 'sidebar.deleteButton': ['button'] }, expected: 'Bundled question' },
+    { extra: { 'account.identity': ['.account'] }, expected: 'Bundled question' },
+    { extra: { 'sidebar.row': '.wrong-row' }, expected: 'Turn repair' },
     {
       extra: { 'sidebar.row': Array.from({ length: 33 }, () => '.wrong-row') },
+      expected: 'Turn repair',
     },
-    { extra: { 'sidebar.row': ['x'.repeat(2049)] } },
-    { extra: { 'sidebar.row': ['.row\u0000'] } },
+    { extra: { 'sidebar.row': ['x'.repeat(2049)] }, expected: 'Turn repair' },
+    { extra: { 'sidebar.row': ['.row\u0000'] }, expected: 'Turn repair' },
   ])(
-    'keeps bundled turns usable when an invalid patch carries a new locator: $extra',
-    async ({ extra }) => {
+    'falls back at the declared boundary when a profile is invalid: $extra',
+    async ({ extra, expected }) => {
       document.body.innerHTML = `
       <div class="user-query-container">Bundled question</div>
-      <div class="remote-user">Unaccepted question</div>`;
+      <div class="remote-user">Turn repair</div>`;
       const service = await hydrate({ 'turn.user': ['.remote-user'], ...extra });
       const users = service.resolve(
         (view) => Array.from(document.querySelectorAll(view.profiles['turn.user'].join(','))),
         (nodes) => nodes.length > 0,
       );
-      expect(users.value.map((node) => node.textContent)).toEqual(['Bundled question']);
+      expect(users.value.map((node) => node.textContent)).toEqual([expected]);
     },
   );
 

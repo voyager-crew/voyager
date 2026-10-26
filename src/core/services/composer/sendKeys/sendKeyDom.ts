@@ -5,7 +5,7 @@
  */
 import { hasPendingComposerUpload } from '@/core/services/composer/sendGuards';
 import {
-  SEND_BUTTON_SELECTORS,
+  sendButtonSelectors,
   isSendActionButton,
   isUnavailableSendControl,
 } from '@/pages/content/sendBehavior/sendButton';
@@ -65,7 +65,7 @@ export function findSendButtonInContainer(container: HTMLElement | null): HTMLEl
 
   // Search for the button strictly WITHIN the container
   if (container) {
-    for (const selector of SEND_BUTTON_SELECTORS) {
+    for (const selector of sendButtonSelectors(container.ownerDocument)) {
       try {
         const element = container.querySelector(selector);
         if (element instanceof HTMLElement) {

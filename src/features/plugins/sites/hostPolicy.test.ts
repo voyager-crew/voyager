@@ -62,9 +62,9 @@ describe('packaged host policy', () => {
     expect(isStaticallyInjectedHost('google.com')).toBe(false);
   });
 
-  it('allows only Gemini locator catalog requests while keeping native themes packaged', () => {
+  it('allows every native host locator request while keeping native themes packaged', () => {
     for (const host of PACKAGED_HOSTS) {
-      expect(allowsRemoteCatalog(host)).toBe(host === 'gemini.google.com');
+      expect(allowsRemoteCatalog(host)).toBe(true);
       expect(allowsPluginTheme(`https://${host}/app`)).toBe(false);
     }
     expect(allowsRemoteCatalog('chatgpt.com')).toBe(true);

@@ -3306,8 +3306,8 @@
     "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "voyager.nagi.fun에서 플러그인 업데이트와 Gemini 페이지 인식 수정을 확인합니다. 사이트 이름만 전송하며 쿠키나 페이지 내용은 보내지 않습니다. 끄면 자동 및 수동 확인이 모두 중지됩니다.",
-    "description": "Explains catalog updates, Gemini page detection fixes, request contents and the off setting"
+    "message": "voyager.nagi.fun에서 플러그인 업데이트와 지원 사이트의 페이지 인식 수정을 확인합니다. 사이트 이름만 전송하며 쿠키나 페이지 내용은 보내지 않습니다. 끄면 자동 및 수동 확인이 모두 중지됩니다.",
+    "description": "Explains shared catalog updates, supported-site page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {
     "message": "확인 주기",

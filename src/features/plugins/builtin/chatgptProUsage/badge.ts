@@ -19,6 +19,7 @@ import type { ModelPickerSection } from '@/features/plugins/sites/sections/model
 import type { SiteAdapter } from '@/features/plugins/types';
 import { getCachedLocale, getTranslationSync } from '@/utils/i18n';
 
+import { chatgptComposerRootOf } from '../chatgptComposerTargets';
 import { findTrigger, mergedLabels, triggerText } from '../chatgptModelSelect/pickerDom';
 import { type Allowance, TIER_NAMES } from './allowance';
 import type { ProUsageSummary } from './usageStore';
@@ -65,9 +66,8 @@ function proLabels(data: ModelPickerSection): Set<string> {
 export function findProTrigger(adapter: SiteAdapter | null): HTMLElement | null {
   const data = pickerData(adapter);
   if (!data) return null;
-  const marker = (adapter ?? chatgptAdapter).pageHooks?.modelPickerTrigger;
-  const trigger = findTrigger(document, data, marker);
-  if (!trigger?.closest('form')) return null;
+  const trigger = findTrigger(document, data);
+  if (!trigger || !chatgptComposerRootOf(trigger, adapter)) return null;
   return proLabels(data).has(triggerText(trigger)) ? trigger : null;
 }
 
@@ -208,10 +208,11 @@ const ANCHOR_DEPTH = 6;
  * above it.
  */
 function ringAnchor(trigger: HTMLElement): HTMLElement {
+  const root = chatgptComposerRootOf(trigger);
   let node: HTMLElement = trigger;
   for (let depth = 0; depth < ANCHOR_DEPTH; depth += 1) {
     const parent = node.parentElement;
-    if (!parent || parent.tagName === 'FORM') break;
+    if (!parent || parent === root) break;
     const display = getComputedStyle(parent).display;
     if (display === 'flex' || display === 'inline-flex') return node;
     node = parent;

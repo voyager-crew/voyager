@@ -1,6 +1,8 @@
 import { findGeminiChatInput, readChatInput } from '@/core/gemini/composer/inputs';
 import { getBundledGeminiSelectorView } from '@/core/gemini/selectors';
 import { insertIntoComposer } from '@/core/services/composer';
+import { inputSiteId, packagedInputSelectors } from '@/core/services/composer/siteInputData';
+import { findSiteChatInput } from '@/core/services/composer/siteInputReads';
 
 import { nativeHealthReporter } from '../nativeHealth';
 import { hasRenderedConversationContent } from '../nativeHealth/pageEvidence';
@@ -17,6 +19,9 @@ interface FindChatInputOptions {
 }
 
 export function findChatInput(options: FindChatInputOptions = {}): HTMLElement | null {
+  const site = inputSiteId();
+  if (site && site !== 'gemini') return findSiteChatInput(site, options);
+  if (!site) return readChatInput(packagedInputSelectors('input.candidates'), options);
   return options.online
     ? findGeminiChatInput(options)
     : readChatInput(CHAT_INPUT_SELECTORS, options);
@@ -41,7 +46,10 @@ function noteComposer(found: boolean): void {
   });
 }
 
-export function insertTextIntoChatInput(text: string, input = findChatInput()): boolean {
+export function insertTextIntoChatInput(
+  text: string,
+  input = findChatInput({ online: true }),
+): boolean {
   if (text.length === 0) return false;
   noteComposer(input !== null);
   if (!input) return false;

@@ -1,0 +1,10 @@
+{
+  "input.clearance": [
+    "form, .text-input-field, input-area-v2, input-container, .input-area, chat-message"
+  ],
+  "input.fab": ["span.mat-mdc-button-touch-target"],
+  "vim.mountInput": [":not(*)"],
+  "vim.mountRoot": [":not(*)"],
+  "vim.crossSiteEdit": [":not(*)"],
+  "vim.editActions": ["button"]
+}

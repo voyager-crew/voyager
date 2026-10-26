@@ -1,10 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
+import { DEEPSEEK_IDENTITY } from '@/features/folder/sites/deepseekIdentity';
+
+import { requireBundledSiteAdapter } from '../../catalog/sites';
 import {
   normalizeHostCatalogCacheEntry,
   siteAdapterFromEntry,
 } from '../../remote/hostCatalogCache';
 import { isSameSiteAdapter } from '../../remote/siteOverride';
+import { createSectionDom } from '../../verbs/folders/sectionDom';
 import { validateSiteAdapterData as readAsV2_0_0 } from '../__fixtures__/v2_0_0SiteAdapterData';
 import {
   readSiteAdapterData,
@@ -65,8 +69,10 @@ function adapterWith(folders: unknown) {
   return result.data;
 }
 
+afterEach(() => document.body.replaceChildren());
+
 describe('site.json folders section', () => {
-  it('keeps the section through a publish and the catalog cache', () => {
+  it('keeps folder location repairs through publication while using packaged row identity', () => {
     const published = JSON.parse(JSON.stringify(siteAdapterToData(adapterWith(FOLDERS))));
     expect(published.folders).toEqual(FOLDERS);
 
@@ -83,7 +89,17 @@ describe('site.json folders section', () => {
       },
       'chat.deepseek.com',
     );
-    expect(siteAdapterFromEntry(entry, '9.9.9')?.folders).toEqual(FOLDERS);
+    const accepted = siteAdapterFromEntry(entry, '9.9.9')!;
+    const bundled = requireBundledSiteAdapter('deepseek');
+    document.body.innerHTML =
+      '<nav aria-label="Chats"><a href="/a/chat/s/kept" data-id="conv-forged"><span class="title">Kept chat</span></a></nav>';
+    const dom = createSectionDom(accepted.folders!, DEEPSEEK_IDENTITY);
+    const rows = dom.list(dom.find()!);
+    expect(rows.map((row) => ({ id: row.id, title: dom.title(row) }))).toEqual([
+      { id: 'kept', title: 'Kept chat' },
+    ]);
+    expect(accepted.folders?.rows.idSources).toEqual(bundled.folders?.rows.idSources);
+    expect(accepted.folders?.rowMenu).toEqual(bundled.folders?.rowMenu);
   });
 
   it('keeps a section without page rules, as AI Studio, which titles prompts itself, has', () => {

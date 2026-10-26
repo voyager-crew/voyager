@@ -9,8 +9,8 @@ the behaviour is the same service the native module runs.
 ## Delivery and control
 
 - Ships inside the extension and updates only with a Voyager release. It is
-  never published to or replaced by the online plugin catalog, and AI Studio
-  pages make no catalog request for it.
+  never published to or replaced by the online plugin catalog. AI Studio pages
+  can receive page-locator fixes through the shared Online updates setting.
 - Controlled by the existing formula copy switch and copy format in Voyager's
   settings (`gvFormulaCopyEnabled`, `gvFormulaCopyFormat`). It has no switch or
   settings of its own. Gemini's formula copy (`voyager.gemini-formula-copy`)

@@ -4,7 +4,6 @@ export {
   getGeminiBundledRevision,
 } from './bundle';
 export {
-  GeminiSelectorService,
   getGeminiSelectorView,
   getGeminiTurnView,
   initializeGeminiSelectors,
@@ -13,14 +12,9 @@ export {
   resolveGeminiTurnOperation,
 } from './service';
 export type { GeminiSelectorInitialization, GeminiSelectorLifetime } from './service';
-export {
-  GEMINI_SELECTOR_HOSTS,
-  GEMINI_SELECTOR_PROFILE_KEYS,
-  GEMINI_TURN_PROFILE_KEYS,
-} from './types';
+export { GEMINI_SELECTOR_PROFILE_KEYS, GEMINI_TURN_PROFILE_KEYS } from './types';
 export type {
   GeminiSelectorPatch,
-  GeminiSelectorHost,
   GeminiSelectorOperation,
   GeminiSelectorProfileKey,
   GeminiSelectorProfiles,

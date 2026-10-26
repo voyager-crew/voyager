@@ -1,6 +1,5 @@
-import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/menu-overlay-packaged.json';
-
 import { resolveExportAlignmentTarget } from './exportOverlayTargets';
+import { exportLayoutData } from './toolbarTargets';
 
 /**
  * Centres the export selection bar over the conversation.
@@ -30,7 +29,7 @@ function isElementVisibleForAlignment(el: HTMLElement): boolean {
 }
 
 function isLikelySidebarElement(el: HTMLElement): boolean {
-  if (el.closest(packaged['exportOverlay.sidebar'].join(','))) {
+  if (el.closest(exportLayoutData().overlaySidebar.join(','))) {
     return true;
   }
 
@@ -111,7 +110,7 @@ function resolveConversationCanvasCenterX(anchors: ConversationAnchors): number 
     if (rect.width > Math.max(300, window.innerWidth * 0.42)) return rect.left + rect.width / 2;
   }
 
-  const main = document.querySelector<HTMLElement>('main');
+  const main = document.querySelector<HTMLElement>(exportLayoutData().fallbackRoot);
   if (main && !isLikelySidebarElement(main)) {
     const rect = main.getBoundingClientRect();
     if (rect.width > 24) return rect.left + rect.width / 2;

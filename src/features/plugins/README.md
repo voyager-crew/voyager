@@ -112,13 +112,14 @@ catalog/
 `import.meta.glob`, so adding a site or a plugin is adding files: there is no
 mapping table. (`scripts/build-plugin-catalog.ts` reads the same tree from disk,
 because `import.meta.glob` does not exist under Bun.) Sites today are
-`aistudio`, `chatgpt`, `claude`, `deepseek` and `gemini`. A plugin's `matches`
+`aistudio`, `chatgpt`, `claude`, `deepseek`, `gemini` and `kimi`. A plugin's `matches`
 must stay inside its site's `matches` (plan D18) or the build fails, and
 `bun run catalog:build` validates every site and plugin before publishing.
 Gemini and AI Studio official plugins are validated like the rest but stay
-packaged and outside `marketplace.json`. The consumer Gemini host file publishes
-only the admitted page-locator profiles in `site.locators`; its other adapter
-fields stay packaged. Gemini Enterprise and AI Studio have no remote host file.
+packaged and outside `marketplace.json`. Every concrete host has a catalog
+file, including Gemini Enterprise and both AI Studio hosts. Each site’s admitted
+page-locator profiles live in `site.locators`; identity and action policies stay
+packaged. Gemini Enterprise reads the Gemini profiles under the same guards.
 See [remote/README.md](remote/README.md#page-locator-profiles-in-site-data).
 
 `catalog/marketplace.json` is **not** that mapping table, and no page reads it:

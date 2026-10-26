@@ -18,10 +18,13 @@ vi.mock('../promptPrefs', () => ({
 }));
 
 let trigger: PromptTrigger | undefined;
+const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 
 async function mount(options: { hiddenByUser?: boolean; attention?: boolean; url?: string } = {}) {
   const onAttentionChange = vi.fn();
-  const site = resolvePromptSiteAdapter(options.url ?? 'https://gemini.google.com/app');
+  const url = options.url ?? 'https://gemini.google.com/app';
+  Object.defineProperty(window, 'location', { configurable: true, value: new URL(url) });
+  const site = resolvePromptSiteAdapter(url);
   trigger = await mountPromptTrigger({
     mascotLogo: false,
     hiddenByUser: options.hiddenByUser ?? false,
@@ -42,6 +45,7 @@ beforeEach(() => {
 afterEach(() => {
   trigger?.destroy();
   trigger = undefined;
+  Object.defineProperty(window, 'location', originalLocation);
 });
 
 describe('prompt trigger visibility', () => {

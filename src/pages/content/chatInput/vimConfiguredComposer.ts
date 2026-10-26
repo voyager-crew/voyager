@@ -1,6 +1,4 @@
-import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/vim-packaged.json';
-
-const EDITABLE_SELECTOR = packaged['vim.editable'].join(',');
+import { packagedInputSelector } from '@/core/services/composer/siteInputData';
 
 /** Wrapper selectors may contain several hidden editors; prefer the rendered control. */
 export function resolveConfiguredComposer(
@@ -9,13 +7,14 @@ export function resolveConfiguredComposer(
   doc: Document = document,
 ): HTMLElement | null {
   const requireVisible = options.requireVisible ?? true;
+  const editableSelector = packagedInputSelector('vim.editable', doc);
   let fallback: HTMLElement | null = null;
   try {
     for (const element of Array.from(doc.querySelectorAll(selector))) {
       if (!(element instanceof HTMLElement)) continue;
-      const editables = element.matches(EDITABLE_SELECTOR)
+      const editables = element.matches(editableSelector)
         ? [element]
-        : Array.from(element.querySelectorAll<HTMLElement>(EDITABLE_SELECTOR));
+        : Array.from(element.querySelectorAll<HTMLElement>(editableSelector));
       for (const editable of editables) {
         if (!fallback) fallback = editable;
         if (isVisibleHudMount(editable)) return editable;

@@ -22,6 +22,7 @@
  */
 import type { Result } from '@/core/types/common';
 
+import { BUNDLED_LOCATOR_SITES } from '../../../core/selectors/sites';
 import type { ManifestIssue } from '../manifest/validate';
 import type { SiteAdapter, SiteCapability, SiteThemeDescriptor } from '../types';
 import { isSafeRegexSource } from './safeRegex';
@@ -170,12 +171,13 @@ function readSelectors(
   raw: unknown,
   issues: ManifestIssue[],
   unknownKeys: ManifestIssue[],
+  fallback?: Readonly<Record<string, string>>,
 ): Record<string, string> {
   const selectors: Record<string, string> = {};
   if (raw === undefined) return selectors;
   if (!isRecord(raw)) {
     issues.push({ path: 'selectors', message: 'must be an object' });
-    return selectors;
+    return fallback ? { ...fallback } : selectors;
   }
   for (const [key, value] of Object.entries(raw)) {
     if (!isSemanticSelectorKey(key)) {
@@ -191,6 +193,21 @@ function readSelectors(
       continue;
     }
     selectors[key] = value;
+  }
+  if (fallback && issues.length) {
+    // A malformed composer member must not mix another composer with a bundled Send button.
+    const groups = [
+      ['composer', 'composerRoot', 'sendButton'],
+      ['userTurn', 'assistantTurn'],
+    ];
+    const rejected = new Set(issues.map((issue) => issue.path.slice('selectors.'.length)));
+    for (const group of groups) {
+      if (group.some((key) => rejected.has(key))) group.forEach((key) => rejected.add(key));
+    }
+    for (const key of rejected) {
+      if (fallback[key]) selectors[key] = fallback[key];
+      else delete selectors[key];
+    }
   }
   return selectors;
 }
@@ -229,11 +246,11 @@ export function validateSiteAdapterData(input: unknown): Result<SiteAdapter, Man
  * selector keys and optional sections (`sectionIssues`).
  */
 export function readSiteAdapterData(input: unknown): SiteAdapterDataRead {
-  const { result, sectionIssues } = parseSiteAdapterData(input);
+  const { result, sectionIssues } = parseSiteAdapterData(input, true);
   return { result, sectionIssues };
 }
 
-function parseSiteAdapterData(input: unknown): SiteAdapterDataParse {
+function parseSiteAdapterData(input: unknown, tolerateSemantic = false): SiteAdapterDataParse {
   if (!isRecord(input)) {
     return {
       result: { success: false, error: [{ path: '', message: 'site must be an object' }] },
@@ -277,10 +294,20 @@ function parseSiteAdapterData(input: unknown): SiteAdapterDataParse {
     issues.push({ path: 'catalogRevision', message: 'must be a non-negative safe integer' });
   }
 
-  const selectors = readSelectors(input.selectors, issues, unknownKeys);
+  const semanticIssues: ManifestIssue[] = [];
+  const bundledSelectors = tolerateSemantic
+    ? BUNDLED_LOCATOR_SITES.find((site) => site.id === input.id)?.selectors
+    : undefined;
+  const selectors = readSelectors(
+    input.selectors,
+    bundledSelectors ? semanticIssues : issues,
+    unknownKeys,
+    bundledSelectors,
+  );
   const theme = readTheme(input.theme, issues);
   const sectionIssues = [
     ...unknownKeys,
+    ...semanticIssues,
     ...modelPickerRead.issues,
     ...projectsRead.issues,
     ...pageHooksRead.issues,

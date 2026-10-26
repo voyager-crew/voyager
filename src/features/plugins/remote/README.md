@@ -36,9 +36,9 @@ without an extension release.
   Gates in order: the build flag; the host shape (plain hostnames, no
   wildcards or ports); the user settings (online-updates switch, check interval
   counted from the last attempt, failure backoff, writer-version staleness); and
-  page eligibility, meaning at least one **enabled** plugin targets the host.
-  `gemini.google.com` is also eligible for page-locator fixes without an enabled
-  plugin. Gemini Enterprise and AI Studio remain ineligible. A manual check sends
+  page eligibility: a supported site has packaged page-locator data, or at least
+  one **enabled** plugin targets its host. This includes Gemini Enterprise and
+  both AI Studio hosts. A manual check sends
   `force` and skips due-time and enabled-plugin gates, but never the online-updates
   switch, build flag or host eligibility.
 - **`remote/hostCatalogPolicy.ts`** — the pure rules the background and the
@@ -65,10 +65,10 @@ without an extension release.
 **Settings** live in `chrome.storage.sync` and are covered by
 `SettingsBackupService`: `gvPluginOnlineUpdatesEnabled` (master switch, on by
 default) and `gvPluginCatalogCheckInterval` (`1h` / `6h` / `24h` / `manual`,
-default `6h`). The popup surfaces both on plugin sites and consumer Gemini.
+default `6h`). The popup surfaces both on every supported site.
 Opening it reads the cache; its manual check works only while updates are on.
 Turning updates off blocks automatic and manual requests. Cached data remains
-local; Gemini page hydration uses the bundle while updates are off.
+local; page hydration uses the bundle while updates are off.
 
 **Message**: a content script or the popup sends `gv.pluginCatalog.refresh`
 (`PLUGIN_CATALOG_REFRESH_MESSAGE` in `runtime/messages.ts`) with
@@ -83,7 +83,8 @@ plugin id:
 - build-only ids (packaged official plugins and catalog folders) always come
   from this build and cannot be replaced or revoked remotely;
 - a remote entry whose `engine` range this build satisfies replaces the bundled
-  copy;
+  copy; native timeline identity parameters retain their packaged values, so an
+  update cannot redirect saved stars or account ownership;
 - if the remote entry needs a newer engine, the bundled copy stays and carries
   `blockedUpdate`, which the popup renders as "needs a newer Voyager" (when
   neither copy is compatible the remote one is listed and the status machine
@@ -124,33 +125,37 @@ through absence from `plugins`. The reason stays in the source file.
 
 The optional `site.locators` section maps namespaced profile keys to ordered
 string arrays. Site-specific policy owns each literal allowlist and fallback
-group. Gemini reuses `GEMINI_SELECTOR_PROFILE_KEYS` (75 keys) and
-`GEMINI_SELECTOR_PROFILE_GROUPS` from `core/gemini/selectors/types.ts`.
-`validateSiteAdapterData` validates this section independently: a malformed or
-over-limit section is omitted, and an unparsable locator drops only its surface’s
-group. The host’s plugin list, other adapter data and kill switch still work.
+group. `core/selectors/contracts/` registers each site; Gemini retains its
+domain vocabulary in `core/gemini/selectors/types.ts`.
+`validateSiteAdapterData` validates this section independently: an over-limit
+section or unknown key omits the section, while a malformed or unparsable
+locator drops only its surface’s group. The host’s plugin list, other adapter data and kill switch still work.
 
-Consumer Gemini uses the same host file as the rest of the catalog:
+Every supported host uses the same channel, for example:
 
 ```text
 https://voyager.nagi.fun/catalog/hosts/gemini.google.com.json
+https://voyager.nagi.fun/catalog/hosts/business.gemini.google.json
+https://voyager.nagi.fun/catalog/hosts/aistudio.google.com.json
 ```
 
-Only locator profiles travel remotely for Gemini. Its official plugins, semantic
-adapter fields, CSS, host admission, identity and interaction protocols stay
-packaged. Gemini Enterprise and AI Studio use only packaged data. The
-[resolver README](../../../core/gemini/selectors/README.md) maps profiles to their
-consumers and describes the independent checks that protect each operation.
+Gemini and AI Studio receive locator data while their official plugins, CSS,
+host admission, identity and interaction protocols stay packaged. Enterprise
+reads the same Gemini data under the same guards. Each other site reads its own
+profiles alongside its existing catalog plugins. The
+[resolver README](../../../core/selectors/README.md) lists the exact coverage
+and independent checks that protect each operation.
 A key whose repair can only confirm the bundle stays packaged-only.
 
 The catalog builder reads the same selected non-`*-packaged.json` fragments as
 `bundle.ts`. Revision, cache writer version, refresh timing and withdrawal use
 this channel’s existing machinery. A resolved adapter must be newer than the
 bundle before its profiles can apply. Missing or empty `site.locators` restores
-the bundle on the next page load. No second setting, cache, endpoint or publisher
-is involved.
+only its namespaced profiles on the next page load. A complete withdrawal also
+restores admitted `site.selectors` values to their packaged values. No second
+setting, cache, endpoint or publisher is involved.
 
-Gemini hydration remains a `startMachine` flow before native features start. It
+Shared per-site hydration is a `startMachine` flow before features start. It
 reads the resolved catalog site data once per content-script claim. Changes to
 update settings during that read settle on the bundle; an error, timeout or
 page teardown cannot adopt late data. After readiness, the snapshot stays fixed
@@ -164,10 +169,10 @@ collection, conflict with an independent native/bundled check or target other
 than the operation’s original element falls back for the whole operation before
 any side effect. These checks remain off the bundled path.
 
-The [rollback runbook](../../../core/gemini/selectors/README.md#rollback-runbook)
+The [rollback runbook](../../../core/selectors/README.md#rollback-runbook)
 covers higher-revision fixes and withdrawing locators in the host file.
 `VOYAGER_PLUGIN_CATALOG_REMOTE=off` disables the single catalog channel,
-including cached Gemini profiles. Requests omit cookies and send no page or
+including every site’s cached profiles. Requests omit cookies and send no page or
 conversation content or account identifiers. Hosting providers see ordinary
 connection metadata such as IP address, User-Agent and the hostname in the URL.
 Announcement and cloud-sync settings remain separate. D13/D14 require the same

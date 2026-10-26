@@ -1,5 +1,5 @@
 import { getGeminiSelectorView } from '@/core/gemini/selectors';
-import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/image-export-packaged.json';
+import { getExportReadProfiles } from '@/features/export/services/exportSiteData';
 
 import {
   bundledGeminiSearchImageSelector,
@@ -12,19 +12,17 @@ export function hasExportSearchImages(
   turn: { assistantContent?: { html: string }; assistantElement?: HTMLElement },
   siteId: string,
 ): boolean {
+  const profiles = getExportReadProfiles(siteId);
   const original =
-    turn.assistantContent?.html.includes('attachment-container.search-images') ||
-    turn.assistantElement?.querySelector(packaged['imageExport.sourcePrompt'].join(', ')) != null;
+    turn.assistantContent?.html.includes(profiles['export.sourcePromptMarkup']) ||
+    turn.assistantElement?.querySelector(profiles['export.sourcePrompt']) != null;
   // Existing source choices and other sites do not depend on Gemini's page snapshot.
   if (original || siteId !== 'gemini') return original;
   const view = getGeminiSelectorView();
   if (!view.remoteKeys.has('imageExport.searchHosts')) return original;
   const element = turn.assistantElement;
   if (!element) return false;
-  const root =
-    element.closest(
-      'model-response, .model-response, .presented-response-container, .response-container, response-container',
-    ) || element;
+  const root = element.closest(profiles['export.responseOwner']) || element;
   const bundled = bundledGeminiSearchImageSelector();
   // Existing image-container cards never gained this prompt merely by enabling online fixes.
   if (collectGeminiImageHosts(root, bundled).length > 0) return false;

@@ -57,7 +57,10 @@
       {
         "op": "native",
         "handler": "codeCollapse",
-        "params": { "action": ".md-code-block-banner [role=\"button\"]" }
+        "params": {
+          "action": ".md-code-block-banner [role=\"button\"]",
+          "code": "pre"
+        }
       }
     ]
   }

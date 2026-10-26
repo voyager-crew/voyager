@@ -12,6 +12,7 @@ import {
   readDiagramExport,
 } from '@/features/plugins/verbs/diagramExportRegistry';
 
+import { exportSiteSnapshot } from '../adapter/exportSiteSnapshot';
 import type { ExportPlatformAdapter } from '../adapter/platformAdapters';
 import type { ExportSelectionOptions } from '../adapter/type';
 import { throwIfExportCancelled } from '../exportCancellation';
@@ -147,7 +148,7 @@ export function captureCatalogWindow(
   adapter: ExportPlatformAdapter,
   root: ParentNode = document,
 ): CatalogSnapshot[] {
-  return mountedSnapshots(site, root, createContentExtractor(adapter));
+  return mountedSnapshots(exportSiteSnapshot(site), root, createContentExtractor(adapter));
 }
 
 function waitForSample(delay: number, signal?: AbortSignal): Promise<void> {
@@ -168,11 +169,12 @@ function waitForSample(delay: number, signal?: AbortSignal): Promise<void> {
 
 /** Read a catalog site's mounted DOM or crawl its virtual list without retaining live bodies. */
 export async function readCatalogConversation(
-  site: SiteAdapter,
+  provided: SiteAdapter,
   adapter: ExportPlatformAdapter,
   options: ExportSelectionOptions,
   timingOverrides: Partial<CatalogReadTiming> = {},
 ): Promise<CatalogReadResult> {
+  const site = exportSiteSnapshot(provided);
   const timing = { ...DEFAULT_TIMING, ...timingOverrides };
   const descriptor = site.export;
   const selector = site.selectors.scrollContainer;

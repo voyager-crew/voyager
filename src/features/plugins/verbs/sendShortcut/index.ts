@@ -1,7 +1,10 @@
+import { withPageSemanticSelectors } from '@/core/selectors';
 import { findComposer, insertIntoComposer } from '@/core/services/composer';
 import { hasPendingComposerUpload } from '@/core/services/composer/sendGuards';
 import { getSendKeyCoordinator } from '@/core/services/composer/sendKeys/sendKeyCoordinator';
 import { isImeKeyEvent, type SendKeyMode } from '@/core/services/composer/sendKeys/sendKeyIntent';
+import { SEND_SITE_POLICIES } from '@/core/services/composer/sendKeys/sendSitePolicies';
+import { resolveComposerOperation } from '@/core/services/composer/siteComposerOperation';
 import { isGeminiEnterpriseEnvironment } from '@/core/utils/gemini';
 
 import { claimComposerEnter } from '../composerEnterOwner';
@@ -84,7 +87,10 @@ export const sendShortcutPrimitive: Primitive<SendShortcutParams> = {
   },
 
   activate(scope, params, context) {
-    const { doc, adapter } = context;
+    const { doc } = context;
+    const adapter = context.adapter
+      ? withPageSemanticSelectors(context.adapter, ['composer', 'composerRoot', 'sendButton'])
+      : null;
     const mode = params.mode ?? 'ctrlEnterSends';
     const host = doc.location.hostname;
     const site =
@@ -105,7 +111,7 @@ export const sendShortcutPrimitive: Primitive<SendShortcutParams> = {
         'send-key-mode',
       );
       context.setTargetCounter(
-        () => doc.querySelectorAll('[contenteditable="true"], [role="textbox"], textarea').length,
+        () => doc.querySelectorAll(SEND_SITE_POLICIES[site].editableSelector).length,
       );
       return { updateSettings() {} };
     }
@@ -126,22 +132,41 @@ export const sendShortcutPrimitive: Primitive<SendShortcutParams> = {
         if (event.shiftKey || event.altKey) return;
         const target = event.target;
         if (!(target instanceof Element)) return;
-        const field = target.closest<HTMLElement>(composer);
-        if (!(field instanceof HTMLElement) || field !== findComposer(adapter, { doc })) return;
+        if (!adapter) return;
+        const ctrl = event.ctrlKey || event.metaKey;
+        const sending = mode === 'enterSends' ? !ctrl : ctrl;
+        const accepted = resolveComposerOperation(
+          adapter,
+          doc,
+          { composer, composerRoot, sendButton },
+          (selectors, requiresProof) => {
+            const field = target.closest<HTMLElement>(selectors.composer);
+            if (
+              !(field instanceof HTMLElement) ||
+              field !== findComposer(selectors.composer, { doc })
+            )
+              return { field: null, root: null, control: null };
+            const root = sending || requiresProof ? field.closest(selectors.composerRoot) : null;
+            if (!sending) return { field, root, control: null };
+            if (!root || hasPendingComposerUpload(root)) return { field, root, control: null };
+            const control = root
+              ? (Array.from(doc.querySelectorAll<HTMLElement>(selectors.sendButton)).find(
+                  (candidate) =>
+                    candidate instanceof HTMLElement &&
+                    root.contains(candidate) &&
+                    isEnabledSendControl(candidate),
+                ) ?? null)
+              : null;
+            return { field, root, control };
+          },
+        );
+        const { field, root, control } = accepted;
+        if (!field) return;
 
         event.preventDefault();
         event.stopImmediatePropagation();
-        const ctrl = event.ctrlKey || event.metaKey;
-        if (mode === 'enterSends' ? !ctrl : ctrl) {
-          const root = field.closest(composerRoot);
-          if (!root || hasPendingComposerUpload(root)) return;
-          // Full adapter selectors can name the root itself; constrain their document matches here.
-          const control = Array.from(doc.querySelectorAll<HTMLElement>(sendButton)).find(
-            (candidate) =>
-              candidate instanceof HTMLElement &&
-              root.contains(candidate) &&
-              isEnabledSendControl(candidate),
-          );
+        if (sending) {
+          if (!root) return;
           control?.click();
         } else if (field instanceof HTMLTextAreaElement) {
           insertIntoComposer(field, '\n', 'insertAtCursor');

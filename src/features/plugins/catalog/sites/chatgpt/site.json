@@ -11,7 +11,8 @@
     "sidebar": "nav[aria-label], #stage-slideover-sidebar",
     "scrollContainer": "[data-app-action-timeline-scroll]",
     "composerRoot": "form:has(#prompt-textarea, [data-composer-markdown])",
-    "sendButton": "form:has(#prompt-textarea, [data-composer-markdown]) button[type=\"submit\"]"
+    "sendButton": "form:has(#prompt-textarea, [data-composer-markdown]) button[type=\"submit\"]",
+    "headerActions": "#conversation-header-actions"
   },
   "theme": {
     "hostSelector": "html",
@@ -267,7 +268,9 @@
       "open": "expanded",
       "after": "firstSubmenu",
       "strip": ["data-radix-collection-item"],
-      "rename": { "plainItem": 0 }
+      "rename": {
+        "plainItem": 0
+      }
     },
     "page": {
       "placeholderTitles": {

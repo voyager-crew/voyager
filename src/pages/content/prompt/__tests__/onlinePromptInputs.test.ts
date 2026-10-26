@@ -150,7 +150,7 @@ describe('online prompt owners', () => {
     expect(main.textContent).toBe('Full prompt body');
   });
 
-  it('another site keeps its packaged input even when a Gemini profile could repair it', async () => {
+  it('Enterprise shares Gemini input fixes while another site keeps its own packaged input', async () => {
     document.body.innerHTML =
       '<input-area-v2><section id="main" contenteditable="true"></section></input-area-v2>';
     const main = input('main');
@@ -159,6 +159,11 @@ describe('online prompt owners', () => {
     Object.defineProperty(window, 'location', {
       configurable: true,
       value: { hostname: 'business.gemini.google' },
+    });
+    expect(inputFromTarget(main)).toBe(main);
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { hostname: 'aistudio.google.com' },
     });
     expect(inputFromTarget(main)).toBeNull();
   });

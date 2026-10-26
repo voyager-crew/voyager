@@ -1,3 +1,4 @@
+import { locatorSiteForHost } from '@/core/selectors/sites';
 /**
  * HostCatalogRefresher — the ONLY network writer for the remote plugin catalog.
  *
@@ -13,8 +14,8 @@
  *   3. user settings       — online-update switch, check interval, failure backoff,
  *                            writer-version staleness (hostCatalogPolicy);
  *   4. page eligibility    — at least one ENABLED plugin (bundled or already
- *                            cached remote) targets the host, or Gemini locator
- *                            profiles serve the native page. AI Studio stays excluded.
+ *                            cached remote) targets the host, or packaged locator
+ *                            data serves the current supported site.
  *
  * Privacy: the request carries no cookies, no extension identifier and no
  * page content — only the host name in the path.
@@ -22,7 +23,6 @@
 import { logger } from '@/core/services/LoggerService';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 
-import { isGeminiSelectorHost } from '../sites/hostPolicy';
 import { siteAdapterToData } from '../sites/siteAdapterData';
 import { listPluginManifests } from '../sources/defaultSources';
 import { loadPluginState } from '../storage/pluginState';
@@ -93,7 +93,7 @@ export async function defaultIsHostEligible(
   host: string,
   entry: HostCatalogCacheEntry | null,
 ): Promise<boolean> {
-  if (isGeminiSelectorHost(host)) return true;
+  if (locatorSiteForHost(host)) return true;
   const [snapshot, state] = await Promise.all([listPluginManifests(), loadPluginState()]);
   const manifests = entry?.status === 'ok' ? [...snapshot, ...entry.manifests] : snapshot;
   return hasEnabledPluginForHost(manifests, state, host);

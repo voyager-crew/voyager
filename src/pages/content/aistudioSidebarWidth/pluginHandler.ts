@@ -7,8 +7,9 @@ import { normalizeAIStudioSidebarWidth } from '@/core/utils/aistudioSidebarWidth
 import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContext';
 import { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import type { PluginSettings } from '@/features/plugins/types';
+import { aistudioPackagedSelector } from '@/pages/content/folder/aistudioLocatorReads';
 
-const NAV_SELECTOR = '.nav-content.v3-left-nav';
+const NAV_SELECTOR = aistudioPackagedSelector('navigation.sidebar');
 const WIDTH_PROPERTIES = [
   'width',
   'min-width',
@@ -79,7 +80,7 @@ export function activateAIStudioSidebarWidth(scope: PluginScope, settings: Plugi
     };
     const apply = (force = false) => {
       if (scope.isDisposed || navScope.isDisposed) return;
-      const expanded = nav.classList.contains('expanded');
+      const expanded = nav.matches(aistudioPackagedSelector('navigation.expanded'));
       handle.style.display = expanded ? 'block' : 'none';
       if (expanded || force) {
         const px = `${width}px`;

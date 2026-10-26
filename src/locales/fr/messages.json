@@ -3306,8 +3306,8 @@
     "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "Vérifie les mises à jour des extensions et les correctifs de détection des pages Gemini sur voyager.nagi.fun. Seul le nom du site est envoyé, sans cookies ni contenu de page. La désactivation bloque les vérifications automatiques et manuelles.",
-    "description": "Explains catalog updates, Gemini page detection fixes, request contents and the off setting"
+    "message": "Vérifie les mises à jour des extensions et les correctifs de détection des pages des sites compatibles sur voyager.nagi.fun. Seul le nom du site est envoyé, sans cookies ni contenu de page. La désactivation bloque les vérifications automatiques et manuelles.",
+    "description": "Explains shared catalog updates, supported-site page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {
     "message": "Fréquence de vérification",

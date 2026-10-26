@@ -1,189 +1,65 @@
-import { type Machine, startMachine } from '@/features/plugins/runtime/stateMachine';
-
+/** Gemini's domain names delegate to the shared per-site snapshot owner. */
+import {
+  getSiteSelectorView,
+  initializeSiteSelectors,
+  resolveSiteSelectorOperationInView,
+  type SiteSelectorInitialization,
+  type SiteSelectorLifetime,
+} from '../../selectors/service';
 import { acceptsGeminiTurnView } from '../turnIntegrity';
-import { getBundledGeminiSelectorView, getGeminiBundledRevision } from './bundle';
+import { getBundledGeminiSelectorView } from './bundle';
 import {
-  type GeminiSelectorSettlement,
-  type HydrationEvent,
-  type HydrationState,
-  createHydrationEffects,
-  hydrationTransition,
-} from './hydration';
-import {
-  GEMINI_SELECTOR_HOSTS,
-  GEMINI_SELECTOR_PROFILE_GROUPS,
   GEMINI_TURN_PROFILE_KEYS,
   type GeminiSelectorOperation,
-  type GeminiSelectorProfileKey,
   type GeminiSelectorView,
   type GeminiTurnOperation,
   type GeminiTurnView,
 } from './types';
-import { readGeminiSelectorProfiles } from './validation';
 
-export interface GeminiSelectorInitialization {
-  readonly host: string;
-  readonly doc: Document;
-  readonly lifetime: AbortSignal;
-  readonly read: () => Promise<unknown>;
-  /** Subscribes to changes that make a pending read stale; unsubscribed once it settles. */
-  readonly invalidatedBy?: (invalidate: () => void) => () => void;
-  readonly bundledRevision?: number;
-  readonly timeoutMs?: number;
-}
-
-export interface GeminiSelectorLifetime {
-  readonly ready: Promise<GeminiSelectorSettlement>;
-  readonly stop: () => void;
-  /** False once stopped, replaced or past the page lifetime. */
-  readonly isCurrent: () => boolean;
-}
-
-/** One state owner per content-script instance; consumers never read storage. */
-export class GeminiSelectorService {
-  private view = getBundledGeminiSelectorView();
-  private active: Machine<HydrationState, HydrationEvent> | null = null;
-
-  getView(): GeminiSelectorView {
-    return this.view;
-  }
-
-  initialize(input: GeminiSelectorInitialization): GeminiSelectorLifetime {
-    this.active?.send({ type: 'retire' });
-    this.view = getBundledGeminiSelectorView();
-    let settle: (settlement: GeminiSelectorSettlement) => void = () => undefined;
-    const ready = new Promise<GeminiSelectorSettlement>((resolve) => {
-      settle = resolve;
-    });
-    const hydration = startMachine<HydrationState, HydrationEvent>(
-      {
-        id: 'geminiSelectorHydration',
-        transition: hydrationTransition,
-        effects: createHydrationEffects({
-          lifetime: input.lifetime,
-          timeoutMs: input.timeoutMs ?? 250,
-          read: input.read,
-          toView: (raw) => toRemoteView(raw, input),
-          invalidatedBy: input.invalidatedBy,
-          install: (view) => {
-            this.view = view;
-          },
-          release: (view) => {
-            // A retired initializer must not clear the snapshot owned by its replacement.
-            if (this.view === view) this.view = getBundledGeminiSelectorView();
-          },
-          settle: (settlement) => settle(settlement),
-        }),
-      },
-      input.lifetime.aborted ? { status: 'retired', view: null } : { status: 'reading' },
-    );
-    this.active = hydration;
-    return {
-      ready,
-      stop: () => hydration.send({ type: 'retire' }),
-      isCurrent: () => hydration.state.status !== 'retired',
-    };
-  }
-
-  resolve<T>(
-    read: (view: GeminiSelectorView) => T,
-    isUsable: (value: T) => boolean,
-  ): GeminiSelectorOperation<T> {
-    return resolveGeminiSelectorOperationInView(this.view, read, isUsable);
-  }
-}
-
-const service = new GeminiSelectorService();
+export type GeminiSelectorInitialization = SiteSelectorInitialization;
+export type GeminiSelectorLifetime = SiteSelectorLifetime;
 
 export function initializeGeminiSelectors(
   input: GeminiSelectorInitialization,
 ): GeminiSelectorLifetime {
-  return service.initialize(input);
-}
-
-export function getGeminiTurnView(): GeminiTurnView {
-  return service.getView();
+  return initializeSiteSelectors('gemini', input);
 }
 
 export function getGeminiSelectorView(): GeminiSelectorView {
-  return service.getView();
+  return getSiteSelectorView('gemini') as GeminiSelectorView;
 }
 
-/** Read against one captured snapshot, falling back by rerunning the complete pure operation. */
+export function getGeminiTurnView(): GeminiTurnView {
+  return getGeminiSelectorView();
+}
+
 export function resolveGeminiSelectorOperationInView<T>(
   view: GeminiSelectorView,
   read: (view: GeminiSelectorView) => T,
   isUsable: (value: T) => boolean,
 ): GeminiSelectorOperation<T> {
-  const bundle = getBundledGeminiSelectorView();
-  if (view.remoteKeys.size === 0) return { value: read(bundle), view: bundle };
-  try {
-    const value = read(view);
-    if (isUsable(value)) return { value, view };
-  } catch {
-    // Query errors cannot combine a rejected remote collection with bundled descendants.
-  }
-  return { value: read(bundle), view: bundle };
+  return resolveSiteSelectorOperationInView(view, read, isUsable);
 }
 
 export function resolveGeminiSelectorOperation<T>(
   read: (view: GeminiSelectorView) => T,
   isUsable: (value: T) => boolean,
 ): GeminiSelectorOperation<T> {
-  return service.resolve(read, isUsable);
+  return resolveSiteSelectorOperationInView(getGeminiSelectorView(), read, isUsable);
 }
 
-/** The callback is a pure read; the owner commits IDs/DOM/storage only after selecting its view. */
+/** Turn ownership and completeness are Gemini protocols, independent of the shared transport. */
 export function resolveGeminiTurnOperation<T>(
   read: (view: GeminiTurnView) => T,
   isUsable: (value: T) => boolean,
-  view: GeminiTurnView = service.getView(),
+  view: GeminiTurnView = getGeminiSelectorView(),
 ): GeminiTurnOperation<T> {
-  if (!GEMINI_TURN_PROFILE_KEYS.some((key) => view.remoteKeys.has(key))) {
+  if (
+    !GEMINI_TURN_PROFILE_KEYS.some((key) => view.remoteKeys.has(key)) ||
+    !acceptsGeminiTurnView(view)
+  ) {
     const bundle = getBundledGeminiSelectorView();
     return { value: read(bundle), view: bundle };
   }
-  if (!acceptsGeminiTurnView(view)) {
-    const bundle = getBundledGeminiSelectorView();
-    return { value: read(bundle), view: bundle };
-  }
-  return resolveGeminiSelectorOperationInView(view, read, isUsable);
-}
-
-function toRemoteView(
-  raw: unknown,
-  input: GeminiSelectorInitialization,
-): GeminiSelectorView | null {
-  if (!(GEMINI_SELECTOR_HOSTS as readonly string[]).includes(input.host)) return null;
-  if (!raw || typeof raw !== 'object' || !('id' in raw) || raw.id !== 'gemini') return null;
-  if (!('catalogRevision' in raw) || typeof raw.catalogRevision !== 'number') return null;
-  const revision = raw.catalogRevision;
-  const patch = 'locators' in raw ? readGeminiSelectorProfiles(raw.locators) : null;
-  const floor = input.bundledRevision ?? getGeminiBundledRevision();
-  if (!patch || !Number.isSafeInteger(revision) || revision <= floor) return null;
-  const profiles = { ...getBundledGeminiSelectorView().profiles };
-  const remoteKeys = new Set<GeminiSelectorProfileKey>();
-  for (const group of GEMINI_SELECTOR_PROFILE_GROUPS) {
-    const changed: Array<readonly [GeminiSelectorProfileKey, readonly string[]]> = [];
-    try {
-      for (const key of group) {
-        const list = patch[key];
-        if (!list) continue;
-        for (const selector of list) input.doc.querySelector(selector);
-        if (JSON.stringify(list) !== JSON.stringify(profiles[key])) changed.push([key, list]);
-      }
-    } catch {
-      // One unsupported selector drops its whole surface, before any consumer sees it.
-      continue;
-    }
-    for (const [key, list] of changed) {
-      profiles[key] = list;
-      remoteKeys.add(key);
-    }
-  }
-  return Object.freeze({
-    profiles: Object.freeze(profiles),
-    remoteKeys,
-    revision,
-  });
+  return resolveSiteSelectorOperationInView(view, read, isUsable);
 }

@@ -1,0 +1,20 @@
+{
+  "input.clearance": ["form"],
+  "vim.editable": ["input, textarea, select, [contenteditable=\"true\"], [role=\"textbox\"]"],
+  "vim.editInputs": ["textarea[aria-label=\"Edit message\"]"],
+  "vim.sendTarget": [
+    "form:has(#prompt-textarea, [data-composer-markdown]) button[type=\"submit\"]"
+  ],
+  "vim.editForm": [":not(*)"],
+  "vim.host": [":not(*)"],
+  "vim.inputFallback": [":not(*)"],
+  "vim.hud": [":not(*)"],
+  "vim.mountInput": [
+    "#prompt-textarea[contenteditable=\"true\"]",
+    "[data-composer-markdown][contenteditable=\"true\"]"
+  ],
+  "vim.mountRoot": ["form"],
+  "vim.crossSiteEdit": ["textarea[aria-label=\"Edit message\"]"],
+  "vim.editActions": ["button"],
+  "input.nativeOwner": ["form[data-chatgpt-composer]"]
+}

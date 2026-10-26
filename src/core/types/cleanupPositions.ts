@@ -43,7 +43,7 @@ export enum CleanupPositions {
   RemoveStorageOnChangedListener,
   CleanupVisualEffects,
   /** After native consumers release their nodes, before removing the page scheme. */
-  CleanupGeminiSelectors,
+  CleanupPageSelectors,
   /** Last: every surface it styles is gone by now. */
   CleanupSchemeBridge,
 }

@@ -20,7 +20,8 @@ import { StorageKeys } from '@/core/types/common';
 import { isSafari as detectSafari } from '@/core/utils/browser';
 import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContext';
 
-import { editableKindOf, findSendButton, insertNewline } from './sendKeyDom';
+import { findAIStudioSendButton } from './aistudioSendRead';
+import { editableKindOf, insertNewline } from './sendKeyDom';
 import { type SendKeyMode, type SendKeyRule, classifySendKey } from './sendKeyIntent';
 import { SEND_SITE_POLICIES, type SendSiteId } from './sendSitePolicies';
 
@@ -107,9 +108,7 @@ export function createSendKeyCoordinator(
 
     if (intent === 'send') {
       const sendButton =
-        site === 'gemini'
-          ? findGeminiSendButton(target)
-          : findSendButton(target, policy.sendContainerSelectors);
+        site === 'gemini' ? findGeminiSendButton(target) : findAIStudioSendButton(target);
       if (!sendButton) return;
       // Element-level and stopPropagation only: document-capture readers have already run.
       event.preventDefault();

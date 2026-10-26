@@ -14,6 +14,10 @@ import {
   extractTurnContent,
 } from '@/features/export/services/DOMContentExtractor';
 import { queryOutsideThoughts } from '@/features/export/services/exportDomPolicy';
+import {
+  getExportReadProfiles,
+  type ExportReadProfiles,
+} from '@/features/export/services/exportSiteData';
 import type { CanvasDoc, ChatTurn as ExportChatTurn } from '@/features/export/types/export';
 
 import { isServerTurnId } from '../fork/turnId';
@@ -93,14 +97,17 @@ function normalizeText(text: string | null): string {
   }
 }
 
-function extractAssistantText(el: HTMLElement, view?: GeminiSelectorView): string {
+function extractAssistantText(
+  el: HTMLElement,
+  profiles: ExportReadProfiles,
+  view?: GeminiSelectorView,
+): string {
   // Prefer direct text from message container if available (connected to DOM)
   // Use queryOutsideThoughts to avoid matching the message-content inside
   // the expanded thinking/reasoning panel.
   try {
     const bundled = () =>
-      queryOutsideThoughts<HTMLElement>(el, 'message-content, .markdown, .markdown-main-panel') ??
-      el;
+      queryOutsideThoughts<HTMLElement>(el, profiles['export.collectorAnswer']) ?? el;
     const mc = view ? resolveGeminiAnswerElement(el, bundled, view) : bundled();
     if (mc !== el) {
       const raw = mc.textContent || mc.innerText || '';
@@ -218,6 +225,7 @@ function buildTurnsForSelectedMessages(
 
 export function createConversationCollector(adapter: ExportPlatformAdapter): ConversationCollector {
   const extractor = createContentExtractor(adapter);
+  const profiles = getExportReadProfiles(adapter.site.id);
   let cachedCanvasDocs: CanvasDoc[] | null = null;
 
   const conversationRoot = (): HTMLElement =>
@@ -255,7 +263,7 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
         userSelector,
         assistantSelector,
       );
-      const aText = aEl ? extractAssistantText(aEl, view) : '';
+      const aText = aEl ? extractAssistantText(aEl, profiles, view) : '';
       const turnId = uniqueTurnIds[i];
       const turnIdAliases =
         turnId && nativeConversationId && isServerTurnId(turnId)
@@ -299,7 +307,7 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
       const docs = cachedCanvasDocs?.length ? cachedCanvasDocs : extractAllCanvasDocs();
       if (docs.length > 0) {
         appendCanvasDocSections(
-          target.querySelector('.markdown, .markdown-main-panel') || target,
+          target.querySelector(profiles['export.walkMarkdown']) || target,
           docs,
         );
       }
@@ -343,9 +351,7 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
     assistantMessageIdFor: (trigger) => {
       if (!trigger) return null;
 
-      const assistantHost = trigger.closest(
-        '.response-container, response-container, .model-response, model-response',
-      ) as HTMLElement | null;
+      const assistantHost = trigger.closest<HTMLElement>(profiles['export.menuResponseOwner']);
       if (!assistantHost) return null;
 
       const messages = buildExportMessagesFromPairs(collectChatPairs());

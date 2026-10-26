@@ -3,9 +3,12 @@
 // inline export dropdown) is absent — e.g. after the lr26 UI refresh removed
 // [data-test-id="logo"]. Calls back into showExportDialog when clicked.
 import { createDownloadIcon } from '@/core/icons/promptManagerIcons';
-import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/export-entry-packaged.json';
 
-import { exportToolbarMutationControls, resolveExportToolbarControls } from './toolbarTargets';
+import {
+  exportLayoutData,
+  exportToolbarMutationControls,
+  resolveExportToolbarControls,
+} from './toolbarTargets';
 
 export type PersistentExportToolbarOptions = {
   label: string;
@@ -18,25 +21,10 @@ const BUTTON_CLASS = 'gv-persistent-export-btn';
 const ICON_CLASS = 'gv-persistent-export-icon';
 const LABEL_CLASS = 'gv-persistent-export-label';
 const HIDDEN_CLASS = 'gv-hidden';
-const CANVAS_OWNER_SELECTOR = packaged['exportToolbar.canvasOwner'];
-const CANVAS_CONTENT_SELECTOR = packaged['exportToolbar.canvasContent'];
-const CANVAS_STRUCTURE_SELECTOR = `${CANVAS_OWNER_SELECTOR}, ${CANVAS_CONTENT_SELECTOR}`;
-const INACTIVE_CANVAS_SELECTOR = packaged['exportToolbar.inactiveCanvas'];
 const DEFAULT_RIGHT_OFFSET_PX = 84;
 const TOP_RIGHT_GAP_PX = 12;
 const TOP_RIGHT_MAX_Y_PX = 96;
 const TOP_RIGHT_MIN_LEFT_RATIO = 0.45;
-/** Selectors specific to top-bar controls. */
-/**
- * Broad substring selectors that also match per-message buttons such as
- * "Copy prompt". Tracking hidden matches of these would put every chat turn's
- * ancestry under watch, so only visible ones count, and never ones inside a
- * conversation turn.
- */
-const TOP_RIGHT_BROAD_SELECTORS = packaged['exportToolbar.broadControls'].join(',');
-/** Conversation turns on Gemini (Angular hosts) and ChatGPT (role attribute). */
-const CONVERSATION_TURN_SELECTOR = 'user-query, model-response, [data-message-author-role]';
-const INTERACTIVE_SELECTOR = 'button, a[href], [role="button"]';
 /** Voyager's own layers and full-page dialog overlays, which can sit above the host header. */
 const VOYAGER_SURFACE_SELECTOR = [
   '[data-gv-layer]',
@@ -48,7 +36,6 @@ const VOYAGER_SURFACE_SELECTOR = [
 ].join(',');
 const ROW_PROBE_STEP_PX = 8;
 const MAX_ROW_SHIFTS = 4;
-const ROW_AVOIDANCE_PLATFORMS = new Set(['chatgpt']);
 
 type OwnedToolbarRoot = HTMLDivElement & { _gvOwner?: symbol };
 type ToolbarButton = HTMLButtonElement & { _gvOnClick?: () => void };
@@ -73,7 +60,7 @@ function classifyTopRightElement(
   if (element === toolbarRoot || toolbarRoot.contains(element)) return null;
   // A turn's visible "Copy prompt" scrolled into the top band is not a top-bar
   // control; avoiding it pushed the toolbar over the message text.
-  if (element.closest(CONVERSATION_TURN_SELECTOR)) return null;
+  if (element.closest(exportLayoutData(toolbarRoot).turns)) return null;
   const rect = element.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) {
     return element.matches(controlSelector) ? 'hidden' : null;
@@ -100,10 +87,11 @@ function measureTopRightControls(toolbarRoot: HTMLElement): TopRightMeasurement 
   const hidden: HTMLElement[] = [];
   const canvas: HTMLElement[] = [];
   let leftMost: number | null = null;
-  const { selector: controls } = resolveExportToolbarControls();
-  const selector = `${controls},${TOP_RIGHT_BROAD_SELECTORS},${CANVAS_CONTENT_SELECTOR}`;
+  const { selector: controls } = resolveExportToolbarControls(toolbarRoot);
+  const layout = exportLayoutData(toolbarRoot);
+  const selector = `${controls},${layout.broadControls.join(',')},${layout.canvasContent}`;
   for (const element of Array.from(document.querySelectorAll<HTMLElement>(selector))) {
-    if (element.matches(CANVAS_CONTENT_SELECTOR)) {
+    if (element.matches(layout.canvasContent)) {
       canvas.push(element);
       continue;
     }
@@ -128,7 +116,7 @@ function measureTopRightControls(toolbarRoot: HTMLElement): TopRightMeasurement 
 }
 
 function usesRowAvoidance(toolbarRoot: HTMLElement): boolean {
-  return ROW_AVOIDANCE_PLATFORMS.has(toolbarRoot.dataset.gvPlatform ?? '');
+  return exportLayoutData(toolbarRoot).avoidRow;
 }
 
 // Host markup changes without notice, so also hit-test the toolbar's own row
@@ -146,7 +134,7 @@ function findControlUnderToolbar(toolbarRoot: HTMLElement, right: number): HTMLE
       .find(
         (element) => !toolbarRoot.contains(element) && !element.closest(VOYAGER_SURFACE_SELECTOR),
       );
-    const control = topmost?.closest<HTMLElement>(INTERACTIVE_SELECTOR);
+    const control = topmost?.closest<HTMLElement>(exportLayoutData(toolbarRoot).interactive);
     if (control) return control;
   }
   return null;
@@ -230,10 +218,12 @@ function mutationsMayMoveTopRightControls(
   // Let the next update notice the detached toolbar and tear itself down.
   if (!toolbarRoot.isConnected) return true;
   // Row avoidance hit-tests unlabeled controls, so any new one may land under the toolbar.
-  const avoidanceSelector = `${exportToolbarMutationControls()},${TOP_RIGHT_BROAD_SELECTORS}`;
+  const layout = exportLayoutData(toolbarRoot);
+  const canvasStructure = `${layout.canvasOwner}, ${layout.canvasContent}`;
+  const avoidanceSelector = `${exportToolbarMutationControls(toolbarRoot)},${layout.broadControls.join(',')}`;
   const addedSelector = usesRowAvoidance(toolbarRoot)
-    ? `${avoidanceSelector},${CANVAS_STRUCTURE_SELECTOR},${INTERACTIVE_SELECTOR}`
-    : `${avoidanceSelector},${CANVAS_STRUCTURE_SELECTOR}`;
+    ? `${avoidanceSelector},${canvasStructure},${layout.interactive}`
+    : `${avoidanceSelector},${canvasStructure}`;
   for (const mutation of mutations) {
     const target = mutation.target;
     // The toolbar's own offset writes and label updates.
@@ -252,7 +242,7 @@ function mutationsMayMoveTopRightControls(
     }
     for (const node of Array.from(mutation.removedNodes)) {
       if (measured.watchedAndAncestors.has(node)) return true;
-      if (containsMatch(node, CANVAS_STRUCTURE_SELECTOR)) return true;
+      if (containsMatch(node, canvasStructure)) return true;
     }
   }
   return false;
@@ -273,13 +263,14 @@ function installToolbarAvoidance(root: HTMLDivElement): void {
       return;
     }
     const { offset, watched, hidden, canvas } = measureTopRightControls(root);
+    const layout = exportLayoutData(root);
     // Fullscreen Canvas puts Collapse under this pill; its own Export menu remains available.
     root.classList.toggle(
       HIDDEN_CLASS,
       canvas.some(
         (editor) =>
-          editor.closest(CANVAS_OWNER_SELECTOR)?.matches('immersive-panel') &&
-          !editor.closest(INACTIVE_CANVAS_SELECTOR),
+          editor.closest(layout.canvasOwner)?.matches(layout.fullscreenCanvas) &&
+          !editor.closest(layout.inactiveCanvas),
       ),
     );
     measured = indexMeasuredControls(watched, hidden, canvas);

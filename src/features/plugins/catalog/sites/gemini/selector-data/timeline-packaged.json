@@ -1,0 +1,4 @@
+{
+  "timeline.userText": ".query-text",
+  "guide.overlays": ["[role=\"menu\"]", "[role=\"dialog\"]", "[role=\"alertdialog\"]"]
+}

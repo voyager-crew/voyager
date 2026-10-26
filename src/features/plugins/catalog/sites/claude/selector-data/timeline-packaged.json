@@ -1,0 +1,4 @@
+{
+  "timeline.userText": ":not(*)",
+  "guide.overlays": ["[role=\"menu\"]", "[role=\"dialog\"]", "[role=\"alertdialog\"]"]
+}

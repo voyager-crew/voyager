@@ -225,13 +225,13 @@ describe('hasEnabledPluginForUrl', () => {
 });
 
 describe('native locator catalog host', () => {
-  it('admits Gemini consumer pages and keeps other native pages packaged', () => {
+  it('admits Gemini Enterprise and AI Studio to the same catalog channel', () => {
     for (const url of [
       'https://business.gemini.google/',
       'https://aistudio.google.com/prompts',
       'https://aistudio.google.cn/',
     ]) {
-      expect(catalogHostFromUrl(url)).toBeUndefined();
+      expect(catalogHostFromUrl(url)).toBe(new URL(url).hostname);
     }
     expect(catalogHostFromUrl('https://gemini.google.com/u/2/app/1')).toBe('gemini.google.com');
     expect(isEligibleCatalogHost('gemini.google.com')).toBe(true);

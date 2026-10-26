@@ -6,6 +6,7 @@ import {
   type GeminiSelectorView,
   type GeminiSelectorOperation,
 } from '@/core/gemini/selectors';
+import { locatorSiteForHost } from '@/core/selectors/sites';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/activity-packaged.json';
 
 interface ActivitySendIntent {
@@ -52,7 +53,7 @@ export function resolveActivitySendIntent(
 ): GeminiSelectorOperation<ActivitySendIntent> {
   const bundle = getBundledGeminiSelectorView();
   const view = getGeminiSelectorView();
-  if (location.hostname !== 'gemini.google.com' || !view.remoteKeys.has('activity.inputs'))
+  if (!view.remoteKeys.has('activity.inputs') || locatorSiteForHost(location.hostname) !== 'gemini')
     return { value: readIntent(event, bundle), view: bundle };
   const bundled = readIntent(event, bundle, true);
   return resolveGeminiSelectorOperationInView(

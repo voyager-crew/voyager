@@ -12,7 +12,9 @@
  * - The send control has no test id: the composer form's `button[type=submit]`.
  * - Earlier conversations of the tab stay in the DOM under `display: none`.
  */
+import { withPageSemanticSelectors } from '@/core/selectors';
 import { findComposer } from '@/core/services/composer';
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 import {
   createChatGptPage,
   readConversationId,
@@ -32,21 +34,32 @@ import {
   resolveVisibleConversationRoot,
 } from '@/pages/content/export/adapter/chatgptThread';
 
+import {
+  chatgptComposerRootOf,
+  resolveChatgptComposer,
+  resolveChatgptSend,
+} from '../../chatgptComposerTargets';
+
 /** The protocol's id shape; a new chat's provisional `local-…:<uuid>` id never passes. */
 const CONVERSATION_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
-export const USER_UNIT_SELECTOR = '[data-chatgpt-search-unit-key$=":user"]';
-const ASSISTANT_UNIT_SELECTOR = '[data-chatgpt-search-unit-key$=":assistant"]';
+export const USER_UNIT_SELECTOR = chatgptPageData.userUnit;
+const ASSISTANT_UNIT_SELECTOR = chatgptPageData.assistantUnit;
 const MESSAGE_IDS_ATTRIBUTE = 'data-chatgpt-search-message-ids';
 const REPLY_ID_ATTRIBUTE = 'data-chatgpt-selection-message-id';
-export const ASSISTANT_HEADING_SELECTOR = 'h4[data-conversation-role]';
-const TURN_STATE_ATTRIBUTE = 'data-talvt-turn-state';
-const TURN_STATE_COMPLETE = 'complete';
-const THINKING_SELECTOR =
-  'span.loading-shimmer, [aria-busy="true"], [role="progressbar"], progress, .result-streaming, [data-message-streaming="true"], [data-is-streaming="true"]';
-const SUBMIT_SELECTOR = 'button[type="submit"]';
+const ASSISTANT_HEADING_SELECTOR = chatgptPageData.assistantHeading;
+const TURN_STATE_ATTRIBUTE = chatgptPageData.turnStateAttribute;
+const TURN_STATE_COMPLETE = chatgptPageData.turnStateComplete;
+const THINKING_SELECTOR = chatgptPageData.thinking;
+const SUBMIT_SELECTOR = chatgptPageData.submit;
 
 export function siteOf(adapter: SiteAdapter | null): SiteAdapter {
-  return adapter ?? chatgptAdapter;
+  return withPageSemanticSelectors(adapter ?? chatgptAdapter, [
+    'composer',
+    'composerRoot',
+    'sendButton',
+    'userTurn',
+    'assistantTurn',
+  ]);
 }
 
 /** Compare texts as the editor and the thread render them: line breaks and runs of spaces vary. */
@@ -65,11 +78,14 @@ export function settledConversationId(pathname: string = location.pathname): str
 }
 
 export function findComposerField(adapter: SiteAdapter | null): HTMLElement | null {
-  return findComposer(siteOf(adapter)) ?? findComposer(CHATGPT_COMPOSER_SELECTOR);
+  return resolveChatgptComposer(
+    () => findComposer(chatgptAdapter) ?? findComposer(CHATGPT_COMPOSER_SELECTOR),
+    adapter,
+  );
 }
 
 export function composerFormOf(field: HTMLElement): HTMLElement {
-  return field.closest<HTMLElement>('form') ?? field.parentElement ?? field;
+  return chatgptComposerRootOf(field) ?? field.parentElement ?? field;
 }
 
 export function isEnabledButton(button: HTMLButtonElement): boolean {
@@ -85,21 +101,25 @@ function queryAll<T extends Element>(root: ParentNode, selector: string): T[] {
 }
 
 /** The composer form's own submit button, unique; the site data and older test ids as fallbacks. */
-export function findSendButton(
-  field: HTMLElement,
-  adapter: SiteAdapter | null,
-): HTMLButtonElement | null {
+function findBundledSendButton(field: HTMLElement): HTMLButtonElement | null {
   const own = queryAll<HTMLButtonElement>(composerFormOf(field), SUBMIT_SELECTOR).filter(
     isRendered,
   );
   if (own.length === 1) return own[0];
   if (own.length > 1) return null;
-  for (const selector of [siteOf(adapter).selectors.sendButton, CHATGPT_SEND_CONTROL_SELECTOR]) {
+  for (const selector of [chatgptAdapter.selectors.sendButton, CHATGPT_SEND_CONTROL_SELECTOR]) {
     if (!selector) continue;
     const found = queryAll<HTMLButtonElement>(document, selector).filter(isRendered);
     if (found.length === 1 && found[0] instanceof HTMLButtonElement) return found[0];
   }
   return null;
+}
+
+export function findSendButton(
+  field: HTMLElement,
+  adapter: SiteAdapter | null,
+): HTMLButtonElement | null {
+  return resolveChatgptSend(field, adapter, () => findBundledSendButton(field));
 }
 
 /** A stop control in a rendered composer, by its known label or its inline-svg shape. */

@@ -10,6 +10,7 @@ import type { ExtractedContent } from '@/features/export/services/DOMContentExtr
 import { extractExportCodeBlock } from '@/features/export/services/exportCodeBlocks';
 import { resolveExportMessageContent } from '@/features/export/services/exportContentRoots';
 import { normalizeText } from '@/features/export/services/exportDomPolicy';
+import { getExportReadProfiles } from '@/features/export/services/exportSiteData';
 import type { SiteAdapter } from '@/features/plugins/types';
 
 import {
@@ -207,12 +208,14 @@ export function buildGeminiAdapter(
   acceptedView?: GeminiSelectorView,
 ): ExportPlatformAdapter {
   const current = acceptedView ?? getGeminiSelectorView();
+  const profiles = getExportReadProfiles(site.id);
   // Extraction is synchronous; one probe chooses the image tier before any output is emitted.
   let imageSearchSelector = bundledGeminiSearchImageSelector();
   const contentView = (element: HTMLElement, role: 'user' | 'assistant') =>
     acceptedView ?? checkedGeminiContentView(element, role, current);
   return {
     site,
+    siteId: site.id,
     getUserSelectors: geminiUserTurnSelectors,
     getAssistantSelectors: geminiAssistantTurnSelectors,
     extractConversationTitle,
@@ -225,10 +228,7 @@ export function buildGeminiAdapter(
         contentView(element, 'assistant'),
       );
       if (current.remoteKeys.has('imageExport.searchHosts')) {
-        const imageRoot =
-          content.closest(
-            'model-response, .model-response, .presented-response-container, .response-container, response-container',
-          ) || content;
+        const imageRoot = content.closest(profiles['export.responseOwner']) || content;
         imageSearchSelector = resolveGeminiSearchImageSelector(imageRoot, current);
       }
       return content;

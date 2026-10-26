@@ -31,6 +31,7 @@ import type {
   ConversationReadyResult,
   SwitchableMode,
 } from '@/features/bridge/protocol';
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 import type { LocalizedLabels } from '@/features/plugins/sites/sections/modelPickerData';
 import type { SiteAdapter } from '@/features/plugins/types';
 import { isRendered } from '@/pages/content/export/adapter/chatgptThread';
@@ -44,7 +45,7 @@ const SHELL_TIMEOUT_MS = 30_000;
 const MODE_SWITCH_TIMEOUT_MS = 5_000;
 const SURFACE_MODE_STORAGE_KEY = 'oai/apps/tpp/chat-surface-mode';
 /** Measured on 2026-10-18: the sidebar's home link, an in-app route to the new-chat page. */
-const HOME_LINK_SELECTOR = 'nav a[href="/"]';
+const HOME_LINK_SELECTOR = chatgptPageData.homeLink;
 // Structural first; ChatGPT's earlier test ids as a fallback. Unverified on the current DOM.
 const LOGIN_CONTROL_SELECTOR = [
   'a[href*="/auth/login"]',
@@ -55,10 +56,9 @@ const LOGIN_CONTROL_SELECTOR = [
 
 function composerLabels(field: HTMLElement): string[] {
   const labels = [
-    field.getAttribute('aria-label'),
-    field.getAttribute('aria-placeholder'),
-    field.getAttribute('placeholder'),
-    field.querySelector('[data-placeholder]')?.getAttribute('data-placeholder') ?? null,
+    ...chatgptPageData.composerLabelAttributes.map((name) => field.getAttribute(name)),
+    field.querySelector(chatgptPageData.composerPlaceholder)?.getAttribute('data-placeholder') ??
+      null,
   ];
   return labels.map((label) => label?.trim() ?? '').filter((label) => label.length > 0);
 }

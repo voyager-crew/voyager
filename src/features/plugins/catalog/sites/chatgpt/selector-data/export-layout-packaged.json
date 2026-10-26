@@ -1,0 +1,40 @@
+{
+  "controls": [
+    "#conversation-header-actions",
+    "[data-testid=\"share-chat-button\"]",
+    "[data-testid=\"conversation-options-button\"]"
+  ],
+  "broadControls": ["[aria-label*=\"pro\" i]", "[aria-label*=\"advanced\" i]"],
+  "canvasOwner": ":not(*)",
+  "canvasContent": ":not(*)",
+  "fullscreenCanvas": ":not(*)",
+  "inactiveCanvas": "[hidden], [aria-hidden=\"true\"]",
+  "turns": "[data-message-author-role]",
+  "interactive": "button, a[href], [role=\"button\"]",
+  "avoidRow": true,
+  "overlaySidebar": [
+    "[data-test-id=\"side-nav\"]",
+    "side-navigation",
+    "mat-sidenav",
+    "aside",
+    "nav",
+    ".side-nav",
+    ".sidenav",
+    ".chat-history-nav"
+  ],
+  "fallbackRoot": "main",
+  "alignmentCanvas": [
+    "#chat-history",
+    "infinite-scroller.chat-history",
+    ".chat-history-scroll-container",
+    "chat-window-content",
+    "main chat-window-content"
+  ],
+  "alignmentComposer": [
+    "rich-textarea",
+    "[aria-label*=\"Enter a prompt\"]",
+    "[aria-label*=\"prompt\"]",
+    "[aria-label*=\"Gemini\"]",
+    "[contenteditable=\"true\"][aria-label]"
+  ]
+}

@@ -51,11 +51,12 @@ Gemini draft slots are per pathname, not per account; the catalog draft primitiv
 
 ### Catalog page data
 
-Consumer Gemini can receive page-locator fixes through the single online catalog
+Every supported site can receive its own page-locator fixes through the single online catalog
 (D14 in [remote/DECISIONS.md](../remote/DECISIONS.md)). The shared **Online updates**
 setting governs requests; OFF blocks automatic and manual checks. Its host file
 carries `site.locators`, while official plugins, CSS, identity and interaction
-protocols stay packaged. Gemini Enterprise and AI Studio remain catalog-ineligible.
+protocols stay packaged. Gemini Enterprise uses Gemini profiles and guards; both
+AI Studio hosts use AI Studio profiles.
 The page takes one resolved profile snapshot at startup; new fixes or disabling
 updates apply after a user refresh, without automatic reload or native remount.
 

@@ -70,7 +70,7 @@ export function detectTopFrame(): boolean {
 
 /**
  * D4 trigger. Only the top frame of a page that an ENABLED plugin targets
- * may ask for a check. Native Gemini locator checks belong to page startup;
+ * may ask for a check. Native-site locator checks belong to page startup;
  * embedded companion frames and pages without an enabled plugin stay silent.
  */
 export function maybeRequestCatalogRefresh(
@@ -80,7 +80,7 @@ export function maybeRequestCatalogRefresh(
   request: (host: string) => void,
 ): void {
   if (!page.host || !page.isTopFrame) return;
-  // Gemini startup already requests its locator check; plugin reconciliation must not duplicate it.
+  // Native page startup already requests its locator check; plugin reconciliation must not duplicate it.
   if (isStaticallyInjectedHost(page.host)) return;
   if (!hasEnabledPluginForUrl(manifests, state, page.url)) return;
   request(page.host);

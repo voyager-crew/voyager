@@ -4,6 +4,7 @@ import { chatGptTurnHash, loadChatGptStarHashes } from '@/features/savedLibrary/
 
 import type { ExportMessage } from '../conversationCollector';
 import type { ExportTurnReader } from '../exportSite';
+import { chatgptExportData, CHATGPT_USER_BUBBLE } from './chatgptExportData';
 import {
   LOGGED_OUT_ASSISTANT_SELECTOR,
   LOGGED_OUT_MESSAGE_SELECTOR,
@@ -18,13 +19,13 @@ import {
 import type { ExportPlatformAdapter } from './platform/contract';
 import type { ExportSelectionOptions } from './type';
 
-const LOGGED_OUT_USER_SELECTOR = '[data-user-message-bubble]';
+const LOGGED_OUT_USER_SELECTOR = CHATGPT_USER_BUBBLE;
 /**
  * A reply still streaming: its message carries `data-message-streaming` with an
  * empty value (measured live). Its Stop button sits outside `main`, where the
  * desktop check looks, so that check alone never fires on this page.
  */
-const STREAMING_MESSAGE_SELECTOR = '[data-message-streaming]:not([data-message-streaming="false"])';
+const STREAMING_MESSAGE_SELECTOR = chatgptExportData['export.loggedOutStreaming'];
 
 /**
  * Reads ChatGPT's logged-out conversation page (see `chatgptLoggedOutDom.ts`),

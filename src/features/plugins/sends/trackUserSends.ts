@@ -22,10 +22,10 @@ import type { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import { matchesAnyPattern } from '@/features/plugins/sites/matchPattern';
 import { parseSiteConversation } from '@/features/plugins/sites/siteConversation';
 import type { SiteAdapter } from '@/features/plugins/types';
-import { isSendActionButton } from '@/pages/content/sendBehavior/sendButton';
-import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 
+import { startPendingSend } from './pendingSend';
 import { type SendInputs, sendInputsOf } from './sendInputs';
+import { sendTargets } from './sendTargets';
 
 /** A site's send inputs (`sendInputsOf`), plus how to tell a chat the host keeps nowhere. */
 export interface SendSite extends SendInputs {
@@ -74,20 +74,6 @@ export function sendConversationKey(site: SendSite, href: string): string | null
   return parseSiteConversation(namespace, href)?.key ?? null;
 }
 
-/** A send whose message never showed up (the host was still answering, say) is forgotten after this. */
-const PENDING_SEND_MS = 30_000;
-
-type PendingSend = {
-  readonly sentAt: number;
-  /** The chat it was sent in. */
-  readonly conversationKey: string;
-  /** User turns on the page when it was sent. */
-  readonly known: ReadonlySet<string>;
-  /** The prompt it submitted, without whitespace; empty for a file sent alone. */
-  readonly prompt: string;
-  readonly disposers: Array<() => void | Promise<void>>;
-};
-
 /** Text compared without whitespace, which the composer and the rendered message lay out differently. */
 const compact = (text: string): string => text.replace(/[\s\u200b]+/g, '');
 
@@ -101,43 +87,20 @@ export function trackUserSends(
   report: (send: UserSend) => void,
   doc: Document = document,
 ): void {
-  let pending: PendingSend | null = null;
+  let stopPending: (() => void) | null = null;
+  scope.effect(() => () => {
+    stopPending?.();
+    stopPending = null;
+  });
   /** Set while one submission's events arrive: its Enter or click, then its form's submit. */
   let submitting = false;
 
   const keyedTurns = (): Array<{ turn: Element; key: string }> =>
-    Array.from(doc.querySelectorAll(site.userTurn), (turn) => ({
+    Array.from(doc.querySelectorAll(sendTargets(site, doc).userTurn), (turn) => ({
       turn,
       key: readTurnKey(turn, site.turnKeyAttributes),
     })).filter((entry): entry is { turn: Element; key: string } => entry.key !== null);
   const routeConversation = (): string | null => sendConversationKey(site, location.href);
-
-  const forget = (): void => {
-    pending?.disposers.forEach((dispose) => void dispose());
-    pending = null;
-  };
-
-  const check = (): void => {
-    if (!pending) return;
-    // A send adds the newest turn; older ones mounting while it settles are not it.
-    const newest = keyedTurns().at(-1);
-    if (!newest || pending.known.has(newest.key)) return;
-    // Exactly its prompt: a refused prompt stays unsent, and the chat's own last
-    // message hydrating next must not pass for it. A file sent alone has no prompt.
-    if (pending.prompt !== '' && compact(textWithLatexSource(newest.turn)) !== pending.prompt)
-      return;
-    const { conversationKey, sentAt } = pending;
-    forget();
-    if (routeConversation() === conversationKey)
-      report({ conversationKey, turnKey: newest.key, at: sentAt });
-  };
-
-  const onRoute = (): void => {
-    if (!pending) return;
-    // Leaving the chat: its old turns would take the send's place.
-    if (routeConversation() !== pending.conversationKey) forget();
-    else check();
-  };
 
   /** Whether a submit carries a prompt or a file; the host sends nothing from an empty composer. */
   const hasDraft = (fields: readonly Element[], form: Element | null): boolean =>
@@ -157,26 +120,36 @@ export function trackUserSends(
     // One submission dispatches its events in one task; a later send is its own, with its own time.
     submitting = true;
     scope.timer(() => (submitting = false), 0);
-    forget();
-    pending = {
-      sentAt: Date.now(),
-      conversationKey,
-      known: new Set(keyedTurns().map(({ key }) => key)),
-      prompt,
-      disposers: [
-        scope.observe(doc.body, { childList: true, subtree: true }, check),
-        scope.effect(() => watchRouteChanges(onRoute), 'user-sends:route'),
-        scope.timer(forget, PENDING_SEND_MS),
-      ],
-    };
+    stopPending?.();
+    stopPending = startPendingSend(
+      {
+        sentAt: Date.now(),
+        conversationKey,
+        known: new Set(keyedTurns().map(({ key }) => key)),
+        prompt,
+      },
+      {
+        doc,
+        signal: scope.signal,
+        conversation: routeConversation,
+        report,
+        newest: () => {
+          const newest = keyedTurns().at(-1);
+          return newest
+            ? { key: newest.key, prompt: compact(textWithLatexSource(newest.turn)) }
+            : null;
+        },
+      },
+    );
   };
 
-  const composerForm = (target: Element): HTMLFormElement | null => {
-    const form = target.closest('form');
-    return form?.querySelector(site.composer) ? form : null;
+  const composerForm = (target: Element): Element | null => {
+    const selectors = sendTargets(site, doc);
+    const form = selectors.composerRoot ? target.closest(selectors.composerRoot) : null;
+    return form?.querySelector(selectors.composer) ? form : null;
   };
-  const sendFrom = (form: HTMLFormElement): void =>
-    onSend(Array.from(form.querySelectorAll(site.composer)), form);
+  const sendFrom = (form: Element): void =>
+    onSend(Array.from(form.querySelectorAll(sendTargets(site, doc).composer)), form);
 
   // Capture phase: these run before the host handles the send and renders its message.
   scope.on(
@@ -184,8 +157,11 @@ export function trackUserSends(
     'keydown',
     (event) => {
       if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
-      const field = event.target instanceof Element ? event.target.closest(site.composer) : null;
-      if (field) onSend([field], field.closest('form'));
+      const field =
+        event.target instanceof Element
+          ? event.target.closest(sendTargets(site, doc).composer)
+          : null;
+      if (field) onSend([field], composerForm(field));
     },
     { capture: true },
   );
@@ -193,8 +169,10 @@ export function trackUserSends(
     doc,
     'click',
     (event) => {
-      const button = event.target instanceof Element ? event.target.closest('button') : null;
-      if (!button || button.disabled || !isSendActionButton(button)) return;
+      const sendButton = sendTargets(site, doc).sendButton;
+      const button =
+        event.target instanceof Element && sendButton ? event.target.closest(sendButton) : null;
+      if (!button || button.matches(':disabled, [aria-disabled="true"]')) return;
       const form = composerForm(button);
       if (form) sendFrom(form);
     },

@@ -59,8 +59,7 @@ export function hostCatalogBackoffMs(failureCount: number): number {
  * anything with a path are rejected so the file name is a plain
  * `<host>.json` and per-artifact frame subdomains never cause a lookup each.
  *
- * Gemini consumer pages use the shared catalog for locator profiles only.
- * Gemini Business and AI Studio remain outside this channel (D14).
+ * Gemini (including Enterprise) and AI Studio use the shared catalog for locator profiles.
  * The same host rule covers pages, popup and background checks.
  */
 export function isEligibleCatalogHost(host: string): boolean {
@@ -92,7 +91,7 @@ export function hostCatalogFileUrl(baseUrl: string, host: string): string {
 
 /**
  * D4 trigger: a page may ask for a catalog check only when at least one
- * ENABLED plugin targets it. Native Gemini locator updates have their own
+ * ENABLED plugin targets it. Packaged site locator updates have their own
  * eligibility in the refresher. A user-imported (`local.*`) plugin
  * never counts: the catalog cannot update it, so enabling one must not make
  * Voyager contact the catalog host about that site. Only an explicit

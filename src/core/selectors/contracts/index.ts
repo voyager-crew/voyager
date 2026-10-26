@@ -1,0 +1,79 @@
+import {
+  GEMINI_SELECTOR_PROFILE_GROUPS,
+  GEMINI_SELECTOR_PROFILE_KEYS,
+} from '../../gemini/selectors/types';
+import type { SiteSelectorContract } from '../types';
+import {
+  AISTUDIO_SURFACE_FILES,
+  AISTUDIO_SURFACE_GROUPS,
+  AISTUDIO_SURFACE_KEYS,
+} from './aistudioSurfaces';
+import { CHATGPT_ACTION_GROUPS, CHATGPT_ACTION_KEYS } from './chatgptActions';
+import { EXPORT_GROUPS, EXPORT_KEYS } from './export';
+import { GEMINI_SELECTOR_FILES } from './gemini';
+import {
+  INPUT_SITE_FILES,
+  INPUT_SITE_GROUPS,
+  INPUT_SITE_KEYS,
+  INPUT_SEMANTIC_KEYS,
+  INPUT_SEMANTIC_GROUPS,
+} from './inputSurfaces';
+
+const EXPORT_FILE = { file: 'export.json', keys: EXPORT_KEYS };
+
+export const SITE_SELECTOR_CONTRACTS: Readonly<Record<string, SiteSelectorContract>> = {
+  gemini: {
+    keys: GEMINI_SELECTOR_PROFILE_KEYS,
+    groups: GEMINI_SELECTOR_PROFILE_GROUPS,
+    files: GEMINI_SELECTOR_FILES,
+  },
+  aistudio: {
+    keys: [...INPUT_SITE_KEYS.aistudio, ...INPUT_SEMANTIC_KEYS.aistudio, ...AISTUDIO_SURFACE_KEYS],
+    groups: [
+      ...INPUT_SITE_GROUPS.aistudio,
+      ...INPUT_SEMANTIC_GROUPS.aistudio,
+      ...AISTUDIO_SURFACE_GROUPS,
+    ],
+    files: [...INPUT_SITE_FILES.aistudio, ...AISTUDIO_SURFACE_FILES],
+  },
+  chatgpt: {
+    keys: [
+      ...INPUT_SITE_KEYS.chatgpt,
+      ...INPUT_SEMANTIC_KEYS.chatgpt,
+      ...CHATGPT_ACTION_KEYS,
+      ...EXPORT_KEYS,
+    ],
+    groups: [
+      ...INPUT_SITE_GROUPS.chatgpt,
+      ...INPUT_SEMANTIC_GROUPS.chatgpt,
+      ...CHATGPT_ACTION_GROUPS,
+      ...EXPORT_GROUPS,
+    ],
+    files: [
+      ...INPUT_SITE_FILES.chatgpt,
+      { file: 'actions.json', keys: CHATGPT_ACTION_KEYS },
+      EXPORT_FILE,
+    ],
+  },
+  claude: {
+    keys: [...INPUT_SITE_KEYS.claude, ...INPUT_SEMANTIC_KEYS.claude, ...EXPORT_KEYS],
+    groups: [...INPUT_SITE_GROUPS.claude, ...INPUT_SEMANTIC_GROUPS.claude, ...EXPORT_GROUPS],
+    files: [...INPUT_SITE_FILES.claude, EXPORT_FILE],
+  },
+  deepseek: {
+    keys: [...INPUT_SITE_KEYS.deepseek, ...INPUT_SEMANTIC_KEYS.deepseek, ...EXPORT_KEYS],
+    groups: [...INPUT_SITE_GROUPS.deepseek, ...INPUT_SEMANTIC_GROUPS.deepseek, ...EXPORT_GROUPS],
+    files: [...INPUT_SITE_FILES.deepseek, EXPORT_FILE],
+  },
+  kimi: {
+    keys: [...INPUT_SITE_KEYS.kimi, ...INPUT_SEMANTIC_KEYS.kimi, ...EXPORT_KEYS],
+    groups: [...INPUT_SITE_GROUPS.kimi, ...INPUT_SEMANTIC_GROUPS.kimi, ...EXPORT_GROUPS],
+    files: [...INPUT_SITE_FILES.kimi, EXPORT_FILE],
+  },
+};
+
+export function getSiteSelectorContract(siteId: string): SiteSelectorContract | undefined {
+  return Object.hasOwn(SITE_SELECTOR_CONTRACTS, siteId)
+    ? SITE_SELECTOR_CONTRACTS[siteId]
+    : undefined;
+}

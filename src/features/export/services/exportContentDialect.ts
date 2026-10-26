@@ -10,6 +10,7 @@ export type ExtractedContentFlags = Pick<
  * message. A hook that returns true has consumed the element.
  */
 export interface ExportContentDialect {
+  readonly siteId?: string;
   resolveAssistantContent?: (element: HTMLElement) => HTMLElement;
   getUserTextLines?: (element: HTMLElement) => NodeListOf<HTMLElement>;
   extractUserImage: (element: HTMLElement) => NodeListOf<HTMLImageElement>;

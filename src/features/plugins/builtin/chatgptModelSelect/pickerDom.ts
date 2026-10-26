@@ -1,3 +1,5 @@
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
+import chatgptSite from '@/features/plugins/catalog/sites/chatgpt/site.json';
 /**
  * Read-only views of ChatGPT's chat-mode model picker, measured on chatgpt.com
  * (zh-CN) on 2026-10-18. Structure comes from ARIA and ChatGPT's own data
@@ -56,23 +58,20 @@ export function mergedLabels(table: Readonly<Record<string, readonly string[]>>)
 
 /**
  * ChatGPT's marker on the picker trigger, the same in every UI language, as
- * measured; the site's `pageHooks.modelPickerTrigger` replaces it remotely.
+ * measured. It stays packaged: a remote marker alone cannot identify a model control.
  */
-export const DEFAULT_TRIGGER_MARKER =
-  'button[aria-haspopup="menu"][data-composer-navigation-target="reasoning"]';
+const DEFAULT_TRIGGER_MARKER = chatgptSite.pageHooks.modelPickerTrigger;
 
 /** The one rendered picker trigger in `scope`, else null (none, or ambiguous). */
-export function findTrigger(
-  scope: ParentNode,
-  data: ModelPickerSection,
-  marker: string = DEFAULT_TRIGGER_MARKER,
-): HTMLElement | null {
+export function findTrigger(scope: ParentNode, data: ModelPickerSection): HTMLElement | null {
   // The aria-label is translated into each of ChatGPT's UI languages; the marker is not.
-  const marked = Array.from(scope.querySelectorAll<HTMLElement>(marker)).filter(isRendered);
+  const marked = Array.from(scope.querySelectorAll<HTMLElement>(DEFAULT_TRIGGER_MARKER)).filter(
+    isRendered,
+  );
   if (marked.length > 0) return marked.length === 1 ? marked[0] : null;
   const labels = mergedLabels(data.triggerLabels);
   const found = Array.from(
-    scope.querySelectorAll<HTMLElement>('button[aria-haspopup="menu"][aria-label]'),
+    scope.querySelectorAll<HTMLElement>(chatgptPageData.pickerLabelledTrigger),
   ).filter(
     (button) =>
       labels.has(normalizeLabel(button.getAttribute('aria-label') ?? '')) && isRendered(button),
@@ -139,9 +138,9 @@ export function readStatus(menu: HTMLElement, data: ModelPickerSection): PickerS
 
 /**
  * ChatGPT's marker on the effort row, the same in every UI language, as
- * measured; the site's `pageHooks.effortControl` replaces it remotely.
+ * measured. It stays packaged with the slider/status interaction protocol.
  */
-export const DEFAULT_EFFORT_CONTROL = '[role="menuitem"][data-reasoning-slider="true"]';
+const DEFAULT_EFFORT_CONTROL = chatgptSite.pageHooks.effortControl;
 
 /** The step a status names by its two numbers (place, count), in either order; else null. */
 export function statusStep(text: string): { readonly now: number; readonly max: number } | null {
@@ -168,11 +167,7 @@ function readNumber(element: Element, name: string): number | null {
   return Number(raw);
 }
 
-export function readPicker(
-  menu: HTMLElement,
-  data: ModelPickerSection,
-  effortControl: string = DEFAULT_EFFORT_CONTROL,
-): PickerReading {
+export function readPicker(menu: HTMLElement, data: ModelPickerSection): PickerReading {
   const radios = Array.from(menu.querySelectorAll('[role="menuitemradio"]')).map((radio) => ({
     label: normalizeLabel(radio.textContent ?? ''),
     checked: radio.getAttribute('aria-checked') === 'true',
@@ -187,6 +182,6 @@ export function readPicker(
     if (now !== null && min !== null && max !== null) slider = { element, now, min, max };
   }
   const status = readStatus(menu, data);
-  if (sliders.length === 0) slider = rowSlider(menu, effortControl, status);
+  if (sliders.length === 0) slider = rowSlider(menu, DEFAULT_EFFORT_CONTROL, status);
   return { radios, slider, status };
 }

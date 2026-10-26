@@ -11,10 +11,10 @@
  */
 import type { StateEffects } from '@/features/plugins/runtime/stateMachine';
 
-import type { GeminiTurnView } from './types';
+import type { SiteSelectorView } from './types';
 
 /** How hydration ended: the stored read in time, the bundle, or the page retired first. */
-export type GeminiSelectorSettlement = 'read' | 'fallback' | 'retired';
+export type SiteSelectorSettlement = 'read' | 'fallback' | 'retired';
 
 export type HydrationState =
   | { readonly status: 'reading' }
@@ -22,12 +22,12 @@ export type HydrationState =
       readonly status: 'settled';
       readonly by: 'read' | 'fallback';
       /** The remote view this page installed, if any. */
-      readonly view: GeminiTurnView | null;
+      readonly view: SiteSelectorView | null;
     }
-  | { readonly status: 'retired'; readonly view: GeminiTurnView | null };
+  | { readonly status: 'retired'; readonly view: SiteSelectorView | null };
 
 export type HydrationEvent =
-  | { readonly type: 'read'; readonly view: GeminiTurnView | null }
+  | { readonly type: 'read'; readonly view: SiteSelectorView | null }
   | { readonly type: 'deadline' }
   /** The stored data changed while it was being read. */
   | { readonly type: 'invalidated' }
@@ -48,13 +48,13 @@ export interface HydrationPorts {
   readonly timeoutMs: number;
   read(): Promise<unknown>;
   /** The remote view a stored file yields, or null; throws when a selector does not parse. */
-  toView(raw: unknown): GeminiTurnView | null;
+  toView(raw: unknown): SiteSelectorView | null;
   /** Subscribes to changes that make a pending read stale; returns the unsubscribe. */
   invalidatedBy?(invalidate: () => void): () => void;
-  install(view: GeminiTurnView): void;
+  install(view: SiteSelectorView): void;
   /** Restores the bundle unless another hydration installed its own view since. */
-  release(view: GeminiTurnView): void;
-  settle(settlement: GeminiSelectorSettlement): void;
+  release(view: SiteSelectorView): void;
+  settle(settlement: SiteSelectorSettlement): void;
 }
 
 export function createHydrationEffects(

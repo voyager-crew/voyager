@@ -1,4 +1,7 @@
-import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/vim-packaged.json';
+import {
+  packagedInputSelector,
+  packagedInputSelectors,
+} from '@/core/services/composer/siteInputData';
 
 import type { VimMode } from './vimCommands';
 import { getVimComposerMount } from './vimComposerMount';
@@ -52,7 +55,7 @@ export function createVimPresentation(
   let hudRetryAttempts = 0;
 
   function queryHudMountCandidates(): HTMLElement[] {
-    const selectors = packaged['vim.hud'];
+    const selectors = packagedInputSelectors('vim.hud');
 
     const candidates: HTMLElement[] = [];
     const seen = new Set<HTMLElement>();
@@ -69,11 +72,11 @@ export function createVimPresentation(
   }
 
   function getCrossSiteEditMount(input: HTMLElement | null): HTMLElement | null {
-    if (!input?.matches('textarea[aria-label="Edit message"]')) return null;
+    if (!input?.matches(packagedInputSelector('vim.crossSiteEdit'))) return null;
 
     let candidate = input.parentElement;
     for (let depth = 0; candidate && candidate !== document.body && depth < 8; depth++) {
-      if (candidate.querySelectorAll('button').length >= 2) {
+      if (candidate.querySelectorAll(packagedInputSelector('vim.editActions')).length >= 2) {
         return candidate;
       }
       candidate = candidate.parentElement;
@@ -92,7 +95,7 @@ export function createVimPresentation(
       findVimInput({ requireVisible: false });
     const editForm =
       input && isEditPromptInput(input)
-        ? input.closest<HTMLElement>(packaged['vim.editForm'].join(','))
+        ? input.closest<HTMLElement>(packagedInputSelector('vim.editForm'))
         : null;
 
     if (editForm?.isConnected) {
@@ -111,7 +114,7 @@ export function createVimPresentation(
       return { element: crossSiteComposer, input, placement: 'floating' };
     }
 
-    const composer = input?.closest<HTMLElement>(packaged['vim.host'].join(','));
+    const composer = input?.closest<HTMLElement>(packagedInputSelector('vim.host'));
 
     if (composer?.isConnected) {
       return { element: composer, input, placement: 'composer' };
@@ -139,7 +142,7 @@ export function createVimPresentation(
     }
 
     const inputFallback = document.querySelector<HTMLElement>(
-      packaged['vim.inputFallback'].join(','),
+      packagedInputSelector('vim.inputFallback'),
     )?.parentElement;
     return inputFallback instanceof HTMLElement
       ? { element: inputFallback, input, placement: 'inline' }

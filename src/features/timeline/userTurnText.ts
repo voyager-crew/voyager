@@ -1,4 +1,4 @@
-const USER_CONTENT_SELECTOR = '[data-user-message-bubble], .query-text, .ds-collapsible-text';
+import { timelineSiteData } from './siteTextData';
 const EXCLUDED_SELECTOR =
   'button, [role="button"], script, style, template, model-response, [data-message-author-role="assistant"], [data-conversation-role="assistant"]';
 const BLOCK_TAGS = new Set([
@@ -49,7 +49,8 @@ function injected(element: Element): boolean {
  * Full user prompt as plain text, read from the connected original so host CSS decides what is hidden.
  * Reads computed styles for the whole turn: call it only when a star needs text, never per collect.
  */
-export function userTurnText(element: HTMLElement): string {
+export function userTurnText(element: HTMLElement, url?: string): string {
+  const userContentSelector = timelineSiteData(element.ownerDocument, url)['timeline.userText'];
   const styles = new Map<Element, CSSStyleDeclaration>();
   const style = (node: Element): CSSStyleDeclaration => {
     let value = styles.get(node);
@@ -74,9 +75,9 @@ export function userTurnText(element: HTMLElement): string {
     }
     return true;
   };
-  const content = element.matches(USER_CONTENT_SELECTOR)
+  const content = element.matches(userContentSelector)
     ? element
-    : (Array.from(element.querySelectorAll(USER_CONTENT_SELECTOR)).find(reachable) ?? element);
+    : (Array.from(element.querySelectorAll(userContentSelector)).find(reachable) ?? element);
 
   let text = '';
   let syntheticNewline = false;

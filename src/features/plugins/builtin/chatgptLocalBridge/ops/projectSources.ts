@@ -25,6 +25,7 @@ import type {
   ProjectUploadParams,
   ProjectUploadResult,
 } from '@/features/bridge/protocol';
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 import type { ProjectsSection } from '@/features/plugins/sites/sections/projectsData';
 import type { SiteAdapter } from '@/features/plugins/types';
 import { isRendered } from '@/pages/content/export/adapter/chatgptThread';
@@ -51,7 +52,7 @@ const REMOVE_TIMEOUT_MS = 10_000;
 const UPLOAD_PROGRESS_EVERY_MS = 5_000;
 /** Kept back from the grant so the op reports its own failure before the lease runs out. */
 const DEADLINE_MARGIN_MS = 1_000;
-const BUSY_SELECTOR = '[aria-busy="true"], [role="progressbar"], progress';
+const BUSY_SELECTOR = chatgptPageData.sourceBusy;
 /** The settle windows and the progress beat run on the clock, which no wake reports. */
 const CLOCK_RECHECK_MS = 250;
 

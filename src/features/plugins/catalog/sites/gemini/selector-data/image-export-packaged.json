@@ -8,7 +8,6 @@
   "imageExport.sourceAnchor": ["a.source"],
   "imageExport.caption": ["figcaption", ".caption", ".image-caption", ".attribution"],
   "imageExport.sourceLabel": [".source .label"],
-  "imageExport.sourcePrompt": [".attachment-container.search-images"],
   "imageExport.youtubeThumbnails": [
     ".attachment-container.youtube img.thumbnail",
     "youtube-block img.thumbnail",

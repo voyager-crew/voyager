@@ -1,0 +1,5 @@
+{
+  "navigation.libraryLink": [
+    ".nav-content a[href=\"/library\"], .nav-content a[href$=\"aistudio.google.com/library\"]"
+  ]
+}

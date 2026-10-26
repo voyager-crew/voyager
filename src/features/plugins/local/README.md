@@ -123,7 +123,8 @@ plugin's own CSS can still restyle anything on Gemini, Voyager's UI and its
 **Gemini and AI Studio.** The packaged official plugins
 (`catalog/sites/{gemini,aistudio}/` and fixed-id entries in `builtin/`) and local
 plugins target them; their manifests stay packaged or local. The catalog serves
-page-locator profiles for consumer Gemini without publishing these manifests. The official ones replace native modules feature by
+page-locator profiles for Gemini (including Enterprise) and both AI Studio hosts
+without publishing these manifests. The official ones replace native modules feature by
 feature. Stage 7 retires migrated native startup callbacks and registrations; the content script
 admits each official plugin where its native module used to start, and the
 plugin follows the native setting it replaces (`storage/legacySettingBindings.ts`).
@@ -228,9 +229,9 @@ official setting wins on a cold page, while a mounted holder keeps the rail unti
 Turn off **Show Timeline** before enabling a local replacement; turn the local plugin off before
 returning to the official rail. Shared manifests stay within `https://gemini.google.com/*` and
 cannot override turn, route or account identity. Business, Enterprise and custom coverage
-do not admit this native-data rail. Consumer Gemini can receive page-locator fixes
-through the shared online catalog; a local plugin does not change catalog eligibility
-or update settings. Gemini Enterprise and AI Studio remain packaged-only.
+do not admit this native-data rail. Every supported site can receive its own
+page-locator fixes through the shared online catalog, including Gemini Enterprise
+and AI Studio; a local plugin does not change catalog eligibility or update settings.
 A minimal Gemini plugin:
 
 ```json

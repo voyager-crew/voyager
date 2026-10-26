@@ -11,6 +11,7 @@
 import { LAYER_ATTR } from '@/core/ui/layer';
 import { detectRTL } from '@/core/utils/rtl';
 import type { Dispose, PluginScope } from '@/features/plugins/runtime/pluginScope';
+import { timelineSiteData } from '@/features/timeline/siteTextData';
 import { type CoachmarkResult, hasSeenCoachmark, showCoachmark } from '@/pages/content/coachmark';
 import { FLOATING_PANEL_CLASS } from '@/pages/content/folder/floatingTree/shared';
 import { getTranslationSyncUnsafe as t } from '@/utils/i18n';
@@ -23,13 +24,7 @@ const FOLDER_ICON =
   '<svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640v400q0 33-23.5 56.5T800-160H160Z"/></svg>';
 
 /** The site's own menus and dialogs, plus the folder picker and Voyager's confirms. */
-const OVERLAY_SELECTOR = [
-  '[role="menu"]',
-  '[role="dialog"]',
-  '[role="alertdialog"]',
-  `.${FOLDER_PICKER_CLASS}`,
-  `[${LAYER_ATTR}="popover"]`,
-].join(',');
+const OVERLAY_SELECTOR = [`.${FOLDER_PICKER_CLASS}`, `[${LAYER_ATTR}="popover"]`].join(',');
 
 /**
  * Neither blocks the guide: the guide itself, and the floating folder panel, a
@@ -39,7 +34,9 @@ const NOT_OVERLAYS = `.gv-coach, .${FLOATING_PANEL_CLASS}`;
 
 /** CSS-hidden panels stay mounted; only visible overlays should block the guide. */
 export function hasOpenOverlay(doc: Document = document): boolean {
-  for (const element of doc.querySelectorAll<HTMLElement>(OVERLAY_SELECTOR)) {
+  for (const element of doc.querySelectorAll<HTMLElement>(
+    `${timelineSiteData(doc)['guide.overlays'].join(',')},${OVERLAY_SELECTOR}`,
+  )) {
     if (element.closest(NOT_OVERLAYS)) continue;
     if (element.hidden || element.closest('[aria-hidden="true"], [data-state="closed"]')) continue;
     const rect = element.getBoundingClientRect();

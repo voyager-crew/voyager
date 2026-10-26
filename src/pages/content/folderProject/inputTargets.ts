@@ -7,6 +7,7 @@ import {
   resolveGeminiSelectorOperationInView,
   type GeminiSelectorOperation,
 } from '@/core/gemini/selectors';
+import { locatorSiteForHost } from '@/core/selectors/sites';
 import { isEditable } from '@/core/services/composer/find';
 
 import { findChatInput } from '../chatInput';
@@ -18,7 +19,7 @@ export function resolveProjectInput(
   const key = 'project.inputs';
   const view = getGeminiSelectorView();
   const bundle = getBundledGeminiSelectorView();
-  if (location.hostname !== 'gemini.google.com' || !view.remoteKeys.has(key))
+  if (!view.remoteKeys.has(key) || locatorSiteForHost(location.hostname) !== 'gemini')
     return { value: findChatInput(), view: bundle };
   const collect = (selectors: readonly string[]) => [
     ...new Set(

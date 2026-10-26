@@ -1,3 +1,4 @@
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 import type { PluginScope } from '@/features/plugins/runtime/pluginScope';
 
 import {
@@ -67,11 +68,7 @@ export function isTemporaryChat(): boolean {
     `${toggle.getAttribute('aria-label') || ''} ${toggle.textContent || ''}`.toLowerCase();
   const pressed = toggle.getAttribute('aria-pressed');
   return (
-    pressed === 'true' ||
-    label.includes('close temporary') ||
-    label.includes('turn off temporary') ||
-    label.includes('关闭临时') ||
-    label.includes('關閉暫時')
+    pressed === 'true' || chatgptPageData.temporaryOffLabels.some((text) => label.includes(text))
   );
 }
 

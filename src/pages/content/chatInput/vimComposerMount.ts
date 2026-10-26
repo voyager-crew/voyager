@@ -1,3 +1,5 @@
+import { packagedInputSelector } from '@/core/services/composer/siteInputData';
+
 /** Keep the HUD near its configured composer without attaching it to the page body. */
 
 /** Badge height plus its gap: the strip above the mount the badge renders into. */
@@ -36,11 +38,10 @@ export function getVimComposerMount(
   acceptWrapper = false,
 ): HTMLElement | null {
   if (!input) return null;
-  if (input.matches('#prompt-textarea[contenteditable="true"]')) {
-    return unclippedMount(input.closest('form'));
-  }
-  if (input.matches('[data-testid="chat-input"][contenteditable="true"]')) {
-    return unclippedMount(input.closest('fieldset'));
+  if (input.matches(packagedInputSelector('vim.mountInput', input.ownerDocument))) {
+    return unclippedMount(
+      input.closest(packagedInputSelector('vim.mountRoot', input.ownerDocument)),
+    );
   }
   if (!configuredSelector) return null;
   let composer = input;

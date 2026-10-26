@@ -3306,8 +3306,8 @@
     "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "يتحقق من تحديثات الإضافات وإصلاحات التعرّف على صفحات Gemini عبر voyager.nagi.fun. يرسل اسم الموقع فقط، دون ملفات ارتباط أو محتوى الصفحة. إيقافه يمنع التحقق التلقائي واليدوي.",
-    "description": "Explains catalog updates, Gemini page detection fixes, request contents and the off setting"
+    "message": "يتحقق من تحديثات الإضافات وإصلاحات التعرّف على صفحات المواقع المدعومة عبر voyager.nagi.fun. يرسل اسم الموقع فقط، دون ملفات ارتباط أو محتوى الصفحة. إيقافه يمنع التحقق التلقائي واليدوي.",
+    "description": "Explains shared catalog updates, supported-site page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {
     "message": "التحقق كل",

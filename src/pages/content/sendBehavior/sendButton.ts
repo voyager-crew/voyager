@@ -1,9 +1,17 @@
 import type { EffectiveSendKey } from '@/core/services/composer/sendKeys/sendKeyCoordinator';
 import { isImeKeyEvent } from '@/core/services/composer/sendKeys/sendKeyIntent';
-import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/composer-send-packaged.json';
+import { inputSiteId } from '@/core/services/composer/siteInputData';
+import aistudioPackaged from '@/features/plugins/catalog/sites/aistudio/selector-data/input-packaged.json';
+import geminiPackaged from '@/features/plugins/catalog/sites/gemini/selector-data/composer-send-packaged.json';
+
+function sendData(doc: Document = document): typeof geminiPackaged {
+  return inputSiteId(doc) === 'aistudio' ? aistudioPackaged : geminiPackaged;
+}
 
 /** Selectors and semantic fallbacks shared by send-related content features. */
-export const SEND_BUTTON_SELECTORS = packaged['composer.sendCandidates'];
+export function sendButtonSelectors(doc: Document): readonly string[] {
+  return sendData(doc)['composer.sendCandidates'];
+}
 
 const ACTION_BUTTON_LABEL_ATTRIBUTES = [
   'aria-label',
@@ -22,10 +30,6 @@ const INITIAL_SEND_LABEL_PATTERN =
 const UPDATE_BUTTON_LABEL_PATTERN =
   /\b(update|save|confirm)\b|更新|保存|actualizar|guardar|mettre à jour|enregistrer|atualizar|salvar|обновить|сохранить|更新する|保存する|업데이트|저장|تحديث|حفظ/i;
 
-const SEND_COMPOSER_SELECTORS = packaged['composer.actionOwners'];
-
-const SEND_INPUT_SELECTOR = packaged['composer.actionInput'];
-
 function getButtonLabel(button: HTMLButtonElement): string {
   const labels = ACTION_BUTTON_LABEL_ATTRIBUTES.map((attribute) => button.getAttribute(attribute));
   labels.push(button.textContent);
@@ -33,20 +37,23 @@ function getButtonLabel(button: HTMLButtonElement): string {
 }
 
 function hasSendActionIcon(button: HTMLButtonElement): boolean {
-  const icon = button.querySelector<HTMLElement>(packaged['composer.actionIcon']);
+  const icon = button.querySelector<HTMLElement>(
+    sendData(button.ownerDocument)['composer.actionIcon'],
+  );
   const iconName = (icon?.getAttribute('fonticon') || icon?.textContent || '').trim().toLowerCase();
   return iconName === 'send' || iconName === 'play_arrow';
 }
 
 /** Gemini uses the same send-button wrapper for Stop during generation. */
 export function isUnavailableSendControl(control: HTMLElement): boolean {
-  if (control.closest(packaged['composer.unavailableAncestors'])) return true;
+  if (control.closest(sendData(control.ownerDocument)['composer.unavailableAncestors']))
+    return true;
   const button = control instanceof HTMLButtonElement ? control : control.querySelector('button');
   if (!button) return control.matches(':disabled');
   return (
     button.disabled ||
     button.matches('[aria-disabled="true"]') ||
-    !!button.querySelector(packaged['composer.stopIcons']) ||
+    !!button.querySelector(sendData(control.ownerDocument)['composer.stopIcons']) ||
     /\b(stop|cancel)\b|停止|取消|중지|отмен|останов|إيقاف/i.test(getButtonLabel(button))
   );
 }
@@ -63,7 +70,7 @@ export function isSemanticSendActionButton(button: HTMLButtonElement): boolean {
 /** Recognizes selector-based, localized-label, and icon-only send/action buttons. */
 export function isSendActionButton(button: HTMLButtonElement): boolean {
   if (isUnavailableSendControl(button)) return false;
-  const matchesKnownSelector = SEND_BUTTON_SELECTORS.some((selector) => {
+  const matchesKnownSelector = sendButtonSelectors(button.ownerDocument).some((selector) => {
     try {
       return button.matches(selector) || Boolean(button.querySelector(selector));
     } catch {
@@ -86,25 +93,27 @@ export function findClosestSendActionButton(target: Element): HTMLButtonElement 
 /** Distinguishes an edit submission from the initial Edit action. */
 export function isUpdateActionButton(button: HTMLButtonElement): boolean {
   return (
-    button.matches(packaged['composer.updateButton']) ||
+    button.matches(sendData(button.ownerDocument)['composer.updateButton']) ||
     UPDATE_BUTTON_LABEL_PATTERN.test(getButtonLabel(button))
   );
 }
 
 /** Finds the editable input owned by a recognized send/update button. */
 export function findInputForSendActionButton(button: HTMLButtonElement): HTMLElement | null {
+  const data = sendData(button.ownerDocument);
+  const inputSelector = data['composer.actionInput'];
   let ancestor = button.parentElement;
   while (ancestor && ancestor !== document.body) {
-    if (SEND_COMPOSER_SELECTORS.some((selector) => ancestor?.matches(selector))) {
+    if (data['composer.actionOwners'].some((selector) => ancestor?.matches(selector))) {
       const active = document.activeElement;
       if (
         active instanceof HTMLElement &&
         ancestor.contains(active) &&
-        active.matches(SEND_INPUT_SELECTOR)
+        active.matches(inputSelector)
       ) {
         return active;
       }
-      const input = ancestor.querySelector<HTMLElement>(SEND_INPUT_SELECTOR);
+      const input = ancestor.querySelector<HTMLElement>(inputSelector);
       if (input) return input;
     }
     ancestor = ancestor.parentElement;

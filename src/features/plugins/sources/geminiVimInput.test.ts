@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// @vitest-environment-options { "url": "https://gemini.google.com/app" }
 /**
  * The packaged Gemini Vim plugin must look exactly like the native module it
  * replaces: same composer, same HUD layout. Runs the real manifest params,

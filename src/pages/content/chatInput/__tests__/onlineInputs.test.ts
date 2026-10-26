@@ -2,9 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getGeminiSelectorView } from '@/core/gemini/selectors';
 import { insertIntoComposer, readComposer } from '@/core/services/composer';
+import { installNativeEditingMock } from '@/tests/nativeEditing';
 
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
-import { findChatInput } from '../index';
+import { findChatInput, insertTextIntoChatInput } from '../index';
 
 let retire: (() => void) | undefined;
 const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
@@ -74,12 +75,27 @@ describe('online Gemini composer inputs', () => {
     expect(readComposer(findChatInput({ online: true })!)).toBe('first');
   });
 
-  it('repairs a renamed main input while prompt and Vim readers retain their bundled result', async () => {
+  it('repairs a renamed main input while explicit bundled readers retain their result', async () => {
     document.body.innerHTML = `<div class="text-input-field"><section id="renamed" contenteditable="true">new draft</section></div>`;
     showInputs();
     retire = await installGeminiSelectorPatch({ 'composer.candidates': ['#renamed'] });
     expect(readComposer(findChatInput({ online: true })!)).toBe('new draft');
     expect(findChatInput()).toBeNull();
+  });
+
+  it('prompt insertion uses the proven repaired composer without touching another draft', async () => {
+    const restoreEditing = installNativeEditingMock();
+    try {
+      document.body.innerHTML =
+        '<div class="text-input-field"><section id="renamed" contenteditable="true">draft</section></div><aside><section contenteditable="true">untouched</section></aside>';
+      showInputs();
+      retire = await installGeminiSelectorPatch({ 'composer.candidates': ['#renamed'] });
+      expect(insertTextIntoChatInput(' added')).toBe(true);
+      expect(readComposer(field('renamed'))).toBe('draft added');
+      expect(document.querySelector('aside')!.textContent).toBe('untouched');
+    } finally {
+      restoreEditing();
+    }
   });
 
   it.each([
@@ -137,13 +153,18 @@ describe('online Gemini composer inputs', () => {
     expect(readComposer(findChatInput({ online: true })!)).toBe('main');
   });
 
-  it('an online snapshot cannot change the input read on another host', async () => {
+  it('Enterprise uses Gemini fixes while another site keeps its own input data', async () => {
     document.body.innerHTML = `<div class="text-input-field"><section id="main" contenteditable="true">main</section></div>`;
     showInputs();
     retire = await installGeminiSelectorPatch({ 'composer.candidates': ['#main'] });
     Object.defineProperty(window, 'location', {
       configurable: true,
       value: { hostname: 'business.gemini.google' },
+    });
+    expect(readComposer(findChatInput({ online: true })!)).toBe('main');
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { hostname: 'aistudio.google.com' },
     });
     expect(findChatInput({ online: true })).toBeNull();
     Object.defineProperty(window, 'location', {

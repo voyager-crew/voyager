@@ -3,8 +3,7 @@
   "vim.editInputs": [
     ".query-content.edit-mode textarea",
     ".edit-container textarea",
-    "textarea[aria-label=\"Edit prompt\"]",
-    "textarea[aria-label=\"Edit message\"]"
+    "textarea[aria-label=\"Edit prompt\"]"
   ],
   "vim.sendTarget": [
     ".update-button",

@@ -39,6 +39,10 @@ describe('native popup catalog updates', () => {
     (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
     vi.clearAllMocks();
     vi.stubGlobal('chrome', extensionApi);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 503 })),
+    );
     for (const area of ['sync', 'local'] as const) {
       extensionApi.storage[area].get.mockImplementation((keys: unknown, callback?: unknown) => {
         const data = keys && typeof keys === 'object' && !Array.isArray(keys) ? { ...keys } : {};
@@ -66,10 +70,11 @@ describe('native popup catalog updates', () => {
 
   it.each([
     ['https://gemini.google.com/u/1/app', true],
-    ['https://business.gemini.google/', false],
-    ['https://aistudio.google.com/prompts/new_chat', false],
+    ['https://business.gemini.google/', true],
+    ['https://aistudio.google.com/prompts/new_chat', true],
+    ['https://aistudio.google.cn/', true],
   ] as const)(
-    'shares catalog updates only on the supported native host %s',
+    'shares the single catalog control on the supported native host %s',
     async (url, online) => {
       extensionApi.tabs.query.mockResolvedValue([{ id: 7, url }]);
       await act(async () => {
@@ -93,7 +98,7 @@ describe('native popup catalog updates', () => {
       await act(async () => button!.click());
       expect(extensionApi.runtime.sendMessage).toHaveBeenCalledWith({
         type: PLUGIN_CATALOG_REFRESH_MESSAGE,
-        payload: { host: 'gemini.google.com', force: true },
+        payload: { host: new URL(url).hostname, force: true },
       });
       await act(async () => controls[0].click());
       expect(extensionApi.storage.sync.set).toHaveBeenCalledWith({

@@ -1,0 +1,22 @@
+{
+  "history.dragHosts": [
+    "[data-test-id^=\"history-item\"]",
+    "[role=\"listitem\"]",
+    ".mat-mdc-list-item",
+    "li"
+  ],
+  "history.preferred": [".prompt-link"],
+  "history.click": ["a.prompt-link"],
+  "history.observe": ["title", "aria-label", "href"],
+  "history.titleAttributes": ["aria-label", "title"],
+  "library.archivableLink": ["a[href^=\"/prompts/\"], a.name-btn[href*=\"/prompts/\"]"],
+  "library.dropRows": ["tr.mat-mdc-row, tr[mat-row]"],
+  "library.dropLink": ["a[href*=\"/prompts/\"]"],
+  "navigation.promptLink": ["ms-prompt-history-v3 a.prompt-link"],
+  "navigation.anchorSteps": [" > nav > .empty-space", " > nav > .bottom-actions"],
+  "navigation.navChild": [":scope > nav"],
+  "navigation.empty": [":scope > .empty-space"],
+  "navigation.bottom": [":scope > .bottom-actions"],
+  "navigation.expanded": [".expanded"],
+  "navigation.historyRoot": ["ms-prompt-history-v3"]
+}

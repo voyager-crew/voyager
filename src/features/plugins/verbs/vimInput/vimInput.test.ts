@@ -68,6 +68,7 @@ describe('vimInput primitive', () => {
     expect(mocks.startInputVimMode).toHaveBeenCalledWith({
       forceEnabled: true,
       composerSelector: 'textarea.ds-scroll-area',
+      resolveComposer: expect.any(Function),
       signal: scope.signal,
     });
     expect(counters[0]()).toBe(1);

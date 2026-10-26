@@ -1,3 +1,4 @@
+import { locatorSiteForHost } from '@/core/selectors/sites';
 import { findComposer, isEditable, type FindComposerOptions } from '@/core/services/composer/find';
 
 import {
@@ -41,7 +42,10 @@ function resolveGeminiInput(
   const key = 'composer.candidates';
   const bundle = getBundledGeminiSelectorView();
   const doc = options.doc ?? document;
-  if (doc.defaultView?.location.hostname !== 'gemini.google.com' || !view.remoteKeys.has(key))
+  if (
+    !view.remoteKeys.has(key) ||
+    locatorSiteForHost(doc.defaultView?.location.hostname ?? '') !== 'gemini'
+  )
     return read(bundle.profiles[key]);
   const bundled = candidates(doc, bundle.profiles[key]);
   return resolveGeminiSelectorOperationInView(

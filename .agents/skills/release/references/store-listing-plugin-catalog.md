@@ -6,42 +6,17 @@
 
 Voyager uses one online catalog at
 `https://voyager.nagi.fun/catalog/hosts/<site host>.json`. It may carry plugin
-updates and page detection fixes for Gemini. The same setting, interval and
+updates and site-specific page detection fixes for all supported sites. The same setting, interval and
 catalog cache govern both. This disclosure applies to Chrome, Edge, Firefox and
 Safari builds with remote catalog updates enabled.
 
 ## 1. Listing paragraph (English)
 
-> Voyager works locally. “Online updates” is on by default. On Gemini, or another
-> supported site where you have enabled a plugin, Voyager may check
-> voyager.nagi.fun for validated catalog data when you open the page, at your
-> selected interval (6 hours by default). Opening the extension popup reads the
-> local cache; its manual check can skip the interval while updates are on.
-> Turning updates off blocks automatic and manual catalog requests. The switch
-> and interval are included in browser sync and settings backups; downloaded
-> catalogs stay on the device.
->
-> This same channel may provide fixes for finding page elements on
-> gemini.google.com, including conversation, sidebar, input, menu, export and
-> image features. Gemini’s official plugins, CSS, account and content identity
-> rules, and click behavior remain packaged. Gemini Enterprise and AI Studio
-> use only packaged data. New Gemini fixes, withdrawals and switching updates
-> off apply after you refresh the page yourself. Open pages keep their current
-> snapshot; Voyager does not reload them automatically.
->
-> Catalog requests send no cookies, account or extension identifiers, or page
-> or conversation content. The server sees ordinary request metadata, such as
-> IP address, User-Agent and the site hostname in the URL. No remote JavaScript
-> or WebAssembly is executed. Announcement checks and optional cloud sync have
-> separate controls.
+> **Online catalog updates**: the “Online updates” setting is on by default. On supported Gemini (including Enterprise), AI Studio, ChatGPT, Claude, DeepSeek and Kimi pages, Voyager may fetch `https://voyager.nagi.fun/catalog/hosts/<site host>.json` over HTTPS when you open the page. Opening the extension popup reads the local cache; its button requests a manual check. Automatic checks follow your selected interval from the last attempt (6 hours by default; 1 hour, 6 hours, 24 hours or manual only), with backoff after failures. A manual check can skip that interval while updates are on. Turning updates off blocks automatic and manual catalog requests. The switch and interval use browser sync storage and settings backup; downloaded catalogs stay on the device. This one channel carries each site’s own page detection data. Online fixes cover Gemini conversations, sidebar, input, menus, exports and images; AI Studio input, library rows and Library navigation links; ChatGPT, Claude and Kimi input; ChatGPT, Claude, DeepSeek and Kimi exported reply content; and ChatGPT local-bridge reply content. Gemini and AI Studio official plugins and CSS, and all sites’ identity rules, destructive actions and click/input policies remain packaged. Fixes, withdrawals and switching updates off apply after you refresh the page yourself; open pages keep their current snapshot without automatic reload. Unusable or unproved fixes fall back to the bundled read for the entire operation. Catalog requests are plain GETs without cookies, account or extension identifiers, or page or conversation content. The server sees ordinary connection metadata, including IP address, User-Agent and the site hostname in the URL. Catalog CSS and JSON are validated before use; no remote JavaScript or WebAssembly is executed. Announcements and optional cloud sync have separate controls. voyager.nagi.fun uses static hosting behind a Cloudflare proxy; the Voyager project does not log or retain these requests, and hosting providers handle connection metadata under their own privacy policies.
 
 ## 2. Listing paragraph (Simplified Chinese)
 
-> Voyager 在本地运行。「在线更新」默认开启。在 Gemini，或已启用插件的其他受支持网站，打开页面时，Voyager 可按所选间隔（默认 6 小时）向 voyager.nagi.fun 检查经过校验的目录数据。打开扩展弹窗只读取本地缓存；开启更新时，可通过其中的手动检查跳过间隔。关闭更新后禁止自动和手动目录请求。开关与间隔参与浏览器同步和设置备份，下载的目录留在本机。
->
-> 同一通道也可提供 gemini.google.com 的页面识别修复，覆盖对话、侧边栏、输入、菜单、导出和图片等功能。Gemini 官方插件、CSS、账户与内容身份规则及点击行为仍随扩展打包。Gemini Enterprise 和 AI Studio 只使用包内数据。Gemini 的新修复、撤回和关闭更新在用户自行刷新后生效；已打开页面保留当前快照，Voyager 不会自动重载。
->
-> 目录请求不发送 Cookie、账户或扩展标识、页面或对话内容。服务器可见 IP 地址、User-Agent 和 URL 中的网站主机名等常规请求元数据。不执行远程 JavaScript 或 WebAssembly。公告检查和可选云同步各有开关。
+> **在线目录更新**：“在线更新”默认开启。在受支持的 Gemini（含 Enterprise）、AI Studio、ChatGPT、Claude、DeepSeek 和 Kimi 页面，打开页面时，Voyager 可能通过 HTTPS 获取 `https://voyager.nagi.fun/catalog/hosts/<网站主机名>.json`。打开弹窗只读取本地缓存，其中的按钮可发起手动检查。自动检查从上次尝试起按所选间隔进行（默认 6 小时，可选 1 小时、6 小时、24 小时或仅手动），失败后会延后重试。开启时，手动检查可跳过间隔；关闭后禁止自动和手动目录请求。开关与间隔保存在浏览器同步存储中，并包含在设置备份内；下载的目录留在本机。同一通道提供各站点自己的页面识别数据。在线修复覆盖 Gemini 的对话、侧边栏、输入、菜单、导出和图片，AI Studio 的输入、资料库列表和资料库导航链接，ChatGPT、Claude、Kimi 的输入，ChatGPT、Claude、DeepSeek、Kimi 的导出回复正文，以及 ChatGPT 本地桥接的回复正文。Gemini 与 AI Studio 的官方插件和 CSS，以及所有站点的身份规则、删除等操作和点击、输入协议仍随扩展打包。新修复、撤回和关闭更新在用户自行刷新后生效；已打开页面保留当前快照，不自动重载。修复不可用或无法独立验证时，整次操作使用包内数据。目录请求是普通 GET，不携带 Cookie、账户或扩展标识、页面或对话内容。服务器可见 IP 地址、User-Agent 和 URL 中的网站主机名等常规连接元数据。目录中的 CSS 和 JSON 使用前经过校验，不执行远程 JavaScript 或 WebAssembly。公告和可选云同步各有开关。voyager.nagi.fun 是由 Cloudflare 代理的静态托管站点；Voyager 项目不记录、不保存这些请求，托管方按其自身隐私政策处理连接元数据。
 
 The same disclosure is available in the other eight supported locales:
 [Arabic](store-listing-gemini/ar.md), [Spanish](store-listing-gemini/es.md),
@@ -60,7 +35,7 @@ site hostname in the URL. The listing and privacy pages disclose this; the
 store’s classification still depends on its review.
 
 If AMO review disagrees, ship the Firefox build with
-`VOYAGER_PLUGIN_CATALOG_REMOTE=off`. It disables this channel, including Gemini
+`VOYAGER_PLUGIN_CATALOG_REMOTE=off`. It disables this channel, including all sites’
 page detection cache use, so only bundled plugin and page detection data apply.
 Remove the online-update listing paragraphs for that build. The flag does not
 disable announcements or user-requested cloud sync.
@@ -69,7 +44,7 @@ disable announcements or user-requested cloud sync.
 
 One-line answer for the data-usage questionnaire:
 
-> Voyager fetches public static catalog data, including Gemini page detection
+> Voyager fetches public static catalog data, including site-specific page detection
 > fixes, over HTTPS without cookies, identifiers, page content or conversation
 > content. The server sees the request’s IP address, User-Agent and site host.
 > “Online updates” is on by default; turning it off blocks automatic and manual
@@ -80,5 +55,5 @@ One-line answer for the data-usage questionnaire:
 - Privacy policy wording, all 10 locales: `docs/privacy.md` and
   `docs/<locale>/privacy.md`, under the online catalog updates bullet.
 - Implementation and gates: `src/features/plugins/remote/README.md` and
-  `src/core/gemini/selectors/README.md`.
+  `src/core/selectors/README.md`.
 - Build flag: `src/features/plugins/remote/config.ts`.

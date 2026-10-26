@@ -1,3 +1,6 @@
+import chatgptExportData from '@/features/plugins/catalog/sites/chatgpt/selector-data/export-packaged.json';
+import claudeSite from '@/features/plugins/catalog/sites/claude/site.json';
+
 import { type PluginManifest, hasNativeOps } from '../types';
 import { contract as conversationExportContract } from '../verbs/conversationExport/contract';
 import { AISTUDIO_BATCH_DELETE_MANIFEST } from './aistudioBatchDeleteManifest';
@@ -180,7 +183,7 @@ export const BUILTIN_PLUGINS: readonly PluginManifest[] = [
     matches: ['https://claude.ai/*'],
     params: {
       // Never open the onboarding guide over an active artifact frame.
-      yieldWhen: 'iframe[src*="claudeusercontent.com"]',
+      yieldWhen: claudeSite.selectors.sidePanel,
       // Claude's thread container names its conversation and changes it
       // in the render that swaps the turns: it decides star writes.
       conversationIdAttribute: 'data-conv-id',
@@ -197,7 +200,7 @@ export const BUILTIN_PLUGINS: readonly PluginManifest[] = [
     // written only for a turn whose reply, inside its item, names the
     // conversation the URL is on.
     params: {
-      turnItem: '[data-turn-key]',
+      turnItem: chatgptExportData['export.turnItem'],
       conversationIdAttribute: CHATGPT_CONVERSATION_ID_ATTRIBUTE,
       accountIdAttributes: ['data-theme-user-id', 'data-theme-account-id'],
     },

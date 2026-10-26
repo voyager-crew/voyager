@@ -1,5 +1,4 @@
 {
-  "export.markdown": [".markdown, .markdown-main-panel"],
   "export.presentedAncestor": [".presented-response-container"],
   "export.presentedContent": [".presented-response-container, .response-content"],
   "export.responseElement": ["response-element"],
@@ -15,5 +14,20 @@
     ".markdown",
     ".response-content",
     "response-element"
-  ]
+  ],
+  "export.messageContent": "message-content",
+  "export.thoughts": "model-thoughts, .thoughts-container, .thoughts-content",
+  "export.rawCode": "pre > code, [data-test-id=\"code-content\"]",
+  "export.codeOwner": "code-block",
+  "export.responseOwner": "model-response, .model-response, .presented-response-container, .response-container, response-container",
+  "export.walkMarkdown": ".markdown, .markdown-main-panel",
+  "export.markdown": [".markdown, .markdown-main-panel"],
+  "export.assistantFallback": [".markdown-main-panel, .markdown, .model-response-text"],
+  "export.fallbackClass": "markdown",
+  "export.sourcePrompt": ".attachment-container.search-images",
+  "export.sourcePromptMarkup": "attachment-container.search-images",
+  "export.collectorAnswer": "message-content, .markdown, .markdown-main-panel",
+  "export.menuResponseOwner": ".response-container, response-container, .model-response, model-response",
+  "export.userLinesFallback": ".query-text-line",
+  "export.attachmentPreviewOwner": "user-query-file-preview"
 }

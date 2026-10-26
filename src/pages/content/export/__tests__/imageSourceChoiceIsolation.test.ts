@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 
-import { GeminiSelectorService } from '@/core/gemini/selectors';
+import { SiteSelectorService } from '@/core/selectors';
 
 import { hasExportSearchImages } from '../exportSearchImages';
 
@@ -14,7 +14,7 @@ it.each([
   '$siteId source choice (already detected: $original) works without a Gemini page snapshot',
   ({ siteId, original }) => {
     // These source choices predate the Gemini channel and must not depend on its state.
-    vi.spyOn(GeminiSelectorService.prototype, 'getView').mockImplementation(() => {
+    vi.spyOn(SiteSelectorService.prototype, 'getView').mockImplementation(() => {
       throw new Error('No Gemini page snapshot is available');
     });
     const turn = original

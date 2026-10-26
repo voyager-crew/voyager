@@ -1,0 +1,5 @@
+{
+  "library.rows": ["tr.mat-mdc-row, tr[mat-row], tr[role=\"row\"]"],
+  "library.archivableRows": ["tr.mat-mdc-row, tr[mat-row]"],
+  "library.table": ["table.mat-mdc-table, mat-table"]
+}

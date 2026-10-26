@@ -4,6 +4,11 @@ import type {
   ExtractedContent,
 } from '@/features/export/services/DOMContentExtractor';
 
+import {
+  chatgptExportData,
+  CHATGPT_USER_BUBBLE,
+  CHATGPT_ASSISTANT_TURN,
+} from './chatgptExportData';
 import { mergeExtractedContent } from './chatgptShared';
 
 /**
@@ -25,12 +30,12 @@ import { mergeExtractedContent } from './chatgptShared';
  * - Conversations opened earlier in the tab stay in the DOM under a
  *   `display: none` ancestor, each with its own `main`.
  */
-export const TURN_ITEM_SELECTOR = '[data-turn-key]';
+export const TURN_ITEM_SELECTOR = chatgptExportData['export.turnItem'];
 const TURN_KEY_ATTRIBUTE = 'data-turn-key';
-export const USER_BUBBLE_SELECTOR = '[data-user-message-bubble]';
+export const USER_BUBBLE_SELECTOR = CHATGPT_USER_BUBBLE;
 /** The block that holds a prompt's bubble, its uploads and its action row. */
-const USER_UNIT_SELECTOR = '[data-chatgpt-search-unit-key]';
-export const ASSISTANT_REPLY_SELECTOR = '[data-chatgpt-selection-message-id]';
+const USER_UNIT_SELECTOR = chatgptExportData['export.userUnit'];
+export const ASSISTANT_REPLY_SELECTOR = CHATGPT_ASSISTANT_TURN;
 const REPLY_ID_ATTRIBUTE = 'data-chatgpt-selection-message-id';
 const MESSAGE_IDS_ATTRIBUTE = 'data-chatgpt-search-message-ids';
 /** The attributes {@link readTurnKey} and {@link readTurnFingerprint} read. */
@@ -39,25 +44,21 @@ export const TURN_VERSION_ATTRIBUTES: readonly string[] = [
   MESSAGE_IDS_ATTRIBUTE,
   REPLY_ID_ATTRIBUTE,
 ];
-const HISTORY_PENDING_SELECTOR = '[role="status"]';
+const HISTORY_PENDING_SELECTOR = chatgptExportData['export.historyPending'];
 /** The list's own wrapper: the history spinner and the items, nothing of the page around them. */
-const THREAD_LIST_SELECTOR = '[data-chatgpt-conversation-selection-target]';
-const ROOT_CANDIDATES = ['main', '[role="main"]'];
+const THREAD_LIST_SELECTOR = chatgptExportData['export.threadList'];
+const ROOT_CANDIDATES = chatgptExportData['export.roots'];
 
 // Unverified on the live DOM: no generated image, upload or streaming reply was
 // on screen when the selectors above were measured. These are the earlier
 // DOM's selectors, kept so those cases still export if ChatGPT kept them.
-const IMAGEGEN_SELECTOR = '[class*="group/imagegen-image"]';
+const IMAGEGEN_SELECTOR = chatgptExportData['export.imageGeneration'];
 const STOP_GENERATING_SELECTOR = [
   '[data-testid="stop-button"]',
   'button[aria-label*="stop generating" i]',
   'button[aria-label*="停止生成"]',
 ].join(',');
-const STREAMING_SELECTOR = [
-  '[data-message-streaming="true"]',
-  '[data-is-streaming="true"]',
-  '.result-streaming',
-].join(',');
+const STREAMING_SELECTOR = chatgptExportData['export.streaming'].join(',');
 const RENDERED_CONTENT_SELECTOR =
   'img, svg, canvas, pre, table, [data-math-source], [role="math"], .katex';
 
@@ -254,7 +255,7 @@ export function extractUserMessage(
     unit === bubble
       ? []
       : topLevelOnly(
-          Array.from(unit.querySelectorAll('img, [role="group"][aria-label]')).filter(
+          Array.from(unit.querySelectorAll(chatgptExportData['export.uploadCandidates'])).filter(
             (element) => !bubble.contains(element) && !element.closest('button'),
           ),
         );

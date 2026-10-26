@@ -12,10 +12,11 @@ Semantic anchors ChatGPT declares (use them as { "kind": "semantic", "key": … 
 - codeBlock: a rendered code block
 - composer: the prompt input the user types into
 - sidebar: the conversation list / navigation rail
+- headerActions: the top-right action cluster of the conversation view
 - scrollContainer: the element that scrolls the conversation
 - composerRoot: the container around the prompt input and its action buttons
 - sendButton: the button that sends the prompt (may exist only while the prompt is non-empty)
 
-ChatGPT does not declare thinkingBlock, sidePanel, headerActions: a plugin that relies on one of these is refused. Use a CSS selector instead.
+ChatGPT does not declare thinkingBlock, sidePanel: a plugin that relies on one of these is refused. Use a CSS selector instead.
 
 Primitives (native ops) and an optional "theme" accent are allowed on ChatGPT.

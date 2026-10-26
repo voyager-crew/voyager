@@ -202,9 +202,13 @@ describe('catalog locator sections', () => {
     });
     const registry = new SiteRegistry();
     registry.register(BUNDLE);
-    expect(resolveSiteAdapterForUrl('https://business.gemini.google/app', registry, remote)).toBe(
-      BUNDLE,
-    );
+    expect(
+      resolveSiteAdapterForUrl('https://business.gemini.google/app', registry, remote),
+    ).toMatchObject({
+      ...BUNDLE,
+      catalogRevision: 42,
+      locators: { 'turn.user': ['.repaired'] },
+    });
   });
 
   it('turning online updates off blocks automatic and manual requests; enabling uses the same host file', async () => {

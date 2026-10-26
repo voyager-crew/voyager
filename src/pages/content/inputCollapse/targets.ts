@@ -4,6 +4,7 @@ import {
   getGeminiSelectorView,
   resolveGeminiSelectorOperationInView,
 } from '@/core/gemini/selectors';
+import { locatorSiteForHost } from '@/core/selectors/sites';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/input-collapse-packaged.json';
 
 /** The original visual-island walk, shared only by pure reads. */
@@ -43,7 +44,10 @@ function resolveInputCollapseTargets(doc: Document): {
       nativeEditor: null,
     };
   };
-  if (doc.defaultView?.location.hostname !== 'gemini.google.com' || !view.remoteKeys.has(key))
+  if (
+    !view.remoteKeys.has(key) ||
+    locatorSiteForHost(doc.defaultView?.location.hostname ?? '') !== 'gemini'
+  )
     return read(bundle.profiles[key]);
   const bundled = read(bundle.profiles[key]);
   const inputs = bundled.wrappers.length ? [] : findOwnedGeminiMainInputs(doc);
@@ -86,7 +90,7 @@ function readCollapseElement(
   key: 'inputCollapse.emptyInputs' | 'inputCollapse.focus',
 ): { element: Element | null; native: boolean } {
   if (
-    root.ownerDocument.defaultView?.location.hostname === 'gemini.google.com' &&
+    locatorSiteForHost(root.ownerDocument.defaultView?.location.hostname ?? '') === 'gemini' &&
     getGeminiSelectorView().remoteKeys.has('inputCollapse.wrapper')
   ) {
     const accepted = resolveInputCollapseTargets(root.ownerDocument);

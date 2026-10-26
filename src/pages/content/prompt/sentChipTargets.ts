@@ -3,6 +3,7 @@ import {
   getGeminiSelectorView,
   resolveGeminiSelectorOperationInView,
 } from '@/core/gemini/selectors';
+import { locatorSiteForHost } from '@/core/selectors/sites';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/sent-chips-packaged.json';
 
 export interface SentChipTarget {
@@ -36,7 +37,10 @@ export function readSentChipTargets(root: ParentNode): SentChipTarget[] {
       };
     });
   const doc = root instanceof Document ? root : root.ownerDocument;
-  if (doc?.defaultView?.location.hostname !== 'gemini.google.com' || !view.remoteKeys.has(key))
+  if (
+    !view.remoteKeys.has(key) ||
+    locatorSiteForHost(doc?.defaultView?.location.hostname ?? '') !== 'gemini'
+  )
     return read(bundle.profiles[key]);
   const bundled = read(bundle.profiles[key]);
   const native = Array.from(root.querySelectorAll<HTMLElement>('user-query')).filter(

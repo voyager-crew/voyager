@@ -6,8 +6,10 @@ import {
   resolveGeminiSelectorOperationInView,
 } from '@/core/gemini/selectors';
 import { GEMINI_EXPORT_OVERLAY_PROFILE_KEYS } from '@/core/gemini/selectors/menuKeys';
+import { getPageSelectorSiteId } from '@/core/selectors';
 
 import type { ConversationAnchors } from './exportOverlayUi';
+import { exportLayoutData } from './toolbarTargets';
 
 type Surface = 'canvas' | 'composer';
 interface AlignmentRead {
@@ -21,6 +23,12 @@ export function resolveExportAlignmentTarget(
   anchors: ConversationAnchors,
   pick: (selectors: readonly string[], surface: Surface) => HTMLElement | null,
 ): HTMLElement | null {
+  const siteId = getPageSelectorSiteId();
+  if (siteId && siteId !== 'gemini') {
+    const layout = exportLayoutData();
+    // Preserve the original ordered alignment probes; a scrollContainer is not the same anchor.
+    return pick(layout.alignmentCanvas, 'canvas') ?? pick(layout.alignmentComposer, 'composer');
+  }
   const view = getGeminiSelectorView();
   const bundled = getBundledGeminiSelectorView();
   const online = GEMINI_EXPORT_OVERLAY_PROFILE_KEYS.some((key) => view.remoteKeys.has(key));

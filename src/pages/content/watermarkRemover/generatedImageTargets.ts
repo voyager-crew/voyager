@@ -3,6 +3,7 @@ import {
   getGeminiSelectorView,
   type GeminiSelectorView,
 } from '@/core/gemini/selectors';
+import { locatorSiteForHost } from '@/core/selectors/sites';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/generated-image-packaged.json';
 
 export const GENERATED_IMAGE_PACKAGED = packaged;
@@ -37,7 +38,7 @@ export function findGeneratedDownloadIcon(
     root.querySelector(selected.profiles['generatedImage.downloadIcon'].join(', '));
   const bundled = read(bundle);
   if (
-    root.ownerDocument.defaultView?.location.hostname !== 'gemini.google.com' ||
+    locatorSiteForHost(root.ownerDocument.defaultView?.location.hostname ?? '') !== 'gemini' ||
     !view.remoteKeys.has('generatedImage.downloadIcon')
   )
     return bundled;

@@ -22,19 +22,26 @@ function rect(left = 0, top = 0, width = 320, height = 24): DOMRect {
   } as DOMRect;
 }
 
+export function setVimTestSite(hostname: string): void {
+  Object.defineProperty(window, 'location', { configurable: true, value: { hostname } });
+}
+
 export function setupVimTestEnvironment(): void {
+  const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
   const rangeRects = Object.getOwnPropertyDescriptor(Range.prototype, 'getClientRects');
   const rangeBox = Object.getOwnPropertyDescriptor(Range.prototype, 'getBoundingClientRect');
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
     document.body.innerHTML = '';
+    setVimTestSite('gemini.google.com');
     mockCollapsedCaretRects();
   });
   afterEach(() => {
     document.body.innerHTML = '';
     document.querySelector('[data-vim-test-styles]')?.remove();
     vi.restoreAllMocks();
+    Object.defineProperty(window, 'location', originalLocation);
     for (const [key, descriptor] of [
       ['getClientRects', rangeRects],
       ['getBoundingClientRect', rangeBox],

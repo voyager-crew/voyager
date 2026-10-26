@@ -7,15 +7,17 @@
  * theme, the popup): a covering, valid, same-version remote site wins only
  * when its catalog revision is strictly newer. Bundled data wins every tie.
  */
+import { overlayPublishedSemanticSelectors } from '@/core/selectors/semanticProfiles';
 import { logger } from '@/core/services/LoggerService';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 
-import { allowsRemoteCatalog, isGeminiSelectorHost, packagedSiteForUrl } from '../sites/hostPolicy';
+import { allowsRemoteCatalog, packagedSiteForUrl } from '../sites/hostPolicy';
 import { matchesAnyPattern } from '../sites/matchPattern';
 import type { SiteRegistry } from '../sites/registry';
 import type { PluginSource, PluginSourceContext, SiteAdapter } from '../types';
 import { isRemotePluginCatalogEnabledAtBuild } from './config';
 import { loadHostCatalogCache, siteAdapterFromEntry } from './hostCatalogCache';
+import { protectSiteAdapterIdentity } from './siteIdentity';
 
 /** First site override any source offers for this context, or null. */
 export async function resolveSiteOverride(
@@ -44,20 +46,27 @@ export function resolveSiteAdapterForUrl(
   override: SiteAdapter | null,
 ): SiteAdapter | null {
   if (override && matchesAnyPattern(url, override.matches)) {
-    const bundled = registry.all().find((adapter) => adapter.id === override.id);
+    const bundled = registry.resolveByUrl(url);
+    // A remote matches list cannot introduce a host or borrow another site’s identity.
+    if (!bundled || bundled.id !== override.id) return bundled;
     // A later fetch of stale published data must not replace newer packaged selectors.
     if ((override.catalogRevision ?? 0) > (bundled?.catalogRevision ?? 0)) {
       if (packagedSiteForUrl(url) !== null) {
-        if (!bundled || bundled.id !== 'gemini' || !isGeminiSelectorHost(new URL(url).host)) {
+        if (!bundled || bundled.id !== packagedSiteForUrl(url)) {
           return registry.resolveByUrl(url);
         }
         return {
           ...bundled,
           catalogRevision: override.catalogRevision,
+          selectors: overlayPublishedSemanticSelectors(
+            bundled.id,
+            bundled.selectors,
+            override.selectors,
+          ),
           locators: override.locators,
         };
       }
-      return override;
+      return protectSiteAdapterIdentity(bundled, override);
     }
   }
   return registry.resolveByUrl(url);

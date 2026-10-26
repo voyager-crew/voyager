@@ -1,7 +1,14 @@
 import { readChatGptConversationPath } from '@/features/folder/sites/chatgptIdentity';
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 import type { SiteAdapter } from '@/features/plugins/types';
 
-import { chatgptAdapter } from '../../sites/adapters/chatgpt';
+import {
+  BUNDLED_NOTIFICATION_SELECTORS,
+  type ChatgptNotificationSelectors,
+  acceptsNotificationSelectors,
+  hasChangedNotificationSelectors,
+  notificationSelectorsOf,
+} from '../chatgptNotificationSelectors';
 
 /**
  * Read-only views of the ChatGPT page that the completion run inspects, as
@@ -28,7 +35,7 @@ import { chatgptAdapter } from '../../sites/adapters/chatgpt';
 
 // The `[data-turn-key]` item that holds one prompt and its reply; the adapter
 // only lists it as a key attribute (`turnKeyAttributes`), not as a container.
-const TURN_SELECTOR = '[data-turn-key]';
+const TURN_SELECTOR = chatgptPageData.turnItem;
 // The adapter's `assistantTurn` names the reply by this attribute; its value is the reply id.
 const REPLY_ID_ATTRIBUTE = 'data-chatgpt-selection-message-id';
 const LEGACY_STOP_SELECTOR = '[data-testid="stop-button"]';
@@ -37,27 +44,6 @@ const LEGACY_STOP_SELECTOR = '[data-testid="stop-button"]';
 const STOP_LABEL = /^(?:stop(?: streaming| generating)?|停止(?:生成)?)$/i;
 const ACTION_SCOPE_MAX_PARENT_DEPTH = 6;
 const MAX_TITLE_LENGTH = 80;
-
-interface ChatGptSelectors {
-  readonly userTurn: string;
-  readonly assistantTurn: string;
-  readonly composer: string;
-  readonly composerRoot: string;
-  readonly sendButton: string;
-}
-
-function selectorsOf(adapter: SiteAdapter | null): ChatGptSelectors {
-  // A published override may drop a key; the bundled site.json has them all.
-  const pick = (key: keyof ChatGptSelectors): string =>
-    adapter?.selectors[key] ?? chatgptAdapter.selectors[key];
-  return {
-    userTurn: pick('userTurn'),
-    assistantTurn: pick('assistantTurn'),
-    composer: pick('composer'),
-    composerRoot: pick('composerRoot'),
-    sendButton: pick('sendButton'),
-  };
-}
 
 function isRendered(element: Element): boolean {
   if (!(element instanceof HTMLElement)) return false;
@@ -103,9 +89,7 @@ export interface ChatGptPage {
   getPromptForReply(reply: HTMLElement | null): string;
 }
 
-export function createChatGptPage(adapter: SiteAdapter | null): ChatGptPage {
-  const selectors = selectorsOf(adapter);
-
+function readPage(selectors: ChatgptNotificationSelectors): ChatGptPage {
   /** The roots of the rendered composers; a hidden earlier conversation keeps its own. */
   const composerRoots = (): Element[] => {
     const roots = new Set<Element>();
@@ -184,6 +168,23 @@ export function createChatGptPage(adapter: SiteAdapter | null): ChatGptPage {
   };
 }
 
+/** Freeze data at startup; prove each current operation's DOM only when the data differs. */
+export function createChatGptPage(adapter: SiteAdapter | null): ChatGptPage {
+  const selected = notificationSelectorsOf(adapter);
+  const page = readPage(selected);
+  if (!hasChangedNotificationSelectors(selected)) return page;
+  const bundled = readPage(BUNDLED_NOTIFICATION_SELECTORS);
+  const current = () => (acceptsNotificationSelectors(selected) ? page : bundled);
+  return {
+    hasLabelledStopControl: () => current().hasLabelledStopControl(),
+    isAwaitingReply: () => current().isAwaitingReply(),
+    isStopControlTarget: (target) => current().isStopControlTarget(target),
+    isSendGesture: (event) => current().isSendGesture(event),
+    getLatestReply: () => current().getLatestReply(),
+    getPromptForReply: (reply) => current().getPromptForReply(reply),
+  };
+}
+
 /** Which reply, and what it says: a regenerated reply gets a new id, a new send a new node. */
 export function getReplyIdentity(reply: HTMLElement): string {
   return `${reply.getAttribute(REPLY_ID_ATTRIBUTE) ?? ''}|${normalizeText(reply.textContent)}`;
@@ -207,7 +208,7 @@ function actionScope(reply: HTMLElement): HTMLElement | null {
 export function hasReplyActions(reply: HTMLElement): boolean {
   const scope = actionScope(reply);
   if (!scope) return false;
-  return Array.from(scope.querySelectorAll('button')).some(
+  return Array.from(scope.querySelectorAll(chatgptPageData.replyActions)).some(
     (button) =>
       !reply.contains(button) &&
       !!(reply.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING),

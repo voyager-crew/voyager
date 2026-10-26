@@ -5,6 +5,7 @@ import {
   type GeminiSelectorOperation,
   type GeminiSelectorView,
 } from '@/core/gemini/selectors';
+import { locatorSiteForHost } from '@/core/selectors/sites';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/code-packaged.json';
 
 export const GEMINI_PACKAGED_CODE = packaged;
@@ -14,7 +15,8 @@ const SHELL_SELECTOR = packaged['code.shell'].join(', ');
 
 export function hasGeminiCodeFixes(doc: Document, view = getGeminiSelectorView()): boolean {
   return (
-    doc.defaultView?.location.hostname === 'gemini.google.com' && view.remoteKeys.has('code.host')
+    view.remoteKeys.has('code.host') &&
+    locatorSiteForHost(doc.defaultView?.location.hostname ?? '') === 'gemini'
   );
 }
 

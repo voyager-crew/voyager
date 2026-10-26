@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { SiteSelectorService } from '../../../selectors/service';
 import { getBundledGeminiTurnView } from '../bundle';
-import { GeminiSelectorService } from '../service';
+import type { GeminiSelectorProfileKey } from '../types';
 
 const patch = (selectors: unknown, catalogRevision = 2) => ({
   id: 'gemini',
@@ -9,7 +10,11 @@ const patch = (selectors: unknown, catalogRevision = 2) => ({
   locators: selectors,
 });
 
-function mount(service: GeminiSelectorService, read: () => Promise<unknown>, signal?: AbortSignal) {
+function mount(
+  service: SiteSelectorService<GeminiSelectorProfileKey>,
+  read: () => Promise<unknown>,
+  signal?: AbortSignal,
+) {
   return service.initialize({
     host: 'gemini.google.com',
     doc: document,
@@ -26,7 +31,7 @@ afterEach(() => {
 
 describe('Gemini page selector snapshot', () => {
   it('reads once and replaces an ordered list as a whole without filling it with old entries', async () => {
-    const service = new GeminiSelectorService();
+    const service = new SiteSelectorService<GeminiSelectorProfileKey>('gemini');
     const read = vi.fn(async () => patch({ 'turn.user': ['.new-second', '.new-first'] }));
     const lifetime = mount(service, read);
     await lifetime.ready;
@@ -41,7 +46,7 @@ describe('Gemini page selector snapshot', () => {
   });
 
   it('rejects the whole cached patch when one selector fails native parsing', async () => {
-    const service = new GeminiSelectorService();
+    const service = new SiteSelectorService<GeminiSelectorProfileKey>('gemini');
     const lifetime = mount(service, async () =>
       patch({ 'turn.user': ['.valid-new'], 'turn.assistant': ['['] }),
     );
@@ -52,7 +57,7 @@ describe('Gemini page selector snapshot', () => {
   });
 
   it('never adopts a stale revision or a failed storage read', async () => {
-    const service = new GeminiSelectorService();
+    const service = new SiteSelectorService<GeminiSelectorProfileKey>('gemini');
     const old = mount(service, async () => patch({ 'turn.user': ['.old'] }, 1));
     await old.ready;
     expect(service.getView().remoteKeys.size).toBe(0);
@@ -67,7 +72,7 @@ describe('Gemini page selector snapshot', () => {
 
   it('does not install a late read after the startup deadline', async () => {
     vi.useFakeTimers();
-    const service = new GeminiSelectorService();
+    const service = new SiteSelectorService<GeminiSelectorProfileKey>('gemini');
     let complete: (value: unknown) => void = () => undefined;
     const pending = new Promise<unknown>((resolve) => {
       complete = resolve;
@@ -83,7 +88,7 @@ describe('Gemini page selector snapshot', () => {
   });
 
   it('stops a pending read on retirement and does not let an old cleanup clear a new snapshot', async () => {
-    const service = new GeminiSelectorService();
+    const service = new SiteSelectorService<GeminiSelectorProfileKey>('gemini');
     const controller = new AbortController();
     const old = mount(service, () => new Promise(() => undefined), controller.signal);
     controller.abort();
@@ -97,7 +102,7 @@ describe('Gemini page selector snapshot', () => {
   });
 
   it('uses remote-only DOM when bundled selectors find nothing', async () => {
-    const service = new GeminiSelectorService();
+    const service = new SiteSelectorService<GeminiSelectorProfileKey>('gemini');
     const user = document.createElement('section');
     user.className = 'new-user';
     document.body.append(user);
@@ -113,7 +118,7 @@ describe('Gemini page selector snapshot', () => {
   });
 
   it('retries the entire operation on an empty remote result without combining tiers', async () => {
-    const service = new GeminiSelectorService();
+    const service = new SiteSelectorService<GeminiSelectorProfileKey>('gemini');
     const user = document.createElement('user-query');
     const assistant = document.createElement('model-response');
     document.body.append(user, assistant);
@@ -139,7 +144,7 @@ describe('Gemini page selector snapshot', () => {
   });
 
   it('does not do a partial-pair rescue probe once the operation is usable', async () => {
-    const service = new GeminiSelectorService();
+    const service = new SiteSelectorService<GeminiSelectorProfileKey>('gemini');
     const lifetime = mount(service, async () => patch({ 'turn.user': ['.new-user'] }));
     await lifetime.ready;
     const read = vi.fn(() => ({ users: ['pending'], answers: [] }));

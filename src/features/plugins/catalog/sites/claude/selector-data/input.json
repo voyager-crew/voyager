@@ -1,0 +1,17 @@
+{
+  "input.candidates": [
+    "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+    "div[contenteditable=\"true\"][role=\"textbox\"]",
+    ".input-area textarea",
+    "textarea[placeholder*=\"Ask\"]",
+    "textarea"
+  ],
+  "vim.candidates": [
+    "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+    "div[contenteditable=\"true\"][role=\"textbox\"]",
+    ".input-area textarea",
+    "textarea[placeholder*=\"Ask\"]",
+    "textarea"
+  ],
+  "input.handoff": ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]
+}

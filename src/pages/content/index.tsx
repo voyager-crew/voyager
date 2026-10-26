@@ -35,7 +35,7 @@ import { NATIVE_FEATURES } from './nativeFeatures';
 import { createOnboardingCoachmarks } from './onboardingCoachmarks';
 import { registerPageErrorHandlers } from './pageErrorHandlers';
 import { PageRetiredError, createPageSteps } from './pageInitSteps';
-import { startPageGeminiSelectors } from './pageSelectorStartup';
+import { startPageSelectors } from './pageSelectorStartup';
 import { ensureScheme, stopScheme } from './platformTheme/scheme';
 import { registerBuiltinNativeHandlers } from './pluginNativeRegistration';
 import { createPromptManagerEngine, readPromptCoverage } from './prompt/promptManagerEngine';
@@ -318,14 +318,14 @@ function handleVisibilityChange(): void {
     // Permanent page services retain their native lifetime. The host
     // itself follows AI Studio's master switch (runtime/surfaceSwitch.ts), so
     // "Voyager off on AI Studio" also keeps local plugins off there.
-    const selectorStartup = startPageGeminiSelectors({
+    const selectorStartup = startPageSelectors({
       url: location.href,
       doc: document,
       lifetime: pageLifetime.signal,
     });
     cleanupManager.registerCleanupFunction(
       selectorStartup.stop,
-      CleanupPositions.CleanupGeminiSelectors,
+      CleanupPositions.CleanupPageSelectors,
     );
     selectorCurrent = selectorStartup.isCurrent;
     // Share hydration with features; ping and account services already started synchronously.

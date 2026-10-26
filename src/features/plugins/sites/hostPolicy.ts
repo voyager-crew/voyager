@@ -6,7 +6,7 @@
  *   - static injection: the main content script is declared for these hosts in
  *     `manifest.json`, with matching `host_permissions`, so they never need a
  *     dynamic registration or an optional host grant;
- *   - remote catalog: Gemini consumer pages may read locator profiles through
+ *   - remote catalog: all supported pages may read locator profiles through
  *     the shared channel. Native plugins, identity and theme stay packaged;
  *   - plugin theme: never. Gemini and AI Studio keep Voyager's own accent;
  *   - catalog data stores (catalog outline, send times, ...): not theirs.
@@ -22,10 +22,6 @@
  * Kept free of storage keys, browser APIs and `import.meta`: the local-plugin
  * validator imports this, and the CLI bundles that chain.
  */
-import {
-  GEMINI_SELECTOR_HOSTS,
-  type GeminiSelectorHost,
-} from '../../../core/gemini/selectors/types';
 import type { ManifestIssue } from '../manifest/validate';
 import type { PluginManifest, SiteAdapter } from '../types';
 import { type PackagedSiteId, pluginOwnedHandlers } from './featureOwners';
@@ -122,14 +118,9 @@ export function isStaticallyInjectedHost(host: string): boolean {
   return policyForHost(host) !== undefined;
 }
 
-/** The shared channel serves Gemini locator profiles; other native hosts stay packaged. */
-export function allowsRemoteCatalog(host: string): boolean {
-  return isGeminiSelectorHost(host) || policyForHost(host) === undefined;
-}
-
-/** Native host whose catalog may carry independently guarded locator profiles. */
-export function isGeminiSelectorHost(host: string): host is GeminiSelectorHost {
-  return (GEMINI_SELECTOR_HOSTS as readonly string[]).includes(host);
+/** Every packaged host can receive locator data through the one catalog channel. */
+export function allowsRemoteCatalog(_host: string): boolean {
+  return true;
 }
 
 function siteAllowsPluginTheme(siteId: string): boolean {

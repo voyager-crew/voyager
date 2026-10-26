@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// @vitest-environment-options { "url": "https://gemini.google.com/app" }
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { SiteRegistry } from '@/features/plugins/sites/registry';

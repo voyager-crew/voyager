@@ -3,6 +3,8 @@ import { createToaster } from '@/core/ui/toast/toaster';
 import { isUserEvent } from '@/core/utils/userEvent';
 import { createContentExtractor } from '@/features/export/services/DOMContentExtractor';
 import type { ChatTurn } from '@/features/export/types/export';
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
+import chatgptSite from '@/features/plugins/catalog/sites/chatgpt/site.json';
 import { type Dispose, PluginScope } from '@/features/plugins/runtime/pluginScope';
 import type { PluginSettings } from '@/features/plugins/types';
 import {
@@ -16,6 +18,7 @@ import { resolveExportAdapter } from '@/pages/content/export/adapter/platformAda
 import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 import { getCurrentLanguage } from '@/utils/i18n';
 
+import { chatgptComposerRootOf } from '../chatgptComposerTargets';
 import {
   hasCurrentComposerAttachments,
   isCurrentComposerAttachmentRemovalControl,
@@ -44,8 +47,8 @@ import { CHATGPT_TEMPORARY_HANDOFF_CSS } from './styles';
 import { showHandoffConfirmation, showHandoffProgress } from './ui';
 
 const BUTTON_MARKER = 'data-gv-chatgpt-handoff-button';
-const HEADER_SELECTOR = '#conversation-header-actions';
-const SHARE_SELECTOR = '[data-testid="share-chat-button"]';
+const HEADER_SELECTOR = chatgptSite.selectors.headerActions;
+const SHARE_SELECTOR = chatgptPageData.shareButton;
 const REFRESH_DELAY_MS = 80;
 const TOAST_MS = 4_500;
 /** Each outcome replaces the previous one: they report the same handoff. */
@@ -231,7 +234,7 @@ class ChatGptTemporaryHandoffPlugin {
         subtree: true,
         characterData: true,
         attributes: true,
-        attributeFilter: ['aria-label', 'aria-pressed', 'data-testid', 'title'],
+        attributeFilter: chatgptPageData.handoffObservedAttributes,
       },
       (records) => {
         const mountedComposer = this.mutationsMountComposer(records);
@@ -296,7 +299,9 @@ class ChatGptTemporaryHandoffPlugin {
   private mutationsTouchComposerForm(records: readonly MutationRecord[]): boolean {
     return records.some((record) => {
       const target = record.target instanceof Element ? record.target : record.target.parentElement;
-      return Boolean(target?.closest('form')?.querySelector(CHATGPT_COMPOSER_SELECTOR));
+      return Boolean(
+        target && chatgptComposerRootOf(target)?.querySelector(CHATGPT_COMPOSER_SELECTOR),
+      );
     });
   }
 

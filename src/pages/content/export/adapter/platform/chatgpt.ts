@@ -3,6 +3,7 @@ import type { ExtractedContent } from '@/features/export/services/DOMContentExtr
 import { escapeHtml, escapeHtmlAttribute } from '@/features/export/services/exportDomPolicy';
 import type { SiteAdapter } from '@/features/plugins/types';
 
+import { chatgptExportData, CHATGPT_CODE_BLOCK } from '../chatgptExportData';
 import {
   DESKTOP_TURN_SELECTOR,
   LOGGED_OUT_ASSISTANT_SELECTOR,
@@ -11,6 +12,7 @@ import {
   resolveChatGptLoggedOutThread,
 } from '../chatgptLoggedOutDom';
 import { resolveVisibleConversationRoot } from '../chatgptThread';
+import { exportSiteSnapshot } from '../exportSiteSnapshot';
 import type { ExportPlatformAdapter } from './contract';
 
 /** The logged-out page's tab title is ChatGPT's marketing copy, never the conversation's name. */
@@ -24,9 +26,7 @@ function extractTitle(): string {
   const title = isLoggedOutPage() ? '' : document.title?.trim();
   if (title && title !== 'ChatGPT' && title !== 'New chat') return title;
 
-  const active = document.querySelector(
-    'nav a[aria-current="page"], #stage-slideover-sidebar a[aria-current="page"]',
-  );
+  const active = document.querySelector(chatgptExportData['export.activeConversation']);
   const activeTitle = active?.textContent?.trim();
   if (activeTitle) return activeTitle;
 
@@ -74,16 +74,16 @@ function extractUserImage(element: HTMLElement): NodeListOf<HTMLImageElement> {
 }
 
 function getUserAttachmentCandidates(element: HTMLElement): HTMLElement[] | undefined {
-  return Array.from(element.querySelectorAll<HTMLElement>('[role="group"][aria-label]')).filter(
-    (candidate) => {
-      const name = candidate.getAttribute('aria-label')?.trim();
-      const buttonName = candidate
-        .querySelector<HTMLElement>('[data-default-action] button[aria-label]')
-        ?.getAttribute('aria-label')
-        ?.trim();
-      return !!name && name === buttonName;
-    },
-  );
+  return Array.from(
+    element.querySelectorAll<HTMLElement>(chatgptExportData['export.userAttachments']),
+  ).filter((candidate) => {
+    const name = candidate.getAttribute('aria-label')?.trim();
+    const buttonName = candidate
+      .querySelector<HTMLElement>(chatgptExportData['export.attachmentAction'])
+      ?.getAttribute('aria-label')
+      ?.trim();
+    return !!name && name === buttonName;
+  });
 }
 
 const USER_TEXT_BLOCK_TAGS = new Set([
@@ -197,12 +197,12 @@ export function chatgptExtractFormula(
 }
 
 /** ChatGPT's current code block: a `div`, not a `pre`, with its source in a `code`. */
-const CODE_BLOCK_SELECTOR = '[data-markdown-copy="code-block"]';
+const CODE_BLOCK_SELECTOR = CHATGPT_CODE_BLOCK;
 /** Block chrome ChatGPT leaves out of its own copy: language label, wrap and copy buttons. */
-const COPY_EXCLUDED_SELECTOR = '[data-markdown-copy="exclude"]';
-const CODE_LANGUAGE_LABEL_SELECTOR = `${COPY_EXCLUDED_SELECTOR} .truncate`;
+const COPY_EXCLUDED_SELECTOR = chatgptExportData['export.copyExcluded'];
+const CODE_LANGUAGE_LABEL_SELECTOR = chatgptExportData['export.codeLanguage'];
 /** ChatGPT's own Mermaid drawing; the finished chart keeps no source to export. */
-const MERMAID_PREVIEW_SELECTOR = '[data-chatgpt-mermaid-preview]';
+const MERMAID_PREVIEW_SELECTOR = chatgptExportData['export.mermaidPreview'];
 const LANGUAGE_ID = /^[a-z0-9_+#.-]{1,32}$/i;
 const PLAIN_TEXT_IDS = new Set(['plaintext', 'plain', 'text', 'txt']);
 
@@ -271,9 +271,11 @@ export function chatgptExtractInlineFormula(
   return true;
 }
 
-export function buildChatGptAdapter(site: SiteAdapter): ExportPlatformAdapter {
+export function buildChatGptAdapter(provided: SiteAdapter): ExportPlatformAdapter {
+  const site = exportSiteSnapshot(provided);
   return {
     site,
+    siteId: site.id,
     getUserSelectors: () => [site.selectors.userTurn],
     getAssistantSelectors: () => [site.selectors.assistantTurn, LOGGED_OUT_ASSISTANT_SELECTOR],
     extractConversationTitle: extractTitle,

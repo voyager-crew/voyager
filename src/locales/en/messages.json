@@ -3306,8 +3306,8 @@
     "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "Checks voyager.nagi.fun for plugin updates and Gemini page detection fixes. Sends the site name, no cookies or page content. Off blocks automatic and manual checks.",
-    "description": "Explains catalog updates, Gemini page detection fixes, request contents and the off setting"
+    "message": "Checks voyager.nagi.fun for plugin updates and page detection fixes for supported sites. Sends the site name, no cookies or page content. Off blocks automatic and manual checks.",
+    "description": "Explains shared catalog updates, supported-site page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {
     "message": "Check every",

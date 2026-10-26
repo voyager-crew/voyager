@@ -1,3 +1,4 @@
+import { aistudioPackagedSelector, aistudioPackagedList } from './aistudioLocatorReads';
 import {
   PROMPT_LINK_SELECTOR,
   collectNativePromptTitles,
@@ -19,19 +20,8 @@ import type { FolderData } from './types';
 
 const PROMPT_LIST_BIND_DEBOUNCE_MS = 120;
 const PROMPT_TITLE_SYNC_DEBOUNCE_MS = 280;
-const PROMPT_DRAG_HOST_SELECTORS = [
-  '[data-test-id^="history-item"]',
-  '[role="listitem"]',
-  '.mat-mdc-list-item',
-  'li',
-];
-export const BODY_PROMPT_POPOVER_SELECTOR = [
-  '.cdk-overlay-container',
-  '.cdk-overlay-pane',
-  '[role="menu"]',
-  '[role="listbox"]',
-  '[role="dialog"]',
-].join(', ');
+const PROMPT_DRAG_HOST_SELECTORS = aistudioPackagedList('history.dragHosts');
+export const BODY_PROMPT_POPOVER_SELECTOR = aistudioPackagedSelector('history.popovers');
 
 type DragBoundHost = HTMLElement & { _gvDragBound?: boolean };
 
@@ -150,12 +140,14 @@ export function watchPromptHistory(
       subtree: true,
       characterData: true,
       attributes: true,
-      attributeFilter: ['title', 'aria-label', 'href'],
+      attributeFilter: [...aistudioPackagedList('history.observe')],
     });
   } catch {}
 
   const onClick = (event: Event) => {
-    const link = (event.target as HTMLElement | null)?.closest?.('a.prompt-link');
+    const link = (event.target as HTMLElement | null)?.closest?.(
+      aistudioPackagedSelector('history.click'),
+    );
     if (link && /\/prompts\//.test(link.getAttribute('href') || '')) {
       setTimeout(hooks.onPromptClick, 0);
     }

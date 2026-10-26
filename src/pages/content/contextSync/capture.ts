@@ -1,5 +1,6 @@
 import { acceptsGeminiContextImages, readGeminiContextImages } from '@/core/gemini/content/reads';
 import { getBundledGeminiSelectorView, getGeminiSelectorView } from '@/core/gemini/selectors';
+import { locatorSiteForHost } from '@/core/selectors/sites';
 import { logger } from '@/core/services/LoggerService';
 import { getMatchedAdapter } from '@/features/contextSync/adapters';
 import { DialogNode } from '@/features/contextSync/types';
@@ -58,7 +59,7 @@ export class ContextCaptureService {
         return prepared ? [prepared] : [];
       });
     const bundle = getBundledGeminiSelectorView();
-    let view = host === 'gemini.google.com' ? getGeminiSelectorView() : bundle;
+    let view = locatorSiteForHost(host) === 'gemini' ? getGeminiSelectorView() : bundle;
     if (!view.remoteKeys.has('context.images')) {
       // OFF retains the original per-message prepare/await ordering.
       for (const { element, role } of ordered) {

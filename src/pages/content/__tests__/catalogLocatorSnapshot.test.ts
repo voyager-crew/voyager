@@ -6,7 +6,7 @@ import { EXTENSION_VERSION } from '@/core/utils/version';
 import geminiSite from '@/features/plugins/catalog/sites/gemini/site.json';
 import { hostCatalogStorageKey } from '@/features/plugins/remote/hostCatalogCache';
 
-import { startPageGeminiSelectors } from '../pageSelectorStartup';
+import { startPageSelectors } from '../pageSelectorStartup';
 
 const host = 'gemini.google.com';
 const stops: Array<() => void> = [];
@@ -31,7 +31,7 @@ function cache(
 }
 
 async function start() {
-  const startup = startPageGeminiSelectors({
+  const startup = startPageSelectors({
     url: 'https://gemini.google.com/u/1/app/test',
     doc: document,
     lifetime: new AbortController().signal,

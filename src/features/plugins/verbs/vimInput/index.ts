@@ -1,3 +1,5 @@
+import { getBundledSiteSelectorView, pageSemanticSelector } from '@/core/selectors';
+import { BUNDLED_LOCATOR_SITES } from '@/core/selectors/sites';
 /**
  * `vimInput` primitive (D10): Vim-style modal editing in the prompt
  * composer, built on `chatInput/vimMode.ts`. The composer is located through
@@ -5,6 +7,7 @@
  * param), so a site Voyager has no hard-coded selector for still works.
  */
 import { findChatInput } from '@/pages/content/chatInput';
+import { createGeminiVimComposerResolver } from '@/pages/content/chatInput/vimGeminiComposer';
 import { startInputVimMode } from '@/pages/content/chatInput/vimMode';
 
 import type { ManifestIssue } from '../../manifest/validate';
@@ -45,7 +48,22 @@ export const vimInputPrimitive: Primitive<VimInputParams> = {
   },
 
   activate(scope, params, context) {
-    const composer = params.composer ?? context.adapter?.selectors.composer;
+    const composer =
+      params.composer ??
+      (context.adapter ? pageSemanticSelector(context.adapter, 'composer') : undefined);
+    const siteId = context.adapter?.id;
+    const resolveComposer =
+      !params.composer && siteId && BUNDLED_LOCATOR_SITES.some((site) => site.id === siteId)
+        ? createGeminiVimComposerResolver(
+            () =>
+              (siteId === 'gemini'
+                ? getBundledSiteSelectorView(siteId).profiles['vim.configuredComposer']
+                : getBundledSiteSelectorView(siteId).profiles.composer
+              )?.join(',') ??
+              composer ??
+              null,
+          )
+        : undefined;
     context.setTargetCounter(() => {
       if (composer) {
         try {
@@ -66,6 +84,7 @@ export const vimInputPrimitive: Primitive<VimInputParams> = {
         startInputVimMode({
           forceEnabled: true,
           composerSelector: composer,
+          ...(resolveComposer ? { resolveComposer } : {}),
           signal: scope.signal,
         }),
       'input-vim',

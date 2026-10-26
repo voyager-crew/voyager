@@ -1,4 +1,4 @@
-import { initializeGeminiSelectors } from '@/core/gemini/selectors';
+import { initializeSiteSelectors, locatorSiteForHost } from '@/core/selectors';
 import { StorageKeys } from '@/core/types/common';
 import { isRemotePluginCatalogEnabledAtBuild } from '@/features/plugins/remote/config';
 import { loadPluginCatalogSettings } from '@/features/plugins/remote/hostCatalogSettings';
@@ -7,7 +7,6 @@ import {
   resolveSiteAdapterForUrl,
 } from '@/features/plugins/remote/siteOverride';
 import { sendCatalogRefreshRequest } from '@/features/plugins/runtime/pluginHostOptions';
-import { isGeminiSelectorHost } from '@/features/plugins/sites/hostPolicy';
 import { SiteRegistry } from '@/features/plugins/sites/registry';
 
 interface PageSelectorStartupInput {
@@ -25,14 +24,14 @@ export interface PageSelectorStartup {
 function locatorHost(url: string): string | null {
   try {
     const parsed = new URL(url);
-    return parsed.protocol === 'https:' && isGeminiSelectorHost(parsed.host) ? parsed.host : null;
+    return parsed.protocol === 'https:' && locatorSiteForHost(parsed.host) ? parsed.host : null;
   } catch {
     return null;
   }
 }
 
 /** Only PluginHost and feature admission wait; ping, theme and page services stay synchronous. */
-export function startPageGeminiSelectors(input: PageSelectorStartupInput): PageSelectorStartup {
+export function startPageSelectors(input: PageSelectorStartupInput): PageSelectorStartup {
   const host = locatorHost(input.url);
   if (!host || !isRemotePluginCatalogEnabledAtBuild() || input.lifetime.aborted) {
     // Nothing is read here, so there is no phase to retire; stop only ends isCurrent.
@@ -47,7 +46,7 @@ export function startPageGeminiSelectors(input: PageSelectorStartupInput): PageS
   }
 
   const settings = loadPluginCatalogSettings();
-  const hydration = initializeGeminiSelectors({
+  const hydration = initializeSiteSelectors(locatorSiteForHost(host)!, {
     host,
     doc: input.doc,
     lifetime: input.lifetime,

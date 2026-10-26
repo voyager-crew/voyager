@@ -5,6 +5,7 @@ import {
   type GeminiSelectorOperation,
   type GeminiSelectorView,
 } from '@/core/gemini/selectors';
+import { locatorSiteForHost } from '@/core/selectors/sites';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/canvas-packaged.json';
 import entry from '@/features/plugins/catalog/sites/gemini/selector-data/export-entry-packaged.json';
 
@@ -68,7 +69,7 @@ function nativeRoots(root: ParentNode): HTMLElement[] {
 function usesRemoteCodePanels(root: ParentNode, view: GeminiSelectorView): boolean {
   const doc = root instanceof Document ? root : root.ownerDocument;
   return (
-    doc?.defaultView?.location.hostname === 'gemini.google.com' &&
+    locatorSiteForHost(doc?.defaultView?.location.hostname ?? '') === 'gemini' &&
     view.remoteKeys.has('canvas.codePanels')
   );
 }

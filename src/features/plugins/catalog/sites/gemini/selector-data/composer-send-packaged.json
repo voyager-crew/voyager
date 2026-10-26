@@ -27,14 +27,10 @@
     ".text-input-field",
     ".user-query-container.edit-mode",
     ".input-area",
-    "ms-prompt-box",
-    "ms-prompt-input-wrapper",
-    "ms-prompt-input",
-    "ms-chat-turn-input",
     "chat-message"
   ],
-  "composer.actionInput": "[data-testid=\"chat-input\"][contenteditable=\"true\"], #prompt-textarea[contenteditable=\"true\"], rich-textarea [contenteditable=\"true\"], [contenteditable=\"true\"][role=\"textbox\"], [contenteditable=\"true\"], textarea",
-  "composer.unavailableAncestors": ".stop, .gem-button-disabled, .ds-button--disabled, [aria-disabled=\"true\"]",
+  "composer.actionInput": "rich-textarea [contenteditable=\"true\"], [contenteditable=\"true\"][role=\"textbox\"], [contenteditable=\"true\"], textarea",
+  "composer.unavailableAncestors": ".stop, .gem-button-disabled, [aria-disabled=\"true\"]",
   "composer.stopIcons": "mat-icon[fonticon=\"stop\"], mat-icon[fonticon=\"stop_circle\"]",
   "composer.updateButton": ".update-button",
   "composer.actionIcon": ".material-symbols-outlined, mat-icon"

@@ -1,0 +1,4 @@
+{
+  "timeline.userText": ".ds-collapsible-text",
+  "guide.overlays": ["[role=\"menu\"]", "[role=\"dialog\"]", "[role=\"alertdialog\"]"]
+}

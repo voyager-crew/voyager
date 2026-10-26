@@ -1,0 +1,14 @@
+{
+  "input.clearance": ["form"],
+  "vim.editable": ["input, textarea, select, [contenteditable=\"true\"], [role=\"textbox\"]"],
+  "vim.editInputs": ["textarea[aria-label=\"Edit message\"]"],
+  "vim.sendTarget": [".send-button-container:not(.disabled)"],
+  "vim.editForm": [":not(*)"],
+  "vim.host": [":not(*)"],
+  "vim.inputFallback": [":not(*)"],
+  "vim.hud": [":not(*)"],
+  "vim.mountInput": [":not(*)"],
+  "vim.mountRoot": ["form"],
+  "vim.crossSiteEdit": ["textarea[aria-label=\"Edit message\"]"],
+  "vim.editActions": ["button"]
+}

@@ -2,7 +2,7 @@
 
 插件分发方案（2026-09-07 定稿，P1–P4 已实现）中仍然约束代码的部分。机制说明见 [remote/README.md](README.md) 与 [插件生态总览](../README.md)；这里只记**定了什么、为什么**。编号沿用原方案，代码注释里的 `plan D7`、`C1`、`§11.2` 指的就是这里。
 
-一句话：站点知识和插件是数据，走远程通道，合并到 `main` 即发布；原语、引擎和无法参数化的 builtin 是代码，随本体发版。Gemini 通过同一个目录通道接收页面定位修复，官方插件仍随本体打包；Gemini Enterprise 与 AI Studio 只用包内数据；新站点随本体发版。
+一句话：站点知识和插件是数据，走远程通道，合并到 `main` 即发布；原语、引擎和无法参数化的 builtin 是代码，随本体发版。全部受支持站点通过同一个目录通道接收各自的页面定位修复，包括 Gemini Enterprise 与 AI Studio；两者的官方插件仍随本体打包，新站点随本体发版。
 
 ## 1. 已定决策
 
@@ -13,7 +13,7 @@ D15 原方案未使用。
 | D1  | 目录仓库     | 主仓 `src/features/plugins/catalog/`，不用独立仓库；`.github/CODEOWNERS` 按站点目录分配。退役的 `../voyager-plugins` 不再是来源                                                                                                                                                                                                                                                                                                             |
 | D2  | 分发地址     | `https://voyager.nagi.fun/catalog/hosts/<host>.json`，经 Cloudflare 代理，**不签名**。已接受的供应链风险：目录只含 CSS/JSON，使用前校验净化，HTTPS 传输，缓存按扩展版本绑定，通过 `revoked` 显式撤回插件；能改文件的人已经能改发布本身，签名不缩小信任面。发布链路若脱离仓库 CI，再补签名。`remote/config.ts` 的 `VOYAGER_PLUGIN_CATALOG_URL` 只为预览环境改 base（仅 https）                                                               |
 | D3  | 文件粒度     | 每个具体 host 一个文件，路径由 `location.host` 直接算出（`hostCatalogFileUrl`），不发索引请求；多域名站点每个 host 各一份，由 `scripts/lib/buildPluginCatalog.ts` 生成                                                                                                                                                                                                                                                                      |
-| D4  | 拉取触发     | 没有后台定时器。只有页面上有**已启用**插件指向该 host 时（`hasEnabledPluginForUrl` / `hasEnabledPluginForHost`），顶层 frame 才请求检查；Gemini 页面定位更新不要求启用插件；popup 的手动检查在在线更新开启时可用，发 `force`。「上次检查」按上次**尝试**计，失败退避见 D19                                                                                                                                                                  |
+| D4  | 拉取触发     | 没有后台定时器。只有页面上有**已启用**插件指向该 host 时（`hasEnabledPluginForUrl` / `hasEnabledPluginForHost`），顶层 frame 才请求检查；受支持站点的页面定位更新不要求额外启用插件；popup 的手动检查在在线更新开启时可用，发 `force`。「上次检查」按上次**尝试**计，失败退避见 D19                                                                                                                                                         |
 | D5  | 阈值         | `PLUGIN_CATALOG_CHECK_INTERVALS`：1h / 6h / 24h / 仅手动，默认 6h；总开关「在线更新」`gvPluginOnlineUpdatesEnabled` 默认开。两者都在 sync，随设置备份                                                                                                                                                                                                                                                                                       |
 | D6  | 合并优先级   | 按 id 判定（`mergePluginRecords`）：远程有且兼容取远程；远程不兼容而快照兼容，取快照并带 `blockedUpdate`（「需要新版 Voyager」）；新客户端不再因缺席而下架，远程权威时仅按 `revoked` 列表撤回（kill switch），因为构建漏掉插件不能导致卸载；远程不可用用快照。缓存只在「同扩展版本写入的成功拉取」时权威（`isHostCatalogEntryUsable`），扩展版本一变全部作废；404 记为 `missing`，不触发 kill switch。**不用版本高者胜**：revert 必须能生效 |
 | D7  | 应用时机     | CSS 与 domOps 更新即时重挂载；含 `native` op（第一方代码、可能有 UI 状态）的已挂载插件冻结在当前版本、报 `pendingVersion`，下次整页加载才切换，SPA 内 pushState 不切换（`catalogReloadPlan.ts`）。本地插件重新导入同样适用。popup 文案「刷新页面后生效」                                                                                                                                                                                    |
@@ -23,7 +23,7 @@ D15 原方案未使用。
 | D11 | 可见性       | popup 显示插件版本；目录更新后显示角标（`gvPluginSeenVersions`，local、按设备、不备份）；清单 `changelog` 一行说明                                                                                                                                                                                                                                                                                                                          |
 | D12 | 健康信号     | 适配器 `userTurn` 已命中、插件自身目标为零、DOM 静默一段时间后，才标黄「本页无效果」；目标出现即清除。纯 CSS 插件（无 domOps、无原语）豁免（`runtime/healthMonitor.ts`）。默认开启的 Gemini / AI Studio 官方插件可在 `featureOwners.ts` 用 `healthTracking: false` 退出，免得每个 Gemini 页面都多一个 body 观察者                                                                                                                           |
 | D13 | 隐私         | 打开远程通道的同一变更里，更新 release-privacy 契约、站内隐私页和商店描述；启用插件时的授权文案说明会向 voyager.nagi.fun 检查更新。文案限定为「插件目录」，公告服务及其开关不变，不承诺「不连接任何服务器」                                                                                                                                                                                                                                 |
-| D14 | Gemini       | `gemini.google.com` 的页面定位数据随同一个 catalog 下发，受现有在线更新开关控制；官方插件及其余 native 协议仍打包，细则见 §1.1。Gemini Enterprise 与 AI Studio 不请求目录。                                                                                                                                                                                                                                                                 |
+| D14 | 站点定位     | 全部受支持站点的页面定位数据随同一个 catalog 下发，包含 Gemini Enterprise 与 AI Studio，受现有在线更新开关控制；官方 native 插件及协议仍打包，细则见 §1.1。                                                                                                                                                                                                                                                                                 |
 | D16 | 新站点       | 远程只更新打包快照里已有的站点；新站点随本体发版。「清单 matches → 用户授权 → 注入内容脚本 → PluginHost 拉取」这条链决定远程无法引入新 host                                                                                                                                                                                                                                                                                                 |
 | D17 | 校验实现     | 不引入 zod 等 schema 库。清单、`site.json`、原语 params 都是手写 guard（`manifest/validate.ts`、`sites/siteAdapterData.ts`）；`docs/public/plugin.schema.json` / `site.schema.json` 手写发布，测试让示例清单同时过 schema 和 guard                                                                                                                                                                                                          |
 | D18 | matches 归属 | `plugin.json` 和 `site.json` 都保留 `matches`；插件的 matches 必须是站点 matches 的子集（`patternWithin`），`plugin:check` 与 `catalog:build` 都校验                                                                                                                                                                                                                                                                                        |
@@ -32,19 +32,19 @@ D15 原方案未使用。
 
 ### 1.1 D14 细则：一个目录通道
 
-- `gemini.google.com` 使用 `/catalog/hosts/gemini.google.com.json`。`site.locators` 保存 namespaced profile 到有序字符串数组的映射；各站点在包内定义 allowlist 和 groups。Gemini 沿用既有 75-key literal allowlist 与 surface groups。
-- `validateSiteAdapterData` 独立校验 locators。错误或超限 section 只丢弃 locators；语法错误只丢弃所属 group，不影响其余 site data、插件列表或 kill switch。
+- 每个具体 host 使用 `/catalog/hosts/<host>.json`。Gemini、AI Studio、ChatGPT、Claude、DeepSeek、Kimi 各读自己的 `site.locators` 及获准的 `site.selectors`，在 `core/selectors/contracts/` 定义 literal allowlist 与 groups。Gemini Enterprise 与 consumer Gemini 共享 Gemini 数据和守卫；两个 AI Studio host 共享 AI Studio 数据。
+- `validateSiteAdapterData` 独立校验 locators。未知 key 或超限 section 只丢弃 locators；单个 locator 的 shape 或语法错误只丢弃所属 group，不影响其余 site data、插件列表或 kill switch。
 - 现有「在线更新」`gvPluginOnlineUpdatesEnabled` 默认开启，间隔默认 6 小时，可选 1h / 6h / 24h / manual。两项设置都在 sync 并参与备份。OFF 阻止自动和手动目录请求；ON 时 `force` 可跳过间隔及 enabled-plugin gate。页面启动可请求 due check，打开 popup 只读缓存，按钮触发手动检查。
-- revision、缓存、扩展版本、刷新与撤回沿用 catalog。只有比 bundle 更新的 resolved site data 才能提供 profiles；缺失或空 `site.locators` 用 bundle。缓存留在本机，关闭不清理用户数据。
-- Gemini 官方插件、CSS、semantic adapter 字段、host admission、账号、ID、删除/重命名、点击与输入协议继续留在包内。Gemini Enterprise 和 AI Studio 不进入远程目录；本地插件不能绕过这些边界。
-- 每个 surface 独立拒绝语法错误；集合不完整、与独立 native/bundled 检查冲突或不属于原操作元素时，整次读取回到 bundle。`remoteKeys` 与 consumer guards 保持原样；新增检查不进入 bundled path。
-- 页面 hydration 继续使用 `startMachine`，从同一 resolved catalog site data 建立 snapshot。snapshot 固定到用户自行刷新；新数据、撤回和关闭更新不自动重载页面，也不重挂 native 功能。
+- 只有比 bundle 更新的 site data 才能提供修复；revision、缓存及版本策略沿用 catalog。清空 `site.locators` 只撤回 namespaced profiles；完整撤回还须把允许远程更新的 `site.selectors` 恢复为包内值。OFF 不清缓存或用户数据。
+- Gemini 与 AI Studio 的官方插件、CSS 和 native 协议继续留在包内。所有站点的 host admission、账号、ID、删除/重命名、点击与输入协议、模型元数据、ARIA 关联和 clone sanitizer 不由定位更新改变。只能确认 bundled 结果的定位项仍为 packaged-only；本地插件不能绕过这些边界。
+- 每个 surface 独立拒绝语法错误；集合不完整、与独立 native/bundled 检查冲突或不属于原操作元素时，整次读取回到 bundle。`remoteKeys` 与 consumer guards 由包内代码控制；新增检查不进入 bundled path。
+- 共用的 per-site hydration 使用 `startMachine`，从同一 resolved catalog site data 建立 snapshot。snapshot 固定到用户自行刷新；新数据、撤回和关闭更新不自动重载页面，也不重挂 native 功能。
 
 ## 10. 回滚
 
 - 远程内容：revert 主仓提交，Pages 重新部署并 purge CDN，客户端下次检查即采用回退后的远程条目（D6 不按版本高者胜）。插件若已随 bundle 发布，新客户端不会因 revert 后目录里缺席而移除它，必须把旧 id 加入站点的 `revoked.json`；重新发布已撤回的 id 时，必须先从 `revoked.json` 移除它。
-- 客户端：关掉「在线更新」后，Gemini 在用户刷新时回到打包快照；任一阶段可以单独 revert，不触及用户存储。
-- Gemini 定位数据：按 [rollback runbook](../../../core/gemini/selectors/README.md#rollback-runbook) 用更高 `catalogRevision` 发布修正，或在 host file 中省略/清空 `site.locators`；沿用 catalog 缓存与撤回机制。
+- 客户端：关掉「在线更新」后，各站点在用户刷新时回到打包快照；任一阶段可以单独 revert，不触及用户存储。
+- 站点定位数据：按 [rollback runbook](../../../core/selectors/README.md#rollback-runbook) 用更高 `catalogRevision` 发布修正，或清空 `site.locators` 并将允许远程更新的 `site.selectors` 恢复为包内值。
 - 商店审核兜底：`VOYAGER_PLUGIN_CATALOG_REMOTE=off` 编出从不连接目录的构建（C6）。
 
 ## 11. 商店政策结论（2026-09-07 调研，含原文出处）

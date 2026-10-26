@@ -1,3 +1,4 @@
+import type { SiteSelectorView } from '../../selectors/types';
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
 import { GEMINI_CANVAS_CODE_PROFILE_KEYS } from './canvasKeys';
 import { GEMINI_CODE_PROFILE_KEYS } from './codeKeys';
@@ -27,10 +28,6 @@ import {
 import { GEMINI_SIDEBAR_PROFILE_KEYS } from './sidebarKeys';
 import { GEMINI_USAGE_PROFILE_KEYS } from './usageKeys';
 import { GEMINI_VIM_PROFILE_KEYS } from './vimKeys';
-
-/** Locator data only; query algorithms, identity and actions remain packaged. */
-export const GEMINI_SELECTOR_HOSTS = ['gemini.google.com'] as const;
-export type GeminiSelectorHost = (typeof GEMINI_SELECTOR_HOSTS)[number];
 
 export const GEMINI_TURN_PROFILE_KEYS = [
   'turn.user',
@@ -159,11 +156,7 @@ export type GeminiSelectorPatch = Readonly<
   Partial<Record<GeminiSelectorProfileKey, readonly string[]>>
 >;
 
-export interface GeminiSelectorView {
-  readonly profiles: GeminiSelectorProfiles;
-  readonly remoteKeys: ReadonlySet<GeminiSelectorProfileKey>;
-  readonly revision: number | null;
-}
+export type GeminiSelectorView = SiteSelectorView<GeminiSelectorProfileKey>;
 
 export interface GeminiSelectorOperation<T> {
   readonly value: T;

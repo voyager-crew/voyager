@@ -1,14 +1,15 @@
 # Gemini page detection data
 
-This resolver serves `https://gemini.google.com` only. Its online profiles come
+These Gemini profiles serve `https://gemini.google.com` and
+`https://business.gemini.google` through the [shared per-site resolver](../../selectors/README.md). Its online profiles come
 from the existing plugin catalog, governed by **Online updates** (on by default).
-Gemini Enterprise and AI Studio stay packaged-only. Transport, settings and cache
+Every supported site uses that one channel. Transport, settings and cache
 ownership are described in the [remote catalog README](../../../features/plugins/remote/README.md#page-locator-profiles-in-site-data).
 
 ## Catalog site data
 
-The host file is
-`https://voyager.nagi.fun/catalog/hosts/gemini.google.com.json`.
+Each Gemini host has its own `/catalog/hosts/<host>.json` file with the same
+Gemini locator data.
 Its optional `site.locators` section is a map of profile keys to nonempty ordered
 string arrays. Missing keys use the bundle; supplied arrays replace their entire
 profiles, preserving order. A newer host file with no `site.locators`, or an empty
@@ -19,9 +20,9 @@ allowlist. The catalog publisher and site-data validator use the same contract,
 checked by [`catalog-locator-publishing.test.ts`](../../../../scripts/__tests__/catalog-locator-publishing.test.ts).
 The locator section retains the Gemini limits: 65,536 UTF-8 bytes, at most 32
 entries per profile and 2,048 UTF-16 code units per string, with empty strings and
-non-whitespace C0 controls rejected. Unknown keys and malformed sections fall
-back to the bundle without invalidating the adapter, plugins or kill switch.
-An unparsable locator drops only its surface’s group.
+non-whitespace C0 controls rejected. Unknown keys and oversized sections fall back to the bundle without
+invalidating the adapter, plugins or kill switch. A malformed or unparsable
+locator drops only its surface’s group.
 
 The builder reads the same selected non-`*-packaged.json` source fragments as
 [`bundle.ts`](bundle.ts). Catalog publication uses the main lineage’s first-parent
@@ -132,7 +133,9 @@ selected for publication.
   substring match also accepts `https://wrong.example/gemini-code-immersive`; a
   loose remote locator could capture another site's frame. Online data cannot
   supply the origin policy, and this migration does not change the bundled policy.
-- Dormant implementations remain dormant; other sites keep their existing reads.
+- Dormant implementations remain dormant. Shared consumers resolve the current
+  site’s own data through `core/selectors/`; Gemini fragments contain no other
+  site’s composer dialect.
 
 ### MAIN-world scroll literals
 
@@ -153,11 +156,11 @@ virtualization or image-algorithm changes can still require an extension release
 
 1. Revert the bad locator data on main and retain the failing DOM fixture. The new
    commit must produce a higher first-parent `catalogRevision`.
-2. Run affected behavior tests and `bun run catalog:build`. Inspect the Gemini
-   host file’s revision, `site.locators`, keys and byte limits before publishing.
+2. Run affected behavior tests and `bun run catalog:build`. Inspect both Gemini
+   host files’ revision, `site.locators`, keys and byte limits before publishing.
 3. Publish through the normal Pages workflow and purge the CDN entry for
-   `https://voyager.nagi.fun/catalog/hosts/gemini.google.com.json`. Fetch that
-   exact URL to verify the host, revision and body.
+   each affected `/catalog/hosts/<host>.json`. Fetch those
+   exact URLs to verify the host, revision and body.
 4. Enabled clients receive it on their next due or manual catalog check and
    apply the profiles after a user refresh. To withdraw all profiles, publish a
    higher-revision host file with `site.locators` omitted or `{}` while retaining

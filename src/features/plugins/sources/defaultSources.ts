@@ -4,6 +4,7 @@ import { resolveEngineVersion } from '../engineVersion';
 import { LocalPluginSource } from '../local/LocalPluginSource';
 import { isLocalPluginId } from '../local/localPluginId';
 import { HostCatalogSource } from '../remote/HostCatalogSource';
+import { protectRemoteNativeIdentity } from '../remote/nativeIdentity';
 import { engineSatisfied } from '../semver';
 import { isPackagedOfficialPluginId } from '../sites/featureOwners';
 import { matchesAnyPattern } from '../sites/matchPattern';
@@ -101,9 +102,13 @@ export function mergePluginRecords(input: MergePluginRecordsInput): SourcedPlugi
   const snapshot = input.snapshot.filter(official);
   // Decided by the build's stable id table, never by the owner entry or the
   // remote manifest itself.
-  const remoteRecords = input.remote.filter(
-    (record) => official(record) && !isBuildOnlyPluginId(record.manifest.id),
-  );
+  const remoteRecords = input.remote
+    .filter((record) => official(record) && !isBuildOnlyPluginId(record.manifest.id))
+    .map((record) => {
+      const packaged = snapshot.find((entry) => entry.manifest.id === record.manifest.id)?.manifest;
+      const manifest = protectRemoteNativeIdentity(record.manifest, packaged);
+      return manifest === record.manifest ? record : { ...record, manifest };
+    });
 
   for (const record of builtin) {
     if (seen.has(record.manifest.id)) continue;

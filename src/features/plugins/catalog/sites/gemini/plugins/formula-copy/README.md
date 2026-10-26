@@ -9,7 +9,7 @@ native module runs.
 ## Delivery and control
 
 - Ships inside the extension and updates only with a Voyager release. It is
-  never published to or replaced by the online plugin catalog. Consumer Gemini
+  never published to or replaced by the online plugin catalog. Gemini, including Enterprise,
   can receive page-locator fixes through the shared Online updates setting.
 - Controlled by the existing formula copy switch and copy format in Voyager's
   Gemini settings (`gvFormulaCopyEnabled`, `gvFormulaCopyFormat`). It has no

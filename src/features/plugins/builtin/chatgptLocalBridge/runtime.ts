@@ -36,9 +36,11 @@ import {
   LEASED_OPS,
   isBridgeMessageType,
 } from '@/features/bridge/runtimeMessages';
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 import type { SiteAdapter } from '@/features/plugins/types';
 import { getCurrentLanguage } from '@/utils/i18n';
 
+import { chatgptComposerRootOf } from '../chatgptComposerTargets';
 import { CHALLENGE_TOAST_COPY, type ChallengeKind, createChallengeGuard } from './challengeGuard';
 import { getDocNonce, isOwnDocNonce } from './docIdentity';
 import {
@@ -76,7 +78,7 @@ const CANCELLED_MEMORY = 16;
 const DONE_RETRY_DELAYS_MS = [1_000, 3_000] as const;
 const TOAST_MS = 20_000;
 const USER_INPUT_EVENTS = ['keydown', 'beforeinput', 'paste', 'drop', 'pointerdown'] as const;
-const COMPOSER_FIELD_SELECTOR = '[contenteditable="true"], textarea';
+const COMPOSER_FIELD_SELECTOR = chatgptPageData.composerEditable;
 
 export type RuntimeSend = (message: Record<string, unknown>) => Promise<unknown>;
 
@@ -360,7 +362,7 @@ export function createBridgeRuntime(options: BridgeRuntimeOptions = {}): BridgeR
 
   const noteUserInput = (event: Event): void => {
     if (!isUserEvent(event) || !(event.target instanceof Element)) return;
-    if (event.target.closest('form')?.querySelector(COMPOSER_FIELD_SELECTOR)) {
+    if (chatgptComposerRootOf(event.target, adapter)?.querySelector(COMPOSER_FIELD_SELECTOR)) {
       lastUserInputAt = now();
     }
   };

@@ -1,0 +1,4 @@
+{
+  "timeline.userText": "[data-user-message-bubble]",
+  "guide.overlays": ["[role=\"menu\"]", "[role=\"dialog\"]", "[role=\"alertdialog\"]"]
+}

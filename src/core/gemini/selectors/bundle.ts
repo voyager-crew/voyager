@@ -40,6 +40,7 @@ import usageProfiles from '@/features/plugins/catalog/sites/gemini/selector-data
 import userLatexProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/user-latex.json';
 import vimProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/vim.json';
 
+import { bundledSemanticProfiles } from '../../selectors/sites';
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
 import { GEMINI_CANVAS_CODE_PROFILE_KEYS } from './canvasKeys';
 import { GEMINI_CODE_PROFILE_KEYS } from './codeKeys';
@@ -123,7 +124,8 @@ function readBundle(): GeminiSelectorProfiles {
 }
 
 const BUNDLED_VIEW: GeminiSelectorView = Object.freeze({
-  profiles: readBundle(),
+  siteId: 'gemini',
+  profiles: Object.freeze({ ...bundledSemanticProfiles('gemini'), ...readBundle() }),
   remoteKeys: new Set<never>(),
   revision: null,
 });
@@ -136,7 +138,4 @@ export function getBundledGeminiTurnView(): GeminiTurnView {
   return BUNDLED_VIEW;
 }
 
-export function getGeminiBundledRevision(): number {
-  const value = Number(import.meta.env.VOYAGER_CATALOG_REVISION);
-  return Number.isSafeInteger(value) && value >= 0 ? value : 0;
-}
+export { getSiteBundledRevision as getGeminiBundledRevision } from '../../selectors/revision';

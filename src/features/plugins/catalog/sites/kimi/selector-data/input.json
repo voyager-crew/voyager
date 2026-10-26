@@ -1,0 +1,14 @@
+{
+  "input.candidates": [
+    "div[contenteditable=\"true\"][role=\"textbox\"]",
+    ".input-area textarea",
+    "textarea[placeholder*=\"Ask\"]",
+    "textarea"
+  ],
+  "vim.candidates": [
+    "div[contenteditable=\"true\"][role=\"textbox\"]",
+    ".input-area textarea",
+    "textarea[placeholder*=\"Ask\"]",
+    "textarea"
+  ]
+}

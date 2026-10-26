@@ -12,7 +12,7 @@ then press `i` to return to insert mode.
 ## Delivery and control
 
 - Ships inside the extension and updates only with a Voyager release. It is
-  never published to or replaced by the online plugin catalog. Consumer Gemini
+  never published to or replaced by the online plugin catalog. Gemini, including Enterprise,
   can receive page-locator fixes through the shared Online updates setting.
 - Controlled by the existing Vim input switch in Voyager's Gemini settings
   (`gvInputVimMode`, off by default). It has no switch or settings of its own.

@@ -94,8 +94,9 @@ export function makeFixtureCatalog(overrides: FixtureOverrides = {}): string {
   return catalogDir;
 }
 
-/** Native hosts outside the catalog channel (D14). */
-export const PACKAGED_HOSTS = [
+/** Native hosts receive locator data while official plugins remain packaged (D14). */
+export const NATIVE_HOSTS = [
+  'gemini.google.com',
   'business.gemini.google',
   'aistudio.google.com',
   'aistudio.google.cn',
