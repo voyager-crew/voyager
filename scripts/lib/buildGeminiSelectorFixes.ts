@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'nod
 import { join } from 'node:path';
 
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from '../../src/core/gemini/selectors/activityKeys';
+import { GEMINI_CODE_PROFILE_KEYS } from '../../src/core/gemini/selectors/codeKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from '../../src/core/gemini/selectors/composerKeys';
 import {
   GEMINI_CONTENT_PROFILE_KEYS,
@@ -9,6 +10,7 @@ import {
 } from '../../src/core/gemini/selectors/contentKeys';
 import { GEMINI_GEMS_PROFILE_KEYS } from '../../src/core/gemini/selectors/gemsKeys';
 import { GEMINI_INPUT_COLLAPSE_PROFILE_KEYS } from '../../src/core/gemini/selectors/inputCollapseKeys';
+import { GEMINI_USER_LATEX_PROFILE_KEYS } from '../../src/core/gemini/selectors/mathKeys';
 import {
   GEMINI_MENU_PROFILE_KEYS,
   GEMINI_EXPORT_OVERLAY_PROFILE_KEYS,
@@ -73,6 +75,8 @@ const PROFILE_GROUPS = [
   { file: 'response-actions.json', keys: GEMINI_RESPONSE_ACTION_PROFILE_KEYS },
   { file: 'research-pack.json', keys: GEMINI_RESEARCH_PACK_PROFILE_KEYS },
   { file: 'usage.json', keys: GEMINI_USAGE_PROFILE_KEYS },
+  { file: 'code.json', keys: GEMINI_CODE_PROFILE_KEYS },
+  { file: 'user-latex.json', keys: GEMINI_USER_LATEX_PROFILE_KEYS },
 ] as const;
 
 /** Build from the same locator fragments the package imports; no adapter or plugin enters it. */

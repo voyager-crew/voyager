@@ -1,8 +1,10 @@
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
+import { GEMINI_CODE_PROFILE_KEYS } from './codeKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
 import { GEMINI_CONTENT_PROFILE_KEYS, GEMINI_CONTEXT_IMAGE_PROFILE_KEYS } from './contentKeys';
 import { GEMINI_GEMS_NAV_PROFILE_KEYS, GEMINI_GEMS_CATALOG_PROFILE_KEYS } from './gemsKeys';
 import { GEMINI_INPUT_COLLAPSE_PROFILE_KEYS } from './inputCollapseKeys';
+import { GEMINI_USER_LATEX_PROFILE_KEYS } from './mathKeys';
 import { GEMINI_MENU_PROFILE_KEYS, GEMINI_EXPORT_OVERLAY_PROFILE_KEYS } from './menuKeys';
 import { GEMINI_MODEL_PICKER_PROFILE_KEYS } from './modelPickerKeys';
 import { GEMINI_PROJECT_PROFILE_KEYS } from './projectKeys';
@@ -166,6 +168,8 @@ export const GEMINI_V3_SELECTOR_PROFILE_KEYS = [
   'responseActions.bars',
   'researchPack.actionBars',
   'usage.root',
+  'code.host',
+  'userLatex.lines',
 ] as const;
 
 export const GEMINI_SELECTOR_PROFILE_KEYS = GEMINI_V3_SELECTOR_PROFILE_KEYS;
@@ -195,6 +199,8 @@ export const GEMINI_SELECTOR_PROFILE_GROUPS: readonly (readonly GeminiSelectorPr
   GEMINI_RESPONSE_ACTION_PROFILE_KEYS,
   GEMINI_RESEARCH_PACK_PROFILE_KEYS,
   GEMINI_USAGE_PROFILE_KEYS,
+  GEMINI_CODE_PROFILE_KEYS,
+  GEMINI_USER_LATEX_PROFILE_KEYS,
 ];
 export type GeminiSelectorProfiles = Readonly<Record<GeminiSelectorProfileKey, readonly string[]>>;
 

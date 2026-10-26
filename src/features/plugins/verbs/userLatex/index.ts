@@ -19,6 +19,8 @@
  * waiting for KaTeX included: a whole turn over another's rendered leaf would
  * save that leaf's KaTeX text as its source.
  */
+import { resolveGeminiUserLatexLines } from '@/core/gemini/math/userLatex';
+import { getGeminiSelectorView } from '@/core/gemini/selectors';
 import { createUserLatexOwner } from '@/core/utils/userLatexSource';
 import {
   createUserLatexClaims,
@@ -103,9 +105,14 @@ export const userLatexPrimitive: Primitive<UserLatexParams> = {
     if (!turn) return;
     const { doc } = context;
     const wholeTurn = params.unit === 'turn';
+    // Only the packaged Gemini line profile participates; local selectors keep their own contract.
+    const geminiLines =
+      context.adapter?.id === 'gemini' && wholeTurn && turn === 'p.query-text-line';
+    const readMessages = () =>
+      geminiLines ? resolveGeminiUserLatexLines(doc) : { value: querySafe(doc, turn), view: null };
     const owner = createUserLatexOwner(context.pluginId);
     const claims = createUserLatexClaims(owner);
-    context.setTargetCounter(() => querySafe(doc, turn).length);
+    context.setTargetCounter(() => readMessages().value.length);
 
     const skipped = (element: HTMLElement, message: Element): boolean => {
       // Only up to the message: Voyager stamps gv- classes on the page (body.gv-rtl) around every message.
@@ -128,12 +135,15 @@ export const userLatexPrimitive: Primitive<UserLatexParams> = {
     const renderable = (element: HTMLElement, message: Element): boolean =>
       (wholeTurn ? element === message : element.childElementCount === 0) &&
       !skipped(element, message);
-    const render = (element: HTMLElement, message: Element): void => {
+    const render = (element: HTMLElement, message: Element, accepts: () => boolean): void => {
       dropStaleUserLatex(element);
       if (!element.textContent?.includes('$') || !renderable(element, message)) return;
       // Eligibility again once KaTeX has loaded: the element may have become an editor meanwhile.
       const stillEligible = (): boolean =>
-        message.contains(element) && element.isConnected && renderable(element, message);
+        message.contains(element) &&
+        element.isConnected &&
+        renderable(element, message) &&
+        accepts();
       void renderUserLatex(element, {
         owner,
         signal: scope.signal,
@@ -143,13 +153,22 @@ export const userLatexPrimitive: Primitive<UserLatexParams> = {
     };
     const renderAll = (): void => {
       claims.prune();
-      for (const message of querySafe(doc, turn)) {
+      const operation = readMessages();
+      const view = operation.view;
+      for (const message of operation.value) {
+        // A renamed line moved to another turn while KaTeX loaded is no longer this operation's line.
+        const host = view?.remoteKeys.has('userLatex.lines') ? message.closest('user-query') : null;
+        const accepts = () =>
+          !view?.remoteKeys.has('userLatex.lines') ||
+          (getGeminiSelectorView() === view &&
+            message.closest('user-query') === host &&
+            resolveGeminiUserLatexLines(doc, view).value.includes(message as HTMLElement));
         if (wholeTurn) {
-          if (message instanceof HTMLElement) render(message, message);
+          if (message instanceof HTMLElement) render(message, message, accepts);
           continue;
         }
         for (const element of [message, ...message.querySelectorAll('*')]) {
-          if (element instanceof HTMLElement) render(element, message);
+          if (element instanceof HTMLElement) render(element, message, accepts);
         }
       }
     };

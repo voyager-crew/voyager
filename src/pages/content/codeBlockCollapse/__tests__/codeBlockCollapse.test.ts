@@ -227,9 +227,7 @@ describe('codeBlockCollapse', () => {
   it('keeps the header out of the sticky layer for collapsible blocks', () => {
     const css = readContentStyle();
     const rule =
-      css.match(
-        /code-block\.gv-code-block-collapsible \.code-block-decoration\s*{([\s\S]*?)}/,
-      )?.[1] ?? '';
+      css.match(/\.gv-code-block-collapsible \.code-block-decoration\s*{([\s\S]*?)}/)?.[1] ?? '';
 
     expect(rule).toContain('position: static !important');
     expect(rule).toContain('top: auto !important');

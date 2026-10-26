@@ -50,6 +50,7 @@ import {
   activatePrimitives,
   updatePrimitiveSettings,
 } from './primitiveLifecycle';
+import { resolveSemanticElements } from './semanticElements';
 import { applyOpToElement, isTargetedOp } from './targetedOps';
 
 interface ActivePlugin extends PrimitiveSlot {
@@ -393,6 +394,10 @@ export class DeclarativeEngine {
   }
 
   private queryAll(ref: SelectorRef): Element[] {
+    if (ref.kind === 'semantic') {
+      const elements = resolveSemanticElements(this.doc, this.adapter, ref.key);
+      if (elements) return [...elements];
+    }
     const selector = this.resolveSelector(ref);
     if (!selector) return [];
     try {

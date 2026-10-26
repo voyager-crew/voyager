@@ -51,6 +51,8 @@ function fixtureCatalog(): string {
     'response-actions.json',
     'research-pack.json',
     'usage.json',
+    'code.json',
+    'user-latex.json',
   ]) {
     writeFileSync(join(destination, file), readFileSync(join(catalogDir, dataPath, file)));
   }

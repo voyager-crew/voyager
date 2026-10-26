@@ -13,6 +13,7 @@ import {
   isSemanticSelectorKey,
 } from '../sites/semanticKeys';
 import type { PluginManifest, SiteAdapter } from '../types';
+import { resolveSemanticElements } from './semanticElements';
 import { type TargetedOperation, isTargetedOp } from './targetedOps';
 
 /**
@@ -64,7 +65,9 @@ function diagnoseOp(
   if (!selector) return { ...base, count: 0, state: 'unresolved-key' };
   let count: number;
   try {
-    count = doc.querySelectorAll(selector).length;
+    count =
+      (semantic ? resolveSemanticElements(doc, adapter, target.key)?.length : undefined) ??
+      doc.querySelectorAll(selector).length;
   } catch {
     return { ...base, count: 0, state: 'invalid-selector' };
   }

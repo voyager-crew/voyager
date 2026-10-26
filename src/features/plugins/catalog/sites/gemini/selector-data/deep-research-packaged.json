@@ -1,0 +1,19 @@
+{
+  "deepResearch.items": [".item-container"],
+  "deepResearch.reportCandidates": [".markdown, .markdown-main-panel, message-content"],
+  "deepResearch.panel": "deep-research-immersive-panel",
+  "deepResearch.thinkingPanels": "thinking-panel",
+  "deepResearch.thought": "thought-item",
+  "deepResearch.thoughtHeader": ".thought-header",
+  "deepResearch.thoughtContent": ".gds-body-m.gds-italic:not(.thought-header)",
+  "deepResearch.browseList": "browse-chip-list",
+  "deepResearch.browseLinks": "browse-web-chip a[data-test-id=\"browse-chip-link\"]",
+  "deepResearch.browseDomain": "[data-test-id=\"domain-name\"]",
+  "deepResearch.browseTitle": "[data-test-id=\"title\"]",
+  "deepResearch.documentTitle": "title",
+  "deepResearch.reportHeadings": ["h1", "h2", "[role=\"heading\"]"],
+  "deepResearch.menuPanel": ".mat-mdc-menu-panel[role=\"menu\"]",
+  "deepResearch.menuContent": ".mat-mdc-menu-content",
+  "deepResearch.menuShare": "[data-test-id=\"share-button-tooltip-container\"], [data-test-id=\"share-drive-button\"], [data-test-id=\"share-classroom-button\"]",
+  "deepResearch.menuExport": "[data-test-id=\"export-to-docs-button\"], [data-test-id=\"copy-button\"]"
+}

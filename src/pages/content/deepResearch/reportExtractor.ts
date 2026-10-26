@@ -3,6 +3,7 @@
  *
  * Goal: find the primary rendered report content while excluding Thinking panels.
  */
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/deep-research-packaged.json';
 
 const GENERIC_TITLES = new Set([
   'Gemini',
@@ -32,12 +33,12 @@ function scoreCandidate(el: HTMLElement): number {
  * Heuristic: choose the largest markdown-like container that is not inside `thinking-panel`.
  */
 export function findDeepResearchReportRoot(): HTMLElement | null {
-  const panel = document.querySelector('deep-research-immersive-panel');
+  const panel = document.querySelector(packaged['deepResearch.panel']);
   if (!panel) return null;
 
   const candidates = Array.from(
-    panel.querySelectorAll<HTMLElement>('.markdown, .markdown-main-panel, message-content'),
-  ).filter((el) => !el.closest('thinking-panel'));
+    panel.querySelectorAll<HTMLElement>(packaged['deepResearch.reportCandidates'].join(',')),
+  ).filter((element) => !element.closest(packaged['deepResearch.thinkingPanels']));
 
   let best: { el: HTMLElement; score: number } | null = null;
   for (const el of candidates) {
@@ -56,10 +57,11 @@ export function findDeepResearchReportRoot(): HTMLElement | null {
  */
 export function extractDeepResearchReportTitle(reportRoot: HTMLElement): string {
   // Prefer the first heading in the report content.
-  const heading =
-    reportRoot.querySelector('h1') ||
-    reportRoot.querySelector('h2') ||
-    reportRoot.querySelector('[role="heading"]');
+  let heading: Element | null = null;
+  for (const selector of packaged['deepResearch.reportHeadings']) {
+    heading = reportRoot.querySelector(selector);
+    if (heading) break;
+  }
 
   const headingText = heading?.textContent?.trim() || '';
   if (isMeaningfulTitle(headingText)) return headingText;

@@ -24,7 +24,7 @@ Gemini disclosure also applies to Safari when that channel is enabled in the bui
 > for gemini.google.com from voyager.nagi.fun. This helps Voyager find conversation
 > turns, sidebar entries and titles, areas used to display folders, model menu
 > controls, conversation and export menus, the sidebar toggle button’s clickable area and sidebar hover areas,
-> message content for export and forks, context images, response and research-pack actions, usage displays, the Gems sidebar, message inputs and their controls, and page elements used by input
+> message content for export and forks, context images, response and research-pack actions, usage displays, code blocks and diagrams, paragraphs containing LaTeX in your messages, the Gems sidebar, message inputs and their controls, and page elements used by input
 > collapse, Vim mode, prompt history, slash commands, Folder as Project and folder
 > activity. It downloads no code, CSS or
 > plugins. Automatic checks run at most once every 6 hours; turning the setting
@@ -47,7 +47,7 @@ Gemini disclosure also applies to Safari when that channel is enabled in the bui
 
 > Voyager 在本地运行。在 Claude、ChatGPT、DeepSeek、Kimi 等网站启用插件后，Voyager 可按所选间隔（默认 6 小时）向 voyager.nagi.fun 检查经过校验的插件 CSS 和 JSON。Gemini 和 AI Studio 不请求这个插件目录。关闭「插件在线更新」会停止自动检查，手动检查仍可使用。
 >
-> Gemini 另有独立的「Gemini 页面识别在线修复」选项，默认关闭。只有开启后才会向 voyager.nagi.fun 请求 gemini.google.com 的页面识别数据，用于找到对话轮次、侧边栏条目和标题、文件夹显示区域、模型菜单控件、对话和导出菜单、侧边栏开关按钮的点击区域与侧边栏悬停区域、导出与分支所用的消息正文、上下文图片、回复和研究资料包操作、用量显示、Gems 侧边栏、消息输入框和相关控件，以及输入框折叠、Vim 模式、提示词历史、斜杠命令、文件夹作为项目及文件夹活动所用的页面元素，不下载代码、CSS 或插件。自动检查最多每 6 小时一次，关闭再开启不会重置间隔；被扩展重启中断的检查可能重试。「立即检查」只在开启时可跳过间隔。开启需要在 Gemini 标签页中操作，关闭可在任何标签页的弹窗里完成。关闭后禁止这类请求，包括手动检查，取消进行中的检查并删除已下载的数据。设置和缓存仅保存在当前设备，不参与同步或设置备份，上次尝试时间保留在本地。已打开页面继续使用当前修复，直到你自行刷新。AI Studio 仍只使用包内数据。
+> Gemini 另有独立的「Gemini 页面识别在线修复」选项，默认关闭。只有开启后才会向 voyager.nagi.fun 请求 gemini.google.com 的页面识别数据，用于找到对话轮次、侧边栏条目和标题、文件夹显示区域、模型菜单控件、对话和导出菜单、侧边栏开关按钮的点击区域与侧边栏悬停区域、导出与分支所用的消息正文、上下文图片、回复和研究资料包操作、用量显示、代码块和图表、用户消息中含 LaTeX 的段落、Gems 侧边栏、消息输入框和相关控件，以及输入框折叠、Vim 模式、提示词历史、斜杠命令、文件夹作为项目及文件夹活动所用的页面元素，不下载代码、CSS 或插件。自动检查最多每 6 小时一次，关闭再开启不会重置间隔；被扩展重启中断的检查可能重试。「立即检查」只在开启时可跳过间隔。开启需要在 Gemini 标签页中操作，关闭可在任何标签页的弹窗里完成。关闭后禁止这类请求，包括手动检查，取消进行中的检查并删除已下载的数据。设置和缓存仅保存在当前设备，不参与同步或设置备份，上次尝试时间保留在本地。已打开页面继续使用当前修复，直到你自行刷新。AI Studio 仍只使用包内数据。
 >
 > 两个通道均不发送 Cookie、账户或扩展标识、页面或对话内容。服务器能看到 IP 地址、User-Agent 等常规请求元数据及 URL 中的主机名。不下载或执行远程 JavaScript 或 WebAssembly。检查失败时保留现有数据。公告检查有自己的开关。
 

@@ -1,10 +1,11 @@
 // Keep sent quote markers for export, timeline and teardown; repaint after user-LaTeX rendering.
 // Composer classes alone preserve caret, IME and native submitted Markdown.
-import { getGeminiSelectorView } from '@/core/gemini/selectors';
+import { resolveGeminiUserLatexLines } from '@/core/gemini/math/userLatex';
+import { getBundledGeminiSelectorView, getGeminiSelectorView } from '@/core/gemini/selectors';
 
 import { CHAT_INPUT_SELECTOR, findChatInput } from '../chatInput/index';
 
-const USER_LINE_SELECTOR = 'p.query-text-line';
+const USER_LINE_SELECTOR = getBundledGeminiSelectorView().profiles['userLatex.lines'].join(',');
 const QUOTE_WRAPPER_CLASS = 'gv-rendered-quote';
 const QUOTE_LINE_CLASS = 'gv-rendered-quote-line';
 const QUOTE_EMPTY_LINE_CLASS = 'gv-rendered-quote-empty';
@@ -88,12 +89,12 @@ function unwrapQuote(wrapper: HTMLElement): void {
   wrapper.remove();
 }
 
-function rebuildContainer(container: HTMLElement): void {
+function rebuildContainer(container: HTMLElement, lines: ReadonlySet<HTMLElement>): void {
   container.querySelectorAll<HTMLElement>(`:scope > .${QUOTE_WRAPPER_CLASS}`).forEach(unwrapQuote);
 
   let current = container.firstElementChild;
   while (current) {
-    if (!(current instanceof HTMLElement) || !current.matches(USER_LINE_SELECTOR)) {
+    if (!(current instanceof HTMLElement) || !lines.has(current)) {
       current = current.nextElementSibling;
       continue;
     }
@@ -109,11 +110,7 @@ function rebuildContainer(container: HTMLElement): void {
     owned.wrappers.add(wrapper);
     container.insertBefore(wrapper, current);
 
-    while (
-      current instanceof HTMLElement &&
-      current.matches(USER_LINE_SELECTOR) &&
-      isQuoteLine(current)
-    ) {
+    while (current instanceof HTMLElement && lines.has(current) && isQuoteLine(current)) {
       const next: Element | null = current.nextElementSibling;
       decorateQuoteLine(current);
       wrapper.appendChild(current);
@@ -122,10 +119,9 @@ function rebuildContainer(container: HTMLElement): void {
   }
 }
 
-function containerNeedsRebuild(container: HTMLElement): boolean {
+function containerNeedsRebuild(container: HTMLElement, lines: ReadonlySet<HTMLElement>): boolean {
   const directQuoteLine = Array.from(container.children).some(
-    (child) =>
-      child instanceof HTMLElement && child.matches(USER_LINE_SELECTOR) && isQuoteLine(child),
+    (child) => child instanceof HTMLElement && lines.has(child) && isQuoteLine(child),
   );
   if (directQuoteLine) return true;
 
@@ -135,10 +131,7 @@ function containerNeedsRebuild(container: HTMLElement): boolean {
   if (
     wrappers.some((wrapper) =>
       Array.from(wrapper.children).some(
-        (child) =>
-          !(child instanceof HTMLElement) ||
-          !child.matches(USER_LINE_SELECTOR) ||
-          !isQuoteLine(child),
+        (child) => !(child instanceof HTMLElement) || !lines.has(child) || !isQuoteLine(child),
       ),
     )
   ) {
@@ -155,10 +148,10 @@ function containerNeedsRebuild(container: HTMLElement): boolean {
   });
 }
 
-function collectUserLineContainers(): Set<HTMLElement> {
+function collectUserLineContainers(lines: ReadonlySet<HTMLElement>): Set<HTMLElement> {
   const containers = new Set<HTMLElement>();
 
-  document.querySelectorAll<HTMLElement>(USER_LINE_SELECTOR).forEach((line) => {
+  lines.forEach((line) => {
     const wrapper = line.closest<HTMLElement>(`.${QUOTE_WRAPPER_CLASS}`);
     const container = wrapper?.parentElement ?? line.parentElement;
     if (container) containers.add(container);
@@ -190,12 +183,15 @@ function renderQuotedComposerLines(): void {
 
 export function renderQuotedUserMessages(): void {
   restoreOwnedNodes((node) => !node.isConnected);
-  collectUserLineContainers().forEach((container) => {
-    if (containerNeedsRebuild(container)) rebuildContainer(container);
+  const lines = new Set(resolveGeminiUserLatexLines(document).value);
+  collectUserLineContainers(lines).forEach((container) => {
+    if (containerNeedsRebuild(container, lines)) rebuildContainer(container, lines);
 
     container
-      .querySelectorAll<HTMLElement>(`:scope > .${QUOTE_WRAPPER_CLASS} > ${USER_LINE_SELECTOR}`)
-      .forEach(decorateQuoteLine);
+      .querySelectorAll<HTMLElement>(`:scope > .${QUOTE_WRAPPER_CLASS} > *`)
+      .forEach((line) => {
+        if (lines.has(line)) decorateQuoteLine(line);
+      });
   });
 
   renderQuotedComposerLines();
@@ -260,9 +256,13 @@ export function startRenderedQuoteStyling(): () => void {
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   const observer = new MutationObserver((mutations) => {
     // Renamed composers must reach the guarded read even when the host replaces lines without input.
-    const selector = getGeminiSelectorView().remoteKeys.has('composer.candidates')
+    const view = getGeminiSelectorView();
+    const composerSelector = view.remoteKeys.has('composer.candidates')
       ? `${QUOTE_RELEVANT_SELECTOR}, ${NATIVE_EDITABLE_SELECTOR}`
       : QUOTE_RELEVANT_SELECTOR;
+    const selector = view.remoteKeys.has('userLatex.lines')
+      ? `${composerSelector}, ${view.profiles['userLatex.lines'].join(',')}`
+      : composerSelector;
     if (!mutations.some((mutation) => mutationMayAffectQuotes(mutation, selector))) return;
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {

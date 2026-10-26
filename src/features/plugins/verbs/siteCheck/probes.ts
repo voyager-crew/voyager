@@ -7,6 +7,7 @@
  */
 import { isLocalPluginId } from '../../local/localPluginId';
 import { requiredSemanticKeys, requiredSiteSections } from '../../runtime/pluginStatus';
+import { resolveSemanticElements } from '../../runtime/semanticElements';
 import { isTargetedOp } from '../../runtime/targetedOps';
 import type { FoldersSection } from '../../sites/sections/foldersData';
 import {
@@ -45,6 +46,8 @@ export interface Probe {
   readonly expect: ProbeExpectation;
   /** The user's own plugin: its selector text stays out of the report. */
   readonly local?: boolean;
+  /** A semantic surface may need a checked operation instead of a raw CSS count. */
+  readonly resolveElements?: (doc: Document) => readonly Element[] | null;
 }
 
 export interface ProbeResult extends Probe {
@@ -58,7 +61,15 @@ function siteProbes(adapter: SiteAdapter): Probe[] {
   return SEMANTIC_SELECTOR_KEYS.flatMap((key) => {
     const selector = adapter.selectors[key];
     return selector
-      ? [{ source: 'site', name: key, selector, expect: SEMANTIC_KEY_PRESENCE[key] }]
+      ? [
+          {
+            source: 'site',
+            name: key,
+            selector,
+            expect: SEMANTIC_KEY_PRESENCE[key],
+            resolveElements: (doc: Document) => resolveSemanticElements(doc, adapter, key),
+          },
+        ]
       : [];
   });
 }
@@ -123,6 +134,7 @@ function pluginProbes(manifest: PluginManifest, adapter: SiteAdapter | null): Pr
     name: key,
     selector: adapter?.selectors[key] ?? null,
     expect: isSemanticSelectorKey(key) ? SEMANTIC_KEY_PRESENCE[key] : 'unknown',
+    resolveElements: (doc) => resolveSemanticElements(doc, adapter, key),
     ...local,
   }));
   (manifest.contributes.domOps ?? []).forEach((op, index) => {
@@ -179,6 +191,8 @@ function queryAll(root: ParentNode, selector: string): Element[] {
 
 /** The elements a probe finds on `doc`; throws on a selector this browser rejects. */
 export function probeElements(doc: Document, probe: Probe): ReadonlySet<Element> {
+  const resolved = probe.resolveElements?.(doc);
+  if (resolved) return new Set(resolved);
   if (!probe.selector) return new Set();
   const roots: ParentNode[] = probe.within ? queryAll(doc, probe.within) : [doc];
   const found = new Set<Element>();
@@ -232,6 +246,8 @@ export function runProbes(probes: readonly Probe[], page: CheckPage): ProbeResul
 
 /** Whether `element` is one the probe finds; never throws. */
 export function probeMatches(element: Element, probe: Probe): boolean {
+  const resolved = probe.resolveElements?.(element.ownerDocument);
+  if (resolved) return resolved.includes(element);
   if (!probe.selector || probe.closestOf) return false;
   try {
     return element.matches(probe.selector) && (!probe.within || !!element.closest(probe.within));

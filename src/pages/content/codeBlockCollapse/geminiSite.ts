@@ -4,11 +4,20 @@
  * every `code-block` on the page (thinking included), the toggle in the
  * block's own button row, never a diagram block.
  */
+import {
+  GEMINI_PACKAGED_CODE,
+  hasGeminiCodeFixes,
+  resolveGeminiCodeHosts,
+} from '@/core/gemini/code/hosts';
+import type { CollapseReadSession } from '@/core/ui/collapse/engine';
 import { DIAGRAM_OWNER_ATTR } from '@/features/plugins/verbs/diagramExportRegistry';
 
 import type { CodeBlockCollapseSite } from './engine';
 
-const CODE_SELECTOR = 'code[data-test-id="code-content"], code.code-container, pre > code';
+const CODE_SELECTOR = GEMINI_PACKAGED_CODE['code.content'].join(', ');
+const LANGUAGE_SELECTOR = GEMINI_PACKAGED_CODE['code.language'].join(', ');
+const DECORATION_SELECTOR = GEMINI_PACKAGED_CODE['code.decoration'].join(', ');
+const BUTTONS_SELECTOR = GEMINI_PACKAGED_CODE['code.buttons'].join(', ');
 /** Stamped by a diagram primitive (`verbs/codeBlockDiagram.ts`) on a block it draws. */
 const DIAGRAM_OWNER_SELECTOR = `[${DIAGRAM_OWNER_ATTR}]`;
 
@@ -22,17 +31,14 @@ export function isGeminiDiagramBlock(host: HTMLElement): boolean {
     return true;
   }
 
-  const language = host
-    .querySelector('.code-block-decoration > span')
-    ?.textContent?.trim()
-    .toLowerCase();
+  const language = host.querySelector(LANGUAGE_SELECTOR)?.textContent?.trim().toLowerCase();
   return language === 'mermaid';
 }
 
 /** The toggle joins Gemini's copy buttons, or the header when the row is missing. */
 export function geminiCodeBlockActions(host: HTMLElement): HTMLElement | null {
-  const decoration = host.querySelector<HTMLElement>('.code-block-decoration');
-  return decoration?.querySelector<HTMLElement>('.buttons') ?? decoration;
+  const decoration = host.querySelector<HTMLElement>(DECORATION_SELECTOR);
+  return decoration?.querySelector<HTMLElement>(BUTTONS_SELECTOR) ?? decoration;
 }
 
 /**
@@ -46,6 +52,22 @@ export function createGeminiCodeBlockSite(
   return {
     root: () => doc.body,
     hostSelector,
+    ...(hasGeminiCodeFixes(doc) && hostSelector === 'code-block'
+      ? {
+          resolveHosts: (ownerRoot: ParentNode): CollapseReadSession => {
+            const { value: hosts } = resolveGeminiCodeHosts(ownerRoot);
+            return {
+              hosts,
+              closest: (element) =>
+                hosts.find((host) => host === element || host.contains(element)) ?? null,
+              matches: (element) => hosts.includes(element as HTMLElement),
+              accepts: (host) => !isGeminiDiagramBlock(host),
+              content: (host) => host.querySelector<HTMLElement>(CODE_SELECTOR),
+              actions: geminiCodeBlockActions,
+            };
+          },
+        }
+      : {}),
     accepts: (host) => !isGeminiDiagramBlock(host),
     // A diagram plugin claims a block in place, often after this took it as long
     // code: only the attribute tells, so its toggle would otherwise stay.

@@ -1,3 +1,8 @@
+import {
+  GEMINI_FORMULA_PACKAGED,
+  GEMINI_FORMULA_CONTAINER_SELECTOR,
+} from '@/core/gemini/math/formula';
+
 /**
  * Find the nearest math element in the DOM tree
  * Supports both Gemini (data-math attribute) and AI Studio (ms-katex container)
@@ -10,7 +15,11 @@ export function findMathElement(target: Element): HTMLElement | null {
   }
 
   // 2. Try Gemini's .math-inline, .math-block containers
-  const geminiContainer = target.closest('.math-inline, .math-block');
+  const containerSelector =
+    target.ownerDocument.location?.hostname === 'gemini.google.com'
+      ? GEMINI_FORMULA_CONTAINER_SELECTOR
+      : '.math-inline, .math-block';
+  const geminiContainer = target.closest(containerSelector);
   if (geminiContainer instanceof HTMLElement) {
     return findDataMathInSubtree(geminiContainer);
   }
@@ -92,7 +101,11 @@ export function extractLatexSource(element: HTMLElement): string | null {
  */
 export function isDisplayMode(element: HTMLElement): boolean {
   // 1. Gemini: check for a block/display container
-  if (element.closest('.math-block, .math-display') !== null) {
+  const display =
+    element.ownerDocument.location?.hostname === 'gemini.google.com'
+      ? GEMINI_FORMULA_PACKAGED['formula.display']
+      : '.math-block, .math-display';
+  if (element.closest(display) !== null) {
     return true;
   }
 

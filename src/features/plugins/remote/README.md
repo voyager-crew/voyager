@@ -146,13 +146,15 @@ The `v3` file (`format: 3`) carries ordered `turn.*`, `sidebar.*`, `modelPicker.
 `composer.*`, `inputCollapse.*`, `vim.*`, `promptHistory.*`, `slash.*`, `sentChips.*`,
 `project.*`, `activity.*`, `menu.*`, `exportOverlay.*`, `sidebarWidth.*`,
 `sidebarHover.*`, `gems.*`, `content.*`, `context.*`,
-`responseActions.*`, `researchPack.*` and `usage.root` profiles. The publisher reads the same per-surface
+`responseActions.*`, `researchPack.*`, `usage.root`, `code.host` and `userLatex.lines`
+profiles. The publisher reads the same per-surface
 JSON fragments in `selector-data/` as the bundle. These cover conversation turns,
 sidebar entries/titles and folder display areas, model menu discovery, conversation
 and export menu anchors, the sidebar toggle button’s hit area and sidebar hover areas, the active Gems
 sidebar, message inputs and their controls, input collapse, Vim, prompt history, slash commands,
 sent prompt previews, Folder as Project, folder activity, message content for export and
-forks, context images, response and research-pack actions, and usage displays. Each surface has its own
+forks, context images, response and research-pack actions, usage displays, code blocks
+and diagrams, and paragraphs containing LaTeX in user messages. Each online surface has its own
 syntax-fallback group. A remote read must preserve the complete independently
 verified collection and the operation's original input; a miss or mismatch reruns
 the whole read with bundled data. The configured Vim wrapper-to-editable order,
@@ -160,6 +162,9 @@ hidden fallback and accepted HUD selector are preserved; collapse scans, mutatio
 flushes and resize measurements each use one read session. Gems scraping also reads
 one view; Gem identity, pins, MRU and descriptions retain their existing meaning.
 The dormant Gems hider remains dormant.
+Code collapse, diagram scans, copy and export rechecks use the accepted code-host collection.
+A renamed host needs an independent native code shell; partial lists fall back whole.
+User LaTeX keeps the original paragraph and turn through rendering.
 Identity extraction, account controls, delete/rename/confirmation, deletion
 tracking, native menu association, clone sanitizing, ARIA/focus safety and click
 policy remain packaged. Chat width CSS and native health checks remain packaged too.
@@ -173,7 +178,14 @@ and Canvas menus (`canvas-entry.json`) also stay packaged: their independent pag
 checks can only confirm the bundled result, so these fragments are not published.
 Fork copy controls, export logo identity, source attributes and URL checks,
 MathML/KaTeX and HTML serialization, export DOM policy, and usage values/reset/tier
-locators also remain packaged; `*-packaged.json` fragments never enter publication. The files contain no plugins,
+locators also remain packaged. Code source, language and button locators, diagram
+parameters and every formula and Deep Research locator stay packaged too.
+The observed formula container itself carries `data-math`, so a container override
+would only reconfirm the bundled source lookup. Deep Research item and report repairs
+lack live evidence for independent native boundaries; fixture-only row-parent and
+article/document assumptions do not justify publishing them. Their packaged reads
+preserve item order, report scoring, titles, source URLs and menu association.
+`*-packaged.json` fragments never enter publication. The files contain no plugins,
 CSS, actions, JavaScript, matches, capabilities or theme. The bundle and remote
 files use the same selector-data guard. A newer accepted revision
 replaces the previous patch; each supplied list replaces that bundled list as

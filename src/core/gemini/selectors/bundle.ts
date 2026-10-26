@@ -14,6 +14,7 @@
  * a list whole, in its own order, and never merges entries.
  */
 import activityProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/activity.json';
+import codeProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/code.json';
 import composerProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/composer.json';
 import contentProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/content.json';
 import contextImageProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/context-images.json';
@@ -33,13 +34,16 @@ import sidebarProfiles from '@/features/plugins/catalog/sites/gemini/selector-da
 import slashProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/slash.json';
 import turnProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/turn.json';
 import usageProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/usage.json';
+import userLatexProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/user-latex.json';
 import vimProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/vim.json';
 
 import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
+import { GEMINI_CODE_PROFILE_KEYS } from './codeKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
 import { GEMINI_CONTENT_PROFILE_KEYS, GEMINI_CONTEXT_IMAGE_PROFILE_KEYS } from './contentKeys';
 import { GEMINI_GEMS_PROFILE_KEYS } from './gemsKeys';
 import { GEMINI_INPUT_COLLAPSE_PROFILE_KEYS } from './inputCollapseKeys';
+import { GEMINI_USER_LATEX_PROFILE_KEYS } from './mathKeys';
 import { GEMINI_MENU_PROFILE_KEYS, GEMINI_EXPORT_OVERLAY_PROFILE_KEYS } from './menuKeys';
 import { GEMINI_MODEL_PICKER_PROFILE_KEYS } from './modelPickerKeys';
 import { GEMINI_PROJECT_PROFILE_KEYS } from './projectKeys';
@@ -101,6 +105,8 @@ function readBundle(): GeminiSelectorProfiles {
     ...readGroup(responseActionProfiles, GEMINI_RESPONSE_ACTION_PROFILE_KEYS, 'response-actions'),
     ...readGroup(researchPackProfiles, GEMINI_RESEARCH_PACK_PROFILE_KEYS, 'research-pack'),
     ...readGroup(usageProfiles, GEMINI_USAGE_PROFILE_KEYS, 'usage'),
+    ...readGroup(codeProfiles, GEMINI_CODE_PROFILE_KEYS, 'code'),
+    ...readGroup(userLatexProfiles, GEMINI_USER_LATEX_PROFILE_KEYS, 'user-latex'),
   };
   const file = readGeminiSelectorFile(
     {

@@ -134,6 +134,8 @@ const PUBLISHED_KEYS = {
     'responseActions.bars',
     'researchPack.actionBars',
     'usage.root',
+    'code.host',
+    'userLatex.lines',
   ],
 } as const;
 
@@ -159,11 +161,18 @@ describe('Gemini selector publishing contract', () => {
     const file = readGeminiSelectorFile(raw, host);
     expect(file?.format).toBe(format);
     expect(Object.keys(file!.selectors).sort()).toEqual([...PUBLISHED_KEYS[format]].sort());
-    expect(
-      readGeminiSelectorFile(
-        { ...file, selectors: { ...file!.selectors, 'composer.semanticInput': ['#editor'] } },
-        host,
-      ),
-    ).toBeNull();
+    for (const key of [
+      'composer.semanticInput',
+      'formula.container',
+      'deepResearch.items',
+      'deepResearch.reportCandidates',
+    ]) {
+      expect(
+        readGeminiSelectorFile(
+          { ...file, selectors: { ...file!.selectors, [key]: ['#unpublished'] } },
+          host,
+        ),
+      ).toBeNull();
+    }
   });
 });

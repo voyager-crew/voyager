@@ -1,0 +1,7 @@
+{
+  "code.content": ["code[data-test-id=\"code-content\"]", "code.code-container", "pre > code"],
+  "code.decoration": [".code-block-decoration"],
+  "code.buttons": [".buttons"],
+  "code.language": [".code-block-decoration > span"],
+  "code.shell": [".code-block"]
+}

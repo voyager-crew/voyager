@@ -1,0 +1,7 @@
+{
+  "formula.container": [".math-inline", ".math-block"],
+  "formula.display": ".math-block, .math-display",
+  "formula.inline": ".math-inline",
+  "formula.presentation": ".math-inline, .math-display, .math-block, ms-katex, .katex, .katex-display",
+  "formula.quote": ".math-inline, .math-block"
+}
