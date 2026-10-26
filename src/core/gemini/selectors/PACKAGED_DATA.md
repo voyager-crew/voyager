@@ -1,101 +1,68 @@
-# Gemini packaged page-data ledger
+# Gemini locator trust ledger (1/5)
 
-Part of the [Gemini data README](README.md#packaged-only-boundaries) and the [shared ledger](../../selectors/PACKAGED_DATA.md). Every unpublished JSON fragment is listed, including unsuffixed files. **No independent proof** records a real limitation: a renamable class can break and needs a packaged proof before its replacement can be accepted. Original design §6 protocols remain packaged.
+Part of the [complete trust ledger](../../selectors/PACKAGED_DATA.md). A = action/data/identity proof; B = trusted Voyager UI placement; §6 = packaged protocol. `bundle copy` preserves baseline literals for the named online counterpart. `legacy adapter` retains the pre-branch override path, including OFF semantics. Keys refer to this site’s selector-data fragments or semantic site fields; duplicate source copies share one row.
 
-## activity-packaged.json
+Parts: [1](PACKAGED_DATA.md), [2](PACKAGED_SURFACES.md), [3](PACKAGED_CONTENT.md), [4](PACKAGED_INPUT.md), [5](PACKAGED_ACTIONS.md).
 
-| Exact retained keys               | Reason                                                                                                                              |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `activity.send`, `activity.owner` | Send/action ownership and timestamp recording protocol (§6). The candidate input is independently repaired through activity.inputs. |
-
-## canvas-entry.json
-
-| Exact retained keys | Reason                                                                                                                                                                   |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `canvasEntry.menus` | Native menu role plus Gemini owner/association defines the action entry. No independent proof admits a differently owned menu without changing the interaction protocol. |
-
-## canvas-packaged.json
-
-| Exact retained keys                                                                                                                                                                                                               | Reason                                                                                                                                                                                                                                                                             |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `canvas.documentEditors`, `canvas.proseMirror`, `canvas.documentTitles`, `canvas.documentTitleInputs`, `canvas.codeEditor`, `canvas.codeLines`, `canvas.codeLine`, `canvas.codeTitle`, `canvas.codeLanguage`, `canvas.indicators` | Canvas document repair has no independent proof: inline title-container and panel toolbar titles do not identify the original document editor. Code lines/language/title and document serialization remain the source protocol; the code-panel owner alone is remotely repairable. |
-
-## code-packaged.json
-
-| Exact retained keys                                                              | Reason                                                                                                                                                                                     |
-| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `code.content`, `code.decoration`, `code.buttons`, `code.language`, `code.shell` | Source, language, toolbar and clip relationships within the already proved code host. These define copying/serialization and control placement (§6); code.host is the single remote owner. |
-
-## composer-draft-packaged.json
-
-| Exact retained keys                                                                                                                                                  | Reason                                                                                                                                                       |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `composer.draftEditExclusion`, `composer.draftPlaceholderHost`, `composer.notificationInteraction`, `composer.notificationTyping`, `composer.notificationGenerating` | Inline-edit exclusions, placeholder source and interaction/typing/generation refusal predicates. Remote data cannot remove the draft/send safety floor (§6). |
-
-## composer-packaged.json
-
-| Exact retained keys                                                                  | Reason                                                                                                                                                                                        |
-| ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `composer.uploadPreview`, `composer.uploadPreviewFallback`, `composer.semanticInput` | Upload evidence and native semantic input witness. The native editable probe already identifies the admissible editor; aliases must not redefine independent health or upload readiness (§6). |
-
-## composer-send-packaged.json
-
-| Exact retained keys     | Reason                                                         |
-| ----------------------- | -------------------------------------------------------------- |
-| `composer.keyEditables` | Standard editable/event protocol, never remotely mutable (§6). |
-
-## content-packaged.json
-
-| Exact retained keys                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Reason                                                                                                                                                                                                                                                                                                                              |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `export.presentedAncestor`, `export.presentedContent`, `export.responseElement`, `export.userImages`, `export.uploadedFiles`, `export.filePreviews`, `content.timelinePreview`, `content.highlightRoot`, `export.messageContent`, `export.thoughts`, `export.rawCode`, `export.codeOwner`, `export.responseOwner`, `export.walkMarkdown`, `export.markdown`, `export.assistantFallback`, `export.fallbackClass`, `export.sourcePrompt`, `export.sourcePromptMarkup`, `export.collectorAnswer`, `export.menuResponseOwner`, `export.userLinesFallback`, `export.attachmentPreviewOwner` | Source serialization, content preference, attachment provenance and fallback grammar. Complete answer/user body repair enters through content.answer/content.userLines; no independent proof can select another preferred subset or classify arbitrary file/image markup. Source/role and exclusion protocols remain packaged (§6). |
-
-## conversation.json
-
-| Exact retained keys  | Reason                                                                                                                                                                                                  |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `conversation.roots` | Ordered original conversation landmarks. Current independent ownership evidence finds these same roots; no independent proof establishes another root as the active conversation rather than a preview. |
-
-## deep-research-packaged.json
-
-| Exact retained keys                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Reason                                                                                                                                                                                                                                                                                         |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `deepResearch.items`, `deepResearch.reportCandidates`, `deepResearch.panel`, `deepResearch.thinkingPanels`, `deepResearch.thought`, `deepResearch.thoughtHeader`, `deepResearch.thoughtContent`, `deepResearch.browseList`, `deepResearch.browseLinks`, `deepResearch.browseDomain`, `deepResearch.browseTitle`, `deepResearch.documentTitle`, `deepResearch.reportHeadings`, `deepResearch.menuPanel`, `deepResearch.menuContent`, `deepResearch.menuShare`, `deepResearch.menuExport` | No independent proof for renamed report/item boundaries on actual markup; longest text or headings alone cannot distinguish a report from an ordinary answer. Thought-before-browse ordering, source URLs, title parsing and share/export actions are fixed source/interaction protocols (§6). |
-
-## export-entry-packaged.json
-
-| Exact retained keys                                                                                                                                                                                                  | Reason                                                                                                                                                                                                    |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `exportEntry.logo`, `exportToolbar.broadControls`, `exportToolbar.canvasOwner`, `exportToolbar.canvasContent`, `exportToolbar.inactiveCanvas`, `canvasEntry.downloadItem`, `canvasEntry.owner`, `canvasEntry.editor` | Logo identity and Canvas download/owner/editor action protocol (§6); other probes preserve toolbar collision and inactive/occluded Canvas placement. None can independently identify a new export action. |
-
-## export-layout-packaged.json
-
-| Exact retained keys                                                                                                                                                                                             | Reason                                                                                                                                                  |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `controls`, `broadControls`, `canvasOwner`, `canvasContent`, `fullscreenCanvas`, `inactiveCanvas`, `turns`, `interactive`, `avoidRow`, `overlaySidebar`, `fallbackRoot`, `alignmentCanvas`, `alignmentComposer` | No independent proof of renamed toolbar collision/alignment targets. See the shared-site ledger; the effective conversation/header mounts are separate. |
-
-## export-toolbar.json
-
-| Exact retained keys      | Reason                                                                                                                                                                                                            |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `exportToolbar.controls` | Upgrade/Pro avoidance and existing top-bar control placement policy. No independent proof identifies a new header control cluster while retaining upgrade avoidance; remote data cannot simply declare that role. |
-
-## fork-packaged.json
-
-| Exact retained keys                                                                     | Reason                                                                                                                                                                                                                                                                      |
-| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fork.userHost`, `fork.copyButton`, `fork.copyIcon`, `fork.sentTextLines`, `fork.input` | Native user owner, copy-button/icon action association and source-text interpretation (§6 identity/copy protocol). Content repairs use the shared guarded body. fork.input preserves the narrower bundled prefill read; remote repairs use the guarded composer.candidates. |
-
-## formula-packaged.json
-
-| Exact retained keys                                                                               | Reason                                                                                                                                                                                |
-| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `formula.container`, `formula.display`, `formula.inline`, `formula.presentation`, `formula.quote` | Formula source/display/quote serialization. Native data-math/MathML/KaTeX already supplies the content proof; an alias without a source has no independently verifiable formula (§6). |
-
-## gems-packaged.json
-
-| Exact retained keys                                                                                                                                                   | Reason                                                                                                                                                                                                                                             |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `link`, `nativeLink`, `nativeRow`, `titleEvidence`, `descriptionEvidence`, `iconEvidence`, `currentName`, `currentIcon`, `moreEntry`, `topNav`, `navHost`, `excluded` | Independent Gem href/ID, native row/title/description/icon evidence and editor/dialog exclusions. Remote Gems lists cannot certify their own identity or delete saved pins; no independent proof admits a different current-name/icon source (§6). |
-
-Remaining image, input, sidebar and protocol data is listed in the [second half of this ledger](PACKAGED_SURFACES.md).
+| Key                                | Tier / delivery | Reason                                                                                                                                                |
+| ---------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `actionsContainer`                 | A / bundle copy | Scopes sidebar actions; independent toggle/new-chat association must prove ownership. Online counterpart: `sidebar.actionsContainer`.                 |
+| `activity.inputs`                  | A / online      | Captures sent prompts for activity; native editor ownership proves the input.                                                                         |
+| `activity.owner`                   | A / packaged    | Activity records require native composer ownership; another wrapper proves no send owner.                                                             |
+| `activity.send`                    | §6 / packaged   | Native send-control association is the event protocol for activity recording.                                                                         |
+| `alignmentCanvas`                  | B / bundle copy | Canvas bounds only align Voyager export UI. Online counterpart: `exportLayout.alignmentCanvas`.                                                       |
+| `alignmentComposer`                | B / bundle copy | Composer bounds only align Voyager export UI. Online counterpart: `exportLayout.alignmentComposer`.                                                   |
+| `assistantTurn`                    | A / packaged    | Native semantic evidence stays independent; specific turn/composer/code profiles repair consumers, while another semantic source cannot prove itself. |
+| `avoidRow`                         | §6 / packaged   | Boolean toolbar algorithm option, not a locator.                                                                                                      |
+| `broadControls`                    | B / bundle copy | Collision probe only positions the Voyager export button. Online counterpart: `exportLayout.broadControls`.                                           |
+| `canvas.codeEditor`                | A / packaged    | Exported editor content needs native editor/source grammar; another editable cannot prove code ownership.                                             |
+| `canvas.codeLanguage`              | A / packaged    | Exported language uses native metadata; arbitrary labels cannot prove language identity.                                                              |
+| `canvas.codeLine`                  | A / packaged    | Exported line boundaries use native editor grammar; arbitrary text nodes cannot prove source-line identity.                                           |
+| `canvas.codeLines`                 | A / packaged    | Exported line ordering uses native editor grammar; an arbitrary collection cannot prove original source order.                                        |
+| `canvas.codePanels`                | A / online      | Supplies exported Canvas code/title; independent source/title ownership proves the panel.                                                             |
+| `canvas.codeTitle`                 | A / packaged    | Exported filename uses native title precedence; arbitrary labels cannot prove the document title.                                                     |
+| `canvas.documentEditors`           | A / online      | Complete native ProseMirror immediate shells must belong to fixed Canvas owners.                                                                      |
+| `canvas.documentTitleInputs`       | A / packaged    | Exported title-input value has no independent canonical title witness.                                                                                |
+| `canvas.documentTitles`            | A / packaged    | Exported document title has no independent canonical witness outside native title metadata.                                                           |
+| `canvas.indicators`                | A / packaged    | Native Canvas source/state indicators are the document admission witness; arbitrary marks prove no document identity.                                 |
+| `canvas.proseMirror`               | A / packaged    | Native ProseMirror content is the independent document-editor witness; another source cannot certify itself.                                          |
+| `canvasContent`                    | B / bundle copy | Canvas content box only positions Voyager export UI. Online counterpart: `exportLayout.canvasContent`.                                                |
+| `canvasEntry.downloadItem`         | §6 / packaged   | Native download command identity is fixed interaction protocol.                                                                                       |
+| `canvasEntry.editor`               | A / packaged    | Supplies exported Canvas content; arbitrary editable content cannot prove document ownership.                                                         |
+| `canvasEntry.menus`                | A / online      | Native menu/download_md action and unique expanded ARIA controller must bind it to the original Canvas document.                                      |
+| `canvasEntry.owner`                | A / packaged    | Scopes Canvas export; arbitrary wrappers cannot prove the native editor/action owner.                                                                 |
+| `canvasOwner`                      | B / bundle copy | Canvas boundary only positions Voyager export UI. Online counterpart: `exportLayout.canvasOwner`.                                                     |
+| `code.buttons`                     | B / online      | Places the Voyager code-collapse toggle beside native buttons only.                                                                                   |
+| `code.content`                     | A / packaged    | Exported code source follows native grammar; arbitrary text cannot prove original code.                                                               |
+| `code.decoration`                  | §6 / packaged   | Native decoration is independent code-host proof, not remote placement evidence.                                                                      |
+| `code.host`                        | A / online      | Supplies copied/exported code; independent native code and decoration prove its complete owner.                                                       |
+| `code.language`                    | A / packaged    | Exported language follows native metadata; arbitrary header text cannot prove language.                                                               |
+| `code.shell`                       | §6 / packaged   | Native shell is independent code-host proof, not remote placement evidence.                                                                           |
+| `codeBlock`                        | A / packaged    | Native semantic evidence stays independent; specific turn/composer/code profiles repair consumers, while another semantic source cannot prove itself. |
+| `composer`                         | A / packaged    | Native semantic evidence stays independent; specific turn/composer/code profiles repair consumers, while another semantic source cannot prove itself. |
+| `composer.candidates`              | A / online      | Selects the editor for text insertion; independent native editor ownership is required.                                                               |
+| `composer.draftCandidates`         | A / online      | Reads/writes persisted drafts; independent native editor ownership is required.                                                                       |
+| `composer.draftEditExclusion`      | §6 / packaged   | Inline-edit rejection floor prevents drafts from targeting another edit session.                                                                      |
+| `composer.draftPlaceholderHost`    | A / packaged    | Draft placeholder source has native precedence; arbitrary text cannot prove input state.                                                              |
+| `composer.keyEditables`            | §6 / packaged   | Native editable/event grammar is the send safety floor.                                                                                               |
+| `composer.notificationGenerating`  | §6 / packaged   | Native generation evidence determines notification timing.                                                                                            |
+| `composer.notificationInteraction` | §6 / packaged   | Native interaction evidence determines notification cancellation.                                                                                     |
+| `composer.notificationTyping`      | §6 / packaged   | Native typing evidence determines notification cancellation.                                                                                          |
+| `composer.semanticInput`           | §6 / packaged   | Independent native editable/health witness cannot certify itself remotely.                                                                            |
+| `composer.sendContainers`          | A / online      | Selects the owner of a send; requires independently proved editor and control.                                                                        |
+| `composer.uploadPreview`           | §6 / packaged   | Native upload witness independently prevents premature send/completion.                                                                               |
+| `composer.uploadPreviewFallback`   | §6 / packaged   | Native fallback upload witness independently prevents premature send/completion.                                                                      |
+| `composerRoot`                     | A / packaged    | Native semantic evidence stays independent; specific turn/composer/code profiles repair consumers, while another semantic source cannot prove itself. |
+| `content`                          | §6 / packaged   | Native sidebar content grammar supplies independent ownership evidence.                                                                               |
+| `content.answer`                   | A / online      | Supplies saved/exported reply text; complete native reply ownership is required.                                                                      |
+| `content.highlightRoot`            | A / packaged    | Saved highlight source depends on native content boundaries; arbitrary wrappers cannot prove stable source coordinates.                               |
+| `content.timelinePreview`          | A / packaged    | Stored timeline preview preference has no independent witness for a different preferred text subset.                                                  |
+| `content.userLines`                | A / online      | Supplies saved/exported prompt text; complete native user-turn ownership is required.                                                                 |
+| `contentInner`                     | §6 / packaged   | Native sidebar inner-content grammar supplies independent state/layout evidence.                                                                      |
+| `context.images`                   | A / online      | Supplies images for stored/exported context; native source and turn ownership are required.                                                           |
+| `controls`                         | B / bundle copy | Avoids native controls when placing the Voyager export button. Online counterpart: `exportLayout.controls`.                                           |
+| `conversation.roots`               | A / online      | Scopes conversation operations; must be the scrolling common ancestor of every proved turn.                                                           |
+| `currentIcon`                      | A / packaged    | Current Gem icon has no independent canonical source outside the native icon field.                                                                   |
+| `currentName`                      | A / packaged    | Current Gem name has no independent canonical source outside the native name field.                                                                   |
+| `daily`                            | A / packaged    | Cached daily usage uses native value/label grammar; arbitrary numbers cannot prove this metric.                                                       |
+| `deepResearch.browseDomain`        | A / packaged    | Exported citation domain uses native source grammar; arbitrary labels prove no domain attribution.                                                    |

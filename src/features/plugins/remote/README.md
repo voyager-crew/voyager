@@ -149,7 +149,12 @@ reads the same Gemini data under the same guards. Each other site reads its own
 profiles alongside its existing catalog plugins. The
 [resolver README](../../../core/selectors/README.md) lists the exact coverage
 and independent checks that protect each operation.
-A key whose repair can only confirm the bundle stays packaged-only.
+The [trust ledger](../../../core/selectors/PACKAGED_DATA.md) records every key's
+Tier A, Tier B or design §6 classification. Tier A keys require independent page
+proof for host actions, stored/exported data and operation identity. Tier B keys
+only place or avoid Voyager UI and trust the official catalog without that proof.
+A missing match or a mount inside a host editable region falls back to the bundle.
+Both tiers retain the literal allowlist, groups, syntax checks and size limits.
 
 The catalog builder reads the same selected non-`*-packaged.json` fragments as
 `bundle.ts`. Revision, cache writer version, refresh timing and withdrawal use
@@ -185,10 +190,11 @@ contract keys use the frozen guarded view only with Online updates on. With
 updates off they also retain the baseline resolved-adapter read; no semantic key
 is silently dropped.
 
-Every consumer guard and `remoteKeys` decision remains packaged. A partial
-collection, conflict with an independent native/bundled check or target other
-than the operation’s original element falls back for the whole operation before
-any side effect. These checks remain off the bundled path.
+Every tier assignment, consumer guard and `remoteKeys` decision remains packaged.
+For Tier A, a partial collection, conflict with independent native/bundled evidence
+or wrong operation target falls back before side effects. Tier B applies only its
+no-match and editable-mount fallback. These checks remain off the bundled path.
+Design §6 identity, action and source protocols never become remote instructions.
 
 The [rollback runbook](../../../core/selectors/README.md#rollback-runbook)
 covers higher-revision fixes and withdrawing locators in the host file.

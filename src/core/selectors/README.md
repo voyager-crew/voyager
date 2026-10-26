@@ -12,18 +12,19 @@ Each site's `catalog/sites/<site>/selector-data/` directory owns its locator
 fragments. [`contracts/`](contracts/) declares literal remote keys, rejection
 groups and publication files. [`bundle.ts`](bundle.ts) and the catalog publisher
 read those same fragments. Existing semantic keys keep `site.json` as their
-single source. Packaged fragments hold the site's fixed protocols and locators
-without an independent proof that could admit a useful replacement.
-
-The [complete packaged-data ledger](PACKAGED_DATA.md) lists every retained key
-and its reason. Some renamable classes have **no independent proof** of a safe
-replacement; those remain packaged until a new proof is implemented. They are
-not immutable protocols, and a class rename may still require an extension release.
+single source. The [per-key trust ledger](PACKAGED_DATA.md) classifies published profiles,
+packaged fragments and semantic keys on all six sites. Tier A requires independent
+page proof when a locator drives a host action, supplies stored/exported data, or
+decides the conversation, turn, account, Gem, folder or project an operation uses.
+Tier B is trusted official-catalog data used only to place or avoid Voyager UI.
+It cannot act on the host or supply data. Design §6 protocols stay packaged;
+a retained Tier A locator has a per-key reason why a replacement cannot be proved
+without trusting that replacement.
 
 | Site                         | Online page detection coverage                                                                                                                                                                                                       |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Gemini, including Enterprise | Conversation turns and content; sidebar and Gems; composer and prompt tools; menus; export and image surfaces; code and Canvas panels. The [Gemini registry](../gemini/selectors/README.md#groups-and-consumers) lists each surface. |
-| AI Studio                    | Composer candidates; complete library rows and drag targets; prompt history, sidebar and navigation children. Placement slots remain packaged.                                                                                       |
+| AI Studio                    | Composer candidates; complete library rows and drag targets; prompt history, sidebar and navigation children. Navigation insertion slots and UI layout are also covered.                                                             |
 | ChatGPT                      | Composer and handoff candidates, composer owners, Vim input, turns, model controls, header actions, temporary-chat navigation, export/streaming roots, code hosts, sidebar and scroll owners.                                        |
 | Claude                       | Composer and handoff candidates, Vim input, complete reply roots for export, sidebar and scroll owners.                                                                                                                              |
 | Kimi                         | Composer candidates, Vim input, complete reply roots for export, sidebar and scroll owners.                                                                                                                                          |
@@ -71,15 +72,23 @@ Validation caps each site's profiles at 65,536 UTF-8 bytes, each ordered list at
 control characters are rejected. A malformed or unparsable locator drops its
 whole surface group. Unknown keys are reported and ignored so older clients retain their other repairs. An oversized section drops the section without invalidating plugins or unrelated site data. Authoring fragments remain strict about unexpected keys.
 
-With Online updates on, consumers of keys admitted to the guarded page-locator
-contract perform a pure read against one captured view before any click,
-insertion, send, export, download or persistent write. Remote data counts only
-when an independent native or bundled read proves the complete result and its
-original owner. A partial list, reordered result, conflicting evidence or wrong
-element reruns the entire operation against the bundle. Rejected candidates
-never contribute descendants or side effects. These checks stay off the
-bundled path: without remote changes, the reader runs once and no remote guard
-runs.
+With Online updates on, Tier A consumers perform a pure read against one
+captured view before a host action, export or persistent write. Independent
+native or bundled evidence must prove the complete result and its original owner.
+A partial list, reordered result, conflicting evidence or wrong target reruns the
+whole operation against the bundle; rejected candidates contribute no descendants
+or side effects.
+
+Tier B covers export-toolbar layout, HUD and prompt UI placement, insertion
+slots, alignment and avoidance probes. It needs no ownership proof: a matching
+value from the official catalog is trusted, as existing site overrides were.
+Zero matches fall back for that operation. A mount inside a host editable region
+(contenteditable, input, textarea or other form controls) also falls back.
+Literal allowlists, group rejection, syntax checks and size limits apply to both
+tiers. A mixed-use locator is Tier A unless placement has its own separate key.
+
+Neither tier adds checks to the bundled path. OFF or absent remote profiles keep
+the bundled values, order, behavior and query cost from `6fa19b4ae`.
 
 ChatGPT's `composerRoot` is admitted separately from its composer/send group.
 A repair must identify exactly one owner containing the independently proven

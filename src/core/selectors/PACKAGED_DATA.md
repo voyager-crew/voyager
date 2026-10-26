@@ -1,52 +1,78 @@
-# Packaged page-data ledger
+# Page-locator trust ledger
 
-A renamable class is not an immutable protocol. **No independent proof** means the current page cannot distinguish a proposed replacement from a wrong target; it does not mean the locator cannot break. Such repairs require a packaged change that supplies a new proof. The tables cover every non-published selector-data fragment; published keys and their guards are in [the contracts](contracts/) and [the resolver README](README.md). Gemini has its [own complete table](../gemini/selectors/PACKAGED_DATA.md). Existing non-locator adapter data and catalog CSS keep their separate distribution rules.
+Every key is classified by what its consumers can do, including online contract
+keys, all packaged fragment fields and semantic keys forced to the bundle. Each
+site's table gives one reason per key. Stored titles, timeline/preview text,
+export roots/content, filenames, IDs and saved prompts are **Tier A**, even when
+their native source grammar remains packaged.
 
-## Shared site fragments
+- **Tier A:** host actions (click, send, stop, delete, type/insert, navigate or open
+  menus), stored/exported data, or conversation/turn/account/Gem/folder/project
+  ownership. Remote replacements require independent page evidence before the
+  whole operation is accepted. An action or source protocol is not proved merely
+  because a remote query found a node.
+- **Tier B:** only positions, mounts, aligns or avoids Voyager's own UI. Trust the
+  official catalog without independent ownership proof. Zero matches fall back
+  for that operation; a mount inside a host editable region also falls back.
+  Both tiers keep literal allowlists, rejection groups, size limits and per-group
+  rejection of unparsable values. Mixed-use keys stay Tier A or gain a separate
+  placement key.
+- **§6:** packaged host/permission, ID extraction, native health, source or action
+  protocols, CSS sinks, Voyager-owned DOM and dormant compatibility fragments.
+  Attributes and flags listed beside locators are included so no source field is
+  silently omitted. §6 does not excuse a stored-data locator from Tier A.
 
-Bundled input candidates, clearance anchors and Vim control fallbacks retain
-the baseline values and order on every site. Only values known not to match on
-that site may become `:not(*)` or be omitted without changing the remaining
-order; site-specific plausible alternatives must not be prepended.
+## Per-site inventory
 
-| Site / fragment                              | Exact retained keys                                                                                                                                                                                             | Reason                                                                                                                                                                                                                                                                             |
-| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| All six sites: `export-layout-packaged.json` | `controls`, `broadControls`, `canvasOwner`, `canvasContent`, `fullscreenCanvas`, `inactiveCanvas`, `turns`, `interactive`, `avoidRow`, `overlaySidebar`, `fallbackRoot`, `alignmentCanvas`, `alignmentComposer` | No independent proof of a replacement collision or alignment target. These renamable locators find controls and Canvas regions; geometry alone cannot distinguish the intended placement. Remote conversation/header mounts are resolved separately.                               |
-| All six sites: `timeline-packaged.json`      | `timeline.userText`                                                                                                                                                                                             | Ordered text preference followed by native traversal. No independent proof distinguishes another preferred subset from missing text; changing it could change saved summaries.                                                                                                     |
-| All six sites: `timeline-packaged.json`      | `guide.overlays`                                                                                                                                                                                                | Native ARIA menu/dialog association and interaction safety (§6).                                                                                                                                                                                                                   |
-| Five non-Gemini sites: `input-packaged.json` | `vim.editable`, `vim.editInputs`, `vim.crossSiteEdit`, `vim.editActions`, `vim.sendTarget`, `vim.editForm`                                                                                                      | Packaged editing, send/Save/Update, and focus exclusion grammar (§6 interaction/write protocol). These ordered legacy fallbacks stay available where their native evidence actually matches; they do not publish another composer channel.                                         |
-| Five non-Gemini sites: `input-packaged.json` | `vim.host`, `vim.inputFallback`, `vim.mountInput`, `vim.mountRoot`, `vim.mountChatInput`, `vim.mountChatRoot`                                                                                                   | No independent proof of a different HUD owner. Mount, host and input fallback candidates retain their baseline values and order on every site, followed by the configured composer fallback.                                                                                       |
-| Five non-Gemini sites: `input-packaged.json` | `input.clearance`                                                                                                                                                                                               | No independent proof that a renamed ancestor is the composer clearance boundary; geometry alone cannot identify that owner.                                                                                                                                                        |
-| Five non-Gemini sites: `input-packaged.json` | `vim.hud`                                                                                                                                                                                                       | Ordered baseline toolbar/HUD candidates on every site, followed by the existing composer/form/fieldset fallback. No independent proof identifies a replacement placement target.                                                                                                   |
-| Five non-Gemini sites: `input-packaged.json` | `input.fab`                                                                                                                                                                                                     | ChatGPT, Claude, DeepSeek and Kimi explicitly use `:not(*)`: their prompt trigger does not use the Material FAB branch. AI Studio uses its actual Angular Material touch target. No independent proof identifies a replacement as the FAB; geometry sorting alone is insufficient. |
-| ChatGPT / AI Studio: `input-packaged.json`   | `input.nativeOwner`                                                                                                                                                                                             | Independent native composer witness. Remote data must not certify its own ownership (§6 native health).                                                                                                                                                                            |
-| AI Studio: `input-packaged.json`             | `composer.keyEditables`, `composer.sendContainers`                                                                                                                                                              | Native editable/send-owner protocol and rejection floor. Run/form ownership already identifies the admissible owner; a second remote wrapper would not prove another legal send unit.                                                                                              |
-| DeepSeek: `input.json`                       | `input.candidates`, `vim.candidates`                                                                                                                                                                            | The current independent proof requires the original native textarea/root. It already finds the bundled editor; no independent proof admits a renamed alternative. These lists are packaged despite the unsuffixed filename.                                                        |
+“Before” is `3adb77650`; both columns use the new classification. Counts are
+**distinct site/key names**, not CSS strings: duplicate copies with the same key
+count once. A new `exportLayout.*` or `sidebar.*` alias and its differently named
+baseline copy each count once. Original fragment values/order stay intact.
+“Online” counts the literal profile contract, including semantic/page-hook
+aliases; legacy adapter overrides are separate. The two ChatGPT model-picker
+aliases come from `site.json/pageHooks`, so its before count is 116, not 114.
 
-## AI Studio navigation
+| Site                                           | Keys before → after | A         | B       | §6      | Online before → after | Nested adapter fields |
+| ---------------------------------------------- | ------------------- | --------- | ------- | ------- | --------------------- | --------------------- |
+| [gemini](../gemini/selectors/PACKAGED_DATA.md) | 280 → 297           | 179 → 183 | 38 → 51 | 63 → 63 | 75 → 120              | 10                    |
+| [aistudio](PACKAGED_AISTUDIO.md)               | 59 → 71             | 18 → 18   | 27 → 39 | 14 → 14 | 12 → 37               | 6                     |
+| [chatgpt](PACKAGED_CHATGPT.md)                 | 116 → 128           | 56 → 56   | 23 → 35 | 37 → 37 | 25 → 50               | 30                    |
+| [claude](PACKAGED_CLAUDE.md)                   | 42 → 54             | 11 → 11   | 22 → 34 | 9 → 9   | 8 → 30                | 16                    |
+| [deepseek](PACKAGED_DEEPSEEK.md)               | 42 → 54             | 12 → 12   | 22 → 34 | 8 → 8   | 4 → 26                | 7                     |
+| [kimi](PACKAGED_KIMI.md)                       | 41 → 53             | 11 → 11   | 22 → 34 | 8 → 8   | 6 → 28                | 7                     |
 
-| Fragment                   | Exact retained keys       | Reason                                                                                                                                                                                                                                                                    |
-| -------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `navigation-packaged.json` | `history.preferred`       | No independent proof of preferred-title precedence among duplicate prompt IDs. URL identity proves membership, not which duplicate title should be saved.                                                                                                                 |
-| `navigation-packaged.json` | `history.observe`         | MutationObserver attribute names: source/event protocol, not locators (§6).                                                                                                                                                                                               |
-| `navigation-packaged.json` | `history.titleAttributes` | Ordered aria-label/title/text serialization, not locators (§6 source protocol).                                                                                                                                                                                           |
-| `navigation-packaged.json` | `library.dropLink`        | Native anchor href prompt-route protocol. Any independently proven prompt URL already satisfies this predicate (§6 URL/ID).                                                                                                                                               |
-| `navigation-packaged.json` | `navigation.anchorSteps`  | No independent proof. Relative queries include renamable spacer/bottom classes; sidebar and nav membership cannot distinguish the intended insertion slot from another child. Remote sidebar/history/nav-child repairs still run before this packaged placement sequence. |
-| `navigation-packaged.json` | `navigation.empty`        | No independent proof. The renamable `.empty-space` class is the only spacer evidence; an arbitrary empty node cannot prove the intended placement or priority.                                                                                                            |
-| `navigation-packaged.json` | `navigation.bottom`       | No independent proof. The renamable bottom-actions class is the only pinned-footer evidence; buttons or links do not prove a region is the footer.                                                                                                                        |
-| `navigation-packaged.json` | `navigation.expanded`     | Native expansion-state predicate used by width styling (§6 state/CSS). The sidebar target has its own guarded remote key.                                                                                                                                                 |
+The [nested adapter supplement](PACKAGED_ADAPTERS.md) and its
+[ChatGPT continuation](PACKAGED_ADAPTER_CHATGPT.md) list existing folder, project,
+page-hook, export-state and theme fields separately. They already use the catalog's
+adapter sections and are not additional page-locator profiles. The two ChatGPT
+page-hook aliases overlap the main table; supplemental counts must not be added
+to the main totals without removing that overlap.
 
-ChatGPT has a [complete per-key action and export table](PACKAGED_CHATGPT.md), including the two renamable classes with **no independent proof**.
+## Reading delivery and retained keys
 
-## Other packaged boundaries
+`online` means admitted to the frozen page-locator contract. `bundle copy` means
+an unchanged literal fallback for a separately named online counterpart, not an
+unimplemented repair. `packaged` has the per-key protocol or proof limitation in
+its row. `legacy adapter` keeps the established resolved-adapter path; admission
+to the new contract must not silently remove those existing overrides.
 
-| Source                                                           | Retained data                                                                                                                                                                                                                                                                                                                                                                   | Reason                                                                                                                                                                                             |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude `site.json`                                               | `sidePanel`                                                                                                                                                                                                                                                                                                                                                                     | Native ownership proofs use the bundled artifact-origin predicate; remote data cannot define a trusted origin (§6). Existing declarative catalog sidePanel overrides still pass through as before. |
-| `src/features/export/services/shared-content.json`               | `export.messageContent`, `export.thoughts`, `export.rawCode`, `export.codeOwner`, `export.codeBlocks`, `export.responseOwner`, `export.walkMarkdown`, `export.fallbackClass`, `export.sourcePrompt`, `export.sourcePromptMarkup`, `export.collectorAnswer`, `export.menuResponseOwner`, `export.userLinesFallback`, `export.attachmentPreviewOwner`, `export.assistantFallback` | Shared standard content serialization/exclusion grammar. Complete body repairs use export.assistantContent; the serializer cannot accept a second independently unproven subset.                   |
-| `src/core/services/composer/generic-input.json`                  | `input.candidates`, `input.clearance`, `input.fab`, `vim.candidates`, `vim.editable`, `vim.editInputs`, `vim.sendTarget`, `vim.editForm`, `vim.host`, `vim.inputFallback`, `vim.hud`, `vim.mountInput`, `vim.mountRoot`, `vim.mountChatInput`, `vim.mountChatRoot`, `vim.crossSiteEdit`, `vim.editActions`                                                                      | Unknown/custom-host historical input and HUD fallbacks. Unknown origins have no catalog contract and must not borrow another site’s data.                                                          |
-| `src/pages/content/prompt/prompt-input-protocol.json`            | `promptHistory.input`, `promptHistory.editOwner`, `promptHistory.mainOwner`, `slash.sendOwner`                                                                                                                                                                                                                                                                                  | Shared editable/write/event ownership protocol (§6), not another remote channel.                                                                                                                   |
-| `src/pages/content/sendBehavior/send-protocol.json`              | `composer.sendCandidates`, `composer.actionOwners`, `composer.actionInput`, `composer.unavailableAncestors`, `composer.stopIcons`, `composer.updateButton`, `composer.actionIcon`                                                                                                                                                                                               | Shared send/Stop/disabled/upload and event rejection floor (§6).                                                                                                                                   |
-| `src/pages/content/export/adapter/platform/generic-profile.json` | `userTurns`, `assistantTurns`, `roots`, `assistantElements`, `userImages`, `uploadedFiles`, `filePreviews`, `images`, `canvas`, `title`                                                                                                                                                                                                                                         | Unknown-host historical export compatibility profile. No catalog claim exists; shared algorithms receive this profile, never a named site’s online snapshot.                                       |
+With Online updates OFF, all semantic keys keep baseline cached-adapter reads;
+only namespaced profiles revert to bundled values. With no remote changes, no
+new proof or placement query runs. The baseline ordered input, Vim, clearance
+and mount candidates remain unchanged on every host. Each site reads only its
+own profiles and unknown keys are ignored.
 
-Host admission, permissions, account controls, ID extraction, destructive actions, clone sanitizing, ARIA association, focus/caret writes, state interpretation, origin policy, CSS and Voyager-owned DOM remain packaged under design §6. They are protocols, not unimplemented remote keys.
+The old `exportToolbar.*` compatibility fragments have no live consumer; the
+active export toolbar uses `exportLayout.*`. The `interactive` layout probe is
+dormant on sites whose packaged `avoidRow` is false, and publishing that data does
+not enable row avoidance there. AI Studio relative insertion steps keep their
+original bundled query behavior; the online profile uses parser-safe `:scope`
+queries for the same relative placement operation.
+
+Host admission/matches/capabilities, account controls/exclusions, parsed-ID
+comparison, destructive actions, native clone sanitizing, ARIA/focus association,
+send/Stop/IME/disabled checks, event ordering, Quill/caret writes, model metadata,
+URL/origin policy, HTML/MathML serialization, CSS and Voyager-owned markers remain
+packaged. MAIN-world scroll policy stays in `public/prevent-auto-scroll.js`; it
+is not a remotely projected execution channel. Source locators that produce data
+remain labelled A in the site tables even when these protocols explain retention.
