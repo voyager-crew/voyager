@@ -1,4 +1,3 @@
-import { withPageSemanticSelectors } from '@/core/selectors';
 /**
  * What a site must name in site.json for its sends to be told apart. Kept free
  * of page code so the popup can tell whether a site's timeline records send times.
@@ -24,9 +23,6 @@ export interface SendInputs {
  * a site has no send tracking, rather than tracking that could stamp the wrong turn.
  */
 export function sendInputsOf(adapter: SiteAdapter | null | undefined): SendInputs | null {
-  adapter = adapter
-    ? withPageSemanticSelectors(adapter, ['composer', 'composerRoot', 'sendButton', 'userTurn'])
-    : adapter;
   const userTurn = adapter?.selectors.userTurn;
   const composer = adapter?.selectors.composer;
   const pattern = adapter?.conversationIdPattern;

@@ -1,4 +1,4 @@
-import profiles from '@/features/plugins/catalog/sites/chatgpt/selector-data/actions.json';
+import profiles from '../../../features/plugins/catalog/sites/chatgpt/selector-data/actions.json';
 
 /** Reply roots need independent completeness and original-response ownership before extraction. */
 export const CHATGPT_ACTION_KEYS = ['bridge.replyContent'] as const;

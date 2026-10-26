@@ -1,8 +1,8 @@
-import aistudio from '@/features/plugins/catalog/sites/aistudio/selector-data/input.json';
-import chatgpt from '@/features/plugins/catalog/sites/chatgpt/selector-data/input.json';
-import claude from '@/features/plugins/catalog/sites/claude/selector-data/input.json';
-import deepseek from '@/features/plugins/catalog/sites/deepseek/selector-data/input.json';
-import kimi from '@/features/plugins/catalog/sites/kimi/selector-data/input.json';
+import aistudio from '../../../features/plugins/catalog/sites/aistudio/selector-data/input.json';
+import chatgpt from '../../../features/plugins/catalog/sites/chatgpt/selector-data/input.json';
+import claude from '../../../features/plugins/catalog/sites/claude/selector-data/input.json';
+import deepseek from '../../../features/plugins/catalog/sites/deepseek/selector-data/input.json';
+import kimi from '../../../features/plugins/catalog/sites/kimi/selector-data/input.json';
 
 export const INPUT_SITE_PROFILES = { aistudio, chatgpt, claude, deepseek, kimi };
 export const INPUT_SITE_KEYS = {

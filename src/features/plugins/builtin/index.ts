@@ -1,6 +1,5 @@
-import chatgptExportData from '@/features/plugins/catalog/sites/chatgpt/selector-data/export-packaged.json';
-import claudeSite from '@/features/plugins/catalog/sites/claude/site.json';
-
+import chatgptExportData from '../catalog/sites/chatgpt/selector-data/export-packaged.json';
+import claudeSite from '../catalog/sites/claude/site.json';
 import { type PluginManifest, hasNativeOps } from '../types';
 import { contract as conversationExportContract } from '../verbs/conversationExport/contract';
 import { AISTUDIO_BATCH_DELETE_MANIFEST } from './aistudioBatchDeleteManifest';

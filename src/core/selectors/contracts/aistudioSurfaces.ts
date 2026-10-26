@@ -1,5 +1,5 @@
-import library from '@/features/plugins/catalog/sites/aistudio/selector-data/library.json';
-import navigation from '@/features/plugins/catalog/sites/aistudio/selector-data/navigation.json';
+import library from '../../../features/plugins/catalog/sites/aistudio/selector-data/library.json';
+import navigation from '../../../features/plugins/catalog/sites/aistudio/selector-data/navigation.json';
 
 export const AISTUDIO_SURFACE_PROFILES = { ...library, ...navigation };
 export const AISTUDIO_SURFACE_KEYS = [

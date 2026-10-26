@@ -12,6 +12,7 @@
  * nowhere (ChatGPT's temporary chats) report nothing. Everything here fails
  * closed: a missed send is fine, a send pinned to the wrong turn is not.
  */
+import { withPageSemanticSelectors } from '@/core/selectors';
 import { textWithLatexSource } from '@/core/utils/userLatexSource';
 import {
   hasComposerAttachments,
@@ -52,7 +53,12 @@ export function isEphemeralChat(siteId: string): boolean {
 
 /** `adapter`'s send inputs, or `null` when it lacks any (see `sendInputsOf`). */
 export function sendSiteOf(adapter: SiteAdapter | null): SendSite | null {
-  const inputs = sendInputsOf(adapter);
+  // Keep capability discovery usable by Node; page snapshots belong to the send owner.
+  const inputs = sendInputsOf(
+    adapter
+      ? withPageSemanticSelectors(adapter, ['composer', 'composerRoot', 'sendButton', 'userTurn'])
+      : adapter,
+  );
   return inputs && { ...inputs, isEphemeral: EPHEMERAL_CHECKS[inputs.siteId] };
 }
 
