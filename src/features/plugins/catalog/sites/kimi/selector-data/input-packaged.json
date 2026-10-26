@@ -25,25 +25,12 @@
   "vim.editForm": ["mat-form-field.edit-form, .edit-form"],
   "vim.host": [".text-input-field, input-area-v2, input-container"],
   "vim.inputFallback": ["rich-textarea"],
-  "vim.hud": [
-    "toolbox-drawer .toolbox-drawer-button-label-icon-text",
-    "toolbox-drawer .toolbox-drawer-button-label",
-    "toolbox-drawer .toolbox-drawer-button-container",
-    "toolbox-drawer button",
-    "toolbox-drawer .toolbox-drawer-container",
-    "[class*=\"toolbox-drawer\"] .toolbox-drawer-button-label-icon-text",
-    "[class*=\"toolbox-drawer\"] button",
-    "button[aria-label*=\"Tools\"]",
-    "button[aria-label*=\"tools\"]",
-    "button[aria-label*=\"工具\"]",
-    "button[aria-label*=\"ツール\"]",
-    "button[aria-label*=\"도구\"]"
-  ],
+  "vim.hud": [":not(*)"],
   "vim.mountInput": ["#prompt-textarea[contenteditable=\"true\"]"],
   "vim.mountRoot": ["form"],
   "vim.crossSiteEdit": ["textarea[aria-label=\"Edit message\"]"],
   "vim.editActions": ["button"],
-  "input.fab": ["span.mat-mdc-button-touch-target"],
+  "input.fab": [":not(*)"],
   "vim.mountChatInput": ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"],
   "vim.mountChatRoot": ["fieldset"]
 }

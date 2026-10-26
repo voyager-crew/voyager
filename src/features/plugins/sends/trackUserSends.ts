@@ -12,7 +12,7 @@
  * nowhere (ChatGPT's temporary chats) report nothing. Everything here fails
  * closed: a missed send is fine, a send pinned to the wrong turn is not.
  */
-import { withPageSemanticSelectors } from '@/core/selectors';
+import { getPageSelectorSiteId, getSiteSelectorView } from '@/core/selectors';
 import { hasComposerAttachments, readComposerText } from '@/core/services/composer/draft';
 import { textWithLatexSource } from '@/core/utils/userLatexSource';
 import { isTemporaryChat } from '@/features/plugins/builtin/chatgptTemporaryHandoff/handoff';
@@ -23,11 +23,16 @@ import type { SiteAdapter } from '@/features/plugins/types';
 import { isSendActionButton } from '@/pages/content/sendBehavior/sendButton';
 
 import { startPendingSend } from './pendingSend';
-import { type SendInputs, sendInputsOf } from './sendInputs';
-import { sendTargets } from './sendTargets';
+import { sendInputsOf } from './sendInputs';
+import {
+  sendTargets,
+  sendUserTurnSelector,
+  type TrackingTargets,
+  type SendTargetSource,
+} from './sendTargets';
 
 /** A site's send inputs (`sendInputsOf`), plus how to tell a chat the host keeps nowhere. */
-export interface SendSite extends SendInputs {
+export interface SendSite extends SendTargetSource {
   /** Whether the open chat is one the host keeps nowhere. */
   readonly isEphemeral?: () => boolean;
 }
@@ -52,12 +57,14 @@ export function isEphemeralChat(siteId: string): boolean {
 /** `adapter`'s send inputs, or `null` when it lacks any (see `sendInputsOf`). */
 export function sendSiteOf(adapter: SiteAdapter | null): SendSite | null {
   // Keep capability discovery usable by Node; page snapshots belong to the send owner.
-  const inputs = sendInputsOf(
-    adapter
-      ? withPageSemanticSelectors(adapter, ['composer', 'composerRoot', 'sendButton', 'userTurn'])
-      : adapter,
-  );
-  return inputs && { ...inputs, isEphemeral: EPHEMERAL_CHECKS[inputs.siteId] };
+  const inputs = sendInputsOf(adapter);
+  if (!inputs) return null;
+  // Freeze candidates, not today's proof: Angular/React may mount the repaired editor later.
+  const selectorView =
+    typeof document !== 'undefined' && getPageSelectorSiteId(document) === inputs.siteId
+      ? getSiteSelectorView(inputs.siteId)
+      : undefined;
+  return { ...inputs, selectorView, isEphemeral: EPHEMERAL_CHECKS[inputs.siteId] };
 }
 
 /** The key `attributes` give the user turn `turn`, from it or its nearest ancestor holding one. */
@@ -99,8 +106,8 @@ export function trackUserSends(
   /** Set while one submission's events arrive: its Enter or click, then its form's submit. */
   let submitting = false;
 
-  const keyedTurns = (): Array<{ turn: Element; key: string }> =>
-    Array.from(doc.querySelectorAll(sendTargets(site, doc).userTurn), (turn) => ({
+  const keyedTurns = (selector: string): Array<{ turn: Element; key: string }> =>
+    Array.from(doc.querySelectorAll(selector), (turn) => ({
       turn,
       key: readTurnKey(turn, site.turnKeyAttributes),
     })).filter((entry): entry is { turn: Element; key: string } => entry.key !== null);
@@ -111,7 +118,11 @@ export function trackUserSends(
     fields.some((field) => field instanceof HTMLElement && readComposerText(field).trim() !== '') ||
     (form !== null && hasComposerAttachments(form));
 
-  const onSend = (fields: readonly Element[], form: Element | null): void => {
+  const onSend = (
+    fields: readonly Element[],
+    form: Element | null,
+    targets: TrackingTargets,
+  ): void => {
     if (scope.isDisposed || submitting || site.isEphemeral?.()) return;
     // An empty submit sends nothing; armed, it would claim whichever chat's turn mounted next.
     if (!hasDraft(fields, form)) return;
@@ -129,7 +140,7 @@ export function trackUserSends(
       {
         sentAt: Date.now(),
         conversationKey,
-        known: new Set(keyedTurns().map(({ key }) => key)),
+        known: new Set(keyedTurns(targets.userTurn).map(({ key }) => key)),
         prompt,
       },
       {
@@ -138,7 +149,7 @@ export function trackUserSends(
         conversation: routeConversation,
         report,
         newest: () => {
-          const newest = keyedTurns().at(-1);
+          const newest = keyedTurns(sendUserTurnSelector(site, doc)).at(-1);
           return newest
             ? { key: newest.key, readPrompt: () => compact(textWithLatexSource(newest.turn)) }
             : null;
@@ -147,15 +158,14 @@ export function trackUserSends(
     );
   };
 
-  const composerForm = (target: Element): Element | null => {
-    const selectors = sendTargets(site, doc);
+  const composerForm = (target: Element, selectors: TrackingTargets): Element | null => {
     // A repaired editor may no longer match the bundled root selector; keep its proved owner.
     const form = selectors.remoteComposer ? selectors.provedRoot : target.closest('form');
     if (selectors.remoteComposer && !form?.contains(target)) return null;
     return form?.querySelector(selectors.composer) ? form : null;
   };
-  const sendFrom = (form: Element): void =>
-    onSend(Array.from(form.querySelectorAll(sendTargets(site, doc).composer)), form);
+  const sendFrom = (form: Element, targets: TrackingTargets): void =>
+    onSend(Array.from(form.querySelectorAll(targets.composer)), form, targets);
 
   // Capture phase: these run before the host handles the send and renders its message.
   scope.on(
@@ -163,13 +173,16 @@ export function trackUserSends(
     'keydown',
     (event) => {
       if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
-      const field =
-        event.target instanceof Element
-          ? event.target.closest(sendTargets(site, doc).composer)
-          : null;
+      if (!(event.target instanceof Element)) return;
+      // One event owns one proof; later DOM mutations only need to prove the resulting turns.
+      const targets = sendTargets(site, doc);
+      const field = event.target.closest(targets.composer);
       if (field) {
-        const targets = sendTargets(site, doc);
-        onSend([field], targets.remoteComposer ? composerForm(field) : field.closest('form'));
+        onSend(
+          [field],
+          targets.remoteComposer ? composerForm(field, targets) : field.closest('form'),
+          targets,
+        );
       }
     },
     { capture: true },
@@ -191,9 +204,8 @@ export function trackUserSends(
       ) {
         return;
       }
-      if (!button) return;
-      const form = composerForm(button);
-      if (form) sendFrom(form);
+      const form = composerForm(button, targets);
+      if (form) sendFrom(form, targets);
     },
     { capture: true },
   );
@@ -201,8 +213,10 @@ export function trackUserSends(
     doc,
     'submit',
     (event) => {
-      const form = event.target instanceof Element ? composerForm(event.target) : null;
-      if (form) sendFrom(form);
+      if (!(event.target instanceof Element)) return;
+      const targets = sendTargets(site, doc);
+      const form = composerForm(event.target, targets);
+      if (form) sendFrom(form, targets);
     },
     { capture: true },
   );

@@ -25,9 +25,18 @@ describe('bundled export placement', () => {
       handle.root.dataset.gvPlatform = siteId;
       await nextFrame();
       expect(handle.root.style.getPropertyValue('--gv-persistent-export-right')).toBe('332px');
-      control.setAttribute('aria-label', 'Pro');
+      const pro = document.createElement('button');
+      pro.setAttribute('aria-label', 'Pro');
+      mockRect(pro, { top: 8, bottom: 44, left: 900, right: 1130, width: 230, height: 36 });
+      control.replaceWith(pro);
       await nextFrame();
-      expect(handle.root.style.getPropertyValue('--gv-persistent-export-right')).toBe('332px');
+      await nextFrame();
+      expect(handle.root.style.getPropertyValue('--gv-persistent-export-right')).toBe('392px');
+      pro.remove();
+      await nextFrame();
+      await nextFrame();
+      expect(handle.root.style.getPropertyValue('--gv-persistent-export-right')).toBe('84px');
+      handle.remove();
     },
   );
 });

@@ -7,9 +7,7 @@ import { isRendered } from './chatgptThread';
  * without an account, at desktop widths as well as on phones; logged-in
  * ChatGPT on a phone keeps the desktop thread (`/c/<id>`, `[data-turn-key]`).
  */
-export const LOGGED_OUT_THREAD_SELECTOR = chatgptExportData['export.loggedOutThread'];
 export const LOGGED_OUT_MESSAGE_SELECTOR = chatgptExportData['export.loggedOutMessages'];
-export const LOGGED_OUT_ASSISTANT_SELECTOR = chatgptExportData['export.loggedOutAssistant'];
 
 /** A desktop turn ChatGPT has rendered: the virtual list's items or the earlier DOM's containers. */
 export const DESKTOP_TURN_SELECTOR = chatgptExportData['export.desktopTurns'].join(', ');

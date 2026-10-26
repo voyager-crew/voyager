@@ -4,12 +4,7 @@ import type {
   ExtractedContent,
 } from '@/features/export/services/DOMContentExtractor';
 
-import {
-  chatgptExportData,
-  chatgptTurnSelector,
-  CHATGPT_USER_BUBBLE,
-  CHATGPT_ASSISTANT_TURN,
-} from './chatgptExportData';
+import { chatgptExportData, chatgptTurnSelector, CHATGPT_USER_BUBBLE } from './chatgptExportData';
 import { chatgptStreamingSelector } from './chatgptExportLocators';
 import { mergeExtractedContent } from './chatgptShared';
 
@@ -37,7 +32,6 @@ const TURN_KEY_ATTRIBUTE = 'data-turn-key';
 export const USER_BUBBLE_SELECTOR = CHATGPT_USER_BUBBLE;
 /** The block that holds a prompt's bubble, its uploads and its action row. */
 const USER_UNIT_SELECTOR = chatgptExportData['export.userUnit'];
-export const ASSISTANT_REPLY_SELECTOR = CHATGPT_ASSISTANT_TURN;
 const REPLY_ID_ATTRIBUTE = 'data-chatgpt-selection-message-id';
 const MESSAGE_IDS_ATTRIBUTE = 'data-chatgpt-search-message-ids';
 /** The attributes {@link readTurnKey} and {@link readTurnFingerprint} read. */

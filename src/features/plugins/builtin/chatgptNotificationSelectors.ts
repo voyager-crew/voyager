@@ -1,4 +1,4 @@
-import { pageSemanticSelector } from '@/core/selectors';
+import { getSiteSelectorView, pageSemanticSelector } from '@/core/selectors';
 import site from '@/features/plugins/catalog/sites/chatgpt/site.json';
 import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
 import type { SiteAdapter } from '@/features/plugins/types';
@@ -27,23 +27,8 @@ export function notificationSelectorsOf(adapter: SiteAdapter | null): ChatgptNot
   };
 }
 
-/** Changed selectors are accepted as one complete page read, never a partial turn collection. */
-export function acceptsNotificationSelectors(
-  selected: ChatgptNotificationSelectors,
-  doc: Document = document,
-): boolean {
-  try {
-    for (const key of KEYS) {
-      if (selected[key] === site.selectors[key]) continue;
-      // Every consumer uses the shared turn/composer proof, including repairs with no bundled match.
-      if (selected[key] !== pageSemanticSelector(chatgptAdapter, key, doc)) return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function hasChangedNotificationSelectors(selected: ChatgptNotificationSelectors): boolean {
-  return KEYS.some((key) => selected[key] !== site.selectors[key]);
+/** A repair that cannot yet be proved may become usable after the native thread mounts. */
+export function hasNotificationSelectorFixes(): boolean {
+  const { remoteKeys } = getSiteSelectorView('chatgpt');
+  return KEYS.some((key) => remoteKeys.has(key));
 }

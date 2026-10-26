@@ -15,10 +15,7 @@ import { chatgptActionSelector } from './chatgptActionTargets';
 import { hasThinkingSignal } from './chatgptLocalBridge/ops/pageReaders';
 import { interruptionNotice } from './chatgptLocalBridge/ops/replyEvidence';
 import { findTrigger, readPicker } from './chatgptModelSelect/pickerDom';
-import {
-  notificationSelectorsOf,
-  acceptsNotificationSelectors,
-} from './chatgptNotificationSelectors';
+import { notificationSelectorsOf } from './chatgptNotificationSelectors';
 import { findButtonTarget } from './chatgptTemporaryHandoff/buttonTarget';
 import { isTemporaryChat } from './chatgptTemporaryHandoff/handoff';
 
@@ -68,7 +65,6 @@ it('export and notifications keep the same complete turn nodes through the catal
   const selectors = notificationSelectorsOf(chatgptAdapter);
   expect(document.querySelector(selectors.userTurn)).toBe(user);
   expect(document.querySelector(selectors.assistantTurn)).toBe(assistant);
-  expect(acceptsNotificationSelectors(selectors)).toBe(true);
 });
 
 it('renamed turn bodies repair export and notification reads together', async () => {
@@ -77,7 +73,6 @@ it('renamed turn bodies repair export and notification reads together', async ()
   expect(findUserBubble(item)?.textContent).toBe('Question whole');
   expect(findAssistantReply(item)?.querySelector('img')?.src).toBe('https://example.com/image.png');
   const selectors = notificationSelectorsOf(chatgptAdapter);
-  expect(acceptsNotificationSelectors(selectors)).toBe(true);
   expect(document.querySelector(selectors.userTurn)).toBe(findUserBubble(item));
 });
 
@@ -208,13 +203,6 @@ it('a remote temporary toggle cannot treat an unrelated pressed control as tempo
   expect(isTemporaryChat()).toBe(false);
 });
 
-it('a new-chat repair preserves the exact same-origin account route', async () => {
-  document.body.innerHTML = '<nav><a class="new-chat" href="/">New chat</a></nav>';
-  const original = document.querySelector(chatgptActionSelector('actions.newChat'));
-  await online({ 'actions.newChat': ['.new-chat'] });
-  expect(document.querySelector(chatgptActionSelector('actions.newChat'))).toBe(original);
-});
-
 it('a remote new-chat link cannot navigate to another origin', async () => {
   document.body.innerHTML =
     '<nav><a class="new-chat" href="https://example.com/">New chat</a></nav>';
@@ -222,13 +210,17 @@ it('a remote new-chat link cannot navigate to another origin', async () => {
   expect(document.querySelector(chatgptActionSelector('actions.newChat'))).toBeNull();
 });
 
-it('a custom GPT new-chat link can be repaired without losing its route', async () => {
-  history.replaceState(null, '', '/u/2/g/example/c/thread');
-  document.body.innerHTML = '<nav><a class="new-chat" href="/u/2/g/example/">New chat</a></nav>';
+it('a renamed custom GPT new-chat link is recovered only while its original route is intact', async () => {
+  history.replaceState(null, '', '/g/example/c/thread');
+  document.body.innerHTML = '<nav><a class="new-chat" href="/g/example/">New chat</a></nav>';
+  const link = document.querySelector<HTMLAnchorElement>('a')!;
+  expect(document.querySelector(chatgptActionSelector('actions.newChat'))).toBeNull();
   await online({ 'actions.newChat': ['.new-chat'] });
-  expect(
-    document.querySelector<HTMLAnchorElement>(chatgptActionSelector('actions.newChat'))?.pathname,
-  ).toBe('/u/2/g/example/');
+  expect(document.querySelector(chatgptActionSelector('actions.newChat'))).toBe(link);
+  link.href = '/g/another/';
+  expect(document.querySelector(chatgptActionSelector('actions.newChat'))).toBeNull();
+  link.href = '/g/example/';
+  expect(document.querySelector(chatgptActionSelector('actions.newChat'))).toBe(link);
 });
 
 it('a new-chat repair cannot leave the selected account or custom GPT', async () => {
@@ -286,7 +278,6 @@ it('notifications retain the same repaired native composer accepted by the runti
     '<form data-chatgpt-composer><textarea class="renamed-input">Draft</textarea><button class="renamed-send" type="submit">Send</button></form>';
   await online({}, { composer: '.renamed-input', sendButton: '.renamed-send' });
   const selected = notificationSelectorsOf(chatgptAdapter);
-  expect(acceptsNotificationSelectors(selected)).toBe(true);
   expect(document.querySelector(selected.composer)).toBe(document.querySelector('textarea'));
   expect(document.querySelector(selected.sendButton)).toBe(document.querySelector('button'));
 });

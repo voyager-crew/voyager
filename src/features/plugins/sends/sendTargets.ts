@@ -1,4 +1,9 @@
-import { getBundledSiteSelectorView, getSiteSelectorView } from '@/core/selectors';
+import {
+  getBundledSiteSelectorView,
+  getSiteSelectorView,
+  getPageSelectorSiteId,
+  type SiteSelectorView,
+} from '@/core/selectors';
 import { guardedChatgptSemanticSelector } from '@/core/selectors/chatgptSemantics';
 import { getSiteSelectorContract } from '@/core/selectors/contracts';
 import { resolveComposerOperation } from '@/core/services/composer/siteComposerOperation';
@@ -6,16 +11,24 @@ import { nativeSiteComposerRoot } from '@/core/services/composer/siteInputReads'
 
 import type { SendInputs } from './sendInputs';
 
+export interface SendTargetSource extends SendInputs {
+  readonly selectorView?: SiteSelectorView;
+}
+
+function candidateView(site: SendTargetSource, doc: Document): SiteSelectorView | undefined {
+  return site.selectorView?.siteId === getPageSelectorSiteId(doc) ? site.selectorView : undefined;
+}
+
 type TargetSelectors = Pick<SendInputs, 'composer' | 'composerRoot' | 'sendButton' | 'userTurn'>;
 const COMPOSER_KEYS = ['composer', 'composerRoot', 'sendButton'] as const;
 const KEYS = [...COMPOSER_KEYS, 'userTurn'] as const;
-type TrackingTargets = TargetSelectors & {
+export type TrackingTargets = TargetSelectors & {
   readonly remoteComposer: boolean;
   readonly provedRoot: Element | null;
 };
 
 /** Tracking uses the same complete composer/action proof before it can stamp a user turn. */
-export function sendTargets(site: SendInputs, doc: Document): TrackingTargets {
+export function sendTargets(site: SendTargetSource, doc: Document): TrackingTargets {
   // Custom adapters have no catalog claim; their installed selectors keep the legacy path.
   if (!getSiteSelectorContract(site.siteId))
     return { ...site, remoteComposer: false, provedRoot: null };
@@ -26,42 +39,22 @@ export function sendTargets(site: SendInputs, doc: Document): TrackingTargets {
     sendButton: profiles.sendButton?.join(',') ?? site.sendButton,
     userTurn: profiles.userTurn?.join(',') ?? site.userTurn,
   };
+  const view = candidateView(site, doc);
   let selected = {
     ...bundle,
     ...Object.fromEntries(
-      KEYS.filter((key) => site[key] !== undefined).map((key) => [key, site[key]]),
+      KEYS.filter((key) => site[key] !== undefined).map((key) => [
+        key,
+        view?.profiles[key]?.join(',') ?? site[key],
+      ]),
     ),
   } as TargetSelectors;
   const bundled = { ...bundle, remoteComposer: false, provedRoot: null };
   if (KEYS.every((key) => selected[key] === bundle[key])) return bundled;
   try {
-    if (selected.userTurn !== bundle.userTurn) {
-      if (site.siteId === 'chatgpt') {
-        const view = getSiteSelectorView('chatgpt');
-        selected = {
-          ...selected,
-          userTurn:
-            guardedChatgptSemanticSelector(
-              'userTurn',
-              {
-                ...view,
-                profiles: { ...view.profiles, userTurn: [selected.userTurn] },
-                remoteKeys: new Set([...view.remoteKeys, 'userTurn']),
-              },
-              doc,
-            ) ?? bundle.userTurn,
-        };
-      }
-      const actual = Array.from(doc.querySelectorAll(selected.userTurn));
-      const expected = Array.from(doc.querySelectorAll(bundle.userTurn));
-      // A partial turn set must never stamp another turn as the user's new send.
-      if (
-        site.siteId !== 'chatgpt' &&
-        (actual.length !== expected.length ||
-          actual.some((element, index) => element !== expected[index]))
-      )
-        return bundled;
-    }
+    const userTurn = checkedUserTurn(site, doc, selected.userTurn, bundle.userTurn);
+    if (userTurn === null) return bundled;
+    selected = { ...selected, userTurn };
     if (COMPOSER_KEYS.every((key) => selected[key] === bundle[key]))
       return { ...selected, remoteComposer: false, provedRoot: null };
     if (!selected.composerRoot || !selected.sendButton) return bundled;
@@ -95,5 +88,48 @@ export function sendTargets(site: SendInputs, doc: Document): TrackingTargets {
     };
   } catch {
     return bundled;
+  }
+}
+
+function checkedUserTurn(
+  site: SendTargetSource,
+  doc: Document,
+  selected: string,
+  bundle: string,
+): string | null {
+  if (selected === bundle) return bundle;
+  if (site.siteId === 'chatgpt') {
+    const view = candidateView(site, doc) ?? getSiteSelectorView('chatgpt');
+    return (
+      guardedChatgptSemanticSelector(
+        'userTurn',
+        {
+          ...view,
+          profiles: { ...view.profiles, userTurn: [selected] },
+          remoteKeys: new Set([...view.remoteKeys, 'userTurn']),
+        },
+        doc,
+      ) ?? bundle
+    );
+  }
+  const actual = Array.from(doc.querySelectorAll(selected));
+  const expected = Array.from(doc.querySelectorAll(bundle));
+  // A partial turn set must never stamp another turn as the user's new send.
+  return actual.length === expected.length &&
+    actual.every((element, index) => element === expected[index])
+    ? selected
+    : null;
+}
+
+/** Pending sends re-prove newly mounted turns without rescanning the already submitted composer. */
+export function sendUserTurnSelector(site: SendTargetSource, doc: Document): string {
+  if (!getSiteSelectorContract(site.siteId)) return site.userTurn;
+  const bundle =
+    getBundledSiteSelectorView(site.siteId).profiles.userTurn?.join(',') ?? site.userTurn;
+  try {
+    const selected = candidateView(site, doc)?.profiles.userTurn?.join(',') ?? site.userTurn;
+    return checkedUserTurn(site, doc, selected, bundle) ?? bundle;
+  } catch {
+    return bundle;
   }
 }

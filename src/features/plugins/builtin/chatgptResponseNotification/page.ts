@@ -1,3 +1,4 @@
+import { nativeSiteComposerRoot } from '@/core/services/composer/siteInputReads';
 import { readChatGptConversationPath } from '@/features/folder/sites/chatgptIdentity';
 import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 import type { SiteAdapter } from '@/features/plugins/types';
@@ -5,8 +6,7 @@ import type { SiteAdapter } from '@/features/plugins/types';
 import {
   BUNDLED_NOTIFICATION_SELECTORS,
   type ChatgptNotificationSelectors,
-  acceptsNotificationSelectors,
-  hasChangedNotificationSelectors,
+  hasNotificationSelectorFixes,
   notificationSelectorsOf,
 } from '../chatgptNotificationSelectors';
 
@@ -90,11 +90,15 @@ export interface ChatGptPage {
 }
 
 function readPage(selectors: ChatgptNotificationSelectors): ChatGptPage {
+  const repairedComposer = selectors.composer !== BUNDLED_NOTIFICATION_SELECTORS.composer;
   /** The roots of the rendered composers; a hidden earlier conversation keeps its own. */
   const composerRoots = (): Element[] => {
     const roots = new Set<Element>();
     for (const composer of queryAll(selectors.composer)) {
-      const root = closest(composer, selectors.composerRoot);
+      if (!(composer instanceof HTMLElement)) continue;
+      const root = repairedComposer
+        ? nativeSiteComposerRoot('chatgpt', composer)
+        : closest(composer, selectors.composerRoot);
       if (root && isRendered(composer)) roots.add(root);
     }
     return [...roots];
@@ -134,7 +138,13 @@ function readPage(selectors: ChatgptNotificationSelectors): ChatGptPage {
     isStopControlTarget: (target) => {
       if (!(target instanceof Element)) return false;
       const button = target.closest('button');
-      if (!button || !closest(button, selectors.composerRoot)) return false;
+      if (
+        !button ||
+        (repairedComposer
+          ? !composerRoots().some((root) => root.contains(button))
+          : !closest(button, selectors.composerRoot))
+      )
+        return false;
       if (hasStopLabel(button)) return true;
       // Work mode's 选择项目 / 文件 buttons also draw inline svgs, but carry visible text.
       return (
@@ -170,11 +180,9 @@ function readPage(selectors: ChatgptNotificationSelectors): ChatGptPage {
 
 /** Freeze data at startup; prove each current operation's DOM only when the data differs. */
 export function createChatGptPage(adapter: SiteAdapter | null): ChatGptPage {
-  const selected = notificationSelectorsOf(adapter);
-  const page = readPage(selected);
-  if (!hasChangedNotificationSelectors(selected)) return page;
-  const bundled = readPage(BUNDLED_NOTIFICATION_SELECTORS);
-  const current = () => (acceptsNotificationSelectors(selected) ? page : bundled);
+  if (!hasNotificationSelectorFixes()) return readPage(notificationSelectorsOf(adapter));
+  // A page can start before its renamed thread/composer mounts; reprove each current operation.
+  const current = () => readPage(notificationSelectorsOf(adapter));
   return {
     hasLabelledStopControl: () => current().hasLabelledStopControl(),
     isAwaitingReply: () => current().isAwaitingReply(),

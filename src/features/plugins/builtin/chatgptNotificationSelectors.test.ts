@@ -86,3 +86,39 @@ describe('ChatGPT notification page reads', () => {
     expect(page.isStopControlTarget(foreign)).toBe(false);
   });
 });
+
+it('notifications recover a renamed thread that first mounts after the notification reader starts', async () => {
+  const page = await online({ userTurn: '.question', assistantTurn: '.answer' });
+  document.body.innerHTML =
+    '<main><div data-turn-key="late"><div data-chatgpt-search-unit-key="late:user"><div class="question">Late question</div></div><div data-chatgpt-search-unit-key="late:assistant"><div class="answer">Late answer</div></div></div></main>';
+  const reply = document.querySelector<HTMLElement>('.answer')!;
+  Object.defineProperty(reply, 'offsetWidth', { value: 100 });
+  Object.defineProperty(document.querySelector('.question')!, 'offsetWidth', { value: 100 });
+  expect(page.getLatestReply()).toBe(reply);
+  expect(page.getPromptForReply(reply)).toBe('Late question');
+  expect(page.isAwaitingReply()).toBe(false);
+  const main = document.querySelector('main')!;
+  main.setAttribute('role', 'dialog');
+  expect(page.getLatestReply()).toBeNull();
+  main.removeAttribute('role');
+  expect(page.getLatestReply()).toBe(reply);
+});
+
+it('notifications follow a late native composer and its own send and stop controls', async () => {
+  const page = await online({ composer: '.renamed-input', sendButton: '.renamed-send' });
+  document.body.innerHTML =
+    '<form data-chatgpt-composer><textarea id="late-input" class="renamed-input">Draft</textarea><button class="renamed-send" type="submit">Send</button><button type="button" aria-label="Stop">Stop</button></form><button id="unrelated-stop" aria-label="Stop">Stop</button>';
+  const field = document.querySelector('textarea')!;
+  Object.defineProperty(field, 'offsetWidth', { value: 100 });
+  const stop = document.querySelector('form [aria-label="Stop"]')!;
+  Object.defineProperty(stop, 'offsetWidth', { value: 100 });
+  expect(page.isSendGesture(enterOn('late-input'))).toBe(true);
+  expect(page.hasLabelledStopControl()).toBe(true);
+  expect(page.isStopControlTarget(stop)).toBe(true);
+  expect(page.isStopControlTarget(document.getElementById('unrelated-stop'))).toBe(false);
+  document.querySelector('form')!.setAttribute('role', 'dialog');
+  expect(page.isSendGesture(enterOn('late-input'))).toBe(false);
+  expect(page.hasLabelledStopControl()).toBe(false);
+  document.querySelector('form')!.removeAttribute('role');
+  expect(page.isSendGesture(enterOn('late-input'))).toBe(true);
+});

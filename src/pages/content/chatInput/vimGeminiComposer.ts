@@ -97,8 +97,7 @@ export function createGeminiVimComposerResolver(
             : composerSelector,
       };
     };
-    if (site !== 'gemini' || !GEMINI_VIM_PROFILE_KEYS.some((key) => view.remoteKeys.has(key)))
-      return read(bundle);
+    if (!GEMINI_VIM_PROFILE_KEYS.some((key) => view.remoteKeys.has(key))) return read(bundle);
 
     const expectedConfigured = configuredInputs(doc, configured);
     const expectedCandidates = candidateInputs(doc, bundle.profiles['vim.candidates']);
