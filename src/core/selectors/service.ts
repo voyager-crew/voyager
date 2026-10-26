@@ -10,6 +10,7 @@ import {
   createHydrationEffects,
   hydrationTransition,
 } from './hydration';
+import { startSemanticSource } from './semanticSource';
 import { BUNDLED_LOCATOR_SITES, locatorSiteForHost } from './sites';
 import type { SiteSelectorOperation, SiteSelectorView } from './types';
 import { isSelectorRecord, readSiteSelectorGroups } from './validation';
@@ -19,6 +20,8 @@ export interface SiteSelectorInitialization {
   readonly doc: Document;
   readonly lifetime: AbortSignal;
   readonly read: () => Promise<unknown>;
+  /** Shares the host’s initial settings read without blocking profile readiness. */
+  readonly readOnlineUpdates?: () => Promise<boolean>;
   readonly invalidatedBy?: (invalidate: () => void) => () => void;
   readonly bundledRevision?: number;
   readonly timeoutMs?: number;
@@ -36,6 +39,7 @@ export interface SiteSelectorLifetime {
 export class SiteSelectorService<Key extends string = string> {
   private view: SiteSelectorView<Key>;
   private active: Machine<HydrationState, HydrationEvent> | null = null;
+  private semanticSource: ReturnType<typeof startSemanticSource> | null = null;
 
   constructor(private readonly siteId: string) {
     this.view = this.bundle();
@@ -46,11 +50,25 @@ export class SiteSelectorService<Key extends string = string> {
   }
 
   getView(): SiteSelectorView<Key> {
+    if (!this.active || this.active.state.status === 'retired')
+      return Object.freeze({ ...this.bundle(), semanticSource: 'adapter' });
+    const source = this.semanticSource?.state;
+    if (source?.status === 'settled' && source.source === 'adapter')
+      return Object.freeze({ ...this.bundle(), semanticSource: 'adapter' });
     return this.view;
   }
 
   initialize(input: SiteSelectorInitialization): SiteSelectorLifetime {
     this.active?.send({ type: 'retire' });
+    this.semanticSource?.send({ type: 'retire' });
+    const semanticSource = input.readOnlineUpdates
+      ? startSemanticSource({
+          lifetime: input.lifetime,
+          read: input.readOnlineUpdates,
+          invalidatedBy: input.invalidatedBy,
+        })
+      : null;
+    this.semanticSource = semanticSource;
     this.view = this.bundle();
     let settle: (settlement: SiteSelectorSettlement) => void = () => undefined;
     const ready = new Promise<SiteSelectorSettlement>((resolve) => {
@@ -96,7 +114,10 @@ export class SiteSelectorService<Key extends string = string> {
         }
         hydration.send({ type: 'read', view });
       },
-      stop: () => hydration.send({ type: 'retire' }),
+      stop: () => {
+        semanticSource?.send({ type: 'retire' });
+        hydration.send({ type: 'retire' });
+      },
       isCurrent: () => hydration.state.status !== 'retired',
     };
   }

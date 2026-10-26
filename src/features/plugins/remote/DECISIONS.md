@@ -37,7 +37,7 @@ D15 原方案未使用。
 ## 10. 回滚
 
 - 远程内容：revert 主仓提交，Pages 重新部署并 purge CDN，客户端下次检查即采用回退后的远程条目（D6 不按版本高者胜）。插件若已随 bundle 发布，新客户端不会因 revert 后目录里缺席而移除它，必须把旧 id 加入站点的 `revoked.json`；重新发布已撤回的 id 时，必须先从 `revoked.json` 移除它。
-- 客户端：关掉「在线更新」后，各站点的受守卫页面定位在用户刷新时回到打包快照；缓存插件及其他 adapter 字段保留；任一阶段可以单独 revert，不触及用户存储。
+- 客户端：关掉「在线更新」并刷新页面后，各站点的 `site.locators` profiles 回到打包快照，所有 semantic keys（含 contract keys）仍按 baseline 读取缓存 adapter；缓存插件保留；任一阶段可以单独 revert，不触及用户存储。
 - 站点定位数据：按 [rollback runbook](../../../core/selectors/README.md#rollback-runbook) 用更高 `catalogRevision` 发布修正，或清空 `site.locators` 并将允许远程更新的 `site.selectors` 恢复为包内值。
 - 商店审核兜底：`VOYAGER_PLUGIN_CATALOG_REMOTE=off` 编出从不连接目录的构建（C6）。
 

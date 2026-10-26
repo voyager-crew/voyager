@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { initializeSiteSelectors, type SiteSelectorLifetime } from '@/core/selectors';
 import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
 
-import { createChatGptPage } from './chatgptResponseNotification/page';
+import { createChatGptPage, getReplyIdentity } from './chatgptResponseNotification/page';
 
 const lifetimes: SiteSelectorLifetime[] = [];
 
@@ -47,8 +47,23 @@ afterEach(() => {
 });
 
 describe('ChatGPT notification page reads', () => {
-  it('OFF cached reply data keeps installed identities and the original single-query read', () => {
+  it('OFF uses the cached reply target with its native identity and a single-query read', () => {
     const replies = mount();
+    const page = createChatGptPage({
+      ...chatgptAdapter,
+      selectors: { ...chatgptAdapter.selectors, assistantTurn: '[data-first]' },
+    });
+    const query = vi.spyOn(document, 'querySelectorAll');
+    const reply = page.getLatestReply();
+    expect(reply).toBe(replies[0]);
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(getReplyIdentity(reply!)).toBe('one|First answer');
+    expect(page.getPromptForReply(reply)).toBe('First question');
+  });
+
+  it('ON without an admitted repair keeps the latest reply with one bundled DOM lookup', async () => {
+    const replies = mount();
+    await online({});
     const page = createChatGptPage({
       ...chatgptAdapter,
       selectors: { ...chatgptAdapter.selectors, assistantTurn: '[data-first]' },
@@ -56,6 +71,24 @@ describe('ChatGPT notification page reads', () => {
     const query = vi.spyOn(document, 'querySelectorAll');
     expect(page.getLatestReply()).toBe(replies[1]);
     expect(query).toHaveBeenCalledTimes(1);
+  });
+
+  it('OFF does not widen a cached composer’s stop owner beyond the baseline root', () => {
+    document.body.innerHTML =
+      '<form data-chatgpt-composer><div class="cached-editor" contenteditable="true">Draft</div><button type="button" aria-label="Stop">Stop</button></form>';
+    const field = document.querySelector<HTMLElement>('.cached-editor')!;
+    const stop = document.querySelector('button')!;
+    for (const element of [field, stop])
+      Object.defineProperty(element, 'offsetWidth', { value: 100 });
+    const page = createChatGptPage({
+      ...chatgptAdapter,
+      selectors: { ...chatgptAdapter.selectors, composer: '.cached-editor' },
+    });
+    expect(page.hasLabelledStopControl()).toBe(false);
+    expect(page.isStopControlTarget(stop)).toBe(false);
+    field.id = 'prompt-textarea';
+    expect(page.hasLabelledStopControl()).toBe(true);
+    expect(page.isStopControlTarget(stop)).toBe(true);
   });
 
   it('matching hydrated composer data preserves the same send gesture and prompt pairing', async () => {

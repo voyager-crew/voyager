@@ -13,7 +13,14 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-it('cached remote adapter fields cannot redirect an OFF composer read', () => {
+it('ON without an accepted snapshot cannot redirect the composer through a cached adapter', async () => {
+  lifetime = initializeSiteSelectors('chatgpt', {
+    host: 'chatgpt.com',
+    doc: document,
+    lifetime: new AbortController().signal,
+    read: async () => null,
+  });
+  await lifetime.ready;
   const bundle = requireBundledSiteAdapter('chatgpt');
   const changed = { ...bundle, selectors: { ...bundle.selectors, composer: '.wrong' } };
   document.body.innerHTML =

@@ -232,8 +232,9 @@ it('a reply finishing outside form still sends one completion notification', asy
   expect(notifications[0][0]).toMatchObject({ payload: { userPrompt: 'Question' } });
 });
 
-it('a renamed root cannot send an unrecognised profile editor through the composer operation boundary', () => {
+it('a renamed root cannot send an unrecognised profile editor through the composer operation boundary', async () => {
   const { field, submit } = mount();
+  await online();
   const click = vi.fn((event: Event) => event.preventDefault());
   submit.addEventListener('click', click);
   const send = () => {

@@ -9,7 +9,7 @@ import { guardedSiteStructureSelector, isSiteStructureKey } from './siteSemantic
 import { getPageSelectorSiteId } from './sites';
 import type { SiteSelectorView } from './types';
 
-/** Migrated reads use the page claim's snapshot, even if PluginHost later reloads its adapter. */
+/** ON freezes migrated reads; OFF retains the adapter values used before migration. */
 export function pageSemanticSelector(
   adapter: Pick<SiteAdapter, 'id' | 'selectors'>,
   key: string,
@@ -20,6 +20,9 @@ export function pageSemanticSelector(
   if (!contract || (isSemanticSelectorKey(key) && !contract.keys.includes(key)))
     return adapter.selectors[key];
   const view = getSiteSelectorView(adapter.id);
+  // OFF must retain cached upload owners and other baseline semantic overrides.
+  if (isSemanticSelectorKey(key) && view.semanticSource === 'adapter')
+    return adapter.selectors[key];
   return doc ? pageSemanticSelectorInView(key, view, doc) : view.profiles[key]?.join(',');
 }
 

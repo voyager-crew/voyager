@@ -1,3 +1,4 @@
+import { getSiteSelectorView } from '@/core/selectors';
 import { nativeSiteComposerRoot } from '@/core/services/composer/siteInputReads';
 import { readChatGptConversationPath } from '@/features/folder/sites/chatgptIdentity';
 import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
@@ -90,8 +91,11 @@ export interface ChatGptPage {
 }
 
 function readPage(selectors: ChatgptNotificationSelectors): ChatGptPage {
-  const repairedComposer = selectors.composer !== BUNDLED_NOTIFICATION_SELECTORS.composer;
-  const repairedRoot = selectors.composerRoot !== BUNDLED_NOTIFICATION_SELECTORS.composerRoot;
+  // Cached OFF aliases keep the baseline closest-root checks without new ownership inference.
+  const online = getSiteSelectorView('chatgpt').semanticSource !== 'adapter';
+  const repairedComposer = online && selectors.composer !== BUNDLED_NOTIFICATION_SELECTORS.composer;
+  const repairedRoot =
+    online && selectors.composerRoot !== BUNDLED_NOTIFICATION_SELECTORS.composerRoot;
   /** The roots of the rendered composers; a hidden earlier conversation keeps its own. */
   const composerRoots = (): Element[] => {
     const roots = new Set<Element>();

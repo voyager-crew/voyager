@@ -34,9 +34,16 @@ export async function runModelSelect(
     );
   }
 
-  const { previous, ...result } = await selectModel(ctx, data, target, () => {
-    const field = findComposerField(adapter);
-    return field ? composerFormOf(field) : document;
-  });
+  const { previous, ...result } = await selectModel(
+    ctx,
+    data,
+    target,
+    () => {
+      const field = findComposerField(adapter);
+      return field ? composerFormOf(field) : document;
+    },
+    adapter?.pageHooks?.modelPickerTrigger,
+    adapter?.pageHooks?.effortControl,
+  );
   return params.capturePrevious ? { ...result, previous } : result;
 }

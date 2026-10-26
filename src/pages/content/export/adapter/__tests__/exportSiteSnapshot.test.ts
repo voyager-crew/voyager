@@ -42,7 +42,10 @@ it('a catalog turn repair remains exportable while a foreign scroll-root overrid
     { nativeId: 'data-virtual-list-item-key:u', role: 'user', text: 'Repaired prompt' },
     { nativeId: 'data-virtual-list-item-key:a', role: 'assistant', text: 'Repaired answer' },
   ];
-  expect(read()).toEqual(expected);
+  // OFF retains the scroll owner selected by the baseline cached adapter.
+  expect(buildCatalogExportAdapter(cached).resolveConversationRoot([], document)).toBe(
+    document.querySelector('.other'),
+  );
 
   const running = initializeSiteSelectors('deepseek', {
     host: 'chat.deepseek.com',

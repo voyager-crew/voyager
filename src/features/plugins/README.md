@@ -120,6 +120,10 @@ packaged and outside `marketplace.json`. Every concrete host has a catalog
 file, including Gemini Enterprise and both AI Studio hosts. Each site’s admitted
 page-locator profiles live in `site.locators`; identity and action policies stay
 packaged. Gemini Enterprise reads the Gemini profiles under the same guards.
+With Online updates off, semantic keys keep the baseline resolved-adapter reads,
+including cached overrides for keys admitted to the guarded contract. Only
+namespaced `site.locators` profiles revert to the bundle; the new contract
+proofs apply with updates on.
 See [remote/README.md](remote/README.md#page-locator-profiles-in-site-data).
 
 `catalog/marketplace.json` is **not** that mapping table, and no page reads it:

@@ -69,8 +69,10 @@ default `6h`). The popup surfaces both on every supported site.
 Opening it reads the cache. Manual checks bypass the switch and interval.
 Turning updates off stops automatic requests. Cached plugin manifests and site
 adapter data remain usable under the same revision and identity rules at first
-mount and on catalog reload. The guarded page-locator snapshot uses the bundle
-while updates are off; it does not discard unrelated cached adapter fields.
+mount and on catalog reload. With updates off, every semantic key, including
+keys admitted to the guarded contract, reads the cached adapter value as at
+baseline `6fa19b4ae`; only namespaced `site.locators` profiles use the bundle.
+The new contract proofs apply only when updates are on.
 
 **Message**: a content script or the popup sends `gv.pluginCatalog.refresh`
 (`PLUGIN_CATALOG_REFRESH_MESSAGE` in `runtime/messages.ts`) with
@@ -165,15 +167,23 @@ mount fixes whichever snapshot is already available. If catalog storage has not
 settled by then, that page keeps bundled profiles; a later page load can try
 again. A timely eligible cache still supplies the first native mount. Changes to
 update settings during hydration, an error, timeout or page teardown cannot adopt
-late data. After readiness, the snapshot stays fixed until the page is loaded
-again. New page-locator fixes, withdrawals and switching updates off therefore
+late data. After readiness, the profile snapshot stays fixed until the page is
+loaded again. An independent `startMachine` in
+[`semanticSource.ts`](../../../core/selectors/semanticSource.ts) shares the same
+initial settings read without delaying profile readiness. That read can still
+select OFF semantics after profiles are ready, restoring baseline adapter reads
+without installing late profiles. Settings changes during the pending read,
+read failures and teardown invalidate its result. Once this mode settles,
+new page-locator fixes, withdrawals and switching updates off therefore
 take effect after a user refresh, with no automatic reload or native remount.
 The page requests a due catalog check after hydration; opening the popup only
 reads the cache, and its refresh button requests a manual check.
 
 Existing semantic site overrides outside a site’s page-locator contract keep
 their baseline declarative behavior, including native primitives. Admitted
-contract keys use the frozen guarded view; no semantic key is silently dropped.
+contract keys use the frozen guarded view only with Online updates on. With
+updates off they also retain the baseline resolved-adapter read; no semantic key
+is silently dropped.
 
 Every consumer guard and `remoteKeys` decision remains packaged. A partial
 collection, conflict with an independent native/bundled check or target other

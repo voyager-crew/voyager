@@ -29,6 +29,18 @@ async function online(selectors: Readonly<Record<string, string>>): Promise<Site
   return source;
 }
 
+async function offline(): Promise<void> {
+  const lifetime = initializeSiteSelectors('chatgpt', {
+    host: 'chatgpt.com',
+    doc: document,
+    lifetime: new AbortController().signal,
+    readOnlineUpdates: async () => false,
+    read: async () => null,
+  });
+  lifetimes.push(lifetime);
+  await lifetime.ready;
+}
+
 function composer(id: string, content: string): HTMLElement {
   const form = document.createElement('form');
   form.innerHTML = `<div id="${id}" contenteditable="true" role="textbox">${content}</div><button type="submit">Send</button>`;
@@ -57,9 +69,10 @@ afterEach(() => {
 });
 
 describe('ChatGPT composer ownership', () => {
-  it('OFF cached adapter data keeps the original composer with one bundled DOM lookup', () => {
+  it('ON without an admitted repair keeps the original composer with one bundled DOM lookup', async () => {
     const input = composer('prompt-textarea', 'Original draft');
     composer('cached-editor', 'Private draft');
+    await online({});
     const stale = adapter({
       composer: '#cached-editor',
       composerRoot: 'body',
@@ -69,6 +82,34 @@ describe('ChatGPT composer ownership', () => {
     expect(findComposerField(stale)).toBe(input);
     expect(query).toHaveBeenCalledTimes(1);
     expect(input.textContent).toBe('Original draft');
+  });
+
+  it('OFF keeps the cached composer ahead of a still-mounted bundled editor', async () => {
+    const original = composer('prompt-textarea', 'Original draft');
+    const cached = composer('cached-editor', 'Cached draft');
+    await offline();
+    const source = adapter({ composer: '#cached-editor' });
+    const query = vi.spyOn(document, 'querySelectorAll');
+    expect(findComposerField(source)).toBe(cached);
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(cached.textContent).toBe('Cached draft');
+    expect(original.textContent).toBe('Original draft');
+  });
+
+  it('OFF keeps the cached send fallback after the composer’s own submit disappears', async () => {
+    const field = composer('prompt-textarea', 'Unsent draft');
+    const own = field.parentElement!.querySelector('button')!;
+    const cached = document.createElement('button');
+    cached.type = 'button';
+    cached.id = 'cached-send';
+    cached.textContent = 'Send';
+    document.body.append(cached);
+    await offline();
+    const source = adapter({ sendButton: '#cached-send' });
+    expect(findSendButton(field, source)).toBe(own);
+    own.remove();
+    expect(findSendButton(field, source)).toBe(cached);
+    expect(field.textContent).toBe('Unsent draft');
   });
 
   it('a broad online composer root retains the field’s native form', async () => {

@@ -73,7 +73,11 @@ function triggerLabel(button: HTMLElement): string {
 }
 
 /** The one rendered picker trigger in `scope`, else null (none, or ambiguous). */
-export function findTrigger(scope: ParentNode, data: ModelPickerSection): HTMLElement | null {
+export function findTrigger(
+  scope: ParentNode,
+  data: ModelPickerSection,
+  marker: string = DEFAULT_TRIGGER_MARKER,
+): HTMLElement | null {
   const view = getSiteSelectorView('chatgpt');
   if (view.remoteKeys.has('modelPicker.trigger')) {
     const selector = view.profiles['modelPicker.trigger'].join(',');
@@ -95,9 +99,9 @@ export function findTrigger(scope: ParentNode, data: ModelPickerSection): HTMLEl
       return candidate;
   }
   // The aria-label is translated into each of ChatGPT's UI languages; the marker is not.
-  const marked = Array.from(scope.querySelectorAll<HTMLElement>(DEFAULT_TRIGGER_MARKER)).filter(
-    isRendered,
-  );
+  // OFF keeps the baseline cached marker; only ON replacements need the independent proof above.
+  const fallbackMarker = view.semanticSource === 'adapter' ? marker : DEFAULT_TRIGGER_MARKER;
+  const marked = Array.from(scope.querySelectorAll<HTMLElement>(fallbackMarker)).filter(isRendered);
   if (marked.length > 0) return marked.length === 1 ? marked[0] : null;
   const labels = mergedLabels(data.triggerLabels);
   const found = Array.from(
@@ -197,7 +201,11 @@ function readNumber(element: Element, name: string): number | null {
   return Number(raw);
 }
 
-export function readPicker(menu: HTMLElement, data: ModelPickerSection): PickerReading {
+export function readPicker(
+  menu: HTMLElement,
+  data: ModelPickerSection,
+  effortControl: string = DEFAULT_EFFORT_CONTROL,
+): PickerReading {
   const radios = Array.from(menu.querySelectorAll('[role="menuitemradio"]')).map((radio) => ({
     label: normalizeLabel(radio.textContent ?? ''),
     checked: radio.getAttribute('aria-checked') === 'true',
@@ -214,7 +222,9 @@ export function readPicker(menu: HTMLElement, data: ModelPickerSection): PickerR
   const status = readStatus(menu, data);
   if (sliders.length === 0) {
     const view = getSiteSelectorView('chatgpt');
-    const native = rowSlider(menu, DEFAULT_EFFORT_CONTROL, status);
+    const fallbackControl =
+      view.semanticSource === 'adapter' ? effortControl : DEFAULT_EFFORT_CONTROL;
+    const native = rowSlider(menu, fallbackControl, status);
     slider = native;
     if (view.remoteKeys.has('modelPicker.effort')) {
       const repaired = rowSlider(menu, view.profiles['modelPicker.effort'].join(','), status);

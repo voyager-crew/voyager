@@ -177,7 +177,9 @@ virtualization or image-algorithm changes can still require an extension release
 
 The local emergency path is to turn **Online updates** off and refresh Gemini.
 This stops automatic catalog requests; manual checks remain available. It restores
-bundled page-locator reads without clearing folders, drafts, highlights or other
-user data. Cached plugins and unrelated site-adapter data remain usable. The
-catalog cache remains on the device. Withdrawal cannot reverse an action
+bundled `site.locators` profiles without clearing folders, drafts, highlights or
+other user data. Semantic adapter reads retain their baseline behavior, including
+cached overrides; the new contract proofs apply only with updates on. Cached
+plugins and site-adapter data remain usable. The catalog cache remains on the
+device. Withdrawal cannot reverse an action
 already completed.

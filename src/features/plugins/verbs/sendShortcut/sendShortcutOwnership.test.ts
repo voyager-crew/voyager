@@ -167,7 +167,15 @@ it('Kimi repairs only its composer and keeps its installed bare-div send control
   expect(field.textContent).toBe('draft');
 });
 
-it('with online data absent, a cached adapter cannot redirect the installed composer', async () => {
+it('ON without an accepted snapshot cannot redirect a send through the cached adapter', async () => {
+  const run = initializeSiteSelectors('chatgpt', {
+    host: 'chatgpt.com',
+    doc: document,
+    lifetime: new AbortController().signal,
+    read: async () => null,
+  });
+  stopProfiles.push(run.stop);
+  await run.ready;
   document.body.innerHTML =
     '<form data-chatgpt-composer><div data-composer-markdown class="remote-input" contenteditable="true">draft</div><button type="submit" id="real">Send</button></form><form><textarea>profile</textarea><button type="submit" class="remote-send">Submit</button></form>';
   const field = showField();

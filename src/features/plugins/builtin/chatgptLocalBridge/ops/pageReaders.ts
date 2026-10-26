@@ -12,7 +12,7 @@
  * - The send control has no test id: the composer form's `button[type=submit]`.
  * - Earlier conversations of the tab stay in the DOM under `display: none`.
  */
-import { withPageSemanticSelectors } from '@/core/selectors';
+import { getSiteSelectorView, withPageSemanticSelectors } from '@/core/selectors';
 import { chatgptSignalSelector } from '@/core/selectors/chatgptSignals';
 import { findComposer } from '@/core/services/composer';
 import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
@@ -78,6 +78,9 @@ export function settledConversationId(pathname: string = location.pathname): str
 }
 
 export function findComposerField(adapter: SiteAdapter | null): HTMLElement | null {
+  // OFF keeps the baseline adapter-first read, including its original fallback order.
+  if (getSiteSelectorView('chatgpt').semanticSource === 'adapter')
+    return findComposer(siteOf(adapter)) ?? findComposer(CHATGPT_COMPOSER_SELECTOR);
   return resolveChatgptComposer(
     () => findComposer(chatgptAdapter) ?? findComposer(CHATGPT_COMPOSER_SELECTOR),
     adapter,
@@ -101,13 +104,16 @@ function queryAll<T extends Element>(root: ParentNode, selector: string): T[] {
 }
 
 /** The composer form's own submit button, unique; the site data and older test ids as fallbacks. */
-function findBundledSendButton(field: HTMLElement): HTMLButtonElement | null {
+function findFallbackSendButton(
+  field: HTMLElement,
+  adapter: SiteAdapter = chatgptAdapter,
+): HTMLButtonElement | null {
   const own = queryAll<HTMLButtonElement>(composerFormOf(field), SUBMIT_SELECTOR).filter(
     isRendered,
   );
   if (own.length === 1) return own[0];
   if (own.length > 1) return null;
-  for (const selector of [chatgptAdapter.selectors.sendButton, CHATGPT_SEND_CONTROL_SELECTOR]) {
+  for (const selector of [adapter.selectors.sendButton, CHATGPT_SEND_CONTROL_SELECTOR]) {
     if (!selector) continue;
     const found = queryAll<HTMLButtonElement>(document, selector).filter(isRendered);
     if (found.length === 1 && found[0] instanceof HTMLButtonElement) return found[0];
@@ -119,7 +125,10 @@ export function findSendButton(
   field: HTMLElement,
   adapter: SiteAdapter | null,
 ): HTMLButtonElement | null {
-  return resolveChatgptSend(field, adapter, () => findBundledSendButton(field));
+  // The baseline tries the field's own submit before the cached adapter's fallback control.
+  if (getSiteSelectorView('chatgpt').semanticSource === 'adapter')
+    return findFallbackSendButton(field, siteOf(adapter));
+  return resolveChatgptSend(field, adapter, () => findFallbackSendButton(field));
 }
 
 /** A stop control in a rendered composer, by its known label or its inline-svg shape. */

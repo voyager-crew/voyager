@@ -1,5 +1,5 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
-import { getBundledSiteSelectorView } from '@/core/selectors';
+import { getBundledSiteSelectorView, getSiteSelectorView } from '@/core/selectors';
 import { getSiteSelectorContract } from '@/core/selectors/contracts';
 import type { SiteAdapter } from '@/features/plugins/types';
 
@@ -29,7 +29,9 @@ export function resolveComposerOperation<T extends ComposerRead>(
   read: (selectors: ComposerSelectors, requiresProof: boolean) => T,
 ): T {
   const contract = getSiteSelectorContract(adapter.id);
-  if (!contract) return read(selectors, false);
+  // OFF reads the cached adapter exactly as before, without the new online ownership proofs.
+  if (!contract || getSiteSelectorView(adapter.id).semanticSource === 'adapter')
+    return read(selectors, false);
   const profiles = getBundledSiteSelectorView(adapter.id).profiles;
   // Noncontract fields retain the pre-migration catalog override, including the upload owner.
   const baseline = (key: keyof ComposerSelectors): string =>

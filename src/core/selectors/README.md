@@ -49,21 +49,30 @@ site, and the catalog revision must exceed the bundle. Settings changes,
 timeouts and retirement settle pending work without accepting late results.
 The first adapter and settings reads are shared with PluginHost. Cached adapter
 selection uses the same revision/identity rule at first mount and later reloads,
-regardless of Online updates; only page-locator hydration follows that switch.
+regardless of Online updates. The switch governs profile hydration and whether
+semantic reads use the adapter or the guarded snapshot.
 Native features add no catalog wait. At their first mount, after the existing
 settings/coverage reads, they fix the snapshot already available. If cache
 hydration is still pending, that page keeps the bundle and later catalog results
 cannot switch it; a subsequent page load can try again. A timely eligible cache
-supplies the first mount. Once ready, the snapshot stays fixed until the user
-refreshes the page; consumer proofs still run against the current DOM.
+supplies the first mount. Once ready, the profile snapshot stays fixed until the
+user refreshes the page; consumer proofs still run against the current DOM.
+
+[`semanticSource.ts`](semanticSource.ts) separately resolves the initial semantic
+read mode through `startMachine`, reusing that same settings read without delaying
+profile readiness. If the initial setting resolves to OFF after profiles are
+ready, subsequent semantic reads use the baseline adapter; this cannot install
+late profiles. A settings change while the read is pending, a read failure or
+teardown invalidates that result. Once the mode settles, later setting changes
+require a page refresh.
 
 Validation caps each site's profiles at 65,536 UTF-8 bytes, each ordered list at
 32 entries and each locator at 2,048 UTF-16 code units. Empty strings and unsafe
 control characters are rejected. A malformed or unparsable locator drops its
 whole surface group. Unknown keys are reported and ignored so older clients retain their other repairs. An oversized section drops the section without invalidating plugins or unrelated site data. Authoring fragments remain strict about unexpected keys.
 
-For keys admitted to the guarded page-locator contract, consumers perform a pure
-read against one captured view before any click,
+With Online updates on, consumers of keys admitted to the guarded page-locator
+contract perform a pure read against one captured view before any click,
 insertion, send, export, download or persistent write. Remote data counts only
 when an independent native or bundled read proves the complete result and its
 original owner. A partial list, reordered result, conflicting evidence or wrong
@@ -81,10 +90,13 @@ for each operation; enclosing upload owners also retain their pending-upload
 check. The proof lives in
 [`chatgptRootProof.ts`](../services/composer/chatgptRootProof.ts).
 
-Existing `site.selectors` fields outside a site’s guarded contract retain their
-earlier catalog override behavior in declarative DOM operations and native
-primitives. They are not silently replaced with bundled values. Independent
-native ownership proofs still read packaged evidence.
+With Online updates off, every semantic key, including admitted contract keys,
+reads the resolved adapter value exactly as at baseline `6fa19b4ae`. Cached
+`site.selectors` overrides keep their existing revision and identity rules; the
+new guarded proofs apply only with Online updates on. Fields outside the guarded
+contract retain their earlier catalog override behavior in either mode.
+Namespaced `site.locators` profiles use the bundle while updates are off.
+Independent native ownership proofs still read packaged evidence.
 
 ## Rollback runbook
 
@@ -102,8 +114,10 @@ native ownership proofs still read packaged evidence.
 5. A build with `VOYAGER_PLUGIN_CATALOG_REMOTE=off` disables the whole channel.
 
 Locally, turn **Online updates** off and refresh the page to restore bundled
-page-locator reads. This stops automatic requests; manual checks remain available.
-Cached plugins and unrelated site-adapter data remain usable, including at the
-first mount. It does not clear folders, drafts, highlights or other user data.
+`site.locators` profiles and baseline semantic reads from the resolved adapter.
+This stops automatic requests; manual checks remain available. Cached plugins
+and all existing site-adapter fields remain usable, including admitted semantic
+keys, at the first mount and on catalog reload. It does not clear folders, drafts,
+highlights or other user data.
 The local catalog cache is retained.
 Withdrawal cannot undo an action already completed.

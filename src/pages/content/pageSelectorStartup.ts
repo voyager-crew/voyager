@@ -71,6 +71,8 @@ export function startPageSelectors(input: PageSelectorStartupInput): PageSelecto
     host,
     doc: input.doc,
     lifetime: input.lifetime,
+    readOnlineUpdates: async () =>
+      (await legacySettings.load())[StorageKeys.PLUGIN_ONLINE_UPDATES_ENABLED] !== false,
     read: async () => {
       const candidate = await adapterRead;
       // A missing/stale cache needs no switch read before starting the page.
@@ -108,13 +110,11 @@ export function startPageSelectors(input: PageSelectorStartupInput): PageSelecto
       // Consume completed storage reads synchronously; Promise plumbing is not another startup wait.
       const candidate = availableAdapter;
       const settings = legacySettings.current();
-      if (candidate === undefined) {
+      if (settings?.[StorageKeys.PLUGIN_ONLINE_UPDATES_ENABLED] === false) {
+        hydration.useAvailableSnapshot(null);
+      } else if (candidate === undefined) {
         hydration.useAvailableSnapshot();
-      } else if (
-        candidate === bundle ||
-        !hasSiteSelectorChanges(siteId, candidate) ||
-        settings?.[StorageKeys.PLUGIN_ONLINE_UPDATES_ENABLED] === false
-      ) {
+      } else if (candidate === bundle || !hasSiteSelectorChanges(siteId, candidate)) {
         hydration.useAvailableSnapshot(null);
       } else {
         hydration.useAvailableSnapshot(settings === undefined ? undefined : candidate);

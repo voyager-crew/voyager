@@ -206,7 +206,8 @@ it('a Voyager component marker cannot be used as a repaired native composer', as
   expect(document.querySelector('.send')?.className).toBe('send');
 });
 
-it('an admitted remote composer cannot bypass the frozen OFF view through the cached adapter', () => {
+it('ON without changed profiles cannot redirect semantic operations through the cached adapter', async () => {
+  await online({});
   page();
   document.body.insertAdjacentHTML(
     'beforeend',
