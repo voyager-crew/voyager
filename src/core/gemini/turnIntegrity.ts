@@ -14,6 +14,25 @@ export interface GeminiTurnCollection {
 const EXCLUDED =
   'deep-research-immersive-panel, model-thoughts, .thoughts-container, .thoughts-content';
 
+/** Every explicit or queried turn excludes the same research and thought owners. */
+export function isGeminiTurnMatch(element: Element): boolean {
+  return !element.closest(EXCLUDED);
+}
+
+function isNonContent(element: Element): boolean {
+  return (
+    shouldSkipElement(element) ||
+    element.matches(`${EXCLUDED}, message-actions, .message-actions, .gv-timestamp`)
+  );
+}
+
+/** Remote host fallbacks must serialize only the content whose completeness was proved. */
+export function stripGeminiTurnNonContent(root: HTMLElement): void {
+  for (const element of root.querySelectorAll('*')) {
+    if (isNonContent(element)) element.remove();
+  }
+}
+
 function before(left: Node, right: Node): boolean {
   const position = left.compareDocumentPosition(right);
   return (
@@ -30,11 +49,7 @@ function hasContent(host: Node, excluded: readonly Node[] = []): boolean {
   if (excluded.includes(host)) return false;
   if (host instanceof Element) {
     // Timestamp labels are Voyager UI beside the prompt, not an omitted native content leaf.
-    if (
-      shouldSkipElement(host) ||
-      host.matches(`${EXCLUDED}, message-actions, .message-actions, .gv-timestamp`)
-    )
-      return false;
+    if (isNonContent(host)) return false;
     if (host.matches('img, canvas, svg, math')) return true;
   }
   if (host.nodeType === Node.TEXT_NODE && host.textContent?.trim()) return true;
@@ -96,7 +111,7 @@ export function acceptsGeminiTurnCollection(
   return sameItems(owners, containers) && sameItems(paired, assistants);
 }
 
-function readMatches(
+export function readGeminiTurnMatches(
   root: HTMLElement,
   selectors: readonly string[],
   hosts = false,
@@ -107,11 +122,11 @@ function readMatches(
         ? Array.from(root.querySelectorAll<HTMLElement>(selectors.join(',')))
         : selectors.flatMap((selector) => Array.from(root.querySelectorAll<HTMLElement>(selector))),
     ),
-  ).filter((node) => !node.closest(EXCLUDED));
+  ).filter(isGeminiTurnMatch);
   return hosts ? nodes : filterTopLevel(nodes);
 }
 
-function readCollection(
+export function readGeminiTurnCollection(
   view: GeminiTurnView,
   doc: Document,
   hosts: boolean,
@@ -119,18 +134,18 @@ function readCollection(
 ): GeminiTurnCollection {
   const users = userSelectors ?? view.profiles[hosts ? 'turn.userWithHosts' : 'turn.user'];
   const root = doc.body;
-  const specific = readMatches(
+  const specific = readGeminiTurnMatches(
     root,
     view.profiles[hosts ? 'turn.assistantWithHosts' : 'turn.assistant'],
     hosts,
   );
   return {
     root,
-    users: readMatches(root, users, hosts),
+    users: readGeminiTurnMatches(root, users, hosts),
     assistants:
       specific.length || hosts
         ? specific
-        : readMatches(root, view.profiles['turn.assistantFallback']),
+        : readGeminiTurnMatches(root, view.profiles['turn.assistantFallback']),
   };
 }
 
@@ -151,16 +166,16 @@ export function acceptsGeminiTurnView(
     if (
       primary &&
       !acceptsGeminiTurnCollection(
-        readCollection(view, doc, false, userSelectors),
-        readCollection(bundle, doc, false),
+        readGeminiTurnCollection(view, doc, false, userSelectors),
+        readGeminiTurnCollection(bundle, doc, false),
       )
     )
       return false;
     return (
       !hosts ||
       acceptsGeminiTurnCollection(
-        readCollection(view, doc, true),
-        readCollection(bundle, doc, true),
+        readGeminiTurnCollection(view, doc, true),
+        readGeminiTurnCollection(bundle, doc, true),
       )
     );
   } catch {

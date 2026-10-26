@@ -1,6 +1,11 @@
 /** Native content serialization shared by the packaged and generic export dialects. */
 import type { ExtractedContent } from '@/features/export/services/DOMContentExtractor';
 import { extractExportCodeBlock } from '@/features/export/services/exportCodeBlocks';
+import {
+  DEFAULT_EXPORT_CODE_PROFILE,
+  matchesExportCodeHost,
+  type ExportCodeProfile,
+} from '@/features/export/services/exportCodeProfile';
 import { normalizeText } from '@/features/export/services/exportDomPolicy';
 
 export function extractUserText(textLines: NodeListOf<HTMLElement>, textParts: string[]): void {
@@ -35,17 +40,18 @@ export function extractCodeBlock(
   htmlParts: string[],
   textParts: string[],
   flags: Pick<ExtractedContent, 'hasImages' | 'hasFormulas' | 'hasTables' | 'hasCode'>,
-  tagName?: string,
+  _tagName?: string,
   _DEBUG?: boolean,
+  codeProfile: ExportCodeProfile = DEFAULT_EXPORT_CODE_PROFILE,
 ): boolean | undefined {
   if (child.querySelector('.gv-mermaid-wrapper')) return;
 
   // Descendant code blocks belong to the shared DOM-order traversal. Claiming
   // their parent here drops prose and sibling blocks around the first match.
-  if (tagName !== 'code-block' && !child.classList.contains('code-block')) return;
+  if (!matchesExportCodeHost(child, codeProfile)) return;
 
   // A diagram plugin's block exports its drawing while it can be read; otherwise its source.
-  const codeContent = extractExportCodeBlock(child as HTMLElement);
+  const codeContent = extractExportCodeBlock(child as HTMLElement, codeProfile);
   if (codeContent?.text) {
     flags.hasCode = true;
     htmlParts.push(codeContent.html);

@@ -3,6 +3,7 @@
   "export.thoughts": "model-thoughts, .thoughts-container, .thoughts-content",
   "export.rawCode": "pre > code, [data-test-id=\"code-content\"]",
   "export.codeOwner": "code-block",
+  "export.codeBlocks": "code-block, .code-block",
   "export.responseOwner": "model-response, .model-response, .presented-response-container, .response-container, response-container",
   "export.walkMarkdown": ".markdown, .markdown-main-panel",
   "export.fallbackClass": "markdown",

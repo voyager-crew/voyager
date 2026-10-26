@@ -1,11 +1,13 @@
 import { acceptsGeminiContextImages, readGeminiContextImages } from '@/core/gemini/content/reads';
 import { getBundledGeminiSelectorView, getGeminiSelectorView } from '@/core/gemini/selectors';
+import { stripGeminiTurnNonContent } from '@/core/gemini/turnIntegrity';
 import { locatorSiteForHost } from '@/core/selectors/sites';
 import { logger } from '@/core/services/LoggerService';
 import { getMatchedAdapter } from '@/features/contextSync/adapters';
 import { DialogNode } from '@/features/contextSync/types';
 
 import { getBrowserName } from '../../../core/utils/browser';
+import { readContextTurns } from './turnCapture';
 
 interface PreparedContextNode {
   readonly element: HTMLElement;
@@ -30,17 +32,9 @@ export class ContextCaptureService {
     const adapter = getMatchedAdapter(host);
     const messages: DialogNode[] = [];
 
-    let queries: HTMLElement[] = [];
-    let responses: HTMLElement[] = [];
-
-    if (adapter.user_selector && adapter.ai_selector) {
-      queries = adapter.user_selector
-        ? (Array.from(document.querySelectorAll(adapter.user_selector.join(','))) as HTMLElement[])
-        : [];
-      responses = adapter.ai_selector
-        ? (Array.from(document.querySelectorAll(adapter.ai_selector.join(','))) as HTMLElement[])
-        : [];
-    }
+    const bundle = getBundledGeminiSelectorView();
+    let view = locatorSiteForHost(host) === 'gemini' ? getGeminiSelectorView() : bundle;
+    const { queries, responses, remote, fallbackHosts } = readContextTurns(adapter, view);
 
     logger.debug(
       `[ContextSync] Found ${queries.length} queries and ${responses.length} responses.`,
@@ -55,12 +49,10 @@ export class ContextCaptureService {
     ).flat();
     const collect = () =>
       ordered.flatMap(({ element, role }) => {
-        const prepared = this.prepareNode(element, role);
+        const prepared = this.prepareNode(element, role, fallbackHosts.has(element));
         return prepared ? [prepared] : [];
       });
-    const bundle = getBundledGeminiSelectorView();
-    let view = locatorSiteForHost(host) === 'gemini' ? getGeminiSelectorView() : bundle;
-    if (!view.remoteKeys.has('context.images')) {
+    if (!remote && !view.remoteKeys.has('context.images')) {
       // OFF retains the original per-message prepare/await ordering.
       for (const { element, role } of ordered) {
         const node = this.prepareNode(element, role);
@@ -248,11 +240,16 @@ export class ContextCaptureService {
     }
   }
 
-  private prepareNode(el: HTMLElement, role: 'user' | 'assistant'): PreparedContextNode | null {
+  private prepareNode(
+    el: HTMLElement,
+    role: 'user' | 'assistant',
+    remoteFallback = false,
+  ): PreparedContextNode | null {
     if (el.offsetParent === null) return null;
     if (['SCRIPT', 'STYLE', 'NAV', 'HEADER', 'FOOTER', 'SVG', 'PATH'].includes(el.tagName))
       return null;
     const clone = el.cloneNode(true) as HTMLElement;
+    if (remoteFallback) stripGeminiTurnNonContent(clone);
     const tables = Array.from(clone.querySelectorAll('table')).reverse();
     tables.forEach((table) => {
       const md = this.convertTableToMarkdown(table as HTMLTableElement);

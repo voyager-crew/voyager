@@ -6,7 +6,7 @@ import {
   GEMINI_TURN_PROFILE_KEYS,
   type GeminiTurnView,
 } from '@/core/gemini/selectors';
-import { acceptsGeminiTurnCollection } from '@/core/gemini/turnIntegrity';
+import { acceptsGeminiTurnCollection, readGeminiTurnMatches } from '@/core/gemini/turnIntegrity';
 import { filterTopLevel } from '@/core/utils/array';
 
 import type { ExportPlatformAdapter } from './adapter/platformAdapters';
@@ -38,10 +38,15 @@ function readConversationTurns(
     : adapter.resolveConversationRoot(userSelectors, document);
   const userSelector = userSelectors.join(',');
   const assistantSelector = assistantSelectors.join(',');
+  const repairedTurns = view && GEMINI_TURN_PROFILE_KEYS.some((key) => view.remoteKeys.has(key));
   const read = (selector: string): HTMLElement[] =>
-    filterTopLevel(
-      filterOutDeepResearchImmersiveNodes(Array.from(root.querySelectorAll<HTMLElement>(selector))),
-    );
+    repairedTurns
+      ? readGeminiTurnMatches(root, [selector])
+      : filterTopLevel(
+          filterOutDeepResearchImmersiveNodes(
+            Array.from(root.querySelectorAll<HTMLElement>(selector)),
+          ),
+        );
   return {
     root,
     view,

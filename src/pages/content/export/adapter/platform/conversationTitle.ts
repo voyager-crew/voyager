@@ -45,8 +45,8 @@ export function readConversationRowTitle(
 }
 
 export function readConversationTitle(
-  profile: ConversationTitleProfile,
-  readRow = (element: HTMLElement) => readConversationRowTitle(element, profile),
+  profile: Pick<ConversationTitleProfile, 'heading' | 'active'>,
+  readRow: (element: HTMLElement) => string | null,
 ): string {
   try {
     const active =

@@ -2,7 +2,11 @@ import type { SiteAdapter } from '@/features/plugins/types';
 
 import { createCanvasContent } from '../../canvasContent';
 import type { ExportPlatformAdapter } from './contract';
-import { extractAppConversationId, readConversationTitle } from './conversationTitle';
+import {
+  extractAppConversationId,
+  readConversationTitle,
+  readConversationRowTitle,
+} from './conversationTitle';
 import profile from './generic-profile.json';
 import {
   genericAssistantTurnSelectors,
@@ -43,7 +47,10 @@ export function buildGenericExportAdapter(): ExportPlatformAdapter {
     siteId: site.id,
     getUserSelectors: genericUserTurnSelectors,
     getAssistantSelectors: genericAssistantTurnSelectors,
-    extractConversationTitle: () => readConversationTitle(profile.title),
+    extractConversationTitle: () =>
+      readConversationTitle(profile.title, (element) =>
+        readConversationRowTitle(element, profile.title),
+      ),
     extractConversationIdFromUrl: extractAppConversationId,
     resolveConversationRoot: resolveGenericConversationRoot,
     selectAssistantExportElement: pickGenericAssistantExportElement,

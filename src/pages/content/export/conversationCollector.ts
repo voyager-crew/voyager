@@ -1,5 +1,9 @@
 import { resolveGeminiAnswerElement } from '@/core/gemini/content/reads';
-import type { GeminiSelectorView } from '@/core/gemini/selectors';
+import {
+  GEMINI_TURN_PROFILE_KEYS,
+  getGeminiSelectorView,
+  type GeminiSelectorView,
+} from '@/core/gemini/selectors';
 /**
  * Reads the conversation shown on the page into export turns and selectable messages.
  *
@@ -354,17 +358,24 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
     assistantMessageIdFor: (trigger) => {
       if (!trigger) return null;
 
-      const assistantHost = trigger.closest<HTMLElement>(profiles['export.menuResponseOwner']);
-      if (!assistantHost) return null;
+      const repairedTurns =
+        adapter.site.id === 'gemini' &&
+        GEMINI_TURN_PROFILE_KEYS.some((key) => getGeminiSelectorView().remoteKeys.has(key));
+      const assistantHost = repairedTurns
+        ? null
+        : trigger.closest<HTMLElement>(profiles['export.menuResponseOwner']);
+      if (!repairedTurns && !assistantHost) return null;
 
       const messages = buildExportMessagesFromPairs(collectChatPairs());
       const target = messages.find((message) => {
         if (message.role !== 'assistant') return false;
         const host = message.hostElement;
+        // The collected host already passed the whole-turn proof, even after a native tag rename.
+        if (repairedTurns) return host.contains(trigger);
         return (
           host === assistantHost ||
           host.contains(assistantHost) ||
-          assistantHost.contains(host) ||
+          assistantHost?.contains(host) ||
           host.contains(trigger)
         );
       });

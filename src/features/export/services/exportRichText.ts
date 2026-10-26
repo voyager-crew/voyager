@@ -3,6 +3,7 @@ import {
   extractExportCodeBlock,
   serializeListHtml,
 } from './exportCodeBlocks';
+import { DEFAULT_EXPORT_CODE_PROFILE, type ExportCodeProfile } from './exportCodeProfile';
 import type { ExportContentDialect } from './exportContentDialect';
 import {
   shouldSkipElement,
@@ -341,19 +342,34 @@ type ListDialect = Pick<ExportContentDialect, 'extractInlineFormula' | 'extractC
 function readHostCodeBlock(
   element: Element,
   adapter: ListDialect,
+  codeProfile: ExportCodeProfile,
 ): { html: string; text: string } | null {
   const htmlParts: string[] = [];
   const textParts: string[] = [];
   const flags = { hasImages: false, hasFormulas: false, hasTables: false, hasCode: false };
-  if (!adapter.extractCodeBlock(element, htmlParts, textParts, flags, element.localName)) {
+  if (
+    !adapter.extractCodeBlock(
+      element,
+      htmlParts,
+      textParts,
+      flags,
+      element.localName,
+      false,
+      codeProfile,
+    )
+  ) {
     return null;
   }
   return { html: htmlParts.join(''), text: flags.hasCode ? textParts.join('').trim() : '' };
 }
 
-function containsHostCodeBlock(element: Element, adapter: ListDialect): boolean {
+function containsHostCodeBlock(
+  element: Element,
+  adapter: ListDialect,
+  codeProfile: ExportCodeProfile,
+): boolean {
   return Array.from(element.querySelectorAll('*')).some(
-    (descendant) => readHostCodeBlock(descendant, adapter) !== null,
+    (descendant) => readHostCodeBlock(descendant, adapter, codeProfile) !== null,
   );
 }
 
@@ -361,6 +377,7 @@ export function extractList(
   element: HTMLElement,
   adapter: ListDialect,
   depth: number = 0,
+  codeProfile: ExportCodeProfile = DEFAULT_EXPORT_CODE_PROFILE,
 ): { html: string; text: string; hasFormulas: boolean; hasCode: boolean } {
   const isOrdered = element.tagName === 'OL';
   const orderedStart = isOrdered ? (element as HTMLOListElement).start : 1;
@@ -420,7 +437,7 @@ export function extractList(
         const child = node as HTMLElement;
         if (child.tagName === 'UL' || child.tagName === 'OL') {
           flushProse();
-          const nestedResult = extractList(child, adapter, depth + 1);
+          const nestedResult = extractList(child, adapter, depth + 1, codeProfile);
           if (nestedResult.hasFormulas) hasFormulas = true;
           if (nestedResult.hasCode) hasCode = true;
           if (nestedResult.text) {
@@ -430,18 +447,18 @@ export function extractList(
           return;
         }
 
-        const exportCodeBlocks = findExportCodeBlocks(child);
+        const exportCodeBlocks = findExportCodeBlocks(child, codeProfile);
         const directExportCodeBlock = exportCodeBlocks.find((element) => element === child);
         if (directExportCodeBlock) {
           flushProse();
-          const content = extractExportCodeBlock(directExportCodeBlock);
+          const content = extractExportCodeBlock(directExportCodeBlock, codeProfile);
           if (content?.text) pushCodeBlock(content.text);
           return;
         }
 
         // Hosts whose blocks have no shared selector (ChatGPT's div or pre) read them through
         // their adapter, or the list flattens the code into prose with its header label.
-        const hostCodeBlock = readHostCodeBlock(child, adapter);
+        const hostCodeBlock = readHostCodeBlock(child, adapter, codeProfile);
         if (hostCodeBlock) {
           flushProse();
           if (hostCodeBlock.text) pushCodeBlock(hostCodeBlock.text);
@@ -451,7 +468,7 @@ export function extractList(
         if (
           exportCodeBlocks.length > 0 ||
           child.querySelector('ul, ol') ||
-          containsHostCodeBlock(child, adapter)
+          containsHostCodeBlock(child, adapter, codeProfile)
         ) {
           flushProse();
           processItemNodes(Array.from(child.childNodes));
@@ -473,7 +490,8 @@ export function extractList(
   const html = serializeListHtml(
     element,
     // '' is a block the adapter consumed into nothing; only null leaves the element as it is.
-    (block) => readHostCodeBlock(block, adapter)?.html ?? null,
+    (block) => readHostCodeBlock(block, adapter, codeProfile)?.html ?? null,
+    codeProfile,
   );
 
   return {

@@ -12,6 +12,11 @@ import {
   extractCodeFromCodeElement,
   readDrawnDiagramBlock,
 } from './exportCodeBlocks';
+import {
+  DEFAULT_EXPORT_CODE_PROFILE,
+  closestExportCodeHost,
+  type ExportCodeProfile,
+} from './exportCodeProfile';
 import type { ExportContentDialect, ExtractedContentFlags } from './exportContentDialect';
 import { resolveExportMessageContent } from './exportContentRoots';
 import {
@@ -69,6 +74,8 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       dialect.resolveAssistantContent?.(element) ??
       resolveExportMessageContent(element, dialect.siteId);
 
+    const codeProfile = dialect.resolveCodeProfile?.(messageContent) ?? DEFAULT_EXPORT_CODE_PROFILE;
+
     // Don't clone! Angular custom elements may lose content when cloned
     // Instead, skip model-thoughts during processNodes
     const htmlParts: string[] = [];
@@ -76,7 +83,14 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     const processedImageSrcs = new Set<string>();
 
     const markdownDiv = messageContent.querySelector(readProfiles['export.walkMarkdown']);
-    processNodes(markdownDiv || messageContent, htmlParts, textParts, result, processedImageSrcs);
+    processNodes(
+      markdownDiv || messageContent,
+      htmlParts,
+      textParts,
+      result,
+      processedImageSrcs,
+      codeProfile,
+    );
 
     // Helper function to search in both light DOM and shadow DOM
     const searchAll = (root: Element, selector: string): Element[] => {
@@ -107,8 +121,8 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       // Avoid duplicates if already processed
       if ((codeEl as Element & { processedByGV?: boolean }).processedByGV) return;
       // Skip if inside a code-block (already handled by processNodes)
-      if (codeEl.closest && codeEl.closest(readProfiles['export.codeOwner'])) return;
-      const extracted = extractCodeFromCodeElement(codeEl as HTMLElement);
+      if (closestExportCodeHost(codeEl, codeProfile, true)) return;
+      const extracted = extractCodeFromCodeElement(codeEl as HTMLElement, codeProfile);
       if (extracted.text) {
         (codeEl as Element & { processedByGV?: boolean }).processedByGV = true;
         result.hasCode = true;
@@ -147,7 +161,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
         (element as HTMLElement);
       try {
         const plain =
-          readTextOutsideEmptyBlocks(fallbackContainer) ??
+          readTextOutsideEmptyBlocks(fallbackContainer, codeProfile) ??
           ((fallbackContainer as HTMLElement).innerText || fallbackContainer.textContent || '');
         combinedText = normalizeText(plain);
       } catch {
@@ -160,7 +174,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
   }
 
   /** Whether the dialect claims `element` as a code block that exports as nothing. */
-  function isEmptyClaimedBlock(element: Element): boolean {
+  function isEmptyClaimedBlock(element: Element, codeProfile: ExportCodeProfile): boolean {
     const textParts: string[] = [];
     const flags = { hasImages: false, hasFormulas: false, hasTables: false, hasCode: false };
     const claimed = dialect.extractCodeBlock(
@@ -170,6 +184,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       flags,
       element.localName,
       false,
+      codeProfile,
     );
     return Boolean(claimed) && !textParts.join('').trim();
   }
@@ -179,7 +194,10 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
    * null when it holds none. A host-drawn chart's labels are no reply text (ChatGPT's
    * Mermaid preview would otherwise export as "StartFinish").
    */
-  function readTextOutsideEmptyBlocks(container: Element): string | null {
+  function readTextOutsideEmptyBlocks(
+    container: Element,
+    codeProfile: ExportCodeProfile,
+  ): string | null {
     let skipped = false;
     const walker = document.createTreeWalker(
       container,
@@ -187,7 +205,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       (node) => {
         if (!(node instanceof Element)) return NodeFilter.FILTER_ACCEPT;
         if (shouldSkipElement(node)) return NodeFilter.FILTER_REJECT;
-        if (!isEmptyClaimedBlock(node)) return NodeFilter.FILTER_SKIP;
+        if (!isEmptyClaimedBlock(node, codeProfile)) return NodeFilter.FILTER_SKIP;
         skipped = true;
         return NodeFilter.FILTER_REJECT;
       },
@@ -204,7 +222,8 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     htmlParts: string[],
     textParts: string[],
     flags: ExtractedContentFlags,
-    processedImageSrcs: Set<string> = new Set<string>(),
+    processedImageSrcs: Set<string>,
+    codeProfile: ExportCodeProfile,
   ): void {
     const children = Array.from(container.children);
     const appendInlineContent = (processed: ProcessedInlineContent): void => {
@@ -242,7 +261,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     // Check for Shadow DOM
     const shadowRoot = container instanceof Element ? container.shadowRoot : null;
     if (shadowRoot) {
-      processNodes(shadowRoot, htmlParts, textParts, flags, processedImageSrcs);
+      processNodes(shadowRoot, htmlParts, textParts, flags, processedImageSrcs, codeProfile);
     }
 
     for (const child of children) {
@@ -254,7 +273,14 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       }
 
       if (child.shadowRoot && child.children.length === 0) {
-        processNodes(child.shadowRoot, htmlParts, textParts, flags, processedImageSrcs);
+        processNodes(
+          child.shadowRoot,
+          htmlParts,
+          textParts,
+          flags,
+          processedImageSrcs,
+          codeProfile,
+        );
         continue;
       }
 
@@ -277,10 +303,10 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
         continue;
       }
 
-      const exportCodeBlocks = findExportCodeBlocks(child);
+      const exportCodeBlocks = findExportCodeBlocks(child, codeProfile);
       const directExportCodeBlock = exportCodeBlocks.find((element) => element === child);
       if (directExportCodeBlock) {
-        const content = extractExportCodeBlock(directExportCodeBlock);
+        const content = extractExportCodeBlock(directExportCodeBlock, codeProfile);
         if (content) {
           htmlParts.push(content.html);
         }
@@ -308,14 +334,16 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       }
 
       // Extract code block via the per-platform adapter
-      if (dialect.extractCodeBlock(child, htmlParts, textParts, flags, tagName, false)) {
+      if (
+        dialect.extractCodeBlock(child, htmlParts, textParts, flags, tagName, false, codeProfile)
+      ) {
         continue;
       }
 
       // Traverse containers that own export blocks instead of consuming only their first
       // descendant. This keeps prose, code, and Mermaid output in DOM order.
       if (tagName !== 'ul' && tagName !== 'ol' && exportCodeBlocks.length > 0) {
-        processNodes(child, htmlParts, textParts, flags);
+        processNodes(child, htmlParts, textParts, flags, new Set<string>(), codeProfile);
         continue;
       }
 
@@ -325,7 +353,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       // A wrapper around the whole reply also "contains a table": exporting it as one
       // dropped every heading, paragraph and list beside the table.
       if (!isTable && (tableBlock || child.querySelector('table')) && hasBlocksBesideTable(child)) {
-        processNodes(child, htmlParts, textParts, flags, processedImageSrcs);
+        processNodes(child, htmlParts, textParts, flags, processedImageSrcs, codeProfile);
         continue;
       }
       if (isTable || tableBlock || child.querySelector('table')) {
@@ -383,7 +411,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
 
       // Lists
       if (tagName === 'ul' || tagName === 'ol') {
-        const listContent = extractList(child as HTMLElement, dialect);
+        const listContent = extractList(child as HTMLElement, dialect, 0, codeProfile);
         if (listContent.hasFormulas) flags.hasFormulas = true;
         if (listContent.hasCode) flags.hasCode = true;
         htmlParts.push(listContent.html);
@@ -394,7 +422,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       if (tagName === 'blockquote') {
         const quoteHtml: string[] = [];
         const quoteText: string[] = [];
-        processNodes(child, quoteHtml, quoteText, flags, processedImageSrcs);
+        processNodes(child, quoteHtml, quoteText, flags, processedImageSrcs, codeProfile);
         htmlParts.push(`<blockquote>${quoteHtml.join('')}</blockquote>`);
         const markdown = quoteText
           .join('')
@@ -421,7 +449,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
           if (processed.hasFormulas) flags.hasFormulas = true;
           appendInlineContent(processed);
         } else {
-          processNodes(child, htmlParts, textParts, flags, processedImageSrcs);
+          processNodes(child, htmlParts, textParts, flags, processedImageSrcs, codeProfile);
         }
         continue;
       }

@@ -1,4 +1,10 @@
 import { resolveGeminiTurnOperation, type GeminiTurnView } from '@/core/gemini/selectors';
+import {
+  readGeminiTurnCollection,
+  readGeminiTurnMatches,
+  stripGeminiTurnNonContent,
+} from '@/core/gemini/turnIntegrity';
+import { filterTopLevel } from '@/core/utils/array';
 import { getAssistantTurnSelectors } from '@/core/utils/selectors';
 import composerPackaged from '@/features/plugins/catalog/sites/gemini/selector-data/composer-draft-packaged.json';
 
@@ -73,8 +79,11 @@ export function hasGeneratingIndicator({ countTypingAnimation = true } = {}): bo
 export function getAssistantResponses(): HTMLElement[] {
   return resolveGeminiTurnOperation(
     (view) =>
-      Array.from(
-        document.querySelectorAll<HTMLElement>(getAssistantTurnSelectors(view).join(', ')),
+      (view.remoteKeys.has('turn.assistantWithHosts')
+        ? [...readGeminiTurnCollection(view, document, true).assistants]
+        : Array.from(
+            document.querySelectorAll<HTMLElement>(getAssistantTurnSelectors(view).join(', ')),
+          )
       ).filter((element) => element.textContent?.trim()),
     (responses) => responses.length > 0,
   ).value;
@@ -137,9 +146,10 @@ function hasVisuallyHiddenClass(element: Element): boolean {
   );
 }
 
-function getVisibleElementText(element: HTMLElement): string {
+function getVisibleElementText(element: HTMLElement, remoteFallback = false): string {
   try {
     const clone = element.cloneNode(true) as HTMLElement;
+    if (remoteFallback) stripGeminiTurnNonContent(clone);
     if (hasVisuallyHiddenClass(clone)) return '';
 
     Array.from(clone.getElementsByTagName('*')).forEach((descendant) => {
@@ -157,15 +167,34 @@ function getVisibleElementText(element: HTMLElement): string {
 }
 
 export function getUserPromptElements(): HTMLElement[] {
-  // Membership uses one accepted host view, including responses whose text is still empty.
-  const { view } = resolveGeminiTurnOperation(
-    (candidate) => document.querySelector(getAssistantTurnSelectors(candidate).join(', ')),
-    (response) => response !== null,
-  );
-  return Array.from(
-    document.querySelectorAll<HTMLElement>(USER_PROMPT_SELECTORS.join(', ')),
-  ).filter(
-    (element) =>
+  return resolveUserPrompts().value.map(({ element }) => element);
+}
+
+interface NotificationPrompt {
+  readonly element: HTMLElement;
+  readonly remoteFallback: boolean;
+}
+
+function resolveUserPrompts() {
+  return resolveGeminiTurnOperation(readUserPromptElements, (prompts) => prompts.length > 0);
+}
+
+function readUserPromptElements(view: GeminiTurnView): NotificationPrompt[] {
+  const selector = USER_PROMPT_SELECTORS.join(', ');
+  const bundled = view.remoteKeys.has('turn.userWithHosts')
+    ? readGeminiTurnMatches(document.body, USER_PROMPT_SELECTORS, true)
+    : Array.from(document.querySelectorAll<HTMLElement>(selector));
+  // Keep the original prompt evidence inside surviving hosts; renamed hosts provide its fallback.
+  const candidates = view.remoteKeys.has('turn.userWithHosts')
+    ? filterTopLevel([...readGeminiTurnCollection(view, document, true).users]).flatMap((host) => {
+        const native = bundled.filter((element) => host.contains(element));
+        return native.length
+          ? native.map((element) => ({ element, remoteFallback: false }))
+          : [{ element: host, remoteFallback: true }];
+      })
+    : bundled.map((element) => ({ element, remoteFallback: false }));
+  return candidates.filter(
+    ({ element }) =>
       !isInsideAssistantResponse(element, view) &&
       !isPromptInteractionTarget(element) &&
       // Gemini's hidden "You said …" label is the last match in every turn; reading it emptied every prompt.
@@ -175,9 +204,12 @@ export function getUserPromptElements(): HTMLElement[] {
 
 export function getLatestUserPromptSnapshot(): { element: HTMLElement; text: string } | null {
   // Include an empty last turn: a prior non-empty prompt must not stand in for it.
-  const element = getUserPromptElements().at(-1);
-  return element
-    ? { element, text: normalizePromptIdentity(getVisibleElementText(element)) }
+  const prompt = resolveUserPrompts().value.at(-1);
+  return prompt
+    ? {
+        element: prompt.element,
+        text: normalizePromptIdentity(getVisibleElementText(prompt.element, prompt.remoteFallback)),
+      }
     : null;
 }
 

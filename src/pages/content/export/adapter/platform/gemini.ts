@@ -1,3 +1,4 @@
+import { hasGeminiCodeFixes, resolveGeminiCodeHosts } from '@/core/gemini/code/hosts';
 import { GEMINI_PACKAGED_CONTENT } from '@/core/gemini/content/packaged';
 import { resolveGeminiAnswerElement, readGeminiUserLines } from '@/core/gemini/content/reads';
 import { getGeminiSelectorView, type GeminiSelectorView } from '@/core/gemini/selectors';
@@ -5,6 +6,7 @@ import {
   GEMINI_PACKAGED_TITLE_SELECTORS,
   readCorroboratedGeminiTitle,
 } from '@/core/gemini/sidebarTitles';
+import { DEFAULT_EXPORT_CODE_PROFILE } from '@/features/export/services/exportCodeProfile';
 import { resolveExportMessageContent } from '@/features/export/services/exportContentRoots';
 import { getExportReadProfiles } from '@/features/export/services/exportSiteData';
 import titleData from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar-titles.json';
@@ -37,7 +39,6 @@ import {
 function extractConversationTitle(): string {
   const profile = {
     heading: GEMINI_PACKAGED_TITLE_SELECTORS.export,
-    links: '',
     active: titleData['title.activeExport'],
   };
   return readConversationTitle(profile, (element) =>
@@ -101,6 +102,18 @@ export function buildGeminiAdapter(
         imageSearchSelector = resolveGeminiSearchImageSelector(imageRoot, current);
       }
       return content;
+    },
+    resolveCodeProfile: (element) => {
+      if (!hasGeminiCodeFixes(element.ownerDocument, current)) return DEFAULT_EXPORT_CODE_PROFILE;
+      // Prove the complete live collection before shared traversal or detached list serialization.
+      const { view, value } = resolveGeminiCodeHosts(element, current);
+      if (!view.remoteKeys.has('code.host')) return DEFAULT_EXPORT_CODE_PROFILE;
+      const owner = view.profiles['code.host'].join(', ');
+      return {
+        owner: `${owner}, ${DEFAULT_EXPORT_CODE_PROFILE.owner}`,
+        blocks: `${owner}, ${DEFAULT_EXPORT_CODE_PROFILE.blocks}`,
+        acceptedHosts: new Set(value),
+      };
     },
     getUserTextLines: (element) => readGeminiUserLines(element, contentView(element, 'user')),
     extractUserImage,
