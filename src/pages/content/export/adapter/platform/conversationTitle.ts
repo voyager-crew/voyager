@@ -1,5 +1,11 @@
-/** Historical unknown-host title/URL protocol, independent of named-site catalog snapshots. */
-export function extractGenericConversationId(): string | null {
+/** Title policy shared by Gemini and the historical unknown-host export dialect. */
+export interface ConversationTitleProfile {
+  readonly heading: string;
+  readonly links: string;
+  readonly active: readonly string[];
+}
+
+export function extractAppConversationId(): string | null {
   const appMatch = window.location.pathname.match(/\/app\/([^/?#]+)/);
   if (appMatch?.[1]) return appMatch[1];
   return window.location.pathname.match(/\/gem\/[^/]+\/([^/?#]+)/)?.[1] ?? null;
@@ -12,9 +18,8 @@ function isMeaningfulTitle(value: string | null | undefined): value is string {
     ['Untitled Conversation', 'Gemini', 'Google Gemini', 'Google AI Studio', 'New chat'].includes(
       title,
     )
-  ) {
+  )
     return false;
-  }
   return !(title.startsWith('Gemini -') || title.startsWith('Google AI Studio -'));
 }
 
@@ -22,24 +27,27 @@ function escapeCss(value: string): string {
   return globalThis.CSS?.escape?.(value) ?? value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-function extractTitleFromConversationElement(element: HTMLElement): string | null {
-  const scope = (element.closest('[data-test-id="conversation"]') as HTMLElement) || element;
-  const heading = scope.querySelector(
-    '.gds-label-l, .conversation-title-text, [data-test-id="conversation-title"], h3',
-  );
-  const headingText = heading?.textContent?.trim();
-  if (isMeaningfulTitle(headingText)) return headingText;
+export function readConversationRowTitle(
+  element: HTMLElement,
+  profile: ConversationTitleProfile,
+): string | null {
+  // Row identity is a packaged protocol even when a site repairs its descendant link.
+  const scope = element.closest('[data-test-id="conversation"]') || element;
+  const heading = scope.querySelector(profile.heading)?.textContent?.trim();
+  if (isMeaningfulTitle(heading)) return heading;
 
-  const link = scope.querySelector(
-    'a[href*="/app/"], a[href*="/gem/"]',
-  ) as HTMLAnchorElement | null;
+  const candidate = scope.querySelector(profile.links);
+  const link = candidate instanceof HTMLAnchorElement ? candidate : null;
   const ariaLabel = link?.getAttribute('aria-label')?.trim();
   if (isMeaningfulTitle(ariaLabel)) return ariaLabel;
   const linkTitle = link?.getAttribute('title')?.trim();
   return isMeaningfulTitle(linkTitle) ? linkTitle : null;
 }
 
-export function extractGenericConversationTitle(): string {
+export function readConversationTitle(
+  profile: ConversationTitleProfile,
+  readRow = (element: HTMLElement) => readConversationRowTitle(element, profile),
+): string {
   try {
     const active =
       document.querySelector(
@@ -51,20 +59,18 @@ export function extractGenericConversationTitle(): string {
   }
 
   try {
-    const conversationId = extractGenericConversationId();
+    const conversationId = extractAppConversationId();
     if (conversationId) {
       const escapedId = escapeCss(conversationId);
       const element =
-        (document.querySelector(
+        document.querySelector<HTMLElement>(
           `[data-test-id="conversation"][jslog*="c_${escapedId}"]`,
-        ) as HTMLElement) ||
-        (document.querySelector(
+        ) ||
+        document.querySelector<HTMLElement>(
           `[data-test-id="conversation"] a[href*="${escapedId}"]`,
-        ) as HTMLElement);
-      if (element) {
-        const title = extractTitleFromConversationElement(element);
-        if (title) return title;
-      }
+        );
+      const title = element ? readRow(element) : null;
+      if (title) return title;
     }
   } catch {
     /* ignore */
@@ -74,10 +80,7 @@ export function extractGenericConversationTitle(): string {
   if (isMeaningfulTitle(pageTitle)) return pageTitle;
 
   try {
-    for (const selector of [
-      'mat-list-item.mdc-list-item--activated [mat-line]',
-      'mat-list-item[aria-current="page"] [mat-line]',
-    ]) {
+    for (const selector of profile.active) {
       const title = document.querySelector(selector)?.textContent?.trim();
       if (isMeaningfulTitle(title)) return title;
     }
@@ -85,6 +88,6 @@ export function extractGenericConversationTitle(): string {
     /* ignore */
   }
 
-  const conversationId = extractGenericConversationId();
+  const conversationId = extractAppConversationId();
   return conversationId ? `Conversation ${conversationId.slice(0, 8)}` : 'Untitled Conversation';
 }

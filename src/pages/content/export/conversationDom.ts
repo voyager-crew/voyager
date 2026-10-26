@@ -3,8 +3,8 @@ import { GEMINI_PACKAGED_CONTENT } from '@/core/gemini/content/packaged';
 import { resolveGeminiAnswerElement } from '@/core/gemini/content/reads';
 import { getGeminiTurnView, type GeminiTurnView } from '@/core/gemini/selectors';
 import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
-import { queryOutsideThoughts } from '@/features/export/services/exportDomPolicy';
 
+import { readAssistantExportElement } from './assistantExportElement';
 import { readConfiguredExportUserSelector } from './configuredUserSelector';
 
 type ResolveConversationRootOptions = {
@@ -77,25 +77,13 @@ export function pickAssistantExportElement(
 }
 
 function pickBundledAssistantExportElement(assistantHost: HTMLElement): HTMLElement {
-  return (
-    queryOutsideThoughts<HTMLElement>(assistantHost, 'message-content') ||
-    queryOutsideThoughts<HTMLElement>(
-      assistantHost,
-      GEMINI_PACKAGED_CONTENT['export.markdown'].join(','),
-    ) ||
-    (assistantHost.closest(
-      GEMINI_PACKAGED_CONTENT['export.presentedAncestor'].join(','),
-    ) as HTMLElement | null) ||
-    queryOutsideThoughts<HTMLElement>(
-      assistantHost,
-      GEMINI_PACKAGED_CONTENT['export.presentedContent'].join(','),
-    ) ||
-    queryOutsideThoughts<HTMLElement>(
-      assistantHost,
-      GEMINI_PACKAGED_CONTENT['export.responseElement'].join(','),
-    ) ||
-    assistantHost
-  );
+  return readAssistantExportElement(assistantHost, {
+    content: 'message-content',
+    markdown: GEMINI_PACKAGED_CONTENT['export.markdown'].join(','),
+    presentedAncestor: GEMINI_PACKAGED_CONTENT['export.presentedAncestor'].join(','),
+    presentedContent: GEMINI_PACKAGED_CONTENT['export.presentedContent'].join(','),
+    responseElement: GEMINI_PACKAGED_CONTENT['export.responseElement'].join(','),
+  });
 }
 
 /** Gemini prompt selectors, led by the one the timeline configured or detected. */

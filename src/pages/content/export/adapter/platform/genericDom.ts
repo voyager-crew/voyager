@@ -1,5 +1,4 @@
-import { queryOutsideThoughts } from '@/features/export/services/exportDomPolicy';
-
+import { readAssistantExportElement } from '../../assistantExportElement';
 import { readConfiguredExportUserSelector } from '../../configuredUserSelector';
 import profile from './generic-profile.json';
 
@@ -36,12 +35,5 @@ export function resolveGenericConversationRoot(
 
 /** Preserve the original collector's preference before shared rich-content serialization. */
 export function pickGenericAssistantExportElement(host: HTMLElement): HTMLElement {
-  return (
-    queryOutsideThoughts<HTMLElement>(host, profile.assistantElements[0]) ||
-    queryOutsideThoughts<HTMLElement>(host, profile.assistantElements[1]) ||
-    host.closest<HTMLElement>('.presented-response-container') ||
-    queryOutsideThoughts<HTMLElement>(host, profile.assistantElements[2]) ||
-    queryOutsideThoughts<HTMLElement>(host, profile.assistantElements[3]) ||
-    host
-  );
+  return readAssistantExportElement(host, profile.assistantElements);
 }

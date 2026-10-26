@@ -23,12 +23,13 @@
     "div[role=\"listitem\"]:not([data-user=\"true\"])"
   ],
   "roots": ["#chat-history", "infinite-scroller.chat-history", "chat-window-content", "main"],
-  "assistantElements": [
-    "message-content",
-    ".markdown, .markdown-main-panel",
-    ".presented-response-container, .response-content",
-    "response-element"
-  ],
+  "assistantElements": {
+    "content": "message-content",
+    "markdown": ".markdown, .markdown-main-panel",
+    "presentedAncestor": ".presented-response-container",
+    "presentedContent": ".presented-response-container, .response-content",
+    "responseElement": "response-element"
+  },
   "userImages": "user-query-file-preview img, .preview-image",
   "uploadedFiles": "user-query-file-preview [data-test-id=\"uploaded-file\"]",
   "filePreviews": "user-query-file-preview .new-file-preview-file",
@@ -76,5 +77,13 @@
     "canvas.codeLanguage": ".xap-monaco-container",
     "canvas.indicators": ["immersive-entry-chip", "canvas-create-button", "[class*=\"canvas\"]"],
     "canvas.codePanels": ["code-immersive-panel"]
+  },
+  "title": {
+    "heading": ".gds-label-l, .conversation-title-text, [data-test-id=\"conversation-title\"], h3",
+    "links": "a[href*=\"/app/\"], a[href*=\"/gem/\"]",
+    "active": [
+      "mat-list-item.mdc-list-item--activated [mat-line]",
+      "mat-list-item[aria-current=\"page\"] [mat-line]"
+    ]
   }
 }

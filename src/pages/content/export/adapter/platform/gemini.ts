@@ -4,10 +4,10 @@ import { getGeminiSelectorView, type GeminiSelectorView } from '@/core/gemini/se
 import {
   GEMINI_PACKAGED_TITLE_SELECTORS,
   readCorroboratedGeminiTitle,
-  readGeminiActiveSidebarTitle,
 } from '@/core/gemini/sidebarTitles';
 import { resolveExportMessageContent } from '@/features/export/services/exportContentRoots';
 import { getExportReadProfiles } from '@/features/export/services/exportSiteData';
+import titleData from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar-titles.json';
 import type { SiteAdapter } from '@/features/plugins/types';
 
 import {
@@ -16,6 +16,11 @@ import {
   resolveConversationRoot,
 } from '../../conversationDom';
 import type { ExportPlatformAdapter } from './contract';
+import {
+  extractAppConversationId,
+  readConversationRowTitle,
+  readConversationTitle,
+} from './conversationTitle';
 import { checkedGeminiContentView } from './geminiContentView';
 import {
   bundledGeminiSearchImageSelector,
@@ -29,92 +34,20 @@ import {
   extractInlineFormula,
 } from './sharedContent';
 
-function extractConversationId(): string | null {
-  const appMatch = window.location.pathname.match(/\/app\/([^/?#]+)/);
-  if (appMatch?.[1]) return appMatch[1];
-  return window.location.pathname.match(/\/gem\/[^/]+\/([^/?#]+)/)?.[1] ?? null;
-}
-
-function isMeaningfulTitle(value: string | null | undefined): value is string {
-  const title = (value || '').trim();
-  if (!title) return false;
-  if (
-    ['Untitled Conversation', 'Gemini', 'Google Gemini', 'Google AI Studio', 'New chat'].includes(
-      title,
-    )
-  ) {
-    return false;
-  }
-  return !(title.startsWith('Gemini -') || title.startsWith('Google AI Studio -'));
-}
-
-function escapeCss(value: string): string {
-  return globalThis.CSS?.escape?.(value) ?? value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-}
-
-function extractTitleFromConversationElement(
-  element: HTMLElement,
-  view: GeminiSelectorView,
-): string | null {
-  // Remote labels never change the packaged conversation-identity boundary.
-  const scope = (element.closest('[data-test-id="conversation"]') as HTMLElement) || element;
-  const heading = scope.querySelector(GEMINI_PACKAGED_TITLE_SELECTORS.export);
-  const headingText = heading?.textContent?.trim();
-  if (isMeaningfulTitle(headingText)) return headingText;
-
-  const candidate = scope.querySelector(view.profiles['sidebar.conversationLinks'].join(', '));
-  const link = candidate instanceof HTMLAnchorElement ? candidate : null;
-  const ariaLabel = link?.getAttribute('aria-label')?.trim();
-  if (isMeaningfulTitle(ariaLabel)) return ariaLabel;
-  const linkTitle = link?.getAttribute('title')?.trim();
-  return isMeaningfulTitle(linkTitle) ? linkTitle : null;
-}
-
 function extractConversationTitle(): string {
-  try {
-    const active =
-      document.querySelector(
-        '.gv-folder-conversation.gv-folder-conversation-selected .gv-conversation-title',
-      ) || document.querySelector('.gv-folder-conversation-selected .gv-conversation-title');
-    if (active?.textContent?.trim()) return active.textContent.trim();
-  } catch {
-    /* ignore */
-  }
-
-  try {
-    const conversationId = extractConversationId();
-    if (conversationId) {
-      const escapedId = escapeCss(conversationId);
-      const element =
-        (document.querySelector(
-          `[data-test-id="conversation"][jslog*="c_${escapedId}"]`,
-        ) as HTMLElement) ||
-        (document.querySelector(
-          `[data-test-id="conversation"] a[href*="${escapedId}"]`,
-        ) as HTMLElement);
-      if (element) {
-        const title = readCorroboratedGeminiTitle((view) =>
-          extractTitleFromConversationElement(element, view),
-        );
-        if (title) return title;
-      }
-    }
-  } catch {
-    /* ignore */
-  }
-
-  const pageTitle = document.title?.trim();
-  if (isMeaningfulTitle(pageTitle)) return pageTitle;
-
-  try {
-    const title = readGeminiActiveSidebarTitle('activeExport', isMeaningfulTitle);
-    if (title) return title;
-  } catch {
-    /* ignore */
-  }
-
-  const conversationId = extractConversationId();
-  return conversationId ? `Conversation ${conversationId.slice(0, 8)}` : 'Untitled Conversation';
+  const profile = {
+    heading: GEMINI_PACKAGED_TITLE_SELECTORS.export,
+    links: '',
+    active: titleData['title.activeExport'],
+  };
+  return readConversationTitle(profile, (element) =>
+    readCorroboratedGeminiTitle((view) =>
+      readConversationRowTitle(element, {
+        ...profile,
+        links: view.profiles['sidebar.conversationLinks'].join(', '),
+      }),
+    ),
+  );
 }
 
 function resolveRoot(userSelectors: string[], doc: Document = document): HTMLElement {
@@ -155,7 +88,7 @@ export function buildGeminiAdapter(
     getUserSelectors: geminiUserTurnSelectors,
     getAssistantSelectors: geminiAssistantTurnSelectors,
     extractConversationTitle,
-    extractConversationIdFromUrl: extractConversationId,
+    extractConversationIdFromUrl: extractAppConversationId,
     resolveConversationRoot: resolveRoot,
     resolveAssistantContent: (element) => {
       const content = resolveGeminiAnswerElement(
