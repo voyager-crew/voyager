@@ -20,6 +20,8 @@ export interface InitializationEntryDeps {
   mountEdgeNotice: () => Promise<unknown>;
   startEnterprisePanel: () => Promise<void>;
   readCoverage?: (host: string) => Promise<boolean>;
+  /** Freeze already available page data after the existing coverage read, before any mount. */
+  beforeMount?: () => void;
 }
 
 export async function enterInitialization(
@@ -28,7 +30,9 @@ export async function enterInitialization(
   deps: InitializationEntryDeps,
 ): Promise<InitializationEntry> {
   const readCoverage = deps.readCoverage ?? readPromptCoverage;
-  if (await deps.settle(readCoverage(page.host))) {
+  const covered = await deps.settle(readCoverage(page.host));
+  deps.beforeMount?.();
+  if (covered) {
     await deps.settle(deps.followCoverage(page.host));
     return 'custom-coverage';
   }

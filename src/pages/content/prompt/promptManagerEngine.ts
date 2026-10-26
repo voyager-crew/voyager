@@ -34,7 +34,7 @@ export interface PromptManagerEngine {
    * Slash completion, following its popup setting, and sent-prompt chips.
    * Does nothing on a site without slash completion.
    */
-  startComposerFeatures(): Promise<void>;
+  startComposerFeatures(beforeMount?: () => void): Promise<void>;
   /** Mounts the panel for the rest of the page. */
   startPanel(): Promise<void>;
   /**
@@ -162,11 +162,20 @@ export function createPromptManagerEngine(
   }
 
   return {
-    async startComposerFeatures() {
+    async startComposerFeatures(beforeMount) {
       if (!adapter.slash) return;
-      const slashToggle = createNativeFeatureToggle(cleanup, slash);
+      const slashToggle = createNativeFeatureToggle(cleanup, {
+        ...slash,
+        start: () => {
+          beforeMount?.();
+          return slash.start();
+        },
+      });
       follow(slashToggle);
-      await applyInitial(slashToggle, await readSlashEnabled(), 'slash completion');
+      const enabled = await readSlashEnabled();
+      // Reuse the existing setting wait; native startup must not wait for catalog storage too.
+      beforeMount?.();
+      await applyInitial(slashToggle, enabled, 'slash completion');
 
       // Chips restore what a sent slash token looked like. They follow the
       // site, never the slash setting: turning slash off must not re-expand

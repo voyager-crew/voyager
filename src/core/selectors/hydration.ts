@@ -2,6 +2,7 @@
  * One page's selector hydration, as explicit state for `startMachine`.
  *
  *   reading ─read─▶ settled{by: 'read'}
+ *   reading ─native mount─▶ settled{by: 'available'}         (bundled view)
  *   reading ─deadline/invalidated─▶ settled{by: 'fallback'}   (bundled view)
  *   reading | settled ─retire─▶ retired
  *
@@ -14,13 +15,13 @@ import type { StateEffects } from '@/features/plugins/runtime/stateMachine';
 import type { SiteSelectorView } from './types';
 
 /** How hydration ended: the stored read in time, the bundle, or the page retired first. */
-export type SiteSelectorSettlement = 'read' | 'fallback' | 'retired';
+export type SiteSelectorSettlement = 'read' | 'available' | 'fallback' | 'retired';
 
 export type HydrationState =
   | { readonly status: 'reading' }
   | {
       readonly status: 'settled';
-      readonly by: 'read' | 'fallback';
+      readonly by: 'read' | 'available' | 'fallback';
       /** The remote view this page installed, if any. */
       readonly view: SiteSelectorView | null;
     }
@@ -29,6 +30,8 @@ export type HydrationState =
 export type HydrationEvent =
   | { readonly type: 'read'; readonly view: SiteSelectorView | null }
   | { readonly type: 'deadline' }
+  /** Native startup uses the snapshot already available without waiting for catalog storage. */
+  | { readonly type: 'use-available' }
   /** The stored data changed while it was being read. */
   | { readonly type: 'invalidated' }
   | { readonly type: 'retire' };
@@ -40,6 +43,7 @@ export function hydrationTransition(state: HydrationState, event: HydrationEvent
   }
   if (state.status !== 'reading') return state;
   if (event.type === 'read') return { status: 'settled', by: 'read', view: event.view };
+  if (event.type === 'use-available') return { status: 'settled', by: 'available', view: null };
   return { status: 'settled', by: 'fallback', view: null };
 }
 

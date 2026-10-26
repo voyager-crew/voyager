@@ -26,6 +26,8 @@ export interface SiteSelectorInitialization {
 
 export interface SiteSelectorLifetime {
   readonly ready: Promise<SiteSelectorSettlement>;
+  /** Freeze the view already available before the first native feature mounts. */
+  readonly useAvailableSnapshot: (raw?: unknown) => void;
   readonly stop: () => void;
   readonly isCurrent: () => boolean;
 }
@@ -79,6 +81,21 @@ export class SiteSelectorService<Key extends string = string> {
     this.active = hydration;
     return {
       ready,
+      useAvailableSnapshot: (raw) => {
+        if (hydration.state.status !== 'reading') return;
+        if (raw === undefined) {
+          hydration.send({ type: 'use-available' });
+          return;
+        }
+        // The storage value can be ready before its async wrappers deliver the read event.
+        let view: SiteSelectorView | null = null;
+        try {
+          view = toRemoteView(this.siteId, raw, input);
+        } catch {
+          // Match the ordinary read's whole-view fallback on validation failure.
+        }
+        hydration.send({ type: 'read', view });
+      },
       stop: () => hydration.send({ type: 'retire' }),
       isCurrent: () => hydration.state.status !== 'retired',
     };

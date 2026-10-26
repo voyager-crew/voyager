@@ -102,7 +102,7 @@ function mountForPage(feature: NativeFeature): Promise<StopNativeFeature> {
 
 let initialized = false;
 let initializationTimer: number | null = null;
-let selectorReady: Promise<void> = Promise.resolve();
+let useAvailableSelectors = () => {};
 let selectorCurrent = () => true;
 
 /**
@@ -116,18 +116,18 @@ async function initializeFeatures(): Promise<void> {
   // return (custom coverage, Enterprise, AI Studio off) or failure below
   // leaves the official plugins it did not admit denied.
   try {
-    await settle(selectorReady);
     if (!selectorCurrent() || !hasValidExtensionContext()) {
       return;
     }
 
-    await settle(promptManager.startComposerFeatures());
+    await settle(promptManager.startComposerFeatures(useAvailableSelectors));
 
     const delay = (ms: number) => settle(yieldToIdle(ms));
 
     // Custom-website coverage and Gemini Enterprise end initialization here.
     const entry = await enterInitialization(location, document, {
       settle,
+      beforeMount: useAvailableSelectors,
       followCoverage: (host) => promptManager.followCoverage(host),
       mountEdgeNotice: () => mountForPage(NATIVE_FEATURES.edgeFinalVersionNotice),
       startEnterprisePanel: () => promptManager.startPanel(),
@@ -327,7 +327,7 @@ function handleVisibilityChange(): void {
       CleanupPositions.CleanupPageSelectors,
     );
     selectorCurrent = selectorStartup.isCurrent;
-    selectorReady = selectorStartup.ready;
+    useAvailableSelectors = selectorStartup.useAvailableSnapshot;
     cleanupManager.registerCleanupFunction(
       startPluginHost({
         admission: officialAdmission,
