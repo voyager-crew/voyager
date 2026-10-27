@@ -5,7 +5,7 @@
  * path: `PluginHost`, the bundled catalog plugin and Kimi's `site.json`, over
  * Kimi's sidebar as measured live (2026-10-24).
  */
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
@@ -66,9 +66,9 @@ function mountSidebar(): void {
 
 async function nextPass(): Promise<void> {
   await settle(5);
-  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  vi.advanceTimersToNextFrame();
   await settle(20);
-  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  await vi.advanceTimersByTimeAsync(1);
   await settle(20);
 }
 
@@ -98,12 +98,25 @@ beforeAll(async () => {
   if (original) globalThis.chrome.storage = original;
 });
 
+beforeEach(() => {
+  vi.useFakeTimers({
+    toFake: ['Date', 'setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame'],
+  });
+});
+
 afterEach(async () => {
-  host?.stop();
-  host = null;
-  await nextPass();
-  document.body.replaceChildren();
-  if (original) globalThis.chrome.storage = original;
+  try {
+    host?.stop();
+    host = null;
+    await nextPass();
+    // Unmounting does not cancel Preact's after-paint fallback when the tab drew no frames.
+    await vi.runAllTimersAsync();
+  } finally {
+    document.body.replaceChildren();
+    if (original) globalThis.chrome.storage = original;
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  }
 });
 
 async function openPage(): Promise<void> {
@@ -139,7 +152,7 @@ describe('Kimi folders: hide filed chats', () => {
     try {
       await openPage();
       for (let i = 0; i < 5; i += 1) await settle(20);
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await vi.advanceTimersByTimeAsync(0);
       await settle(20);
 
       expect(shown(FILED)).toBe(false);
