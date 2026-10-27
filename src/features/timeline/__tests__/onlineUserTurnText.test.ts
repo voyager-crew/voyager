@@ -1,5 +1,5 @@
 import type { JSDOM } from 'jsdom';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 declare const jsdom: JSDOM;
 import { initializeSiteSelectors } from '@/core/selectors';
 
@@ -7,6 +7,7 @@ import { userTurnText } from '../userTurnText';
 
 const sites = [
   ['gemini', 'gemini.google.com', '<user-query id="turn">BODY</user-query>'],
+  ['gemini', 'business.gemini.google', '<user-query id="turn">BODY</user-query>'],
   ['aistudio', 'aistudio.google.com', '<section data-turn-role="User" id="turn">BODY</section>'],
   ['chatgpt', 'chatgpt.com', '<section data-user-message-bubble id="turn">BODY</section>'],
   ['claude', 'claude.ai', '<section data-testid="user-message" id="turn">BODY</section>'],
@@ -24,9 +25,9 @@ afterEach(() => {
 });
 
 for (const [site, host, template] of sites)
-  describe(`${site} timeline text`, () => {
+  describe(`${site} timeline text on ${host}`, () => {
+    beforeEach(() => jsdom.reconfigure({ url: `https://${host}/` }));
     async function patch(selector: string) {
-      jsdom.reconfigure({ url: `https://${host}/` });
       const run = initializeSiteSelectors(site, {
         host,
         doc: document,
@@ -90,6 +91,17 @@ for (const [site, host, template] of sites)
         const bundled = userTurnText(turn());
         expect(bundled).toBe('Explain the proof\nKeep every step');
         await patch('.complete');
+        expect(userTurnText(turn())).toBe(bundled);
+      });
+    } else {
+      it('a Gemini-named preview tag cannot hide authored text on another site', async () => {
+        document.body.innerHTML = template.replace(
+          'BODY',
+          '<user-query-file-preview>Keep this authored note</user-query-file-preview>\n<div class="renamed-body"><p>Explain the proof</p><p>Keep every step</p></div>',
+        );
+        const bundled = userTurnText(turn());
+        expect(bundled).toBe('Keep this authored note\nExplain the proof\nKeep every step');
+        await patch('.renamed-body');
         expect(userTurnText(turn())).toBe(bundled);
       });
     }

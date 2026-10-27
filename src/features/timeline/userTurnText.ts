@@ -149,9 +149,11 @@ export function userTurnText(element: HTMLElement, url?: string): string {
         !excluded(candidate) &&
         ownsTimelineUserText(candidate, site)
       ) {
-        const value = extract(candidate, true);
+        // Gemini preview tags are metadata; another site's same-named tag remains authored text.
+        const excludeAttachments = site === 'gemini';
+        const value = extract(candidate, excludeAttachments);
         // Attachments precede Gemini's body; only the complete authored text can prove a repair.
-        if (isCompleteUserText(value, extract(bundledContent, true))) return value;
+        if (isCompleteUserText(value, extract(bundledContent, excludeAttachments))) return value;
       }
     } catch {
       // Keep the original text preference if this operation cannot prove complete prompt text.

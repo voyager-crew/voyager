@@ -27,7 +27,7 @@ function firstList(root: ParentNode, selectors: readonly string[]): HTMLElement[
   return [];
 }
 
-function authoredText(bubble: HTMLElement): string {
+function geminiAuthoredText(bubble: HTMLElement): string {
   const walker = bubble.ownerDocument.createTreeWalker(bubble, NodeFilter.SHOW_TEXT);
   let text = '';
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
@@ -41,6 +41,7 @@ export function readSentChipTargets(root: ParentNode): SentChipTarget[] {
   const key = 'sentChips.bubbles';
   const bundle = getBundledGeminiSelectorView();
   const doc = root instanceof Document ? root : root.ownerDocument;
+  // Only Gemini repairs may use native attachment metadata to prove the sent text.
   const view =
     locatorSiteForHost(doc?.defaultView?.location.hostname ?? '') === 'gemini'
       ? getGeminiSelectorView()
@@ -57,7 +58,7 @@ export function readSentChipTargets(root: ParentNode): SentChipTarget[] {
         const text = remote.map((node) => node.textContent ?? '').join(' ');
         const reference = bundledLines.length
           ? bundledLines.map((node) => node.textContent ?? '').join(' ')
-          : authoredText(bubble);
+          : geminiAuthoredText(bubble);
         // Partial lines and filenames must not label a different saved prompt as the sent text.
         if (
           remote.length &&

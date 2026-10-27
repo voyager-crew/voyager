@@ -79,6 +79,26 @@ it('a partial turn repair falls back to all original captured messages', async (
   ]);
 });
 
+it('a response-only repair falls back until the dialogue has a captured user turn', async () => {
+  document.body.innerHTML =
+    '<div class="conversation-container"><model-response><section class="reply-body">Orphan answer</section></model-response></div>';
+  const bundled = await capture();
+  expect(bundled).toEqual([]);
+  stop = await installGeminiSelectorPatch({ 'context.responses': ['.reply-body'] });
+  expect(await capture()).toEqual(bundled);
+
+  document
+    .querySelector('model-response')!
+    .insertAdjacentHTML(
+      'beforebegin',
+      '<user-query><div class="user-query-container">Sent prompt</div></user-query>',
+    );
+  expect((await capture()).map((node) => [node.text, node.is_user_likely])).toEqual([
+    ['Sent prompt', true],
+    ['Orphan answer', false],
+  ]);
+});
+
 it('unowned aliases cannot enter context capture but their later complete turns can', async () => {
   document.body.innerHTML =
     '<section class="user-fix">Private draft</section><section class="answer-fix">Preview</section>';

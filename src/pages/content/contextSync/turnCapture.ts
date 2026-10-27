@@ -125,7 +125,8 @@ export function readContextTurns(
           fallbackHosts,
         };
       },
-      (result) => result !== null && result.queries.length + result.responses.length > 0,
+      // An orphan reply cannot establish a dialogue whose user turn was not captured.
+      (result) => result !== null && result.queries.length > 0,
     ).value ?? bundled
   );
 }

@@ -2,7 +2,7 @@ import { getBundledSiteSelectorView } from './bundle';
 import type { SiteSelectorView } from './types';
 
 const INTERACTIVE_MOUNT =
-  'button, a[href], [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="switch"], [role="checkbox"], [role="radio"], [role="treeitem"], [role="tab"], [role="option"], summary, label, pre, code';
+  'button, a[href], [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="switch"], [role="checkbox"], [role="radio"], [role="treeitem"], [role="tab"], [role="option"], [role="slider"], summary, label, pre, code';
 
 function composedParent(element: Element): Element | null {
   if (element.assignedSlot) return element.assignedSlot;
@@ -34,7 +34,7 @@ function isSafePlacementTarget(element: Element): boolean {
   for (let current: Element | null = element; current; current = composedParent(current)) {
     if (
       current.matches(
-        '[contenteditable]:not([contenteditable="false"]), input, textarea, select, option, [role="textbox"], [role="combobox"]',
+        '[contenteditable]:not([contenteditable="false"]), input, textarea, select, option, [role="textbox"], [role="combobox"], [role="searchbox"], [role="spinbutton"]',
       )
     )
       return false;
