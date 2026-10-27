@@ -6,6 +6,8 @@ Parts: [1](PACKAGED_DATA.md), [2](PACKAGED_SURFACES.md), [3](PACKAGED_CONTENT.md
 
 | Key                              | Tier / delivery | Reason                                                                                                                 |
 | -------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `chatWidth.userTurn`             | §6 / packaged   | CSS sink keeps the baseline width list; remote turn detection cannot alter CSS.                                        |
+| `chatWidth.assistantTurn`        | §6 / packaged   | CSS sink keeps baseline host-first order, separate from turn detection precedence.                                     |
 | `deepResearch.browseLinks`       | A / packaged    | Exported citations use fixed href/source protocol; a remote link cannot prove its own provenance.                      |
 | `deepResearch.browseList`        | A / packaged    | Exported browse ordering uses native source grammar; another list proves no provenance.                                |
 | `deepResearch.browseTitle`       | A / packaged    | Exported citation title uses native source grammar; arbitrary text proves no citation attribution.                     |

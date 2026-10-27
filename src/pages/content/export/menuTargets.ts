@@ -8,7 +8,8 @@ import { GEMINI_MENU_PROFILE_KEYS } from '@/core/gemini/selectors/menuKeys';
 import { sameItems } from '@/core/utils/array';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/menu-packaged.json';
 
-export const MENU_PANEL_SELECTOR = '.mat-mdc-menu-panel[role="menu"], gem-menu';
+export const MENU_PANEL_SELECTOR =
+  getBundledGeminiSelectorView().profiles['menu.panels'].join(', ');
 
 class InjectedOnlinePanels {
   private readonly panels = new WeakSet<HTMLElement>();

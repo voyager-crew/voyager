@@ -13,7 +13,7 @@ their native source grammar remains packaged.
   because a remote query found a node.
 - **Tier B:** only positions, mounts, aligns or avoids Voyager's own UI. Trust the
   official catalog without independent ownership proof. Zero matches fall back
-  for that operation; a mount inside a host editable region also falls back.
+  for that operation; mounts follow the shared [mount rule](README.md#shared-snapshot-and-guards).
   Both tiers keep literal allowlists, rejection groups, size limits and per-group
   rejection of unparsable values. Mixed-use keys stay Tier A or gain a separate
   placement key.
@@ -27,19 +27,19 @@ their native source grammar remains packaged.
 “Before” is `3adb77650`; both columns use the new classification. Counts are
 **distinct site/key names**, not CSS strings: duplicate copies with the same key
 count once. A new `exportLayout.*` or `sidebar.*` alias and its differently named
-baseline copy each count once. Original fragment values/order stay intact.
+baseline copy each count once. Legacy values/order stay intact; two explicit chat-width CSS profiles now record their separate baseline order.
 “Online” counts the literal profile contract, including semantic/page-hook
 aliases; legacy adapter overrides are separate. The two ChatGPT model-picker
 aliases come from `site.json/pageHooks`, so its before count is 116, not 114.
 
 | Site                                           | Keys before → after | A         | B       | §6      | Online before → after | Nested adapter fields |
 | ---------------------------------------------- | ------------------- | --------- | ------- | ------- | --------------------- | --------------------- |
-| [gemini](../gemini/selectors/PACKAGED_DATA.md) | 280 → 297           | 179 → 183 | 38 → 51 | 63 → 63 | 75 → 120              | 10                    |
-| [aistudio](PACKAGED_AISTUDIO.md)               | 59 → 71             | 18 → 18   | 27 → 39 | 14 → 14 | 12 → 37               | 6                     |
-| [chatgpt](PACKAGED_CHATGPT.md)                 | 116 → 128           | 56 → 56   | 23 → 35 | 37 → 37 | 25 → 50               | 30                    |
-| [claude](PACKAGED_CLAUDE.md)                   | 42 → 54             | 11 → 11   | 22 → 34 | 9 → 9   | 8 → 30                | 16                    |
-| [deepseek](PACKAGED_DEEPSEEK.md)               | 42 → 54             | 12 → 12   | 22 → 34 | 8 → 8   | 4 → 26                | 7                     |
-| [kimi](PACKAGED_KIMI.md)                       | 41 → 53             | 11 → 11   | 22 → 34 | 8 → 8   | 6 → 28                | 7                     |
+| [gemini](../gemini/selectors/PACKAGED_DATA.md) | 280 → 299           | 179 → 183 | 38 → 51 | 63 → 65 | 75 → 119              | 10                    |
+| [aistudio](PACKAGED_AISTUDIO.md)               | 59 → 71             | 18 → 18   | 27 → 39 | 14 → 14 | 12 → 36               | 6                     |
+| [chatgpt](PACKAGED_CHATGPT.md)                 | 116 → 128           | 56 → 56   | 23 → 35 | 37 → 37 | 25 → 49               | 30                    |
+| [claude](PACKAGED_CLAUDE.md)                   | 42 → 54             | 11 → 11   | 22 → 34 | 9 → 9   | 8 → 29                | 16                    |
+| [deepseek](PACKAGED_DEEPSEEK.md)               | 42 → 54             | 12 → 12   | 22 → 34 | 8 → 8   | 4 → 25                | 7                     |
+| [kimi](PACKAGED_KIMI.md)                       | 41 → 53             | 11 → 11   | 22 → 34 | 8 → 8   | 6 → 27                | 7                     |
 
 The [nested adapter supplement](PACKAGED_ADAPTERS.md) and its
 [ChatGPT continuation](PACKAGED_ADAPTER_CHATGPT.md) list existing folder, project,

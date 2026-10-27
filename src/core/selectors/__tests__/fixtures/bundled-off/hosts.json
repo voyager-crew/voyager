@@ -1,0 +1,14 @@
+[
+  ["gemini.google.com", "gemini"],
+  ["business.gemini.google", "gemini"],
+  ["aistudio.google.com", "aistudio"],
+  ["aistudio.google.cn", "aistudio"],
+  ["chatgpt.com", "chatgpt"],
+  ["chat.openai.com", "chatgpt"],
+  ["claude.ai", "claude"],
+  ["chat.deepseek.com", "deepseek"],
+  ["www.kimi.com", "kimi"],
+  ["custom.example", "generic"],
+  ["gemini.google.com.custom.example", "generic"],
+  ["artifact.frame.claudeusercontent.com", "generic"]
+]

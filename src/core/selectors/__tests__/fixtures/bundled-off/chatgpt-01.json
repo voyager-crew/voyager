@@ -1,0 +1,333 @@
+[
+  ["siteId", "chatgpt"],
+  [
+    "profiles/userTurn",
+    [
+      "[data-user-message-bubble], [data-message-author-role=\"user\"]:not(:has([data-user-message-bubble]))"
+    ]
+  ],
+  ["profiles/assistantTurn", ["[data-chatgpt-selection-message-id]"]],
+  ["profiles/codeBlock", ["[data-markdown-copy=\"code-block\"]"]],
+  ["profiles/composer", ["#prompt-textarea, [data-composer-markdown][contenteditable=\"true\"]"]],
+  ["profiles/sidebar", ["nav[aria-label], #stage-slideover-sidebar"]],
+  ["profiles/scrollContainer", ["[data-app-action-timeline-scroll]"]],
+  ["profiles/composerRoot", ["form:has(#prompt-textarea, [data-composer-markdown])"]],
+  [
+    "profiles/sendButton",
+    ["form:has(#prompt-textarea, [data-composer-markdown]) button[type=\"submit\"]"]
+  ],
+  ["profiles/headerActions", ["#conversation-header-actions"]],
+  [
+    "profiles/input.candidates",
+    [
+      "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+      "#prompt-textarea[contenteditable=\"true\"]",
+      "[data-composer-markdown][contenteditable=\"true\"]",
+      "rich-textarea [contenteditable=\"true\"]",
+      "div[contenteditable=\"true\"][role=\"textbox\"]",
+      ".input-area textarea",
+      "textarea[placeholder*=\"Ask\"]",
+      "textarea"
+    ]
+  ],
+  [
+    "profiles/vim.candidates",
+    [
+      "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+      "#prompt-textarea[contenteditable=\"true\"]",
+      "[data-composer-markdown][contenteditable=\"true\"]",
+      "rich-textarea [contenteditable=\"true\"]",
+      "div[contenteditable=\"true\"][role=\"textbox\"]",
+      ".input-area textarea",
+      "textarea[placeholder*=\"Ask\"]",
+      "textarea"
+    ]
+  ],
+  [
+    "profiles/input.handoff",
+    [
+      "#prompt-textarea[contenteditable=\"true\"], [data-composer-markdown][contenteditable=\"true\"]"
+    ]
+  ],
+  ["profiles/export.assistantContent", [".markdown-main-panel, .markdown, .model-response-text"]],
+  ["profiles/bridge.replyContent", ["[data-markdown-text-style=\"assistant-message\"]"]],
+  [
+    "profiles/actions.temporaryToggle",
+    [
+      "[data-testid=\"temporary-chat-toggle\"]",
+      "button[aria-label*=\"temporary chat\" i]",
+      "button[aria-label*=\"临时聊天\"]",
+      "button[aria-label*=\"暫時聊天\"]"
+    ]
+  ],
+  [
+    "profiles/actions.newChat",
+    ["a[data-testid=\"create-new-chat-button\"], a[href=\"/\"], a[href^=\"/u/\"][href$=\"/\"]"]
+  ],
+  ["profiles/actions.shareButton", ["[data-testid=\"share-chat-button\"]"]],
+  [
+    "profiles/actions.thinking",
+    [
+      "span.loading-shimmer, [aria-busy=\"true\"], [role=\"progressbar\"], progress, .result-streaming, [data-message-streaming=\"true\"], [data-is-streaming=\"true\"]"
+    ]
+  ],
+  ["profiles/actions.homeLink", ["nav a[href=\"/\"]"]],
+  [
+    "profiles/modelPicker.trigger",
+    ["button[aria-haspopup=\"menu\"][data-composer-navigation-target=\"reasoning\"]"]
+  ],
+  ["profiles/modelPicker.effort", ["[role=\"menuitem\"][data-reasoning-slider=\"true\"]"]],
+  [
+    "profiles/export.streaming",
+    ["[data-message-streaming=\"true\"]", "[data-is-streaming=\"true\"]", ".result-streaming"]
+  ],
+  [
+    "profiles/export.loggedOutStreaming",
+    ["[data-message-streaming]:not([data-message-streaming=\"false\"])"]
+  ],
+  ["profiles/export.loggedOutThread", ["[data-mobile-thread]"]],
+  ["profiles/export.loggedOutAssistant", ["[data-assistant-markdown-root]"]],
+  ["profiles/export.threadList", ["[data-chatgpt-conversation-selection-target]"]],
+  ["profiles/export.historyPending", ["[role=\"status\"]"]],
+  ["profiles/export.codeLanguage", ["[data-markdown-copy=\"exclude\"] .truncate"]],
+  [
+    "profiles/exportLayout.controls",
+    [
+      "top-bar-actions",
+      ".top-bar-actions",
+      "[data-test-id=\"top-bar-actions\"]",
+      "side-nav-sparkle-button",
+      "side-nav-menu-button",
+      "[data-test-id*=\"upgrade\" i]",
+      "[aria-label*=\"upgrade\" i]",
+      "#conversation-header-actions",
+      "[data-testid=\"share-chat-button\"]",
+      "[data-testid=\"conversation-options-button\"]"
+    ]
+  ],
+  [
+    "profiles/exportLayout.broadControls",
+    ["[aria-label*=\"pro\" i]", "[aria-label*=\"advanced\" i]"]
+  ],
+  ["profiles/exportLayout.canvasOwner", ["inline-preview, immersive-panel"]],
+  ["profiles/exportLayout.canvasContent", ["immersive-editor, code-immersive-panel"]],
+  ["profiles/exportLayout.fullscreenCanvas", ["immersive-panel"]],
+  [
+    "profiles/exportLayout.inactiveCanvas",
+    ["deep-research-immersive-panel, [hidden], [aria-hidden=\"true\"]"]
+  ],
+  ["profiles/exportLayout.turns", ["user-query, model-response, [data-message-author-role]"]],
+  ["profiles/exportLayout.interactive", ["button, a[href], [role=\"button\"]"]],
+  [
+    "profiles/exportLayout.overlaySidebar",
+    [
+      "[data-test-id=\"side-nav\"]",
+      "side-navigation",
+      "mat-sidenav",
+      "aside",
+      "nav",
+      ".side-nav",
+      ".sidenav",
+      ".chat-history-nav"
+    ]
+  ],
+  ["profiles/exportLayout.fallbackRoot", ["main"]],
+  [
+    "profiles/exportLayout.alignmentCanvas",
+    [
+      "#chat-history",
+      "infinite-scroller.chat-history",
+      ".chat-history-scroll-container",
+      "chat-window-content",
+      "main chat-window-content"
+    ]
+  ],
+  [
+    "profiles/exportLayout.alignmentComposer",
+    [
+      "rich-textarea",
+      "[aria-label*=\"Enter a prompt\"]",
+      "[aria-label*=\"prompt\"]",
+      "[aria-label*=\"Gemini\"]",
+      "[contenteditable=\"true\"][aria-label]"
+    ]
+  ],
+  [
+    "profiles/input.clearance",
+    [
+      "form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message"
+    ]
+  ],
+  ["profiles/input.fab", [":not(*)"]],
+  ["profiles/vim.host", [".text-input-field, input-area-v2, input-container"]],
+  ["profiles/vim.inputFallback", ["rich-textarea"]],
+  ["profiles/vim.mountInput", ["#prompt-textarea[contenteditable=\"true\"]"]],
+  ["profiles/vim.mountRoot", ["form"]],
+  ["profiles/vim.mountChatInput", ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]],
+  ["profiles/vim.mountChatRoot", ["fieldset"]],
+  ["profiles/timeline.userText", ["[data-user-message-bubble], .query-text, .ds-collapsible-text"]],
+  [
+    "packagedInput",
+    [
+      ["input.candidates", [":not(*)"]],
+      [
+        "input.clearance",
+        [
+          "form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message"
+        ]
+      ],
+      ["input.fab", [":not(*)"]],
+      ["vim.candidates", [":not(*)"]],
+      ["vim.editable", ["input, textarea, select, [contenteditable=\"true\"], [role=\"textbox\"]"]],
+      [
+        "vim.editInputs",
+        [
+          ".query-content.edit-mode textarea",
+          ".edit-container textarea",
+          "textarea[aria-label=\"Edit prompt\"]",
+          "textarea[aria-label=\"Edit message\"]"
+        ]
+      ],
+      [
+        "vim.sendTarget",
+        [
+          ".update-button",
+          "button[aria-label*=\"Send\"]",
+          "button[aria-label*=\"send\"]",
+          "button[data-tooltip*=\"Send\"]",
+          "button[data-tooltip*=\"send\"]",
+          "button mat-icon[fonticon=\"send\"]",
+          "[data-send-button]",
+          ".send-button",
+          "button[aria-label*=\"Update\"]",
+          "button[aria-label*=\"Save\"]",
+          "button[aria-label*=\"更新\"]"
+        ]
+      ],
+      ["vim.editForm", ["mat-form-field.edit-form, .edit-form"]],
+      ["vim.host", [".text-input-field, input-area-v2, input-container"]],
+      ["vim.inputFallback", ["rich-textarea"]],
+      [
+        "vim.hud",
+        [
+          "toolbox-drawer .toolbox-drawer-button-label-icon-text",
+          "toolbox-drawer .toolbox-drawer-button-label",
+          "toolbox-drawer .toolbox-drawer-button-container",
+          "toolbox-drawer button",
+          "toolbox-drawer .toolbox-drawer-container",
+          "[class*=\"toolbox-drawer\"] .toolbox-drawer-button-label-icon-text",
+          "[class*=\"toolbox-drawer\"] button",
+          "button[aria-label*=\"Tools\"]",
+          "button[aria-label*=\"tools\"]",
+          "button[aria-label*=\"工具\"]",
+          "button[aria-label*=\"ツール\"]",
+          "button[aria-label*=\"도구\"]"
+        ]
+      ],
+      ["vim.mountInput", ["#prompt-textarea[contenteditable=\"true\"]"]],
+      ["vim.mountRoot", ["form"]],
+      ["vim.mountChatInput", ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]],
+      ["vim.mountChatRoot", ["fieldset"]],
+      ["vim.crossSiteEdit", ["textarea[aria-label=\"Edit message\"]"]],
+      ["vim.editActions", ["button"]]
+    ]
+  ],
+  [
+    "timeline",
+    [
+      ["timeline.userText", "[data-user-message-bubble], .query-text, .ds-collapsible-text"],
+      ["guide.overlays", ["[role=\"menu\"]", "[role=\"dialog\"]", "[role=\"alertdialog\"]"]]
+    ]
+  ],
+  [
+    "actions-packaged.json/composerCandidates",
+    [
+      "form[data-chatgpt-composer] [contenteditable=\"true\"][role=\"textbox\"]",
+      "#prompt-textarea",
+      "form[data-type=\"unified-composer\"] [contenteditable=\"true\"][role=\"textbox\"]",
+      "form[data-testid*=\"composer\" i] [contenteditable=\"true\"][role=\"textbox\"]"
+    ]
+  ],
+  [
+    "actions-packaged.json/genericComposer",
+    "main form [contenteditable=\"true\"][role=\"textbox\"]"
+  ],
+  ["actions-packaged.json/composerRootFallback", "form"],
+  ["actions-packaged.json/composerEditable", "[contenteditable=\"true\"], textarea"],
+  [
+    "actions-packaged.json/sendControls",
+    [
+      "button[data-testid=\"send-button\"]",
+      "button[data-testid=\"composer-submit-button\"]",
+      "form[data-chatgpt-composer] button[type=\"submit\"]"
+    ]
+  ],
+  ["actions-packaged.json/submit", "button[type=\"submit\"]"],
+  [
+    "actions-packaged.json/temporaryOffLabels",
+    ["close temporary", "turn off temporary", "关闭临时", "關閉暫時"]
+  ],
+  ["actions-packaged.json/composerPlaceholder", "[data-placeholder]"],
+  [
+    "actions-packaged.json/composerLabelAttributes",
+    ["aria-label", "aria-placeholder", "placeholder"]
+  ],
+  [
+    "actions-packaged.json/handoffObservedAttributes",
+    ["aria-label", "aria-pressed", "data-testid", "title"]
+  ],
+  ["actions-packaged.json/userUnit", "[data-chatgpt-search-unit-key$=\":user\"]"],
+  ["actions-packaged.json/assistantUnit", "[data-chatgpt-search-unit-key$=\":assistant\"]"],
+  ["actions-packaged.json/assistantHeading", "h4[data-conversation-role]"],
+  ["actions-packaged.json/assistantMarkdown", "[data-markdown-text-style=\"assistant-message\"]"],
+  ["actions-packaged.json/turnItem", "[data-turn-key]"],
+  ["actions-packaged.json/turnStateAttribute", "data-talvt-turn-state"],
+  ["actions-packaged.json/turnStateComplete", "complete"],
+  ["actions-packaged.json/replyActions", "button"],
+  ["actions-packaged.json/replyNotice", "[role=\"alert\"], [role=\"status\"], [aria-live]"],
+  ["actions-packaged.json/replyAlert", "[role=\"alert\"], [aria-live=\"assertive\"]"],
+  ["actions-packaged.json/interruptedCopy", ["^connection interrupted\\b", "^连接已中断"]],
+  ["actions-packaged.json/interruptedAnywhere", "connection interrupted|连接已中断"],
+  ["actions-packaged.json/fileInput", "input[type=\"file\"]"],
+  [
+    "actions-packaged.json/attachmentBusy",
+    [
+      "[aria-busy=\"true\"]",
+      "[data-state=\"loading\"]",
+      "[data-state=\"uploading\"]",
+      "[data-state=\"pending\"]",
+      ".animate-spin"
+    ]
+  ],
+  [
+    "actions-packaged.json/attachmentNotice",
+    "[role=\"alert\"], [role=\"status\"], [data-sonner-toast], [data-radix-toast-viewport] li, [class*=\"toast\" i]"
+  ],
+  ["actions-packaged.json/attachmentControl", "button, [role=\"button\"]"],
+  ["actions-packaged.json/attachmentCards", "[data-composer-attachments] > *"],
+  ["actions-packaged.json/attachmentArea", "[data-composer-attachments]"],
+  ["actions-packaged.json/attachmentMarkerAttributes", ["data-attachment-id", "data-file-id"]],
+  [
+    "actions-packaged.json/attachmentPreview",
+    "[data-testid*=\"attachment\" i], [data-testid*=\"file\" i], [aria-label], [title]"
+  ],
+  [
+    "actions-packaged.json/attachmentMarkers",
+    "[data-attachment-id], [data-file-id], [data-testid]"
+  ],
+  [
+    "actions-packaged.json/attachmentRemovalPreview",
+    "[data-attachment-id], [data-file-id], [data-testid*=\"attachment\" i], [data-testid*=\"file\" i]"
+  ],
+  ["actions-packaged.json/attachmentProgress", "progress, [role~=\"progressbar\"]"],
+  ["actions-packaged.json/modeButton", "button"],
+  ["actions-packaged.json/modeHomeStateAttribute", "data-state"],
+  ["actions-packaged.json/sourceUploadedAt", "time[datetime]"],
+  ["actions-packaged.json/sourceBusy", "[aria-busy=\"true\"], [role=\"progressbar\"], progress"],
+  ["actions-packaged.json/pickerLabelledTrigger", "button[aria-haspopup=\"menu\"][aria-label]"],
+  ["actions-packaged.json/composerNativeRoot", "form[data-chatgpt-composer]"],
+  [
+    "actions-packaged.json/composerNativeEditable",
+    "textarea, [contenteditable=\"true\"], [contenteditable=\"plaintext-only\"]"
+  ]
+]

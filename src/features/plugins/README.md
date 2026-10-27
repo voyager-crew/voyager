@@ -119,16 +119,10 @@ Gemini and AI Studio official plugins are validated like the rest but stay
 packaged and outside `marketplace.json`. Every concrete host has a catalog
 file, including Gemini Enterprise and both AI Studio hosts. Each site’s admitted
 page-locator profiles live in `site.locators`; identity and action policies stay
-packaged. Locator trust has two levels: host actions, data and operation identity
-require independent page proof (Tier A); placement and avoidance of Voyager UI
-trust the official catalog (Tier B), with fallback for no match or an editable
-mount. Both levels retain the same allowlists, groups and size limits. Gemini
-Enterprise reads the Gemini profiles under the same rules.
-With Online updates off, semantic keys keep the baseline resolved-adapter reads,
-including cached overrides for keys admitted to the guarded contract. Only
-namespaced `site.locators` profiles revert to the bundle; the new contract
-proofs apply with updates on.
-See [remote/README.md](remote/README.md#page-locator-profiles-in-site-data).
+packaged. The [resolver invariants](../../core/selectors/README.md#invariants) own the
+trust tiers, mount rule, site isolation, OFF behavior and declarative override
+compatibility. Transport details live in
+[remote/README.md](remote/README.md#page-locator-profiles-in-site-data).
 
 `catalog/marketplace.json` is **not** that mapping table, and no page reads it:
 the site's plugin table is built from the manifests themselves

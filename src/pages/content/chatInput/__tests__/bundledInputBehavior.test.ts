@@ -1,10 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { getBundledSiteSelectorView } from '@/core/selectors';
-import { SEND_SITE_POLICIES } from '@/core/services/composer/sendKeys/sendSitePolicies';
-import { inputSiteId, packagedInputSelectors } from '@/core/services/composer/siteInputData';
-
 import { resolvePromptSiteAdapter } from '../../prompt/resolvePromptSiteAdapter';
 import { findChatInput } from '../index';
 import { getVimComposerMount } from '../vimComposerMount';
@@ -46,105 +42,7 @@ const GENERIC_CANDIDATES = [
   '<textarea></textarea>',
 ];
 
-// Compatibility contract copied from findChatInput at 6fa19b4ae, not from current data.
-const BASELINE_CANDIDATES = [
-  '[data-testid="chat-input"][contenteditable="true"]',
-  '#prompt-textarea[contenteditable="true"]',
-  '[data-composer-markdown][contenteditable="true"]',
-  'rich-textarea [contenteditable="true"]',
-  'div[contenteditable="true"][role="textbox"]',
-  '.input-area textarea',
-  'textarea[placeholder*="Ask"]',
-  'textarea',
-];
-
-// Literal compatibility contracts from 6fa19b4ae, before these shared lists moved into site data.
-const BASELINE_PACKAGED_PROFILES = {
-  // prompt/triggerClearance.ts: composerElement
-  'input.clearance': [
-    'form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message',
-  ],
-  // chatInput/vimInputTargets.ts: SEND_BUTTON_SELECTOR
-  'vim.sendTarget': [
-    '.update-button',
-    'button[aria-label*="Send"]',
-    'button[aria-label*="send"]',
-    'button[data-tooltip*="Send"]',
-    'button[data-tooltip*="send"]',
-    'button mat-icon[fonticon="send"]',
-    '[data-send-button]',
-    '.send-button',
-    'button[aria-label*="Update"]',
-    'button[aria-label*="Save"]',
-    'button[aria-label*="更新"]',
-  ],
-  // chatInput/vimPresentation.ts: queryHudMountCandidates
-  'vim.hud': [
-    'toolbox-drawer .toolbox-drawer-button-label-icon-text',
-    'toolbox-drawer .toolbox-drawer-button-label',
-    'toolbox-drawer .toolbox-drawer-button-container',
-    'toolbox-drawer button',
-    'toolbox-drawer .toolbox-drawer-container',
-    '[class*="toolbox-drawer"] .toolbox-drawer-button-label-icon-text',
-    '[class*="toolbox-drawer"] button',
-    'button[aria-label*="Tools"]',
-    'button[aria-label*="tools"]',
-    'button[aria-label*="工具"]',
-    'button[aria-label*="ツール"]',
-    'button[aria-label*="도구"]',
-  ],
-};
-
-// composer/sendKeys/sendSitePolicies.ts at 6fa19b4ae: both native send policies shared this order.
-const BASELINE_SEND_CONTAINERS = [
-  '.text-input-field',
-  'ms-prompt-box',
-  'ms-prompt-input-wrapper',
-  'ms-prompt-input',
-  'ms-chat-turn-input',
-  'ms-autosize-textarea',
-  '.prompt-input-wrapper',
-  '.prompt-input-container',
-  '.user-query-container.edit-mode',
-  '.edit-container',
-  'chat-message',
-  'form',
-  '[role="dialog"]',
-  '.mat-mdc-dialog-container',
-];
-
-describe('bundled input parity', () => {
-  it.each(HOSTS)('%s bundled input and Vim candidates equal baseline order', (hostname) => {
-    host(hostname);
-    const site = inputSiteId();
-    if (!site) {
-      expect(packagedInputSelectors('input.candidates')).toEqual(BASELINE_CANDIDATES);
-      expect(packagedInputSelectors('vim.candidates')).toEqual(BASELINE_CANDIDATES);
-      return;
-    }
-    const profiles = getBundledSiteSelectorView(site).profiles;
-    const input = profiles[site === 'gemini' ? 'composer.candidates' : 'input.candidates'];
-    expect(input).toEqual(BASELINE_CANDIDATES);
-    expect(profiles['vim.candidates'] ?? input).toEqual(BASELINE_CANDIDATES);
-  });
-
-  describe.each(Object.entries(BASELINE_PACKAGED_PROFILES))(
-    '%s baseline contract',
-    (key, expected) => {
-      it.each(HOSTS)('%s retains every bundled candidate in baseline order', (hostname) => {
-        host(hostname);
-        expect(packagedInputSelectors(key)).toEqual(expected);
-      });
-    },
-  );
-
-  it.each(['gemini', 'aistudio'] as const)(
-    '%s retains every bundled send container in baseline order',
-    (site) => {
-      expect(SEND_SITE_POLICIES[site].sendContainerSelectors).toEqual(BASELINE_SEND_CONTAINERS);
-    },
-  );
-
+describe('bundled input behavior', () => {
   it.each(HOSTS)('%s keeps baseline composer precedence before a search textarea', (hostname) => {
     host(hostname);
     const candidates = GENERIC_CANDIDATES;

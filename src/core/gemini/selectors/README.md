@@ -1,10 +1,9 @@
 # Gemini page detection data
 
-These Gemini profiles serve `https://gemini.google.com` and
-`https://business.gemini.google` through the [shared per-site resolver](../../selectors/README.md). Its online profiles come
-from the existing plugin catalog, governed by **Online updates** (on by default).
-Every supported site uses that one channel. Transport, settings and cache
-ownership are described in the [remote catalog README](../../../features/plugins/remote/README.md#page-locator-profiles-in-site-data).
+These profiles serve Gemini and Gemini Enterprise. The [shared resolver
+invariants](../../selectors/README.md#invariants) define the online channel, OFF
+compatibility, site isolation, trust tiers and packaged boundaries; transport and
+cache details live in the [remote catalog README](../../../features/plugins/remote/README.md).
 
 ## Catalog site data
 
@@ -20,16 +19,14 @@ allowlist. The catalog publisher and site-data validator use the same contract,
 checked by [`catalog-locator-publishing.test.ts`](../../../../scripts/__tests__/catalog-locator-publishing.test.ts).
 The locator section retains the Gemini limits: 65,536 UTF-8 bytes, at most 32
 entries per profile and 2,048 UTF-16 code units per string, with empty strings and
-non-whitespace C0 controls rejected. Unknown keys and oversized sections fall back to the bundle without
-invalidating the adapter, plugins or kill switch. A malformed or unparsable
+non-whitespace C0 controls rejected. Oversized sections are omitted without invalidating other site data. Unknown-key handling follows the shared invariants. A malformed or unparsable
 locator drops only its surface’s group.
 
 The builder reads the same selected non-`*-packaged.json` source fragments as
 [`bundle.ts`](bundle.ts). Catalog publication uses the main lineage’s first-parent
 commit count. The resolved remote adapter wins only if its `catalogRevision` is
 strictly newer than the bundle. Cache writer-version checks, refresh, withdrawal
-and account boundaries use the catalog’s existing machinery. There is no separate
-fetcher, opt-in setting or selector cache.
+and account boundaries use the catalog’s existing machinery.
 
 ## Groups and consumers
 
@@ -82,21 +79,10 @@ or the deadline also settle on the bundle; late results cannot replace that
 decision. Once ready, the page snapshot stays fixed until its claim ends. New downloads and turning the switch off take
 effect after a user refresh, without automatic reload or remount.
 
-Tier A reads are pure until the consumer accepts a complete operation. A nonempty
-result alone is insufficient for an action, stored/exported content or operation identity. A partial collection, different DOM order, conflict with an
-independent native/bundled check, or an element other than the operation's original
-target falls back to the bundled read for the whole operation. No rejected read may
-click, insert, send, export, download or persist anything. Checks introduced for
-online data run only when that surface has remote keys, preserving the bundled
-path with the switch off.
-
-Tier B reads only place or avoid Voyager UI. The official catalog is trusted for
-these keys without independent page proof. No match falls back for that operation;
-mounts inside host editable regions also fall back. Export layout, Vim HUD mounts,
-input clearance, project picker placement and chip insertion share this rule.
-Literal allowlists, groups, size limits and unparsable-value rejection still apply.
-A locator also used for host actions or data stays Tier A, or gets a separate
-placement-only key with the action/source proof kept independent.
+Operation acceptance and mount rejection follow the [shared invariants and
+mount rule](../../selectors/README.md#shared-snapshot-and-guards). Gemini's model
+stars retain their validated native picker-row decoration exception; Vim HUD
+candidates remain packaged because the baseline list includes a Tools button.
 
 Remote turn winners never enter the legacy saved Auto selector. Unknown remote
 turn spellings use the packaged conversation observer scope. Collapse scans,
@@ -119,19 +105,9 @@ The publisher selects literal keys from named fragments. Baseline copies in
 `*-packaged.json` preserve values and ordering where an online counterpart now
 exists. A fragment's filename alone does not determine its trust tier.
 
-- Host admission, permissions, account controls/exclusions, parsed IDs, storage
-  formats and destructive action protocols remain packaged. So do native menu
-  association, clone sanitizing, ARIA/focus safety, send/Stop/IME/disabled checks,
-  click ordering, Quill writes and caret/selection.
-- Model selected state (`selectedModel`, `selectedThinking`, `selectedNestedThinking`)
-  stays in `modelPickerMetadata.ts`. Native metadata supplies evidence for repaired
-  model-menu targets; placement of Voyager stars does not redefine model identity.
-- Independent native health, source attributes, URL/origin policy, MathML/KaTeX
-  and HTML serialization, Markdown mutation exclusions, theme and every CSS sink
-  stay packaged. A remote mount cannot change these source or interaction rules.
-- Compatibility copies do not create a second online channel. Dormant code stays
-  dormant. Shared consumers resolve only their current site's profiles; bundled
-  input, HUD and mount candidates retain their historical values and order.
+The [shared invariants](../../selectors/README.md#invariants) and per-key ledger
+own the packaged boundary. Gemini model selected-state metadata remains in
+`modelPickerMetadata.ts`, separate from star decoration placement.
 
 ### MAIN-world scroll literals
 

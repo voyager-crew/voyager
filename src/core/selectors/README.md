@@ -1,10 +1,17 @@
 # Site page detection data
 
-All six supported sites use the existing plugin catalog host files:
-`https://voyager.nagi.fun/catalog/hosts/<host>.json`. Gemini Enterprise uses the
-Gemini data and guards; both AI Studio hosts use AI Studio data. A page never
-reads another site's profiles. There is one online-update setting, cache,
-refresher and publisher; see the [remote catalog](../../features/plugins/remote/README.md).
+## Invariants
+
+1. One online channel: every site's page locators use `<base>/hosts/<host>.json`, the existing Online updates setting, cache, refresher and publisher.
+2. OFF or no remote data equals `6fa19b4ae`: preserve cached adapter precedence and reads, bundled values and their order, behavior and query cost; OFF disables new namespaced profiles, not baseline cached adapters.
+3. Tier A keys require independent page proof; Tier B keys trust the official catalog subject to the shared mount rule below; design §6 protocols stay packaged.
+4. Every consumer of a published key reads through its contract; an independent native proof or §6 protocol is an explicit, reviewed exception.
+5. Each site reads only its own data; Gemini Enterprise uses Gemini, both AI Studio hosts use AI Studio, and unknown hosts get the generic profile.
+6. Unknown remote keys are reported and ignored without rejecting known keys, other adapter data, plugins or the kill switch.
+7. A site override is never weaker than at baseline: declarative `sidebar` and `headerActions` targets retain exactly their `6fa19b4ae` catalog trust, while placement reads apply Tier B mount safety.
+
+The [remote catalog](../../features/plugins/remote/README.md) owns transport and cache details.
+`bun run selectors:check` enforces published-literal and site-import boundaries plus per-site loader parity; the complete OFF snapshots in `__tests__/bundledOffParity.test.ts` pin values and ordering. Both run in `verify:pr` and CI.
 
 ## Source and boundaries
 
@@ -82,13 +89,11 @@ or side effects.
 Tier B covers export-toolbar layout, HUD and prompt UI placement, insertion
 slots, alignment and avoidance probes. It needs no ownership proof: a matching
 value from the official catalog is trusted, as existing site overrides were.
-Zero matches fall back for that operation. A mount inside a host editable region
-(contenteditable, input, textarea or other form controls) also falls back.
+Zero matches fall back for that operation. The shared mount rule rejects editable, interactive and code ancestors: contenteditable, input, textarea, button, linked anchors, interactive ARIA roles, summary, label, select, pre and code. A model-title decoration may cross only its independently validated native picker-row boundary; nested controls and code still fail.
 Literal allowlists, group rejection, syntax checks and size limits apply to both
 tiers. A mixed-use locator is Tier A unless placement has its own separate key.
 
-Neither tier adds checks to the bundled path. OFF or absent remote profiles keep
-the bundled values, order, behavior and query cost from `6fa19b4ae`.
+The bundled path does not run either tier’s new checks (invariant 2).
 
 ChatGPT's `composerRoot` is admitted separately from its composer/send group.
 A repair must identify exactly one owner containing the independently proven
@@ -99,13 +104,11 @@ for each operation; enclosing upload owners also retain their pending-upload
 check. The proof lives in
 [`chatgptRootProof.ts`](../services/composer/chatgptRootProof.ts).
 
-With Online updates off, every semantic key, including admitted contract keys,
-reads the resolved adapter value exactly as at baseline `6fa19b4ae`. Cached
-`site.selectors` overrides keep their existing revision and identity rules; the
-new guarded proofs apply only with Online updates on. Fields outside the guarded
-contract retain their earlier catalog override behavior in either mode.
-Namespaced `site.locators` profiles use the bundle while updates are off.
-Independent native ownership proofs still read packaged evidence.
+Declarative operations resolve `sidebar` and `headerActions` from the original
+adapter in both modes, including targets inside controls, exactly as at baseline.
+They do not pass through the placement guard. Other admitted semantic consumers
+use the frozen guarded view with updates on and the resolved adapter with updates
+off. Independent native ownership proofs always read packaged evidence.
 
 ## Rollback runbook
 

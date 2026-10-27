@@ -78,7 +78,7 @@ export function pickAssistantExportElement(
 
 function pickBundledAssistantExportElement(assistantHost: HTMLElement): HTMLElement {
   return readAssistantExportElement(assistantHost, {
-    content: 'message-content',
+    content: GEMINI_PACKAGED_CONTENT['export.messageContent'],
     markdown: GEMINI_PACKAGED_CONTENT['export.markdown'].join(','),
     presentedAncestor: GEMINI_PACKAGED_CONTENT['export.presentedAncestor'].join(','),
     presentedContent: GEMINI_PACKAGED_CONTENT['export.presentedContent'].join(','),

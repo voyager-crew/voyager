@@ -1,0 +1,63 @@
+[
+  ["placement.json/exportLayout.turns", ["user-query, model-response, [data-message-author-role]"]],
+  ["placement.json/exportLayout.interactive", ["button, a[href], [role=\"button\"]"]],
+  [
+    "placement.json/exportLayout.overlaySidebar",
+    [
+      "[data-test-id=\"side-nav\"]",
+      "side-navigation",
+      "mat-sidenav",
+      "aside",
+      "nav",
+      ".side-nav",
+      ".sidenav",
+      ".chat-history-nav"
+    ]
+  ],
+  ["placement.json/exportLayout.fallbackRoot", ["main"]],
+  [
+    "placement.json/exportLayout.alignmentCanvas",
+    [
+      "#chat-history",
+      "infinite-scroller.chat-history",
+      ".chat-history-scroll-container",
+      "chat-window-content",
+      "main chat-window-content"
+    ]
+  ],
+  [
+    "placement.json/exportLayout.alignmentComposer",
+    [
+      "rich-textarea",
+      "[aria-label*=\"Enter a prompt\"]",
+      "[aria-label*=\"prompt\"]",
+      "[aria-label*=\"Gemini\"]",
+      "[contenteditable=\"true\"][aria-label]"
+    ]
+  ],
+  [
+    "placement.json/input.clearance",
+    [
+      "form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message"
+    ]
+  ],
+  ["placement.json/input.fab", [":not(*)"]],
+  ["placement.json/vim.host", [".text-input-field, input-area-v2, input-container"]],
+  ["placement.json/vim.inputFallback", ["rich-textarea"]],
+  ["placement.json/vim.mountInput", ["#prompt-textarea[contenteditable=\"true\"]"]],
+  ["placement.json/vim.mountRoot", ["form"]],
+  ["placement.json/vim.mountChatInput", ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]],
+  ["placement.json/vim.mountChatRoot", ["fieldset"]],
+  [
+    "timeline-packaged.json/timeline.userText",
+    "[data-user-message-bubble], .query-text, .ds-collapsible-text"
+  ],
+  [
+    "timeline-packaged.json/guide.overlays",
+    ["[role=\"menu\"]", "[role=\"dialog\"]", "[role=\"alertdialog\"]"]
+  ],
+  [
+    "timeline.json/timeline.userText",
+    ["[data-user-message-bubble], .query-text, .ds-collapsible-text"]
+  ]
+]

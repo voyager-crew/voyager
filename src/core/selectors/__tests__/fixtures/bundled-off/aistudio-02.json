@@ -1,0 +1,139 @@
+[
+  [
+    "input.json/input.candidates",
+    [
+      "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+      "#prompt-textarea[contenteditable=\"true\"]",
+      "[data-composer-markdown][contenteditable=\"true\"]",
+      "rich-textarea [contenteditable=\"true\"]",
+      "div[contenteditable=\"true\"][role=\"textbox\"]",
+      ".input-area textarea",
+      "textarea[placeholder*=\"Ask\"]",
+      "textarea"
+    ]
+  ],
+  ["library.json/library.rows", ["tr.mat-mdc-row, tr[mat-row], tr[role=\"row\"]"]],
+  ["library.json/library.archivableRows", ["tr.mat-mdc-row, tr[mat-row]"]],
+  ["library.json/library.table", ["table.mat-mdc-table, mat-table"]],
+  [
+    "library.json/library.archivableLink",
+    ["a[href^=\"/prompts/\"], a.name-btn[href*=\"/prompts/\"]"]
+  ],
+  ["navigation-packaged.json/history.preferred", [".prompt-link"]],
+  ["navigation-packaged.json/history.observe", ["title", "aria-label", "href"]],
+  ["navigation-packaged.json/history.titleAttributes", ["aria-label", "title"]],
+  ["navigation-packaged.json/library.dropLink", ["a[href*=\"/prompts/\"]"]],
+  [
+    "navigation-packaged.json/navigation.anchorSteps",
+    [" > nav > .empty-space", " > nav > .bottom-actions"]
+  ],
+  ["navigation-packaged.json/navigation.empty", [":scope > .empty-space"]],
+  ["navigation-packaged.json/navigation.bottom", [":scope > .bottom-actions"]],
+  ["navigation-packaged.json/navigation.expanded", [".expanded"]],
+  [
+    "navigation-placement.json/navigation.anchorSteps",
+    [":scope > nav > .empty-space", ":scope > nav > .bottom-actions"]
+  ],
+  ["navigation-placement.json/navigation.empty", [":scope > .empty-space"]],
+  ["navigation-placement.json/navigation.bottom", [":scope > .bottom-actions"]],
+  [
+    "navigation.json/navigation.libraryLink",
+    [".nav-content a[href=\"/library\"], .nav-content a[href$=\"aistudio.google.com/library\"]"]
+  ],
+  [
+    "navigation.json/history.dragHosts",
+    ["[data-test-id^=\"history-item\"]", "[role=\"listitem\"]", ".mat-mdc-list-item", "li"]
+  ],
+  ["navigation.json/history.click", ["a.prompt-link"]],
+  ["navigation.json/navigation.promptLink", ["ms-prompt-history-v3 a.prompt-link"]],
+  ["navigation.json/navigation.navChild", [":scope > nav"]],
+  ["navigation.json/navigation.historyRoot", ["ms-prompt-history-v3"]],
+  ["navigation.json/navigation.sidebar", [".nav-content.v3-left-nav"]],
+  [
+    "placement.json/exportLayout.controls",
+    [
+      "top-bar-actions",
+      ".top-bar-actions",
+      "[data-test-id=\"top-bar-actions\"]",
+      "side-nav-sparkle-button",
+      "side-nav-menu-button",
+      "[data-test-id*=\"upgrade\" i]",
+      "[aria-label*=\"upgrade\" i]",
+      "#conversation-header-actions",
+      "[data-testid=\"share-chat-button\"]",
+      "[data-testid=\"conversation-options-button\"]"
+    ]
+  ],
+  [
+    "placement.json/exportLayout.broadControls",
+    ["[aria-label*=\"pro\" i]", "[aria-label*=\"advanced\" i]"]
+  ],
+  ["placement.json/exportLayout.canvasOwner", ["inline-preview, immersive-panel"]],
+  ["placement.json/exportLayout.canvasContent", ["immersive-editor, code-immersive-panel"]],
+  ["placement.json/exportLayout.fullscreenCanvas", ["immersive-panel"]],
+  [
+    "placement.json/exportLayout.inactiveCanvas",
+    ["deep-research-immersive-panel, [hidden], [aria-hidden=\"true\"]"]
+  ],
+  ["placement.json/exportLayout.turns", ["user-query, model-response, [data-message-author-role]"]],
+  ["placement.json/exportLayout.interactive", ["button, a[href], [role=\"button\"]"]],
+  [
+    "placement.json/exportLayout.overlaySidebar",
+    [
+      "[data-test-id=\"side-nav\"]",
+      "side-navigation",
+      "mat-sidenav",
+      "aside",
+      "nav",
+      ".side-nav",
+      ".sidenav",
+      ".chat-history-nav"
+    ]
+  ],
+  ["placement.json/exportLayout.fallbackRoot", ["main"]],
+  [
+    "placement.json/exportLayout.alignmentCanvas",
+    [
+      "#chat-history",
+      "infinite-scroller.chat-history",
+      ".chat-history-scroll-container",
+      "chat-window-content",
+      "main chat-window-content"
+    ]
+  ],
+  [
+    "placement.json/exportLayout.alignmentComposer",
+    [
+      "rich-textarea",
+      "[aria-label*=\"Enter a prompt\"]",
+      "[aria-label*=\"prompt\"]",
+      "[aria-label*=\"Gemini\"]",
+      "[contenteditable=\"true\"][aria-label]"
+    ]
+  ],
+  [
+    "placement.json/input.clearance",
+    [
+      "form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message"
+    ]
+  ],
+  ["placement.json/input.fab", ["span.mat-mdc-button-touch-target"]],
+  ["placement.json/vim.host", [".text-input-field, input-area-v2, input-container"]],
+  ["placement.json/vim.inputFallback", ["rich-textarea"]],
+  ["placement.json/vim.mountInput", ["#prompt-textarea[contenteditable=\"true\"]"]],
+  ["placement.json/vim.mountRoot", ["form"]],
+  ["placement.json/vim.mountChatInput", ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]],
+  ["placement.json/vim.mountChatRoot", ["fieldset"]],
+  [
+    "timeline-packaged.json/timeline.userText",
+    "[data-user-message-bubble], .query-text, .ds-collapsible-text"
+  ],
+  [
+    "timeline-packaged.json/guide.overlays",
+    ["[role=\"menu\"]", "[role=\"dialog\"]", "[role=\"alertdialog\"]"]
+  ],
+  [
+    "timeline.json/timeline.userText",
+    ["[data-user-message-bubble], .query-text, .ds-collapsible-text"]
+  ]
+]

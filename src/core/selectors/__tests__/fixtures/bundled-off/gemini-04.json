@@ -1,0 +1,348 @@
+[
+  ["gems-packaged.json/topNav", "mat-nav-list.top-action-list-scrollable"],
+  ["gems-packaged.json/navHost", "mat-nav-list"],
+  [
+    "gems-packaged.json/excluded",
+    "model-response, user-query, [role=\"dialog\"], bot-editor, [data-test-id=\"bot-editor\"], [contenteditable=\"true\"]"
+  ],
+  ["gems.json/gems.navEntry", ["[data-test-id=\"gems-side-nav-entry-button\"]"]],
+  ["gems.json/gems.list", ["[data-test-id=\"your-gems-list\"]"]],
+  ["gems.json/gems.row", ["bot-list-row"]],
+  ["gems.json/gems.title", [".title-container", ".bot-title-inner"]],
+  ["gems.json/gems.description", [".bot-desc"]],
+  ["gems.json/gems.icon", [".bot-logo-text"]],
+  [
+    "generated-image-packaged.json/generatedImage.container",
+    "generated-image,.generated-image-container"
+  ],
+  [
+    "generated-image-packaged.json/generatedImage.previewSource",
+    "img[src*=\"googleusercontent.com\"]"
+  ],
+  [
+    "generated-image-packaged.json/generatedImage.downloadOwner",
+    "generated-image, .generated-image-container, download-generated-image-button"
+  ],
+  ["generated-image-packaged.json/generatedImage.downloadHost", "download-generated-image-button"],
+  [
+    "generated-image-packaged.json/generatedImage.downloadDataButton",
+    "button[data-test-id=\"download-generated-image-button\"]"
+  ],
+  [
+    "generated-image-packaged.json/generatedImage.downloadHostButton",
+    "download-generated-image-button button"
+  ],
+  ["generated-image-packaged.json/generatedImage.button", "button"],
+  ["generated-image-packaged.json/generatedImage.image", "img"],
+  [
+    "generated-image-packaged.json/generatedImage.dialog",
+    "expansion-dialog,[role=\"dialog\"],.cdk-overlay-pane"
+  ],
+  [
+    "generated-image-packaged.json/generatedImage.dialogImage",
+    "generated-image img, img[src^=\"blob:\"], img[src*=\"googleusercontent.com\"]"
+  ],
+  [
+    "generated-image.json/generatedImage.downloadIcon",
+    ["mat-icon[fonticon=\"download\"], .google-symbols[data-mat-icon-name=\"download\"]"]
+  ],
+  ["generated-ui-packaged.json/generatedUi.frames", "iframe[src*=\"gemini-code-immersive\"]"],
+  ["generated-ui-packaged.json/generatedUi.attachment", ".attachment-container"],
+  ["generated-ui-packaged.json/generatedUi.response", "response-element"],
+  ["generated-ui-packaged.json/generatedUi.message", "message-content"],
+  ["generated-ui-packaged.json/generatedUi.markdown", ".markdown, .markdown-main-panel"],
+  [
+    "generated-ui-packaged.json/generatedUi.container",
+    ".markdown, .markdown-main-panel, message-content"
+  ],
+  [
+    "image-export-packaged.json/imageExport.generatedHosts",
+    ["generated-image", "single-image", ".attachment-container.generated-images"]
+  ],
+  [
+    "image-export-packaged.json/imageExport.preferredImages",
+    ["img.image", "img.hero-image", "img.spark-licensed-portrait"]
+  ],
+  ["image-export-packaged.json/imageExport.sourceAnchor", ["a.source"]],
+  [
+    "image-export-packaged.json/imageExport.caption",
+    ["figcaption", ".caption", ".image-caption", ".attribution"]
+  ],
+  ["image-export-packaged.json/imageExport.sourceLabel", [".source .label"]],
+  [
+    "image-export-packaged.json/imageExport.youtubeThumbnails",
+    [
+      ".attachment-container.youtube img.thumbnail",
+      "youtube-block img.thumbnail",
+      "single-video img.thumbnail"
+    ]
+  ],
+  [
+    "image-export-packaged.json/imageExport.youtubeCard",
+    ["single-video", "youtube-block", ".attachment-container.youtube"]
+  ],
+  ["image-export-packaged.json/imageExport.youtubeTitle", [".video-title", "[class*=\"title\"]"]],
+  [
+    "image-export.json/imageExport.searchHosts",
+    [".attachment-container.search-images", ".image-container[data-full-size-image-uri]"]
+  ],
+  [
+    "input-collapse-packaged.json/inputCollapse.emptyInputs",
+    ["rich-textarea", "textarea", "[contenteditable=\"true\"]"]
+  ],
+  [
+    "input-collapse-packaged.json/inputCollapse.focus",
+    [".ql-editor", "[contenteditable]", "rich-textarea"]
+  ],
+  [
+    "input-collapse-packaged.json/inputCollapse.related",
+    [
+      ".cdk-overlay-container",
+      ".mat-mdc-menu-panel",
+      ".mat-mdc-dialog-container",
+      ".ng-trigger",
+      "[role=\"listbox\"]",
+      "[role=\"option\"]",
+      "[role=\"combobox\"]",
+      "[data-test-id*=\"attachment\"]",
+      "[data-test-id*=\"upload\"]",
+      "[data-test-id*=\"file\"]"
+    ]
+  ],
+  ["input-collapse.json/inputCollapse.wrapper", ["rich-textarea"]],
+  [
+    "input-packaged.json/input.clearance",
+    [
+      "form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message"
+    ]
+  ],
+  ["input-packaged.json/input.fab", ["span.mat-mdc-button-touch-target"]],
+  ["input-packaged.json/vim.mountInput", ["#prompt-textarea[contenteditable=\"true\"]"]],
+  ["input-packaged.json/vim.mountRoot", ["form"]],
+  ["input-packaged.json/vim.crossSiteEdit", ["textarea[aria-label=\"Edit message\"]"]],
+  ["input-packaged.json/vim.editActions", ["button"]],
+  [
+    "input-packaged.json/vim.mountChatInput",
+    ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]
+  ],
+  ["input-packaged.json/vim.mountChatRoot", ["fieldset"]],
+  [
+    "menu-overlay.json/exportOverlay.canvas",
+    [
+      "#chat-history",
+      "infinite-scroller.chat-history",
+      ".chat-history-scroll-container",
+      "chat-window-content",
+      "main chat-window-content"
+    ]
+  ],
+  [
+    "menu-overlay.json/exportOverlay.composer",
+    [
+      "rich-textarea",
+      "[aria-label*=\"Enter a prompt\"]",
+      "[aria-label*=\"prompt\"]",
+      "[aria-label*=\"Gemini\"]",
+      "[contenteditable=\"true\"][aria-label]"
+    ]
+  ],
+  ["menu-packaged.json/menu.nativePanels", "[role=\"menu\"], gem-menu"],
+  ["menu-packaged.json/menu.items", "button.mat-mdc-menu-item, gem-menu-item"],
+  [
+    "menu-packaged.json/menu.sidebar",
+    "[data-test-id=\"overflow-container\"], [data-test-id=\"all-conversations\"]"
+  ],
+  ["menu-packaged.json/menu.expandedTrigger", "[aria-haspopup=\"menu\"][aria-expanded=\"true\"]"],
+  ["menu-packaged.json/menu.backdrop", ".cdk-overlay-backdrop"],
+  [
+    "menu-packaged.json/menu.conversationTriggers",
+    "[data-test-id=\"actions-menu-button\"], [data-test-id=\"conversation-actions-menu-icon-button\"]"
+  ],
+  ["menu-packaged.json/menu.responseTrigger", "[data-test-id=\"more-menu-button\"]"],
+  ["menu.json/menu.panels", [".mat-mdc-menu-panel[role=\"menu\"], gem-menu"]],
+  ["menu.json/menu.content", [".mat-mdc-menu-content"]],
+  [
+    "model-picker.json/modelPicker.trigger",
+    [
+      "[data-test-id=\"bard-mode-menu-button\"]",
+      "button.input-area-switch",
+      ".input-area-switch-label",
+      "[data-test-id=\"model-selector\"]",
+      "button[aria-haspopup=\"menu\"].mat-mdc-menu-trigger"
+    ]
+  ],
+  [
+    "model-picker.json/modelPicker.legacyPanels",
+    [
+      ".mat-mdc-menu-panel.gds-mode-switch-menu[role=\"menu\"]",
+      "mat-action-list.gds-mode-switch-menu-list"
+    ]
+  ],
+  [
+    "model-picker.json/modelPicker.panelFallback",
+    [".mat-mdc-menu-panel[role=\"menu\"]:not(.desktop-settings-menu)"]
+  ],
+  ["model-picker.json/modelPicker.overlayPane", [".cdk-overlay-pane"]],
+  [
+    "model-picker.json/modelPicker.container",
+    [
+      ".cdk-overlay-pane, .mat-mdc-menu-panel[role=\"menu\"], mat-action-list.gds-mode-switch-menu-list"
+    ]
+  ],
+  [
+    "model-picker.json/modelPicker.observerRoot",
+    [
+      ".cdk-overlay-container, .cdk-global-overlay-wrapper, .cdk-overlay-connected-position-bounding-box, .cdk-overlay-pane, .mat-mdc-menu-panel[role=\"menu\"], mat-action-list.gds-mode-switch-menu-list, [data-mode-id], [role=\"menuitemradio\"], [role=\"menuitem\"]"
+    ]
+  ],
+  ["model-picker.json/modelPicker.items", ["[role=\"menuitemradio\"], [role=\"menuitem\"]"]],
+  [
+    "model-picker.json/modelPicker.modelEvidence",
+    ["[data-mode-id], .mode-title, .title-and-description"]
+  ],
+  ["model-picker.json/modelPicker.modelIdItem", ["[data-mode-id]"]],
+  ["model-picker.json/modelPicker.modelLabel", [".mode-title, .gds-title-m, .gds-label-l, .label"]],
+  ["model-picker.json/modelPicker.thinkingLabel", [".label, .gds-title-m, .gds-label-l"]],
+  ["model-picker.json/modelPicker.thinkingRow", ["[value=\"thinking_level\"]"]],
+  ["model-picker.json/modelPicker.thinkingItems", ["gem-menu-item, [role=\"menuitem\"]"]],
+  ["model-picker.json/modelPicker.thinkingContent", ["gem-menu-item-content, .label-container"]],
+  [
+    "model-picker.json/modelPicker.modelTitleContainer",
+    [".title-and-description, .label-container"]
+  ],
+  ["model-picker.json/modelPicker.thinkingTitleContainer", [".label-container"]],
+  [
+    "model-picker.json/modelPicker.focusInput",
+    [
+      "main rich-textarea [contenteditable=\"true\"]",
+      "rich-textarea [contenteditable=\"true\"]",
+      "main div[contenteditable=\"true\"][role=\"textbox\"]",
+      "div[contenteditable=\"true\"][role=\"textbox\"]",
+      "main .input-area textarea",
+      ".input-area textarea",
+      "main [contenteditable=\"true\"]",
+      "main textarea"
+    ]
+  ],
+  [
+    "placement.json/exportLayout.controls",
+    [
+      "top-bar-actions",
+      ".top-bar-actions",
+      "[data-test-id=\"top-bar-actions\"]",
+      "side-nav-sparkle-button",
+      "side-nav-menu-button",
+      "[data-test-id*=\"upgrade\" i]",
+      "[aria-label*=\"upgrade\" i]",
+      "#conversation-header-actions",
+      "[data-testid=\"share-chat-button\"]",
+      "[data-testid=\"conversation-options-button\"]"
+    ]
+  ],
+  [
+    "placement.json/exportLayout.broadControls",
+    ["[aria-label*=\"pro\" i]", "[aria-label*=\"advanced\" i]"]
+  ],
+  ["placement.json/exportLayout.canvasOwner", ["inline-preview, immersive-panel"]],
+  ["placement.json/exportLayout.canvasContent", ["immersive-editor, code-immersive-panel"]],
+  ["placement.json/exportLayout.fullscreenCanvas", ["immersive-panel"]],
+  [
+    "placement.json/exportLayout.inactiveCanvas",
+    ["deep-research-immersive-panel, [hidden], [aria-hidden=\"true\"]"]
+  ],
+  ["placement.json/exportLayout.turns", ["user-query, model-response, [data-message-author-role]"]],
+  ["placement.json/exportLayout.interactive", ["button, a[href], [role=\"button\"]"]],
+  [
+    "placement.json/exportLayout.overlaySidebar",
+    [
+      "[data-test-id=\"side-nav\"]",
+      "side-navigation",
+      "mat-sidenav",
+      "aside",
+      "nav",
+      ".side-nav",
+      ".sidenav",
+      ".chat-history-nav"
+    ]
+  ],
+  ["placement.json/exportLayout.fallbackRoot", ["main"]],
+  [
+    "placement.json/exportLayout.alignmentCanvas",
+    [
+      "#chat-history",
+      "infinite-scroller.chat-history",
+      ".chat-history-scroll-container",
+      "chat-window-content",
+      "main chat-window-content"
+    ]
+  ],
+  [
+    "placement.json/exportLayout.alignmentComposer",
+    [
+      "rich-textarea",
+      "[aria-label*=\"Enter a prompt\"]",
+      "[aria-label*=\"prompt\"]",
+      "[aria-label*=\"Gemini\"]",
+      "[contenteditable=\"true\"][aria-label]"
+    ]
+  ],
+  [
+    "placement.json/input.clearance",
+    [
+      "form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message"
+    ]
+  ],
+  ["placement.json/input.fab", ["span.mat-mdc-button-touch-target"]],
+  ["placement.json/vim.host", [".text-input-field, input-area-v2, input-container"]],
+  ["placement.json/vim.inputFallback", ["rich-textarea"]],
+  ["placement.json/vim.mountInput", ["#prompt-textarea[contenteditable=\"true\"]"]],
+  ["placement.json/vim.mountRoot", ["form"]],
+  ["placement.json/vim.mountChatInput", ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]],
+  ["placement.json/vim.mountChatRoot", ["fieldset"]],
+  [
+    "project-packaged.json/project.send",
+    [
+      "button[aria-label*=\"Send\"]",
+      "button[aria-label*=\"send\"]",
+      "button[data-tooltip*=\"Send\"]",
+      "button[data-tooltip*=\"send\"]",
+      "[data-send-button]",
+      ".send-button"
+    ]
+  ],
+  ["project-packaged.json/project.modelAnchor", [".model-picker-container"]],
+  ["project-packaged.json/project.inputAnchor", ["rich-textarea"]],
+  ["project-packaged.json/project.fontSource", [".model-picker-container button"]],
+  [
+    "project.json/project.inputs",
+    [
+      "rich-textarea [contenteditable=\"true\"]",
+      "div[contenteditable=\"true\"][role=\"textbox\"]",
+      ".input-area textarea",
+      "textarea[placeholder*=\"Ask\"]",
+      "textarea"
+    ]
+  ],
+  [
+    "prompt-history.json/promptHistory.candidates",
+    [
+      "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+      "#prompt-textarea[contenteditable=\"true\"]",
+      "[data-composer-markdown][contenteditable=\"true\"]",
+      "rich-textarea [contenteditable=\"true\"]",
+      "div[contenteditable=\"true\"][role=\"textbox\"]",
+      ".input-area textarea",
+      "textarea[placeholder*=\"Ask\"]",
+      "textarea"
+    ]
+  ],
+  ["research-pack-packaged.json/researchPack.host", "model-response"],
+  [
+    "research-pack-packaged.json/researchPack.thoughts",
+    "model-thoughts, .thoughts-container, .thoughts-content"
+  ],
+  ["research-pack-packaged.json/researchPack.actionLinkScope", "message-actions, .message-actions"],
+  ["research-pack-packaged.json/researchPack.conversation", ".conversation-container"],
+  ["research-pack-packaged.json/researchPack.user", "user-query"],
+  ["research-pack-packaged.json/researchPack.deepResearch", "deep-research-immersive-panel"]
+]

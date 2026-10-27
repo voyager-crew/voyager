@@ -1,6 +1,6 @@
 # Remote host catalog (`remote/`)
 
-Part of the [Plugin ecosystem overview](../README.md).
+Part of the [Plugin ecosystem overview](../README.md). Page-locator rules have one source of truth: the [resolver invariants](../../../core/selectors/README.md#invariants).
 
 The official CSS/JSON plugins ship as a snapshot inside the extension, and the
 same data is published per site at `<base>/hosts/<host>.json` (default base
@@ -69,10 +69,7 @@ default `6h`). The popup surfaces both on every supported site.
 Opening it reads the cache. Manual checks bypass the switch and interval.
 Turning updates off stops automatic requests. Cached plugin manifests and site
 adapter data remain usable under the same revision and identity rules at first
-mount and on catalog reload. With updates off, every semantic key, including
-keys admitted to the guarded contract, reads the cached adapter value as at
-baseline `6fa19b4ae`; only namespaced `site.locators` profiles use the bundle.
-The new contract proofs apply only when updates are on.
+mount and on catalog reload. The resolver invariants define OFF reads and the declarative compatibility boundary.
 
 **Message**: a content script or the popup sends `gv.pluginCatalog.refresh`
 (`PLUGIN_CATALOG_REFRESH_MESSAGE` in `runtime/messages.ts`) with
@@ -143,26 +140,17 @@ https://voyager.nagi.fun/catalog/hosts/business.gemini.google.json
 https://voyager.nagi.fun/catalog/hosts/aistudio.google.com.json
 ```
 
-Gemini and AI Studio receive locator data while their official plugins, CSS,
-host admission, identity and interaction protocols stay packaged. Enterprise
-reads the same Gemini data under the same guards. Each other site reads its own
-profiles alongside its existing catalog plugins. The
-[resolver README](../../../core/selectors/README.md) lists the exact coverage
-and independent checks that protect each operation.
-The [trust ledger](../../../core/selectors/PACKAGED_DATA.md) records every key's
-Tier A, Tier B or design §6 classification. Tier A keys require independent page
-proof for host actions, stored/exported data and operation identity. Tier B keys
-only place or avoid Voyager UI and trust the official catalog without that proof.
-A missing match or a mount inside a host editable region falls back to the bundle.
-Both tiers retain the literal allowlist, groups, syntax checks and size limits.
+The [resolver invariants](../../../core/selectors/README.md#invariants) define
+site isolation, trust tiers, mount safety and packaged boundaries. The
+[trust ledger](../../../core/selectors/PACKAGED_DATA.md) records the decision for
+every key. Gemini and AI Studio official plugins and CSS remain packaged.
 
 The catalog builder reads the same selected non-`*-packaged.json` fragments as
 `bundle.ts`. Revision, cache writer version, refresh timing and withdrawal use
 this channel’s existing machinery. A resolved adapter must be newer than the
 bundle before its profiles can apply. Missing or empty `site.locators` restores
 only its namespaced profiles on the next page load. A complete withdrawal also
-restores admitted `site.selectors` values to their packaged values. No second
-setting, cache, endpoint or publisher is involved.
+restores admitted `site.selectors` values to their packaged values.
 
 Shared per-site hydration is a `startMachine` flow. It shares PluginHost’s first
 adapter and settings reads, but adapter precedence does not depend on the
@@ -183,18 +171,6 @@ new page-locator fixes, withdrawals and switching updates off therefore
 take effect after a user refresh, with no automatic reload or native remount.
 The page requests a due catalog check after hydration; opening the popup only
 reads the cache, and its refresh button requests a manual check.
-
-Existing semantic site overrides outside a site’s page-locator contract keep
-their baseline declarative behavior, including native primitives. Admitted
-contract keys use the frozen guarded view only with Online updates on. With
-updates off they also retain the baseline resolved-adapter read; no semantic key
-is silently dropped.
-
-Every tier assignment, consumer guard and `remoteKeys` decision remains packaged.
-For Tier A, a partial collection, conflict with independent native/bundled evidence
-or wrong operation target falls back before side effects. Tier B applies only its
-no-match and editable-mount fallback. These checks remain off the bundled path.
-Design §6 identity, action and source protocols never become remote instructions.
 
 The [rollback runbook](../../../core/selectors/README.md#rollback-runbook)
 covers higher-revision fixes and withdrawing locators in the host file.
