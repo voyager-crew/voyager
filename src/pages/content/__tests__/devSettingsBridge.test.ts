@@ -106,9 +106,16 @@ describe('dev settings bridge', () => {
     expect(chrome.storage.sync.set).not.toHaveBeenCalled();
   });
 
-  it("writes and reads a host's plugin catalog cache entry in local storage", async () => {
-    const key = `${StorageKeys.PLUGIN_HOST_CATALOG_PREFIX}chat.deepseek.com`;
-    const entry = { host: 'chat.deepseek.com', status: 'ok', manifests: [] };
+  it.each([
+    'chat.deepseek.com',
+    'gemini.google.com',
+    'business.gemini.google',
+    'aistudio.google.com',
+    'aistudio.google.cn',
+    'custom.example',
+  ])('round-trips the %s catalog cache through local storage', async (host) => {
+    const key = `${StorageKeys.PLUGIN_HOST_CATALOG_PREFIX}${host}`;
+    const entry = { host, status: 'ok', manifests: [] };
     vi.mocked(chrome.storage.local.set).mockResolvedValue(undefined);
     vi.mocked(chrome.storage.local.get).mockResolvedValueOnce({ [key]: entry } as never);
 
@@ -140,7 +147,8 @@ describe('dev settings bridge', () => {
     ['in sync storage', 'sync', 'chat.deepseek.com'],
     ['with a path after the host', 'local', 'chat.deepseek.com/x'],
     ['with a port', 'local', 'localhost:3000'],
-    ['for a host that never has a catalog', 'local', 'gemini.google.com'],
+    // Catalog eligibility validates a concrete DNS name, including native and custom hosts.
+    ['for a wildcard instead of a concrete host', 'local', '*.example.com'],
   ])('refuses a plugin catalog key %s and writes nothing', async (_, area, host) => {
     const key = `${StorageKeys.PLUGIN_HOST_CATALOG_PREFIX}${host}`;
     postFromPage({
