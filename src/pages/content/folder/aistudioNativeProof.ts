@@ -19,7 +19,13 @@ export function isOriginalAIStudioNavigation(element: Element): boolean {
   if (element.closest(OVERLAY)) return false;
   // The captured navbar is beside main; content tabs and breadcrumbs cannot supply sidebar links.
   if (element.closest('main, [role="main"]')) return false;
-  const navigations = element.ownerDocument.querySelectorAll(NAVIGATION);
+  // Content navigation and preview copies must not make the original sidebar ambiguous.
+  const navigations = Array.from(element.ownerDocument.querySelectorAll(NAVIGATION)).filter(
+    (navigation) =>
+      !navigation.closest('main, [role="main"]') &&
+      !navigation.closest(OVERLAY) &&
+      !hasVoyagerOwner(navigation),
+  );
   if (navigations.length !== 1) return false;
   const sidebar = navigations[0].parentElement;
   return Boolean(

@@ -85,9 +85,12 @@ function stateOwner(
   if (!sidebar) return false;
   if (key === 'sidebar.openHost') return sidebar.closest('.side-nav-open') === element;
   const mains = Array.from(element.ownerDocument.querySelectorAll('main, [role="main"]')).filter(
-    (main) => !main.parentElement?.closest('main, [role="main"]'),
+    (main) =>
+      !main.parentElement?.closest('main, [role="main"]') &&
+      !hasVoyagerOwner(main) &&
+      !main.closest('dialog, [role="dialog"], [role="alertdialog"], [role="menu"]'),
   );
-  // Closing removes the state class; the native app still directly owns its outer main.
+  // Closing removes the state class; only native outer mains can establish the app owner.
   return mains.length === 1 && mains[0].parentElement === element;
 }
 

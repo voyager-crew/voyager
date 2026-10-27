@@ -1,4 +1,9 @@
-/** Captured on aistudio.google.com/library, 2026-10-27: navigation and main are siblings. */
+/**
+ * Captured live on aistudio.google.com/library, 2026-10-27: the app/layout ancestors,
+ * ms-navbar-v2 > .nav-content.v3-left-nav > nav, and the sibling [role="main"] wrapper.
+ * Inferred for behavior tests: Library and ms-prompt-history-v3 inside nav, their links/rows,
+ * and the example chat turn inside main. IDs and text are synthetic test data.
+ */
 export function mountRealAIStudioNavigation() {
   document.body.innerHTML = `<app-root id="app"><ms-app>
     <div class="banner-and-app-container"><div class="makersuite-layout" id="layout">

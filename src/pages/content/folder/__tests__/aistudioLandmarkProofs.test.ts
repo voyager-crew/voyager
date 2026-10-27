@@ -76,6 +76,64 @@ describe('AI Studio native navigation landmarks', () => {
     ]).toEqual(before);
   });
 
+  it.each([
+    { name: 'content tabs', markup: '<nav mat-tab-nav-bar></nav>', inMain: true },
+    { name: 'content breadcrumbs', markup: '<nav aria-label="Breadcrumb"></nav>', inMain: true },
+    {
+      name: 'content ARIA navigation',
+      markup: '<section role="navigation"></section>',
+      inMain: true,
+    },
+    { name: 'a closed dialog', markup: '<dialog><nav></nav></dialog>', inMain: false },
+    { name: 'a dialog', markup: '<section role="dialog"><nav></nav></section>', inMain: false },
+    {
+      name: 'an alert dialog',
+      markup: '<section role="alertdialog"><nav></nav></section>',
+      inMain: false,
+    },
+    { name: 'a menu', markup: '<section role="menu"><nav></nav></section>', inMain: false },
+    {
+      name: 'Voyager UI',
+      markup: '<section data-gv-component="preview"><nav></nav></section>',
+      inMain: false,
+    },
+  ])(
+    '$name beside the AI Studio sidebar does not disable its repaired prompt or Library link',
+    async ({ markup, inMain }) => {
+      const { content, layout, navigation, library, prompt } = renamedNavigation();
+      const parent = inMain ? content : layout;
+      parent.insertAdjacentHTML('beforeend', markup);
+      const copy = parent.lastElementChild!;
+      await patch(repairedNavigation);
+      expect(readAIStudioLibraryLink()).toBe(library);
+      expect(readAIStudioPromptLink('a', 'a')).toBe(prompt);
+
+      // The same frozen remote values must fail when their links move into the excluded owner.
+      copy.append(library, prompt);
+      expect(readAIStudioLibraryLink()).toBeNull();
+      expect(readAIStudioPromptLink('a', 'a')).toBeNull();
+      navigation.append(library, prompt);
+      expect(readAIStudioLibraryLink()).toBe(library);
+      expect(readAIStudioPromptLink('a', 'a')).toBe(prompt);
+    },
+  );
+
+  it.each(['main', 'section role="main"', 'main role="navigation"'])(
+    'a %s nested inside the sidebar nav cannot donate a repaired prompt or Library link',
+    async (wrapper) => {
+      const { navigation, library, prompt } = renamedNavigation();
+      const tag = wrapper.split(' ')[0];
+      navigation.insertAdjacentHTML('beforeend', `<${wrapper} id="nested-main"></${tag}>`);
+      document.getElementById('nested-main')!.append(library, prompt);
+      await patch(repairedNavigation);
+      expect(readAIStudioLibraryLink()).toBeNull();
+      expect(readAIStudioPromptLink('a', 'a')).toBeNull();
+      navigation.append(library, prompt);
+      expect(readAIStudioLibraryLink()).toBe(library);
+      expect(readAIStudioPromptLink('a', 'a')).toBe(prompt);
+    },
+  );
+
   it.each(['nav', 'section role="navigation"'])(
     'an in-content %s cannot donate a repaired sidebar prompt or Library control',
     async (wrapper) => {
@@ -88,7 +146,6 @@ describe('AI Studio native navigation landmarks', () => {
       expect(readAIStudioLibraryLink()).toBeNull();
       expect(readAIStudioPromptLink('a', 'a')).toBeNull();
       navigation.append(library, prompt);
-      tabs.remove();
       expect(readAIStudioLibraryLink()).toBe(library);
       expect(readAIStudioPromptLink('a', 'a')).toBe(prompt);
     },
