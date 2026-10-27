@@ -317,7 +317,7 @@ export async function startPromptManager(
       } else {
         listView.renderTags();
         listView.render();
-        requestAnimationFrame(listView.syncTagScrollHint);
+        listView.scheduleTagScrollHint();
       }
     }
 
@@ -340,7 +340,7 @@ export async function startPromptManager(
       void library.retry();
       panel.classList.remove('gv-hidden');
       placement.place();
-      requestAnimationFrame(listView.syncTagScrollHint);
+      listView.scheduleTagScrollHint();
     }
 
     function closePanel(): void {
@@ -502,6 +502,7 @@ export async function startPromptManager(
           window.removeEventListener('keydown', onWindowKeyDown);
           placement.destroy();
           listView.destroy();
+          saved.destroy();
           toaster.destroy();
           themeToggle.destroy();
 

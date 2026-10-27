@@ -40,6 +40,8 @@ export interface TemplateFillOptions {
   /** Receives the body with the supplied values substituted. */
   onSubmit: (filled: string) => void;
   onCancel?: () => void;
+  /** The owner's teardown also releases a submitted fill's trailing-keystroke listeners. */
+  signal?: AbortSignal;
 }
 
 export interface TemplateFillHandle {
@@ -202,10 +204,15 @@ export function openTemplateFill(options: TemplateFillOptions): TemplateFillHand
     };
     window.addEventListener('keyup', swallow, true);
     window.addEventListener('keypress', swallow, true);
-    window.setTimeout(() => {
+    function release(): void {
+      window.clearTimeout(timer);
       window.removeEventListener('keyup', swallow, true);
       window.removeEventListener('keypress', swallow, true);
-    }, 0);
+      options.signal?.removeEventListener('abort', release);
+    }
+    const timer = window.setTimeout(release, 0);
+    // Submission closes the card, but only owner teardown may end its same-task Enter guard early.
+    options.signal?.addEventListener('abort', release, { once: true });
   }
 
   function onKeyDown(event: KeyboardEvent): void {

@@ -40,6 +40,7 @@ import type { StarredMessage } from '@/features/savedLibrary/starTypes';
 import { ALL_FILTER } from '@/features/savedLibrary/viewModel';
 import type { TranslationKey } from '@/utils/translations';
 
+import { downloadPromptFile } from './promptDownload';
 import { formatStarredMessageTime } from './starredLibrary';
 
 const EXPORT_WRAP_CLASS = 'gv-pm-saved-export-wrap';
@@ -63,6 +64,7 @@ export interface SavedLibraryView {
   handleEscape: () => boolean;
   /** Reloads when stars or highlights changed in storage while this view is active. */
   applyStorageChange: (area: string, changes: Record<string, unknown>) => void;
+  destroy: () => void;
 }
 
 export interface SavedLibraryViewOptions {
@@ -101,6 +103,7 @@ export function createSavedLibraryView({
   let loading = false;
   let loadError = false;
   let exportMenuOpen = false;
+  const downloadLifetime = new AbortController();
 
   const toolbar = createEl('div', 'gv-pm-saved-toolbar gv-hidden');
   const filterGroup = createEl('div', 'gv-pm-saved-filters');
@@ -221,10 +224,11 @@ export function createSavedLibraryView({
       if (!response?.ok || typeof response.data !== 'string') {
         throw new Error(response?.error || 'Highlight export failed');
       }
-      downloadTextFile(
+      downloadPromptFile(
         response.data,
         response.filename || `gemini-voyager-highlights.${format === 'json' ? 'json' : 'md'}`,
         format === 'json' ? 'application/json' : 'text/markdown',
+        downloadLifetime.signal,
       );
     } catch (error) {
       logger.warn('[PromptManager] Failed to export highlights', { error: String(error) });
@@ -412,6 +416,7 @@ export function createSavedLibraryView({
         void load();
       }
     },
+    destroy: () => downloadLifetime.abort(),
   };
 }
 
@@ -500,18 +505,6 @@ function navigateToSavedLibraryItem(item: SavedLibraryItem): boolean {
       : new Event('popstate'),
   );
   return true;
-}
-
-function downloadTextFile(data: string, filename: string, mimeType: string): void {
-  const url = URL.createObjectURL(new Blob([data], { type: mimeType }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.style.display = 'none';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function createEl<K extends keyof HTMLElementTagNameMap>(

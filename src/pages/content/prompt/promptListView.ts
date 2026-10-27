@@ -43,6 +43,7 @@ export interface PromptListView {
   render: () => void;
   /** Shows the "more tags below" hint when the tag area overflows. */
   syncTagScrollHint: () => void;
+  scheduleTagScrollHint: () => void;
   /** Closes surfaces anchored to a row that is going away. */
   closeTransient: () => void;
   destroy: () => void;
@@ -95,6 +96,24 @@ export function createPromptListView({
   /* The template fill surface is modal-ish but not a modal: at most one is
    * open, and closing the panel must take it with it. */
   let templateFill: TemplateFillHandle | null = null;
+  const lifetime = new AbortController();
+  const frames = new Set<number>();
+
+  function nextFrame(callback: () => void): void {
+    const frame = requestAnimationFrame(() => {
+      frames.delete(frame);
+      callback();
+    });
+    frames.add(frame);
+  }
+
+  function cancelFrames(): void {
+    // Detached rows must not start Markdown rendering or measure tags after teardown.
+    for (const frame of frames) cancelAnimationFrame(frame);
+    frames.clear();
+  }
+
+  const scheduleTagScrollHint = () => nextFrame(syncTagScrollHint);
 
   function syncTagScrollHint(): void {
     const { isOverflowing, showHint } = getScrollHintState(
@@ -147,7 +166,7 @@ export function createPromptListView({
       });
       tagsWrap.appendChild(btn);
     }
-    requestAnimationFrame(syncTagScrollHint);
+    scheduleTagScrollHint();
   }
 
   /* Manual ordering (#1009): the list renders `items` in stored order, so a
@@ -222,6 +241,7 @@ export function createPromptListView({
       text: it.text,
       name: it.name,
       anchor,
+      signal: lifetime.signal,
       theme: getTheme(),
       labels: {
         // `deliverPromptText` copies unless insert-on-click is enabled,
@@ -343,7 +363,7 @@ export function createPromptListView({
         }
       };
       // Defer rendering to next frame to ensure element is fully attached
-      requestAnimationFrame(() => {
+      nextFrame(() => {
         void renderPromptMarkdown(it.text)
           .then(paintMarkdown)
           .catch(() => {
@@ -457,11 +477,14 @@ export function createPromptListView({
     renderTags,
     render,
     syncTagScrollHint,
+    scheduleTagScrollHint,
     closeTransient: () => {
       closeConfirm();
       closeTemplateFill();
     },
     destroy: () => {
+      cancelFrames();
+      lifetime.abort();
       // Drops the reorder listeners and auto-scroll frame on a mid-drag teardown.
       reorder.destroy();
       confirmLifetime.abort();

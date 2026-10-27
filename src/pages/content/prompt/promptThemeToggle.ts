@@ -65,18 +65,30 @@ export function createThemeToggle({
     if (saved) applySaved(saved);
   });
 
+  const transitionTimers = new Set<ReturnType<typeof setTimeout>>();
+  function cancelTransitions(): void {
+    // A pending transition must not touch a panel destroyed during an extension reload.
+    for (const timer of transitionTimers) clearTimeout(timer);
+    transitionTimers.clear();
+  }
+
   themeToggle.addEventListener('click', async () => {
     fixedTheme = currentTheme === 'dark' ? 'light' : 'dark';
     // Enable smooth color transition on all panel children
     panel.classList.add('gv-pm-transitioning');
     applyTheme(fixedTheme);
-    setTimeout(() => panel.classList.remove('gv-pm-transitioning'), 450);
+    const timer = setTimeout(() => {
+      transitionTimers.delete(timer);
+      panel.classList.remove('gv-pm-transitioning');
+    }, 450);
+    transitionTimers.add(timer);
     await writeSyncedChoice(StorageKeys.PROMPT_THEME, fixedTheme);
   });
 
   return {
     element: themeToggle,
     destroy: () => {
+      cancelTransitions();
       stopFollowingPage();
       // After an extension reload `browser.storage` is gone; a throw here would
       // skip the rest of the Prompt Manager's teardown and strand its trigger.
