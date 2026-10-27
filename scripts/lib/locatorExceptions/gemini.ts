@@ -5,14 +5,9 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
     file: 'src/core/gemini/code/hosts.ts',
     kind: 'proof',
     values: {
-      main: 1,
       'model-response': 1,
       'message-content': 1,
       'rich-textarea': 1,
-      '[role="dialog"]': 1,
-      button: 1,
-      textarea: 1,
-      '[role="button"]': 1,
       'code-block': 1,
     },
     reason:
@@ -29,13 +24,9 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
       '.edit-container': 1,
       '.user-query-container.edit-mode': 1,
       '.user-query-container': 1,
-      '[role="dialog"]': 1,
       'user-query': 1,
       'model-response': 1,
       '[data-message-author-role]': 1,
-      textarea: 1,
-      '[hidden]': 1,
-      '[aria-hidden="true"]': 1,
     },
     reason:
       'Independent main-composer owner/editability witness in native.ts; remote locators cannot redefine main ownership or the native editable protocol. Additional hidden/inert/ARIA-hidden checks are native visibility refusal conditions.',
@@ -51,23 +42,12 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
       '.edit-container': 1,
       '.user-query-container.edit-mode': 1,
       '.user-query-container': 1,
-      '[role="dialog"]': 1,
       'user-query': 1,
       'model-response': 1,
       '[data-message-author-role]': 1,
-      textarea: 1,
     },
     reason:
       'findOwnedGeminiMainInputs independently enumerates native editables and rejects edit/dialog/transcript/Voyager owners; it corroborates a repaired input rather than consuming its locator.',
-  },
-  {
-    file: 'src/core/gemini/composer/send.ts',
-    kind: 'proof',
-    values: {
-      button: 1,
-    },
-    reason:
-      'HTML button enumeration is bounded to the independently unique native main editor owner; native Send/Update/Stop/visibility semantics corroborate a repaired send control.',
   },
   {
     file: 'src/core/gemini/content/conversation.ts',
@@ -86,12 +66,8 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
       '.message-actions': 1,
       'model-response': 1,
       'user-query': 1,
-      h3: 1,
-      li: 1,
       'code-block': 1,
       'generated-image': 1,
-      '[role="listitem"]': 1,
-      button: 2,
     },
     reason:
       'readGeminiContentLeaves excludes thought/action text before complete-leaf identity comparison; this is the independent reference, not answer selection. belongsToHost rejects a candidate crossing a nested original turn/conversation owner; it cannot contribute another turn to the remote result. preservesGeminiContentFrames forbids starting inside native prose/code/math/image frames, preserving serialization and full content independently of remote spelling. Native context-image witness excludes action/icon descendants before requiring full-size source metadata and exact image identity/order. Additional button/attachment-preview exclusions preserve every authored native paragraph in the independent complete reference.',
@@ -100,9 +76,6 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
     file: 'src/core/gemini/math/userLatex.ts',
     kind: 'proof',
     values: {
-      button: 1,
-      textarea: 1,
-      '[aria-hidden="true"]': 1,
       'user-query': 1,
     },
     reason:
@@ -150,11 +123,7 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
     values: {
       'model-response': 1,
       'user-query': 1,
-      form: 1,
-      textarea: 1,
-      '[role="dialog"]': 1,
       '[data-test-id="conversation"]': 1,
-      button: 1,
     },
     reason:
       'nativeControl rejects transcript/editable/dialog/menu ownership before independently proving the Gemini sidebar toggle action. Original conversation-row and unique haspopup/controls queries corroborate exact row/menu identity via ARIA association before a repaired actionsContainer counts.',
@@ -163,9 +132,6 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
     file: 'src/core/gemini/sidebar/proof.ts',
     kind: 'proof',
     values: {
-      main: 3,
-      form: 1,
-      '[role="dialog"]': 1,
       'model-response': 1,
       'user-query': 1,
       '[data-message-author-role]': 1,
@@ -174,12 +140,7 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
       'chat-app': 1,
       '#app-root': 1,
       '[data-test-id="conversation"]': 3,
-      nav: 1,
-      aside: 1,
-      'a[href]': 1,
       'a[data-test-id="conversation"][href]': 1,
-      button: 1,
-      '[role="button"]': 1,
       '[data-test-id="overflow-container"]': 1,
     },
     reason:
@@ -189,14 +150,10 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
     file: 'src/core/gemini/sidebar/titleProof.ts',
     kind: 'proof',
     values: {
-      'a[href]': 1,
       'bard-sidenav': 1,
       'side-nav': 1,
-      nav: 1,
-      main: 1,
       'model-response': 1,
       'user-query': 1,
-      '[role="dialog"]': 1,
       '[data-test-id="conversation-title"]': 1,
       '.title-text': 1,
     },
@@ -213,16 +170,5 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
     },
     reason:
       'Native transcript serialization excludes research/thought/action owners and Voyager timestamps; remote turn collection still comes through guarded turn profiles.',
-  },
-  {
-    file: 'src/core/gemini/turnOwnership.ts',
-    kind: 'proof',
-    values: {
-      form: 1,
-      textarea: 1,
-      '[role="dialog"]': 1,
-    },
-    reason:
-      'isOriginalGeminiTranscriptElement rejects editors/dialogs/menus before any remote turn is admitted.',
   },
 ];

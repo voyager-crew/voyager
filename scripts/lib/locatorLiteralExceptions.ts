@@ -12,11 +12,8 @@ import { FOLDER_PROTOCOLS_LITERAL_EXCEPTIONS } from './locatorExceptions/folderP
 import { GEMINI_LITERAL_EXCEPTIONS } from './locatorExceptions/gemini';
 import { INPUT_PROTOCOLS_LITERAL_EXCEPTIONS } from './locatorExceptions/inputProtocols';
 import { NATIVE_SERVICES_LITERAL_EXCEPTIONS } from './locatorExceptions/nativeServices';
-import { OWNED_UI_LITERAL_EXCEPTIONS } from './locatorExceptions/ownedUi';
 import { PLUGIN_RUNTIME_LITERAL_EXCEPTIONS } from './locatorExceptions/pluginRuntime';
 import { PLUGIN_VERBS_LITERAL_EXCEPTIONS } from './locatorExceptions/pluginVerbs';
-import { POPUP_PLUGINS_LITERAL_EXCEPTIONS } from './locatorExceptions/popupPlugins';
-import { POPUP_UI_LITERAL_EXCEPTIONS } from './locatorExceptions/popupUi';
 import { SELECTOR_PROOFS_LITERAL_EXCEPTIONS } from './locatorExceptions/selectorProofs';
 import type { LocatorLiteralException } from './locatorExceptions/types';
 
@@ -31,10 +28,7 @@ export const LOCATOR_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
   ...GEMINI_LITERAL_EXCEPTIONS,
   ...INPUT_PROTOCOLS_LITERAL_EXCEPTIONS,
   ...NATIVE_SERVICES_LITERAL_EXCEPTIONS,
-  ...OWNED_UI_LITERAL_EXCEPTIONS,
   ...PLUGIN_RUNTIME_LITERAL_EXCEPTIONS,
   ...PLUGIN_VERBS_LITERAL_EXCEPTIONS,
-  ...POPUP_PLUGINS_LITERAL_EXCEPTIONS,
-  ...POPUP_UI_LITERAL_EXCEPTIONS,
   ...SELECTOR_PROOFS_LITERAL_EXCEPTIONS,
 ];

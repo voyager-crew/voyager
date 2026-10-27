@@ -2,64 +2,6 @@ import type { LocatorLiteralException } from './types';
 
 export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
   {
-    file: 'src/pages/content/export/adapter/chatgptCodeLanguage.ts',
-    kind: 'proof',
-    values: {
-      form: 1,
-      textarea: 1,
-      '[role="dialog"]': 1,
-    },
-    reason:
-      'Remote ChatGPT code-language label cannot be inside code/edit/dialog ownership; accepted language must independently match the native fence metadata.',
-  },
-  {
-    file: 'src/pages/content/export/adapter/chatgptExportLocators.ts',
-    kind: 'proof',
-    values: {
-      form: 3,
-      '[role="dialog"]': 3,
-      main: 2,
-      nav: 1,
-      aside: 1,
-    },
-    reason:
-      'ChatGPT export thread/body proofs reject page roots and form/dialog/nav content, require native main/role owners and preserve every original message before a remote body is used.',
-  },
-  {
-    file: 'src/pages/content/export/adapter/chatgptHistoryLocators.ts',
-    kind: 'proof',
-    values: {
-      form: 2,
-      textarea: 1,
-      '[role="dialog"]': 2,
-      main: 1,
-      nav: 1,
-      aside: 1,
-      '[role="status"]': 1,
-      '[aria-busy="true"]': 1,
-    },
-    reason:
-      'ChatGPT history list/pending proofs require original turn IDs and main ownership; pending controls must be native status/busy nodes outside turns so remote data cannot finish crawling early.',
-  },
-  {
-    file: 'src/pages/content/export/adapter/chatgptLegacyDom.ts',
-    kind: 'protocol',
-    values: {
-      button: 2,
-    },
-    reason:
-      'Native Stop button aliases are the fixed send/Stop/generation protocol, used alongside the guarded streaming reader. They prevent exporting an in-flight response and cannot be weakened by online locator replacements.',
-  },
-  {
-    file: 'src/pages/content/export/adapter/chatgptThread.ts',
-    kind: 'protocol',
-    values: {
-      button: 3,
-    },
-    reason:
-      'Native Stop button aliases retain the fixed generation protocol. closest(button) excludes interactive upload/control chrome from an already identified message; this is source serialization policy, not a replacement turn/composer discovery read.',
-  },
-  {
     file: 'src/pages/content/export/adapter/platform/conversationTitle.ts',
     kind: 'protocol',
     values: {
@@ -88,14 +30,10 @@ export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
     file: 'src/pages/content/export/adapter/platform/geminiImageRead.ts',
     kind: 'proof',
     values: {
-      button: 1,
       'user-query': 2,
       'generated-image': 1,
       'message-actions': 1,
       '.message-actions': 1,
-      h3: 1,
-      li: 1,
-      textarea: 1,
       'model-response': 1,
       '.model-response': 1,
     },
@@ -115,21 +53,10 @@ export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
     file: 'src/pages/content/export/adapter/platform/imageContent.ts',
     kind: 'protocol',
     values: {
-      button: 1,
       'generated-image': 1,
     },
     reason:
       'isChromeWrappedImage distinguishes native generated/search image source wrappers from button UI chrome while serializing an already selected image host. Standard button ancestry and native single-image/generated-image source grammar remain packaged source/HTML protocol; image host and attribution locator reads use the supplied profile.',
-  },
-  {
-    file: 'src/pages/content/export/conversationCollector.ts',
-    kind: 'protocol',
-    values: {
-      button: 2,
-      '[role="button"]': 1,
-    },
-    reason:
-      'On a detached clone of an already accepted response, role/button checks strip native reasoning-toggle UI by its fixed labels. They are serialization/control exclusions and cannot select a different exported response.',
   },
   {
     file: 'src/pages/content/export/conversationDom.ts',
@@ -160,15 +87,6 @@ export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
       'Fixed native menu-trigger test IDs bind interaction observation to the real menu action protocol; the published menu panel/content winner is guarded separately.',
   },
   {
-    file: 'src/pages/content/export/exportSelectionSession.ts',
-    kind: 'protocol',
-    values: {
-      button: 2,
-    },
-    reason:
-      'Voyager constructs or assigns native button type/role to its own exportSelectionSession controls. document.createElement is the HTML-construction exception; helper/JSX/type/role uses define owned markup and never query host elements.',
-  },
-  {
     file: 'src/pages/content/export/generatedUiScreenshots.ts',
     kind: 'protocol',
     values: {
@@ -178,13 +96,13 @@ export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
       'generatedUi.markdown is a namespaced key used to index packaged generated-UI data, not an embedded .markdown selector.',
   },
   {
-    file: 'src/pages/content/export/logoExportButton.ts',
+    file: 'src/pages/content/export/menuTargets.ts',
     kind: 'protocol',
     values: {
-      button: 2,
+      'gem-menu': 2,
     },
     reason:
-      'The button tag/type constructs Voyager’s own export control; the remaining button word occurs in diagnostic prose. Neither selects native host content.',
+      'Native GEM-MENU tag comparisons preserve its self-contained content and clone-insertion protocol after menu.panels accepts the panel; panel discovery still uses the published contract.',
   },
   {
     file: 'src/pages/content/export/menuIdentity.ts',
@@ -196,20 +114,9 @@ export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
       'Original conversation row ancestry binds a native menu trigger to its identity owner for observation, teardown and operation cancellation. This fixed action/identity association cannot be redirected by a remote menu locator.',
   },
   {
-    file: 'src/pages/content/export/persistentExportToolbar.ts',
-    kind: 'protocol',
-    values: {
-      button: 1,
-    },
-    reason:
-      'Voyager constructs or assigns native button type/role to its own persistentExportToolbar controls. document.createElement is the HTML-construction exception; helper/JSX/type/role uses define owned markup and never query host elements.',
-  },
-  {
     file: 'src/pages/content/export/responseActionImageButton.ts',
     kind: 'protocol',
     values: {
-      button: 2,
-      '[role="button"]': 1,
       '[data-test-id="conversation-title"]': 2,
       '[data-test-id="top-bar-actions"]': 2,
       '[data-test-id="side-nav"]': 2,
@@ -228,8 +135,6 @@ export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
     file: 'src/pages/content/export/responseActionTargets.ts',
     kind: 'proof',
     values: {
-      button: 1,
-      '[role="button"]': 1,
       'message-actions': 1,
       '.message-actions': 1,
       '.actions-container-v2': 1,
@@ -275,7 +180,6 @@ export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
     kind: 'protocol',
     values: {
       '[data-test-id="conversation"]': 1,
-      'a[href]': 1,
     },
     reason:
       'Dynamic conversation-ID-specific lookup retains native identity association and escaping. These are packaged identity/navigation paths, not general-purpose remote sidebar discovery.',
@@ -285,18 +189,8 @@ export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
     kind: 'protocol',
     values: {
       '[data-test-id="conversation"]': 1,
-      'a[href]': 2,
     },
     reason:
       'Original conversation row association plus standard native anchor traversal supplies href/jslog identity for menu/navigation targeting. Those identity and action-association rules stay packaged independently of repaired sidebar discovery.',
-  },
-  {
-    file: 'src/pages/content/export/sites/catalogReader.ts',
-    kind: 'protocol',
-    values: {
-      '[role="button"]': 1,
-    },
-    reason:
-      'The role=button removal runs on the detached exported content clone to strip controls after message selection. It is HTML/ARIA serialization policy, not a raw live page locator read.',
   },
 ];

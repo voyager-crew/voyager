@@ -5,14 +5,15 @@ import ts from 'typescript';
 import { getBundledSiteSelectorView } from '../src/core/selectors/bundle';
 import { SITE_SELECTOR_CONTRACTS } from '../src/core/selectors/contracts';
 import { readPublishedSiteLocators } from './lib/buildSiteLocators';
-import { isHtmlConstruction } from './lib/locatorConstruction';
 import { inspectLocatorImports, type ModuleReader } from './lib/locatorImports';
 import { LOCATOR_LITERAL_EXCEPTIONS } from './lib/locatorLiteralExceptions';
 import {
+  canonicalLocator,
   locatorLiterals,
   matchedPublishedLocators,
   selectorListMembers,
 } from './lib/locatorLiterals';
+import { hasHostLocatorFragment } from './lib/locatorVocabulary';
 import { inspectSiteFragmentOwnership } from './lib/siteFragmentOwnership';
 
 const ROOT = process.cwd();
@@ -32,8 +33,9 @@ export function publishedLocatorValues(): ReadonlyMap<string, readonly string[]>
       const bundled = view.profiles[key];
       if (!bundled) throw new Error(`${site}:${key} has no bundled profile`);
       for (const value of bundled)
-        for (const member of new Set([value, ...selectorListMembers(value)]))
-          values.set(member, [...(values.get(member) ?? []), `${site}:${key}`]);
+        for (const member of new Set([value, ...selectorListMembers(value)].map(canonicalLocator)))
+          if (hasHostLocatorFragment(member))
+            values.set(member, [...(values.get(member) ?? []), `${site}:${key}`]);
     }
   }
   return values;
@@ -57,7 +59,6 @@ export function inspectLocatorSource(
   inspectLocatorImports(file, source, fail, readModule);
   if (TEST.test(file)) return failures;
   const literals = locatorLiterals(source)
-    .filter(({ node, text }) => !isHtmlConstruction(node, file, text))
     .map((literal) => ({ literal, matched: matchedPublishedLocators(literal, values) }))
     .filter(({ matched }) => matched.length > 0);
   const counts = new Map<string, number>();

@@ -84,9 +84,42 @@ function balancedEnd(value: string, start: number): number {
   return value.length;
 }
 
+/** Equivalent CSS attribute quotes and HTML type casing identify the same locator. */
+export function canonicalLocator(value: string): string {
+  let result = '';
+  for (let index = 0; index < value.length;) {
+    const char = value[index];
+    if (char === '[') {
+      const end = balancedEnd(value, index);
+      const attribute = value.slice(index, end);
+      const match = attribute.match(
+        /^\[\s*([\w:-]+)\s*([~|^$*]?=)\s*(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)'|([^\s\]]+))\s*([is])?\s*\]$/i,
+      );
+      result += match
+        ? `[${match[1].toLowerCase()}${match[2]}${JSON.stringify(match[3] ?? match[4] ?? match[5])}${match[6] ? ` ${match[6].toLowerCase()}` : ''}]`
+        : attribute;
+      index = end;
+    } else if (char === '\\') {
+      result += value.slice(index, index + 2);
+      index += 2;
+    } else {
+      const name = value.slice(index).match(/^[\w\-\uE000]+/)?.[0];
+      if (name) {
+        const prefix = value[index - 1];
+        result += prefix === '.' || prefix === '#' || prefix === ':' ? name : name.toLowerCase();
+        index += name.length;
+      } else {
+        result += char;
+        index++;
+      }
+    }
+  }
+  return result;
+}
+
 /** A compound can embed a published class, attribute or tag beside extra constraints. */
 export function selectorLiteralParts(value: string): string[] {
-  value = withoutComments(value);
+  value = canonicalLocator(withoutComments(value));
   const result = new Set([value]);
   for (const compound of compounds(value)) {
     result.add(compound);

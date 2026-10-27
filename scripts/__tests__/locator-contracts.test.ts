@@ -79,24 +79,6 @@ describe('published locator boundaries', () => {
     expect(inspectLocatorSource('src/features/native.spec.ts', 'query("user-query")')).toEqual([]);
   });
 
-  it('allows native HTML construction but still rejects a host query for the same tag', () => {
-    const failures = inspectLocatorSource(
-      consumer,
-      'document.createElement("textarea");\ndocument.querySelector("textarea");',
-    );
-    expect(failures).toEqual([expect.objectContaining({ line: 2 })]);
-  });
-
-  it('distinguishes native parenthesized construction from a disguised host query', () => {
-    expect(inspectLocatorSource(consumer, 'document.createElement(("textarea"))')).toEqual([]);
-    expect(
-      inspectLocatorSource(
-        consumer,
-        'const q={createElement:document.querySelector.bind(document)};q.createElement("textarea")',
-      ),
-    ).toHaveLength(1);
-  });
-
   it('does not let a helper named el disguise a copied host locator', () => {
     expect(
       inspectLocatorSource(
