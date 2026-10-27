@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   setupVimTestEnvironment,
@@ -18,19 +18,34 @@ import {
 setupVimTestEnvironment();
 
 describe('input Vim mode integration', () => {
+  let cleanup: (() => void) | undefined;
+
+  beforeEach(() => {
+    vi.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame'],
+    });
+  });
+
+  afterEach(() => {
+    try {
+      cleanup?.();
+    } finally {
+      cleanup = undefined;
+      vi.useRealTimers();
+    }
+  });
+
   it('focuses the question input with i when enabled', async () => {
     mockInputVimModeStorage(true);
     const input = createQuestionInput();
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     const event = fireWindowKey('i');
 
     expect(input.focus).toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(true);
-
-    cleanup();
   });
 
   it('can be forced on by the plugin lifecycle without the Gemini setting', async () => {
@@ -38,15 +53,13 @@ describe('input Vim mode integration', () => {
     const input = createQuestionInput();
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode({ forceEnabled: true });
+    cleanup = await startInputVimMode({ forceEnabled: true });
 
     const event = fireInputKey(input, 'Escape');
 
     expect(event.defaultPrevented).toBe(true);
     expect(input.dataset.gvVimMode).toBe('normal');
     expect(chrome.storage.sync.get).not.toHaveBeenCalled();
-
-    cleanup();
   });
 
   it('uses Vim commands in the visible edit prompt instead of the main composer', async () => {
@@ -57,7 +70,7 @@ describe('input Vim mode integration', () => {
     input.selectionEnd = 1;
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     const escapeEvent = fireInputKey(input, 'Escape');
 
@@ -73,8 +86,6 @@ describe('input Vim mode integration', () => {
     fireInputKey(input, 'x');
 
     expect(input.value).toBe('hllo');
-
-    cleanup();
   });
 
   it('does not mistake a newline in the edit prompt for submitting the main composer', async () => {
@@ -85,17 +96,21 @@ describe('input Vim mode integration', () => {
     input.selectionEnd = 4;
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
     fireInputKey(input, 'Enter');
+    input.value = 'edit\n prompt';
 
-    await new Promise((resolve) => setTimeout(resolve, 120));
+    vi.advanceTimersByTime(80);
 
     expect(input.dataset.gvVimMode).toBe('normal');
     expect(mainInput.dataset.gvVimMode).toBeUndefined();
 
-    cleanup();
+    // The retry must still detect a later send, proving the reconcile timer ran.
+    input.value = '';
+    vi.advanceTimersByTime(80);
+    expect(input.dataset.gvVimMode).toBe('insert');
   });
 
   it('switches the question input from insert to normal mode with Escape', async () => {
@@ -103,15 +118,13 @@ describe('input Vim mode integration', () => {
     const input = createQuestionInput();
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     const event = fireInputKey(input, 'Escape');
 
     expect(input.blur).not.toHaveBeenCalled();
     expect(input.dataset.gvVimMode).toBe('normal');
     expect(event.defaultPrevented).toBe(true);
-
-    cleanup();
   });
 
   it('switches from insert to normal mode with Ctrl+[', async () => {
@@ -119,14 +132,12 @@ describe('input Vim mode integration', () => {
     const input = createQuestionInput();
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     const event = fireCtrlInputKey(input, '[');
 
     expect(input.dataset.gvVimMode).toBe('normal');
     expect(event.defaultPrevented).toBe(true);
-
-    cleanup();
   });
 
   it('allows normal typing while in insert mode', async () => {
@@ -134,13 +145,11 @@ describe('input Vim mode integration', () => {
     const input = createQuestionInput();
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     const event = fireInputKey(input, 'a');
 
     expect(event.defaultPrevented).toBe(false);
-
-    cleanup();
   });
 
   it('keeps the HUD buffer empty after a single completed H motion', async () => {
@@ -149,7 +158,7 @@ describe('input Vim mode integration', () => {
     setContentEditableSelection(input, 2);
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
     fireInputKey(input, 'H');
@@ -157,8 +166,6 @@ describe('input Vim mode integration', () => {
     const buffer = document.querySelector<HTMLElement>('.gv-input-vim-hud-buffer');
     expect(buffer?.hidden).toBe(true);
     expect(buffer?.textContent).toBe('');
-
-    cleanup();
   });
 
   it('shows count while pending and clears it after a counted H motion', async () => {
@@ -167,7 +174,7 @@ describe('input Vim mode integration', () => {
     setContentEditableSelection(input, 4);
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
     fireInputKey(input, '1');
@@ -181,8 +188,6 @@ describe('input Vim mode integration', () => {
 
     expect(buffer?.hidden).toBe(true);
     expect(buffer?.textContent).toBe('');
-
-    cleanup();
   });
 
   it('shows pending operator commands in typed order', async () => {
@@ -191,7 +196,7 @@ describe('input Vim mode integration', () => {
     setContentEditableSelection(input, 0);
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
     fireInputKey(input, '3');
@@ -200,8 +205,6 @@ describe('input Vim mode integration', () => {
     const buffer = document.querySelector<HTMLElement>('.gv-input-vim-hud-buffer');
     expect(buffer?.hidden).toBe(false);
     expect(buffer?.textContent).toBe('3d');
-
-    cleanup();
   });
 
   it('prevents unsupported printable keys from inserting text in normal mode', async () => {
@@ -211,15 +214,13 @@ describe('input Vim mode integration', () => {
     input.selectionEnd = 2;
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
     const event = fireInputKey(input, 'q');
 
     expect(event.defaultPrevented).toBe(true);
     expect(input.value).toBe('hello');
-
-    cleanup();
   });
 
   it('prevents Backspace and Delete from editing text in normal mode', async () => {
@@ -229,7 +230,7 @@ describe('input Vim mode integration', () => {
     input.selectionEnd = 2;
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
     const backspaceEvent = fireInputKey(input, 'Backspace');
@@ -238,8 +239,6 @@ describe('input Vim mode integration', () => {
     expect(backspaceEvent.defaultPrevented).toBe(true);
     expect(deleteEvent.defaultPrevented).toBe(true);
     expect(input.value).toBe('hello');
-
-    cleanup();
   });
 
   it('prevents browser editing shortcuts from mutating text in normal mode', async () => {
@@ -249,7 +248,7 @@ describe('input Vim mode integration', () => {
     input.selectionEnd = 2;
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
     const pasteEvent = fireCtrlInputKey(input, 'v');
@@ -258,8 +257,6 @@ describe('input Vim mode integration', () => {
     expect(pasteEvent.defaultPrevented).toBe(true);
     expect(undoEvent.defaultPrevented).toBe(true);
     expect(input.value).toBe('hello');
-
-    cleanup();
   });
 
   it('allows browser editing shortcuts in insert mode', async () => {
@@ -269,13 +266,11 @@ describe('input Vim mode integration', () => {
     input.selectionEnd = 2;
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     const pasteEvent = fireCtrlInputKey(input, 'v');
 
     expect(pasteEvent.defaultPrevented).toBe(false);
-
-    cleanup();
   });
 
   it('keeps x effective after leaving insert mode at EOF', async () => {
@@ -285,15 +280,13 @@ describe('input Vim mode integration', () => {
     input.selectionEnd = 5;
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
     fireInputKey(input, 'x');
 
     expect(input.value).toBe('hell');
     expect(input.selectionStart).toBe(4);
-
-    cleanup();
   });
 
   it('moves the visible block cursor with the textarea caret', async () => {
@@ -355,7 +348,7 @@ describe('input Vim mode integration', () => {
     );
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
     fireInputKey(input, 'h');
@@ -383,8 +376,6 @@ describe('input Vim mode integration', () => {
 
     fireInputKey(input, 'k');
     expect(input.selectionStart).toBe(2);
-
-    cleanup();
   });
 
   it('returns to insert mode and hides the Vim cursor after Enter sends and clears the input', async () => {
@@ -393,19 +384,21 @@ describe('input Vim mode integration', () => {
     setContentEditableSelection(input, 4);
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
+    vi.advanceTimersToNextFrame();
+    const cursor = document.querySelector<HTMLElement>('.gv-input-vim-cursor');
+    expect(cursor?.hidden).toBe(false);
+
     fireInputKey(input, 'Enter');
     input.textContent = '';
 
-    await new Promise((resolve) => setTimeout(resolve, 120));
+    vi.advanceTimersByTime(80);
+    vi.advanceTimersToNextFrame();
 
-    const cursor = document.querySelector<HTMLElement>('.gv-input-vim-cursor');
     expect(input.dataset.gvVimMode).toBe('insert');
     expect(cursor?.hidden).toBe(true);
-
-    cleanup();
   });
 
   it('returns to insert mode after clicking the send button clears the input', async () => {
@@ -417,17 +410,15 @@ describe('input Vim mode integration', () => {
     setContentEditableSelection(input, 4);
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
     fireClick(sendButton);
     input.textContent = '';
 
-    await new Promise((resolve) => setTimeout(resolve, 120));
+    vi.advanceTimersByTime(80);
 
     expect(input.dataset.gvVimMode).toBe('insert');
-
-    cleanup();
   });
 
   it('keeps normal mode after Enter when the input content remains', async () => {
@@ -436,17 +427,20 @@ describe('input Vim mode integration', () => {
     setContentEditableSelection(input, 4);
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
     fireInputKey(input, 'Enter');
     input.textContent = 'send this\n';
 
-    await new Promise((resolve) => setTimeout(resolve, 120));
+    vi.advanceTimersByTime(80);
 
     expect(input.dataset.gvVimMode).toBe('normal');
 
-    cleanup();
+    // Clearing on a later retry proves the unchanged-mode assertion was observed.
+    input.textContent = '';
+    vi.advanceTimersByTime(80);
+    expect(input.dataset.gvVimMode).toBe('insert');
   });
 
   it('completes dd even when the second d keydown is marked repeat', async () => {
@@ -456,7 +450,7 @@ describe('input Vim mode integration', () => {
     input.selectionEnd = 4;
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
     fireInputKey(input, 'd');
@@ -464,8 +458,6 @@ describe('input Vim mode integration', () => {
 
     expect(input.value).toBe('one\nthree');
     expect(input.selectionStart).toBe(4);
-
-    cleanup();
   });
 
   it('ignores repeated destructive keydown events after 2dd', async () => {
@@ -475,7 +467,7 @@ describe('input Vim mode integration', () => {
     input.selectionEnd = 4;
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
     fireInputKey(input, '2');
@@ -485,8 +477,6 @@ describe('input Vim mode integration', () => {
 
     expect(repeatEvent.defaultPrevented).toBe(true);
     expect(input.value).toBe('one\nfour\nfive');
-
-    cleanup();
   });
 
   it('clears undo history when the active input changes', async () => {
@@ -496,7 +486,7 @@ describe('input Vim mode integration', () => {
     firstInput.selectionEnd = 1;
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(firstInput, 'Escape');
     fireInputKey(firstInput, 'x');
@@ -511,8 +501,6 @@ describe('input Vim mode integration', () => {
     fireInputKey(secondInput, 'u');
 
     expect(secondInput.value).toBe('world');
-
-    cleanup();
   });
 
   it('does not steal keys while another editable element is focused', async () => {
@@ -522,14 +510,12 @@ describe('input Vim mode integration', () => {
     document.body.appendChild(otherInput);
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     const event = fireInputKey(otherInput, 'i');
 
     expect(input.focus).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
-
-    cleanup();
   });
 
   it('does nothing while disabled', async () => {
@@ -537,14 +523,12 @@ describe('input Vim mode integration', () => {
     const input = createQuestionInput();
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     const event = fireWindowKey('i');
 
     expect(input.focus).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
-
-    cleanup();
   });
 
   it('scrolls the input viewport when j moves the Vim caret below the visible area', async () => {
@@ -560,13 +544,11 @@ describe('input Vim mode integration', () => {
     setContentEditableSelection(input, 1);
 
     const { startInputVimMode } = await import('../vimMode');
-    const cleanup = await startInputVimMode();
+    cleanup = await startInputVimMode();
 
     fireInputKey(input, 'Escape');
     fireInputKey(input, 'j');
 
     expect(input.scrollTop).toBeGreaterThan(0);
-
-    cleanup();
   });
 });
