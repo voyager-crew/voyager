@@ -329,6 +329,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
     }
 
     if (!root.hidden && activeInput === input && results.length > 0) {
+      if (['ArrowDown', 'ArrowUp', 'Tab', 'Enter'].includes(event.key)) preview.cancelAim();
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
         event.stopPropagation();

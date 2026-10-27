@@ -5,7 +5,8 @@
  * the way to it runs across other rows. Taken literally, each of those rows
  * claims the card as the pointer passes over it. While the pointer stays in
  * the triangle from where it left its row to the card's near corners, and
- * keeps closing in, it is on its way to the card and those rows should wait.
+ * keeps closing in fast enough, it is on its way to the card and those rows
+ * should wait.
  *
  * The geometry is pure. `createSafeTriangle` adds only what tracking needs: a
  * document `pointermove` listener and a stall timer, both alive just while the
@@ -19,8 +20,15 @@ export const SAFE_TRIANGLE_STALL_MS = 300;
 export const SAFE_TRIANGLE_TOLERANCE_PX = 3;
 /** Drift away from the card that is still a wobble rather than a turn. */
 const BACKTRACK_PX = 4;
-/** Getting closer by less than this is jitter, not progress. */
-const PROGRESS_PX = 0.5;
+/**
+ * Slower than this toward the card is browsing, not heading for it (Floating
+ * UI's `requireIntent` uses the same 0.1 px/ms). The slash card sits above the
+ * whole list, so every upward move points at it; without a speed floor a slow
+ * scan up the rows kept the first row's card until the pointer stopped.
+ */
+export const SAFE_TRIANGLE_MIN_SPEED = 0.1;
+/** Approach speed is measured over at least this long, so one jittery event cannot decide it. */
+const SPEED_WINDOW_MS = 50;
 
 export interface Point {
   x: number;
@@ -98,7 +106,7 @@ export interface SafeTriangle {
   /**
    * The pointer moved from `exit` (its last point on the row whose card is
    * open) to `point`. Starts tracking and returns true when that move heads
-   * into the triangle toward the card.
+   * into the triangle and closer to the card.
    */
   start: (exit: Point, point: Point) => boolean;
   /** Whether the pointer is still heading for the card. */
@@ -110,13 +118,14 @@ export interface SafeTriangle {
 export interface SafeTriangleOptions {
   /** The card's current rect, or null once it is gone. */
   cardRect: () => Box | null;
-  /** The pointer stopped heading for the card: left the triangle, turned back or settled. */
+  /** The pointer stopped heading for the card: left the triangle, turned back, slowed or settled. */
   onExpire: () => void;
 }
 
 export function createSafeTriangle({ cardRect, onExpire }: SafeTriangleOptions): SafeTriangle {
   let apex: Point | null = null;
   let best = 0;
+  let checkpoint = { distance: 0, time: 0 };
   let stallTimer: number | null = null;
 
   function holds(point: Point): boolean {
@@ -126,7 +135,13 @@ export function createSafeTriangle({ cardRect, onExpire }: SafeTriangleOptions):
     if (!triangle || !isInsideTriangle(triangle, point)) return false;
     const distance = distanceToBox(card, point);
     if (distance > best + BACKTRACK_PX) return false;
-    if (distance < best - PROGRESS_PX) {
+    const now = Date.now();
+    const elapsed = now - checkpoint.time;
+    if (elapsed >= SPEED_WINDOW_MS) {
+      if ((checkpoint.distance - distance) / elapsed < SAFE_TRIANGLE_MIN_SPEED) return false;
+      checkpoint = { distance, time: now };
+    }
+    if (distance < best) {
       best = distance;
       armStall();
     }
@@ -162,7 +177,10 @@ export function createSafeTriangle({ cardRect, onExpire }: SafeTriangleOptions):
       if (!card) return false;
       apex = exit;
       best = distanceToBox(card, exit);
-      if (!holds(point)) {
+      checkpoint = { distance: best, time: Date.now() };
+      // The first move must close in: beside a tall card, a move straight down
+      // stays within the tolerance of the triangle's near-vertical edge.
+      if (distanceToBox(card, point) >= best || !holds(point)) {
         stop();
         return false;
       }
@@ -183,7 +201,7 @@ export interface AimedRows {
    * (or, over no row, the last row left gets its `leave`).
    */
   bind: (row: HTMLElement, enter: () => void, leave: () => void) => void;
-  /** The card was reached or dismissed: drop any waiting hover. */
+  /** The card was reached or dismissed, or the keyboard took over: drop any waiting hover. */
   stop: () => void;
 }
 
@@ -194,10 +212,12 @@ export interface AimedRowsOptions {
   owner: () => HTMLElement | null;
   /** The pointer left `owner` for the card: hold whatever leaving would close. */
   onAim: () => void;
+  /** The pointer is no longer heading for the card, however that ended. */
+  onAimEnd?: () => void;
 }
 
 /** Row hover that waits while a mouse is on its way to the open card. */
-export function createAimedRows({ card, owner, onAim }: AimedRowsOptions): AimedRows {
+export function createAimedRows({ card, owner, onAim, onAimEnd }: AimedRowsOptions): AimedRows {
   let lastInside: { row: HTMLElement; point: Point } | null = null;
   let pending: { row: HTMLElement; enter: () => void } | null = null;
   let resumeLeave: (() => void) | null = null;
@@ -207,14 +227,16 @@ export function createAimedRows({ card, owner, onAim }: AimedRowsOptions): Aimed
     onExpire: () => {
       const next = pending;
       pending = null;
+      onAimEnd?.();
       if (next?.row.isConnected) next.enter();
       else resumeLeave?.();
     },
   });
 
   function stop(): void {
-    triangle.stop();
     pending = null;
+    triangle.stop();
+    onAimEnd?.();
   }
 
   return {
@@ -229,6 +251,10 @@ export function createAimedRows({ card, owner, onAim }: AimedRowsOptions): Aimed
       row.addEventListener('pointerleave', (event) => {
         // Touch and pen have no path to aim along; their taps work as before.
         if (event.pointerType !== 'mouse' || owner() !== row) return;
+        // Leaving the owner again ends any earlier aim and the row it was
+        // holding; a hover kept from then would later reopen a row the
+        // pointer has long left.
+        stop();
         const point = { x: event.clientX, y: event.clientY };
         // The last move inside the row, so a move straight away from the card is
         // judged at once; a stale point from another row would aim from there.
@@ -242,11 +268,13 @@ export function createAimedRows({ card, owner, onAim }: AimedRowsOptions): Aimed
         else enter();
       });
       row.addEventListener('mouseleave', () => {
+        // Whether or not an aim is running: a row the pointer has left is
+        // never the one under it.
+        if (pending?.row === row) pending = null;
         if (!triangle.isActive()) {
           leave();
           return;
         }
-        if (pending?.row === row) pending = null;
         resumeLeave = leave;
       });
     },

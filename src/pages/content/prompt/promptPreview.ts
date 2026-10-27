@@ -52,9 +52,12 @@ export function createPromptPreview({ panel, scrollRoot }: PromptPreviewOptions)
   const rows = createAimedRows({
     card: () => (card?.classList.contains(VISIBLE_CLASS) ? card : null),
     owner: () => shownTarget,
-    // The card and the stalled-aim resume decide when it closes, not a leave
-    // that arrived just before the aim began.
-    onAim: clearHideTimer,
+    onAim: () => {
+      // The pointer is off its row: from here the card's own hover, or the
+      // row the aim hands over to, decides when it closes.
+      targetHovered = false;
+      clearHideTimer();
+    },
   });
 
   function clearOpenTimer(): void {
@@ -101,6 +104,7 @@ export function createPromptPreview({ panel, scrollRoot }: PromptPreviewOptions)
     // Entering the tooltip cancels any pending hide; leaving schedules it.
     // This is what lets the user glide from row → gap → tooltip and scroll.
     el.addEventListener('mouseenter', () => {
+      rows.stop();
       cardHovered = true;
       clearHideTimer();
     });

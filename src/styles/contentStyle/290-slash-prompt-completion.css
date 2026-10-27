@@ -42,7 +42,7 @@
   text-align: start;
 }
 
-.gv-pm-slash-root[data-gv-interaction='pointer'] .gv-pm-slash-option:hover,
+.gv-pm-slash-root:not(.gv-pm-slash-aiming)[data-gv-interaction='pointer'] .gv-pm-slash-option:hover,
 .gv-pm-slash-option[aria-selected='true'] {
   background: var(--gv-ui-hover);
 }

@@ -61,14 +61,15 @@ function setup(options?: PointerOptions) {
 
 describe('Prompt Manager preview hover intent', () => {
   let teardown: (() => void) | null = null;
-  const start = (options?: PointerOptions) => {
+  const setupAt = (x: number, y: number, options?: PointerOptions) => {
     const harness = setup(options);
     teardown = harness.teardown;
     // Rest on the first row until its card opens.
-    harness.pointer.moveTo(300, 125);
+    harness.pointer.moveTo(x, y);
     vi.advanceTimersByTime(OPEN_DELAY_MS);
     return harness;
   };
+  const start = (options?: PointerOptions) => setupAt(300, 125, options);
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -90,6 +91,8 @@ describe('Prompt Manager preview hover intent', () => {
       pointer.glideTo(300 + 10 * step, 125 + 14.6 * step, 1);
       expect(shown()).toBe('Row 0');
     }
+    // Reaching the card ends the hover intent: nothing is left waiting.
+    expect(vi.getTimerCount()).toBe(0);
     vi.advanceTimersByTime(1000);
     expect(shown()).toBe('Row 0');
 
@@ -139,6 +142,35 @@ describe('Prompt Manager preview hover intent', () => {
     pointer.glideTo(410, 230, 5);
 
     expect(shown()).toBeNull();
+  });
+
+  it('a row re-entered on the way to the Prompt Manager card does not keep it open after the pointer leaves', () => {
+    const { pointer, shown } = start();
+    pointer.moveTo(300, 170); // row 1
+    vi.advanceTimersByTime(OPEN_DELAY_MS);
+    expect(shown()).toBe('Row 1');
+    pointer.moveTo(330, 205); // into row 2, heading for the card
+    pointer.moveTo(332, 199); // a wobble back into row 1
+    pointer.moveTo(95, 170); // off the panel to the left: no longer heading there
+    pointer.moveTo(110, 120); // row 0
+    vi.advanceTimersByTime(OPEN_DELAY_MS);
+    expect(shown()).toBe('Row 0');
+
+    // From row 0 into the gap beside the card, crossing no row, then settling.
+    pointer.moveTo(300, 120);
+    pointer.glideTo(405, 125, 6);
+    vi.advanceTimersByTime(SAFE_TRIANGLE_STALL_MS + HIDE_GRACE_MS);
+    expect(shown()).toBeNull();
+  });
+
+  it('a straight move down beside the Prompt Manager card opens the next row on time', () => {
+    const { pointer, shown } = setupAt(390, 125);
+    // 2 px steps; row 1 is entered on the 13th, 208 ms in.
+    pointer.glideTo(390, 155, 15);
+    vi.advanceTimersByTime(208 + OPEN_DELAY_MS - 240 - 1);
+    expect(shown()).toBe('Row 0');
+    vi.advanceTimersByTime(1);
+    expect(shown()).toBe('Row 1');
   });
 
   it('a dismissed Prompt Manager card is not aimed at', () => {

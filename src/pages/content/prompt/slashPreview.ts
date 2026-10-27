@@ -16,6 +16,8 @@ import { createAimedRows } from './safeTriangle';
 export const SLASH_PREVIEW_ID = 'gv-pm-slash-tooltip';
 const TOOLTIP_VALUE_CLASS = 'gv-pm-slash-tooltip-value';
 const TOOLTIP_VISIBLE_CLASS = 'gv-pm-slash-tooltip-visible';
+/** On the result list while the pointer heads for the card: crossed rows do not light up. */
+const AIMING_CLASS = 'gv-pm-slash-aiming';
 const TOOLTIP_HIDE_GRACE_MS = 150;
 
 export interface SlashPreview {
@@ -27,6 +29,11 @@ export interface SlashPreview {
    * to the card, the rows it crosses wait instead of swapping the card.
    */
   bindRow: (row: HTMLElement, onEnter: () => void) => void;
+  /**
+   * The keyboard took over: rows the pointer crossed on its way to the card
+   * must not take the selection back once it settles.
+   */
+  cancelAim: () => void;
   show: (target: HTMLElement, text: string) => void;
   /** Hides after a grace period that entering the card cancels. */
   scheduleHide: () => void;
@@ -60,7 +67,13 @@ export function createSlashPreview({
       return card?.classList.contains(TOOLTIP_VISIBLE_CLASS) ? card : null;
     },
     owner: () => shownTarget,
-    onAim: cancelHide,
+    onAim: () => {
+      cancelHide();
+      // Otherwise the row under the pointer lights up like the selected one,
+      // while Enter would take the row the card shows.
+      resultList.classList.add(AIMING_CLASS);
+    },
+    onAimEnd: () => resultList.classList.remove(AIMING_CLASS),
   });
 
   function cancelHide(): void {
@@ -166,6 +179,7 @@ export function createSlashPreview({
       target.addEventListener('mouseleave', scheduleHide);
     },
     bindRow: (row, onEnter) => rows.bind(row, onEnter, scheduleHide),
+    cancelAim: rows.stop,
     show,
     scheduleHide,
     hide,

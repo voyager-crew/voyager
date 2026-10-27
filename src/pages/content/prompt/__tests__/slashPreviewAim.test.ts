@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { readContentStyle } from '@/tests/contentStyle';
+
 import { SAFE_TRIANGLE_STALL_MS } from '../safeTriangle';
 import { SLASH_PREVIEW_ID, createSlashPreview } from '../slashPreview';
 import {
@@ -55,6 +57,7 @@ function setup(options?: PointerOptions) {
     restoreLayout();
   };
   return {
+    root,
     rows,
     preview,
     entered,
@@ -180,21 +183,65 @@ describe('slash preview hover intent', () => {
     expect(shown()).toBeNull();
   });
 
-  it('a row flicked through without a move inside it aims from where it was left', () => {
-    const { pointer, shown, rows } = start();
-    pointer.moveTo(150, 420);
+  it('a row flicked through without a move inside it does not aim from another row', () => {
+    const { pointer, preview, shown, rows } = start();
+    pointer.moveTo(150, 590);
+    preview.hide();
     const at = (x: number, y: number) => ({ clientX: x, clientY: y, pointerType: 'mouse' });
-    // The browser reports the last row entered and left with no move inside it.
-    rows[0].dispatchEvent(new PointerEvent('pointerleave', at(150, 580)));
-    rows[0].dispatchEvent(new MouseEvent('mouseleave', at(150, 580)));
-    rows[4].dispatchEvent(new PointerEvent('pointerenter', at(150, 580)));
-    rows[4].dispatchEvent(new MouseEvent('mouseenter', at(150, 580)));
-    expect(shown()).toBe('Fifth body');
+    // The browser reports row 1 entered and left with no move inside it.
+    rows[1].dispatchEvent(new MouseEvent('mouseenter', at(150, 470)));
+    expect(shown()).toBe('Second body');
 
-    rows[4].dispatchEvent(new PointerEvent('pointerleave', at(152, 559)));
-    rows[4].dispatchEvent(new MouseEvent('mouseleave', at(152, 559)));
-    rows[3].dispatchEvent(new MouseEvent('mouseenter', at(152, 559)));
-    expect(shown()).toBe('Fifth body');
+    rows[1].dispatchEvent(new PointerEvent('pointerleave', at(150, 481)));
+    rows[1].dispatchEvent(new MouseEvent('mouseleave', at(150, 481)));
+    rows[2].dispatchEvent(new MouseEvent('mouseenter', at(150, 481)));
+    expect(shown()).toBe('Third body');
+  });
+
+  it('a row re-entered on the way to the slash card does not take it back later', () => {
+    const { pointer, shown, root } = start();
+    pointer.moveTo(150, 460);
+    pointer.moveTo(150, 439); // up into row 0, heading for the card
+    pointer.moveTo(150, 441); // a wobble back into row 1
+    pointer.moveTo(95, 445); // off the list to the left: no longer heading there
+    expect(root.classList.contains('gv-pm-slash-aiming')).toBe(false);
+    pointer.moveTo(110, 420); // into row 0 within the hide grace
+    expect(shown()).toBe('First body');
+
+    // From row 0 into the gap below the card, crossing no row, then settling.
+    pointer.moveTo(150, 405);
+    pointer.glideTo(200, 397, 4);
+    vi.advanceTimersByTime(SAFE_TRIANGLE_STALL_MS);
+    expect(shown()).toBe('First body');
+    vi.advanceTimersByTime(HIDE_GRACE_MS);
+    expect(shown()).toBeNull();
+  });
+
+  it('a slow scan up the slash list moves the card row by row', () => {
+    const { pointer, shown, entered } = start();
+    pointer.moveTo(150, 580);
+    // 2 px every 40 ms is reading the names, not heading for the card.
+    for (let y = 578; y >= 490; y -= 2) {
+      vi.advanceTimersByTime(40);
+      pointer.moveTo(150, y);
+      if (y === 550) expect(shown()).toBe('Fourth body');
+    }
+    expect(shown()).toBe('Third body');
+    expect(entered).toEqual([4, 3, 2]);
+  });
+
+  it('rows crossed on the way to the slash card do not light up', () => {
+    const { pointer, root } = start();
+    pointer.moveTo(150, 580);
+    pointer.glideTo(175, 546.7, 2);
+    expect(root.classList.contains('gv-pm-slash-aiming')).toBe(true);
+    // The pointer hover highlight is the only thing the class switches off.
+    expect(readContentStyle()).toContain(
+      ".gv-pm-slash-root:not(.gv-pm-slash-aiming)[data-gv-interaction='pointer'] .gv-pm-slash-option:hover",
+    );
+
+    vi.advanceTimersByTime(SAFE_TRIANGLE_STALL_MS);
+    expect(root.classList.contains('gv-pm-slash-aiming')).toBe(false);
   });
 
   it('a dismissed slash card is not aimed at', () => {

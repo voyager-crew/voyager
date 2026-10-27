@@ -5,35 +5,33 @@ import { distanceToBox, isInsideTriangle, triangleToward } from '../safeTriangle
 const card = { left: 100, top: 100, right: 300, bottom: 200 };
 
 describe('safe triangle geometry', () => {
-  it('aims at the bottom edge of a card above the pointer', () => {
-    expect(triangleToward(card, { x: 150, y: 400 })).toEqual([
-      { x: 150, y: 400 },
-      { x: 100, y: 200 },
-      { x: 300, y: 200 },
-    ]);
+  it('reaches the whole bottom edge of a card above the pointer, and nothing beside it', () => {
+    const triangle = triangleToward(card, { x: 150, y: 400 })!;
+    expect(isInsideTriangle(triangle, { x: 105, y: 205 })).toBe(true);
+    expect(isInsideTriangle(triangle, { x: 295, y: 205 })).toBe(true);
+    expect(isInsideTriangle(triangle, { x: 300, y: 400 })).toBe(false);
+    expect(isInsideTriangle(triangle, { x: 60, y: 250 })).toBe(false);
   });
 
-  it('aims at the near side edge of a card beside the pointer, on either side', () => {
-    expect(triangleToward(card, { x: 20, y: 150 })?.slice(1)).toEqual([
-      { x: 100, y: 100 },
-      { x: 100, y: 200 },
-    ]);
+  it('reaches the near side of a card beside the pointer, on either side', () => {
+    const right = triangleToward(card, { x: 20, y: 150 })!;
+    expect(isInsideTriangle(right, { x: 95, y: 105 })).toBe(true);
+    expect(isInsideTriangle(right, { x: 95, y: 195 })).toBe(true);
+    expect(isInsideTriangle(right, { x: 95, y: 250 })).toBe(false);
     // RTL, or no room on the right: the card sits on the pointer's left.
-    expect(triangleToward(card, { x: 380, y: 150 })?.slice(1)).toEqual([
-      { x: 300, y: 100 },
-      { x: 300, y: 200 },
-    ]);
+    const left = triangleToward(card, { x: 380, y: 150 })!;
+    expect(isInsideTriangle(left, { x: 305, y: 105 })).toBe(true);
+    expect(isInsideTriangle(left, { x: 305, y: 195 })).toBe(true);
+    expect(isInsideTriangle(left, { x: 305, y: 250 })).toBe(false);
   });
 
   it('spans the diagonal of a card off a corner, so both visible edges are in reach', () => {
     // Below and to the right, as when a list is wider than the card above it.
     const triangle = triangleToward(card, { x: 400, y: 300 })!;
-    expect(triangle.slice(1)).toEqual([
-      { x: 300, y: 100 },
-      { x: 100, y: 200 },
-    ]);
-    expect(isInsideTriangle(triangle, { x: 250, y: 210 })).toBe(true);
-    expect(isInsideTriangle(triangle, { x: 310, y: 150 })).toBe(true);
+    expect(isInsideTriangle(triangle, { x: 120, y: 205 })).toBe(true);
+    expect(isInsideTriangle(triangle, { x: 305, y: 110 })).toBe(true);
+    expect(isInsideTriangle(triangle, { x: 400, y: 150 })).toBe(false);
+    expect(isInsideTriangle(triangle, { x: 200, y: 290 })).toBe(false);
   });
 
   it('has no triangle once the pointer is on the card', () => {
