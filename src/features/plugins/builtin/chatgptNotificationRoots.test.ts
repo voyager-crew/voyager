@@ -169,6 +169,28 @@ const INVALID_ROOTS: ReadonlyArray<readonly [string, (nodes: ReturnType<typeof m
   ],
   ['a Voyager root', ({ root }) => root.setAttribute('data-gv-component', 'panel')],
   ['a Voyager editor', ({ field }) => field.setAttribute('data-gv-component', 'editor')],
+  ['a navigation app root', ({ root }) => root.setAttribute('role', 'navigation')],
+  [
+    'a whole main under the owner',
+    ({ root, field, submit }) => {
+      const main = document.createElement('main');
+      const form = document.createElement('form');
+      form.append(field, submit);
+      main.append(form);
+      root.prepend(main);
+    },
+  ],
+  [
+    'a whole ARIA main under the owner',
+    ({ root, field, submit }) => {
+      const main = document.createElement('section');
+      main.setAttribute('role', 'main');
+      const form = document.createElement('form');
+      form.append(field, submit);
+      main.append(form);
+      root.prepend(main);
+    },
+  ],
 ];
 
 it.each(INVALID_ROOTS)(

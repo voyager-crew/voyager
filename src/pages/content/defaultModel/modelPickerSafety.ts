@@ -1,4 +1,5 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
+import { hasGeminiBoundaryConflict } from '@/core/gemini/domBoundary';
 import { getBundledGeminiSelectorView, type GeminiSelectorView } from '@/core/gemini/selectors';
 
 import { TITLE_WRAPPER_CLASS } from './defaultStarView';
@@ -134,7 +135,11 @@ function inExcludedSurface(element: HTMLElement): boolean {
   return (
     hasVoyagerOwner(element) ||
     Boolean(
-      element.closest(
+      hasGeminiBoundaryConflict(
+        element,
+        element.closest('input-area, input-area-v2, input-container') ??
+          (hasNativeItemRole(element) ? element : nativeRows(element)[0]) ??
+          controlledElement(element),
         '[contenteditable="true"], [contenteditable="plaintext-only"], [hidden], [inert], [aria-hidden="true"], dialog, [role="dialog"], [role="alertdialog"], .desktop-settings-menu, user-query, model-response, [data-message-author-role], .edit-container, .user-query-container.edit-mode',
       ),
     )

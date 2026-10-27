@@ -1,3 +1,4 @@
+import { hasGeminiBoundaryConflict } from '@/core/gemini/domBoundary';
 import {
   getBundledGeminiSelectorView,
   getGeminiSelectorView,
@@ -64,7 +65,11 @@ export function getSidebarWidthActionButtons(): HTMLElement[] {
   )
     .filter(
       (button) =>
-        !button.closest('[role="dialog"], [role="menu"], [data-gv-layer]') &&
+        !hasGeminiBoundaryConflict(
+          button,
+          button.closest('bard-sidenav, side-navigation-content'),
+          '[role="dialog"], [role="menu"], [data-gv-layer]',
+        ) &&
         !button.disabled &&
         Array.from(button.querySelectorAll('[fonticon]')).some((icon) =>
           ICON_NAMES.has(icon.getAttribute('fonticon') ?? ''),

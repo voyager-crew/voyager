@@ -2,11 +2,12 @@ import { hasVoyagerOwner } from '../gemini/composer/ownedInput';
 import { sameItems } from '../utils/array';
 import { getBundledSiteSelectorView } from './bundle';
 import { preservesCompleteContent } from './contentIntegrity';
+import { hasForeignPageOwner } from './pageProofBoundary';
 import { placementSelector } from './placement';
 import type { SiteSelectorView } from './types';
 
 const TURN_KEYS = ['userTurn', 'assistantTurn'] as const;
-const FOREIGN = '[role="dialog"], [role="alertdialog"], form, [contenteditable="true"]';
+const FOREIGN = 'dialog, [role="dialog"], [role="alertdialog"], form';
 
 /** Role and identity attributes are native evidence, never supplied by the catalog. */
 function provesTurns(doc: Document, view: SiteSelectorView): boolean {
@@ -25,7 +26,12 @@ function provesTurns(doc: Document, view: SiteSelectorView): boolean {
     if (native.some((node) => !candidates.includes(node))) return false;
     for (const [index, candidate] of candidates.entries()) {
       const owner = owners[index];
-      if (hasVoyagerOwner(candidate) || candidate.closest(FOREIGN)) return false;
+      if (
+        hasVoyagerOwner(candidate) ||
+        hasForeignPageOwner(candidate, FOREIGN) ||
+        candidate.closest('[contenteditable="true"], [contenteditable="plaintext-only"]')
+      )
+        return false;
       if (candidate.closest(ownerSelector) !== owner) return false;
       if (
         !preservesCompleteContent(candidate, owner, (node) =>

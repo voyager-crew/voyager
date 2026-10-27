@@ -1,5 +1,6 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
 import { getBundledSiteSelectorView, getSiteSelectorView } from '@/core/selectors';
+import { hasForeignPageOwner } from '@/core/selectors/pageProofBoundary';
 import { sameItems } from '@/core/utils/array';
 
 import { chatgptPageData } from './chatgptPageData';
@@ -19,9 +20,8 @@ function expectedHome(doc: Document): string {
 function provesAction(element: Element, key: ChatgptActionKey, doc: Document): boolean {
   if (
     hasVoyagerOwner(element) ||
-    element.closest(
-      '[data-turn-key], [data-message-role], [data-message-author-role], [role="dialog"]',
-    )
+    hasForeignPageOwner(element, 'dialog, [role="dialog"], [role="alertdialog"]') ||
+    element.closest('[data-turn-key], [data-message-role], [data-message-author-role]')
   )
     return false;
   if (key === 'actions.newChat' || key === 'actions.homeLink') {

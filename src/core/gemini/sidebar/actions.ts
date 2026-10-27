@@ -1,8 +1,10 @@
 import menuProtocol from '@/features/plugins/catalog/sites/gemini/selector-data/menu-packaged.json';
 
 import { hasVoyagerOwner } from '../composer/ownedInput';
+import { hasGeminiBoundaryConflict } from '../domBoundary';
 import { getGeminiSelectorView } from '../selectors';
 import { GEMINI_PACKAGED_SIDEBAR_SELECTORS } from './packaged';
+import { getGeminiSidebarOwner } from './proof';
 
 function nativeControl(element: Element): boolean {
   const archived = ['gv-conversation-archived', 'gv-conversation-archived-actions'];
@@ -17,7 +19,12 @@ function nativeControl(element: Element): boolean {
     element.isConnected &&
     !voyager &&
     !element.closest(
-      'model-response, user-query, form, [contenteditable]:not([contenteditable="false"]), input, textarea, select, dialog, [role="dialog"], [role="alertdialog"], [role="menu"]',
+      'bard-sidenav-content, chat-window, model-response, user-query, [contenteditable]:not([contenteditable="false"]), input, textarea, select',
+    ) &&
+    !hasGeminiBoundaryConflict(
+      element,
+      getGeminiSidebarOwner(element) ?? element,
+      'form, dialog, [role="dialog"], [role="alertdialog"], [role="menu"]',
     )
   );
 }

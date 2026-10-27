@@ -1,4 +1,5 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
+import { hasGeminiBoundaryConflict } from '@/core/gemini/domBoundary';
 import { getGeminiSelectorView } from '@/core/gemini/selectors';
 import { locatorSiteForHost } from '@/core/selectors/sites';
 import { sameItems } from '@/core/utils/array';
@@ -10,7 +11,7 @@ import { resolveCanvasDocumentRoots } from './documentTargets';
 const KEY = 'canvasEntry.menus';
 const BUNDLED = menus[KEY].join(',');
 const OWNER = packaged['canvasEntry.owner'];
-const FOREIGN = 'form, input-area, rich-textarea, dialog, [role="dialog"], [contenteditable]';
+const FOREIGN = 'input-area, rich-textarea, [contenteditable]';
 
 /** Cleanup retains the native outer menu even when it contains an inner menu role. */
 export function canvasMenuForCleanup(button: HTMLElement): HTMLElement | null {
@@ -47,18 +48,20 @@ function sourceWithin(owner: Element): HTMLElement | null {
 function remoteMenuSource(panel: HTMLElement): HTMLElement | null {
   const triggers = controllers(panel);
   const trigger = triggers[0];
+  const owner = trigger?.closest(OWNER);
   if (
     !panel.matches('[role="menu"]') ||
     triggers.length !== 1 ||
     trigger.getAttribute('aria-expanded') !== 'true' ||
     trigger.closest(FOREIGN) ||
     panel.closest(FOREIGN) ||
+    hasGeminiBoundaryConflict(trigger, owner, 'form, dialog, [role="dialog"]') ||
+    hasGeminiBoundaryConflict(panel, owner, 'form, dialog, [role="dialog"]') ||
     hasVoyagerOwner(trigger) ||
     hasVoyagerOwner(panel) ||
     !panel.querySelector(packaged['canvasEntry.downloadItem'])
   )
     return null;
-  const owner = trigger.closest(OWNER);
   return owner ? sourceWithin(owner) : null;
 }
 

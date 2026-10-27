@@ -1,3 +1,4 @@
+import { hasGeminiBoundaryConflict } from '@/core/gemini/domBoundary';
 import {
   getBundledGeminiSelectorView,
   getGeminiSelectorView,
@@ -59,7 +60,12 @@ function nativeRoot(doc: Document): Element | null {
   const buckets = [...daily, ...weekly];
   if (!root || root === doc.body || root === doc.documentElement || buckets.length === 0)
     return null;
-  if (!buckets.every((bucket) => root.contains(bucket) && !bucket.closest(EXCLUDED))) return null;
+  if (
+    !buckets.every(
+      (bucket) => root.contains(bucket) && !hasGeminiBoundaryConflict(bucket, root, EXCLUDED),
+    )
+  )
+    return null;
   return root;
 }
 

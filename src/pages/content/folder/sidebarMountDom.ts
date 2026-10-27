@@ -25,7 +25,7 @@ function readSidebar(view: GeminiSelectorView): HTMLElement | null {
             isSafePlacementMount(candidate) &&
             candidate !== document.body &&
             candidate !== document.documentElement &&
-            !candidate.closest('.gv-folder-container, [data-gv-shadow-surface], [role="dialog"]'),
+            !candidate.closest('.gv-folder-container, [data-gv-shadow-surface]'),
         )
       : candidates,
   );

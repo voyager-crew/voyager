@@ -8,6 +8,8 @@ import {
 import { locatorSiteForHost } from '@/core/selectors/sites';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/code-packaged.json';
 
+import { hasGeminiBoundaryConflict } from '../domBoundary';
+
 export const GEMINI_PACKAGED_CODE = packaged;
 const CODE_SELECTOR = packaged['code.content'].join(', ');
 const DECORATION_SELECTOR = packaged['code.decoration'].join(', ');
@@ -34,7 +36,12 @@ function isNativeCodeOwner(host: HTMLElement): boolean {
     (host.localName !== 'div' && !host.localName.includes('-')) ||
     host.matches('html, body, main, model-response, message-content, [role="main"]') ||
     host.closest(
-      'input-area, rich-textarea, [contenteditable], dialog, [role="dialog"], button, a, input, textarea, select, [role="button"], [data-gv-layer], [data-gv-plugin], .gv-dialog',
+      'input-area, rich-textarea, [contenteditable], button, a, input, textarea, select, [role="button"], [data-gv-layer], [data-gv-plugin], .gv-dialog',
+    ) ||
+    hasGeminiBoundaryConflict(
+      host,
+      host.closest('model-response, .model-response'),
+      'dialog, [role="dialog"]',
     )
   )
     return false;

@@ -1,9 +1,9 @@
-import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
 import {
   getBundledGeminiSelectorView,
   getGeminiSelectorView,
   type GeminiSelectorView,
 } from '@/core/gemini/selectors';
+import { isOriginalGeminiSidebarNode } from '@/core/gemini/sidebar/proof';
 import {
   geminiSidebarSelector,
   resolveGeminiSidebarOperation,
@@ -23,8 +23,6 @@ type ConversationCandidate = SidebarConversationTarget & {
 };
 
 const SIDEBAR_CONVERSATION_SELECTOR = '[data-test-id="conversation"]';
-const FOREIGN_ROW_OWNER =
-  'main, [role="main"], form, dialog, [role="dialog"], [role="alertdialog"], [role="menu"], [contenteditable]:not([contenteditable="false"])';
 
 function normalizeText(value: string | null | undefined): string {
   return String(value || '')
@@ -113,7 +111,7 @@ function nativeLinkedConversationRow(
   link: HTMLAnchorElement,
   bundled: GeminiSelectorView,
 ): HTMLElement | null {
-  if (hasVoyagerOwner(link) || link.closest(FOREIGN_ROW_OWNER)) return null;
+  if (!isOriginalGeminiSidebarNode(link)) return null;
   // Surviving native rows already have exact element identity; a nested alias cannot replace one.
   if (link.closest(geminiSidebarSelector('sidebar.row', bundled))) return null;
   let row: HTMLElement | null = link;

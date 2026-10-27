@@ -1,6 +1,7 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
 import { getBundledSiteSelectorView, getSiteSelectorView } from '@/core/selectors';
 import { getSiteSelectorContract } from '@/core/selectors/contracts';
+import { hasForeignPageOwner } from '@/core/selectors/pageProofBoundary';
 import type { SiteAdapter } from '@/features/plugins/types';
 
 import { provesChatgptComposerRoot } from './chatgptRootProof';
@@ -58,7 +59,7 @@ export function resolveComposerOperation<T extends ComposerRead>(
       !actual.root ||
       !actual.root.contains(actual.field) ||
       hasVoyagerOwner(actual.field) ||
-      actual.field.closest('[role="dialog"], dialog, [data-gv-plugin]')
+      hasForeignPageOwner(actual.field, '[role="dialog"], [role="alertdialog"], dialog')
     )
       return fallback;
     const repairedRoot =

@@ -1,12 +1,15 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
 import { getBundledSiteSelectorView } from '@/core/selectors/bundle';
+import { hasForeignPageOwner } from '@/core/selectors/pageProofBoundary';
 
 import { isEditable } from './find';
 import { hasSiteContentOwner, ownedSiteInputs } from './siteInputReads';
 
 const EDITABLE = 'textarea, [contenteditable="true"], [contenteditable="plaintext-only"]';
 const FOREIGN =
-  '[role="dialog"], [role="alertdialog"], dialog, nav, aside, [data-turn-key], [data-message-author-role], [data-chatgpt-search-unit-key], [data-chatgpt-selection-message-id]';
+  '[data-turn-key], [data-message-author-role], [data-chatgpt-search-unit-key], [data-chatgpt-selection-message-id]';
+const FOREIGN_REGION =
+  '[role="dialog"], [role="alertdialog"], dialog, nav, aside, [role="navigation"]';
 
 /** A renamed owner must contain the independently identified editor and its unique native submit. */
 export function provesChatgptComposerRoot(
@@ -18,9 +21,10 @@ export function provesChatgptComposerRoot(
   const roots = Array.from(doc.querySelectorAll(selector));
   if (roots.length !== 1 || roots[0] !== root) return false;
   if (
-    root.matches('html, body, main') ||
+    root.matches('html, body, main, [role="main"]') ||
     root.closest(FOREIGN) ||
-    root.querySelector(FOREIGN) ||
+    hasForeignPageOwner(root, FOREIGN_REGION) ||
+    root.querySelector(`${FOREIGN}, ${FOREIGN_REGION}, main, [role="main"]`) ||
     hasVoyagerOwner(field) ||
     hasSiteContentOwner('chatgpt', field)
   )

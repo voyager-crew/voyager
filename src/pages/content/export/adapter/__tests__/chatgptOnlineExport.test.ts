@@ -144,6 +144,16 @@ it('a preview dialog cannot masquerade as the logged-out conversation', async ()
   expect(document.querySelector('[data-message-role="user"]')?.textContent).toBe('Question');
 });
 
+it('the whole ARIA main cannot replace the logged-out conversation body', async () => {
+  page(true);
+  const thread = document.querySelector('.thread')!;
+  thread.setAttribute('role', 'main');
+  await online(profile);
+  expect(resolveChatGptLoggedOutThread()).toBeNull();
+  thread.removeAttribute('role');
+  expect(resolveChatGptLoggedOutThread()).toBe(thread);
+});
+
 it('an answer inside a dialog cannot be substituted into the main thread', async () => {
   page(true);
   document.querySelector('.thread')!.setAttribute('data-mobile-thread', '');

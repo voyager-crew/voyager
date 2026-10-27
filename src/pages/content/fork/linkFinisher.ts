@@ -1,7 +1,9 @@
 import { GEMINI_PACKAGED_FORK } from '@/core/gemini/content/packaged';
+import { hasGeminiBoundaryConflict } from '@/core/gemini/domBoundary';
 import {
   type GeminiTurnView,
   getBundledGeminiTurnView,
+  getGeminiSelectorView,
   resolveGeminiTurnOperation,
 } from '@/core/gemini/selectors';
 import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
@@ -121,6 +123,15 @@ class PendingForkLink implements ForkLinkReceipt {
 
   private field(): HTMLElement | null {
     const field = this.policy.findInput(document);
+    if (field && getGeminiSelectorView().remoteKeys.has('composer.draftCandidates')) {
+      return hasGeminiBoundaryConflict(
+        field,
+        field.closest('input-area, input-area-v2, input-container, .text-input-field, .input-area'),
+        '[role="dialog"], .mat-mdc-dialog-container',
+      )
+        ? null
+        : field;
+    }
     return field?.closest('[role="dialog"], .mat-mdc-dialog-container') ? null : field;
   }
 

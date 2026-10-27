@@ -64,6 +64,8 @@ export const CONTENT_PROOFS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
     kind: 'proof',
     values: {
       '[value="thinking_level"]': 1,
+      'input-area-v2': 1,
+      'input-container': 1,
       'user-query': 1,
       'model-response': 1,
       '[data-message-author-role]': 1,
@@ -73,6 +75,25 @@ export const CONTENT_PROOFS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
     },
     reason:
       'Native button tag/role, thinking_level witness and picker row identity independently prove model/thinking controls. Exclusions reject editable/hidden/dialog/transcript/settings owners; composed row walking rejects nested controls before title movement.',
+  },
+  {
+    file: 'src/pages/content/defaultModel/modelPickerSelectors.ts',
+    kind: 'proof',
+    values: {
+      'input-area-v2': 1,
+      'input-container': 1,
+      '.text-input-field': 1,
+      '.input-area': 1,
+    },
+    reason:
+      'Packaged native composer ownership bounds the remote model-focus safety check. A shared outer app landmark is distinct from an alert/menu preview around the independently proven editor; these values never replace focusInput discovery.',
+  },
+  {
+    file: 'src/pages/content/gemsSidebar/selectorQueries.ts',
+    kind: 'proof',
+    values: { 'bot-list-row': 1, 'bard-sidenav': 1 },
+    reason:
+      'Native Gem row/sidebar/chat ancestry bounds foreign-surface rejection before a catalog candidate can provide Gem metadata. Independent packaged row/link and Gem-ID completeness still prove the selected result.',
   },
   {
     file: 'src/pages/content/researchPack/actionTargets.ts',

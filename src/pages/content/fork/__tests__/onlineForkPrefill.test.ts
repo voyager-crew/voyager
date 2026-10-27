@@ -3,6 +3,8 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import browser from 'webextension-polyfill';
 
+import { mountRealGeminiSidebar } from '@/core/gemini/sidebar/__tests__/realSidebarFixture';
+
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
 import { startForkLinkFinisher } from '../linkFinisher';
 import { startPendingFork } from '../pendingFork';
@@ -38,6 +40,18 @@ function start(mode: 'paste' | 'fileUpload' = 'paste') {
     getConversationTitle: () => 'New',
     onLinked: async () => undefined,
   });
+}
+function sharedAppField(): HTMLElement {
+  const page = mountRealGeminiSidebar();
+  const shell = document.createElement('div');
+  shell.setAttribute('role', 'dialog');
+  page.main.before(shell);
+  shell.append(page.main);
+  page.chatWindow.insertAdjacentHTML(
+    'beforeend',
+    '<input-area-v2><composer-box><section class="fork-input" contenteditable="true">Untouched</section></composer-box></input-area-v2>',
+  );
+  return page.chatWindow.querySelector('.fork-input')!;
 }
 beforeEach(() => {
   vi.useFakeTimers();
@@ -75,6 +89,37 @@ it.each(['paste', 'fileUpload'] as const)(
     else expect(field.textContent).toContain('fork.md');
   },
 );
+
+it.each(['paste', 'fileUpload'] as const)(
+  'a repaired fork %s never reaches the draft because the app has a shared dialog owner',
+  async (mode) => {
+    const field = sharedAppField();
+    field.textContent = '';
+    retire = await installGeminiSelectorPatch({ 'composer.candidates': ['.fork-input'] });
+    start(mode);
+    await flush();
+    if (mode === 'paste') expect(field.textContent).toBe(markdown);
+    else expect(field.textContent).toContain('fork.md');
+  },
+);
+
+it('a nested dialog cannot borrow the repaired fork draft from the shared app', async () => {
+  const field = sharedAppField();
+  field.setAttribute('data-testid', 'chat-input');
+  const preview = document.createElement('div');
+  preview.setAttribute('role', 'dialog');
+  field.before(preview);
+  preview.append(field);
+  retire = await installGeminiSelectorPatch({ 'composer.candidates': ['.fork-input'] });
+  start();
+  await flush();
+  expect(field.textContent).toBe('Untouched');
+  stop();
+  preview.before(field);
+  start();
+  await flush();
+  expect(field.textContent).toBe(markdown);
+});
 
 it('bundled and remote fork prefill write the same text into the same main field', async () => {
   document.body.innerHTML =

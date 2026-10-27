@@ -32,18 +32,13 @@ describe('folder sidebar visibility', () => {
   it.each(['chat-app', 'legacy root', 'rendered width'])(
     'shows the panel when %s marks the sidebar open',
     async (marker) => {
-      const { host } = mountSidebar();
+      const { host, appRoot, sidebarHost } = mountSidebar();
       if (marker !== 'chat-app') host.className = '';
       if (marker === 'legacy root') {
-        const root = document.createElement('div');
-        root.id = 'app-root';
-        root.className = 'side-nav-open';
-        document.body.appendChild(root);
+        appRoot.className = 'side-nav-open';
       }
       if (marker === 'rendered width') {
-        const sidenav = document.createElement('bard-sidenav');
-        setLayout(sidenav, 452, 800);
-        document.body.appendChild(sidenav);
+        setLayout(sidebarHost, 452, 800);
       }
       await harness.runtime.start('sidebar');
       expect(harness.runtime.panel?.style.display).toBe('');

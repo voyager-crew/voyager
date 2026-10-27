@@ -1,4 +1,8 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
+import { aistudioAdapter } from '@/features/plugins/sites/adapters/aistudio';
+
+const NAVIGATION = `nav, aside, [role="navigation"], ${aistudioAdapter.folders!.sidebar}`;
+const OVERLAY = 'dialog, [role="dialog"], [role="alertdialog"], [role="menu"]';
 
 export function aistudioAccountPrefix(pathname: string): string {
   return /^\/u\/\d+(?=\/)/.exec(pathname)?.[0] ?? '';
@@ -6,12 +10,18 @@ export function aistudioAccountPrefix(pathname: string): string {
 
 /** Remote reads cannot borrow a link from a reply, overlay or Voyager's folder tree. */
 export function isOriginalAIStudioNavigation(element: Element): boolean {
-  return (
-    !hasVoyagerOwner(element) &&
-    !element.closest(
-      'main, [role="main"], dialog, [role="dialog"], [role="alertdialog"], [contenteditable="true"], ms-chat-turn, [data-turn-role]',
-    )
-  );
+  if (
+    hasVoyagerOwner(element) ||
+    element.closest('[contenteditable="true"], ms-chat-turn, [data-turn-role]')
+  )
+    return false;
+  // AI Studio has no proved app-root protocol here; copied navigation and a composer cannot certify an overlay.
+  if (element.closest(OVERLAY)) return false;
+  const navigation = element.closest(NAVIGATION);
+  const content = element.closest('main, [role="main"]');
+  if (!content) return true;
+  // A host's main may wrap the whole app; only a main inside the native navigation is foreign.
+  return navigation !== null && navigation !== content && content.contains(navigation);
 }
 
 export function nativeAIStudioPromptAnchor(anchor: Element): anchor is HTMLAnchorElement {
@@ -38,7 +48,7 @@ export function nativeAIStudioLibraryAnchor(anchor: Element): anchor is HTMLAnch
   if (
     !(anchor instanceof HTMLAnchorElement) ||
     hasLibraryVoyagerOwner(anchor) ||
-    anchor.closest('dialog, [role="dialog"], [data-turn-role]')
+    anchor.closest(`ms-chat-turn, [data-turn-role], ${OVERLAY}`)
   )
     return false;
   return nativePromptUrl(anchor);

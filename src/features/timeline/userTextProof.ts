@@ -3,6 +3,7 @@ import { getGeminiSelectorView, getBundledGeminiSelectorView } from '@/core/gemi
 import { acceptsGeminiTurnView, readGeminiTurnCollection } from '@/core/gemini/turnIntegrity';
 import { getBundledSiteSelectorView, getSiteSelectorView } from '@/core/selectors';
 import { guardedChatgptSemanticSelector } from '@/core/selectors/chatgptSemantics';
+import { hasForeignPageOwner } from '@/core/selectors/pageProofBoundary';
 
 /** Attachment names are metadata, never independent evidence of the authored prompt. */
 export const USER_TEXT_ATTACHMENT_PREVIEW = 'user-query-file-preview';
@@ -20,9 +21,8 @@ export function ownsTimelineUserText(element: HTMLElement, site: string): boolea
   const doc = element.ownerDocument;
   if (
     hasVoyagerOwner(element) ||
-    element.closest(
-      'form, [contenteditable]:not([contenteditable="false"]), [role="dialog"], [role="alertdialog"], dialog, input, textarea, select',
-    )
+    hasForeignPageOwner(element, 'form, [role="dialog"], [role="alertdialog"], dialog') ||
+    element.closest('[contenteditable]:not([contenteditable="false"]), input, textarea, select')
   )
     return false;
   if (site === 'gemini') {

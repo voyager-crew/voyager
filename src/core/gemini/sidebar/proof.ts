@@ -1,21 +1,40 @@
 import { hasVoyagerOwner } from '../composer/ownedInput';
+import { hasGeminiBoundaryConflict } from '../domBoundary';
 import type { GeminiSidebarProfileKey } from '../selectors/sidebarKeys';
 
 const FOREIGN =
-  'main, [role="main"], chat-window, form, dialog, [role="dialog"], [role="alertdialog"], [role="menu"], model-response, user-query, [data-message-author-role]';
+  'bard-sidenav-content, chat-window, model-response, user-query, [data-message-author-role], [contenteditable]:not([contenteditable="false"]), input, textarea, select';
+const LANDMARKS =
+  'main, [role="main"], form, dialog, [role="dialog"], [role="alertdialog"], [role="menu"]';
 const SIDEBAR = 'bard-sidenav, side-nav, side-navigation-content';
 const APP = 'chat-app, #app-root';
 const CONTENT =
   '[data-test-id="conversation"], [storagekey="chats"], [storagekey="notebooks"], [data-test-id="chats-expandable-section"], mat-nav-list';
 
-function originalElement(element: Element): boolean {
+/** Prefer the complete sidebar over nested conversation-list navigation landmarks. */
+export function getGeminiSidebarOwner(element: Element): Element | null {
+  return (
+    element.closest('bard-sidenav, side-nav') ??
+    element.closest('side-navigation-content') ??
+    element.closest('nav, aside, [role="navigation"]')
+  );
+}
+
+function originalElement(element: Element, boundary: Element | null = element): boolean {
   return (
     element !== element.ownerDocument.body &&
     element !== element.ownerDocument.documentElement &&
     element.isConnected &&
     !hasVoyagerOwner(element) &&
-    !element.closest(FOREIGN)
+    !element.closest(FOREIGN) &&
+    !hasGeminiBoundaryConflict(element, boundary, LANDMARKS)
   );
+}
+
+/** Sidebar identity is native evidence; shared app landmarks do not own its descendants. */
+export function isOriginalGeminiSidebarNode(element: Element): boolean {
+  const owner = getGeminiSidebarOwner(element);
+  return owner !== null && originalElement(element, owner);
 }
 
 /** Native sidebar content remains independently identifiable when a containing tag is renamed. */
@@ -25,10 +44,10 @@ function sidebarRegion(element: HTMLElement): boolean {
     element.querySelector('main, [role="main"], chat-window')
   )
     return false;
-  const owner = element.closest(`${SIDEBAR}, ${APP}, [role="navigation"]`);
+  const owner = getGeminiSidebarOwner(element);
   if (!owner) return false;
-  const content = Array.from(owner.querySelectorAll(CONTENT)).filter(
-    (node) => !node.closest(FOREIGN),
+  const content = Array.from(owner.querySelectorAll(CONTENT)).filter((node) =>
+    originalElement(node, owner),
   );
   return content.length > 0 && content.every((node) => element.contains(node));
 }
@@ -46,6 +65,7 @@ function sidebarHost(element: HTMLElement): boolean {
 }
 
 function stateOwner(element: HTMLElement): boolean {
+  if (element.matches('bard-sidenav-container')) return false;
   const sidebar = element.querySelector(SIDEBAR);
   return sidebar !== null && sidebar.closest('.side-nav-open') === element;
 }
@@ -58,7 +78,7 @@ export function acceptsGeminiSidebarElement(
 ): element is HTMLElement {
   if (!element) return false;
   if (original) return element === original;
-  if (!originalElement(element)) return false;
+  if (!originalElement(element, getGeminiSidebarOwner(element) ?? element)) return false;
   if (key === 'sidebar.overflow') return sidebarRegion(element);
   if (key === 'sidebar.host') return sidebarHost(element);
   if (key === 'sidebar.openHost' || key === 'sidebar.visibilityHost') return stateOwner(element);
@@ -75,11 +95,15 @@ export function acceptsGeminiSidebarScroller(
 ): candidate is HTMLElement {
   if (!candidate) return false;
   if (original) return candidate === original;
-  if (!originalElement(candidate) || !row.matches('[data-test-id="conversation"]')) return false;
-  const boundary = row.closest(
-    `${SIDEBAR}, [data-test-id="overflow-container"], [role="navigation"]`,
-  );
-  if (!boundary || !boundary.contains(candidate)) return false;
+  const boundary = getGeminiSidebarOwner(row);
+  if (
+    !boundary ||
+    !originalElement(row, boundary) ||
+    !originalElement(candidate, boundary) ||
+    !row.matches('[data-test-id="conversation"]') ||
+    !boundary.contains(candidate)
+  )
+    return false;
   for (
     let parent = row.parentElement;
     parent && boundary.contains(parent);

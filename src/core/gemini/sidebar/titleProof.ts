@@ -1,5 +1,6 @@
 import { hasVoyagerOwner } from '../composer/ownedInput';
 import { getBundledGeminiSelectorView, getGeminiSelectorView } from '../selectors';
+import { isOriginalGeminiSidebarNode } from './proof';
 
 export type GeminiTitleKey =
   | 'title.export'
@@ -18,12 +19,7 @@ export function currentGeminiSidebarTitle(doc: Document): string | null {
   if (!match) return null;
   const titles = new Set<string>();
   for (const link of doc.querySelectorAll<HTMLAnchorElement>('a[href]')) {
-    if (
-      hasVoyagerOwner(link) ||
-      !link.closest('bard-sidenav, side-nav, side-navigation-content, nav, [role="navigation"]') ||
-      link.closest('main, model-response, user-query, [role="dialog"]')
-    )
-      continue;
+    if (!isOriginalGeminiSidebarNode(link)) continue;
     const url = new URL(link.href, location.href);
     const linked = url.pathname.match(/^(\/u\/\d+)?\/(?:app|gem\/[^/]+)\/([^/?#]+)/);
     if (

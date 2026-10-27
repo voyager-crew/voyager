@@ -1,4 +1,5 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
+import { hasGeminiBoundaryConflict } from '@/core/gemini/domBoundary';
 import { getBundledGeminiSelectorView, getGeminiSelectorView } from '@/core/gemini/selectors';
 import { acceptsGeminiTurnView, readGeminiTurnCollection } from '@/core/gemini/turnIntegrity';
 import { locatorSiteForHost } from '@/core/selectors/sites';
@@ -37,7 +38,7 @@ export function generatedImageOwner(node: Element): Element | null {
   try {
     const candidate = node.closest(view.profiles[KEY].join(','));
     if (!candidate || fallback) return candidate === fallback ? candidate : fallback;
-    if (candidate.closest(FOREIGN) || hasVoyagerOwner(candidate)) return fallback;
+    if (hasVoyagerOwner(candidate)) return fallback;
     const images = Array.from(candidate.querySelectorAll('img'));
     const buttons = Array.from(candidate.querySelectorAll(DOWNLOAD));
     // The preview and native download must be a single pair; another image cannot borrow this control.
@@ -49,9 +50,8 @@ export function generatedImageOwner(node: Element): Element | null {
       doc,
       true,
     );
-    return turns.assistants.some((turn) => turn !== candidate && turn.contains(candidate))
-      ? candidate
-      : fallback;
+    const owner = turns.assistants.find((turn) => turn !== candidate && turn.contains(candidate));
+    return owner && !hasGeminiBoundaryConflict(candidate, owner, FOREIGN) ? candidate : fallback;
   } catch {
     return fallback;
   }

@@ -85,8 +85,8 @@ async function online(
   await run.ready;
 }
 function fixture(data: (typeof cases)[number]) {
-  document.body.innerHTML = `${data.sidebar}<div ${data.scroll} style="overflow-y:auto">${data.user}${data.assistant}</div>`;
-  const scroller = document.body.lastElementChild!;
+  document.body.innerHTML = `<form><main>${data.sidebar}<div ${data.scroll} style="overflow-y:auto">${data.user}${data.assistant}</div></main></form>`;
+  const scroller = document.querySelector('main')!.lastElementChild!;
   scroller.classList.add('repaired-scroll');
   Object.defineProperty(scroller, 'scrollHeight', { value: 600 });
   Object.defineProperty(scroller, 'clientHeight', { value: 200 });

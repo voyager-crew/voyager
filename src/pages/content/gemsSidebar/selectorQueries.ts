@@ -1,4 +1,5 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
+import { hasGeminiBoundaryConflict } from '@/core/gemini/domBoundary';
 import {
   getBundledGeminiSelectorView,
   getGeminiSelectorView,
@@ -57,7 +58,16 @@ function nativeLinks(root: ParentNode): HTMLAnchorElement[] {
 }
 
 function nativeNode(element: Element): boolean {
-  return !element.closest(packaged.excluded) && !hasVoyagerOwner(element);
+  const boundary =
+    element.closest('bot-list-row, bard-sidenav, side-navigation-content, chat-window') ??
+    element.querySelector(packaged.nativeRow);
+  return (
+    !hasGeminiBoundaryConflict(
+      element,
+      boundary,
+      `${packaged.excluded}, dialog, [role="alertdialog"], [role="menu"]`,
+    ) && !hasVoyagerOwner(element)
+  );
 }
 
 function readList(doc: Document, view: GeminiSelectorView, remote: boolean): GemsListRead | null {

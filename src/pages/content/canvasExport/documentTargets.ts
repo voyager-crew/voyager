@@ -1,4 +1,5 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
+import { hasGeminiBoundaryConflict } from '@/core/gemini/domBoundary';
 import { getGeminiSelectorView } from '@/core/gemini/selectors';
 import { locatorSiteForHost } from '@/core/selectors/sites';
 import { sameItems } from '@/core/utils/array';
@@ -8,7 +9,7 @@ import entry from '@/features/plugins/catalog/sites/gemini/selector-data/export-
 const KEY = 'canvas.documentEditors';
 const BUNDLED = packaged[KEY].join(', ');
 const FOREIGN =
-  'deep-research-immersive-panel, input-area, rich-textarea, form, dialog, [role="dialog"], button, a, input, textarea, [contenteditable]';
+  'deep-research-immersive-panel, input-area, rich-textarea, button, a, input, textarea, [contenteditable]';
 
 function remoteEnabled(doc: Document): boolean {
   return (
@@ -33,11 +34,13 @@ export function resolveCanvasDocumentRoots(doc: Document): HTMLElement[] {
     if (!sources.length || candidates.length !== sources.length) return native;
     return candidates.every((candidate, index) => {
       const source = sources[index];
+      const owner = source.closest(entry['canvasEntry.owner']);
       return (
         source.parentElement === candidate &&
         source.matches('[contenteditable="true"]') &&
-        candidate !== source.closest(entry['canvasEntry.owner']) &&
+        candidate !== owner &&
         !candidate.closest(FOREIGN) &&
+        !hasGeminiBoundaryConflict(candidate, owner, 'form, dialog, [role="dialog"]') &&
         !hasVoyagerOwner(candidate)
       );
     })

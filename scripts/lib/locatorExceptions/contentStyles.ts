@@ -40,13 +40,17 @@ export const CONTENT_STYLES_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
     file: 'src/pages/content/fork/forkComposer.ts',
     kind: 'proof',
     values: {
-      '.edit-container': 1,
-      '.user-query-container.edit-mode': 1,
-      '.user-query-container': 1,
-      '.mat-mdc-dialog-container': 1,
+      '.edit-container': 2,
+      '.user-query-container.edit-mode': 2,
+      '.user-query-container': 2,
+      '.mat-mdc-dialog-container': 2,
+      'input-area-v2': 1,
+      'input-container': 1,
+      '.text-input-field': 1,
+      '.input-area': 1,
     },
     reason:
-      'Fork composer proof/receiver recheck rejects native edit/dialog owners before guarded input prefill; remote input cannot redirect the write into a dialog.',
+      'Fork prefill rejects native edit/dialog owners relative to the independently proven main composer, while the bundled callback retains its exact original closest query. The owner literals only bound this remote proof and cannot select the prefill field.',
   },
   {
     file: 'src/pages/content/fork/forkControls.ts',
@@ -84,10 +88,14 @@ export const CONTENT_STYLES_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
     file: 'src/pages/content/fork/linkFinisher.ts',
     kind: 'proof',
     values: {
-      '.mat-mdc-dialog-container': 1,
+      '.mat-mdc-dialog-container': 2,
+      'input-area-v2': 1,
+      'input-container': 1,
+      '.text-input-field': 1,
+      '.input-area': 1,
     },
     reason:
-      'Native dialog exclusion rechecks the guarded composer before prefill. Detached-clone button/gv-control stripping defines prompt serialization, while clicked anchor URL checks distinguish navigation from send completion; all remain fixed source/event protocols.',
+      'Native composer ownership bounds the remote dialog exclusion before prefill, while the legacy OFF dialog query stays exact. Detached-clone button/gv-control stripping defines prompt serialization, and clicked anchor URL checks distinguish navigation from send completion; all remain fixed source/event protocols.',
   },
   {
     file: 'src/pages/content/gemsHider/index.ts',
@@ -121,6 +129,7 @@ export const CONTENT_STYLES_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
     kind: 'proof',
     values: {
       '.buttons': 5,
+      'bard-sidenav': 1,
     },
     reason:
       'sidebarWidth.buttons occurrences are profile keys/indexes, not CSS. The action-forwarding proof independently rejects dialogs/menus/Voyager layers and requires original enabled native button/icon ownership; catalog geometry alone cannot authorize a click.',

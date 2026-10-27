@@ -3,12 +3,12 @@ import { hasVoyagerOwner } from '../gemini/composer/ownedInput';
 import { sameItems } from '../utils/array';
 import { getBundledSiteSelectorView } from './bundle';
 import { guardedChatgptSemanticSelector } from './chatgptSemantics';
+import { hasForeignPageOwner } from './pageProofBoundary';
 import { placementSelector } from './placement';
 import { BUNDLED_LOCATOR_SITES } from './sites';
 import type { SiteSelectorView } from './types';
 
-const FOREIGN =
-  'form, [contenteditable="true"], [contenteditable="plaintext-only"], [role="dialog"], [role="alertdialog"], dialog';
+const FOREIGN = 'form, [role="dialog"], [role="alertdialog"], dialog';
 const NAVIGATION = 'nav, aside, [role="navigation"]';
 const CODE_DECORATIONS = new Set([
   'gv-code-block-collapsible',
@@ -41,7 +41,10 @@ function isOriginalVisible(element: Element, doc: Document): boolean {
   if (
     !window ||
     hasStructureVoyagerOwner(element) ||
-    element.closest(`${FOREIGN}, [hidden], [inert], [aria-hidden="true"]`)
+    hasForeignPageOwner(element, FOREIGN) ||
+    element.closest(
+      '[contenteditable="true"], [contenteditable="plaintext-only"], [hidden], [inert], [aria-hidden="true"]',
+    )
   )
     return false;
   for (let node: Element | null = element; node; node = node.parentElement) {
@@ -105,7 +108,9 @@ function provesScroll(candidate: Element, doc: Document, view: SiteSelectorView)
     )
       return (
         candidate === current &&
-        !current.querySelector(`${NAVIGATION}, form, textarea, [contenteditable="true"]`)
+        !Array.from(
+          current.querySelectorAll(`${NAVIGATION}, form, textarea, [contenteditable="true"]`),
+        ).some((node) => !turns.some((turn) => turn.contains(node)))
       );
   }
   return false;

@@ -1,3 +1,4 @@
+import { hasGeminiBoundaryConflict } from '@/core/gemini/domBoundary';
 import {
   getBundledGeminiSelectorView,
   getGeminiSelectorView,
@@ -92,8 +93,10 @@ export function readSentChipTargets(root: ParentNode): SentChipTarget[] {
   const bundled = read(bundle.profiles[key], bundle);
   const native = Array.from(root.querySelectorAll<HTMLElement>('user-query')).filter(
     (bubble) =>
-      !bubble.closest(
-        'model-response, [role="dialog"], [data-gv-plugin], .gv-pm-panel, .gv-ph-panel, .gv-pm-fill, .gv-pm-slash-root',
+      !hasGeminiBoundaryConflict(
+        bubble,
+        bubble.closest('chat-window, .conversation-container'),
+        'model-response, dialog, [role="dialog"], [role="alertdialog"], [role="menu"], [data-gv-plugin], .gv-pm-panel, .gv-ph-panel, .gv-pm-fill, .gv-pm-slash-root',
       ),
   );
   const expected = bundled.length ? bundled.map(({ bubble }) => bubble) : native;

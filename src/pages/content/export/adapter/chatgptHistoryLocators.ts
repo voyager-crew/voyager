@@ -1,9 +1,9 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
 import { getBundledSiteSelectorView, getSiteSelectorView } from '@/core/selectors';
+import { hasForeignPageOwner } from '@/core/selectors/pageProofBoundary';
 
 const TURN_IDS = '[data-turn-key], [data-turn-id-container]';
-const FOREIGN =
-  'form, [contenteditable], input, textarea, dialog, [role="dialog"], [role="alertdialog"]';
+const FOREIGN = 'form, dialog, [role="dialog"], [role="alertdialog"]';
 const THREAD_KEY = 'export.threadList';
 const PENDING_KEY = 'export.historyPending';
 
@@ -26,7 +26,13 @@ function provesLists(candidates: Element[], selector: string, fallback: string):
     candidates.length > 0 &&
     candidates.every((candidate) => {
       const owner = candidate.closest('main, [role="main"]');
-      if (!owner || candidate === owner || candidate.closest(FOREIGN) || hasVoyagerOwner(candidate))
+      if (
+        !owner ||
+        candidate === owner ||
+        hasForeignPageOwner(candidate, FOREIGN) ||
+        candidate.closest('[contenteditable], input, textarea') ||
+        hasVoyagerOwner(candidate)
+      )
         return false;
       const native = Array.from(owner.querySelectorAll(fallback));
       if (native.length && (native.length !== 1 || native[0] !== candidate)) return false;
@@ -35,7 +41,10 @@ function provesLists(candidates: Element[], selector: string, fallback: string):
       return (
         turns.length > 0 &&
         turns.every((turn) => candidate.contains(turn)) &&
-        !candidate.querySelector('form, nav, aside, dialog, [role="dialog"]')
+        !candidate.querySelector('dialog, [role="dialog"], [role="alertdialog"], [role="menu"]') &&
+        !Array.from(candidate.querySelectorAll('form, nav, aside, [role="navigation"]')).some(
+          (node) => !turns.some((turn) => turn.contains(node)),
+        )
       );
     })
   );
@@ -77,7 +86,8 @@ export function chatgptHistoryPendingSelector(scope: ParentNode, first: Element 
         list.contains(node) &&
         !insideTurn(node) &&
         !Array.from(node.querySelectorAll(TURN_IDS)).some(isTurn) &&
-        !node.closest(FOREIGN) &&
+        !hasForeignPageOwner(node, FOREIGN) &&
+        !node.closest('[contenteditable], input, textarea') &&
         !hasVoyagerOwner(node) &&
         precedesTurn(node, first) &&
         node.matches('[role="status"], [aria-busy="true"]'),

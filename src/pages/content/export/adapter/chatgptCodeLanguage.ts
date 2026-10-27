@@ -1,5 +1,6 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
 import { getBundledSiteSelectorView, getSiteSelectorView } from '@/core/selectors';
+import { hasForeignPageOwner } from '@/core/selectors/pageProofBoundary';
 
 const KEY = 'export.codeLanguage';
 const COPY_EXCLUDED = '[data-markdown-copy="exclude"]';
@@ -35,7 +36,8 @@ export function chatgptCodeLanguageLabel(block: Element): string {
     return labels.length === 1 &&
       languages.size === 1 &&
       languages.has(text.toLowerCase()) &&
-      !label.closest('code, form, [contenteditable], input, textarea, dialog, [role="dialog"]') &&
+      !label.closest('code, [contenteditable], input, textarea') &&
+      !hasForeignPageOwner(label, 'form, dialog, [role="dialog"], [role="alertdialog"]') &&
       !hasVoyagerOwner(label)
       ? text
       : fallback();

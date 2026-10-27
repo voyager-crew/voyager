@@ -1,5 +1,9 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
 import { getSiteSelectorView } from '@/core/selectors';
+import {
+  hasSiteComposerForeignOwner,
+  ownedSiteInputs,
+} from '@/core/services/composer/siteInputReads';
 import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 import chatgptSite from '@/features/plugins/catalog/sites/chatgpt/site.json';
 /**
@@ -79,20 +83,28 @@ export function findTrigger(
   marker: string = DEFAULT_TRIGGER_MARKER,
 ): HTMLElement | null {
   const view = getSiteSelectorView('chatgpt');
-  if (view.remoteKeys.has('modelPicker.trigger')) {
+  const requiresProof = view.remoteKeys.has('modelPicker.trigger');
+  const doc = scope instanceof Document ? scope : (scope.ownerDocument ?? document);
+  const inputs = requiresProof ? ownedSiteInputs('chatgpt', doc) : [];
+  const composerForm = inputs.length === 1 ? inputs[0].closest('form') : null;
+  const ownsTrigger = (candidate: HTMLElement) =>
+    composerForm !== null &&
+    candidate.closest('form') === composerForm &&
+    !hasSiteComposerForeignOwner('chatgpt', candidate);
+  if (requiresProof) {
     const selector = view.profiles['modelPicker.trigger'].join(',');
     const candidates = Array.from(scope.querySelectorAll<HTMLElement>(selector)).filter(isRendered);
     const labels = mergedLabels(data.triggerLabels);
     const candidate = candidates[0];
     const native = Array.from(scope.querySelectorAll<HTMLElement>(DEFAULT_TRIGGER_MARKER)).filter(
-      isRendered,
+      (button) => isRendered(button) && ownsTrigger(button),
     );
     // A model label and native menu semantics identify the control before any click occurs.
     if (
       candidates.length === 1 &&
-      !hasVoyagerOwner(candidate) &&
       candidate.matches('button[aria-haspopup="menu"], [role="button"][aria-haspopup="menu"]') &&
-      !!candidate.closest('form') &&
+      // An outer app form can also contain sidebar and reply menus; only the editor's form owns this picker.
+      ownsTrigger(candidate) &&
       labels.has(triggerLabel(candidate)) &&
       (!native.length || (native.length === 1 && native[0] === candidate))
     )
@@ -101,14 +113,19 @@ export function findTrigger(
   // The aria-label is translated into each of ChatGPT's UI languages; the marker is not.
   // OFF keeps the baseline cached marker; only ON replacements need the independent proof above.
   const fallbackMarker = view.semanticSource === 'adapter' ? marker : DEFAULT_TRIGGER_MARKER;
-  const marked = Array.from(scope.querySelectorAll<HTMLElement>(fallbackMarker)).filter(isRendered);
+  // A rejected repair must not re-enter through a lone native/labelled fallback in the sidebar.
+  const marked = Array.from(scope.querySelectorAll<HTMLElement>(fallbackMarker)).filter(
+    (button) => isRendered(button) && (!requiresProof || ownsTrigger(button)),
+  );
   if (marked.length > 0) return marked.length === 1 ? marked[0] : null;
   const labels = mergedLabels(data.triggerLabels);
   const found = Array.from(
     scope.querySelectorAll<HTMLElement>(chatgptPageData.pickerLabelledTrigger),
   ).filter(
     (button) =>
-      labels.has(normalizeLabel(button.getAttribute('aria-label') ?? '')) && isRendered(button),
+      labels.has(normalizeLabel(button.getAttribute('aria-label') ?? '')) &&
+      isRendered(button) &&
+      (!requiresProof || ownsTrigger(button)),
   );
   return found.length === 1 ? found[0] : null;
 }

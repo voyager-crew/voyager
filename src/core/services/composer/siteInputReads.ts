@@ -6,13 +6,14 @@ import {
   resolveSiteSelectorOperationInView,
   type SiteSelectorView,
 } from '@/core/selectors';
+import { hasForeignPageOwner } from '@/core/selectors/pageProofBoundary';
 
 import { isEditable, type FindComposerOptions } from './find';
 import { packagedSiteInputSelectors, type InputSiteId } from './siteInputData';
 
 const NATIVE_EDITABLE = 'textarea, [contenteditable="true"], [contenteditable="plaintext-only"]';
 const OTHER_OWNER =
-  '[role="dialog"], dialog, [data-message-author-role], [data-conversation-role], [data-gv-plugin], [data-turn-role], [data-turn-key], [data-chatgpt-search-unit-key], nav, aside';
+  '[data-message-author-role], [data-conversation-role], [data-gv-plugin], [data-turn-role], [data-turn-key], [data-chatgpt-search-unit-key]';
 
 export function inputCandidates(doc: Document, selectors: readonly string[]): HTMLElement[] {
   return [
@@ -40,15 +41,26 @@ export function nativeSiteComposerRoot(siteId: string, field: HTMLElement): Elem
   return (root ? field.closest(root) : null) ?? field.closest(native);
 }
 
+/** An app form cannot lend composer ownership to its sidebar, turns or modal controls. */
+export function hasSiteComposerForeignOwner(siteId: string, element: HTMLElement): boolean {
+  return (
+    element.closest(OTHER_OWNER) !== null ||
+    hasForeignPageOwner(
+      element,
+      'dialog, [role="dialog"], [role="alertdialog"], nav, aside, [role="navigation"]',
+    ) ||
+    hasSiteContentOwner(siteId, element) ||
+    hasVoyagerOwner(element)
+  );
+}
+
 /** Native ownership uses the installed site's owner and HTML editing protocol, never remote data. */
 export function ownedSiteInputs(siteId: string, doc: Document): HTMLElement[] {
   return Array.from(doc.querySelectorAll<HTMLElement>(NATIVE_EDITABLE)).filter(
     (field) =>
       isEditable(field) &&
       Boolean(nativeSiteComposerRoot(siteId, field)) &&
-      !field.closest(OTHER_OWNER) &&
-      !hasSiteContentOwner(siteId, field) &&
-      !hasVoyagerOwner(field),
+      !hasSiteComposerForeignOwner(siteId, field),
   );
 }
 

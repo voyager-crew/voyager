@@ -1,4 +1,5 @@
 import { findOwnedGeminiMainInputs } from '@/core/gemini/composer/ownedInput';
+import { hasGeminiBoundaryConflict } from '@/core/gemini/domBoundary';
 import {
   getBundledGeminiSelectorView,
   getGeminiSelectorView,
@@ -81,7 +82,13 @@ function isNativeComposer(
 ): boolean {
   if (
     !(candidate instanceof HTMLElement) ||
-    candidate.closest('[role="alertdialog"], [role="menu"], [role="menuitem"]')
+    hasGeminiBoundaryConflict(
+      candidate,
+      candidate.closest(
+        'input-area, input-area-v2, input-container, .text-input-field, .input-area',
+      ),
+      '[role="alertdialog"], [role="menu"], [role="menuitem"]',
+    )
   )
     return false;
   // A rich-textarea in a reply or edit form is not the main composer that owns model changes.

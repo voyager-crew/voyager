@@ -133,7 +133,7 @@ it('an existing native turn cannot be substituted by a duplicate repaired body',
 
 it('a renamed model trigger and effort row retain the native menu and keyboard protocol', async () => {
   document.body.innerHTML =
-    '<form><div role="button" aria-haspopup="menu" aria-label="Select ChatGPT model" class="picker">High</div></form><div role="menu"><span role="status">High, 3 of 5.</span><div role="menuitem" aria-keyshortcuts="ArrowLeft ArrowRight" class="effort"></div></div>';
+    '<form><div id="prompt-textarea" contenteditable="true"></div><div role="button" aria-haspopup="menu" aria-label="Select ChatGPT model" class="picker">High</div></form><div role="menu"><span role="status">High, 3 of 5.</span><div role="menuitem" aria-keyshortcuts="ArrowLeft ArrowRight" class="effort"></div></div>';
   await online({}, {}, { modelPickerTrigger: '.picker', effortControl: '.effort' });
   expect(findTrigger(document.querySelector('form')!, pickerData)).toBe(
     document.querySelector('.picker'),
@@ -149,18 +149,75 @@ it.each([
   ['wrong label', 'aria-label="Open tools" aria-haspopup="menu"', 'form'],
   ['missing menu semantics', 'aria-label="Select ChatGPT model"', 'form'],
   ['foreign owner', 'aria-label="Select ChatGPT model" aria-haspopup="menu"', 'aside'],
+  ['missing composer owner', 'aria-label="Select ChatGPT model" aria-haspopup="menu"', 'section'],
 ])('a repaired picker with %s cannot receive a click', async (_name, attrs, parent) => {
-  document.body.innerHTML = `<${parent}><div role="button" ${attrs} class="picker">High</div></${parent}>`;
+  document.body.innerHTML = `<${parent}><div id="prompt-textarea" contenteditable="true"></div><div role="button" ${attrs} class="picker">High</div></${parent}>`;
   await online({}, {}, { modelPickerTrigger: '.picker' });
   expect(findTrigger(document.body, pickerData)).toBeNull();
 });
 
 it('ambiguous model triggers do not select a different control', async () => {
   document.body.innerHTML =
-    '<form><div role="button" aria-haspopup="menu" aria-label="Select ChatGPT model" class="picker"></div><div role="button" aria-haspopup="menu" aria-label="Select ChatGPT model" class="picker"></div></form>';
+    '<form><div id="prompt-textarea" contenteditable="true"></div><div role="button" aria-haspopup="menu" aria-label="Select ChatGPT model" class="picker"></div><div role="button" aria-haspopup="menu" aria-label="Select ChatGPT model" class="picker"></div></form>';
   await online({}, {}, { modelPickerTrigger: '.picker' });
   expect(findTrigger(document.body, pickerData)).toBeNull();
 });
+
+it.each([
+  'aside',
+  'nav',
+  'section role="navigation"',
+  'section data-turn-key="reply"',
+  'section data-message-author-role="assistant"',
+  'section data-chatgpt-search-unit-key="one:assistant"',
+  'section data-chatgpt-selection-message-id="reply"',
+  'section data-gv-layer="preview"',
+  'section role="menu"',
+  'section role="dialog"',
+])('an app-wide form cannot lend its composer model picker to %s', async (region) => {
+  document.body.innerHTML = `<form><main><div id="prompt-textarea" contenteditable="true">Draft</div><button class="picker" aria-label="Select ChatGPT model" aria-haspopup="menu">Model</button><${region}><button id="foreign-picker" aria-label="Select ChatGPT model" aria-haspopup="menu">Preview model</button></${region.split(' ')[0]}></main></form>`;
+  const original = document.querySelector<HTMLElement>('.picker')!;
+  const foreign = document.getElementById('foreign-picker')!;
+  await online({}, {}, { modelPickerTrigger: '.picker' });
+  expect(findTrigger(document, pickerData)).toBe(original);
+  original.classList.remove('picker');
+  foreign.classList.add('picker');
+  expect(findTrigger(document, pickerData)).toBe(original);
+  foreign.classList.remove('picker');
+  original.classList.add('picker');
+  expect(findTrigger(document, pickerData)).toBe(original);
+});
+
+it('another form cannot borrow the main editor to own a repaired model trigger', async () => {
+  document.body.innerHTML =
+    '<main><form><div id="prompt-textarea" contenteditable="true">Draft</div><button class="picker" aria-label="Select ChatGPT model" aria-haspopup="menu">Model</button></form><form><button id="profile-picker" aria-label="Select ChatGPT model" aria-haspopup="menu">Profile model</button></form></main>';
+  const original = document.querySelector<HTMLElement>('.picker')!;
+  const other = document.getElementById('profile-picker')!;
+  await online({}, {}, { modelPickerTrigger: '.picker' });
+  expect(findTrigger(document, pickerData)).toBe(original);
+  original.classList.remove('picker');
+  other.classList.add('picker');
+  expect(findTrigger(document, pickerData)).toBe(original);
+  other.classList.remove('picker');
+  original.classList.add('picker');
+  expect(findTrigger(document, pickerData)).toBe(original);
+});
+
+it.each(['labelled', 'marked'])(
+  'a rejected remote trigger cannot return through the sole foreign %s fallback',
+  async (fallback) => {
+    document.body.innerHTML =
+      '<form><main><div id="prompt-textarea" contenteditable="true">Draft</div><aside><button class="picker" aria-label="Select ChatGPT model" aria-haspopup="menu">Preview model</button></aside></main></form>';
+    const picker = document.querySelector<HTMLElement>('.picker')!;
+    if (fallback === 'marked') picker.setAttribute('data-composer-navigation-target', 'reasoning');
+    await online({}, {}, { modelPickerTrigger: '.picker' });
+    expect(findTrigger(document, pickerData)).toBeNull();
+    document.querySelector('main')!.append(picker);
+    expect(findTrigger(document, pickerData)).toBe(picker);
+    document.querySelector('aside')!.append(picker);
+    expect(findTrigger(document, pickerData)).toBeNull();
+  },
+);
 
 it('a remote effort row without arrow key support cannot change a model setting', async () => {
   document.body.innerHTML =
@@ -230,7 +287,7 @@ it('bridge waits and export use the same independently proven pending signal', a
 
 it('the same picker controls survive a remote profile without changing their identities', async () => {
   document.body.innerHTML =
-    '<form><button aria-label="Select ChatGPT model" aria-haspopup="menu" data-composer-navigation-target="reasoning" class="picker">High</button></form><div role="menu"><span role="status">High, 3 of 5.</span><div role="menuitem" data-reasoning-slider="true" aria-keyshortcuts="ArrowLeft ArrowRight" class="effort"></div></div>';
+    '<form><div id="prompt-textarea" contenteditable="true"></div><button aria-label="Select ChatGPT model" aria-haspopup="menu" data-composer-navigation-target="reasoning" class="picker">High</button></form><div role="menu"><span role="status">High, 3 of 5.</span><div role="menuitem" data-reasoning-slider="true" aria-keyshortcuts="ArrowLeft ArrowRight" class="effort"></div></div>';
   const form = document.querySelector('form')!,
     menu = document.querySelector<HTMLElement>('[role="menu"]')!;
   const trigger = findTrigger(form, pickerData),

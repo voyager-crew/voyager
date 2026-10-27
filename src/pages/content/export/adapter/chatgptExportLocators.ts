@@ -6,6 +6,7 @@ import {
 } from '@/core/selectors';
 import { chatgptSignalSelector } from '@/core/selectors/chatgptSignals';
 import { preservesCompleteContent } from '@/core/selectors/contentIntegrity';
+import { hasForeignPageOwner } from '@/core/selectors/pageProofBoundary';
 import { sameItems } from '@/core/utils/array';
 
 const MESSAGE = '[data-message-role="user"], [data-message-role="assistant"]';
@@ -28,10 +29,13 @@ function provesThread(doc: Document, view: SiteSelectorView, bundle: SiteSelecto
     candidates.length === 1 &&
     messages.length > 0 &&
     !hasVoyagerOwner(candidate) &&
-    !candidate.closest('form, [role="dialog"], [role="alertdialog"]') &&
-    !candidate.matches('main, body, html') &&
+    !hasForeignPageOwner(candidate, 'form, dialog, [role="dialog"], [role="alertdialog"]') &&
+    !candidate.matches('main, [role="main"], body, html') &&
     !!candidate.closest('main, [role="main"]') &&
-    !candidate.querySelector('form, nav, aside, [role="dialog"]') &&
+    !candidate.querySelector('dialog, [role="dialog"], [role="alertdialog"], [role="menu"]') &&
+    !Array.from(candidate.querySelectorAll('form, nav, aside, [role="navigation"]')).some(
+      (node) => !messages.some((message) => message.contains(node)),
+    ) &&
     messages.every((node) => candidate.contains(node))
   );
 }
@@ -47,7 +51,7 @@ function provesBodies(doc: Document, view: SiteSelectorView, bundle: SiteSelecto
     candidates.every(
       (node, index) =>
         !hasVoyagerOwner(node) &&
-        !node.closest('form, [role="dialog"], [role="alertdialog"]') &&
+        !hasForeignPageOwner(node, 'form, dialog, [role="dialog"], [role="alertdialog"]') &&
         node.closest(ASSISTANT) === owners[index] &&
         preservesCompleteContent(node, owners[index]),
     )

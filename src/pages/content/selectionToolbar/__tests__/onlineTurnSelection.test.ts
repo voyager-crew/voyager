@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { mountRealGeminiSidebar } from '@/core/gemini/sidebar/__tests__/realSidebarFixture';
+
 import { installGeminiTurnPatch } from '../../__tests__/geminiOnlineTurnFixture';
 import { registerSelectionAction, startSelectionToolbarHost } from '../host';
 
@@ -70,6 +72,58 @@ describe('selection toolbar online turn admission', () => {
       expect(document.querySelector('.gv-selection-toolbar')!.classList.contains('gv-hidden')).toBe(
         false,
       );
+    },
+  );
+
+  it.each(['nav', 'navigation', 'sidebar', 'mat-drawer', 'first-main'])(
+    'a repaired Gemini selection disappears because %s surrounds both sidebar and conversation',
+    async (owner) => {
+      document.body.replaceChildren();
+      const page = mountRealGeminiSidebar();
+      const text = page.chatWindow.querySelector('.query-text-line')!;
+      text.id = 'text';
+      const shell = document.createElement(owner === 'nav' ? 'nav' : 'div');
+      if (owner === 'navigation') shell.setAttribute('role', 'navigation');
+      if (owner === 'sidebar' || owner === 'mat-drawer') shell.className = owner;
+      page.main.before(shell);
+      shell.append(page.main);
+      if (owner === 'first-main') {
+        const unrelated = document.createElement('main');
+        document.body.prepend(unrelated);
+      }
+      const selected: string[] = [];
+      stopHost = startSelectionToolbarHost();
+      unregister = registerSelectionAction({
+        id: 'shared-shell-selection',
+        order: 1,
+        className: 'gv-shared-shell-selection',
+        label: () => 'Selection',
+        createIcon: () => document.createElement('i'),
+        isAvailable: () => true,
+        run: (range) => {
+          selected.push(range.toString());
+          return false;
+        },
+      });
+      selectQuestion();
+      expect(document.querySelector('.gv-shared-shell-selection')).toBeNull();
+      stopSelectors = await installGeminiTurnPatch({ 'turn.userWithHosts': ['user-query'] });
+      selectQuestion();
+      const button = document.querySelector<HTMLButtonElement>('.gv-shared-shell-selection')!;
+      expect(button).not.toBeNull();
+      button.click();
+      expect(selected).toEqual(['Question 1']);
+
+      const preview = document.createElement('nav');
+      text.before(preview);
+      preview.append(text);
+      selectQuestion();
+      button.click();
+      expect(selected).toEqual(['Question 1']);
+      preview.before(text);
+      selectQuestion();
+      button.click();
+      expect(selected).toEqual(['Question 1', 'Question 1']);
     },
   );
 });

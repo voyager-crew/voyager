@@ -1,5 +1,7 @@
 import { vi } from 'vitest';
 
+import { mountRealGeminiSidebar } from '@/core/gemini/sidebar/__tests__/realSidebarFixture';
+
 import { FolderSidebarRuntime } from '../FolderSidebarRuntime';
 import { NativeConversationMenus } from '../NativeConversationMenus';
 import { NativeSidebarObserver } from '../NativeSidebarObserver';
@@ -26,24 +28,10 @@ export function setLayout(element: HTMLElement, width: number, height: number): 
   });
 }
 
-export function mountSidebar() {
-  const host = document.createElement('chat-app');
-  host.className = 'side-nav-open';
-  const sidebar = document.createElement('div');
-  sidebar.setAttribute('data-test-id', 'overflow-container');
-  const sectionParent = document.createElement('div');
-  const notebooksSection = document.createElement('expandable-section');
-  // As live Gemini marks them: Notebooks has only a storagekey, Recents keeps its test id too.
-  notebooksSection.setAttribute('storagekey', 'notebooks');
-  const recentsSection = document.createElement('expandable-section');
-  recentsSection.setAttribute('storagekey', 'chats');
-  recentsSection.setAttribute('data-test-id', 'chats-expandable-section');
-  sectionParent.append(notebooksSection, recentsSection);
-  sidebar.appendChild(sectionParent);
-  host.appendChild(sidebar);
-  document.body.appendChild(host);
-  setLayout(sidebar, 280, 800);
-  return { host, sidebar, sectionParent, notebooksSection, recentsSection };
+export function mountSidebar(rowCount = 0) {
+  const fixture = mountRealGeminiSidebar(rowCount);
+  setLayout(fixture.sidebar, 280, 800);
+  return fixture;
 }
 
 export function createSidebarRuntimeHarness() {

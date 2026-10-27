@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { mountRealGeminiSidebar } from '@/core/gemini/sidebar/__tests__/realSidebarFixture';
 import { logger } from '@/core/services/LoggerService';
 import { capturePageIdentity } from '@/pages/content/selectionToolbar/pageIdentity';
 
+import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
 import { installGeminiTurnPatch } from '../../__tests__/geminiOnlineTurnFixture';
 import { ForkNodesService } from '../ForkNodesService';
 import type { PendingForkData } from '../forkLaunch';
@@ -102,6 +104,40 @@ describe('the page-owned fork first-send finisher', () => {
     expect(logger.warn).toHaveBeenCalledOnce();
     expect(finished).toHaveBeenCalledOnce();
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('a repaired fork draft loses its first-send link because a shared dialog wraps the app', async () => {
+    const composer = input().closest('.text-input-field')!;
+    document.querySelector('main')!.remove();
+    const page = mountRealGeminiSidebar();
+    page.chatWindow.append(composer);
+    const shell = document.createElement('div');
+    shell.setAttribute('role', 'dialog');
+    page.main.before(shell);
+    shell.append(page.main);
+    stopSelectors = await installGeminiSelectorPatch({ 'composer.draftCandidates': ['#input'] });
+    const preview = document.createElement('div');
+    preview.setAttribute('role', 'dialog');
+    input().before(preview);
+    preview.append(input());
+    handoff();
+    send();
+    go('/app/wrong-preview');
+    sentTurn();
+    await flush();
+    expect(ForkNodesService.addForkNode).not.toHaveBeenCalled();
+
+    go('/app');
+    preview.before(input());
+    handoff();
+    send();
+    go('/app/actual-branch');
+    sentTurn('First request', '2222222222222222');
+    await flush();
+    expect(ForkNodesService.addForkNode).toHaveBeenCalledTimes(2);
+    expect(ForkNodesService.addForkNode).toHaveBeenLastCalledWith(
+      expect.objectContaining({ conversationId: 'actual-branch' }),
+    );
   });
 
   it.each(['slot', 'email', 'Gem'])('abandons a handoff when its %s changes', async (change) => {

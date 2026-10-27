@@ -1,3 +1,4 @@
+import { hasGeminiBoundaryConflict } from '@/core/gemini/domBoundary';
 import {
   getBundledGeminiSelectorView,
   getGeminiSelectorView,
@@ -11,7 +12,7 @@ import entry from '@/features/plugins/catalog/sites/gemini/selector-data/export-
 
 const OWNER = entry['canvasEntry.owner'];
 const EXCLUDED =
-  'deep-research-immersive-panel, input-area, rich-textarea, dialog, [role="dialog"], button, a, input, textarea, [data-gv-layer], [data-gv-plugin]';
+  'deep-research-immersive-panel, input-area, rich-textarea, button, a, input, textarea, [data-gv-layer], [data-gv-plugin]';
 
 function query(root: ParentNode, view: GeminiSelectorView): HTMLElement[] {
   return Array.from(
@@ -19,10 +20,11 @@ function query(root: ParentNode, view: GeminiSelectorView): HTMLElement[] {
   );
 }
 
-function isRepairShell(shell: HTMLElement): boolean {
+function isRepairShell(shell: HTMLElement, owner: Element): boolean {
   return (
     (shell.localName === 'div' || shell.localName.includes('-')) &&
     !shell.closest(EXCLUDED) &&
+    !hasGeminiBoundaryConflict(shell, owner, 'dialog, [role="dialog"]') &&
     !Array.from(shell.classList).some((name) => name.startsWith('gv-'))
   );
 }
@@ -59,7 +61,7 @@ function nativeRoots(root: ParentNode): HTMLElement[] {
       );
       if (!title) continue;
       // Keep one entry per native source: one remote shell cannot collapse two editors into one.
-      if (isRepairShell(shell) && ownsCodeSource(shell, content)) roots.push(shell);
+      if (isRepairShell(shell, owner) && ownsCodeSource(shell, content)) roots.push(shell);
       break;
     }
   }
