@@ -3,7 +3,6 @@
     "plugins/collapse-long-messages/plugin.json",
     {
       "id": "voyager.chatgpt-collapse-long-messages",
-      "version": "1.0.0",
       "engine": ">=1.8.0",
       "tier": "declarative",
       "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
@@ -42,7 +41,6 @@
     "plugins/composer-counter/plugin.json",
     {
       "id": "voyager.chatgpt-composer-counter",
-      "version": "1.0.0",
       "engine": ">=1.8.0",
       "tier": "declarative",
       "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
@@ -89,7 +87,6 @@
     "plugins/ctrl-enter-send/plugin.json",
     {
       "id": "voyager.chatgpt-ctrl-enter-send",
-      "version": "1.0.0",
       "engine": ">=1.8.0",
       "tier": "declarative",
       "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
@@ -108,7 +105,6 @@
     "plugins/diagram-rendering/plugin.json",
     {
       "id": "voyager.chatgpt-diagram-rendering",
-      "version": "1.0.0",
       "engine": ">=1.7.0",
       "tier": "declarative",
       "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
@@ -139,7 +135,6 @@
     "plugins/folders/plugin.json",
     {
       "id": "voyager.chatgpt-folders",
-      "version": "1.1.0",
       "engine": ">=1.10.0",
       "tier": "declarative",
       "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
@@ -168,7 +163,6 @@
     "plugins/quote-reply/plugin.json",
     {
       "id": "voyager.chatgpt-quote-reply",
-      "version": "1.0.0",
       "engine": ">=1.8.0",
       "tier": "declarative",
       "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
@@ -187,7 +181,6 @@
     "plugins/reading-typography/plugin.json",
     {
       "id": "voyager.chatgpt-reading-typography",
-      "version": "1.0.0",
       "engine": ">=1.4.0",
       "tier": "declarative",
       "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
@@ -287,7 +280,6 @@
     "plugins/reading-width/plugin.json",
     {
       "id": "voyager.chatgpt-reading-width",
-      "version": "1.2.3",
       "engine": ">=1.2.0",
       "tier": "declarative",
       "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
@@ -340,7 +332,6 @@
     "plugins/site-check/plugin.json",
     {
       "id": "voyager.chatgpt-site-check",
-      "version": "1.0.0",
       "engine": ">=1.10.0",
       "tier": "declarative",
       "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
@@ -359,7 +350,6 @@
     "plugins/user-latex/plugin.json",
     {
       "id": "voyager.chatgpt-user-latex",
-      "version": "1.0.0",
       "engine": ">=1.7.0",
       "tier": "declarative",
       "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],

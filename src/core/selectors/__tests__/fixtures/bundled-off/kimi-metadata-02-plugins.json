@@ -3,7 +3,6 @@
     "plugins/composer-counter/plugin.json",
     {
       "id": "voyager.kimi-composer-counter",
-      "version": "1.0.0",
       "engine": ">=1.8.0",
       "tier": "declarative",
       "matches": ["https://www.kimi.com/*"],
@@ -50,7 +49,6 @@
     "plugins/ctrl-enter-send/plugin.json",
     {
       "id": "voyager.kimi-ctrl-enter-send",
-      "version": "1.0.0",
       "engine": ">=1.8.0",
       "tier": "declarative",
       "matches": ["https://www.kimi.com/*"],
@@ -69,7 +67,6 @@
     "plugins/draft-save/plugin.json",
     {
       "id": "voyager.kimi-draft-save",
-      "version": "1.0.0",
       "engine": ">=1.10.0",
       "tier": "declarative",
       "matches": ["https://www.kimi.com/*"],
@@ -91,7 +88,6 @@
     "plugins/export/plugin.json",
     {
       "id": "voyager.kimi-export",
-      "version": "1.0.0",
       "engine": ">=1.10.0",
       "tier": "declarative",
       "matches": ["https://www.kimi.com/*"],
@@ -110,7 +106,6 @@
     "plugins/folders/plugin.json",
     {
       "id": "voyager.kimi-folders",
-      "version": "1.0.0",
       "engine": ">=1.10.0",
       "tier": "declarative",
       "matches": ["https://www.kimi.com/*"],
@@ -139,7 +134,6 @@
     "plugins/quote-reply/plugin.json",
     {
       "id": "voyager.kimi-quote-reply",
-      "version": "1.0.0",
       "engine": ">=1.10.0",
       "tier": "declarative",
       "matches": ["https://www.kimi.com/*"],
@@ -158,7 +152,6 @@
     "plugins/reading-typography/plugin.json",
     {
       "id": "voyager.kimi-reading-typography",
-      "version": "1.0.0",
       "engine": ">=1.4.0",
       "tier": "declarative",
       "matches": ["https://www.kimi.com/*"],
@@ -258,7 +251,6 @@
     "plugins/reading-width/plugin.json",
     {
       "id": "voyager.kimi-reading-width",
-      "version": "1.0.0",
       "engine": ">=1.2.0",
       "tier": "declarative",
       "matches": ["https://www.kimi.com/*"],
@@ -300,7 +292,6 @@
     "plugins/site-check/plugin.json",
     {
       "id": "voyager.kimi-site-check",
-      "version": "1.0.0",
       "engine": ">=1.10.0",
       "tier": "declarative",
       "matches": ["https://www.kimi.com/*"],

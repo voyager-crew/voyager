@@ -12,7 +12,7 @@
 
 The [remote catalog](../../features/plugins/remote/README.md) owns transport and cache details.
 `bun run selectors:check` enforces published-literal and site-import boundaries plus per-site loader parity; the complete OFF snapshots in `__tests__/bundledOffParity.test.ts` pin values and ordering. Both run in `verify:pr` and CI.
-The OFF snapshots also pin runtime fields from every bundled `site.json` and `plugin.json`, including nested settings, policies and ordered contributions; schema and display metadata are excluded.
+The OFF snapshots also pin typed runtime inputs from every bundled `site.json` and `plugin.json`, including nested settings, policies, style references and ordered contributions. Schema, version, release/display copy and unconsumed top-level metadata are excluded; adding a runtime field requires classifying it in the typed projection. Semantic locator values have their own snapshots, and the bundle loader supplies the catalog revision.
 Literal exceptions pin reviewed occurrence counts; barrel re-exports and dynamic/glob imports retain site ownership. The [frozen foreign-dialect baseline](../../../scripts/lib/siteFragmentBaseline.json) alone preserves reviewed `6fa19b4ae` fallback rows; updating an OFF snapshot cannot grant an ownership exemption.
 The literal gate locks host-specific fragments, normalizes attribute quotes and the casing of HTML element and attribute names, and ignores generic HTML/ARIA syntax; CSS escapes, `.join()` and concatenation through variables remain outside its scope.
 

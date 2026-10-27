@@ -3,7 +3,6 @@
     "plugins/cjk-render-fix/plugin.json",
     {
       "id": "voyager.claude-cjk-render-fix",
-      "version": "1.1.0",
       "engine": ">=1.2.0",
       "tier": "declarative",
       "matches": ["https://claude.ai/*"],
@@ -20,7 +19,6 @@
     "plugins/composer-counter/plugin.json",
     {
       "id": "voyager.claude-composer-counter",
-      "version": "1.0.0",
       "engine": ">=1.8.0",
       "tier": "declarative",
       "matches": ["https://claude.ai/*"],
@@ -67,7 +65,6 @@
     "plugins/ctrl-enter-send/plugin.json",
     {
       "id": "voyager.claude-ctrl-enter-send",
-      "version": "1.0.0",
       "engine": ">=1.8.0",
       "tier": "declarative",
       "matches": ["https://claude.ai/*", "https://*.frame.claudeusercontent.com/*"],
@@ -86,7 +83,6 @@
     "plugins/draft-save/plugin.json",
     {
       "id": "voyager.claude-draft-save",
-      "version": "1.0.0",
       "engine": ">=1.8.0",
       "tier": "declarative",
       "matches": ["https://claude.ai/*"],
@@ -108,7 +104,6 @@
     "plugins/export/plugin.json",
     {
       "id": "voyager.claude-export",
-      "version": "1.0.0",
       "engine": ">=1.10.0",
       "tier": "declarative",
       "matches": ["https://claude.ai/*"],
@@ -127,7 +122,6 @@
     "plugins/folders/plugin.json",
     {
       "id": "voyager.claude-folders",
-      "version": "1.1.0",
       "engine": ">=1.10.0",
       "tier": "declarative",
       "matches": ["https://claude.ai/*"],
@@ -156,7 +150,6 @@
     "plugins/quote-reply/plugin.json",
     {
       "id": "voyager.claude-quote-reply",
-      "version": "1.0.0",
       "engine": ">=1.8.0",
       "tier": "declarative",
       "matches": ["https://claude.ai/*", "https://*.frame.claudeusercontent.com/*"],
@@ -175,7 +168,6 @@
     "plugins/reading-typography/plugin.json",
     {
       "id": "voyager.claude-reading-typography",
-      "version": "1.0.0",
       "engine": ">=1.4.0",
       "tier": "declarative",
       "matches": ["https://claude.ai/*"],
@@ -274,7 +266,6 @@
     "plugins/reading-width/plugin.json",
     {
       "id": "voyager.claude-reading-width",
-      "version": "1.4.1",
       "engine": ">=1.2.0",
       "tier": "declarative",
       "matches": ["https://claude.ai/*", "https://*.frame.claudeusercontent.com/*"],
@@ -316,7 +307,6 @@
     "plugins/site-check/plugin.json",
     {
       "id": "voyager.claude-site-check",
-      "version": "1.0.0",
       "engine": ">=1.10.0",
       "tier": "declarative",
       "matches": ["https://claude.ai/*"],
