@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "oxc", "react", "jsx-a11y"],
+  "jsPlugins": [{ "name": "voyager", "specifier": "./scripts/oxlint-plugin-voyager/index.mjs" }],
   "env": { "browser": true, "builtin": true },
   "settings": { "react": { "version": "19.1.0" } },
   // Everything oxlint classes as outright wrong blocks CI. The three opt-outs
@@ -52,6 +53,14 @@
     "unicorn/no-new-array": "off"
   },
   "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**"],
+      "rules": {
+        "voyager/no-real-sleep-in-tests": "error",
+        "voyager/no-per-test-timeout": "error",
+        "voyager/no-unlinked-skip": "error"
+      }
+    },
     {
       // Repository tooling, never bundled into the extension. Printing to the
       // terminal is what these scripts are for.
