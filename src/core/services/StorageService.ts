@@ -1,6 +1,6 @@
 /**
  * Centralized storage service
- * Replaces direct localStorage and chrome.storage calls
+ * Typed wrapper over chrome.storage
  * Implements Repository pattern with type safety
  */
 import { ErrorCode, StorageError } from '../errors/AppError';
@@ -232,118 +232,12 @@ export class ChromeLocalStorageService extends BaseChromeStorageService {
 }
 
 /**
- * LocalStorage implementation (fallback)
- */
-export class LocalStorageService implements IStorageService {
-  private readonly logger = logger.createChild('LocalStorage');
-
-  async get<T>(key: StorageKey): Promise<Result<T>> {
-    try {
-      this.logger.debug(`Reading key: ${key}`);
-
-      const raw = localStorage.getItem(key);
-
-      if (raw === null) {
-        this.logger.debug(`Key not found: ${key}`);
-        return {
-          success: false,
-          error: new StorageError(ErrorCode.STORAGE_READ_FAILED, `Key not found: ${key}`, { key }),
-        };
-      }
-
-      const value = JSON.parse(raw) as T;
-
-      this.logger.debug(`Successfully read key: ${key}`);
-      return { success: true, data: value };
-    } catch (error) {
-      this.logger.error(`Failed to read/parse key: ${key}`, { error });
-      return {
-        success: false,
-        error: new StorageError(
-          ErrorCode.STORAGE_PARSE_FAILED,
-          `Failed to read/parse key: ${key}`,
-          { key },
-          error instanceof Error ? error : undefined,
-        ),
-      };
-    }
-  }
-
-  async set<T>(key: StorageKey, value: T): Promise<Result<void>> {
-    try {
-      this.logger.debug(`Writing key: ${key}`);
-
-      const raw = JSON.stringify(value);
-      localStorage.setItem(key, raw);
-
-      this.logger.debug(`Successfully wrote key: ${key}`);
-      return { success: true, data: undefined };
-    } catch (error) {
-      this.logger.error(`Failed to write key: ${key}`, { error });
-      return {
-        success: false,
-        error: new StorageError(
-          ErrorCode.STORAGE_WRITE_FAILED,
-          `Failed to write key: ${key}`,
-          { key, value },
-          error instanceof Error ? error : undefined,
-        ),
-      };
-    }
-  }
-
-  async remove(key: StorageKey): Promise<Result<void>> {
-    try {
-      this.logger.debug(`Removing key: ${key}`);
-
-      localStorage.removeItem(key);
-
-      this.logger.debug(`Successfully removed key: ${key}`);
-      return { success: true, data: undefined };
-    } catch (error) {
-      this.logger.error(`Failed to remove key: ${key}`, { error });
-      return {
-        success: false,
-        error: new StorageError(
-          ErrorCode.STORAGE_WRITE_FAILED,
-          `Failed to remove key: ${key}`,
-          { key },
-          error instanceof Error ? error : undefined,
-        ),
-      };
-    }
-  }
-
-  async clear(): Promise<Result<void>> {
-    try {
-      this.logger.debug('Clearing all storage');
-
-      localStorage.clear();
-
-      this.logger.debug('Successfully cleared storage');
-      return { success: true, data: undefined };
-    } catch (error) {
-      this.logger.error('Failed to clear storage', { error });
-      return {
-        success: false,
-        error: new StorageError(
-          ErrorCode.STORAGE_WRITE_FAILED,
-          'Failed to clear storage',
-          {},
-          error instanceof Error ? error : undefined,
-        ),
-      };
-    }
-  }
-}
-
-/**
  * Storage type selection
  */
 export type StorageType = 'sync' | 'local';
 
 /**
- * Storage factory - automatically selects the best available storage
+ * Storage factory - picks the chrome.storage area for the requested type
  */
 export class StorageFactory {
   /**
@@ -351,20 +245,7 @@ export class StorageFactory {
    * @param type - 'sync' for chrome.storage.sync (100KB, cross-device), 'local' for chrome.storage.local (5-10MB, local only)
    */
   static create(type: StorageType = 'sync'): IStorageService {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      if (type === 'local' && chrome.storage.local) {
-        logger.info('Using ChromeLocalStorageService');
-        return new ChromeLocalStorageService();
-      }
-
-      if (chrome.storage.sync) {
-        logger.info('Using ChromeStorageService');
-        return new ChromeStorageService();
-      }
-    }
-
-    logger.info('Using LocalStorageService (fallback)');
-    return new LocalStorageService();
+    return type === 'local' ? new ChromeLocalStorageService() : new ChromeStorageService();
   }
 }
 
