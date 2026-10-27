@@ -2,26 +2,44 @@ import { getBundledSiteSelectorView } from './bundle';
 import type { SiteSelectorView } from './types';
 
 const INTERACTIVE_MOUNT =
-  'button, a[href], [role="button"], [role="link"], [role="menuitem"], [role="menuitemradio"], [role="tab"], [role="option"], summary, label, pre, code';
+  'button, a[href], [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="switch"], [role="checkbox"], [role="radio"], [role="treeitem"], [role="tab"], [role="option"], summary, label, pre, code';
+
+function composedParent(element: Element): Element | null {
+  if (element.assignedSlot) return element.assignedSlot;
+  if (element.parentElement) return element.parentElement;
+  const root = element.getRootNode();
+  return root instanceof ShadowRoot ? root.host : null;
+}
 
 /** Catalog mounts must not make Voyager controls activate a host action or alter copied code. */
 export function isSafePlacementMount(element: Element, decorationOwner?: HTMLElement): boolean {
   if (!isSafePlacementTarget(element)) return false;
-  const interactive = element.closest(INTERACTIVE_MOUNT);
-  if (!interactive) return true;
-  // Picker stars already decorate native menu rows; only that row may be crossed, never a nested control.
-  return (
-    interactive === decorationOwner &&
-    (decorationOwner.localName === 'gem-menu-item' ||
-      decorationOwner.matches('button[role="menuitem"], button[role="menuitemradio"]')) &&
-    (!decorationOwner.parentElement || isSafePlacementMount(decorationOwner.parentElement))
-  );
+  // A slot can put a light-DOM mount inside a shadow button; closest() misses that host action.
+  for (let current: Element | null = element; current; current = composedParent(current)) {
+    if (!current.matches(INTERACTIVE_MOUNT)) continue;
+    // Picker stars may cross only their native row, never nested or surrounding controls.
+    if (
+      current !== decorationOwner ||
+      !(
+        decorationOwner.localName === 'gem-menu-item' ||
+        decorationOwner.matches('button[role="menuitem"], button[role="menuitemradio"]')
+      )
+    )
+      return false;
+  }
+  return true;
 }
 
 function isSafePlacementTarget(element: Element): boolean {
-  return !element.closest(
-    '[contenteditable]:not([contenteditable="false"]), input, textarea, select, option, [role="textbox"], [role="combobox"]',
-  );
+  for (let current: Element | null = element; current; current = composedParent(current)) {
+    if (
+      current.matches(
+        '[contenteditable]:not([contenteditable="false"]), input, textarea, select, option, [role="textbox"], [role="combobox"]',
+      )
+    )
+      return false;
+  }
+  return true;
 }
 
 type PlacementResult = Element | readonly Element[] | null;

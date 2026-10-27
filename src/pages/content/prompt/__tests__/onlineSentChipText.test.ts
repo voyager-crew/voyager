@@ -65,12 +65,36 @@ it('a remote first-line match cannot hide the rest of the sent instructions', as
   expect(document.querySelectorAll('.gv-pm-sent-line')).toHaveLength(2);
 });
 
-it('an attachment filename cannot be mistaken for sent text after the native wrapper changes', async () => {
+it('an attachment before a renamed body cannot be mistaken for sent text', async () => {
   vi.stubGlobal('location', new URL('https://gemini.google.com/app/abcdef1234'));
-  document.body.innerHTML = `<user-query class="user-query-container"><div id="prompt">${prompts[0].text}</div> <span id="attachment">notes.pdf</span></user-query>`;
+  document.body.innerHTML = `<user-query class="user-query-container"><user-query-file-preview><span id="attachment">notes.pdf</span></user-query-file-preview>\n<div id="prompt">${prompts[0].text}</div></user-query>`;
   retire = await installGeminiSelectorPatch({ 'sentChips.lines': ['#attachment'] });
   expect(readSentChipTargets(document)[0]?.lines).toEqual([]);
   retire();
   retire = await installGeminiSelectorPatch({ 'sentChips.lines': ['#prompt'] });
   expect(start()).toBe('Actual prompt');
+});
+
+it('a first line after a preceding attachment cannot hide the renamed prompt remainder', async () => {
+  vi.stubGlobal('location', new URL('https://gemini.google.com/app/abcdef1234'));
+  document.body.innerHTML = `<user-query class="user-query-container"><user-query-file-preview>notes.pdf</user-query-file-preview>\n<div id="prompt"><span id="first">${prompts[0].text}</span> <span>Keep every step.</span></div></user-query>`;
+  retire = await installGeminiSelectorPatch({ 'sentChips.lines': ['#first'] });
+  expect(readSentChipTargets(document)[0]?.lines).toEqual([]);
+  retire();
+  retire = await installGeminiSelectorPatch({ 'sentChips.lines': ['#prompt'] });
+  expect(start()).toBe('Actual prompt');
+  expect(document.querySelector('.gv-pm-sent-rest')?.textContent).toBe('Keep every step.');
+});
+
+it('bundled and remote sent chips retain all lines after a preceding attachment', async () => {
+  vi.stubGlobal('location', new URL('https://gemini.google.com/app/abcdef1234'));
+  document.body.innerHTML = `<user-query class="user-query-container"><user-query-file-preview>notes.pdf</user-query-file-preview><div class="query-text"><p class="query-text-line" id="first">${prompts[0].text}</p><p class="query-text-line" id="last">Keep every step.</p></div></user-query>`;
+  expect(start()).toBe('Actual prompt');
+  const bundledRemainder = document.querySelector('.gv-pm-sent-rest')?.textContent;
+  chips!.destroy();
+  chips = null;
+  retire = await installGeminiSelectorPatch({ 'sentChips.lines': ['#first, #last'] });
+  expect(start()).toBe('Actual prompt');
+  expect(document.querySelector('.gv-pm-sent-rest')?.textContent).toBe(bundledRemainder);
+  expect(document.querySelectorAll('.gv-pm-sent-line')).toHaveLength(2);
 });

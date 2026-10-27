@@ -7,7 +7,10 @@ import {
 import { resolvePlacementOperation } from '@/core/selectors/placement';
 import { locatorSiteForHost } from '@/core/selectors/sites';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/sent-chips-packaged.json';
-import { isCompleteUserText } from '@/features/timeline/userTextProof';
+import {
+  isCompleteUserText,
+  USER_TEXT_ATTACHMENT_PREVIEW,
+} from '@/features/timeline/userTextProof';
 
 export interface SentChipTarget {
   bubble: HTMLElement;
@@ -22,6 +25,15 @@ function firstList(root: ParentNode, selectors: readonly string[]): HTMLElement[
     if (nodes.length > 0) return nodes;
   }
   return [];
+}
+
+function authoredText(bubble: HTMLElement): string {
+  const walker = bubble.ownerDocument.createTreeWalker(bubble, NodeFilter.SHOW_TEXT);
+  let text = '';
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (!node.parentElement?.closest(USER_TEXT_ATTACHMENT_PREVIEW)) text += node.textContent ?? '';
+  }
+  return text;
 }
 
 /** Read every bubble and descendant before mounting any chip: fallback cannot mix two views. */
@@ -45,11 +57,11 @@ export function readSentChipTargets(root: ParentNode): SentChipTarget[] {
         const text = remote.map((node) => node.textContent ?? '').join(' ');
         const reference = bundledLines.length
           ? bundledLines.map((node) => node.textContent ?? '').join(' ')
-          : (bubble.textContent ?? '');
+          : authoredText(bubble);
         // Partial lines and filenames must not label a different saved prompt as the sent text.
         if (
           remote.length &&
-          isCompleteUserText(text, reference, bundledLines.length > 0) &&
+          isCompleteUserText(text, reference) &&
           remote.every(
             (node) =>
               !node.closest('model-response, [contenteditable="true"], input, textarea, button'),

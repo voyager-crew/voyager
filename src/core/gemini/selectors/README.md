@@ -55,6 +55,7 @@ The source directory is
 | `gems.json`             | `gems.navEntry`, separately the remaining `gems.*` catalog keys                    | Active Gems sidebar entry and catalog scrape                                                                    |
 | `content.json`          | `content.*`                                                                        | Answer/user text for export, fork, quotes and turn text                                                         |
 | `context-images.json`   | `context.images`                                                                   | Context image collection                                                                                        |
+| `context-text.json`     | `context.users`, `context.responses`                                               | Context dialogue body capture                                                                                   |
 | `response-actions.json` | `responseActions.bars`                                                             | Image export action placement                                                                                   |
 | `research-pack.json`    | `researchPack.actionBars`                                                          | Research-pack action placement                                                                                  |
 | `usage.json`            | `usage.root`                                                                       | Usage display owner                                                                                             |
@@ -80,7 +81,7 @@ decision. Once ready, the page snapshot stays fixed until its claim ends. New do
 effect after a user refresh, without automatic reload or remount.
 
 Operation acceptance and mount rejection follow the [shared invariants and
-mount rule](../../selectors/README.md#shared-snapshot-and-guards). Gemini's model
+mount rule](../../selectors/README.md#tier-b-mount-rule). Gemini's model
 stars retain their validated native picker-row decoration exception; Vim HUD
 candidates remain packaged because the baseline list includes a Tools button.
 

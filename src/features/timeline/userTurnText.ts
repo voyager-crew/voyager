@@ -1,7 +1,11 @@
 import { getPageSelectorSiteId, getSiteSelectorView } from '@/core/selectors';
 
 import { timelineSiteData } from './siteTextData';
-import { isCompleteUserText, ownsTimelineUserText } from './userTextProof';
+import {
+  isCompleteUserText,
+  ownsTimelineUserText,
+  USER_TEXT_ATTACHMENT_PREVIEW,
+} from './userTextProof';
 const EXCLUDED_SELECTOR =
   'button, [role="button"], script, style, template, model-response, [data-message-author-role="assistant"], [data-conversation-role="assistant"]';
 const BLOCK_TAGS = new Set([
@@ -83,7 +87,7 @@ export function userTurnText(element: HTMLElement, url?: string): string {
     : Array.from(element.querySelectorAll(userContentSelector)).find(reachable);
   const bundledContent = bundledMatch ?? element;
 
-  const extract = (content: Element): string => {
+  const extract = (content: Element, excludeAttachments = false): string => {
     let text = '';
     let syntheticNewline = false;
     const append = (value: string): void => {
@@ -102,7 +106,12 @@ export function userTurnText(element: HTMLElement, url?: string): string {
         if (!parent || !invisible(parent)) append((node.nodeValue ?? '').replace(/\r\n?/g, '\n'));
         return;
       }
-      if (!(node instanceof Element) || (!root && excluded(node))) return;
+      if (
+        !(node instanceof Element) ||
+        (!root && excluded(node)) ||
+        (excludeAttachments && node.matches(USER_TEXT_ATTACHMENT_PREVIEW))
+      )
+        return;
       if (node.tagName === 'BR') {
         if (!invisible(node)) append('\n');
         return;
@@ -140,9 +149,9 @@ export function userTurnText(element: HTMLElement, url?: string): string {
         !excluded(candidate) &&
         ownsTimelineUserText(candidate, site)
       ) {
-        const value = extract(candidate);
-        // Surviving prompt content prevents filenames or only its first line becoming saved text.
-        if (isCompleteUserText(value, extract(bundledContent), !!bundledMatch)) return value;
+        const value = extract(candidate, true);
+        // Attachments precede Gemini's body; only the complete authored text can prove a repair.
+        if (isCompleteUserText(value, extract(bundledContent, true))) return value;
       }
     } catch {
       // Keep the original text preference if this operation cannot prove complete prompt text.
