@@ -3,7 +3,7 @@ import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { readBaseline, RULE_IDS } from './baseline.mjs';
-import { measureViolations, updateBaseline } from './check-test-timing.mjs';
+import { measureViolations, updateBaseline } from './check-baseline.mjs';
 import { cleanupFixtures, fixture, lintFiles } from './testing.mjs';
 
 afterAll(cleanupFixtures);

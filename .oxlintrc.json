@@ -25,6 +25,7 @@
     "safari/Models/dmg_source/**"
   ],
   "rules": {
+    "voyager/no-double-cast": "error",
     "react/rules-of-hooks": "error",
     // Deliberately left below the category. The React team ships this one as a
     // warning because it cannot see through refs or stable dispatch identities,

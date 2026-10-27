@@ -67,6 +67,33 @@
     },
     "voyager/no-unlinked-skip": {
       "src/features/plugins/sources/__tests__/pluginPairMatrix.ts": 3
+    },
+    "voyager/no-double-cast": {
+      "src/core/services/highlightAnnotationData.ts": 1,
+      "src/features/export/services/mermaidSvgImage.ts": 1,
+      "src/features/folder/owner/bundleIntent.ts": 1,
+      "src/features/onboarding/toolbarPin.ts": 1,
+      "src/features/plugins/builtin/chatgptLocalBridge/ops/blobBytes.ts": 1,
+      "src/features/plugins/builtin/chatgptLocalBridge/ops/blobUpload.ts": 1,
+      "src/features/plugins/runtime/PluginHost.testHarness.ts": 5,
+      "src/features/timeline/timelineStyleCoachmark.ts": 1,
+      "src/pages/background/bridge/bridgeTaskStore.ts": 2,
+      "src/pages/background/bridge/pageLease.ts": 1,
+      "src/pages/content/changelog/index.ts": 1,
+      "src/pages/content/export/responseImageCopy.ts": 1,
+      "src/pages/content/folder/activityCoachmark.ts": 1,
+      "src/pages/content/folder/conversationSortCoachmark.ts": 1,
+      "src/pages/content/folder/dragPayload.ts": 1,
+      "src/pages/content/folder/folderSearchCoachmark.ts": 1,
+      "src/pages/content/folder/storage/FolderStorageAdapter.ts": 1,
+      "src/pages/content/prompt/promptReorderCoachmark.ts": 1,
+      "src/pages/content/prompt/slashPromptCoachmark.ts": 1,
+      "src/pages/content/timeline/GeminiTimelineAdapter.ts": 1,
+      "src/pages/content/timeline/rulerTimelineCoachmark.ts": 1,
+      "src/pages/content/usageStatus/usageCoachmark.ts": 1,
+      "src/pages/content/visualEffects/sakura.worker.ts": 1,
+      "src/pages/content/watermarkNativeNotice/index.ts": 1,
+      "src/pages/content/wavedrom/renderer.ts": 2
     }
   }
 }

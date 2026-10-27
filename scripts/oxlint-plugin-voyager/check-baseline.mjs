@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 
 import {
   BASELINE_PATH,
+  isProductionFile,
   isTestFile,
   readBaseline,
   relativeFilename,
@@ -22,7 +23,9 @@ export function measureViolations(files) {
       encoding: 'utf8',
     })
       .split('\0')
-      .filter((file) => isTestFile(file) && /\.[cm]?[jt]sx?$/.test(file))
+      .filter(
+        (file) => (isTestFile(file) || isProductionFile(file)) && /\.[cm]?[jt]sx?$/.test(file),
+      )
       .filter((file) => {
         try {
           return lstatSync(path.join(REPOSITORY_ROOT, file)).isFile();
@@ -34,7 +37,7 @@ export function measureViolations(files) {
   }
   const current = { version: 1, rules: Object.fromEntries(RULE_IDS.map((rule) => [rule, {}])) };
   if (files.length === 0) return current;
-  const workspace = mkdtempSync(path.join(tmpdir(), 'voyager-test-timing-'));
+  const workspace = mkdtempSync(path.join(tmpdir(), 'voyager-lint-baseline-'));
   try {
     const configPath = path.join(workspace, 'oxlint.json');
     writeFileSync(
@@ -104,16 +107,16 @@ export function updateBaseline(filename = BASELINE_PATH, files) {
 function main() {
   const updating = process.argv.includes('--update');
   const result = updating ? updateBaseline() : compareCounts(readBaseline(), measureViolations());
-  if (updating) console.log('Test-timing baseline tightened; no allowances added or raised.');
+  if (updating) console.log('Voyager lint baseline tightened; no allowances added or raised.');
   for (const error of result.errors) console.error(error);
   if (result.errors.length > 0) {
     process.exitCode = 1;
     return;
   }
-  console.log('Test timing OK: no file/rule count exceeds its baseline.');
+  console.log('Voyager lint OK: no file/rule count exceeds its baseline.');
   if (result.shrunk.length > 0) {
     console.log(
-      `${result.shrunk.length} allowances can shrink: bun scripts/oxlint-plugin-voyager/check-test-timing.mjs --update`,
+      `${result.shrunk.length} allowances can shrink: bun scripts/oxlint-plugin-voyager/check-baseline.mjs --update`,
     );
   }
 }

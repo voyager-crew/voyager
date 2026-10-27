@@ -1,4 +1,5 @@
-import { baselinedRule } from './baseline.mjs';
+import { baselinedRule, isProductionFile } from './baseline.mjs';
+import { collectDoubleCasts } from './double-cast.mjs';
 import { collectSleeps } from './sleeps.mjs';
 import { collectTimeouts, collectUnlinkedSkips } from './test-api.mjs';
 
@@ -19,6 +20,12 @@ export default {
       'voyager/no-unlinked-skip',
       'Link the quarantine with a // quarantine: #<issue> comment on the same or preceding line, or enable the test.',
       collectUnlinkedSkips,
+    ),
+    'no-double-cast': baselinedRule(
+      'voyager/no-double-cast',
+      'Parse the value into the type with a type guard or narrowing instead of forcing it through unknown.',
+      collectDoubleCasts,
+      { targetsFile: isProductionFile, nodeTypes: ['TSAsExpression', 'TSTypeAssertion'] },
     ),
   },
 };

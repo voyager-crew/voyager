@@ -6,6 +6,7 @@ export const RULE_IDS = [
   'voyager/no-real-sleep-in-tests',
   'voyager/no-per-test-timeout',
   'voyager/no-unlinked-skip',
+  'voyager/no-double-cast',
 ];
 const pluginDirectory = path.dirname(fileURLToPath(import.meta.url));
 export const REPOSITORY_ROOT = realpathSync(path.resolve(pluginDirectory, '../..'));
@@ -13,6 +14,16 @@ export const BASELINE_PATH = path.join(pluginDirectory, 'baseline.json');
 
 export function isTestFile(filename) {
   return /(?:^|\/)__tests__\//.test(filename) || /\.test\.tsx?$/.test(filename);
+}
+
+export function isProductionFile(filename) {
+  const relative = relativeFilename(filename);
+  return (
+    /^src\/.*\.tsx?$/.test(relative) &&
+    !isTestFile(relative) &&
+    !/\.spec\.tsx?$/.test(relative) &&
+    !relative.startsWith('src/tests/')
+  );
 }
 
 export function relativeFilename(filename) {
@@ -29,7 +40,7 @@ export function relativeFilename(filename) {
 export function readBaseline(filename = BASELINE_PATH) {
   const baseline = JSON.parse(readFileSync(filename, 'utf8'));
   if (baseline?.version !== 1 || !baseline.rules || typeof baseline.rules !== 'object') {
-    throw new Error(`Use a version 1 test-timing baseline: ${filename}`);
+    throw new Error(`Use a version 1 Voyager lint baseline: ${filename}`);
   }
   for (const [rule, files] of Object.entries(baseline.rules)) {
     if (!RULE_IDS.includes(rule) || !files || typeof files !== 'object' || Array.isArray(files)) {
@@ -52,7 +63,12 @@ export function readBaseline(filename = BASELINE_PATH) {
 const committedBaseline = readBaseline();
 
 /** The budget is per file and rule; visiting another file never consumes it. */
-export function baselinedRule(ruleId, message, collect) {
+export function baselinedRule(
+  ruleId,
+  message,
+  collect,
+  { targetsFile = isTestFile, nodeTypes } = {},
+) {
   return {
     meta: {
       type: 'problem',
@@ -68,12 +84,19 @@ export function baselinedRule(ruleId, message, collect) {
     },
     create(context) {
       const filename = context.filename.replaceAll('\\', '/');
-      if (!isTestFile(filename)) return {};
+      if (!targetsFile(filename)) return {};
+      const findings = [];
       return {
+        ...Object.fromEntries(
+          (nodeTypes ?? []).map((type) => [
+            type,
+            (node) => findings.push(...collect(node, context.sourceCode)),
+          ]),
+        ),
         'Program:exit'(program) {
-          const nodes = [...new Set(collect(program, context.sourceCode))].sort(
-            (a, b) => a.range[0] - b.range[0],
-          );
+          const nodes = [
+            ...new Set(nodeTypes ? findings : collect(program, context.sourceCode)),
+          ].sort((a, b) => a.range[0] - b.range[0]);
           const option = context.options[0]?.baseline;
           const baseline =
             option === false
