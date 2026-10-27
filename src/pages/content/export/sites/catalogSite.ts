@@ -9,6 +9,7 @@ import type { ExportSelectionOptions } from '../adapter/type';
 import type { ExportMessage } from '../conversationCollector';
 import { throwIfExportCancelled } from '../exportCancellation';
 import type { ExportSite, ExportTurnSession } from '../exportSite';
+import { siteTurnSelector } from '../toolbarTargets';
 import {
   captureCatalogWindow,
   readCatalogConversation,
@@ -181,6 +182,7 @@ export function createCatalogExportSite(provided: SiteAdapter): ExportSite {
     title: adapter.extractConversationTitle,
     entryPoints: {
       kind: 'toolbar',
+      turnSelector: siteTurnSelector(site),
       isConversationPage: (_doc, url) =>
         Boolean(
           site.conversationIdPattern &&

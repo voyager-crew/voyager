@@ -226,7 +226,6 @@
   ],
   ["export-layout-packaged.json/turns", "user-query, model-response, [data-message-author-role]"],
   ["export-layout-packaged.json/interactive", "button, a[href], [role=\"button\"]"],
-  ["export-layout-packaged.json/avoidRow", false],
   [
     "export-layout-packaged.json/overlaySidebar",
     [

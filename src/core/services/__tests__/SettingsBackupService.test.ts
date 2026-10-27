@@ -183,6 +183,22 @@ describe('SettingsBackupService', () => {
     });
   });
 
+  it('keeps the dragged export button spot on this device, out of a settings export', async () => {
+    const key = StorageKeys.PERSISTENT_EXPORT_TOOLBAR_POSITION;
+    const storageArea = {
+      get: vi.fn().mockResolvedValue({ [key]: { claude: { right: 400, top: 300 } } }),
+      set: vi.fn(),
+    };
+
+    const payload = await exportBackupableSyncSettings(storageArea);
+
+    expect(payload.data).not.toHaveProperty(key);
+    expect(NON_SETTINGS_BACKUP_POLICIES[key]).toMatchObject({
+      storage: 'local',
+      disposition: 'device-local',
+    });
+  });
+
   it('keeps the popup settings search query device-local', () => {
     expect(BACKUPABLE_SYNC_SETTINGS_DEFAULTS).not.toHaveProperty(
       StorageKeys.GV_POPUP_SETTINGS_SEARCH_QUERY,

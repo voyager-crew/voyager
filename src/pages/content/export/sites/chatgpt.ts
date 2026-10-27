@@ -16,6 +16,7 @@ import { prepareChatGptExportWithProgress } from '../chatgptCrawlProgress';
 import { createConversationCollector } from '../conversationCollector';
 import type { ExportMessage } from '../conversationCollector';
 import type { ExportSite, ExportTurnReader, ExportTurnSession } from '../exportSite';
+import { siteTurnSelector } from '../toolbarTargets';
 
 function selectionMessages(containers: readonly ChatGptTurnContainer[]): ExportMessage[] {
   return containers.map((turn) => ({
@@ -107,6 +108,7 @@ export function createChatGptExportSite(adapter: ExportPlatformAdapter): ExportS
       kind: 'toolbar',
       isConversationPage: chatgptIsConversationPage,
       opensFromPopup: true,
+      turnSelector: siteTurnSelector(adapter.site),
     },
     title: adapter.extractConversationTitle,
     turns: {

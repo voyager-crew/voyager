@@ -27,7 +27,7 @@ afterEach(() => {
 });
 
 it.each(sites)(
-  '%s retains its packaged row-avoidance policy while repairing interactive regions',
+  '%s row avoidance follows a repaired interactive region and drops a rejected one',
   async (site, host) => {
     jsdom.reconfigure({ url: `https://${host}/` });
     vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(1280);
@@ -71,13 +71,13 @@ it.each(sites)(
     };
     expect(await measure()).toBe('84px');
     await patch('#target');
-    expect(await measure()).toBe(site === 'chatgpt' ? '292px' : '84px');
+    expect(await measure()).toBe('292px');
     await patch('.missing');
     expect(await measure()).toBe('84px');
     await patch('#target');
     target.setAttribute('contenteditable', 'true');
     expect(await measure()).toBe('84px');
     target.removeAttribute('contenteditable');
-    expect(await measure()).toBe(site === 'chatgpt' ? '292px' : '84px');
+    expect(await measure()).toBe('292px');
   },
 );

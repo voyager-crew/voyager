@@ -1,9 +1,14 @@
+/**
+ * The completion drawn past the caret: the rest of the selected prompt's name,
+ * greyed, so the reader sees what Tab or Enter would complete to.
+ */
 import type { PromptScheme } from '@/features/prompt/PromptSiteAdapter';
 
 import { type PromptQuery, createQueryRange } from './slashComposerText';
 import { syncMarkerTypography } from './slashMarkers';
 import { ghostSuffix } from './slashMatch';
-export const GHOST_ID = 'gv-pm-slash-ghost';
+
+const GHOST_ID = 'gv-pm-slash-ghost';
 
 function ghostElement(): HTMLElement {
   const existing = document.getElementById(GHOST_ID);
@@ -42,4 +47,8 @@ export function showGhost(query: PromptQuery, name: string, scheme: PromptScheme
   ghost.style.top = `${Math.round(rect.top)}px`;
   ghost.style.height = `${Math.round(rect.height)}px`;
   ghost.classList.add('gv-pm-slash-ghost-visible');
+}
+
+export function removeGhost(): void {
+  document.getElementById(GHOST_ID)?.remove();
 }

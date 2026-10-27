@@ -27,7 +27,6 @@ Parts: [1](PACKAGED_CHATGPT.md), [2](PACKAGED_CHATGPT_SOURCES.md), [3](PACKAGED_
 | `attachmentPreview`          | §6 / packaged   | Native upload-preview evidence prevents premature send/handoff.                                             |
 | `attachmentProgress`         | §6 / packaged   | Native progress evidence prevents premature send/handoff.                                                   |
 | `attachmentRemovalPreview`   | §6 / packaged   | Native removal-preview state cannot be redefined by a repair.                                               |
-| `avoidRow`                   | §6 / packaged   | Boolean toolbar algorithm option, not a locator.                                                            |
 | `bridge.replyContent`        | A / online      | Supplies bridge reply data; complete text must belong to the proved reply.                                  |
 | `broadControls`              | B / bundle copy | Collision probe only positions the Voyager export button. Online counterpart: `exportLayout.broadControls`. |
 | `canvasContent`              | B / bundle copy | Canvas content box only positions Voyager export UI. Online counterpart: `exportLayout.canvasContent`.      |

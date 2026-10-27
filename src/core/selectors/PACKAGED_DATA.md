@@ -63,9 +63,9 @@ and mount candidates remain unchanged on every host. Each site reads only its
 own profiles and unknown keys are ignored.
 
 The old `exportToolbar.*` compatibility fragments have no live consumer; the
-active export toolbar uses `exportLayout.*`. The `interactive` layout probe is
-dormant on sites whose packaged `avoidRow` is false, and publishing that data does
-not enable row avoidance there. AI Studio relative insertion steps keep their
+active export toolbar uses `exportLayout.*`. Every site's toolbar hit-tests its
+row through the `interactive` layout probe, and its `turns` gain the site's own
+`userTurn`/`assistantTurn` and export message key. AI Studio relative insertion steps keep their
 original bundled query behavior; the online profile uses parser-safe `:scope`
 queries for the same relative placement operation.
 

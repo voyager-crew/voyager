@@ -40,7 +40,7 @@ import {
 import { ghostSuffix, isPromptItem, matchSlashPrompts } from './slashMatch';
 import { createPromptPlacements, syncEditedPromptText } from './slashPlacements';
 import { SLASH_PREVIEW_ID, createSlashPreview } from './slashPreview';
-import { GHOST_ID, hideGhost, showGhost } from './slashPromptView';
+import { hideGhost, removeGhost, showGhost } from './slashPromptView';
 
 const ROOT_ID = 'gv-pm-slash-root';
 const LIST_ID = 'gv-pm-slash-list';
@@ -241,13 +241,12 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
         tags.appendChild(tagEl);
       }
       row.appendChild(tags);
-      row.addEventListener('mouseenter', () => {
+      preview.bindRow(row, () => {
         root.dataset.gvInteraction = 'pointer';
         selectedIndex = index;
         renderSelectionState();
         preview.show(row, prompt.text);
       });
-      row.addEventListener('mouseleave', preview.scheduleHide);
       row.addEventListener('mousedown', (event) => {
         if (event.button !== 0) return;
         event.preventDefault();
@@ -337,6 +336,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
     }
 
     if (!root.hidden && activeInput === input && results.length > 0) {
+      if (['ArrowDown', 'ArrowUp', 'Tab', 'Enter'].includes(event.key)) preview.cancelAim();
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
         event.stopPropagation();
@@ -513,7 +513,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
       placements.destroy();
       root.remove();
       preview.destroy();
-      document.getElementById(GHOST_ID)?.remove();
+      removeGhost();
     },
   };
 }

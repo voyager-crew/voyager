@@ -198,7 +198,6 @@
       "inactiveCanvas": "deep-research-immersive-panel, [hidden], [aria-hidden=\"true\"]",
       "turns": "user-query, model-response, [data-message-author-role]",
       "interactive": "button, a[href], [role=\"button\"]",
-      "avoidRow": false,
       "overlaySidebar": [
         "[data-test-id=\"side-nav\"]",
         "side-navigation",

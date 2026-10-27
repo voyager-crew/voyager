@@ -57,7 +57,7 @@ Parts: [1](PACKAGED_DATA.md), [2](PACKAGED_SURFACES.md), [3](PACKAGED_CONTENT.md
 | `exportLayout.fallbackRoot`      | B / online      | Fallback landmark only mounts Voyager export UI.                                                                       |
 | `exportLayout.fullscreenCanvas`  | B / online      | Fullscreen probe only positions Voyager export UI.                                                                     |
 | `exportLayout.inactiveCanvas`    | B / online      | Inactive Canvas probe only decides Voyager UI visibility.                                                              |
-| `exportLayout.interactive`       | B / online      | Avoids host controls when placing Voyager export UI. Dormant while packaged avoidRow is false on this site.            |
+| `exportLayout.interactive`       | B / online      | Avoids host controls when placing Voyager export UI.                                                                   |
 | `exportLayout.overlaySidebar`    | B / online      | Sidebar bounds only position Voyager export UI.                                                                        |
 | `exportLayout.turns`             | B / online      | Turn-shaped layout probe only places Voyager export UI; it supplies no turn data.                                      |
 | `exportOverlay.canvas`           | B / online      | Only positions, aligns or avoids the Voyager export toolbar.                                                           |

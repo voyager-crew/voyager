@@ -3,7 +3,7 @@
 ## Invariants
 
 1. One online channel: every site's page locators use `<base>/hosts/<host>.json`, the existing Online updates setting, cache, refresher and publisher.
-2. OFF or no remote data equals `6fa19b4ae`: preserve cached adapter precedence and reads, bundled values and their order, behavior and query cost; OFF disables new namespaced profiles, not baseline cached adapters.
+2. OFF or no remote data equals the bundled behavior, `6fa19b4ae` plus later changes merged into main (as the OFF snapshots record): preserve cached adapter precedence and reads, bundled values and their order, behavior and query cost; OFF disables new namespaced profiles, not baseline cached adapters.
 3. Tier A keys require independent page proof; Tier B keys trust the official catalog subject to the shared mount rule below; design §6 protocols stay packaged.
 4. Every consumer of a published key reads through its contract; an independent native proof or §6 protocol is an explicit, reviewed exception.
 5. Each site reads only its own data; Gemini Enterprise uses Gemini, both AI Studio hosts use AI Studio, and unknown hosts get the generic profile.

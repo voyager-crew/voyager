@@ -13,7 +13,6 @@ Parts: [1](PACKAGED_DATA.md), [2](PACKAGED_SURFACES.md), [3](PACKAGED_CONTENT.md
 | `alignmentCanvas`                  | B / bundle copy | Canvas bounds only align Voyager export UI. Online counterpart: `exportLayout.alignmentCanvas`.                                                       |
 | `alignmentComposer`                | B / bundle copy | Composer bounds only align Voyager export UI. Online counterpart: `exportLayout.alignmentComposer`.                                                   |
 | `assistantTurn`                    | A / packaged    | Native semantic evidence stays independent; specific turn/composer/code profiles repair consumers, while another semantic source cannot prove itself. |
-| `avoidRow`                         | §6 / packaged   | Boolean toolbar algorithm option, not a locator.                                                                                                      |
 | `broadControls`                    | B / bundle copy | Collision probe only positions the Voyager export button. Online counterpart: `exportLayout.broadControls`.                                           |
 | `canvas.codeEditor`                | A / packaged    | Exported editor content needs native editor/source grammar; another editable cannot prove code ownership.                                             |
 | `canvas.codeLanguage`              | A / packaged    | Exported language uses native metadata; arbitrary labels cannot prove language identity.                                                              |
