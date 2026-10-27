@@ -84,11 +84,14 @@ Settings changes or retirement also settle pending work. Once the page view is
 frozen, late results cannot replace it; a later page load can try again. Consumer
 proofs still run against the current DOM.
 
-[`pageSelectorAdapter.ts`](../../pages/content/pageSelectorAdapter.ts) separately
-bounds cached adapter resolution with `startMachine`, using the same startup
-deadline. An early OFF snapshot therefore does not discard an eligible cached
-adapter arriving within the cap: PluginHost retains baseline adapter precedence.
-An error, timeout or retirement resolves that pending adapter read to the bundle.
+[`pageSelectorAdapter.ts`](../../pages/content/pageSelectorAdapter.ts) uses
+`startMachine` to cap the adapter result for hydration and the refresh gate at
+the same startup deadline. PluginHost awaits the original shared cache read
+after hydration settles, without a timeout, preserving baseline adapter precedence
+even when storage takes more than 250 ms or updates are OFF. A failed cache read
+uses the bundle; a late successful read cannot change the frozen locator view
+or trigger the page-selector startup's due check. PluginHost's own lifecycle
+prevents a retired page from mounting.
 
 [`semanticSource.ts`](semanticSource.ts) separately resolves the initial semantic
 read mode through `startMachine`, reusing that same settings read without delaying

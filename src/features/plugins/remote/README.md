@@ -152,8 +152,10 @@ bundle before its profiles can apply. Missing or empty `site.locators` restores
 only its namespaced profiles on the next page load. A complete withdrawal also
 restores admitted `site.selectors` values to their packaged values.
 
-Shared per-site hydration and cached adapter resolution use `startMachine` and
-share PluginHost’s first adapter and settings reads. The
+Shared per-site hydration and its bounded adapter result use `startMachine` and
+share PluginHost’s first adapter and settings reads. Only hydration and the
+refresh gate use a capped adapter result; PluginHost keeps awaiting the original
+cache read, including reads slower than 250 ms, with Online updates on or off. The
 [startup readiness rule](../../../core/selectors/README.md#startup-readiness)
 defines the bounded first-consumer wait, frozen page view and independent
 baseline adapter precedence. New page-locator fixes, withdrawals and switching

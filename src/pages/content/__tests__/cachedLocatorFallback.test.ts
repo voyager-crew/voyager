@@ -180,10 +180,16 @@ it.each(['cache', 'settings'])(
     expect(page.first()?.mount?.sidebar).toBe(sidebar);
     expect(page.first()?.mount?.anchor).toBe(recentsSection);
     await page.entering;
-    // The shared adapter promise is bounded too, even when cache storage never answered.
-    expect((await page.startup.initialAdapter)?.id).toBe('gemini');
+    let pluginAdapter: Awaited<typeof page.startup.initialAdapter>;
+    void page.startup.initialAdapter?.then((adapter) => {
+      pluginAdapter = adapter;
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    if (hung === 'cache') expect(pluginAdapter).toBeUndefined();
+    else expect(pluginAdapter?.id).toBe('gemini');
     pending.resolve(hung === 'cache' ? cache() : { [updatesKey]: true });
     await vi.advanceTimersByTimeAsync(0);
+    expect(pluginAdapter?.locators?.['sidebar.overflow']).toEqual(['.cached-overflow']);
     expect(getSiteSelectorView('gemini').remoteKeys.size).toBe(0);
     expect(findSidebarMount('above-recents')?.sidebar).toBe(sidebar);
   },

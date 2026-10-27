@@ -39,7 +39,7 @@ it('a timely cache read preserves the newer adapter for its caller', async () =>
   expect(vi.getTimerCount()).toBe(0);
 });
 
-it('a hung cache resolves to the bundle at 250 ms', async () => {
+it('a hung cache releases locator hydration to the bundle at 250 ms', async () => {
   const adapter = pending();
   let mounted: SiteAdapter | null | undefined;
   void adapter.ready.then((value) => {

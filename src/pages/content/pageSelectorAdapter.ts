@@ -29,7 +29,7 @@ type PageSelectorAdapterResult = {
   readonly adapter: SiteAdapter | null;
 };
 
-/** Cached adapter precedence has its own deadline, independent of an early OFF snapshot. */
+/** Bound only the adapter result used by locator hydration and its refresh gate. */
 export function startPageSelectorAdapter(input: PageSelectorAdapterInput): PageSelectorAdapter {
   let settle: (result: PageSelectorAdapterResult) => void = () => {};
   const ready = new Promise<PageSelectorAdapterResult>((resolve) => {

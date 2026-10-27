@@ -58,15 +58,15 @@ export function startPageSelectors(input: PageSelectorStartupInput): PageSelecto
   const registry = SiteRegistry.createDefault();
   const bundle = registry.resolveByUrl(input.url);
   const legacySettings = pageSelectorSettings(input.url);
-  // Adapter precedence is identical at startup and reload, even when locator hydration is OFF.
+  const adapterRead = (async () => {
+    const entry = await loadHostCatalogCache(host);
+    const override = siteAdapterFromEntry(entry, EXTENSION_VERSION);
+    return resolveSiteAdapterForUrl(input.url, registry, override);
+  })();
   const adapter = startPageSelectorAdapter({
     bundled: bundle,
     lifetime: input.lifetime,
-    read: async () => {
-      const entry = await loadHostCatalogCache(host);
-      const override = siteAdapterFromEntry(entry, EXTENSION_VERSION);
-      return resolveSiteAdapterForUrl(input.url, registry, override);
-    },
+    read: () => adapterRead,
   });
   const hydration = initializeSiteSelectors(siteId, {
     host,
@@ -105,7 +105,8 @@ export function startPageSelectors(input: PageSelectorStartupInput): PageSelecto
       () => {}, // A retired extension cannot request a refresh; the host owns read diagnostics.
     );
   });
-  const initialAdapter = hydration.ready.then(async () => (await adapter.ready).adapter);
+  // Slow storage must not discard PluginHost's baseline cached adapter after locator readiness.
+  const initialAdapter = hydration.ready.then(() => adapterRead);
   return {
     ready,
     initialAdapter,
