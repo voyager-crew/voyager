@@ -1,3 +1,11 @@
+import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
+import { getSiteSelectorView } from '@/core/selectors';
+import {
+  hasSiteComposerForeignOwner,
+  ownedSiteInputs,
+} from '@/core/services/composer/siteInputReads';
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
+import chatgptSite from '@/features/plugins/catalog/sites/chatgpt/site.json';
 /**
  * Read-only views of ChatGPT's chat-mode model picker, measured on chatgpt.com
  * (zh-CN) on 2026-10-18. Structure comes from ARIA and ChatGPT's own data
@@ -56,10 +64,17 @@ export function mergedLabels(table: Readonly<Record<string, readonly string[]>>)
 
 /**
  * ChatGPT's marker on the picker trigger, the same in every UI language, as
- * measured; the site's `pageHooks.modelPickerTrigger` replaces it remotely.
+ * measured. It is the baseline; an online replacement also needs the native accessible name.
  */
-export const DEFAULT_TRIGGER_MARKER =
-  'button[aria-haspopup="menu"][data-composer-navigation-target="reasoning"]';
+const DEFAULT_TRIGGER_MARKER = chatgptSite.pageHooks.modelPickerTrigger;
+
+function triggerLabel(button: HTMLElement): string {
+  const ids = button.getAttribute('aria-labelledby')?.split(/\s+/) ?? [];
+  const labelled = ids
+    .map((id) => button.ownerDocument.getElementById(id)?.textContent ?? '')
+    .join(' ');
+  return normalizeLabel(button.getAttribute('aria-label') ?? labelled);
+}
 
 /** The one rendered picker trigger in `scope`, else null (none, or ambiguous). */
 export function findTrigger(
@@ -67,15 +82,50 @@ export function findTrigger(
   data: ModelPickerSection,
   marker: string = DEFAULT_TRIGGER_MARKER,
 ): HTMLElement | null {
+  const view = getSiteSelectorView('chatgpt');
+  const requiresProof = view.remoteKeys.has('modelPicker.trigger');
+  const doc = scope instanceof Document ? scope : (scope.ownerDocument ?? document);
+  const inputs = requiresProof ? ownedSiteInputs('chatgpt', doc) : [];
+  const composerForm = inputs.length === 1 ? inputs[0].closest('form') : null;
+  const ownsTrigger = (candidate: HTMLElement) =>
+    composerForm !== null &&
+    candidate.closest('form') === composerForm &&
+    !hasSiteComposerForeignOwner('chatgpt', candidate);
+  if (requiresProof) {
+    const selector = view.profiles['modelPicker.trigger'].join(',');
+    const candidates = Array.from(scope.querySelectorAll<HTMLElement>(selector)).filter(isRendered);
+    const labels = mergedLabels(data.triggerLabels);
+    const candidate = candidates[0];
+    const native = Array.from(scope.querySelectorAll<HTMLElement>(DEFAULT_TRIGGER_MARKER)).filter(
+      (button) => isRendered(button) && ownsTrigger(button),
+    );
+    // A model label and native menu semantics identify the control before any click occurs.
+    if (
+      candidates.length === 1 &&
+      candidate.matches('button[aria-haspopup="menu"], [role="button"][aria-haspopup="menu"]') &&
+      // An outer app form can also contain sidebar and reply menus; only the editor's form owns this picker.
+      ownsTrigger(candidate) &&
+      labels.has(triggerLabel(candidate)) &&
+      (!native.length || (native.length === 1 && native[0] === candidate))
+    )
+      return candidate;
+  }
   // The aria-label is translated into each of ChatGPT's UI languages; the marker is not.
-  const marked = Array.from(scope.querySelectorAll<HTMLElement>(marker)).filter(isRendered);
+  // OFF keeps the baseline cached marker; only ON replacements need the independent proof above.
+  const fallbackMarker = view.semanticSource === 'adapter' ? marker : DEFAULT_TRIGGER_MARKER;
+  // A rejected repair must not re-enter through a lone native/labelled fallback in the sidebar.
+  const marked = Array.from(scope.querySelectorAll<HTMLElement>(fallbackMarker)).filter(
+    (button) => isRendered(button) && (!requiresProof || ownsTrigger(button)),
+  );
   if (marked.length > 0) return marked.length === 1 ? marked[0] : null;
   const labels = mergedLabels(data.triggerLabels);
   const found = Array.from(
-    scope.querySelectorAll<HTMLElement>('button[aria-haspopup="menu"][aria-label]'),
+    scope.querySelectorAll<HTMLElement>(chatgptPageData.pickerLabelledTrigger),
   ).filter(
     (button) =>
-      labels.has(normalizeLabel(button.getAttribute('aria-label') ?? '')) && isRendered(button),
+      labels.has(normalizeLabel(button.getAttribute('aria-label') ?? '')) &&
+      isRendered(button) &&
+      (!requiresProof || ownsTrigger(button)),
   );
   return found.length === 1 ? found[0] : null;
 }
@@ -139,9 +189,9 @@ export function readStatus(menu: HTMLElement, data: ModelPickerSection): PickerS
 
 /**
  * ChatGPT's marker on the effort row, the same in every UI language, as
- * measured; the site's `pageHooks.effortControl` replaces it remotely.
+ * measured. The row can be located online; its slider/status and arrow-key protocol stay packaged.
  */
-export const DEFAULT_EFFORT_CONTROL = '[role="menuitem"][data-reasoning-slider="true"]';
+const DEFAULT_EFFORT_CONTROL = chatgptSite.pageHooks.effortControl;
 
 /** The step a status names by its two numbers (place, count), in either order; else null. */
 export function statusStep(text: string): { readonly now: number; readonly max: number } | null {
@@ -187,6 +237,27 @@ export function readPicker(
     if (now !== null && min !== null && max !== null) slider = { element, now, min, max };
   }
   const status = readStatus(menu, data);
-  if (sliders.length === 0) slider = rowSlider(menu, effortControl, status);
+  if (sliders.length === 0) {
+    const view = getSiteSelectorView('chatgpt');
+    const fallbackControl =
+      view.semanticSource === 'adapter' ? effortControl : DEFAULT_EFFORT_CONTROL;
+    const native = rowSlider(menu, fallbackControl, status);
+    slider = native;
+    if (view.remoteKeys.has('modelPicker.effort')) {
+      const repaired = rowSlider(menu, view.profiles['modelPicker.effort'].join(','), status);
+      const row = repaired?.element;
+      const keys = row?.getAttribute('aria-keyshortcuts')?.split(/\s+/) ?? [];
+      // The row must advertise the same native keyboard protocol as the missing slider.
+      if (
+        row &&
+        !hasVoyagerOwner(row) &&
+        row.getAttribute('role') === 'menuitem' &&
+        keys.includes('ArrowLeft') &&
+        keys.includes('ArrowRight') &&
+        (!native || native.element === row)
+      )
+        slider = repaired;
+    }
+  }
   return { radios, slider, status };
 }

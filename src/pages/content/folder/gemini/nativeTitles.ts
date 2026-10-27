@@ -11,7 +11,7 @@ import {
   extractNativeConversationId,
 } from '../nativeConversationIds';
 import { extractNativeConversationTitle } from '../nativeConversationTitles';
-import { getNativeConversationElements } from '../nativeSidebarDom';
+import { packagedConversationRows } from '../sidebarConversationQueries';
 import type { ConversationReference, FolderData } from '../types';
 
 type FolderContents = Record<string, ConversationReference[]>;
@@ -35,7 +35,7 @@ export function applySidebarTitles(
   let updated = false;
   // One index per pass: O(stored + rows + matches); see indexConversationsByRouteId.
   const index = indexConversationsByRouteId(folderContents);
-  for (const convEl of Array.from(getNativeConversationElements(sidebar))) {
+  for (const convEl of Array.from(packagedConversationRows(sidebar))) {
     const element = convEl as HTMLElement;
     const conversationId =
       extractNativeConversationId(element) || extractConversationIdFromElement(element);

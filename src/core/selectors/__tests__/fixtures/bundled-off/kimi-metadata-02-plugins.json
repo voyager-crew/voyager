@@ -1,0 +1,309 @@
+[
+  [
+    "plugins/composer-counter/plugin.json",
+    {
+      "id": "voyager.kimi-composer-counter",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://www.kimi.com/*"],
+      "contributes": {
+        "settings": {
+          "metric": {
+            "type": "select",
+            "label": "What to count",
+            "default": "chars",
+            "options": [
+              {
+                "value": "chars",
+                "label": "Characters"
+              },
+              {
+                "value": "words",
+                "label": "Words"
+              },
+              {
+                "value": "cjkChars",
+                "label": "CJK characters"
+              },
+              {
+                "value": "lines",
+                "label": "Lines"
+              }
+            ]
+          }
+        },
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "counterBadge",
+            "params": {
+              "target": "composer",
+              "metric": "{{metric}}"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/ctrl-enter-send/plugin.json",
+    {
+      "id": "voyager.kimi-ctrl-enter-send",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://www.kimi.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "sendShortcut",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/draft-save/plugin.json",
+    {
+      "id": "voyager.kimi-draft-save",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://www.kimi.com/*"],
+      "requires": {
+        "handlers": ["draftSave"]
+      },
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "draftSave",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/export/plugin.json",
+    {
+      "id": "voyager.kimi-export",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://www.kimi.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "conversationExport",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/folders/plugin.json",
+    {
+      "id": "voyager.kimi-folders",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://www.kimi.com/*"],
+      "requires": {
+        "handlers": ["folders"]
+      },
+      "contributes": {
+        "settings": {
+          "hideFiledChats": {
+            "type": "boolean",
+            "label": "Hide chats already in folders from the sidebar list",
+            "default": false
+          }
+        },
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "folders",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/quote-reply/plugin.json",
+    {
+      "id": "voyager.kimi-quote-reply",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://www.kimi.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "quoteReply",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/reading-typography/plugin.json",
+    {
+      "id": "voyager.kimi-reading-typography",
+      "engine": ">=1.4.0",
+      "tier": "declarative",
+      "matches": ["https://www.kimi.com/*"],
+      "requires": {
+        "semantic": ["assistantTurn"]
+      },
+      "contributes": {
+        "settings": {
+          "fontSizeEnabled": {
+            "type": "boolean",
+            "label": "Custom text size",
+            "default": false
+          },
+          "fontSize": {
+            "type": "number",
+            "enabledBy": "fontSizeEnabled",
+            "label": "Text size (%)",
+            "minLabel": "Small",
+            "maxLabel": "Large",
+            "default": 100,
+            "min": 80,
+            "max": 150
+          },
+          "spacingEnabled": {
+            "type": "boolean",
+            "label": "Custom spacing",
+            "default": false
+          },
+          "lineHeight": {
+            "type": "number",
+            "enabledBy": "spacingEnabled",
+            "label": "Line height (%)",
+            "minLabel": "Tight",
+            "maxLabel": "Loose",
+            "default": 160,
+            "min": 120,
+            "max": 220
+          },
+          "paragraphSpacing": {
+            "type": "number",
+            "enabledBy": "spacingEnabled",
+            "label": "Paragraph spacing (px)",
+            "minLabel": "Tight",
+            "maxLabel": "Loose",
+            "default": 16,
+            "min": 0,
+            "max": 24
+          }
+        },
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ],
+        "domOps": [
+          {
+            "op": "addClass",
+            "target": {
+              "kind": "semantic",
+              "key": "assistantTurn"
+            },
+            "className": "gv-plugin-kimi-reading-typography"
+          },
+          {
+            "op": "setAttribute",
+            "target": {
+              "kind": "semantic",
+              "key": "assistantTurn"
+            },
+            "name": "data-gv-font-size",
+            "value": "{{fontSizeEnabled}}"
+          },
+          {
+            "op": "setAttribute",
+            "target": {
+              "kind": "semantic",
+              "key": "assistantTurn"
+            },
+            "name": "data-gv-spacing",
+            "value": "{{spacingEnabled}}"
+          },
+          {
+            "op": "setStyle",
+            "target": "body",
+            "styles": {
+              "--gv-plugin-reading-text-size": "{{fontSize}}%",
+              "--gv-plugin-reading-text-scale": "{{fontSize}}",
+              "--gv-plugin-reading-line-height": "{{lineHeight}}",
+              "--gv-plugin-reading-paragraph-spacing": "{{paragraphSpacing}}px"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/reading-width/plugin.json",
+    {
+      "id": "voyager.kimi-reading-width",
+      "engine": ">=1.2.0",
+      "tier": "declarative",
+      "matches": ["https://www.kimi.com/*"],
+      "contributes": {
+        "settings": {
+          "width": {
+            "type": "number",
+            "label": "Reading width (px)",
+            "minLabel": "Narrower",
+            "maxLabel": "Wider",
+            "default": 1000,
+            "min": 600,
+            "max": 1600
+          }
+        },
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ],
+        "domOps": [
+          {
+            "op": "addClass",
+            "target": "body",
+            "className": "gv-plugin-kimi-readable"
+          },
+          {
+            "op": "setStyle",
+            "target": "body",
+            "styles": {
+              "--gv-plugin-reading-width": "{{width}}px"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/site-check/plugin.json",
+    {
+      "id": "voyager.kimi-site-check",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://www.kimi.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "siteCheck",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ]
+]

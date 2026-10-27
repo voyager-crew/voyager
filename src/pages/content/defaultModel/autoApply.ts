@@ -12,18 +12,8 @@ import {
   sessionOf,
 } from './autoApplyMachine';
 import { ModelPicker } from './modelPicker';
+import { findModelFocusInput } from './modelPickerSelectors';
 import { DefaultModelPreferences } from './preferences';
-
-const CHAT_INPUT_SELECTORS = [
-  'main rich-textarea [contenteditable="true"]',
-  'rich-textarea [contenteditable="true"]',
-  'main div[contenteditable="true"][role="textbox"]',
-  'div[contenteditable="true"][role="textbox"]',
-  'main .input-area textarea',
-  '.input-area textarea',
-  'main [contenteditable="true"]',
-  'main textarea',
-] as const;
 
 const RECENT_COMPOSER_ACTIVITY_MS = 8000;
 const NAVIGATION_SETTLE_MS = 150;
@@ -280,15 +270,7 @@ export class DefaultModelAutoApply {
   }
 
   private findChatInputElement(): HTMLElement | null {
-    for (const selector of CHAT_INPUT_SELECTORS) {
-      const candidates = document.querySelectorAll<HTMLElement>(selector);
-      for (const candidate of Array.from(candidates)) {
-        if (!candidate.isConnected) continue;
-        if (candidate instanceof HTMLTextAreaElement && candidate.disabled) continue;
-        return candidate;
-      }
-    }
-    return null;
+    return findModelFocusInput();
   }
 
   private subscribeToComposerActivity(signal: AbortSignal): void {

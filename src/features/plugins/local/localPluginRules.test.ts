@@ -71,8 +71,9 @@ describe('local plugin semantic keys', () => {
     expect(issues(authored({ domOps: [op] }))).toEqual([
       {
         path: 'contributes.domOps[0].target.key',
-        message:
-          'Claude does not declare semantic key "thinkingBlock" (it declares userTurn, assistantTurn, composer, sidebar, scrollContainer, composerRoot, sendButton): target a CSS selector instead',
+        message: expect.stringMatching(
+          /^Claude does not declare semantic key "thinkingBlock" .*target a CSS selector instead$/,
+        ),
       },
     ]);
     // DeepSeek declares it, so the same op imports there.
@@ -93,16 +94,19 @@ describe('local plugin semantic keys', () => {
     expect(issues(authored({}, { requires: { semantic: ['codeBlock'] } }))).toEqual([
       {
         path: 'requires.semantic',
-        message:
-          'Claude does not declare semantic key "codeBlock" (it declares userTurn, assistantTurn, composer, sidebar, scrollContainer, composerRoot, sendButton)',
+        message: expect.stringMatching(/^Claude does not declare semantic key "codeBlock" /),
       },
     ]);
+    expect(
+      validateLocalManifest(authored({}, { requires: { semantic: ['sidePanel'] } })).success,
+    ).toBe(true);
     const mermaid = { op: 'native', handler: 'mermaid', params: {} };
     expect(issues(authored({ domOps: [mermaid] }, { engine: '>=1.7.0' }))).toEqual([
       {
         path: 'contributes.domOps[0]',
-        message:
-          'Claude does not declare semantic key "codeBlock" (it declares userTurn, assistantTurn, composer, sidebar, scrollContainer, composerRoot, sendButton), which primitive "mermaid" reads',
+        message: expect.stringMatching(
+          /^Claude does not declare semantic key "codeBlock" .*which primitive "mermaid" reads$/,
+        ),
       },
     ]);
   });
@@ -112,8 +116,7 @@ describe('local plugin semantic keys', () => {
     expect(issues(authored({ domOps: [copy] }, { engine: '>=1.8.0' }))).toEqual([
       {
         path: 'contributes.domOps[0].params.target',
-        message:
-          'Claude does not declare semantic key "thinkingBlock" (it declares userTurn, assistantTurn, composer, sidebar, scrollContainer, composerRoot, sendButton)',
+        message: expect.stringMatching(/^Claude does not declare semantic key "thinkingBlock" /),
       },
     ]);
     const deepseek = { engine: '>=1.8.0', matches: ['https://chat.deepseek.com/*'] };

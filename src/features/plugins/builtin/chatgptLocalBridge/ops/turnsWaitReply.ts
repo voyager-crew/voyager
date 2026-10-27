@@ -43,7 +43,9 @@ import {
   WAIT_REPLY_DEFAULT_TIMEOUT_MS,
   type WaitReplyProgress,
 } from '@/features/bridge/protocol';
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 import { hasReplyActions } from '@/features/plugins/builtin/chatgptResponseNotification/page';
+import chatgptSite from '@/features/plugins/catalog/sites/chatgpt/site.json';
 import type { SiteAdapter } from '@/features/plugins/types';
 
 import type { OpContext } from '../opContext';
@@ -76,10 +78,8 @@ const RESCOPE = Symbol('rescope');
 // ChatGPT's terminal failure copy and its usage-cap and throttling banners: its servers
 // send them in English (no UI language's messages hold them). The site's
 // `pageHooks.replyFailed` / `.rateLimit` replace these measured forms remotely.
-const THINKING_FAILED = [/^thinking failed[.!]?(?:\s+retry)?$/i];
-const RATE_LIMIT_COPY = [
-  /too many requests|sending too many requests|temporarily limited access|please wait a few minutes|rate limit(?:ed)?|usage cap|you've reached/i,
-];
+const THINKING_FAILED = chatgptSite.pageHooks.replyFailed.map((source) => new RegExp(source, 'i'));
+const RATE_LIMIT_COPY = chatgptSite.pageHooks.rateLimit.map((source) => new RegExp(source, 'i'));
 
 /** The site's patterns (checked safe when the site data was read), else the measured ones. */
 function patternsOf(sources: readonly string[] | undefined, fallback: readonly RegExp[]): RegExp[] {
@@ -92,7 +92,7 @@ function patternsOf(sources: readonly string[] | undefined, fallback: readonly R
     }
   });
 }
-const ALERT_SELECTOR = '[role="alert"], [aria-live="assertive"]';
+const ALERT_SELECTOR = chatgptPageData.replyAlert;
 
 interface Gate {
   contentKey: string;
@@ -138,7 +138,7 @@ function findTarget(
 /** The page's alerts outside the thread, as text: found by role, in every UI language. */
 function pageAlerts(): string[] {
   return Array.from(document.querySelectorAll<HTMLElement>(ALERT_SELECTOR))
-    .filter((alert) => !alert.closest('[data-turn-key]'))
+    .filter((alert) => !alert.closest(chatgptPageData.turnItem))
     .map((alert) => (alert.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 300))
     .filter(Boolean);
 }

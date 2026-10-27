@@ -1,3 +1,4 @@
+import { getBundledSiteSelectorView } from '@/core/selectors';
 /**
  * The `/library` history table: which rows are prompts, how a row drags its
  * prompt, and which rows a filed prompt hides. Pure DOM; no state of its own
@@ -5,6 +6,7 @@
  */
 import { AISTUDIO_ROOT_BUCKET_ID } from '@/features/folder/constants';
 
+import { readAIStudioLibraryRows, readAIStudioLibraryTableSelector } from './aistudioLocatorReads';
 import {
   PROMPT_LINK_SELECTOR,
   type PromptDragData,
@@ -14,11 +16,6 @@ import {
 } from './aistudioPromptLinks';
 import type { FolderData } from './types';
 
-const LIBRARY_ROW_SELECTOR = 'tr.mat-mdc-row, tr[mat-row], tr[role="row"]';
-const LIBRARY_TABLE_PART_SELECTOR = `table.mat-mdc-table, mat-table, ${LIBRARY_ROW_SELECTOR}`;
-/** Rows the hide-archived pass reads; it has never matched `tr[role="row"]`. */
-const ARCHIVABLE_ROW_SELECTOR = 'tr.mat-mdc-row, tr[mat-row]';
-const ARCHIVABLE_LINK_SELECTOR = 'a[href^="/prompts/"], a.name-btn[href*="/prompts/"]';
 const ARCHIVED_ROW_CLASS = 'gv-conversation-archived';
 
 type BoundRow = HTMLElement & { _gvLibraryDragBound?: boolean };
@@ -32,9 +29,7 @@ function promptAnchor(row: HTMLElement): HTMLAnchorElement | null {
 }
 
 export function getLibraryPromptRows(): HTMLElement[] {
-  return Array.from(document.querySelectorAll<HTMLElement>(LIBRARY_ROW_SELECTOR)).filter(
-    (row) => !!promptAnchor(row),
-  );
+  return readAIStudioLibraryRows().map(({ row }) => row);
 }
 
 /** The prompt a table row links to, or null for a row without one. */
@@ -91,15 +86,14 @@ export function bindLibraryRows(): void {
 }
 
 function tableMutated(mutations: MutationRecord[]): boolean {
+  const tableSelector = readAIStudioLibraryTableSelector();
+  const tableParts = `${tableSelector}, ${getBundledSiteSelectorView('aistudio').profiles['library.rows'].join(',')}`;
   return mutations.some(
     (mutation) =>
-      (mutation.target instanceof Element &&
-        !!mutation.target.closest('table.mat-mdc-table, mat-table')) ||
+      (mutation.target instanceof Element && !!mutation.target.closest(tableSelector)) ||
       Array.from(mutation.addedNodes).some(
         (node) =>
-          node instanceof Element &&
-          (node.matches(LIBRARY_TABLE_PART_SELECTOR) ||
-            !!node.querySelector(LIBRARY_TABLE_PART_SELECTOR)),
+          node instanceof Element && (node.matches(tableParts) || !!node.querySelector(tableParts)),
       ),
   );
 }
@@ -133,11 +127,10 @@ function collectArchivedPromptIds(data: FolderData): Set<string> {
 /** Hides (or shows) each /library row by whether its prompt is filed. No-op elsewhere. */
 export function applyHideArchivedRows(data: FolderData, enabled: boolean): void {
   if (!isLibraryPath()) return;
-  const rows = document.querySelectorAll<HTMLElement>(ARCHIVABLE_ROW_SELECTOR);
+  const rows = readAIStudioLibraryRows(true);
   if (rows.length === 0) return;
   const archivedIds = collectArchivedPromptIds(data);
-  rows.forEach((row) => {
-    const anchor = row.querySelector<HTMLAnchorElement>(ARCHIVABLE_LINK_SELECTOR);
+  rows.forEach(({ row, anchor }) => {
     const id = anchor ? extractPromptIdFromHref(anchor.getAttribute('href') || anchor.href) : null;
     if (id) row.classList.toggle(ARCHIVED_ROW_CLASS, enabled && archivedIds.has(id));
   });

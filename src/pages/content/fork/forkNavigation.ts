@@ -1,10 +1,7 @@
 import { logger } from '@/core/services/LoggerService';
 
+import { findForkSidebarLink } from './forkSidebar';
 import type { ForkNode } from './forkTypes';
-
-const NATIVE_CONVERSATION_LINKS =
-  '[data-test-id="conversation"] a[href], a[data-test-id="conversation"][href]';
-const NATIVE_SIDEBAR_ROOT = 'bard-sidenav, [data-test-id="all-conversations"]';
 
 function readConversationRoute(url: URL): { path: string; id: string; account: string } | null {
   const match = url.pathname.match(/^(?:\/u\/(\d+))?(\/app\/([^/]+)|\/gem\/[^/]+\/([^/]+))\/?$/);
@@ -46,22 +43,15 @@ export function navigateToForkConversation(
 
   const targetRoute = readConversationRoute(target);
   if (!targetRoute) return;
-  for (const link of document.querySelectorAll<HTMLAnchorElement>(NATIVE_CONVERSATION_LINKS)) {
-    // Voyager folder links and stale account links must not impersonate native navigation.
-    if (!link.closest(NATIVE_SIDEBAR_ROOT)) continue;
-    let url: URL;
-    try {
-      url = new URL(link.href, window.location.origin);
-    } catch {
-      continue;
-    }
+  const link = findForkSidebarLink((url) => {
     const route = readConversationRoute(url);
-    if (
-      url.origin !== window.location.origin ||
-      route?.account !== account ||
-      route.path !== targetRoute.path
-    )
-      continue;
+    return (
+      url.origin === window.location.origin &&
+      route?.account === account &&
+      route.path === targetRoute.path
+    );
+  });
+  if (link) {
     const options = { bubbles: true, cancelable: true, view: window };
     for (const type of ['pointerdown', 'mousedown', 'mouseup', 'click']) {
       link.dispatchEvent(new MouseEvent(type, options));

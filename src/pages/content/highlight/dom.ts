@@ -1,3 +1,9 @@
+import { GEMINI_PACKAGED_CONTENT } from '@/core/gemini/content/packaged';
+import {
+  getGeminiTurnView,
+  resolveGeminiTurnOperation,
+  type GeminiTurnView,
+} from '@/core/gemini/selectors';
 import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
 import {
   buildConversationIdFromUrl,
@@ -11,13 +17,7 @@ import {
 import { getLegacyTurnIndex, makeTurnId, normalizeTurnId } from '../fork/turnId';
 import { historyTimestampStore } from '../timestamp/historyTimestamps';
 
-const ASSISTANT_CONTENT_SELECTORS = [
-  'message-content',
-  '.markdown-main-panel',
-  '.markdown',
-  '.response-content',
-  'response-element',
-] as const;
+const ASSISTANT_CONTENT_SELECTORS = GEMINI_PACKAGED_CONTENT['content.highlightRoot'];
 
 const THOUGHTS_SELECTOR = 'model-thoughts, .thoughts-container, .thoughts-content';
 
@@ -50,12 +50,15 @@ function isBefore(left: Node, right: Node): boolean {
   return Boolean(left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING);
 }
 
-function getUserSelectors(): string[] {
+function getUserSelectors(view: GeminiTurnView): string[] {
   let configured = '';
   try {
     configured =
       localStorage.getItem('geminiTimelineUserTurnSelector') ||
-      localStorage.getItem('geminiTimelineUserTurnSelectorAuto') ||
+      // Auto belongs to bundled discovery: skip it while the page has an online user profile.
+      (!getGeminiTurnView().remoteKeys.has('turn.user')
+        ? localStorage.getItem('geminiTimelineUserTurnSelectorAuto')
+        : '') ||
       '';
   } catch {}
   if (configured) {
@@ -65,7 +68,7 @@ function getUserSelectors(): string[] {
       configured = '';
     }
   }
-  const defaults = getGeminiTurnSelectors('turn.user');
+  const defaults = getGeminiTurnSelectors('turn.user', view);
   return configured
     ? [configured, ...defaults.filter((selector) => selector !== configured)]
     : defaults;
@@ -85,11 +88,11 @@ function getTopLevelMatches(root: HTMLElement, selectors: readonly string[]): HT
   return filterTopLevel(matches);
 }
 
-function getAssistantMatches(root: HTMLElement): HTMLElement[] {
-  const specific = getTopLevelMatches(root, getGeminiTurnSelectors('turn.assistant'));
+function getAssistantMatches(root: HTMLElement, view: GeminiTurnView): HTMLElement[] {
+  const specific = getTopLevelMatches(root, getGeminiTurnSelectors('turn.assistant', view));
   return specific.length > 0
     ? specific
-    : getTopLevelMatches(root, getGeminiTurnSelectors('turn.assistantFallback'));
+    : getTopLevelMatches(root, getGeminiTurnSelectors('turn.assistantFallback', view));
 }
 
 function findAssistantRootForTarget(host: HTMLElement, target?: Node): HTMLElement {
@@ -116,11 +119,11 @@ function getConversationTitle(users: HTMLElement[]): string | undefined {
   return firstUserText.length > 80 ? `${firstUserText.slice(0, 77)}...` : firstUserText;
 }
 
-export function collectHighlightTurns(): HighlightTurnDom[] {
-  const userSelectors = getUserSelectors();
+function readHighlightTurns(view: GeminiTurnView): HighlightTurnDom[] {
+  const userSelectors = getUserSelectors(view);
   const root = resolveConversationRoot({ userSelectors, doc: document });
   const users = getTopLevelMatches(root, userSelectors);
-  const assistants = getAssistantMatches(root);
+  const assistants = getAssistantMatches(root, view);
   const turns: HighlightTurnDom[] = [];
   let assistantIndex = 0;
 
@@ -139,7 +142,6 @@ export function collectHighlightTurns(): HighlightTurnDom[] {
     assistantIndex += 1;
 
     const turnId = makeTurnId(userElement, index);
-    userElement.dataset.turnId = turnId;
     turns.push({
       turnId,
       userElement,
@@ -148,6 +150,18 @@ export function collectHighlightTurns(): HighlightTurnDom[] {
     });
   });
 
+  return turns;
+}
+
+export function collectHighlightTurns(): HighlightTurnDom[] {
+  const { value: turns } = resolveGeminiTurnOperation(
+    readHighlightTurns,
+    (turns) => turns.length > 0,
+  );
+  // A rejected online read must not leave turn ids on nodes that highlighting never accepted.
+  turns.forEach(({ userElement, turnId }) => {
+    userElement.dataset.turnId = turnId;
+  });
   return turns;
 }
 

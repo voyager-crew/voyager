@@ -5,32 +5,33 @@
  * observes or reads responses on its own.
  */
 import {
+  acceptsGeminiContentCollection,
+  resolveGeminiAnswerElement,
+} from '@/core/gemini/content/reads';
+import {
+  getGeminiSelectorView,
+  resolveGeminiSelectorOperationInView,
+  type GeminiSelectorView,
+} from '@/core/gemini/selectors';
+import {
   type ContentExtractor,
   createContentExtractor,
 } from '@/features/export/services/DOMContentExtractor';
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/research-pack-packaged.json';
 import type { ResearchPackDraftItem } from '@/features/researchPack/services/types';
 
+import { buildGeminiAdapter } from '../export/adapter/platform/gemini';
 import { resolveExportAdapter } from '../export/adapter/platformAdapters';
+import { readResearchActionBar, resolveResearchActionBars } from './actionTargets';
 
-export const RESPONSE_HOST_SELECTOR = 'model-response';
-const THOUGHTS_SELECTOR = 'model-thoughts, .thoughts-container, .thoughts-content';
+export const RESPONSE_HOST_SELECTOR = packaged['researchPack.host'];
+const THOUGHTS_SELECTOR = packaged['researchPack.thoughts'];
 /** Action bars hold share/feedback links, never sources. */
-const ACTION_BAR_LINK_SCOPE = 'message-actions, .message-actions';
+const ACTION_BAR_LINK_SCOPE = packaged['researchPack.actionLinkScope'];
 
-function queryOutsideThoughts<T extends Element>(root: Element, selector: string): T | null {
-  for (const element of Array.from(root.querySelectorAll<T>(selector))) {
-    if (!element.closest(THOUGHTS_SELECTOR)) return element;
-  }
-  return null;
-}
-
-/** The element whose content is the answer itself (not thoughts, not the action bar). */
+/** The answer root is resolved before extraction, with the operation host fixed. */
 export function resolveAnswerElement(host: HTMLElement): HTMLElement {
-  return (
-    queryOutsideThoughts<HTMLElement>(host, 'message-content') ??
-    queryOutsideThoughts<HTMLElement>(host, '.markdown, .markdown-main-panel') ??
-    host
-  );
+  return resolveGeminiAnswerElement(host, undefined, checkedCaptureView(host));
 }
 
 /**
@@ -49,10 +50,21 @@ export function readSelectionWithin(answer: HTMLElement, selection: Selection | 
  * source list, which the Markdown extractor deliberately drops. Links inside
  * thoughts and the action bar are skipped; normalization happens later.
  */
-export function collectAnswerLinks(host: HTMLElement): Array<{ url: string; title: string }> {
+export function collectAnswerLinks(
+  host: HTMLElement,
+  view: GeminiSelectorView = getGeminiSelectorView(),
+): Array<{ url: string; title: string }> {
   const links: Array<{ url: string; title: string }> = [];
+  const repairedBar = view.remoteKeys.has('researchPack.actionBars')
+    ? resolveResearchActionBars([host], view)[0]
+    : null;
   for (const anchor of Array.from(host.querySelectorAll<HTMLAnchorElement>('a[href]'))) {
-    if (anchor.closest(THOUGHTS_SELECTOR) || anchor.closest(ACTION_BAR_LINK_SCOPE)) continue;
+    if (
+      anchor.closest(THOUGHTS_SELECTOR) ||
+      anchor.closest(ACTION_BAR_LINK_SCOPE) ||
+      repairedBar?.contains(anchor)
+    )
+      continue;
     const href = anchor.getAttribute('href') ?? '';
     if (!href || href.startsWith('#')) continue;
     const title =
@@ -62,9 +74,10 @@ export function collectAnswerLinks(host: HTMLElement): Array<{ url: string; titl
   return links;
 }
 
-function readPrompt(host: HTMLElement, extractor: ContentExtractor): string {
-  const container = host.closest('.conversation-container');
-  const userQuery = container?.querySelector<HTMLElement>('user-query');
+function readPrompt(
+  userQuery: HTMLElement | null | undefined,
+  extractor: ContentExtractor,
+): string {
   if (!userQuery) return '';
   try {
     const text = extractor.extractUserContent(userQuery).text;
@@ -85,23 +98,54 @@ function readAnswerMarkdown(answer: HTMLElement, extractor: ContentExtractor): s
   return answer.innerText || answer.textContent || '';
 }
 
+function checkedCaptureView(host: HTMLElement, userQuery?: HTMLElement | null): GeminiSelectorView {
+  const current = getGeminiSelectorView();
+  if (
+    !(['content.answer', 'content.userLines', 'researchPack.actionBars'] as const).some((key) =>
+      current.remoteKeys.has(key),
+    )
+  )
+    return current;
+  const prompt =
+    userQuery ??
+    host
+      .closest(packaged['researchPack.conversation'])
+      ?.querySelector<HTMLElement>(packaged['researchPack.user']);
+  // One rejected prompt/answer locator must not leave the paired draft on a mixed profile.
+  return resolveGeminiSelectorOperationInView(
+    current,
+    (candidate) => candidate,
+    (candidate) =>
+      acceptsGeminiContentCollection(prompt ? [prompt] : [], [host], candidate) &&
+      (!candidate.remoteKeys.has('researchPack.actionBars') ||
+        readResearchActionBar(host, candidate) === resolveResearchActionBars([host], candidate)[0]),
+  ).value;
+}
+
 /**
  * Build the draft for one answer. `selectedText`, when non-empty, replaces the
  * whole answer so the user can add only the part that matters.
  */
 export function captureAnswer(host: HTMLElement, selectedText: string): ResearchPackDraftItem {
-  const adapter = resolveExportAdapter();
+  const originalAdapter = resolveExportAdapter();
+  const container = host.closest(packaged['researchPack.conversation']);
+  const userQuery = container?.querySelector<HTMLElement>(packaged['researchPack.user']);
+  const view = checkedCaptureView(host, userQuery);
+  const adapter =
+    originalAdapter.site.id === 'gemini'
+      ? buildGeminiAdapter(originalAdapter.site, view)
+      : originalAdapter;
   const extractor = createContentExtractor(adapter);
 
-  const answer = resolveAnswerElement(host);
+  const answer = resolveGeminiAnswerElement(host, undefined, view);
   const excerpt = selectedText.length > 0;
   return {
     text: excerpt ? selectedText : readAnswerMarkdown(answer, extractor),
     excerpt,
-    prompt: readPrompt(host, extractor),
+    prompt: readPrompt(userQuery, extractor),
     sourceTitle: adapter.extractConversationTitle(),
     sourceUrl: window.location.href,
     platform: adapter.site.id,
-    citations: collectAnswerLinks(host),
+    citations: collectAnswerLinks(host, view),
   };
 }

@@ -1,0 +1,13 @@
+{
+  "project.send": [
+    "button[aria-label*=\"Send\"]",
+    "button[aria-label*=\"send\"]",
+    "button[data-tooltip*=\"Send\"]",
+    "button[data-tooltip*=\"send\"]",
+    "[data-send-button]",
+    ".send-button"
+  ],
+  "project.modelAnchor": [".model-picker-container"],
+  "project.inputAnchor": ["rich-textarea"],
+  "project.fontSource": [".model-picker-container button"]
+}

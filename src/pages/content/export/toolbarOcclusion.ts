@@ -56,6 +56,7 @@ export function detectToolbarOcclusion(
   ) {
     const layer = coveringLayer(
       hostStackAt(toolbarRoot, rect.left + rect.width / 2, rect.top + rect.height / 2),
+      toolbarRoot,
     );
     if (layer) occluders.push(layer);
   }

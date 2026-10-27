@@ -1,0 +1,6 @@
+{
+  "imageExport.searchHosts": [
+    ".attachment-container.search-images",
+    ".image-container[data-full-size-image-uri]"
+  ]
+}

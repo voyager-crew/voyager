@@ -1,37 +1,33 @@
-import { findComposer, insertIntoComposer } from '@/core/services/composer';
+import { findGeminiChatInput, readChatInput } from '@/core/gemini/composer/inputs';
+import { insertIntoComposer } from '@/core/services/composer';
+import {
+  inputSiteId,
+  packagedInputSelectors,
+  packagedSiteInputSelectors,
+} from '@/core/services/composer/siteInputData';
+import { findSiteChatInput } from '@/core/services/composer/siteInputReads';
 
 import { nativeHealthReporter } from '../nativeHealth';
 import { hasRenderedConversationContent } from '../nativeHealth/pageEvidence';
 
-const CHAT_INPUT_SELECTORS = [
-  '[data-testid="chat-input"][contenteditable="true"]',
-  '#prompt-textarea[contenteditable="true"]',
-  '[data-composer-markdown][contenteditable="true"]',
-  'rich-textarea [contenteditable="true"]',
-  'div[contenteditable="true"][role="textbox"]',
-  '.input-area textarea',
-  'textarea[placeholder*="Ask"]',
-  'textarea',
-] as const;
+const CHAT_INPUT_SELECTORS = packagedSiteInputSelectors(null, 'input.candidates');
 
 /** Every chat input candidate as one selector list, for layout-free matching. */
 export const CHAT_INPUT_SELECTOR = CHAT_INPUT_SELECTORS.join(', ');
 
 interface FindChatInputOptions {
   requireVisible?: boolean;
+  /** Explicit composer owners only; Vim and prompt use their own profiles, health keeps the bundle. */
+  online?: boolean;
 }
 
 export function findChatInput(options: FindChatInputOptions = {}): HTMLElement | null {
-  const requireVisible = options.requireVisible ?? true;
-  let fallback: HTMLElement | null = null;
-
-  for (const selector of CHAT_INPUT_SELECTORS) {
-    const visible = findComposer(selector);
-    if (visible) return visible;
-    fallback ??= findComposer(selector, { requireVisible: false });
-  }
-
-  return requireVisible ? null : fallback;
+  const site = inputSiteId();
+  if (site && site !== 'gemini') return findSiteChatInput(site, options);
+  if (!site) return readChatInput(packagedInputSelectors('input.candidates'), options);
+  return options.online
+    ? findGeminiChatInput(options)
+    : readChatInput(CHAT_INPUT_SELECTORS, options);
 }
 
 /**
@@ -53,7 +49,10 @@ function noteComposer(found: boolean): void {
   });
 }
 
-export function insertTextIntoChatInput(text: string, input = findChatInput()): boolean {
+export function insertTextIntoChatInput(
+  text: string,
+  input = findChatInput({ online: true }),
+): boolean {
   if (text.length === 0) return false;
   noteComposer(input !== null);
   if (!input) return false;

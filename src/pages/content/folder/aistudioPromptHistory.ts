@@ -1,3 +1,5 @@
+import { aistudioPackagedSelector, aistudioPackagedList } from './aistudioLocatorReads';
+import { readAIStudioDragHost, readAIStudioPromptClick } from './aistudioNavigationReads';
 import {
   PROMPT_LINK_SELECTOR,
   collectNativePromptTitles,
@@ -19,29 +21,9 @@ import type { FolderData } from './types';
 
 const PROMPT_LIST_BIND_DEBOUNCE_MS = 120;
 const PROMPT_TITLE_SYNC_DEBOUNCE_MS = 280;
-const PROMPT_DRAG_HOST_SELECTORS = [
-  '[data-test-id^="history-item"]',
-  '[role="listitem"]',
-  '.mat-mdc-list-item',
-  'li',
-];
-export const BODY_PROMPT_POPOVER_SELECTOR = [
-  '.cdk-overlay-container',
-  '.cdk-overlay-pane',
-  '[role="menu"]',
-  '[role="listbox"]',
-  '[role="dialog"]',
-].join(', ');
+export const BODY_PROMPT_POPOVER_SELECTOR = aistudioPackagedSelector('history.popovers');
 
 type DragBoundHost = HTMLElement & { _gvDragBound?: boolean };
-
-function promptDragHost(anchor: HTMLAnchorElement): HTMLElement {
-  for (const selector of PROMPT_DRAG_HOST_SELECTORS) {
-    const match = anchor.closest<HTMLElement>(selector);
-    if (match) return match;
-  }
-  return anchor.parentElement || anchor;
-}
 
 /** The anchor a drag on `host` started from: the one under the pointer, else the host's own. */
 function draggedAnchor(
@@ -88,7 +70,7 @@ export function bindPromptDragSources(
     if (unbound(anchor)) anchors.push(anchor);
   });
   for (const anchor of anchors) {
-    const host = promptDragHost(anchor);
+    const host = readAIStudioDragHost(anchor);
     anchor.dataset.gvDragBound = '1';
     bindDragHost(host, links);
   }
@@ -150,12 +132,13 @@ export function watchPromptHistory(
       subtree: true,
       characterData: true,
       attributes: true,
-      attributeFilter: ['title', 'aria-label', 'href'],
+      attributeFilter: [...aistudioPackagedList('history.observe')],
     });
   } catch {}
 
   const onClick = (event: Event) => {
-    const link = (event.target as HTMLElement | null)?.closest?.('a.prompt-link');
+    const link =
+      event.target instanceof Element ? readAIStudioPromptClick(event.target, root) : null;
     if (link && /\/prompts\//.test(link.getAttribute('href') || '')) {
       setTimeout(hooks.onPromptClick, 0);
     }

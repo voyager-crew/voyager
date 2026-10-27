@@ -1,0 +1,372 @@
+[
+  ["siteId", "aistudio"],
+  ["profiles/userTurn", [".user-prompt-container, [data-turn-role=\"User\"]"]],
+  ["profiles/assistantTurn", [".model-prompt-container, [data-turn-role=\"Model\"]"]],
+  [
+    "profiles/composer",
+    [
+      "ms-prompt-box textarea[formcontrolname=promptText], ms-chunk-input textarea, textarea[aria-label]"
+    ]
+  ],
+  ["profiles/sidebar", [".gv-aistudio .gv-folder-container"]],
+  ["profiles/composerRoot", ["ms-prompt-box"]],
+  ["profiles/sendButton", ["ms-run-button > button"]],
+  [
+    "profiles/input.candidates",
+    [
+      "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+      "#prompt-textarea[contenteditable=\"true\"]",
+      "[data-composer-markdown][contenteditable=\"true\"]",
+      "rich-textarea [contenteditable=\"true\"]",
+      "div[contenteditable=\"true\"][role=\"textbox\"]",
+      ".input-area textarea",
+      "textarea[placeholder*=\"Ask\"]",
+      "textarea"
+    ]
+  ],
+  ["profiles/library.rows", ["tr.mat-mdc-row, tr[mat-row], tr[role=\"row\"]"]],
+  ["profiles/library.archivableRows", ["tr.mat-mdc-row, tr[mat-row]"]],
+  ["profiles/library.table", ["table.mat-mdc-table, mat-table"]],
+  ["profiles/library.archivableLink", ["a[href^=\"/prompts/\"], a.name-btn[href*=\"/prompts/\"]"]],
+  [
+    "profiles/navigation.libraryLink",
+    [".nav-content a[href=\"/library\"], .nav-content a[href$=\"aistudio.google.com/library\"]"]
+  ],
+  [
+    "profiles/history.dragHosts",
+    ["[data-test-id^=\"history-item\"]", "[role=\"listitem\"]", ".mat-mdc-list-item", "li"]
+  ],
+  ["profiles/history.click", ["a.prompt-link"]],
+  ["profiles/navigation.promptLink", ["ms-prompt-history-v3 a.prompt-link"]],
+  ["profiles/navigation.navChild", [":scope > nav"]],
+  ["profiles/navigation.historyRoot", ["ms-prompt-history-v3"]],
+  ["profiles/navigation.sidebar", [".nav-content.v3-left-nav"]],
+  [
+    "profiles/navigation.anchorSteps",
+    [":scope > nav > .empty-space", ":scope > nav > .bottom-actions"]
+  ],
+  ["profiles/navigation.empty", [":scope > .empty-space"]],
+  ["profiles/navigation.bottom", [":scope > .bottom-actions"]],
+  [
+    "profiles/exportLayout.controls",
+    [
+      "top-bar-actions",
+      ".top-bar-actions",
+      "[data-test-id=\"top-bar-actions\"]",
+      "side-nav-sparkle-button",
+      "side-nav-menu-button",
+      "[data-test-id*=\"upgrade\" i]",
+      "[aria-label*=\"upgrade\" i]",
+      "#conversation-header-actions",
+      "[data-testid=\"share-chat-button\"]",
+      "[data-testid=\"conversation-options-button\"]"
+    ]
+  ],
+  [
+    "profiles/exportLayout.broadControls",
+    ["[aria-label*=\"pro\" i]", "[aria-label*=\"advanced\" i]"]
+  ],
+  ["profiles/exportLayout.canvasOwner", ["inline-preview, immersive-panel"]],
+  ["profiles/exportLayout.canvasContent", ["immersive-editor, code-immersive-panel"]],
+  ["profiles/exportLayout.fullscreenCanvas", ["immersive-panel"]],
+  [
+    "profiles/exportLayout.inactiveCanvas",
+    ["deep-research-immersive-panel, [hidden], [aria-hidden=\"true\"]"]
+  ],
+  ["profiles/exportLayout.turns", ["user-query, model-response, [data-message-author-role]"]],
+  ["profiles/exportLayout.interactive", ["button, a[href], [role=\"button\"]"]],
+  [
+    "profiles/exportLayout.overlaySidebar",
+    [
+      "[data-test-id=\"side-nav\"]",
+      "side-navigation",
+      "mat-sidenav",
+      "aside",
+      "nav",
+      ".side-nav",
+      ".sidenav",
+      ".chat-history-nav"
+    ]
+  ],
+  ["profiles/exportLayout.fallbackRoot", ["main"]],
+  [
+    "profiles/exportLayout.alignmentCanvas",
+    [
+      "#chat-history",
+      "infinite-scroller.chat-history",
+      ".chat-history-scroll-container",
+      "chat-window-content",
+      "main chat-window-content"
+    ]
+  ],
+  [
+    "profiles/exportLayout.alignmentComposer",
+    [
+      "rich-textarea",
+      "[aria-label*=\"Enter a prompt\"]",
+      "[aria-label*=\"prompt\"]",
+      "[aria-label*=\"Gemini\"]",
+      "[contenteditable=\"true\"][aria-label]"
+    ]
+  ],
+  [
+    "profiles/input.clearance",
+    [
+      "form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message"
+    ]
+  ],
+  ["profiles/input.fab", ["span.mat-mdc-button-touch-target"]],
+  ["profiles/vim.host", [".text-input-field, input-area-v2, input-container"]],
+  ["profiles/vim.inputFallback", ["rich-textarea"]],
+  ["profiles/vim.mountInput", ["#prompt-textarea[contenteditable=\"true\"]"]],
+  ["profiles/vim.mountRoot", ["form"]],
+  ["profiles/vim.mountChatInput", ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]],
+  ["profiles/vim.mountChatRoot", ["fieldset"]],
+  ["profiles/timeline.userText", ["[data-user-message-bubble], .query-text, .ds-collapsible-text"]],
+  [
+    "packagedInput",
+    [
+      ["input.candidates", [":not(*)"]],
+      [
+        "input.clearance",
+        [
+          "form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message"
+        ]
+      ],
+      ["input.fab", ["span.mat-mdc-button-touch-target"]],
+      ["vim.candidates", [":not(*)"]],
+      ["vim.editable", ["input, textarea, select, [contenteditable=\"true\"], [role=\"textbox\"]"]],
+      [
+        "vim.editInputs",
+        [
+          ".query-content.edit-mode textarea",
+          ".edit-container textarea",
+          "textarea[aria-label=\"Edit prompt\"]",
+          "textarea[aria-label=\"Edit message\"]"
+        ]
+      ],
+      [
+        "vim.sendTarget",
+        [
+          ".update-button",
+          "button[aria-label*=\"Send\"]",
+          "button[aria-label*=\"send\"]",
+          "button[data-tooltip*=\"Send\"]",
+          "button[data-tooltip*=\"send\"]",
+          "button mat-icon[fonticon=\"send\"]",
+          "[data-send-button]",
+          ".send-button",
+          "button[aria-label*=\"Update\"]",
+          "button[aria-label*=\"Save\"]",
+          "button[aria-label*=\"更新\"]"
+        ]
+      ],
+      ["vim.editForm", ["mat-form-field.edit-form, .edit-form"]],
+      ["vim.host", [".text-input-field, input-area-v2, input-container"]],
+      ["vim.inputFallback", ["rich-textarea"]],
+      [
+        "vim.hud",
+        [
+          "toolbox-drawer .toolbox-drawer-button-label-icon-text",
+          "toolbox-drawer .toolbox-drawer-button-label",
+          "toolbox-drawer .toolbox-drawer-button-container",
+          "toolbox-drawer button",
+          "toolbox-drawer .toolbox-drawer-container",
+          "[class*=\"toolbox-drawer\"] .toolbox-drawer-button-label-icon-text",
+          "[class*=\"toolbox-drawer\"] button",
+          "button[aria-label*=\"Tools\"]",
+          "button[aria-label*=\"tools\"]",
+          "button[aria-label*=\"工具\"]",
+          "button[aria-label*=\"ツール\"]",
+          "button[aria-label*=\"도구\"]"
+        ]
+      ],
+      ["vim.mountInput", ["#prompt-textarea[contenteditable=\"true\"]"]],
+      ["vim.mountRoot", ["form"]],
+      ["vim.mountChatInput", ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]],
+      ["vim.mountChatRoot", ["fieldset"]],
+      ["vim.crossSiteEdit", ["textarea[aria-label=\"Edit message\"]"]],
+      ["vim.editActions", ["button"]]
+    ]
+  ],
+  [
+    "timeline",
+    [
+      ["timeline.userText", "[data-user-message-bubble], .query-text, .ds-collapsible-text"],
+      ["guide.overlays", ["[role=\"menu\"]", "[role=\"dialog\"]", "[role=\"alertdialog\"]"]]
+    ]
+  ],
+  [
+    "sendPolicy",
+    [
+      "[contenteditable=\"true\"], [role=\"textbox\"], textarea",
+      [
+        ".text-input-field",
+        "ms-prompt-box",
+        "ms-prompt-input-wrapper",
+        "ms-prompt-input",
+        "ms-chat-turn-input",
+        "ms-autosize-textarea",
+        ".prompt-input-wrapper",
+        ".prompt-input-container",
+        ".user-query-container.edit-mode",
+        ".edit-container",
+        "chat-message",
+        "form",
+        "[role=\"dialog\"]",
+        ".mat-mdc-dialog-container"
+      ]
+    ]
+  ],
+  [
+    "export-layout-packaged.json/controls",
+    [
+      "top-bar-actions",
+      ".top-bar-actions",
+      "[data-test-id=\"top-bar-actions\"]",
+      "side-nav-sparkle-button",
+      "side-nav-menu-button",
+      "[data-test-id*=\"upgrade\" i]",
+      "[aria-label*=\"upgrade\" i]",
+      "#conversation-header-actions",
+      "[data-testid=\"share-chat-button\"]",
+      "[data-testid=\"conversation-options-button\"]"
+    ]
+  ],
+  [
+    "export-layout-packaged.json/broadControls",
+    ["[aria-label*=\"pro\" i]", "[aria-label*=\"advanced\" i]"]
+  ],
+  ["export-layout-packaged.json/canvasOwner", "inline-preview, immersive-panel"],
+  ["export-layout-packaged.json/canvasContent", "immersive-editor, code-immersive-panel"],
+  ["export-layout-packaged.json/fullscreenCanvas", "immersive-panel"],
+  [
+    "export-layout-packaged.json/inactiveCanvas",
+    "deep-research-immersive-panel, [hidden], [aria-hidden=\"true\"]"
+  ],
+  ["export-layout-packaged.json/turns", "user-query, model-response, [data-message-author-role]"],
+  ["export-layout-packaged.json/interactive", "button, a[href], [role=\"button\"]"],
+  [
+    "export-layout-packaged.json/overlaySidebar",
+    [
+      "[data-test-id=\"side-nav\"]",
+      "side-navigation",
+      "mat-sidenav",
+      "aside",
+      "nav",
+      ".side-nav",
+      ".sidenav",
+      ".chat-history-nav"
+    ]
+  ],
+  ["export-layout-packaged.json/fallbackRoot", "main"],
+  [
+    "export-layout-packaged.json/alignmentCanvas",
+    [
+      "#chat-history",
+      "infinite-scroller.chat-history",
+      ".chat-history-scroll-container",
+      "chat-window-content",
+      "main chat-window-content"
+    ]
+  ],
+  [
+    "export-layout-packaged.json/alignmentComposer",
+    [
+      "rich-textarea",
+      "[aria-label*=\"Enter a prompt\"]",
+      "[aria-label*=\"prompt\"]",
+      "[aria-label*=\"Gemini\"]",
+      "[contenteditable=\"true\"][aria-label]"
+    ]
+  ],
+  [
+    "input-packaged.json/input.clearance",
+    [
+      "form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message"
+    ]
+  ],
+  [
+    "input-packaged.json/composer.keyEditables",
+    "[contenteditable=\"true\"], [role=\"textbox\"], textarea"
+  ],
+  [
+    "input-packaged.json/composer.sendContainers",
+    [
+      ".text-input-field",
+      "ms-prompt-box",
+      "ms-prompt-input-wrapper",
+      "ms-prompt-input",
+      "ms-chat-turn-input",
+      "ms-autosize-textarea",
+      ".prompt-input-wrapper",
+      ".prompt-input-container",
+      ".user-query-container.edit-mode",
+      ".edit-container",
+      "chat-message",
+      "form",
+      "[role=\"dialog\"]",
+      ".mat-mdc-dialog-container"
+    ]
+  ],
+  ["input-packaged.json/input.fab", ["span.mat-mdc-button-touch-target"]],
+  ["input-packaged.json/input.nativeOwner", ["ms-chunk-input"]],
+  [
+    "input-packaged.json/vim.editable",
+    ["input, textarea, select, [contenteditable=\"true\"], [role=\"textbox\"]"]
+  ],
+  [
+    "input-packaged.json/vim.editInputs",
+    [
+      ".query-content.edit-mode textarea",
+      ".edit-container textarea",
+      "textarea[aria-label=\"Edit prompt\"]",
+      "textarea[aria-label=\"Edit message\"]"
+    ]
+  ],
+  [
+    "input-packaged.json/vim.sendTarget",
+    [
+      ".update-button",
+      "button[aria-label*=\"Send\"]",
+      "button[aria-label*=\"send\"]",
+      "button[data-tooltip*=\"Send\"]",
+      "button[data-tooltip*=\"send\"]",
+      "button mat-icon[fonticon=\"send\"]",
+      "[data-send-button]",
+      ".send-button",
+      "button[aria-label*=\"Update\"]",
+      "button[aria-label*=\"Save\"]",
+      "button[aria-label*=\"更新\"]"
+    ]
+  ],
+  ["input-packaged.json/vim.editForm", ["mat-form-field.edit-form, .edit-form"]],
+  ["input-packaged.json/vim.host", [".text-input-field, input-area-v2, input-container"]],
+  ["input-packaged.json/vim.inputFallback", ["rich-textarea"]],
+  [
+    "input-packaged.json/vim.hud",
+    [
+      "toolbox-drawer .toolbox-drawer-button-label-icon-text",
+      "toolbox-drawer .toolbox-drawer-button-label",
+      "toolbox-drawer .toolbox-drawer-button-container",
+      "toolbox-drawer button",
+      "toolbox-drawer .toolbox-drawer-container",
+      "[class*=\"toolbox-drawer\"] .toolbox-drawer-button-label-icon-text",
+      "[class*=\"toolbox-drawer\"] button",
+      "button[aria-label*=\"Tools\"]",
+      "button[aria-label*=\"tools\"]",
+      "button[aria-label*=\"工具\"]",
+      "button[aria-label*=\"ツール\"]",
+      "button[aria-label*=\"도구\"]"
+    ]
+  ],
+  ["input-packaged.json/vim.mountInput", ["#prompt-textarea[contenteditable=\"true\"]"]],
+  ["input-packaged.json/vim.mountRoot", ["form"]],
+  [
+    "input-packaged.json/vim.mountChatInput",
+    ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]
+  ],
+  ["input-packaged.json/vim.mountChatRoot", ["fieldset"]],
+  ["input-packaged.json/vim.crossSiteEdit", ["textarea[aria-label=\"Edit message\"]"]],
+  ["input-packaged.json/vim.editActions", ["button"]]
+]

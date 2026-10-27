@@ -107,6 +107,7 @@ export function createPromptManagerEngine(
   adapter: PromptSiteAdapter,
   cleanup: CleanupManager,
   lifetime?: AbortSignal,
+  beforeMount?: () => Promise<void>,
 ): PromptManagerEngine {
   const retired = (): boolean => lifetime?.aborted === true;
   const slash: NativeFeature = {
@@ -164,9 +165,13 @@ export function createPromptManagerEngine(
   return {
     async startComposerFeatures() {
       if (!adapter.slash) return;
-      const slashToggle = createNativeFeatureToggle(cleanup, slash);
+      const slashToggle = createNativeFeatureToggle(cleanup, slash, lifetime, beforeMount);
       follow(slashToggle);
-      await applyInitial(slashToggle, await readSlashEnabled(), 'slash completion');
+      const enabled = await readSlashEnabled();
+      // Otherwise a fast native setting read freezes out an already-cached first-load repair.
+      await beforeMount?.();
+      if (retired()) return;
+      await applyInitial(slashToggle, enabled, 'slash completion');
 
       // Chips restore what a sent slash token looked like. They follow the
       // site, never the slash setting: turning slash off must not re-expand
@@ -179,18 +184,23 @@ export function createPromptManagerEngine(
     },
 
     async startPanel() {
-      await mountNativeFeature(cleanup, panel, lifetime);
+      await mountNativeFeature(cleanup, panel, lifetime, beforeMount);
     },
 
     async followCoverage(host) {
-      const coverage = createNativeFeatureToggle(cleanup, {
-        ...panel,
-        toggle: {
-          key: StorageKeys.PROMPT_CUSTOM_WEBSITES,
-          isEnabled: (value) => customWebsitesIncludeHost(value, host),
-          areas: ['sync'],
+      const coverage = createNativeFeatureToggle(
+        cleanup,
+        {
+          ...panel,
+          toggle: {
+            key: StorageKeys.PROMPT_CUSTOM_WEBSITES,
+            isEnabled: (value) => customWebsitesIncludeHost(value, host),
+            areas: ['sync'],
+          },
         },
-      });
+        lifetime,
+        beforeMount,
+      );
       follow(coverage);
       await applyInitial(coverage, await readPromptCoverage(host), 'the Prompt Manager');
     },

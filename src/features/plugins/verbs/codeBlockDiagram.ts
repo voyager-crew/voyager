@@ -24,7 +24,6 @@
  * `exportImage` lets export read the drawn diagram (`diagramExportRegistry.ts`)
  * instead of the block's source in PNG and PDF.
  */
-import type { Result } from '@/core/types/common';
 import {
   type DiagramKind,
   type DiagramToolbarIcon,
@@ -32,15 +31,23 @@ import {
 } from '@/core/ui/diagramToolbar';
 import { SCHEME_ATTR, type Scheme, getScheme } from '@/pages/content/platformTheme/scheme';
 
-import type { ManifestIssue } from '../manifest/validate';
 import type { Dispose, PluginScope } from '../runtime/pluginScope';
+import { startDiagramDraw } from './codeBlockDiagramDraw';
+import { querySafe, readCodeBlock } from './codeBlockDiagramRead';
 import { HIDDEN_ATTR, PAGE_CSS, PANEL_CLASS, SHADOW_CSS } from './codeBlockDiagramStyles';
+import {
+  createDiagramRead,
+  usesGeminiCodeFixes,
+  usesCatalogCodeFixes,
+} from './codeBlockDiagramTargets';
 import {
   DIAGRAM_OWNER_ATTR,
   type DiagramExport,
   provideDiagramExport,
+  ownDiagramSource,
 } from './diagramExportRegistry';
 import type { PrimitiveContext } from './types';
+export { readCodeBlock, validateCodeBlockDiagramParams } from './codeBlockDiagramRead';
 
 export interface CodeBlockDiagramParams {
   readonly turn?: string;
@@ -83,9 +90,6 @@ export interface CodeBlockDiagram {
   exportHtml?(target: HTMLElement): string | null;
 }
 
-const SELECTOR_PARAMS: readonly string[] = ['turn', 'codeBlock', 'code', 'codeLine', 'language'];
-const BOOLEAN_PARAMS: readonly string[] = ['copyButton', 'exportImage'];
-const MAX_SELECTOR_LENGTH = 2_000;
 /** Gemini's pacing: streaming replies settle before a diagram is drawn. */
 const RESCAN_DELAY_MS = 1_000;
 const DEFAULT_CODE_BLOCK = 'pre';
@@ -93,87 +97,21 @@ const DEFAULT_CODE_BLOCK = 'pre';
 const OWNER_ATTR = DIAGRAM_OWNER_ATTR;
 /** How long the copy button shows that it copied. */
 const COPIED_MS = 1_500;
-const LANGUAGE_CLASS = /(?:^|\s)lang(?:uage)?-(\S+)/i;
-/**
- * A language label is an id such as `mermaid`, `c++` or `objective-c`. Hosts
- * print a localized phrase on a block without one (ChatGPT: 纯文本, Texte brut),
- * which no list can cover, so anything not shaped like an id is no label.
- */
-const LANGUAGE_ID = /^[a-z0-9_+#.-]{1,32}$/;
-/** Ids that name no language either, so the block's content still decides. */
-const PLAIN_TEXT_IDS: ReadonlySet<string> = new Set(['text', 'plaintext', 'plain', 'txt']);
+interface CodeOrigin {
+  readonly reply: Element | null;
+  readonly source: Element;
+}
 
 interface Panel {
   readonly host: HTMLElement;
   readonly target: HTMLElement;
+  readonly releaseSource: () => void;
+  origin: CodeOrigin | null;
   /** Source of the last draw; null asks the next scan to draw again. */
   source: string | null;
   cleanup: void | (() => void);
   /** Withdraws the export of the current drawing; null while there is none. */
   withdraw: (() => void) | null;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function querySafe(root: ParentNode, selector: string): Element[] {
-  try {
-    return Array.from(root.querySelectorAll(selector));
-  } catch {
-    return [];
-  }
-}
-
-function classLanguage(element: Element): string | undefined {
-  return LANGUAGE_CLASS.exec(element.getAttribute('class') ?? '')?.[1];
-}
-
-/** `label` as a lowercase language id, or null when it names no language. */
-function languageId(label: string | null | undefined): string | null {
-  const id = label?.trim().toLowerCase();
-  return id && LANGUAGE_ID.test(id) && !PLAIN_TEXT_IDS.has(id) ? id : null;
-}
-
-export function validateCodeBlockDiagramParams(
-  raw: unknown,
-): Result<CodeBlockDiagramParams, ManifestIssue[]> {
-  if (raw !== undefined && !isRecord(raw)) {
-    return { success: false, error: [{ path: 'params', message: 'must be an object' }] };
-  }
-  const issues: ManifestIssue[] = [];
-  const params: Record<string, string | boolean> = {};
-  for (const [key, value] of Object.entries(raw ?? {})) {
-    if (BOOLEAN_PARAMS.includes(key)) {
-      if (typeof value === 'boolean') params[key] = value;
-      else issues.push({ path: `params.${key}`, message: 'must be true or false' });
-    } else if (!SELECTOR_PARAMS.includes(key)) {
-      issues.push({ path: `params.${key}`, message: 'unknown parameter' });
-    } else if (typeof value !== 'string' || !value.trim() || value.length > MAX_SELECTOR_LENGTH) {
-      issues.push({ path: `params.${key}`, message: 'must be a non-empty selector' });
-    } else {
-      params[key] = value;
-    }
-  }
-  return issues.length > 0 ? { success: false, error: issues } : { success: true, data: params };
-}
-
-/** A code block's language id (lowercase; null when untagged or plain text) and source text. */
-export function readCodeBlock(
-  block: Element,
-  params: CodeBlockDiagramParams,
-): { language: string | null; source: string } {
-  const code = querySafe(block, params.code ?? 'code')[0] ?? block;
-  const lines = params.codeLine ? querySafe(code, params.codeLine) : [];
-  const source =
-    lines.length > 0
-      ? lines.map((line) => line.textContent ?? '').join('\n')
-      : (code.textContent ?? '');
-  const label = params.language ? querySafe(block, params.language)[0]?.textContent : null;
-  // A localized "plain text" label is no language: the block's content decides, as on Gemini.
-  const language =
-    languageId(label) ?? languageId(classLanguage(code)) ?? languageId(classLanguage(block));
-  return { language, source };
 }
 
 export function activateCodeBlockDiagram(
@@ -186,7 +124,12 @@ export function activateCodeBlockDiagram(
   const turn = params.turn ?? adapter?.selectors.assistantTurn;
   if (!turn) return;
   const blockSelector = params.codeBlock ?? adapter?.selectors.codeBlock ?? DEFAULT_CODE_BLOCK;
-  context.setTargetCounter(() => querySafe(doc, turn).length);
+  context.setTargetCounter(
+    () => querySafe(doc, params.turn ?? adapter?.selectors.assistantTurn ?? turn).length,
+  );
+  const readOperation = () => createDiagramRead(context, params, turn, blockSelector);
+  const online = () =>
+    usesGeminiCodeFixes(context, blockSelector) || usesCatalogCodeFixes(context, params);
 
   const panels = new Map<HTMLElement, Panel>();
   const owner = `${diagram.name}:${Math.random().toString(36).slice(2, 10)}`;
@@ -197,7 +140,7 @@ export function activateCodeBlockDiagram(
   const release = (block: HTMLElement): void => {
     if (block.getAttribute(OWNER_ATTR) === owner) block.removeAttribute(OWNER_ATTR);
   };
-  const drawing = new Set<HTMLElement>();
+  const drawing = new Map<HTMLElement, ReturnType<typeof startDiagramDraw>>();
   // A source that failed unexpectedly is not retried, or every rescan would redraw it.
   const failed = new WeakMap<HTMLElement, string>();
   let ready: Promise<boolean> | null = null;
@@ -209,6 +152,7 @@ export function activateCodeBlockDiagram(
     if (!panel) return;
     panels.delete(block);
     panel.withdraw?.();
+    panel.releaseSource();
     panel.cleanup?.();
     panel.host.remove();
     block.removeAttribute(HIDDEN_ATTR);
@@ -227,15 +171,28 @@ export function activateCodeBlockDiagram(
     }
   };
 
-  const currentTargetSource = (block: HTMLElement): string | null => {
+  const currentTargetSource = (
+    block: HTMLElement,
+    origin = panels.get(block)?.origin,
+  ): string | null => {
+    const read = online() ? readOperation() : null;
     if (
       scope.isDisposed ||
       !block.isConnected ||
       ownedByOther(block) ||
-      !querySafe(doc, turn).some((reply) => querySafe(reply, blockSelector).includes(block))
+      !(read
+        ? read.blocks.includes(block)
+        : querySafe(doc, turn).some((reply) => querySafe(reply, blockSelector).includes(block)))
     )
       return null;
-    const current = readCodeBlock(block, params);
+    // A moved block or replaced source ends this operation instead of borrowing a new reply's identity.
+    if (
+      origin &&
+      read &&
+      (read.owner(block) !== origin.reply || read.sourceElement(block) !== origin.source)
+    )
+      return null;
+    const current = read ? read.read(block) : readCodeBlock(block, params);
     return diagram.matches(current.language, current.source) ? current.source : null;
   };
 
@@ -253,7 +210,20 @@ export function activateCodeBlockDiagram(
     let revert: Dispose | null = null;
     button.addEventListener('click', () => {
       // Read on click, with no await before writeText, so the click still allows the write.
-      const { source } = readCodeBlock(block, params);
+      const read = online() ? readOperation() : null;
+      // A stale toolbar must not copy a different or no-longer-owned remote block.
+      const panel = panels.get(block);
+      const origin = panel?.origin;
+      if (
+        read &&
+        (!panel ||
+          panel.host.shadowRoot !== button.getRootNode() ||
+          !read.blocks.includes(block) ||
+          (origin &&
+            (read.owner(block) !== origin.reply || read.sourceElement(block) !== origin.source)))
+      )
+        return;
+      const { source } = read ? read.read(block) : readCodeBlock(block, params);
       void navigator.clipboard
         ?.writeText(source)
         .then(() => {
@@ -267,7 +237,7 @@ export function activateCodeBlockDiagram(
     });
   };
 
-  const createPanel = (block: HTMLElement): Panel => {
+  const createPanel = (block: HTMLElement, origin: CodeOrigin | null): Panel => {
     install();
     const host = doc.createElement('div');
     host.className = PANEL_CLASS;
@@ -310,68 +280,106 @@ export function activateCodeBlockDiagram(
     (fullscreenButton ?? target).addEventListener('click', () => diagram.openFullscreen?.(target));
 
     block.before(host);
+    const releaseSource = ownDiagramSource(block);
     show('diagram');
-    const panel: Panel = { host, target, source: null, cleanup: undefined, withdraw: null };
+    const panel: Panel = {
+      host,
+      target,
+      releaseSource,
+      origin,
+      source: null,
+      cleanup: undefined,
+      withdraw: null,
+    };
     panels.set(block, panel);
     return panel;
   };
 
-  const draw = async (block: HTMLElement, source: string): Promise<void> => {
-    drawing.add(block);
+  const retryReplacedSource = (block: HTMLElement, origin: CodeOrigin | null): boolean => {
+    const panel = panels.get(block);
+    if (!origin || !panel || panel.host.nextElementSibling !== block || !online()) return false;
+    const source = readOperation().sourceElement(block);
+    if (
+      source === origin.source ||
+      currentTargetSource(block, { reply: origin.reply, source }) === null
+    )
+      return false;
+    // Keep the view while a new scan validates the replacement; the stale draw cannot publish export.
+    scheduleScan();
+    return true;
+  };
+
+  const draw = (block: HTMLElement, source: string, origin: CodeOrigin | null): void => {
     block.setAttribute(OWNER_ATTR, owner);
-    try {
-      // The library loaded for one scheme; a scheme change replaces `ready`.
-      const prepared = prepare();
-      if (!(await prepared) || scope.isDisposed || !block.isConnected) {
-        if (!panels.has(block)) release(block);
-        return;
-      }
-      // Gemini can finalize a language or replace the source while the library loads.
-      const current = currentTargetSource(block);
-      if (current === null) {
-        remove(block);
-        release(block);
-        return;
-      }
-      source = current;
-      const panel = panels.get(block) ?? createPanel(block);
-      panel.withdraw?.();
-      panel.withdraw = null;
-      panel.cleanup?.();
-      panel.cleanup = undefined;
-      panel.source = source;
-      const cleanup = await diagram.render(panel.target, source);
-      if (panels.get(block) === panel) {
-        panel.cleanup = cleanup;
-        if (currentTargetSource(block) === null) {
-          remove(block);
-          return;
-        }
-        // The scheme changed while this loaded or drew, and that scan skipped the
-        // block: draw it again in the new scheme, and export none of this one.
-        if (ready !== prepared) {
-          panel.source = null;
-          scheduleScan();
-        } else {
-          if (params.exportImage === true) {
-            panel.withdraw = provideDiagramExport(block, () => exportOf(block, panel));
+    const prepared = prepare();
+    const machine = startDiagramDraw(
+      () => prepared,
+      async (signal) => {
+        if (signal.aborted || scope.isDisposed || !block.isConnected) return;
+        try {
+          // Gemini can finalize a language or replace the source while the library loads.
+          const current = currentTargetSource(block, origin);
+          if (current === null) {
+            if (retryReplacedSource(block, origin)) return;
+            remove(block);
+            release(block);
+            scheduleScan();
+            return;
           }
-          // The reply streamed on while this drew, and the scans its edits asked for
-          // skipped the block mid-draw: one more scan draws the current source.
-          if (readCodeBlock(block, params).source !== source) scheduleScan();
+          source = current;
+          const panel = panels.get(block) ?? createPanel(block, origin);
+          panel.withdraw?.();
+          panel.withdraw = null;
+          panel.cleanup?.();
+          panel.cleanup = undefined;
+          panel.source = source;
+          const cleanup = await diagram.render(panel.target, source);
+          if (signal.aborted) {
+            cleanup?.();
+            return;
+          }
+          if (panels.get(block) === panel) {
+            panel.cleanup = cleanup;
+            if (currentTargetSource(block, origin) === null) {
+              if (retryReplacedSource(block, origin)) return;
+              remove(block);
+              return;
+            }
+            // The scheme changed while this loaded or drew, and that scan skipped the
+            // block: draw it again in the new scheme, and export none of this one.
+            if (ready !== prepared) {
+              panel.source = null;
+              scheduleScan();
+            } else {
+              if (params.exportImage === true) {
+                panel.withdraw = provideDiagramExport(block, () => exportOf(block, panel));
+              }
+              // The reply streamed on while this drew, and the scans its edits asked for
+              // skipped the block mid-draw: one more scan draws the current source.
+              if (
+                (online() ? readOperation().read(block) : readCodeBlock(block, params)).source !==
+                source
+              )
+                scheduleScan();
+            }
+          } else {
+            cleanup?.();
+            // A scan removed the panel mid-render and skipped the block as drawing: draw it again.
+            scheduleScan();
+          }
+        } catch {
+          if (signal.aborted) return;
+          // As on Gemini, an unexpected failure shows the code again.
+          failed.set(block, source);
+          remove(block);
         }
-      } else {
-        cleanup?.();
-        // A scan removed the panel mid-render and skipped the block as drawing: draw it again.
-        scheduleScan();
-      }
-    } catch {
-      // As on Gemini, an unexpected failure shows the code again.
-      failed.set(block, source);
-      remove(block);
-    } finally {
-      drawing.delete(block);
-    }
+      },
+      () => {
+        drawing.delete(block);
+        if (!panels.has(block)) release(block);
+      },
+    );
+    drawing.set(block, machine);
   };
 
   const scan = (): void => {
@@ -380,25 +388,48 @@ export function activateCodeBlockDiagram(
       // The host re-rendered the block or put something between: draw it afresh.
       if (!block.isConnected || panel.host.nextElementSibling !== block) remove(block);
     }
-    for (const reply of querySafe(doc, turn)) {
-      for (const block of querySafe(reply, blockSelector)) {
-        if (!(block instanceof HTMLElement) || drawing.has(block)) continue;
-        // Two activations' panels before one block would displace each other on every rescan.
-        if (ownedByOther(block)) continue;
-        const { language, source } = readCodeBlock(block, params);
-        if (!diagram.matches(language, source)) {
+    const read = readOperation();
+    if (read.checked)
+      for (const [block, panel] of panels) {
+        if (
+          !read.blocks.includes(block) ||
+          (panel.origin && read.owner(block) !== panel.origin.reply)
+        ) {
           remove(block);
-          continue;
+        } else if (panel.origin && !drawing.has(block)) {
+          // Re-highlighting replaces <code>; a fresh checked scan keeps the panel and its selected view.
+          panel.origin = { reply: panel.origin.reply, source: read.sourceElement(block) };
         }
-        if (panels.get(block)?.source === source || failed.get(block) === source) continue;
-        void draw(block, source);
       }
+    for (const block of read.blocks) {
+      if (!(block instanceof HTMLElement) || drawing.has(block)) continue;
+      // Two activations' panels before one block would displace each other on every rescan.
+      if (ownedByOther(block)) continue;
+      const { language, source } = read.read(block);
+      if (!diagram.matches(language, source)) {
+        remove(block);
+        continue;
+      }
+      const panel = panels.get(block);
+      if (panel?.source === source) {
+        if (params.exportImage === true && !panel.withdraw)
+          panel.withdraw = provideDiagramExport(block, () => exportOf(block, panel));
+        continue;
+      }
+      if (failed.get(block) === source) continue;
+      void draw(
+        block,
+        source,
+        read.checked ? { reply: read.owner(block), source: read.sourceElement(block) } : null,
+      );
     }
   };
 
   // Registered first so it runs last: observers and timers are gone before panels go.
   scope.effect(
     () => () => {
+      for (const machine of drawing.values()) void machine.stop();
+      drawing.clear();
       Array.from(panels.keys()).forEach(remove);
       // A draw still waiting on its library holds a claim but no panel yet.
       querySafe(doc, `[${OWNER_ATTR}="${owner}"]`).forEach((block) =>

@@ -1,0 +1,210 @@
+{
+  "header": "Frozen foreign-dialect exemptions from 6fa19b4ae. These exact site/fragment/key/value rows preserve baseline shared fallbacks. OFF snapshots are parity fixtures, never ownership authority. Every new exemption must have a reviewed reason.",
+  "baseline": "6fa19b4ae",
+  "entries": [
+    {
+      "sites": ["aistudio", "claude", "deepseek", "gemini", "kimi"],
+      "row": "export-layout-packaged.json/controls",
+      "values": ["#conversation-header-actions"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/export/persistentExportToolbar.ts and exportOverlayUi.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio", "chatgpt", "claude", "deepseek", "kimi"],
+      "row": "export-layout-packaged.json/turns",
+      "values": ["user-query, model-response, [data-message-author-role]"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/export/persistentExportToolbar.ts and exportOverlayUi.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio", "chatgpt", "claude", "deepseek", "kimi"],
+      "row": "export-layout-packaged.json/alignmentComposer",
+      "values": ["rich-textarea"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/export/persistentExportToolbar.ts and exportOverlayUi.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio"],
+      "row": "input-packaged.json/composer.sendContainers",
+      "values": [".user-query-container.edit-mode"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/core/services/composer/sendKeys/sendSitePolicies.ts and src/pages/content/sendBehavior/sendButton.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio", "chatgpt", "claude", "deepseek", "kimi"],
+      "row": "input-packaged.json/vim.inputFallback",
+      "values": ["rich-textarea"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/chatInput/vimComposerMount.ts and vimInputTargets.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio", "chatgpt", "claude", "deepseek", "kimi"],
+      "row": "input-packaged.json/vim.hud",
+      "values": [
+        "toolbox-drawer .toolbox-drawer-button-label-icon-text",
+        "toolbox-drawer .toolbox-drawer-button-label",
+        "toolbox-drawer .toolbox-drawer-button-container",
+        "toolbox-drawer button",
+        "toolbox-drawer .toolbox-drawer-container",
+        "[class*=\"toolbox-drawer\"] .toolbox-drawer-button-label-icon-text",
+        "[class*=\"toolbox-drawer\"] button"
+      ],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/chatInput/vimPresentation.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio", "claude", "deepseek", "gemini", "kimi"],
+      "row": "input-packaged.json/vim.mountInput",
+      "values": ["#prompt-textarea[contenteditable=\"true\"]"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/chatInput/vimComposerMount.ts and vimInputTargets.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio", "claude", "deepseek", "kimi"],
+      "row": "input.json/input.candidates",
+      "values": [
+        "#prompt-textarea[contenteditable=\"true\"]",
+        "[data-composer-markdown][contenteditable=\"true\"]"
+      ],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/chatInput/index.ts and vimInputTargets.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio", "chatgpt", "claude", "deepseek", "kimi"],
+      "row": "input.json/input.candidates",
+      "values": ["rich-textarea [contenteditable=\"true\"]"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/chatInput/index.ts and vimInputTargets.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio", "claude", "deepseek", "gemini", "kimi"],
+      "row": "placement.json/exportLayout.controls",
+      "values": ["#conversation-header-actions"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/export/persistentExportToolbar.ts and exportOverlayUi.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio", "chatgpt", "claude", "deepseek", "kimi"],
+      "row": "placement.json/exportLayout.turns",
+      "values": ["user-query, model-response, [data-message-author-role]"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/export/persistentExportToolbar.ts and exportOverlayUi.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio", "chatgpt", "claude", "deepseek", "kimi"],
+      "row": "placement.json/exportLayout.alignmentComposer",
+      "values": ["rich-textarea"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/export/persistentExportToolbar.ts and exportOverlayUi.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio", "chatgpt", "claude", "deepseek", "kimi"],
+      "row": "placement.json/vim.inputFallback",
+      "values": ["rich-textarea"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/chatInput/vimComposerMount.ts and vimInputTargets.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio", "claude", "deepseek", "gemini", "kimi"],
+      "row": "placement.json/vim.mountInput",
+      "values": ["#prompt-textarea[contenteditable=\"true\"]"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/chatInput/vimComposerMount.ts and vimInputTargets.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio", "chatgpt", "claude", "gemini", "kimi"],
+      "row": "timeline-packaged.json/timeline.userText",
+      "values": ["[data-user-message-bubble], .query-text, .ds-collapsible-text"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/features/timeline/userTurnText.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["aistudio", "chatgpt", "claude", "gemini", "kimi"],
+      "row": "timeline.json/timeline.userText",
+      "values": ["[data-user-message-bubble], .query-text, .ds-collapsible-text"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/features/timeline/userTurnText.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["chatgpt", "claude", "deepseek", "kimi"],
+      "row": "export.json/export.assistantContent",
+      "values": [".markdown-main-panel, .markdown, .model-response-text"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/features/export/services/DOMContentExtractor.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["chatgpt", "claude", "deepseek", "gemini", "kimi"],
+      "row": "input-packaged.json/input.clearance",
+      "values": [
+        "form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message"
+      ],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/prompt/triggerClearance.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["chatgpt", "claude", "deepseek", "kimi"],
+      "row": "input.json/vim.candidates",
+      "values": ["rich-textarea [contenteditable=\"true\"]"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/chatInput/index.ts and vimInputTargets.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["claude", "deepseek", "kimi"],
+      "row": "input.json/vim.candidates",
+      "values": [
+        "#prompt-textarea[contenteditable=\"true\"]",
+        "[data-composer-markdown][contenteditable=\"true\"]"
+      ],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/chatInput/index.ts and vimInputTargets.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["chatgpt", "claude", "deepseek", "gemini", "kimi"],
+      "row": "placement.json/input.clearance",
+      "values": [
+        "form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message"
+      ],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/prompt/triggerClearance.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["gemini"],
+      "row": "activity-packaged.json/activity.owner",
+      "values": ["ms-prompt-input-wrapper"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/folder/gemini/activity.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["gemini"],
+      "row": "composer.json/composer.candidates",
+      "values": [
+        "#prompt-textarea[contenteditable=\"true\"]",
+        "[data-composer-markdown][contenteditable=\"true\"]"
+      ],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/chatInput/index.ts and vimInputTargets.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["gemini"],
+      "row": "composer.json/composer.sendContainers",
+      "values": [
+        "ms-prompt-box",
+        "ms-prompt-input-wrapper",
+        "ms-prompt-input",
+        "ms-chat-turn-input",
+        "ms-autosize-textarea"
+      ],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/core/services/composer/sendKeys/sendSitePolicies.ts and src/pages/content/sendBehavior/sendButton.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["gemini"],
+      "row": "formula-packaged.json/formula.presentation",
+      "values": [".math-inline, .math-display, .math-block, ms-katex, .katex, .katex-display"],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/features/formulaCopy/FormulaInteraction.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["gemini"],
+      "row": "prompt-history.json/promptHistory.candidates",
+      "values": [
+        "#prompt-textarea[contenteditable=\"true\"]",
+        "[data-composer-markdown][contenteditable=\"true\"]"
+      ],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/chatInput/index.ts and vimInputTargets.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["gemini"],
+      "row": "slash.json/slash.candidates",
+      "values": [
+        "#prompt-textarea[contenteditable=\"true\"]",
+        "[data-composer-markdown][contenteditable=\"true\"]"
+      ],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/chatInput/index.ts and vimInputTargets.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    },
+    {
+      "sites": ["gemini"],
+      "row": "vim.json/vim.candidates",
+      "values": [
+        "#prompt-textarea[contenteditable=\"true\"]",
+        "[data-composer-markdown][contenteditable=\"true\"]"
+      ],
+      "reason": "Frozen 6fa19b4ae shared fallback from src/pages/content/chatInput/index.ts and vimInputTargets.ts. Preserve the exact legacy row without admitting new foreign-site data."
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "content.answer": ["message-content", ".markdown, .markdown-main-panel"],
+  "content.userLines": [".query-text-line"]
+}

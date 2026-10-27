@@ -1,6 +1,8 @@
 /**
  * Menu button injection module for Deep Research export
  */
+
+import { logger } from '@/core/services/LoggerService';
 import { ConversationExportService } from '@/features/export/services/ConversationExportService';
 import {
   createContentExtractor,
@@ -23,6 +25,7 @@ import {
   showExportAlert,
   showExportProgress,
 } from '@/features/export/ui/exportToasts';
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/deep-research-packaged.json';
 import type { Dispose, PluginScope } from '@/features/plugins/runtime/pluginScope';
 import { getTranslationSync } from '@/utils/i18n';
 import type { AppLanguage } from '@/utils/language';
@@ -67,7 +70,7 @@ export function updateDeepResearchMenuLabel(button: HTMLElement): void {
  */
 async function handleDownload(dict: ExportDictionaries): Promise<void> {
   try {
-    console.log('[Gemini Voyager] Extracting Deep Research thinking content...');
+    logger.debug('Extracting Deep Research thinking content');
 
     const content = extractThinkingPanels();
     if (!content) {
@@ -281,18 +284,15 @@ function handleSaveReport(dict: ExportDictionaries, lang: AppLanguage): void {
 }
 
 export function isDeepResearchReportMenuPanel(menuPanel: HTMLElement): boolean {
-  if (!menuPanel.matches('.mat-mdc-menu-panel[role="menu"]')) return false;
-  const menuContent = menuPanel.querySelector('.mat-mdc-menu-content');
+  if (!menuPanel.matches(packaged['deepResearch.menuPanel'])) return false;
+  const menuContent = menuPanel.querySelector(packaged['deepResearch.menuContent']);
   if (!(menuContent instanceof HTMLElement)) return false;
 
   const hasReportShareActions = Boolean(
-    menuContent.querySelector('[data-test-id="share-button-tooltip-container"]') ||
-    menuContent.querySelector('[data-test-id="share-drive-button"]') ||
-    menuContent.querySelector('[data-test-id="share-classroom-button"]'),
+    menuContent.querySelector(packaged['deepResearch.menuShare']),
   );
   const hasReportExportActions = Boolean(
-    menuContent.querySelector('[data-test-id="export-to-docs-button"]') ||
-    menuContent.querySelector('[data-test-id="copy-button"]'),
+    menuContent.querySelector(packaged['deepResearch.menuExport']),
   );
 
   return hasReportShareActions && hasReportExportActions;
@@ -306,7 +306,7 @@ export function injectDownloadButton(
   if (scope.isDisposed || !menuPanel.isConnected || !isDeepResearchReportMenuPanel(menuPanel)) {
     return [];
   }
-  const menuContent = menuPanel.querySelector<HTMLElement>('.mat-mdc-menu-content')!;
+  const menuContent = menuPanel.querySelector<HTMLElement>(packaged['deepResearch.menuContent'])!;
   const entries: DeepResearchMenuEntry[] = [];
   if (!menuPanel.querySelector(`.${DOWNLOAD_BUTTON_CLASS}`)) {
     entries.push(

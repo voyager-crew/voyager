@@ -15,6 +15,7 @@
  */
 import { EXTENSION_VERSION } from '@/core/utils/version';
 
+import { isStaticallyInjectedHost } from '../sites/hostPolicy';
 import type {
   PluginManifest,
   PluginSource,
@@ -54,16 +55,21 @@ export class HostCatalogSource implements PluginSource {
   }
 
   async list(context?: PluginSourceContext): Promise<readonly PluginManifest[]> {
+    if (context?.host && isStaticallyInjectedHost(context.host)) return [];
     const entry = await this.usableEntry(context);
     return entry ? entry.manifests : [];
   }
 
   async isAuthoritative(context?: PluginSourceContext): Promise<boolean> {
-    return (await this.usableEntry(context)) !== null;
+    return (await this.listWithAuthority(context)).authoritative;
   }
 
   /** One cache read answers both questions; see `PluginSource.listWithAuthority`. */
   async listWithAuthority(context?: PluginSourceContext): Promise<PluginSourceListing> {
+    // Native official and local plugins keep their packaged/user authority, including revocations.
+    if (context?.host && isStaticallyInjectedHost(context.host)) {
+      return { manifests: [], authoritative: false };
+    }
     const entry = await this.usableEntry(context);
     return entry
       ? { manifests: entry.manifests, authoritative: true, revoked: entry.revoked }

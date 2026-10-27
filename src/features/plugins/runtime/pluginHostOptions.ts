@@ -6,9 +6,10 @@
 import type { FormFactor } from '@/core/types/formFactor';
 
 import { hasEnabledPluginForUrl } from '../remote/hostCatalogPolicy';
+import { isStaticallyInjectedHost } from '../sites/hostPolicy';
 import type { SiteRegistry } from '../sites/registry';
 import type { PluginStateMap } from '../storage/pluginState';
-import type { EntitlementProvider, PluginManifest, PluginSource } from '../types';
+import type { EntitlementProvider, PluginManifest, PluginSource, SiteAdapter } from '../types';
 import type { LegacySettingsSource } from './legacySnapshotFeed';
 import { PLUGIN_CATALOG_REFRESH_MESSAGE } from './messages';
 import type { OfficialAdmission } from './officialAdmission';
@@ -37,6 +38,8 @@ export interface PluginHostOptions {
   readonly admission?: OfficialAdmission;
   /** Injectable for tests; native surfaces read every binding, other pages only shared visual keys. */
   readonly legacySettings?: LegacySettingsSource;
+  /** Shared first adapter read, settled after bounded page-locator readiness. */
+  readonly initialAdapter?: Promise<SiteAdapter | null>;
   /**
    * The device class this page runs on; a plugin without it in
    * `requires.formFactors` reports `needs-form-factor` and never mounts.
@@ -69,8 +72,8 @@ export function detectTopFrame(): boolean {
 
 /**
  * D4 trigger. Only the top frame of a page that an ENABLED plugin targets
- * may ask for a check; embedded companion frames and pages without an
- * enabled plugin (all of Gemini / AI Studio) stay silent.
+ * may ask for a check. Native-site locator checks belong to page startup;
+ * embedded companion frames and pages without an enabled plugin stay silent.
  */
 export function maybeRequestCatalogRefresh(
   page: { readonly host?: string; readonly url: string; readonly isTopFrame: boolean },
@@ -79,6 +82,8 @@ export function maybeRequestCatalogRefresh(
   request: (host: string) => void,
 ): void {
   if (!page.host || !page.isTopFrame) return;
+  // Native page startup already requests its locator check; plugin reconciliation must not duplicate it.
+  if (isStaticallyInjectedHost(page.host)) return;
   if (!hasEnabledPluginForUrl(manifests, state, page.url)) return;
   request(page.host);
 }

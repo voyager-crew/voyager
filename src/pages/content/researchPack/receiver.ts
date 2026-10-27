@@ -12,8 +12,15 @@
  *
  * The text goes in through the shared composer writer, without sending.
  */
+import {
+  getBundledSiteSelectorView,
+  getSiteSelectorView,
+  resolveSiteSelectorOperationInView,
+} from '@/core/selectors';
 import { findComposer, insertIntoComposer } from '@/core/services/composer';
+import { acceptsSiteInputs, inputCandidates } from '@/core/services/composer/siteInputReads';
 import { createToaster } from '@/core/ui/toast/toaster';
+import { startMachine } from '@/features/plugins/runtime/stateMachine';
 import {
   HANDOFF_MESSAGES,
   type HandoffMessage,
@@ -25,10 +32,16 @@ import type { TranslationKey } from '@/utils/translations';
 
 import type { StopNativeFeature } from '../featureLifecycle';
 import { navigationApi } from './navigationApi';
+import {
+  receiverTransition,
+  receiverEffects,
+  type ReceiverState,
+  type ReceiverEvent,
+} from './receiverMachine';
 
 export const RECEIVER_POLL_MS = 150;
 /** The same element on this many polls in a row: the app has finished mounting it. */
-export const RECEIVER_STABLE_POLLS = 3;
+export { RECEIVER_STABLE_POLLS } from './receiverMachine';
 export const RECEIVER_COMPOSER_TIMEOUT_MS = 20_000;
 export const RECEIVER_TOAST_MS = 6_000;
 
@@ -68,18 +81,26 @@ function watchHandoffRoute(navigation: EventTarget, onChange: (href?: string) =>
  * fallback, which also matches canvases and edit-message boxes. The same
  * selectors identify these composers for Vim input and slash prompts.
  */
-export const HANDOFF_COMPOSER_SELECTORS: Readonly<Record<HandoffTarget, string>> = {
-  chatgpt:
-    '#prompt-textarea[contenteditable="true"], [data-composer-markdown][contenteditable="true"]',
-  claude: '[data-testid="chat-input"][contenteditable="true"]',
-};
-
 /** The site's main composer, or null when there is none or more than one is usable. */
 export function findHandoffComposer(
   target: HandoffTarget,
   doc: Document = document,
 ): HTMLElement | null {
-  return findComposer(HANDOFF_COMPOSER_SELECTORS[target], { doc, requireUnique: true });
+  const bundle = getBundledSiteSelectorView(target);
+  const view = getSiteSelectorView(target);
+  const read = (selectors: readonly string[]) =>
+    findComposer(selectors.join(','), { doc, requireUnique: true });
+  const key = 'input.handoff';
+  if (!view.remoteKeys.has(key)) return read(bundle.profiles[key]);
+  const expected = inputCandidates(doc, bundle.profiles[key]);
+  return resolveSiteSelectorOperationInView(
+    view,
+    (candidate) => ({
+      input: read(candidate.profiles[key]),
+      elements: inputCandidates(doc, candidate.profiles[key]),
+    }),
+    ({ elements }) => acceptsSiteInputs(target, doc, elements, expected),
+  ).value.input;
 }
 
 /** Whitespace, including the zero-width characters editors use to hold a caret. */
@@ -163,132 +184,68 @@ export function startResearchPackReceiver(deps: ResearchPackReceiverDeps = {}): 
   const navigation = 'navigation' in deps ? deps.navigation : navigationApi();
   if (!target || !isTopFrame() || !navigation) return () => {};
   const startDocument = document;
-  /**
-   * Set for good by any departure from the new-chat page. Coming back (an SPA
-   * round trip such as / -> /c/A -> /) does not clear it: the composer on
-   * screen may still belong to the conversation the tab passed through.
-   */
-  let departed = false;
-  /** Still the new-chat page this receiver started on, in the same document, never left. */
-  const onNewChat = (): boolean =>
-    !departed && document === startDocument && handoffNewChatTargetForUrl(pageUrl()) === target;
-
   const send = deps.send ?? ((message: HandoffMessage) => chrome.runtime.sendMessage(message));
   const insert =
     deps.insert ??
     ((text: string, input: HTMLElement) => insertIntoComposer(input, text, 'append'));
   const t = deps.t ?? getTranslationSync;
-
-  // Teardown is synchronous: every timer, the composer wait and the toast go at once.
-  let stopped = false;
-  const timers = new Set<ReturnType<typeof setTimeout>>();
   const toaster = createToaster();
-  let abandonWait: (() => void) | null = null;
-
-  // Watched from the first peek until the pack is in or given up on.
-  let stopRoute: (() => void) | null = watchHandoffRoute(navigation, (href) => {
-    if (departed) return;
-    if (handoffNewChatTargetForUrl(href ?? pageUrl()) === target && document === startDocument) {
-      return;
-    }
-    departed = true;
-    unwatchRoute();
-    abandonWait?.();
+  let stopRoute: (() => void) | null = null;
+  const current = () =>
+    document === startDocument && handoffNewChatTargetForUrl(pageUrl()) === target;
+  const machine = startMachine<ReceiverState, ReceiverEvent>(
+    {
+      id: 'researchPackReceiver',
+      transition: receiverTransition,
+      effects: receiverEffects({
+        pollMs: RECEIVER_POLL_MS,
+        timeoutMs: RECEIVER_COMPOSER_TIMEOUT_MS,
+        requireOriginalComposer: getSiteSelectorView(target).remoteKeys.has('input.handoff'),
+        peek: async () => {
+          const peek = await send({ type: HANDOFF_MESSAGES.peek });
+          return Boolean(
+            peek && typeof peek === 'object' && 'pending' in peek && peek.pending === true,
+          );
+        },
+        find: () => findHandoffComposer(target),
+        empty: isEmptyComposer,
+        claim: async () => {
+          const claim = await send({ type: HANDOFF_MESSAGES.claim });
+          return isClaim(claim) ? claim.markdown : null;
+        },
+        current,
+        insert: (markdown, input) => {
+          collapseSelectionToEnd(input);
+          return insert(markdown, input);
+        },
+        finish: (result) => {
+          stopRoute?.();
+          stopRoute = null;
+          if (result !== 'silent')
+            toaster.show({
+              message: t(
+                result === 'ready' ? 'researchPackHandoffReady' : 'researchPackHandoffFailed',
+              ),
+              tone: result === 'ready' ? 'success' : 'error',
+              durationMs: RECEIVER_TOAST_MS,
+            });
+        },
+      }),
+    },
+    { status: 'peeking' },
+  );
+  stopRoute = watchHandoffRoute(navigation, (href) => {
+    if (document !== startDocument || handoffNewChatTargetForUrl(href ?? pageUrl()) !== target)
+      machine.send({
+        type: 'finish',
+        result: machine.state.status === 'claiming' ? 'failed' : 'silent',
+      });
   });
-  function unwatchRoute(): void {
+  return () => {
+    machine.send({ type: 'finish', result: 'silent' });
+    void machine.stop();
     stopRoute?.();
     stopRoute = null;
-  }
-
-  const later = (run: () => void, ms: number): ReturnType<typeof setTimeout> => {
-    const timer = setTimeout(() => {
-      timers.delete(timer);
-      if (!stopped) run();
-    }, ms);
-    timers.add(timer);
-    return timer;
-  };
-
-  const toast = (key: TranslationKey, tone: 'success' | 'error'): void => {
-    toaster.show({ message: t(key), tone, durationMs: RECEIVER_TOAST_MS });
-  };
-
-  /** Resolve with the composer once it has held still, or null on timeout or teardown. */
-  const waitForComposer = (): Promise<HTMLElement | null> =>
-    new Promise((resolve) => {
-      const deadline = Date.now() + RECEIVER_COMPOSER_TIMEOUT_MS;
-      let previous: HTMLElement | null = null;
-      let stable = 0;
-      // Settled once: a departure or teardown also cancels the next poll.
-      let settled = false;
-      let nextPoll: ReturnType<typeof setTimeout> | null = null;
-      const finish = (composer: HTMLElement | null): void => {
-        if (settled) return;
-        settled = true;
-        abandonWait = null;
-        if (nextPoll !== null) {
-          clearTimeout(nextPoll);
-          timers.delete(nextPoll);
-          nextPoll = null;
-        }
-        resolve(composer);
-      };
-      abandonWait = () => finish(null);
-      const poll = (): void => {
-        nextPoll = null;
-        if (settled) return;
-        const composer = findHandoffComposer(target);
-        stable = composer && composer === previous ? stable + 1 : composer ? 1 : 0;
-        previous = composer;
-        if (composer && stable >= RECEIVER_STABLE_POLLS) return finish(composer);
-        if (Date.now() >= deadline) return finish(null);
-        nextPoll = later(poll, RECEIVER_POLL_MS);
-      };
-      poll();
-    });
-
-  const receive = async (): Promise<void> => {
-    const peek = (await send({ type: HANDOFF_MESSAGES.peek })) as { pending?: unknown } | undefined;
-    // Leaving during the peek round trip ends it here, before any composer poll.
-    if (stopped || peek?.pending !== true || !onNewChat()) return;
-
-    const composer = await waitForComposer();
-    if (stopped) return;
-    // Not claimed on any of these: the record expires on its own.
-    if (!onNewChat()) return;
-    if (!composer || !isEmptyComposer(composer)) {
-      toast('researchPackHandoffFailed', 'error');
-      return;
-    }
-
-    const claim = await send({ type: HANDOFF_MESSAGES.claim });
-    if (stopped || !isClaim(claim)) return;
-    // The claim took a round trip: the user may have navigated, typed or
-    // selected meanwhile. The pack is spent now, so anything off inserts
-    // nothing and points the user back to Gemini's Copy.
-    const input = findHandoffComposer(target);
-    if (!onNewChat() || !input || !isEmptyComposer(input)) {
-      toast('researchPackHandoffFailed', 'error');
-      return;
-    }
-    collapseSelectionToEnd(input);
-    if (!insert(claim.markdown, input)) {
-      toast('researchPackHandoffFailed', 'error');
-      return;
-    }
-    toast('researchPackHandoffReady', 'success');
-  };
-
-  void receive()
-    .catch(() => undefined)
-    .finally(unwatchRoute);
-  return () => {
-    if (stopped) return;
-    stopped = true;
-    for (const timer of timers) clearTimeout(timer);
-    timers.clear();
     toaster.destroy();
-    unwatchRoute();
-    abandonWait?.();
   };
 }

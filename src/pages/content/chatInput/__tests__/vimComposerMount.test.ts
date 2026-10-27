@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { getVimComposerMount } from '../vimComposerMount';
+import { setVimTestSite } from './vimHarness';
+const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 
 const COMPOSER = 'textarea.ds-scroll-area';
 
@@ -19,6 +21,7 @@ function div(className: string, top: number, overflow?: string): HTMLElement {
 
 afterEach(() => {
   document.body.innerHTML = '';
+  Object.defineProperty(window, 'location', originalLocation);
 });
 
 describe('vim HUD composer mount', () => {
@@ -51,6 +54,7 @@ describe('vim HUD composer mount', () => {
   });
 
   it('leaves an unclipped host composer alone', () => {
+    setVimTestSite('chatgpt.com');
     // ChatGPT's form and Claude's fieldset already sit outside any clip.
     const form = atTop(document.createElement('form'), 549);
     const input = atTop(document.createElement('div'), 549);

@@ -1,0 +1,24 @@
+[
+  [
+    "site.json",
+    {
+      "id": "aistudio",
+      "matches": ["https://aistudio.google.com/*", "https://aistudio.google.cn/*"],
+      "theme": {
+        "hostSelector": "body",
+        "lightSelector": "body.light-theme",
+        "darkSelector": "body.dark-theme"
+      },
+      "capabilities": ["chat", "sidebar", "composer", "darkMode"],
+      "folders": {
+        "format": 1,
+        "sidebar": ".nav-content.v3-left-nav",
+        "rows": {
+          "row": "a[href^=\"/prompts/\"], a[href^=\"/u/\"][href*=\"/prompts/\"], a[href*=\"://aistudio.google.com/prompts/\"], a[href*=\"://aistudio.google.com/u/\"][href*=\"/prompts/\"], a[href*=\"://aistudio.google.cn/prompts/\"], a[href*=\"://aistudio.google.cn/u/\"][href*=\"/prompts/\"]",
+          "portaled": ".cdk-overlay-container, .cdk-overlay-pane, [role=\"menu\"], [role=\"listbox\"], [role=\"dialog\"]",
+          "drag": "html5"
+        }
+      }
+    }
+  ]
+]

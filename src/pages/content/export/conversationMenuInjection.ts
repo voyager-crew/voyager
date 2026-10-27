@@ -1,7 +1,19 @@
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/menu-packaged.json';
+
 import {
   createMenuItemFromNativeTemplate,
   updateMenuItemTemplateLabel,
 } from '../shared/nativeMenuItemTemplate';
+import {
+  associatedMenuTrigger,
+  onlineMenuActionIsCurrent,
+  isOnlineMenuActionCurrent,
+  retireOnlineMenuAction,
+  retireOnlineMenuActions,
+} from './menuLifetime';
+import { findMenuContent, usesOnlineMenuPanel, isMenuPanel } from './menuTargets';
+
+export { MENU_PANEL_SELECTOR, findMenuContent } from './menuTargets';
 
 export type ConversationMenuExportOptions = {
   label: string;
@@ -23,26 +35,14 @@ export type ResponseMenuContext = {
 const MENU_BUTTON_CLASS = 'gv-export-conversation-menu-btn';
 const RESPONSE_MENU_BUTTON_CLASS = 'gv-export-response-menu-btn';
 const MOVE_TO_FOLDER_BUTTON_CLASS = 'gv-move-to-folder-btn';
-// gem-menu is Gemini's "lr26" replacement for mat-mdc-menu-panel.
-export const MENU_PANEL_SELECTOR = '.mat-mdc-menu-panel[role="menu"], gem-menu';
-const SIDEBAR_CONTAINER_SELECTOR =
-  '[data-test-id="overflow-container"], [data-test-id="all-conversations"]';
-const EXPANDED_MENU_TRIGGER_SELECTOR = '[aria-haspopup="menu"][aria-expanded="true"]';
+const SIDEBAR_CONTAINER_SELECTOR = packaged['menu.sidebar'];
+const EXPANDED_MENU_TRIGGER_SELECTOR = packaged['menu.expandedTrigger'];
 const RESPONSE_MORE_MENU_TRIGGER_TEST_ID = 'more-menu-button';
 const CONVERSATION_MENU_TRIGGER_TEST_IDS = new Set([
   'actions-menu-button',
   'conversation-actions-menu-icon-button',
 ]);
-const MENU_ITEM_SELECTOR = 'button.mat-mdc-menu-item, gem-menu-item';
-
-function isGemMenu(menuPanel: HTMLElement): boolean {
-  return menuPanel.tagName.toLowerCase() === 'gem-menu';
-}
-
-export function findMenuContent(menuPanel: HTMLElement): HTMLElement | null {
-  if (isGemMenu(menuPanel)) return menuPanel;
-  return menuPanel.querySelector('.mat-mdc-menu-content') as HTMLElement | null;
-}
+const MENU_ITEM_SELECTOR = packaged['menu.items'];
 
 function parseControlledIds(trigger: HTMLElement): string[] {
   const raw = `${trigger.getAttribute('aria-controls') || ''} ${
@@ -55,6 +55,7 @@ function parseControlledIds(trigger: HTMLElement): string[] {
 }
 
 function resolveExpandedMenuTrigger(menuPanel: HTMLElement): HTMLElement | null {
+  if (usesOnlineMenuPanel(menuPanel)) return associatedMenuTrigger(menuPanel);
   const triggers = Array.from(
     document.querySelectorAll<HTMLElement>(EXPANDED_MENU_TRIGGER_SELECTOR),
   );
@@ -99,7 +100,7 @@ function findMenuButtonByIcon(menuContent: HTMLElement, iconName: string): HTMLE
 }
 
 function closeMenuOverlay(menuPanel: HTMLElement): void {
-  const backdrops = document.querySelectorAll<HTMLElement>('.cdk-overlay-backdrop');
+  const backdrops = document.querySelectorAll<HTMLElement>(packaged['menu.backdrop']);
   const backdrop = backdrops.length > 0 ? backdrops[backdrops.length - 1] : null;
   if (backdrop) {
     backdrop.click();
@@ -137,23 +138,27 @@ function createMenuItemButton({
   });
   if (!button) return null;
 
+  const isCurrent = onlineMenuActionIsCurrent(menuPanel, button);
   button.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
+    // A recycled or dismissed menu must never export or move another conversation.
+    if (!isCurrent()) return;
     onClick();
-    closeMenuOverlay(menuPanel);
+    if (isCurrent()) closeMenuOverlay(menuPanel);
   });
 
   return button;
 }
 
 export function isConversationMenuPanel(menuPanel: HTMLElement): boolean {
-  if (!menuPanel.matches(MENU_PANEL_SELECTOR)) return false;
+  if (!isMenuPanel(menuPanel)) return false;
   if (menuPanel.classList.contains('gds-mode-switch-menu')) return false;
   if (menuPanel.querySelector('.bard-mode-list-button')) return false;
 
   const menuContent = findMenuContent(menuPanel);
   if (!menuContent) return false;
+  if (usesOnlineMenuPanel(menuPanel) && !associatedMenuTrigger(menuPanel)) return false;
   const hasConversationActions = Boolean(
     menuContent.querySelector('[data-test-id="pin-button"]') ||
     menuContent.querySelector('[data-test-id="rename-button"]') ||
@@ -188,12 +193,13 @@ function isResponseMenuTrigger(trigger: HTMLElement | null): boolean {
 }
 
 export function isResponseMenuPanel(menuPanel: HTMLElement): boolean {
-  if (!menuPanel.matches(MENU_PANEL_SELECTOR)) return false;
+  if (!isMenuPanel(menuPanel)) return false;
   if (menuPanel.classList.contains('gds-mode-switch-menu')) return false;
 
   const menuContent = findMenuContent(menuPanel);
   if (!menuContent) return false;
   if (hasDeepResearchReportMarkers(menuContent)) return false;
+  if (usesOnlineMenuPanel(menuPanel) && !associatedMenuTrigger(menuPanel)) return false;
 
   const trigger = resolveExpandedMenuTrigger(menuPanel);
   if (isResponseMenuTrigger(trigger)) return true;
@@ -220,8 +226,12 @@ export function injectConversationMenuExportButton(
 
   const existing = menuContent.querySelector(`.${MENU_BUTTON_CLASS}`) as HTMLElement | null;
   if (existing) {
-    updateButtonLabelAndTooltip(existing, options.label, options.tooltip);
-    return existing;
+    if (!usesOnlineMenuPanel(menuPanel) || isOnlineMenuActionCurrent(existing)) {
+      updateButtonLabelAndTooltip(existing, options.label, options.tooltip);
+      return existing;
+    }
+    retireOnlineMenuAction(existing);
+    existing.remove();
   }
 
   const button = createMenuItemButton({
@@ -251,6 +261,7 @@ export function injectConversationMenuExportButton(
 
 /** Remove every export item injected into a menu that is still open. */
 export function removeExportMenuItems(root: ParentNode = document): void {
+  retireOnlineMenuActions(`.${MENU_BUTTON_CLASS}, .${RESPONSE_MENU_BUTTON_CLASS}`, root);
   root
     .querySelectorAll(`.${MENU_BUTTON_CLASS}, .${RESPONSE_MENU_BUTTON_CLASS}`)
     .forEach((item) => item.remove());
@@ -268,8 +279,12 @@ export function injectConversationMenuMoveToFolderButton(
     `.${MOVE_TO_FOLDER_BUTTON_CLASS}`,
   ) as HTMLElement | null;
   if (existing) {
-    updateButtonLabelAndTooltip(existing, options.label, options.tooltip);
-    return existing;
+    if (!usesOnlineMenuPanel(menuPanel) || isOnlineMenuActionCurrent(existing)) {
+      updateButtonLabelAndTooltip(existing, options.label, options.tooltip);
+      return existing;
+    }
+    retireOnlineMenuAction(existing);
+    existing.remove();
   }
 
   const button = createMenuItemButton({
@@ -319,8 +334,12 @@ export function injectResponseMenuExportButton(
     `.${RESPONSE_MENU_BUTTON_CLASS}`,
   ) as HTMLElement | null;
   if (existing) {
-    updateButtonLabelAndTooltip(existing, options.label, options.tooltip);
-    return existing;
+    if (!usesOnlineMenuPanel(menuPanel) || isOnlineMenuActionCurrent(existing)) {
+      updateButtonLabelAndTooltip(existing, options.label, options.tooltip);
+      return existing;
+    }
+    retireOnlineMenuAction(existing);
+    existing.remove();
   }
 
   const button = createMenuItemButton({

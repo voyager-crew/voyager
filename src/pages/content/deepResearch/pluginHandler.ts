@@ -1,9 +1,11 @@
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/deep-research-packaged.json';
 import type { Dispose, PluginScope } from '@/features/plugins/runtime/pluginScope';
 import { onCachedLanguageChange } from '@/utils/i18n';
 
+import { findDeepResearchPanel } from './dom';
 import { injectDownloadButton, updateDeepResearchMenuLabel } from './menuButton';
 
-const MENU_SELECTOR = '.mat-mdc-menu-panel[role="menu"]';
+const MENU_SELECTOR = packaged['deepResearch.menuPanel'];
 const INJECTION_DELAY_MS = 50;
 
 /** The scope owns menu admission; accepted exports retain their native lifetime. */
@@ -35,7 +37,7 @@ export function activateGeminiDeepResearchExport(scope: PluginScope): void {
 
   const schedule = (panel: HTMLElement): void => {
     if (scope.isDisposed || !panel.isConnected || pending.has(panel)) return;
-    if (!document.querySelector('deep-research-immersive-panel')) return;
+    if (!findDeepResearchPanel()) return;
     if (
       panel.querySelector('.gv-deep-research-download') &&
       panel.querySelector('.gv-deep-research-save-report')
@@ -45,7 +47,7 @@ export function activateGeminiDeepResearchExport(scope: PluginScope): void {
       panel,
       scope.timer(() => {
         pending.delete(panel);
-        if (scope.isDisposed || !document.querySelector('deep-research-immersive-panel')) return;
+        if (scope.isDisposed || !findDeepResearchPanel()) return;
         for (const { button, release } of injectDownloadButton(scope, panel))
           buttons.set(button, release);
       }, INJECTION_DELAY_MS),

@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { parseSemver } from '../../semver';
 import { usesCatalogDataStores } from '../../sites/hostPolicy';
 import { patternWithinAny } from '../../sites/matchPattern';
 import { SEMANTIC_SELECTOR_KEYS } from '../../sites/semanticKeys';
@@ -88,13 +89,14 @@ describe('bundled catalog discovery', () => {
     }
   });
 
-  it('keeps every plugin inside the match scope of its site (plan D18)', async () => {
+  it('loads every plugin with a valid version inside the match scope of its site (plan D18)', async () => {
     const manifests = await new BundledCatalogPluginSource().list();
     expect(manifests).toHaveLength(pluginPaths.length);
     for (const path of pluginPaths) {
       const manifest = manifests.find((m) => readManifest(path).id === m.id);
       const site = requireBundledSiteAdapter(path.split('/')[1]);
       expect(manifest, `${path}: plugin was not loaded`).toBeDefined();
+      expect(parseSemver(manifest!.version), `${path}: plugin version`).not.toBeNull();
       for (const pattern of manifest!.matches) {
         expect(patternWithinAny(pattern, site.matches), `${path}: ${pattern}`).toBe(true);
       }

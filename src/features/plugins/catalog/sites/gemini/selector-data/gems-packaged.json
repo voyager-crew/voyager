@@ -1,0 +1,14 @@
+{
+  "link": "a.bot-row, a[href*=\"/gem/\"]",
+  "nativeLink": "a[href]",
+  "nativeRow": "bot-list-row",
+  "titleEvidence": ".bot-title",
+  "descriptionEvidence": ".bot-desc-container",
+  "iconEvidence": "bot-logo",
+  "currentName": ".bot-name-container",
+  "currentIcon": ".bot-logo-text",
+  "moreEntry": "[data-test-id=\"overflow-side-nav-entry-button\"]",
+  "topNav": "mat-nav-list.top-action-list-scrollable",
+  "navHost": "mat-nav-list",
+  "excluded": "model-response, user-query, [role=\"dialog\"], bot-editor, [data-test-id=\"bot-editor\"], [contenteditable=\"true\"]"
+}

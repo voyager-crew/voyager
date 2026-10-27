@@ -1,11 +1,13 @@
+import { getGeminiSelectorView } from '@/core/gemini/selectors';
 import { getTranslationSync } from '@/utils/i18n';
 
 import { GEMS_NAV_ENTRY_SELECTOR, containsGemsNavEntry } from './anchorGuard';
+import { gemsPackagedSelectors } from './selectorQueries';
 
 /** Gemini's sidebar "More" entry; its popover now holds the native Gems link. */
-export const MORE_NAV_ENTRY_SELECTOR = '[data-test-id="overflow-side-nav-entry-button"]';
+export const MORE_NAV_ENTRY_SELECTOR = gemsPackagedSelectors.moreEntry;
 /** The scrolling top nav (Library, Images, …, More) inside the overflow container. */
-const TOP_NAV_SELECTOR = 'mat-nav-list.top-action-list-scrollable';
+const TOP_NAV_SELECTOR = gemsPackagedSelectors.topNav;
 
 const SECTION_CLASS = 'gv-gems-section';
 const HEADER_CLASS = 'gv-gems-section-header';
@@ -29,7 +31,7 @@ export interface GemsSectionAnchor {
  */
 export function findGemsSectionNav(overflow: ParentNode): HTMLElement | null {
   const nav =
-    overflow.querySelector(MORE_NAV_ENTRY_SELECTOR)?.closest('mat-nav-list') ??
+    overflow.querySelector(MORE_NAV_ENTRY_SELECTOR)?.closest(gemsPackagedSelectors.navHost) ??
     overflow.querySelector(TOP_NAV_SELECTOR);
   return nav instanceof HTMLElement && nav.parentElement ? nav : null;
 }
@@ -37,7 +39,12 @@ export function findGemsSectionNav(overflow: ParentNode): HTMLElement | null {
 function addsNavEntry(node: Node): boolean {
   if (!(node instanceof Element)) return false;
   const selector = `${GEMS_NAV_ENTRY_SELECTOR}, ${MORE_NAV_ENTRY_SELECTOR}`;
-  return node.matches(selector) || node.querySelector(selector) !== null;
+  // Streaming rows need only the original union probe when online nav repair is off.
+  return (
+    node.matches(selector) ||
+    node.querySelector(selector) !== null ||
+    (getGeminiSelectorView().remoteKeys.has('gems.navEntry') && containsGemsNavEntry(node))
+  );
 }
 
 /**

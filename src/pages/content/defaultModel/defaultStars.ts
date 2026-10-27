@@ -1,88 +1,25 @@
+import type { GeminiSelectorView } from '@/core/gemini/selectors';
 import type { Toaster } from '@/core/ui/toast/types';
 
+import { DefaultStarView, sweepStars } from './defaultStarView';
 import { ModelPicker } from './modelPicker';
+import { readModelId } from './modelPickerMetadata';
+import { hasRemotePickerProfile } from './modelPickerSelectors';
 import { DefaultModelPreferences } from './preferences';
 import type { DefaultModelSetting, DefaultThinkingLevel, ThinkingMode } from './preferences';
 
-const MODE_ITEM_SELECTOR = '[role="menuitemradio"], [role="menuitem"]';
-const DEFAULT_MODEL_UI_SELECTOR = '.gv-default-star-btn';
-const TITLE_WRAPPER_CLASS = 'gv-title-wrapper';
+export { startStaleStarSweeper } from './defaultStarView';
+
 const CONFIRMATION_TOAST_MS = 3000;
 const MENU_RENDER_DELAY_MS = 50;
-
-/** Remove every star button inside `root`. */
-function sweepStars(root: ParentNode = document): void {
-  root.querySelectorAll(DEFAULT_MODEL_UI_SELECTOR).forEach((el) => el.remove());
-}
-
-function mayContainDefaultModelUi(root: HTMLElement): boolean {
-  return root.matches(DEFAULT_MODEL_UI_SELECTOR) || !!root.querySelector(DEFAULT_MODEL_UI_SELECTOR);
-}
-
-/**
- * Off-state guard of the native module: sweeps the stars already on the page,
- * then keeps walking added subtrees so a CDK overlay pane that was detached
- * when the switch went off cannot bring stars back when Gemini reattaches it.
- */
-export function startStaleStarSweeper(): () => void {
-  sweepStars();
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      for (const node of Array.from(mutation.addedNodes)) {
-        if (node instanceof HTMLElement && mayContainDefaultModelUi(node)) sweepStars(node);
-      }
-    }
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
-  return () => observer.disconnect();
-}
-
-/**
- * Nodes this module put into Gemini's menus, kept so stop can take them out
- * even when the host detached their pane meanwhile. Weak references: a pane
- * the host dropped for good is not kept alive, and cannot come back either.
- */
-class InjectedNodes<T extends Node> {
-  private refs = new Set<WeakRef<T>>();
-  private known = new WeakSet<T>();
-
-  public add(node: T): void {
-    if (this.known.has(node)) return;
-    this.known.add(node);
-    for (const ref of this.refs) if (!ref.deref()) this.refs.delete(ref);
-    this.refs.add(new WeakRef(node));
-  }
-
-  public drain(): T[] {
-    const nodes: T[] = [];
-    for (const ref of this.refs) {
-      const node = ref.deref();
-      if (node) nodes.push(node);
-    }
-    this.refs = new Set();
-    this.known = new WeakSet();
-    return nodes;
-  }
-}
-
-/** Put the title back where the wrapper stood and drop the wrapper. */
-function unwrapTitle(wrapper: HTMLElement): void {
-  const parent = wrapper.parentNode;
-  if (!parent) return;
-  while (wrapper.firstChild) parent.insertBefore(wrapper.firstChild, wrapper);
-  wrapper.remove();
-}
 
 export class DefaultStars {
   private observer: MutationObserver | null = null;
   private pendingMenuPanelInjections = new WeakSet<HTMLElement>();
   private menuPanelInjectAttempts = new WeakMap<HTMLElement, number>();
   private started = false;
-  private readonly stars = new InjectedNodes<HTMLElement>();
-  private readonly titleWrappers = new InjectedNodes<HTMLElement>();
+  private readonly view = new DefaultStarView();
   private readonly timers = new Set<number>();
-  /** Aborting it removes every listener this run added to Gemini's own menu items. */
-  private hostListeners: AbortController | null = null;
 
   public constructor(
     private readonly preferences: DefaultModelPreferences,
@@ -94,7 +31,7 @@ export class DefaultStars {
   public start(): void {
     if (this.started) return;
     this.started = true;
-    this.hostListeners = new AbortController();
+    this.view.start();
     this.initObserver();
   }
 
@@ -109,10 +46,7 @@ export class DefaultStars {
     this.observer = null;
     for (const id of this.timers) window.clearTimeout(id);
     this.timers.clear();
-    this.hostListeners?.abort();
-    this.hostListeners = null;
-    for (const star of this.stars.drain()) star.remove();
-    for (const wrapper of this.titleWrappers.drain()) unwrapTitle(wrapper);
+    this.view.stop();
     this.pendingMenuPanelInjections = new WeakSet<HTMLElement>();
     this.menuPanelInjectAttempts = new WeakMap<HTMLElement, number>();
   }
@@ -183,9 +117,10 @@ export class DefaultStars {
       return false;
     }
 
-    const { items, kind } = this.picker.describeMenu(menuPanel);
+    const { items, kind, inlineThinking, nestedThinking, view } =
+      this.picker.describeMenu(menuPanel);
     if (!items.length) return false;
-    if (kind === 'thinking') return this.injectThinkingLevelStars(menuPanel);
+    if (kind === 'thinking') return this.injectThinkingLevelStars(menuPanel, view);
     if (kind !== 'model') return false;
 
     // Sweep stars whose owning item is no longer in the current `items`
@@ -194,27 +129,27 @@ export class DefaultStars {
     // per-item dedup below would happily inject a fresh star into each new
     // item, leaving the orphaned old item with its own star — visually
     // duplicating the star icon.
-    const currentItems = new Set<Element>(Array.from(items));
     menuPanel.querySelectorAll('.gv-default-star-btn').forEach((star) => {
-      const owner = star.closest(MODE_ITEM_SELECTOR);
-      if (!owner || !currentItems.has(owner)) {
-        star.remove();
-      }
+      if (!items.some((item) => item.contains(star))) star.remove();
     });
 
     const currentDefault = this.preferences.model;
 
-    items.forEach((item) => this.injectModelStar(item, currentDefault));
+    items.forEach((item) => this.injectModelStar(item, currentDefault, view));
 
-    await this.injectInlineExtendedThinkingStar(menuPanel);
+    this.injectInlineExtendedThinkingStar(inlineThinking, view);
     if (!this.started) return false;
-    await this.injectNestedThinkingLevelStars(menuPanel);
+    if (nestedThinking) this.injectThinkingLevelStars(nestedThinking, view);
 
     return this.started;
   }
 
-  private injectModelStar(item: HTMLElement, currentDefault: DefaultModelSetting | null): void {
-    const description = this.picker.describeItem(item);
+  private injectModelStar(
+    item: HTMLElement,
+    currentDefault: DefaultModelSetting | null,
+    view: GeminiSelectorView,
+  ): void {
+    const description = this.picker.describeItem(item, view);
     if (description.kind === 'inline-thinking') {
       // The toggle's jslog metadata contains the current model id. A model
       // star injected by an older build therefore looks valid by id, but its
@@ -251,23 +186,35 @@ export class DefaultStars {
     // Avoid duplicates
     if (item.querySelector('.gv-default-star-btn')) {
       // Update state
-      this.updateStarState(item, this.isDefaultForItem(currentDefault, item, modelName), 'model');
+      this.view.updateStarState(
+        item,
+        this.isDefaultForItem(currentDefault, item, modelName),
+        'model',
+      );
       return;
     }
 
-    const btn = this.createStar('model', (button) => this.handleStarClick(modelName, button));
+    const btn = this.view.createStar('model', (button) =>
+      this.handleStarClick(item, description.id, modelName, button),
+    );
 
-    this.appendStar(item, btn, 'model');
-    this.updateStarState(item, this.isDefaultForItem(currentDefault, item, modelName), 'model');
+    this.view.appendStar(
+      item,
+      btn,
+      this.picker.starAnchor(item, 'model', view),
+      hasRemotePickerProfile(view),
+    );
+    this.view.updateStarState(
+      item,
+      this.isDefaultForItem(currentDefault, item, modelName),
+      'model',
+    );
   }
 
-  private async injectNestedThinkingLevelStars(menuPanel: HTMLElement): Promise<void> {
-    const thinkingRow = this.picker.describeMenu(menuPanel).nestedThinking;
-    if (thinkingRow) await this.injectThinkingLevelStars(thinkingRow);
-  }
-
-  private async injectInlineExtendedThinkingStar(menuPanel: HTMLElement): Promise<boolean> {
-    const inlineItems = this.picker.describeMenu(menuPanel).inlineThinking;
+  private injectInlineExtendedThinkingStar(
+    inlineItems: HTMLElement[],
+    view: GeminiSelectorView,
+  ): boolean {
     if (!inlineItems.length) return false;
 
     if (!this.started) {
@@ -279,26 +226,31 @@ export class DefaultStars {
 
     // Low / Medium / High rows (Oct 2026) are a level list, not the Extended toggle.
     if (inlineItems.length > 1) {
-      this.injectThinkingRowStars(inlineItems);
+      this.injectThinkingRowStars(inlineItems, view);
       return true;
     }
     const [item] = inlineItems;
 
-    const label = this.picker.describeItem(item).thinkingLabel;
+    const label = this.picker.describeItem(item, view).thinkingLabel;
     if (!label) return false;
 
     let btn = item.querySelector<HTMLElement>(
       '.gv-default-star-btn[data-gv-default-kind="thinking"]',
     );
     if (!btn) {
-      btn = this.createStar('thinking', (button) =>
-        this.handleThinkingLevelStarClick(0, label, button, 'extended'),
+      btn = this.view.createStar('thinking', (button) =>
+        this.handleThinkingLevelStarClick(item, 0, label, button, 'extended'),
       );
 
-      this.appendStar(item, btn, 'thinking');
+      this.view.appendStar(
+        item,
+        btn,
+        this.picker.starAnchor(item, 'thinking', view),
+        hasRemotePickerProfile(view),
+      );
     }
 
-    this.updateStarState(
+    this.view.updateStarState(
       item,
       this.isInlineExtendedThinkingDefault(this.preferences.thinking, label),
       'thinking',
@@ -318,33 +270,30 @@ export class DefaultStars {
     return !this.preferences.isPageDefaultThinkingLevel(currentDefault) && currentDefault.index > 0;
   }
 
-  private async injectThinkingLevelStars(submenuPane: HTMLElement): Promise<boolean> {
+  private injectThinkingLevelStars(
+    submenuPane: HTMLElement,
+    view = this.picker.describeMenu(submenuPane).view,
+  ): boolean {
     // Master kill switch — see comment on `injectStarButtons`.
     if (!this.started) {
       sweepStars(submenuPane);
       return false;
     }
 
-    const items = Array.from(
-      submenuPane.querySelectorAll<HTMLElement>('gem-menu-item, [role="menuitem"]'),
-    );
+    const items = this.picker.thinkingItems(submenuPane, view);
     if (!items.length) return false;
 
     // Orphan-star sweep — same rationale as `injectStarButtons`.
-    const currentItems = new Set<Element>(items);
     submenuPane.querySelectorAll('.gv-default-star-btn').forEach((star) => {
-      const owner = star.closest('gem-menu-item, [role="menuitem"]');
-      if (!owner || !currentItems.has(owner)) {
-        star.remove();
-      }
+      if (!items.some((item) => item.contains(star))) star.remove();
     });
 
-    this.injectThinkingRowStars(items);
+    this.injectThinkingRowStars(items, view);
     return true;
   }
 
-  private injectThinkingRowStars(items: HTMLElement[]): void {
-    const labels = items.map((item) => this.picker.describeItem(item).thinkingLabel);
+  private injectThinkingRowStars(items: HTMLElement[], view: GeminiSelectorView): void {
+    const labels = items.map((item) => this.picker.describeItem(item, view).thinkingLabel);
     // Resolve the single default row up front. Deciding per-item let a drifted
     // stored index light up a second star alongside the label match — the
     // "both thinking levels selected" bug.
@@ -360,12 +309,13 @@ export class DefaultStars {
       const isDefault = index === defaultIndex;
 
       if (item.querySelector('.gv-default-star-btn')) {
-        this.updateStarState(item, isDefault, 'thinking');
+        this.view.updateStarState(item, isDefault, 'thinking');
         return;
       }
 
-      const btn = this.createStar('thinking', (button) =>
+      const btn = this.view.createStar('thinking', (button) =>
         this.handleThinkingLevelStarClick(
+          item,
           index,
           label,
           button,
@@ -373,37 +323,19 @@ export class DefaultStars {
         ),
       );
 
-      this.appendStar(item, btn, 'thinking');
+      this.view.appendStar(
+        item,
+        btn,
+        this.picker.starAnchor(item, 'thinking', view),
+        hasRemotePickerProfile(view),
+      );
 
-      this.updateStarState(item, isDefault, 'thinking');
+      this.view.updateStarState(item, isDefault, 'thinking');
     });
   }
 
-  private updateStarState(item: HTMLElement, isDefault: boolean, kind: 'model' | 'thinking') {
-    const btn = item.querySelector('.gv-default-star-btn') as HTMLElement | null;
-    if (!btn) return;
-    this.bindStarOwnerHover(item, btn);
-    if (!btn.hasAttribute('data-event-bound')) {
-      btn.setAttribute('data-event-bound', 'true');
-      btn.addEventListener('mousedown', (e) => e.stopPropagation());
-      btn.addEventListener('click', (e) => e.stopPropagation());
-    }
-    if (isDefault) {
-      btn.classList.add('is-default');
-      btn.innerHTML = this.getStarIcon(true);
-      btn.title = chrome.i18n.getMessage(
-        kind === 'model' ? 'cancelDefaultModel' : 'cancelDefaultThinkingLevel',
-      );
-    } else {
-      btn.classList.remove('is-default');
-      btn.innerHTML = this.getStarIcon(false);
-      btn.title = chrome.i18n.getMessage(
-        kind === 'model' ? 'setAsDefaultModel' : 'setAsDefaultThinkingLevel',
-      );
-    }
-  }
-
   private async handleThinkingLevelStarClick(
+    item: HTMLElement,
     index: number,
     label: string,
     btn: HTMLElement,
@@ -416,10 +348,16 @@ export class DefaultStars {
     // mutate storage even though the user has paused the feature. A star
     // left over from a stopped run gets the same treatment.
     if (!this.started) {
-      btn
-        .closest('[role="menuitemradio"], [role="menuitem"], gem-menu-item')
-        ?.querySelectorAll('.gv-default-star-btn')
-        .forEach((el) => el.remove());
+      item.querySelectorAll('.gv-default-star-btn').forEach((el) => el.remove());
+      return;
+    }
+    // A recycled or reparented row must not write a preference for another level.
+    if (
+      !item.isConnected ||
+      !item.contains(btn) ||
+      !this.picker.isCurrentThinkingStar(item, index, label)
+    ) {
+      btn.remove();
       return;
     }
     // The star's own class is the source of truth for whether THIS row is the
@@ -432,10 +370,7 @@ export class DefaultStars {
 
     const persistence = this.preferences.persistThinking(nextDefault);
 
-    const itemEl = btn.closest('gem-menu-item, [role="menuitem"]');
-    if (itemEl instanceof HTMLElement) {
-      this.updateStarState(itemEl, nextDefault !== null, 'thinking');
-    }
+    this.view.updateStarState(item, nextDefault !== null, 'thinking');
 
     if (nextDefault) {
       this.showToast(chrome.i18n.getMessage('defaultThinkingLevelSet', [label]));
@@ -462,115 +397,18 @@ export class DefaultStars {
   ): boolean {
     if (!currentDefault) return false;
     if (currentDefault.kind === 'id') {
-      const id = this.picker.describeItem(item).id;
+      const id = readModelId(item);
       return id === currentDefault.id;
     }
     return currentDefault.name === modelName;
   }
 
-  private createStar(
-    kind: 'model' | 'thinking',
-    onClick: (button: HTMLButtonElement) => Promise<void>,
-  ): HTMLButtonElement {
-    const btn = document.createElement('button');
-    btn.className = 'gv-default-star-btn';
-    btn.dataset.gvDefaultKind = kind;
-    this.stars.add(btn);
-    btn.innerHTML = this.getStarIcon(false);
-    btn.title = chrome.i18n.getMessage(
-      kind === 'model' ? 'setAsDefaultModel' : 'setAsDefaultThinkingLevel',
-    );
-    btn.addEventListener('click', async (event) => {
-      event.stopPropagation();
-      event.preventDefault();
-      await onClick(btn);
-    });
-    return btn;
-  }
-
-  private appendStar(item: HTMLElement, btn: HTMLElement, kind: 'model' | 'thinking'): void {
-    const container = item.querySelector(
-      kind === 'model' ? '.title-and-description, .label-container' : '.label-container',
-    );
-    const title = container?.querySelector(
-      kind === 'model'
-        ? '.mode-title, .gds-title-m, .gds-label-l, .label'
-        : '.label, .gds-title-m, .gds-label-l',
-    );
-    if (!container || !title) {
-      (container ?? item).appendChild(btn);
-      return;
-    }
-    const parent = title.parentElement;
-    let wrapper = container.querySelector<HTMLElement>(`.${TITLE_WRAPPER_CLASS}`);
-    if (!wrapper && parent?.classList.contains(TITLE_WRAPPER_CLASS)) wrapper = parent;
-    if (!wrapper) {
-      wrapper = document.createElement('div');
-      wrapper.className = TITLE_WRAPPER_CLASS;
-      wrapper.style.cssText = 'display: flex; align-items: center; width: 100%;';
-      if (parent) parent.insertBefore(wrapper, title);
-      else container.appendChild(wrapper);
-      wrapper.appendChild(title);
-    }
-    // A wrapper found in place is unwrapped on stop too: it can only be ours.
-    this.titleWrappers.add(wrapper);
-    wrapper.appendChild(btn);
-  }
-
-  private bindStarOwnerHover(item: HTMLElement, btn: HTMLElement) {
-    if (btn.hasAttribute('data-hover-bound')) return;
-    // These listeners sit on Gemini's own item, which outlives the star:
-    // removing the star alone would leave them behind.
-    const signal = this.hostListeners?.signal;
-    if (!signal) return;
-    btn.setAttribute('data-hover-bound', 'true');
-
-    item.addEventListener(
-      'mouseenter',
-      () => {
-        btn.classList.add('is-owner-hovered');
-      },
-      { signal },
-    );
-    item.addEventListener(
-      'mouseleave',
-      () => {
-        btn.classList.remove('is-owner-hovered');
-      },
-      { signal },
-    );
-    item.addEventListener(
-      'focusin',
-      () => {
-        btn.classList.add('is-owner-hovered');
-      },
-      { signal },
-    );
-    item.addEventListener(
-      'focusout',
-      (event) => {
-        const nextTarget = event.relatedTarget;
-        if (!(nextTarget instanceof Node) || !item.contains(nextTarget)) {
-          btn.classList.remove('is-owner-hovered');
-        }
-      },
-      { signal },
-    );
-  }
-
-  private getStarIcon(filled: boolean): string {
-    if (filled) {
-      return `<svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" fill="currentColor"></path></svg>`;
-    } else {
-      return `<svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" fill="none" stroke="currentColor" stroke-width="1.5"></path></svg>`;
-    }
-  }
-
-  private async handleStarClick(modelName: string, btn: HTMLElement) {
-    const closestItem = btn.closest(MODE_ITEM_SELECTOR);
-    const modelItem = closestItem instanceof HTMLElement ? closestItem : null;
-    const modelId = modelItem ? this.picker.describeItem(modelItem).id : null;
-
+  private async handleStarClick(
+    modelItem: HTMLElement,
+    modelId: string | null,
+    modelName: string,
+    btn: HTMLElement,
+  ) {
     // Stale-click guard — see comment on `handleThinkingLevelStarClick`.
     if (!this.started) {
       if (modelItem) {
@@ -578,6 +416,16 @@ export class DefaultStars {
       } else {
         btn.remove();
       }
+      return;
+    }
+
+    // A star owns its captured row; a fresh remote closest() must never change that owner.
+    if (
+      !modelItem.isConnected ||
+      !modelItem.contains(btn) ||
+      !this.picker.isCurrentModelStar(modelItem, modelId, modelName)
+    ) {
+      btn.remove();
       return;
     }
 
@@ -599,7 +447,7 @@ export class DefaultStars {
 
     // Update current button immediately
     if (modelItem) {
-      this.updateStarState(
+      this.view.updateStarState(
         modelItem,
         this.isDefaultForItem(nextDefault, modelItem, modelName),
         'model',

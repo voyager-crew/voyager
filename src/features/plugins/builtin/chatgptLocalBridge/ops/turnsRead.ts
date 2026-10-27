@@ -16,6 +16,7 @@
  */
 import type { FileCandidate, TurnsReadParams, TurnsReadResult } from '@/features/bridge/protocol';
 import { createContentExtractor } from '@/features/export/services/DOMContentExtractor';
+import { resolveChatgptReplyContent } from '@/features/plugins/builtin/chatgptReplyContent';
 import { hasReplyActions } from '@/features/plugins/builtin/chatgptResponseNotification/page';
 import type { SiteAdapter } from '@/features/plugins/types';
 import { extractAssistantMessage } from '@/pages/content/export/adapter/chatgptThread';
@@ -25,7 +26,6 @@ import { GRANT_MARGIN_MS, type OpContext } from '../opContext';
 import type { PageData } from '../pageData/store';
 import { requirePageObserver } from './pageObserver';
 import {
-  ASSISTANT_HEADING_SELECTOR,
   conversationItems,
   findReply,
   findReplyByKey,
@@ -158,23 +158,6 @@ async function findKeyedReply(
   return { ...found, turnKey: key };
 }
 
-// Measured 2026-10-18: the reply's text; file cards and source chips render beside it.
-const MARKDOWN_ROOT_SELECTOR = '[data-markdown-text-style="assistant-message"]';
-
-/** The reply's one Markdown body when it has exactly one, else the whole reply. */
-function replyBody(reply: HTMLElement): HTMLElement {
-  const roots = reply.querySelectorAll<HTMLElement>(MARKDOWN_ROOT_SELECTOR);
-  return roots.length === 1 ? roots[0] : withoutHeading(reply);
-}
-
-/** The reply without its role heading; a copy only when the heading sits inside it. */
-function withoutHeading(reply: HTMLElement): HTMLElement {
-  if (!reply.querySelector(ASSISTANT_HEADING_SELECTOR)) return reply;
-  const copy = reply.cloneNode(true) as HTMLElement;
-  copy.querySelectorAll(ASSISTANT_HEADING_SELECTOR).forEach((heading) => heading.remove());
-  return copy;
-}
-
 /** The sandbox files the turn links, as ChatGPT's last conversation answer lists it. */
 function turnFiles(pageData: PageData, conversationId: string, anchor: string): FileCandidate[] {
   const messages = pageData.messages(conversationId);
@@ -201,7 +184,11 @@ export async function runTurnsRead(
   requireConversation(ctx, params.conversationId);
 
   const extractor = createContentExtractor(buildChatGptAdapter(siteOf(adapter)));
-  const content = extractAssistantMessage(found.item, replyBody(found.reply), extractor);
+  const content = extractAssistantMessage(
+    found.item,
+    resolveChatgptReplyContent(found.reply),
+    extractor,
+  );
   const markdown = content.text.trim().replace(HEADING_LINE, '').trim();
   const messageId = replyIdOf(found.reply);
   return {

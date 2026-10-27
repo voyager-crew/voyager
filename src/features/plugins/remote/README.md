@@ -1,6 +1,6 @@
 # Remote host catalog (`remote/`)
 
-Part of the [Plugin ecosystem overview](../README.md).
+Part of the [Plugin ecosystem overview](../README.md). Page-locator rules have one source of truth: the [resolver invariants](../../../core/selectors/README.md#invariants).
 
 The official CSS/JSON plugins ship as a snapshot inside the extension, and the
 same data is published per site at `<base>/hosts/<host>.json` (default base
@@ -29,14 +29,18 @@ without an extension release.
   version.
 - **`remote/hostCatalogRefresh.ts`** — the only network writer, and it runs in
   the background only. Single flight per host, so concurrent tabs share one
-  pass. Gates in order: the build flag; the host shape (plain hostnames, no
+  pass. Each pass runs on `hostCatalogCheckMachine.ts` (`hostCatalogCheck`):
+  turning updates off cancels preparation and fetch, while an already-started
+  cache write settles before the host is freed. A timeout aborts the fetch and
+  records the failed attempt; late responses cannot write over a later check.
+  Gates in order: the build flag; the host shape (plain hostnames, no
   wildcards or ports); the user settings (online-updates switch, check interval
   counted from the last attempt, failure backoff, writer-version staleness); and
-  page eligibility, meaning at least one **enabled** plugin targets the host.
-  Gemini and AI Studio are never catalog hosts (`isEligibleCatalogHost`), even
-  with a local plugin enabled there, so they never produce a request. A manual
-  check sends `force` and skips every gate except the build flag and the host
-  shape.
+  page eligibility: a supported site has packaged page-locator data, or at least
+  one **enabled** plugin targets its host. This includes Gemini Enterprise and
+  both AI Studio hosts. A manual check sends
+  `force` and bypasses the automatic-update switch, due-time and enabled-plugin
+  gates; build-time disabling and hostname validation still apply.
 - **`remote/hostCatalogPolicy.ts`** — the pure rules the background and the
   content script must agree on (which hosts may be looked up, when a check is
   due, the backoff curve, when a cached entry may be used at all), each one
@@ -61,8 +65,11 @@ without an extension release.
 **Settings** live in `chrome.storage.sync` and are covered by
 `SettingsBackupService`: `gvPluginOnlineUpdatesEnabled` (master switch, on by
 default) and `gvPluginCatalogCheckInterval` (`1h` / `6h` / `24h` / `manual`,
-default `6h`). The popup surfaces both on plugin sites, plus a manual check that
-works even when the switch is off.
+default `6h`). The popup surfaces both on every supported site.
+Opening it reads the cache. Manual checks bypass the switch and interval.
+Turning updates off stops automatic requests. Cached plugin manifests and site
+adapter data remain usable under the same revision and identity rules at first
+mount and on catalog reload. The resolver invariants define OFF reads and the declarative compatibility boundary.
 
 **Message**: a content script or the popup sends `gv.pluginCatalog.refresh`
 (`PLUGIN_CATALOG_REFRESH_MESSAGE` in `runtime/messages.ts`) with
@@ -77,7 +84,8 @@ plugin id:
 - build-only ids (packaged official plugins and catalog folders) always come
   from this build and cannot be replaced or revoked remotely;
 - a remote entry whose `engine` range this build satisfies replaces the bundled
-  copy;
+  copy; native timeline identity parameters retain their packaged values, so an
+  update cannot redirect saved stars or account ownership;
 - if the remote entry needs a newer engine, the bundled copy stays and carries
   `blockedUpdate`, which the popup renders as "needs a newer Voyager" (when
   neither copy is compatible the remote one is listed and the status machine
@@ -105,11 +113,62 @@ namespace, a non-empty reason and no live plugin with the same id. It publishes
 only the ids as an optional top-level `"revoked": ["voyager.deepseek-retired"]`
 in every concrete host file of that site, even after its last plugin is removed.
 The build fails if a plugin directory lacks `plugin.json`, or if `revoked.json`
-has no concrete host that can publish it (including packaged-only Gemini and
-AI Studio sites).
+has no concrete host that can publish it. Gemini and AI Studio official plugins
+remain build-only and cannot be revoked remotely.
 Each host file also revokes the site's live plugin ids whose `matches` no longer
 cover that host. Narrowing a plugin to one host therefore stops its older bundled
 copy on the site's other hosts. When renaming a plugin id, add the old id to
 `revoked.json` so its bundled copy does not run alongside the renamed plugin.
 The additive field keeps `format: 1`; older clients ignore it and still revoke
 through absence from `plugins`. The reason stays in the source file.
+
+## Page-locator profiles in site data
+
+The optional `site.locators` section maps namespaced profile keys to ordered
+string arrays. Site-specific policy owns each literal allowlist and fallback
+group. `core/selectors/contracts/` registers each site; Gemini retains its
+domain vocabulary in `core/gemini/selectors/types.ts`.
+`validateSiteAdapterData` validates this section independently: an over-limit
+section is omitted and an unknown key is reported and ignored, while a malformed or unparsable
+locator drops only its surface’s group. The host’s plugin list, other adapter data and kill switch still work.
+
+Every supported host uses the same channel, for example:
+
+```text
+https://voyager.nagi.fun/catalog/hosts/gemini.google.com.json
+https://voyager.nagi.fun/catalog/hosts/business.gemini.google.json
+https://voyager.nagi.fun/catalog/hosts/aistudio.google.com.json
+```
+
+The [resolver invariants](../../../core/selectors/README.md#invariants) define
+site isolation, trust tiers, mount safety and packaged boundaries. The
+[trust ledger](../../../core/selectors/PACKAGED_DATA.md) records the decision for
+every key. Gemini and AI Studio official plugins and CSS remain packaged.
+
+The catalog builder reads the same selected non-`*-packaged.json` fragments as
+`bundle.ts`. Revision, cache writer version, refresh timing and withdrawal use
+this channel’s existing machinery. A resolved adapter must be newer than the
+bundle before its profiles can apply. Missing or empty `site.locators` restores
+only its namespaced profiles on the next page load. A complete withdrawal also
+restores admitted `site.selectors` values to their packaged values.
+
+Shared per-site hydration and its bounded adapter result use `startMachine` and
+share PluginHost’s first adapter and settings reads. Only hydration and the
+refresh gate use a capped adapter result; PluginHost keeps awaiting the original
+cache read, including reads slower than 250 ms, with Online updates on or off. The
+[startup readiness rule](../../../core/selectors/README.md#startup-readiness)
+defines the bounded first-consumer wait, frozen page view and independent
+baseline adapter precedence. New page-locator fixes, withdrawals and switching
+updates off take effect after a user refresh, with no automatic reload or native
+remount.
+The page requests a due catalog check after hydration; opening the popup only
+reads the cache, and its refresh button requests a manual check.
+
+The [rollback runbook](../../../core/selectors/README.md#rollback-runbook)
+covers higher-revision fixes and withdrawing locators in the host file.
+`VOYAGER_PLUGIN_CATALOG_REMOTE=off` disables the single catalog channel,
+including every site’s cached profiles. Requests omit cookies and send no page or
+conversation content or account identifiers. Hosting providers see ordinary
+connection metadata such as IP address, User-Agent and the hostname in the URL.
+Announcement and cloud-sync settings remain separate. D13/D14 require the same
+coverage and request disclosure in every privacy locale and store-listing draft.

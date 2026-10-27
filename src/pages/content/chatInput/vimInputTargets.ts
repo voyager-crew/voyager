@@ -1,3 +1,12 @@
+import { getGeminiSelectorView } from '@/core/gemini/selectors';
+import { GEMINI_VIM_PROFILE_KEYS } from '@/core/gemini/selectors/vimKeys';
+import { getSiteSelectorView } from '@/core/selectors';
+import { packagedInputSelector, inputSiteId } from '@/core/services/composer/siteInputData';
+
+import { resolveConfiguredComposer, isVisibleHudMount } from './vimConfiguredComposer';
+import type { ResolveVimComposer } from './vimGeminiComposer';
+
+export { resolveConfiguredComposer, isVisibleHudMount } from './vimConfiguredComposer';
 import { findChatInput } from './index';
 
 interface FindVimInputOptions {
@@ -5,91 +14,37 @@ interface FindVimInputOptions {
   target?: HTMLElement | null;
 }
 
-const EDITABLE_SELECTOR = 'input, textarea, select, [contenteditable="true"], [role="textbox"]';
-const EDIT_PROMPT_SELECTOR = [
-  '.query-content.edit-mode textarea',
-  '.edit-container textarea',
-  'textarea[aria-label="Edit prompt"]',
-  'textarea[aria-label="Edit message"]',
-].join(',');
-const SEND_BUTTON_SELECTOR = [
-  '.update-button',
-  'button[aria-label*="Send"]',
-  'button[aria-label*="send"]',
-  'button[data-tooltip*="Send"]',
-  'button[data-tooltip*="send"]',
-  'button mat-icon[fonticon="send"]',
-  '[data-send-button]',
-  '.send-button',
-  'button[aria-label*="Update"]',
-  'button[aria-label*="Save"]',
-  'button[aria-label*="更新"]',
-].join(',');
-
-/** Wrapper selectors may contain several hidden editors; prefer the rendered control. */
-export function resolveConfiguredComposer(
-  selector: string,
-  options: { requireVisible?: boolean } = {},
-  doc: Document = document,
-): HTMLElement | null {
-  const requireVisible = options.requireVisible ?? true;
-  let fallback: HTMLElement | null = null;
-  try {
-    for (const element of Array.from(doc.querySelectorAll(selector))) {
-      if (!(element instanceof HTMLElement)) continue;
-      const editables = element.matches(EDITABLE_SELECTOR)
-        ? [element]
-        : Array.from(element.querySelectorAll<HTMLElement>(EDITABLE_SELECTOR));
-      for (const editable of editables) {
-        if (!fallback) fallback = editable;
-        if (isVisibleHudMount(editable)) return editable;
-      }
-    }
-  } catch {
-    // Invalid selector from a site file: fall back to the generic lookup.
-    return null;
-  }
-  return requireVisible ? null : fallback;
-}
-
 export function isEditableTarget(element: HTMLElement | null): boolean {
   if (!element) return false;
-  return element.matches(EDITABLE_SELECTOR) || Boolean(element.closest(EDITABLE_SELECTOR));
+  return (
+    element.matches(packagedInputSelector('vim.editable')) ||
+    Boolean(element.closest(packagedInputSelector('vim.editable')))
+  );
 }
 
 export function isEditPromptInput(element: HTMLElement): boolean {
-  return element.matches(EDIT_PROMPT_SELECTOR);
+  return element.matches(packagedInputSelector('vim.editInputs'));
 }
 
 export function getSendButtonTarget(element: HTMLElement | null): HTMLElement | null {
   if (!element) return null;
 
-  const matched = element.closest(SEND_BUTTON_SELECTOR);
+  const matched = element.closest(packagedInputSelector('vim.sendTarget'));
   if (!(matched instanceof HTMLElement)) return null;
 
   const button = matched.closest('button');
   return button instanceof HTMLElement ? button : matched;
 }
 
-function hasVisibleLayout(element: HTMLElement): boolean {
-  const rect = element.getBoundingClientRect();
-  return rect.width > 0 && rect.height > 0;
-}
-
-function isElementHidden(element: HTMLElement): boolean {
-  if (element.hidden || element.getAttribute('aria-hidden') === 'true') return true;
-
-  const style = window.getComputedStyle?.(element);
-  return style?.display === 'none' || style?.visibility === 'hidden';
-}
-
-export function isVisibleHudMount(element: HTMLElement | null): element is HTMLElement {
-  if (!element || !element.isConnected || isElementHidden(element)) return false;
-  return hasVisibleLayout(element);
-}
-
-export function createVimInputTargets(getConfiguredSelector: () => string | null) {
+export function createVimInputTargets(
+  getConfiguredSelector: () => string | null,
+  resolveComposer?: ResolveVimComposer,
+) {
   function locateChatInput(options: { requireVisible?: boolean } = {}): HTMLElement | null {
+    if (resolveComposer) {
+      return resolveComposer({ doc: document, requireVisible: options.requireVisible ?? true })
+        .element;
+    }
     const configuredComposerSelector = getConfiguredSelector();
     if (configuredComposerSelector) {
       const configured = resolveConfiguredComposer(configuredComposerSelector, options);
@@ -102,7 +57,7 @@ export function createVimInputTargets(getConfiguredSelector: () => string | null
     let fallback: HTMLElement | null = null;
 
     for (const element of Array.from(
-      document.querySelectorAll<HTMLElement>(EDIT_PROMPT_SELECTOR),
+      document.querySelectorAll<HTMLElement>(packagedInputSelector('vim.editInputs')),
     )) {
       if (!fallback && element.isConnected) fallback = element;
       if (isVisibleHudMount(element)) return element;
@@ -114,10 +69,33 @@ export function createVimInputTargets(getConfiguredSelector: () => string | null
   function findVimInputFromTarget(element: HTMLElement | null): HTMLElement | null {
     if (!element) return null;
 
-    const editable = element.matches(EDITABLE_SELECTOR)
+    const editable = element.matches(packagedInputSelector('vim.editable'))
       ? element
-      : element.closest<HTMLElement>(EDITABLE_SELECTOR);
-    if (!editable) return null;
+      : element.closest<HTMLElement>(packagedInputSelector('vim.editable'));
+    if (!editable) {
+      // OFF keeps unrelated focus and key events out of composer style/layout queries.
+      const site = inputSiteId(element.ownerDocument);
+      if (!site) return null;
+      const view: { readonly remoteKeys: ReadonlySet<string> } =
+        site !== 'gemini' ? getSiteSelectorView(site) : getGeminiSelectorView();
+      if (
+        !GEMINI_VIM_PROFILE_KEYS.some((key) => view.remoteKeys.has(key)) &&
+        !view.remoteKeys.has('composer')
+      )
+        return null;
+      const accepted = resolveComposer?.({ doc: element.ownerDocument, requireVisible: false });
+      // A repaired native editable still owns its events when its new markup misses the legacy union.
+      if (
+        accepted &&
+        (accepted.view.remoteKeys.has('vim.candidates') ||
+          accepted.view.remoteKeys.has('vim.configuredComposer') ||
+          accepted.view.remoteKeys.has('composer')) &&
+        accepted.element &&
+        (accepted.element === element || accepted.element.contains(element))
+      )
+        return accepted.element;
+      return null;
+    }
 
     if (isEditPromptInput(editable)) return editable;
 

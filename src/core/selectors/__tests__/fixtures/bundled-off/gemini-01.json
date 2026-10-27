@@ -1,0 +1,352 @@
+[
+  ["siteId", "gemini"],
+  [
+    "profiles/userTurn",
+    [
+      ".user-query-bubble-with-background, .user-query-bubble-container, .user-query-container, user-query-content .user-query-bubble-with-background, user-query-content, user-query, div[aria-label=\"User message\"], article[data-author=\"user\"], article[data-turn=\"user\"], [data-message-author-role=\"user\"], div[role=\"listitem\"][data-user=\"true\"]"
+    ]
+  ],
+  [
+    "profiles/assistantTurn",
+    [
+      "[aria-label=\"Gemini response\"], [data-message-author-role=\"assistant\"], [data-message-author-role=\"model\"], article[data-author=\"assistant\"], article[data-turn=\"assistant\"], article[data-turn=\"model\"], model-response, .model-response, response-container, .response-container, .presented-response-container, div[role=\"listitem\"]:not([data-user=\"true\"])"
+    ]
+  ],
+  ["profiles/composer", ["input-area-v2, rich-textarea, .text-input-field"]],
+  ["profiles/sidebar", ["bard-sidenav, .gv-folder-container"]],
+  ["profiles/codeBlock", ["code-block"]],
+  [
+    "profiles/composerRoot",
+    [".text-input-field, .user-query-container.edit-mode, [role=\"dialog\"]"]
+  ],
+  ["profiles/sendButton", [".send-button.submit button, .update-button button"]],
+  [
+    "profiles/title.export",
+    [".gds-label-l", ".conversation-title-text", "[data-test-id=\"conversation-title\"]", "h3"]
+  ],
+  [
+    "profiles/title.active",
+    [
+      "mat-list-item.mdc-list-item--activated [mat-line]",
+      "mat-list-item[aria-current=\"page\"] [mat-line]",
+      ".conversation-list-item.active .conversation-title",
+      ".active-conversation .title"
+    ]
+  ],
+  [
+    "profiles/title.activeExport",
+    [
+      "mat-list-item.mdc-list-item--activated [mat-line]",
+      "mat-list-item[aria-current=\"page\"] [mat-line]"
+    ]
+  ],
+  [
+    "profiles/title.activeResearch",
+    [
+      "mat-list-item.mdc-list-item--activated [mat-line]",
+      "mat-list-item[aria-current=\"page\"] [mat-line]",
+      ".conversation-list-item.active .conversation-title"
+    ]
+  ],
+  [
+    "profiles/conversation.roots",
+    ["#chat-history", "infinite-scroller.chat-history", "chat-window-content", "main"]
+  ],
+  [
+    "profiles/sidebar.pageTitle",
+    [
+      ".conversation-title-container [data-test-id=\"conversation-title\"]",
+      "top-bar-actions [data-test-id=\"conversation-title\"]",
+      ".top-bar-actions [data-test-id=\"conversation-title\"]",
+      ".conversation-title-container .conversation-title.gds-title-m",
+      "top-bar-actions .conversation-title.gds-title-m"
+    ]
+  ],
+  [
+    "profiles/sidebar.newChat",
+    [
+      "[data-test-id=\"new-chat-button\"] a[href]",
+      "a[data-test-id=\"new-chat-button\"]",
+      "[data-test-id=\"new-chat-button\"] button",
+      "button[data-test-id=\"new-chat-button\"]"
+    ]
+  ],
+  ["profiles/sidebar.actionsContainer", [".conversation-actions-container"]],
+  [
+    "profiles/sidebar.toggleButton",
+    [
+      "button[aria-label=\"Open sidebar\"]",
+      "button[aria-label=\"Close sidebar\"]",
+      "side-nav-sparkle-button button",
+      "button[data-test-id=\"side-nav-menu-button\"]",
+      "side-nav-menu-button button"
+    ]
+  ],
+  ["profiles/deepResearch.items", [".item-container"]],
+  ["profiles/deepResearch.reportCandidates", [".markdown, .markdown-main-panel, message-content"]],
+  ["profiles/deepResearch.panel", ["deep-research-immersive-panel"]],
+  ["profiles/deepResearch.thinkingPanels", ["thinking-panel"]],
+  ["profiles/sentChips.lines", [".query-text-line", ".query-text"]],
+  ["profiles/sentChips.anchor", [".query-text"]],
+  ["profiles/project.modelAnchor", [".model-picker-container"]],
+  ["profiles/project.inputAnchor", ["rich-textarea"]],
+  ["profiles/project.fontSource", [".model-picker-container button"]],
+  ["profiles/sidebarWidth.candidates", ["bard-sidenav button"]],
+  ["profiles/code.buttons", [".buttons"]],
+  ["profiles/generatedImage.container", ["generated-image,.generated-image-container"]],
+  ["profiles/canvas.documentEditors", ["immersive-editor"]],
+  ["profiles/canvasEntry.menus", ["gem-menu[role=\"menu\"]"]],
+  [
+    "profiles/exportLayout.controls",
+    [
+      "top-bar-actions",
+      ".top-bar-actions",
+      "[data-test-id=\"top-bar-actions\"]",
+      "side-nav-sparkle-button",
+      "side-nav-menu-button",
+      "[data-test-id*=\"upgrade\" i]",
+      "[aria-label*=\"upgrade\" i]",
+      "#conversation-header-actions",
+      "[data-testid=\"share-chat-button\"]",
+      "[data-testid=\"conversation-options-button\"]"
+    ]
+  ],
+  [
+    "profiles/exportLayout.broadControls",
+    ["[aria-label*=\"pro\" i]", "[aria-label*=\"advanced\" i]"]
+  ],
+  ["profiles/exportLayout.canvasOwner", ["inline-preview, immersive-panel"]],
+  ["profiles/exportLayout.canvasContent", ["immersive-editor, code-immersive-panel"]],
+  ["profiles/exportLayout.fullscreenCanvas", ["immersive-panel"]],
+  [
+    "profiles/exportLayout.inactiveCanvas",
+    ["deep-research-immersive-panel, [hidden], [aria-hidden=\"true\"]"]
+  ],
+  ["profiles/exportLayout.turns", ["user-query, model-response, [data-message-author-role]"]],
+  ["profiles/exportLayout.interactive", ["button, a[href], [role=\"button\"]"]],
+  [
+    "profiles/exportLayout.overlaySidebar",
+    [
+      "[data-test-id=\"side-nav\"]",
+      "side-navigation",
+      "mat-sidenav",
+      "aside",
+      "nav",
+      ".side-nav",
+      ".sidenav",
+      ".chat-history-nav"
+    ]
+  ],
+  ["profiles/exportLayout.fallbackRoot", ["main"]],
+  [
+    "profiles/exportLayout.alignmentCanvas",
+    [
+      "#chat-history",
+      "infinite-scroller.chat-history",
+      ".chat-history-scroll-container",
+      "chat-window-content",
+      "main chat-window-content"
+    ]
+  ],
+  [
+    "profiles/exportLayout.alignmentComposer",
+    [
+      "rich-textarea",
+      "[aria-label*=\"Enter a prompt\"]",
+      "[aria-label*=\"prompt\"]",
+      "[aria-label*=\"Gemini\"]",
+      "[contenteditable=\"true\"][aria-label]"
+    ]
+  ],
+  [
+    "profiles/input.clearance",
+    [
+      "form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message"
+    ]
+  ],
+  ["profiles/input.fab", ["span.mat-mdc-button-touch-target"]],
+  ["profiles/vim.host", [".text-input-field, input-area-v2, input-container"]],
+  ["profiles/vim.inputFallback", ["rich-textarea"]],
+  ["profiles/vim.mountInput", ["#prompt-textarea[contenteditable=\"true\"]"]],
+  ["profiles/vim.mountRoot", ["form"]],
+  ["profiles/vim.mountChatInput", ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]],
+  ["profiles/vim.mountChatRoot", ["fieldset"]],
+  ["profiles/timeline.userText", ["[data-user-message-bubble], .query-text, .ds-collapsible-text"]],
+  [
+    "profiles/turn.user",
+    [
+      ".user-query-bubble-with-background",
+      ".user-query-bubble-container",
+      ".user-query-container",
+      "user-query-content .user-query-bubble-with-background",
+      "div[aria-label=\"User message\"]",
+      "article[data-author=\"user\"]",
+      "article[data-turn=\"user\"]",
+      "[data-message-author-role=\"user\"]",
+      "div[role=\"listitem\"][data-user=\"true\"]"
+    ]
+  ],
+  [
+    "profiles/turn.userWithHosts",
+    [
+      ".user-query-bubble-with-background",
+      ".user-query-bubble-container",
+      ".user-query-container",
+      "user-query-content .user-query-bubble-with-background",
+      "user-query-content",
+      "user-query",
+      "div[aria-label=\"User message\"]",
+      "article[data-author=\"user\"]",
+      "article[data-turn=\"user\"]",
+      "[data-message-author-role=\"user\"]",
+      "div[role=\"listitem\"][data-user=\"true\"]"
+    ]
+  ],
+  [
+    "profiles/turn.assistant",
+    [
+      "[aria-label=\"Gemini response\"]",
+      "[data-message-author-role=\"assistant\"]",
+      "[data-message-author-role=\"model\"]",
+      "article[data-author=\"assistant\"]",
+      "article[data-turn=\"assistant\"]",
+      "article[data-turn=\"model\"]",
+      ".model-response",
+      "model-response",
+      ".response-container"
+    ]
+  ],
+  ["profiles/turn.assistantFallback", ["div[role=\"listitem\"]:not([data-user=\"true\"])"]],
+  [
+    "profiles/turn.assistantWithHosts",
+    [
+      "[aria-label=\"Gemini response\"]",
+      "[data-message-author-role=\"assistant\"]",
+      "[data-message-author-role=\"model\"]",
+      "article[data-author=\"assistant\"]",
+      "article[data-turn=\"assistant\"]",
+      "article[data-turn=\"model\"]",
+      "model-response",
+      ".model-response",
+      "response-container",
+      ".response-container",
+      ".presented-response-container",
+      "div[role=\"listitem\"]:not([data-user=\"true\"])"
+    ]
+  ],
+  ["profiles/sidebar.overflow", ["[data-test-id=\"overflow-container\"]"]],
+  [
+    "profiles/sidebar.notebooks",
+    [
+      "expandable-section[storagekey=\"notebooks\"]",
+      "expandable-section[data-test-id=\"notebooks-expandable-section\"]"
+    ]
+  ],
+  ["profiles/sidebar.recents", ["expandable-section[data-test-id=\"chats-expandable-section\"]"]],
+  ["profiles/sidebar.allConversations", ["[data-test-id=\"all-conversations\"]"]],
+  ["profiles/sidebar.history", [".chat-history"]],
+  ["profiles/sidebar.section", ["expandable-section"]],
+  ["profiles/sidebar.row", ["[data-test-id=\"conversation\"]"]],
+  ["profiles/sidebar.rowContainer", [".chat-history", "[class*=\"conversation\"]"]],
+  ["profiles/sidebar.openHost", ["chat-app.side-nav-open", "#app-root.side-nav-open"]],
+  ["profiles/sidebar.host", ["bard-sidenav", "side-nav"]],
+  ["profiles/sidebar.visibilityHost", ["chat-app", "#app-root"]],
+  [
+    "profiles/sidebar.links",
+    ["[data-test-id=\"conversation\"] a[href]", "a[data-test-id=\"conversation\"][href]"]
+  ],
+  ["profiles/sidebar.conversationLinks", ["a[href*=\"/app/\"]", "a[href*=\"/gem/\"]"]],
+  [
+    "profiles/sidebar.title",
+    [
+      ".title-text",
+      ".gds-label-l",
+      ".conversation-title-text",
+      "[data-test-id=\"conversation-title\"]",
+      "h3"
+    ]
+  ],
+  ["profiles/sidebar.titleFallback", [".gds-body-m", ".gds-label-m", ".subtitle"]],
+  ["profiles/sidebar.scroller", ["infinite-scroller"]],
+  ["profiles/sidebar.interactionButton", ["bard-sidenav button", "bard-sidenav [role=\"button\"]"]],
+  ["profiles/sidebar.forkRoots", ["bard-sidenav", "[data-test-id=\"all-conversations\"]"]],
+  [
+    "profiles/modelPicker.trigger",
+    [
+      "[data-test-id=\"bard-mode-menu-button\"]",
+      "button.input-area-switch",
+      ".input-area-switch-label",
+      "[data-test-id=\"model-selector\"]",
+      "button[aria-haspopup=\"menu\"].mat-mdc-menu-trigger"
+    ]
+  ],
+  [
+    "profiles/modelPicker.legacyPanels",
+    [
+      ".mat-mdc-menu-panel.gds-mode-switch-menu[role=\"menu\"]",
+      "mat-action-list.gds-mode-switch-menu-list"
+    ]
+  ],
+  [
+    "profiles/modelPicker.panelFallback",
+    [".mat-mdc-menu-panel[role=\"menu\"]:not(.desktop-settings-menu)"]
+  ],
+  ["profiles/modelPicker.overlayPane", [".cdk-overlay-pane"]],
+  [
+    "profiles/modelPicker.container",
+    [
+      ".cdk-overlay-pane, .mat-mdc-menu-panel[role=\"menu\"], mat-action-list.gds-mode-switch-menu-list"
+    ]
+  ],
+  [
+    "profiles/modelPicker.observerRoot",
+    [
+      ".cdk-overlay-container, .cdk-global-overlay-wrapper, .cdk-overlay-connected-position-bounding-box, .cdk-overlay-pane, .mat-mdc-menu-panel[role=\"menu\"], mat-action-list.gds-mode-switch-menu-list, [data-mode-id], [role=\"menuitemradio\"], [role=\"menuitem\"]"
+    ]
+  ],
+  ["profiles/modelPicker.items", ["[role=\"menuitemradio\"], [role=\"menuitem\"]"]],
+  ["profiles/modelPicker.modelEvidence", ["[data-mode-id], .mode-title, .title-and-description"]],
+  ["profiles/modelPicker.modelIdItem", ["[data-mode-id]"]],
+  ["profiles/modelPicker.modelLabel", [".mode-title, .gds-title-m, .gds-label-l, .label"]],
+  ["profiles/modelPicker.thinkingLabel", [".label, .gds-title-m, .gds-label-l"]],
+  ["profiles/modelPicker.thinkingRow", ["[value=\"thinking_level\"]"]],
+  ["profiles/modelPicker.thinkingItems", ["gem-menu-item, [role=\"menuitem\"]"]],
+  ["profiles/modelPicker.thinkingContent", ["gem-menu-item-content, .label-container"]],
+  ["profiles/modelPicker.modelTitleContainer", [".title-and-description, .label-container"]],
+  ["profiles/modelPicker.thinkingTitleContainer", [".label-container"]],
+  [
+    "profiles/modelPicker.focusInput",
+    [
+      "main rich-textarea [contenteditable=\"true\"]",
+      "rich-textarea [contenteditable=\"true\"]",
+      "main div[contenteditable=\"true\"][role=\"textbox\"]",
+      "div[contenteditable=\"true\"][role=\"textbox\"]",
+      "main .input-area textarea",
+      ".input-area textarea",
+      "main [contenteditable=\"true\"]",
+      "main textarea"
+    ]
+  ],
+  [
+    "profiles/composer.candidates",
+    [
+      "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+      "#prompt-textarea[contenteditable=\"true\"]",
+      "[data-composer-markdown][contenteditable=\"true\"]",
+      "rich-textarea [contenteditable=\"true\"]",
+      "div[contenteditable=\"true\"][role=\"textbox\"]",
+      ".input-area textarea",
+      "textarea[placeholder*=\"Ask\"]",
+      "textarea"
+    ]
+  ],
+  [
+    "profiles/composer.draftCandidates",
+    [
+      "rich-textarea [contenteditable=\"true\"]",
+      "div[contenteditable=\"true\"][role=\"textbox\"]",
+      ".input-area textarea",
+      "textarea[placeholder*=\"Ask\"]"
+    ]
+  ]
+]

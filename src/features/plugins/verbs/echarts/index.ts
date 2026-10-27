@@ -80,9 +80,9 @@ function echartsDiagram(): CodeBlockDiagram {
     },
     install(doc) {
       renderer.startResizeObserver();
-      // The view only lends its stylesheet; its wrappers are Gemini's.
+      // Fullscreen styles are shared with the active shadow-panel renderer.
       const release = leaseDiagramStyle(doc, ECHARTS_STYLES_ID, () =>
-        createEChartsView(renderer, fullscreen).createStyles(),
+        createEChartsView().createStyles(),
       );
       return () => {
         fullscreen.close();

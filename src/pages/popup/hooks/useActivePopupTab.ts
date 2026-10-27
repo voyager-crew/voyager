@@ -16,6 +16,7 @@ export function useActivePopupTab(sourceTabId?: number) {
     'gemini',
   );
   const [activeTabContextLoaded, setActiveTabContextLoaded] = useState(false);
+  const [resolvedSourceTabId, setResolvedSourceTabId] = useState<number | undefined>(undefined);
   // Older reads must not replace the context after another read or source-tab change.
   const requestVersion = useRef(0);
 
@@ -35,7 +36,10 @@ export function useActivePopupTab(sourceTabId?: number) {
     } catch {
       // Keep the previous context when tab inspection fails.
     } finally {
-      if (version === requestVersion.current) setActiveTabContextLoaded(true);
+      if (version === requestVersion.current) {
+        setResolvedSourceTabId(sourceTabId);
+        setActiveTabContextLoaded(true);
+      }
     }
   }, [sourceTabId]);
 
@@ -50,7 +54,8 @@ export function useActivePopupTab(sourceTabId?: number) {
     activeUrl,
     activeTabId,
     activeAccountPlatform,
-    activeTabContextLoaded,
+    // A newly supplied options source is unresolved even while the previous tab is still cached.
+    activeTabContextLoaded: activeTabContextLoaded && resolvedSourceTabId === sourceTabId,
     refreshActiveTabContext,
   };
 }

@@ -19,12 +19,12 @@ import { CatalogTimelineOptions } from './components/CatalogTimelineOptions';
 import { CloudSyncSettings } from './components/CloudSyncSettings';
 import { DiagnosticsExportCard } from './components/DiagnosticsExportCard';
 import { FolderSettingsCard } from './components/FolderSettingsCard';
-import { GeneralSettingsCard } from './components/GeneralSettingsCard';
 import { KeyboardShortcutSettings } from './components/KeyboardShortcutSettings';
 import { NativeHealthNotice } from './components/NativeHealthNotice';
 import { NativeLocalPluginsSection } from './components/NativeLocalPluginsSection';
 import { PluginSiteSettings } from './components/PluginSiteSettings';
 import { PopupFooter } from './components/PopupFooter';
+import { PopupGeneralSettings } from './components/PopupGeneralSettings';
 import { PopupHeader } from './components/PopupHeader';
 import { PopupLayoutSettings } from './components/PopupLayoutSettings';
 import { PopupSearchBox } from './components/PopupSearchBox';
@@ -386,16 +386,12 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
         {/* General Options */}
         {wrapSection(
           'general',
-          <GeneralSettingsCard
-            values={general.values}
-            onChange={general.onChange}
-            remoteAnnouncementPermissionCta={{
-              visible:
-                general.values.remoteAnnouncementEnabled &&
-                canUseSystemNotifications &&
-                !general.remoteAnnouncementPermissionGranted,
-              onRequest: general.requestRemoteAnnouncementSystemPermission,
-            }}
+          <PopupGeneralSettings
+            settings={general}
+            catalogHost={tab.activeTabContextLoaded ? plugins.pluginCatalogHost : undefined}
+            refreshing={plugins.pluginsRefreshing}
+            onRefresh={plugins.refresh}
+            canUseSystemNotifications={canUseSystemNotifications}
             isVisible={(settingId) => sections.shouldShowSetting('general', settingId)}
             t={t}
           />,

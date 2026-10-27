@@ -1,7 +1,12 @@
 import { logger } from '@/core/services/LoggerService';
 
 import { recordWatermarkPresence } from '../watermarkNativeNotice/cleanStreak';
-import { DOWNLOAD_ICON_SELECTOR } from './downloadButton';
+import {
+  GENERATED_IMAGE_PACKAGED,
+  findGeneratedDownloadIcon,
+  findGeneratedImageOwner,
+  findGeneratedPreviewImages,
+} from './generatedImageTargets';
 import type { WatermarkEngine } from './watermarkEngine';
 
 /** The 🍌 badge on a download button that saves the unwatermarked image. */
@@ -78,15 +83,13 @@ export function createWatermarkPreviews({
     });
 
   const isValidGeminiImage = (img: HTMLImageElement): boolean =>
-    img.closest('generated-image,.generated-image-container') !== null;
+    findGeneratedImageOwner(img) !== null;
 
   /**
    * Find all Gemini-generated images on the page
    */
   const findGeminiImages = (): HTMLImageElement[] =>
-    [...document.querySelectorAll<HTMLImageElement>('img[src*="googleusercontent.com"]')].filter(
-      (img) => isValidGeminiImage(img) && img.dataset.watermarkProcessed !== 'true',
-    );
+    findGeneratedPreviewImages(document).filter((img) => img.dataset.watermarkProcessed !== 'true');
 
   /** Restore only attributes still owned by this runtime; never overwrite Gemini's newer image. */
   const restorePreview = (img: HTMLImageElement): void => {
@@ -163,10 +166,10 @@ export function createWatermarkPreviews({
    * host (toolbar AND lightbox).
    */
   function addDownloadIndicator(imgElement: HTMLImageElement): void {
-    const container = imgElement.closest('generated-image,.generated-image-container');
+    const container = findGeneratedImageOwner(imgElement);
     if (!container) return;
 
-    const nativeDownloadIcon = container.querySelector(DOWNLOAD_ICON_SELECTOR);
+    const nativeDownloadIcon = findGeneratedDownloadIcon(container);
     const nativeButton = nativeDownloadIcon?.closest('button');
     if (!nativeButton) return;
 
@@ -289,9 +292,13 @@ export function createWatermarkPreviews({
    */
   const decorateDownloadButtons = (): void => {
     if (!getState().downloadEnabled) return;
-    const hosts = document.querySelectorAll<HTMLElement>('download-generated-image-button');
+    const hosts = document.querySelectorAll<HTMLElement>(
+      GENERATED_IMAGE_PACKAGED['generatedImage.downloadHost'],
+    );
     hosts.forEach((host) => {
-      const button = host.querySelector<HTMLButtonElement>('button');
+      const button = host.querySelector<HTMLButtonElement>(
+        GENERATED_IMAGE_PACKAGED['generatedImage.button'],
+      );
       if (button) attachIndicatorToButton(button);
     });
   };

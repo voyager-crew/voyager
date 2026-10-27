@@ -50,6 +50,7 @@ import {
   activatePrimitives,
   updatePrimitiveSettings,
 } from './primitiveLifecycle';
+import { resolveSemanticElements } from './semanticElements';
 import { applyOpToElement, isTargetedOp } from './targetedOps';
 
 interface ActivePlugin extends PrimitiveSlot {
@@ -65,10 +66,14 @@ interface ActivePlugin extends PrimitiveSlot {
 }
 
 export interface DeclarativeEngineOptions {
+  /** Only an installed remote page profile needs to distinguish native decorations from our UI. */
+  readonly trackNativeDecorations?: boolean;
   /** Document to operate on. Defaults to ambient `document` (override in tests). */
   readonly doc?: Document;
   /** Adapter used to resolve `semantic` selector refs. May be null (unknown site). */
   readonly adapter?: SiteAdapter | null;
+  /** DOM ops retain legacy site override trust where native UI placement has a separate contract. */
+  readonly targetAdapter?: SiteAdapter | null;
   /** Health verdict changes (plan D12): `noEffect` true = flagged; `zeroOps` the ops that found nothing. */
   readonly onHealthChange?: HealthMonitorOptions['onChange'];
   /** Test hook: DOM silence before a health verdict. */
@@ -92,6 +97,7 @@ export interface DeclarativeEngineOptions {
 export class DeclarativeEngine {
   private readonly doc: Document;
   private readonly adapter: SiteAdapter | null;
+  private readonly targetAdapter: SiteAdapter | null;
   private readonly active = new Map<string, ActivePlugin>();
   private readonly health: HealthMonitor;
   private readonly shouldTrackHealth: (manifest: PluginManifest) => boolean;
@@ -107,9 +113,10 @@ export class DeclarativeEngine {
   constructor(options: DeclarativeEngineOptions = {}) {
     this.doc = options.doc ?? document;
     this.adapter = options.adapter ?? null;
+    this.targetAdapter = options.targetAdapter ?? this.adapter;
     this.shouldTrackHealth = options.shouldTrackHealth ?? (() => true);
     this.onRelease = options.onRelease;
-    this.ledger = new DomEffectLedger(this.doc);
+    this.ledger = new DomEffectLedger(this.doc, options.trackNativeDecorations);
     this.primitiveEnv = {
       doc: this.doc,
       adapter: this.adapter,
@@ -199,7 +206,7 @@ export class DeclarativeEngine {
   }
 
   private healthSample(entry: ActivePlugin): HealthSample {
-    const ops = diagnoseOps(this.doc, this.adapter, entry.manifest);
+    const ops = diagnoseOps(this.doc, this.targetAdapter, entry.manifest);
     let total = ops.reduce((sum, op) => sum + op.count, 0);
     for (const count of entry.targetCounters) {
       try {
@@ -381,7 +388,7 @@ export class DeclarativeEngine {
 
   private resolveSelector(ref: SelectorRef): string | null {
     if (ref.kind === 'css') return ref.selector;
-    const selector = this.adapter?.selectors[ref.key];
+    const selector = this.targetAdapter?.selectors[ref.key];
     if (!selector) {
       logger.warn('Unknown semantic selector key', {
         key: ref.key,
@@ -393,6 +400,10 @@ export class DeclarativeEngine {
   }
 
   private queryAll(ref: SelectorRef): Element[] {
+    if (ref.kind === 'semantic') {
+      const elements = resolveSemanticElements(this.doc, this.targetAdapter, ref.key);
+      if (elements) return [...elements];
+    }
     const selector = this.resolveSelector(ref);
     if (!selector) return [];
     try {

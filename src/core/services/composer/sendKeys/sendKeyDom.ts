@@ -5,7 +5,7 @@
  */
 import { hasPendingComposerUpload } from '@/core/services/composer/sendGuards';
 import {
-  SEND_BUTTON_SELECTORS,
+  sendButtonSelectors,
   isSendActionButton,
   isUnavailableSendControl,
 } from '@/pages/content/sendBehavior/sendButton';
@@ -26,14 +26,7 @@ function isVisibleButton(element: Element): element is HTMLButtonElement {
   return element instanceof HTMLButtonElement && element.offsetParent !== null;
 }
 
-/**
- * Find the send button associated with the current input element.
- *
- * Strategy:
- * 1. Container Search: Use `closest()` to find a known container (e.g. `.text-input-field`, `chat-message`).
- * 2. Scoped Button Search: Only search for buttons within the found container to avoid stale matches.
- */
-export function findSendButton(
+export function findSendContainer(
   inputElement: HTMLElement,
   containerSelectors: readonly string[],
 ): HTMLElement | null {
@@ -46,6 +39,25 @@ export function findSendButton(
     }
   }
 
+  return container;
+}
+
+/**
+ * Find the send button associated with the current input element.
+ *
+ * Strategy:
+ * 1. Container Search: Use `closest()` to find a known container (e.g. `.text-input-field`, `chat-message`).
+ * 2. Scoped Button Search: Only search for buttons within the found container to avoid stale matches.
+ */
+export function findSendButton(
+  inputElement: HTMLElement,
+  containerSelectors: readonly string[],
+): HTMLElement | null {
+  return findSendButtonInContainer(findSendContainer(inputElement, containerSelectors));
+}
+
+/** Uses the unchanged packaged button order, upload checks and semantic fallback. */
+export function findSendButtonInContainer(container: HTMLElement | null): HTMLElement | null {
   // Gemini renders a semantic progressbar inside the composer while an
   // attachment is still uploading. Its native Enter handler waits for that
   // state to clear, but a programmatic button click bypasses the guard.
@@ -53,7 +65,7 @@ export function findSendButton(
 
   // Search for the button strictly WITHIN the container
   if (container) {
-    for (const selector of SEND_BUTTON_SELECTORS) {
+    for (const selector of sendButtonSelectors(container.ownerDocument)) {
       try {
         const element = container.querySelector(selector);
         if (element instanceof HTMLElement) {

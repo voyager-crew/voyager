@@ -52,7 +52,7 @@ export class NotebooksAnchorToggle {
     this.button?.remove();
     this.button = null;
     document
-      .querySelectorAll(`expandable-section.${ANCHOR_HOST_CLASS}`)
+      .querySelectorAll(`.${ANCHOR_HOST_CLASS}`)
       .forEach((element) => element.classList.remove(ANCHOR_HOST_CLASS));
   }
 

@@ -1,0 +1,27 @@
+/** Independent proofs protect actions/data; placement-only keys use the shared Tier B rule. */
+export const GEMINI_EXTENDED_KEYS = [
+  'title.export',
+  'title.active',
+  'title.activeExport',
+  'title.activeResearch',
+  'conversation.roots',
+  'sidebar.pageTitle',
+  'sidebar.newChat',
+  'sidebar.actionsContainer',
+  'sidebar.toggleButton',
+  'deepResearch.items',
+  'deepResearch.reportCandidates',
+  'deepResearch.panel',
+  'deepResearch.thinkingPanels',
+  'sentChips.lines',
+  'sentChips.anchor',
+  'project.modelAnchor',
+  'project.inputAnchor',
+  'project.fontSource',
+  'sidebarWidth.candidates',
+  'code.buttons',
+  'generatedImage.container',
+  'canvas.documentEditors',
+  'canvasEntry.menus',
+] as const;
+export const GEMINI_EXTENDED_GROUPS = GEMINI_EXTENDED_KEYS.map((key) => [key]);

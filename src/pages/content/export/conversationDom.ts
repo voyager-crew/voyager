@@ -1,17 +1,16 @@
+import { resolveGeminiConversationRoot } from '@/core/gemini/content/conversation';
+import { GEMINI_PACKAGED_CONTENT } from '@/core/gemini/content/packaged';
+import { resolveGeminiAnswerElement } from '@/core/gemini/content/reads';
+import { getGeminiTurnView, type GeminiTurnView } from '@/core/gemini/selectors';
 import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
-import { queryOutsideThoughts } from '@/features/export/services/exportDomPolicy';
+
+import { readAssistantExportElement } from './assistantExportElement';
+import { readConfiguredExportUserSelector } from './configuredUserSelector';
 
 type ResolveConversationRootOptions = {
   userSelectors: string[];
   doc?: Document;
 };
-
-const CONVERSATION_ROOT_CANDIDATES = [
-  '#chat-history',
-  'infinite-scroller.chat-history',
-  'chat-window-content',
-  'main',
-];
 
 export function filterOutDeepResearchImmersiveNodes<T extends HTMLElement>(elements: T[]): T[] {
   return elements.filter((element) => !element.closest('deep-research-immersive-panel'));
@@ -66,67 +65,48 @@ export function findAssistantForTurn(
 }
 
 /** The element inside a Gemini response host that holds the answer itself. */
-export function pickAssistantExportElement(assistantHost: HTMLElement): HTMLElement {
-  return (
-    queryOutsideThoughts<HTMLElement>(assistantHost, 'message-content') ||
-    queryOutsideThoughts<HTMLElement>(assistantHost, '.markdown, .markdown-main-panel') ||
-    (assistantHost.closest('.presented-response-container') as HTMLElement | null) ||
-    queryOutsideThoughts<HTMLElement>(
-      assistantHost,
-      '.presented-response-container, .response-content',
-    ) ||
-    queryOutsideThoughts<HTMLElement>(assistantHost, 'response-element') ||
-    assistantHost
+export function pickAssistantExportElement(
+  assistantHost: HTMLElement,
+  view?: GeminiTurnView,
+): HTMLElement {
+  return resolveGeminiAnswerElement(
+    assistantHost,
+    () => pickBundledAssistantExportElement(assistantHost),
+    view,
   );
 }
 
+function pickBundledAssistantExportElement(assistantHost: HTMLElement): HTMLElement {
+  return readAssistantExportElement(assistantHost, {
+    content: GEMINI_PACKAGED_CONTENT['export.messageContent'],
+    markdown: GEMINI_PACKAGED_CONTENT['export.markdown'].join(','),
+    presentedAncestor: GEMINI_PACKAGED_CONTENT['export.presentedAncestor'].join(','),
+    presentedContent: GEMINI_PACKAGED_CONTENT['export.presentedContent'].join(','),
+    responseElement: GEMINI_PACKAGED_CONTENT['export.responseElement'].join(','),
+  });
+}
+
 /** Gemini prompt selectors, led by the one the timeline configured or detected. */
-export function geminiUserTurnSelectors(): string[] {
-  const configured = (() => {
-    try {
-      return (
-        localStorage.getItem('geminiTimelineUserTurnSelector') ||
-        localStorage.getItem('geminiTimelineUserTurnSelectorAuto') ||
-        ''
-      );
-    } catch {
-      return '';
-    }
-  })();
-  const defaults = getGeminiTurnSelectors('turn.user');
+export function geminiUserTurnSelectors(view: GeminiTurnView = getGeminiTurnView()): string[] {
+  const configured = readConfiguredExportUserSelector(
+    !getGeminiTurnView().remoteKeys.has('turn.user'),
+  );
+  const defaults = getGeminiTurnSelectors('turn.user', view);
   return configured
     ? [configured, ...defaults.filter((selector) => selector !== configured)]
     : defaults;
 }
 
-export function geminiAssistantTurnSelectors(): string[] {
+export function geminiAssistantTurnSelectors(view: GeminiTurnView = getGeminiTurnView()): string[] {
   return [
-    ...getGeminiTurnSelectors('turn.assistant'),
-    ...getGeminiTurnSelectors('turn.assistantFallback'),
+    ...getGeminiTurnSelectors('turn.assistant', view),
+    ...getGeminiTurnSelectors('turn.assistantFallback', view),
   ];
-}
-
-function hasVisibleUserTurns(root: HTMLElement, userSelectors: string[]): boolean {
-  if (userSelectors.length === 0) return false;
-  const nodes = filterOutDeepResearchImmersiveNodes(
-    Array.from(root.querySelectorAll<HTMLElement>(userSelectors.join(','))),
-  );
-  return nodes.length > 0;
 }
 
 export function resolveConversationRoot({
   userSelectors,
   doc = document,
 }: ResolveConversationRootOptions): HTMLElement {
-  const body = doc.body as HTMLElement;
-  let firstCandidate: HTMLElement | null = null;
-
-  for (const selector of CONVERSATION_ROOT_CANDIDATES) {
-    const candidate = doc.querySelector(selector) as HTMLElement | null;
-    if (!candidate) continue;
-    if (!firstCandidate) firstCandidate = candidate;
-    if (hasVisibleUserTurns(candidate, userSelectors)) return candidate;
-  }
-
-  return firstCandidate || body;
+  return resolveGeminiConversationRoot(userSelectors, doc);
 }

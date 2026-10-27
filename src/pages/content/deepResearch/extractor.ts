@@ -1,6 +1,12 @@
+import type { GeminiSelectorView } from '@/core/gemini/selectors';
+import { readGeminiActiveSidebarTitle } from '@/core/gemini/sidebarTitles';
 /**
  * DOM extraction module for Deep Research thinking content
  */
+import { logger } from '@/core/services/LoggerService';
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/deep-research-packaged.json';
+
+import { deepResearchView, findDeepResearchPanel, researchSelector } from './dom';
 import type { BrowseChip, ThinkingContent, ThinkingItem, ThinkingSection } from './types';
 
 /**
@@ -9,9 +15,9 @@ import type { BrowseChip, ThinkingContent, ThinkingItem, ThinkingSection } from 
  */
 function extractThoughtItem(thoughtElement: Element): { header: string; content: string } | null {
   try {
-    const headerEl = thoughtElement.querySelector('.thought-header');
+    const headerEl = thoughtElement.querySelector(packaged['deepResearch.thoughtHeader']);
     // Select the content div that has gds-body-m and gds-italic but is NOT the header
-    const contentEl = thoughtElement.querySelector('.gds-body-m.gds-italic:not(.thought-header)');
+    const contentEl = thoughtElement.querySelector(packaged['deepResearch.thoughtContent']);
 
     if (!headerEl || !contentEl) {
       return null;
@@ -26,7 +32,7 @@ function extractThoughtItem(thoughtElement: Element): { header: string; content:
 
     return { header, content };
   } catch (error) {
-    console.error('[Gemini Voyager] Error extracting thought item:', error);
+    logger.error('Error extracting Deep Research thought item', { error });
     return null;
   }
 }
@@ -37,15 +43,13 @@ function extractThoughtItem(thoughtElement: Element): { header: string; content:
 function extractBrowseChips(browseListElement: Element): BrowseChip[] {
   try {
     const chips: BrowseChip[] = [];
-    const chipElements = browseListElement.querySelectorAll(
-      'browse-web-chip a[data-test-id="browse-chip-link"]',
-    );
+    const chipElements = browseListElement.querySelectorAll(packaged['deepResearch.browseLinks']);
 
     chipElements.forEach((chipEl) => {
       try {
         const url = chipEl.getAttribute('href') || '';
-        const domainEl = chipEl.querySelector('[data-test-id="domain-name"]');
-        const titleEl = chipEl.querySelector('[data-test-id="title"]');
+        const domainEl = chipEl.querySelector(packaged['deepResearch.browseDomain']);
+        const titleEl = chipEl.querySelector(packaged['deepResearch.browseTitle']);
 
         const domain = domainEl?.textContent?.trim() || '';
         const title = titleEl?.textContent?.trim() || '';
@@ -54,13 +58,13 @@ function extractBrowseChips(browseListElement: Element): BrowseChip[] {
           chips.push({ url, domain, title });
         }
       } catch (error) {
-        console.error('[Gemini Voyager] Error extracting browse chip:', error);
+        logger.error('Error extracting Deep Research browse chip', { error });
       }
     });
 
     return chips;
   } catch (error) {
-    console.error('[Gemini Voyager] Error extracting browse chips:', error);
+    logger.error('Error extracting Deep Research browse chips', { error });
     return [];
   }
 }
@@ -68,16 +72,19 @@ function extractBrowseChips(browseListElement: Element): BrowseChip[] {
 /**
  * Extract a single thinking section (thoughts + browse chips in order)
  */
-function extractThinkingSection(panelElement: Element): ThinkingSection | null {
+function extractThinkingSection(
+  panelElement: Element,
+  view: GeminiSelectorView,
+): ThinkingSection | null {
   try {
     const items: ThinkingItem[] = [];
-
-    // Get all item-container elements in order
-    const itemContainers = panelElement.querySelectorAll('.item-container');
+    const itemContainers = panelElement.querySelectorAll(
+      researchSelector(view, 'deepResearch.items'),
+    );
 
     itemContainers.forEach((container) => {
       // Check if this container has a thought-item
-      const thoughtEl = container.querySelector('thought-item');
+      const thoughtEl = container.querySelector(packaged['deepResearch.thought']);
       if (thoughtEl) {
         const thought = extractThoughtItem(thoughtEl);
         if (thought) {
@@ -90,7 +97,7 @@ function extractThinkingSection(panelElement: Element): ThinkingSection | null {
       }
 
       // Check if this container has a browse-chip-list
-      const browseListEl = container.querySelector('browse-chip-list');
+      const browseListEl = container.querySelector(packaged['deepResearch.browseList']);
       if (browseListEl) {
         const chips = extractBrowseChips(browseListEl);
         if (chips.length > 0) {
@@ -109,7 +116,7 @@ function extractThinkingSection(panelElement: Element): ThinkingSection | null {
 
     return { items };
   } catch (error) {
-    console.error('[Gemini Voyager] Error extracting thinking section:', error);
+    logger.error('Error extracting Deep Research thinking section', { error });
     return null;
   }
 }
@@ -120,26 +127,29 @@ function extractThinkingSection(panelElement: Element): ThinkingSection | null {
 export function extractThinkingPanels(): ThinkingContent | null {
   try {
     // Check if we're in a Deep Research conversation
-    const deepResearchPanel = document.querySelector('deep-research-immersive-panel');
+    const view = deepResearchView();
+    const deepResearchPanel = findDeepResearchPanel(view);
     if (!deepResearchPanel) {
-      console.log('[Gemini Voyager] Not a Deep Research conversation');
+      logger.debug('Not a Deep Research conversation');
       return null;
     }
 
     const sections: ThinkingSection[] = [];
 
     // Find all thinking-panel elements
-    const thinkingPanels = deepResearchPanel.querySelectorAll('thinking-panel');
+    const thinkingPanels = deepResearchPanel.querySelectorAll(
+      researchSelector(view, 'deepResearch.thinkingPanels'),
+    );
 
     thinkingPanels.forEach((panel) => {
-      const section = extractThinkingSection(panel);
+      const section = extractThinkingSection(panel, view);
       if (section) {
         sections.push(section);
       }
     });
 
     if (sections.length === 0) {
-      console.log('[Gemini Voyager] No thinking content found');
+      logger.debug('No Deep Research thinking content found');
       return null;
     }
 
@@ -152,7 +162,7 @@ export function extractThinkingPanels(): ThinkingContent | null {
       title,
     };
   } catch (error) {
-    console.error('[Gemini Voyager] Error extracting thinking panels:', error);
+    logger.error('Error extracting Deep Research thinking panels', { error });
     return null;
   }
 }
@@ -163,7 +173,7 @@ export function extractThinkingPanels(): ThinkingContent | null {
 function getConversationTitle(): string {
   try {
     // Strategy 1: Get from page title
-    const titleElement = document.querySelector('title');
+    const titleElement = document.querySelector(packaged['deepResearch.documentTitle']);
     if (titleElement) {
       const title = titleElement.textContent?.trim();
       if (
@@ -178,20 +188,13 @@ function getConversationTitle(): string {
     }
 
     // Strategy 2: Try to get from sidebar
-    const selectors = [
-      'mat-list-item.mdc-list-item--activated [mat-line]',
-      'mat-list-item[aria-current="page"] [mat-line]',
-      '.conversation-list-item.active .conversation-title',
-    ];
-
-    for (const selector of selectors) {
-      const element = document.querySelector(selector);
-      if (element?.textContent?.trim() && element.textContent.trim() !== 'New chat') {
-        return element.textContent.trim();
-      }
-    }
+    const sidebarTitle = readGeminiActiveSidebarTitle(
+      'activeResearch',
+      (title) => title.length > 0 && title !== 'New chat',
+    );
+    if (sidebarTitle) return sidebarTitle;
   } catch (error) {
-    console.error('[Gemini Voyager] Error getting conversation title:', error);
+    logger.error('Error getting Deep Research conversation title', { error });
   }
 
   return 'Deep Research Conversation';

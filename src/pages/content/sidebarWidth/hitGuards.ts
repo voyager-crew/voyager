@@ -1,12 +1,7 @@
+import { getGeminiSelectorView } from '@/core/gemini/selectors';
 import type { PluginScope } from '@/features/plugins/runtime/pluginScope';
 
-const SIDEBAR_TOGGLE_BUTTON_SELECTOR = [
-  'bard-sidenav .close-sidenav-button',
-  'bard-sidenav button[aria-label="Close sidebar"]',
-  'bard-sidenav button[aria-label="Open sidebar"]',
-].join(', ');
-
-const SIDEBAR_TOGGLE_ICON_NAMES = new Set(['side_nav', 'side_nav_expand']);
+import { getSidebarWidthButtons, getSidebarWidthActionButtons } from './buttonTargets';
 
 function rectContainsPoint(rect: DOMRect, x: number, y: number): boolean {
   return (
@@ -19,41 +14,22 @@ function rectContainsPoint(rect: DOMRect, x: number, y: number): boolean {
   );
 }
 
-function isVisibleElement(element: HTMLElement): boolean {
-  const rect = element.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) return false;
-
-  const style = window.getComputedStyle(element);
-  return style.display !== 'none' && style.visibility !== 'hidden';
-}
-
-function isSidebarToggleButton(button: HTMLElement): boolean {
-  if (button.matches(SIDEBAR_TOGGLE_BUTTON_SELECTOR)) return true;
-
-  const icon = button.querySelector('mat-icon[fonticon]');
-  const iconName = icon?.getAttribute('fonticon') ?? '';
-  return SIDEBAR_TOGGLE_ICON_NAMES.has(iconName);
-}
-
-function getVisibleSidebarToggleButtons(): HTMLElement[] {
-  const buttons = new Set<HTMLElement>(
-    Array.from(document.querySelectorAll<HTMLElement>(SIDEBAR_TOGGLE_BUTTON_SELECTOR)),
-  );
-
-  document.querySelectorAll<HTMLElement>('bard-sidenav button').forEach((button) => {
-    if (isSidebarToggleButton(button)) buttons.add(button);
-  });
-
-  return Array.from(buttons).filter(isVisibleElement);
-}
-
 function setupSidebarToggleHitGuard(scope: PluginScope): void {
   const onPointerDownCapture = (event: PointerEvent) => {
     if (scope.isDisposed) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
 
     const { clientX: x, clientY: y } = event;
-    const toggleButton = getVisibleSidebarToggleButtons().find((button) =>
+    const view = getGeminiSelectorView();
+    const candidates = getSidebarWidthButtons();
+    if (!candidates.some((region) => rectContainsPoint(region.getBoundingClientRect(), x, y)))
+      return;
+    const buttons =
+      view.remoteKeys.has('sidebarWidth.buttons') || view.remoteKeys.has('sidebarWidth.candidates')
+        ? getSidebarWidthActionButtons()
+        : candidates;
+    // Catalog geometry alone must never forward a click outside the actual native control.
+    const toggleButton = buttons.find((button) =>
       rectContainsPoint(button.getBoundingClientRect(), x, y),
     );
     if (!toggleButton) return;

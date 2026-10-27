@@ -17,21 +17,8 @@ import { folderDebugWarn } from '../FolderRepository';
 import { normalizeConversationId, resolveConversationRouteId } from '../folderConversationIdentity';
 import { getCurrentConversationId } from '../nativeConversationIds';
 import type { FolderData } from '../types';
-
-const SEND_BUTTON_SELECTOR = [
-  'button[aria-label*="Send"]',
-  'button[aria-label*="send"]',
-  'button[data-tooltip*="Send"]',
-  'button[data-tooltip*="send"]',
-  '[data-send-button]',
-  '.send-button',
-].join(', ');
-const COMPOSER_INPUT_SELECTOR = [
-  'rich-textarea [contenteditable="true"]',
-  'div[contenteditable="true"][role="textbox"]',
-  '.input-area textarea',
-  'textarea[placeholder*="Ask"]',
-].join(', ');
+import { deferActivitySend, startActivityLifetime } from './activityLifetime';
+import { resolveActivitySendIntent } from './activitySelectors';
 
 export interface ConversationActivityEntry {
   conversationId: string;
@@ -67,91 +54,75 @@ export function raiseConversationActivity(
   return result.outcome.kind === 'saved' ? result.data : null;
 }
 
-function isConversationSendIntent(event: Event): boolean {
-  if (event.type === 'submit') {
-    const form = event.target;
-    return form instanceof HTMLFormElement && form.querySelector(COMPOSER_INPUT_SELECTOR) !== null;
-  }
-
-  const target = event.target instanceof Element ? event.target : null;
-  const button = target?.closest(SEND_BUTTON_SELECTOR);
-  if (!(button instanceof HTMLElement)) return false;
-  if (
-    button instanceof HTMLButtonElement &&
-    (button.disabled || button.getAttribute('aria-disabled') === 'true')
-  ) {
-    return false;
-  }
-
-  const composer = button.closest(
-    'form, .text-input-field, input-area-v2, input-container, ms-prompt-input-wrapper',
-  );
-  return composer?.querySelector(COMPOSER_INPUT_SELECTOR) !== null;
-}
-
 export class GeminiConversationActivity {
   private timestampService: TimestampService | null = null;
-  private starting: Promise<void> | null = null;
-  private unsubscribe: (() => void) | null = null;
-  private sendIntentHandler: ((event: Event) => void) | null = null;
+  private lifetime: ReturnType<typeof startActivityLifetime> | null = null;
 
   constructor(private readonly host: ConversationActivityHost) {}
 
   /** Starts tracking once; a call while it starts or runs returns the same start. */
   start(): Promise<void> {
-    if (this.unsubscribe || this.sendIntentHandler) return Promise.resolve();
-    if (this.starting) return this.starting;
-
-    this.starting = (async () => {
-      try {
-        if (!this.timestampService) {
-          this.timestampService = new TimestampService();
-          await this.timestampService.initialize();
+    if (this.lifetime?.isRunning()) return this.lifetime.ready;
+    this.lifetime = startActivityLifetime({
+      initialize: async (signal) => {
+        try {
+          if (!this.timestampService) {
+            const service = new TimestampService();
+            await service.initialize();
+            if (signal.aborted) return false;
+            // Keep a completed read if the later history wait is cancelled, as the bundled path did.
+            this.timestampService = service;
+          }
+          // Wait for the page-owned store; this feature must not revive it after teardown.
+          return (await whenHistoryTimestampsReady(signal)) && this.host.isActive();
+        } catch (error) {
+          if (!isExtensionContextInvalidatedError(error)) {
+            folderDebugWarn('Failed to initialize conversation activity tracking:', error);
+          }
+          return false;
         }
-        // Waits for the page service; starting the store here could revive it after page teardown.
-        const ready = await whenHistoryTimestampsReady();
-        if (!ready || !this.host.isActive()) return;
-
+      },
+      onCancelled: () => {
+        if (this.host.isActive()) void this.start();
+      },
+      activate: () => {
         this.backfill();
-        this.unsubscribe = historyTimestampStore.subscribe((cids) => {
-          if (!this.host.isActive()) return;
-          this.applyHistory(cids);
+        const unsubscribe = historyTimestampStore.subscribe((cids) => {
+          if (this.host.isActive()) this.applyHistory(cids);
         });
-
-        this.sendIntentHandler = (event) => {
-          if (!isConversationSendIntent(event)) return;
+        const pending = new Set<ReturnType<typeof deferActivitySend>>();
+        const sendIntentHandler = (event: Event) => {
+          if (!resolveActivitySendIntent(event).value.accepted) return;
           const conversationId = getCurrentConversationId();
           if (!conversationId || !this.host.isConversationInFolders(conversationId)) return;
-
           const sentAt = Date.now();
-          window.setTimeout(() => {
-            if (!this.host.isActive() || event.defaultPrevented) return;
-            this.host.apply([{ conversationId, lastTurnAt: sentAt }]);
-          }, 0);
+          const work = deferActivitySend(event, () => {
+            if (this.host.isActive() && this.host.isConversationInFolders(conversationId)) {
+              this.host.apply([{ conversationId, lastTurnAt: sentAt }]);
+            }
+          });
+          pending.add(work);
+          work.subscribe((state) => {
+            if (state.status === 'complete') pending.delete(work);
+          });
         };
-        document.addEventListener('click', this.sendIntentHandler, true);
-        document.addEventListener('submit', this.sendIntentHandler, true);
-      } catch (error) {
-        if (!isExtensionContextInvalidatedError(error)) {
-          folderDebugWarn('Failed to initialize conversation activity tracking:', error);
-        }
-      }
-    })().finally(() => {
-      this.starting = null;
+        document.addEventListener('click', sendIntentHandler, true);
+        document.addEventListener('submit', sendIntentHandler, true);
+        return () => {
+          document.removeEventListener('click', sendIntentHandler, true);
+          document.removeEventListener('submit', sendIntentHandler, true);
+          unsubscribe();
+          for (const work of pending) void work.stop();
+          pending.clear();
+        };
+      },
     });
-
-    return this.starting;
+    return this.lifetime.ready;
   }
 
   stop(): void {
-    this.unsubscribe?.();
-    this.unsubscribe = null;
-
-    if (this.sendIntentHandler) {
-      document.removeEventListener('click', this.sendIntentHandler, true);
-      document.removeEventListener('submit', this.sendIntentHandler, true);
-      this.sendIntentHandler = null;
-    }
+    this.lifetime?.stop();
+    this.lifetime = null;
   }
 
   knownLastTurnAt(conversationId: string, url?: string): number | undefined {

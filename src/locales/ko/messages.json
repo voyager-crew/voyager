@@ -2962,8 +2962,8 @@
     "description": "Shown when no plugins are available"
   },
   "pluginsRefresh": {
-    "message": "지금 플러그인 업데이트 확인",
-    "description": "Tooltip for the manual plugin-update check button"
+    "message": "지금 업데이트 확인",
+    "description": "Label and tooltip for the manual catalog update check button"
   },
   "pluginSourceBuiltin": {
     "message": "내장",
@@ -3302,12 +3302,12 @@
     "description": "Note shown when a plugin update is held back because it needs a newer Voyager; {version} is the held-back version"
   },
   "pluginsOnlineUpdates": {
-    "message": "플러그인 온라인 업데이트",
-    "description": "Label for the switch that allows online plugin update checks for this site"
+    "message": "온라인 업데이트",
+    "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "이 사이트의 플러그인 업데이트를 voyager.nagi.fun에서 확인합니다. 사이트 이름만 전송하며 쿠키나 페이지 내용은 보내지 않습니다. 끄면 위의 새로고침 버튼만 연결합니다.",
-    "description": "Explains what the online plugin update check sends and when it runs"
+    "message": "voyager.nagi.fun에서 플러그인 업데이트와 지원 사이트의 페이지 인식 수정을 확인합니다. 사이트 이름만 전송하며 쿠키나 페이지 내용은 보내지 않습니다. 끄면 자동 확인이 중지되며, 수동 확인은 계속 사용할 수 있습니다.",
+    "description": "Explains shared catalog updates, supported-site page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {
     "message": "확인 주기",

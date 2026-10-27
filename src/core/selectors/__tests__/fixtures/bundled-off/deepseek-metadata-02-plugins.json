@@ -1,0 +1,515 @@
+[
+  [
+    "plugins/code-collapse/plugin.json",
+    {
+      "id": "voyager.deepseek-code-collapse",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "requires": {
+        "handlers": ["codeCollapse"]
+      },
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "codeCollapse",
+            "params": {
+              "action": ".md-code-block-banner [role=\"button\"]",
+              "code": "pre"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/composer-counter/plugin.json",
+    {
+      "id": "voyager.deepseek-composer-counter",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "contributes": {
+        "settings": {
+          "metric": {
+            "type": "select",
+            "label": "What to count",
+            "default": "chars",
+            "options": [
+              {
+                "value": "chars",
+                "label": "Characters"
+              },
+              {
+                "value": "words",
+                "label": "Words"
+              },
+              {
+                "value": "cjkChars",
+                "label": "CJK characters"
+              },
+              {
+                "value": "lines",
+                "label": "Lines"
+              }
+            ]
+          }
+        },
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "counterBadge",
+            "params": {
+              "target": "composer",
+              "metric": "{{metric}}"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/copy-thinking/plugin.json",
+    {
+      "id": "voyager.deepseek-copy-thinking",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "requires": {
+        "handlers": ["copyButton"]
+      },
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "copyButton",
+            "params": {
+              "target": "thinkingBlock",
+              "format": "text"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/ctrl-enter-send/plugin.json",
+    {
+      "id": "voyager.deepseek-ctrl-enter-send",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "sendShortcut",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/draft-save/plugin.json",
+    {
+      "id": "voyager.deepseek-draft-save",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "requires": {
+        "handlers": ["draftSave"]
+      },
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "draftSave",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/export/plugin.json",
+    {
+      "id": "voyager.deepseek-export",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "conversationExport",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/folders/plugin.json",
+    {
+      "id": "voyager.deepseek-folders",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "requires": {
+        "handlers": ["folders"]
+      },
+      "contributes": {
+        "settings": {
+          "hideFiledChats": {
+            "type": "boolean",
+            "label": "Hide chats already in folders from the sidebar list",
+            "default": false
+          }
+        },
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "folders",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/formula-copy/plugin.json",
+    {
+      "id": "voyager.deepseek-formula-copy",
+      "engine": ">=1.3.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "requires": {
+        "handlers": ["formulaCopy"]
+      },
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "formulaCopy",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/quote-reply/plugin.json",
+    {
+      "id": "voyager.deepseek-quote-reply",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "quoteReply",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/reading-typography/plugin.json",
+    {
+      "id": "voyager.deepseek-reading-typography",
+      "engine": ">=1.4.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "requires": {
+        "semantic": ["assistantTurn"]
+      },
+      "contributes": {
+        "settings": {
+          "fontSizeEnabled": {
+            "type": "boolean",
+            "label": "Custom text size",
+            "default": false
+          },
+          "fontSize": {
+            "type": "number",
+            "enabledBy": "fontSizeEnabled",
+            "label": "Text size (%)",
+            "minLabel": "Small",
+            "maxLabel": "Large",
+            "default": 100,
+            "min": 80,
+            "max": 150
+          },
+          "spacingEnabled": {
+            "type": "boolean",
+            "label": "Custom spacing",
+            "default": false
+          },
+          "lineHeight": {
+            "type": "number",
+            "enabledBy": "spacingEnabled",
+            "label": "Line height (%)",
+            "minLabel": "Tight",
+            "maxLabel": "Loose",
+            "default": 160,
+            "min": 120,
+            "max": 220
+          },
+          "paragraphSpacing": {
+            "type": "number",
+            "enabledBy": "spacingEnabled",
+            "label": "Paragraph spacing (px)",
+            "minLabel": "Tight",
+            "maxLabel": "Loose",
+            "default": 16,
+            "min": 0,
+            "max": 24
+          }
+        },
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ],
+        "domOps": [
+          {
+            "op": "addClass",
+            "target": {
+              "kind": "semantic",
+              "key": "assistantTurn"
+            },
+            "className": "gv-plugin-deepseek-reading-typography"
+          },
+          {
+            "op": "setAttribute",
+            "target": {
+              "kind": "semantic",
+              "key": "assistantTurn"
+            },
+            "name": "data-gv-font-size",
+            "value": "{{fontSizeEnabled}}"
+          },
+          {
+            "op": "setAttribute",
+            "target": {
+              "kind": "semantic",
+              "key": "assistantTurn"
+            },
+            "name": "data-gv-spacing",
+            "value": "{{spacingEnabled}}"
+          },
+          {
+            "op": "setStyle",
+            "target": "body",
+            "styles": {
+              "--gv-plugin-reading-text-size": "{{fontSize}}%",
+              "--gv-plugin-reading-text-scale": "{{fontSize}}",
+              "--gv-plugin-reading-line-height": "{{lineHeight}}",
+              "--gv-plugin-reading-paragraph-spacing": "{{paragraphSpacing}}px"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/reading-width/plugin.json",
+    {
+      "id": "voyager.deepseek-reading-width",
+      "engine": ">=1.2.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "contributes": {
+        "settings": {
+          "width": {
+            "type": "number",
+            "label": "Reading width (px)",
+            "minLabel": "Narrower",
+            "maxLabel": "Wider",
+            "default": 712,
+            "min": 600,
+            "max": 1600
+          }
+        },
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ],
+        "domOps": [
+          {
+            "op": "addClass",
+            "target": "body",
+            "className": "gv-plugin-deepseek-readable"
+          },
+          {
+            "op": "setStyle",
+            "target": "body",
+            "styles": {
+              "--gv-plugin-reading-width": "{{width}}px"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/site-check/plugin.json",
+    {
+      "id": "voyager.deepseek-site-check",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "siteCheck",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/table-copy/plugin.json",
+    {
+      "id": "voyager.deepseek-table-copy",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "requires": {
+        "handlers": ["tableCopy"]
+      },
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "tableCopy",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/timeline/plugin.json",
+    {
+      "id": "voyager.deepseek-timeline",
+      "engine": ">=1.6.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "requires": {
+        "handlers": ["turnNavigator"],
+        "semantic": ["userTurn"],
+        "formFactors": ["desktop", "mobile"]
+      },
+      "contributes": {
+        "settings": {
+          "timelineStyle": {
+            "type": "select",
+            "label": "Timeline style",
+            "default": "dots",
+            "options": [
+              {
+                "value": "dots",
+                "label": "Nodes"
+              },
+              {
+                "value": "compact",
+                "label": "Compact"
+              },
+              {
+                "value": "ruler",
+                "label": "Ruler"
+              }
+            ]
+          }
+        },
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ],
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "turnNavigator",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/vim-input/plugin.json",
+    {
+      "id": "voyager.deepseek-vim-input",
+      "engine": ">=1.4.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "requires": {
+        "handlers": ["vimInput"],
+        "semantic": ["composer"]
+      },
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "vimInput",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/wrap-code/plugin.json",
+    {
+      "id": "voyager.deepseek-wrap-code",
+      "engine": ">=1.4.0",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "requires": {
+        "semantic": ["assistantTurn"]
+      },
+      "contributes": {
+        "settings": {
+          "wrapCode": {
+            "type": "boolean",
+            "label": "Wrap code lines",
+            "default": false
+          }
+        },
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ],
+        "domOps": [
+          {
+            "op": "addClass",
+            "target": {
+              "kind": "semantic",
+              "key": "assistantTurn"
+            },
+            "className": "gv-plugin-deepseek-wrap-code"
+          },
+          {
+            "op": "setAttribute",
+            "target": {
+              "kind": "semantic",
+              "key": "assistantTurn"
+            },
+            "name": "data-gv-code-wrap",
+            "value": "{{wrapCode}}"
+          }
+        ]
+      }
+    }
+  ]
+]

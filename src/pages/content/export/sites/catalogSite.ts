@@ -3,17 +3,18 @@ import { showExportProgress } from '@/features/export/ui/exportToasts';
 import type { SiteAdapter } from '@/features/plugins/types';
 import { getTranslationSync } from '@/utils/i18n';
 
+import { exportSiteSnapshot } from '../adapter/exportSiteSnapshot';
 import { buildCatalogExportAdapter } from '../adapter/platform/catalog';
 import type { ExportSelectionOptions } from '../adapter/type';
 import type { ExportMessage } from '../conversationCollector';
 import { throwIfExportCancelled } from '../exportCancellation';
 import type { ExportSite, ExportTurnSession } from '../exportSite';
+import { siteTurnSelector } from '../toolbarTargets';
 import {
   captureCatalogWindow,
   readCatalogConversation,
   type CatalogSnapshot,
 } from './catalogReader';
-import { siteTurnSelector } from './siteTurnSelector';
 
 /** Keep consecutive prompts separate; selecting only a reply keeps its original exchange. */
 function selectedTurns(
@@ -104,7 +105,8 @@ function selectionMessages(
 }
 
 /** Third ExportSite: site data supplies facts, shared owners supply UI and file generation. */
-export function createCatalogExportSite(site: SiteAdapter): ExportSite {
+export function createCatalogExportSite(provided: SiteAdapter): ExportSite {
+  const site = exportSiteSnapshot(provided);
   const adapter = buildCatalogExportAdapter(site);
   const root = () => adapter.resolveConversationRoot(adapter.getUserSelectors(), document);
   const mounted = () => captureCatalogWindow(site, adapter, root());

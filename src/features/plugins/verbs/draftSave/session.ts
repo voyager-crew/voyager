@@ -54,7 +54,6 @@ interface SendIntent {
 
 export function startSiteDraftSave(scope: PluginScope, policy: DraftPolicy, doc: Document): void {
   const detection = policy.sendDetection;
-  const sendButton = detection.kind === 'catalog' ? detection.sendButton : undefined;
   const keyHere = (): string | null =>
     policy.eligible(location, doc) ? policy.keyFor(location) : null;
   const composer = (): HTMLElement | null => policy.findInput(doc);
@@ -279,6 +278,7 @@ export function startSiteDraftSave(scope: PluginScope, policy: DraftPolicy, doc:
       doc,
       'click',
       (event) => {
+        const sendButton = detection.sendButton;
         if (!sendButton || !(event.target instanceof Element)) return;
         let button: Element | null = null;
         try {

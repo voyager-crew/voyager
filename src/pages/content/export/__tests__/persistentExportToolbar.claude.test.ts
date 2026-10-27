@@ -5,7 +5,7 @@ import { validateSiteAdapterData } from '@/features/plugins/sites/siteAdapterDat
 import { createMemoryStorage, settle as settleStorage } from '@/tests/memoryStorage';
 
 import { mountPersistentExportToolbar } from '../persistentExportToolbar';
-import { siteTurnSelector } from '../sites/siteTurnSelector';
+import { siteTurnSelector } from '../toolbarTargets';
 import {
   cleanUpToolbars,
   headerButton,

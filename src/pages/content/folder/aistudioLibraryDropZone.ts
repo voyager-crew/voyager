@@ -4,6 +4,7 @@
  */
 import { sortFoldersByCreation } from '@/features/folder/model/folderData';
 
+import { isAIStudioLibraryRowDrag } from './aistudioLocatorReads';
 import type { Folder, FolderData } from './types';
 
 // With no dragover for this long while the zone shows, the drag is over: the
@@ -194,8 +195,7 @@ function createZone(t: (key: string) => string): { zone: HTMLElement; list: HTML
 
 /** Whether a drag started on a /library table row that links a prompt. */
 function isLibraryRowDrag(event: DragEvent): boolean {
-  const row = (event.target as HTMLElement | null)?.closest?.('tr.mat-mdc-row, tr[mat-row]');
-  return !!row?.querySelector('a[href*="/prompts/"]');
+  return event.target instanceof Element && isAIStudioLibraryRowDrag(event.target);
 }
 
 /**

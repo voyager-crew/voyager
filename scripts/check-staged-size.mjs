@@ -5,8 +5,10 @@ import { pathToFileURL } from 'node:url';
  * Pre-commit size gate: every staged file an agent writes stays under
  * 5,000 tokens, counted as bytes / 4. Only the staged content is measured.
  * Files nobody writes by hand are skipped: lockfiles, binaries, build output,
- * Xcode project data, snapshots, and Chrome locale catalogs (Chrome requires
- * one messages.json per locale, so they cannot be split).
+ * Xcode project data, snapshots, Chrome locale catalogs (Chrome requires
+ * one messages.json per locale, so they cannot be split) and the privacy page
+ * in each language (one page each; the English source sets its length, and some
+ * translations run longer).
  */
 
 export const TOKEN_LIMIT = 5000;
@@ -21,6 +23,7 @@ const IGNORED = [
   /\.svg$/,
   /(^|\/)LICENSE[^/]*$/,
   /^src\/locales\/[^/]+\/messages\.json$/,
+  /^docs\/([^/]+\/)?privacy\.md$/,
 ];
 
 export function isIgnored(path) {

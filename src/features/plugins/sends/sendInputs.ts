@@ -12,6 +12,8 @@ export interface SendInputs {
   readonly userTurn: string;
   /** The prompt field. */
   readonly composer: string;
+  readonly composerRoot?: string;
+  readonly sendButton?: string;
   /** Attributes, on the turn or its nearest ancestor holding one, that keep a message's identity. */
   readonly turnKeyAttributes: readonly string[];
 }
@@ -32,6 +34,8 @@ export function sendInputsOf(adapter: SiteAdapter | null | undefined): SendInput
     conversationIdPattern: pattern,
     userTurn,
     composer,
+    composerRoot: adapter.selectors.composerRoot,
+    sendButton: adapter.selectors.sendButton,
     turnKeyAttributes,
   };
 }

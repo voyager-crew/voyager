@@ -61,12 +61,15 @@ function createRecordingContext() {
   return { context, fillStyles, strokeStyles };
 }
 
-/** Deterministic random in [0, 0.5): positions stay in the top half, so nothing recycles in 1 s. */
-function seededRandom(seed: number): () => number {
+/**
+ * Deterministic random in [0, `span`). The default 0.5 keeps positions in the top half, so
+ * nothing recycles in 1 s; a span of 1 spreads them over the whole viewport.
+ */
+function seededRandom(seed: number, span = 0.5): () => number {
   let state = seed;
   return () => {
     state = (state * 1664525 + 1013904223) % 4294967296;
-    return (state / 4294967296) * 0.5;
+    return (state / 4294967296) * span;
   };
 }
 
@@ -244,6 +247,9 @@ describe('visual effect renderers', () => {
     });
 
     it('spreads particles across a widened window', async () => {
+      // Seeded: with Math.random about 1 run in 100 placed no more than half the particles past
+      // the old width, and failed as `44 > 44`.
+      vi.spyOn(Math, 'random').mockImplementation(seededRandom(7, 1));
       await start(kind);
       drawFrame(kind, 0);
       setViewport(3000, 1080);

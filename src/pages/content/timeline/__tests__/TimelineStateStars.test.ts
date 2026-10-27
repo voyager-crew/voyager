@@ -101,7 +101,7 @@ describe('TimelineState stars in a partially mounted conversation', () => {
       main.innerHTML = '<div class="user">Mounted tail without a server ID</div>';
       document.body.append(main);
       const turns = new TimelineTurns();
-      const mounted = turns.collect(main, '.user');
+      const mounted = turns.commit(turns.plan(main, '.user'));
       expect(mounted[0].id).toBe('u-0');
       vi.spyOn(StarredMessagesService, 'getAllStarredMessages').mockResolvedValue({
         messages: { [CONVERSATION_ID]: [message(FIRST_ID, 'First'), message('u-0', 'First')] },
@@ -121,7 +121,7 @@ describe('TimelineState stars in a partially mounted conversation', () => {
         'afterbegin',
         '<div class="conversation-container" id="1111111111111111"><div class="user">First</div></div>',
       );
-      state.replaceMarkers(turns.collect(main, '.user', state.markers));
+      state.replaceMarkers(turns.commit(turns.plan(main, '.user', state.markers)));
       expect(state.markers.map((turn) => turn.starred)).toEqual([true, false]);
       expect(state.resolveMarkerIdForStorageId('u-0')).toBe(FIRST_ID);
     } finally {

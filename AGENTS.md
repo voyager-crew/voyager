@@ -57,12 +57,13 @@ Use `StorageService` where suitable; established direct `chrome.storage`/`browse
 - Implement the minimum requested behavior. Keep independent options separate; inspect existing data structures and sibling implementations before adding abstractions.
 - Before deletion, trace production entry points, callers and regression guards. Distinguish retired implementations from compatibility cleanup. Remove tests that exist solely for deleted, unreachable code.
 - Extract cohesive data operations or complete lifecycle responsibilities from large managers. Give helpers explicit inputs and one state owner; avoid passing the whole manager into extracted modules. Each step must work independently and preserve existing callers and data.
+- A feature with phases that an async result can outlive (a request a toggle can cancel, a wait the page can leave) runs on `startMachine` (`src/features/plugins/runtime/stateMachine.ts`): states as a union, a pure `transition`, effects owned per state. It replaces hand-written flags, generation counters and promise guards; orthogonal axes stay separate machines or plain state ([plan](.github/docs/STATE_MACHINE_PLAN.md)).
 - Keep listener, observer and timer cleanup beside setup. Sidebar remount, account change and full teardown have different lifetimes; preserve the appropriate state across each.
 - Ask confirmations through `askConfirm` (`src/core/ui/confirm.ts`) and show toasts through `createToaster` (`src/core/ui/toast/toaster.ts`); they own stacking, dismissal, theming and teardown. Outside-press handlers skip `isVoyagerLayerEvent`.
 - For visual changes, state the expected result and verify alignment, spacing and behavior in light/dark themes, including external resource dependencies.
 - After fixing a repeatable, non-obvious bug, put a one-line why-comment at the code that prevents it and name the guarding test after the symptom.
 - `bun run filesize:check` fails when a `src/**/*.ts(x)` file over 1000 lines is added or a baselined one grows: put new code in a new file. Run `bun run filesize:update` after shrinking one; raising an entry in `scripts/file-size-baseline.json` is a deliberate, explained change in the PR.
-- The pre-commit hook (`scripts/check-staged-size.mjs`) also blocks any staged file over 5,000 tokens (bytes / 4), existing files included; lockfiles, binaries, build output and `src/locales/*/messages.json` are exempt. Editing an oversized file means splitting it first, as the hook's message describes.
+- The pre-commit hook (`scripts/check-staged-size.mjs`) also blocks any staged file over 5,000 tokens (bytes / 4), existing files included; lockfiles, binaries, build output, `src/locales/*/messages.json` and `docs/**/privacy.md` are exempt. Editing an oversized file means splitting it first, as the hook's message describes.
 
 ## Verification
 

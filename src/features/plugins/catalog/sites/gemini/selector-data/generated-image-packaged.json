@@ -1,0 +1,12 @@
+{
+  "generatedImage.container": "generated-image,.generated-image-container",
+  "generatedImage.previewSource": "img[src*=\"googleusercontent.com\"]",
+  "generatedImage.downloadOwner": "generated-image, .generated-image-container, download-generated-image-button",
+  "generatedImage.downloadHost": "download-generated-image-button",
+  "generatedImage.downloadDataButton": "button[data-test-id=\"download-generated-image-button\"]",
+  "generatedImage.downloadHostButton": "download-generated-image-button button",
+  "generatedImage.button": "button",
+  "generatedImage.image": "img",
+  "generatedImage.dialog": "expansion-dialog,[role=\"dialog\"],.cdk-overlay-pane",
+  "generatedImage.dialogImage": "generated-image img, img[src^=\"blob:\"], img[src*=\"googleusercontent.com\"]"
+}

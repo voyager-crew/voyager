@@ -3,6 +3,7 @@
  * parameter is optional; defaults come from the site adapter so a manifest
  * usually needs no more than `{ "op": "native", "handler": "turnNavigator" }`.
  */
+import { withGuardedPageAdapter } from '@/core/selectors/semanticSnapshot';
 import { logger } from '@/core/services/LoggerService';
 import { isGeminiEnterpriseEnvironment } from '@/core/utils/gemini';
 import { activateCatalogTimeline } from '@/features/timeline/adapters/catalog/activateCatalogTimeline';
@@ -139,7 +140,7 @@ export const turnNavigatorPrimitive: Primitive<TurnNavigatorParams> = {
   },
 
   activate(scope, params, context) {
-    const adapter = context.adapter;
+    const adapter = withGuardedPageAdapter(context.adapter, context.doc);
     if (!adapter) {
       // Stars, outlines and placement are keyed by the site id; without one, every such
       // site would share a single namespace, so stay inert instead.
@@ -178,7 +179,9 @@ export const turnNavigatorPrimitive: Primitive<TurnNavigatorParams> = {
     }
     context.setTargetCounter(() => {
       try {
-        return context.doc.querySelectorAll(turnSelector).length;
+        return context.doc.querySelectorAll(
+          params.turn ?? adapter.selectors.userTurn ?? turnSelector,
+        ).length;
       } catch {
         return 0;
       }
@@ -196,12 +199,18 @@ export const turnNavigatorPrimitive: Primitive<TurnNavigatorParams> = {
     const config: CatalogTimelineConfig = {
       ...siteConversationConfig(adapter, params.conversationIdPattern),
       siteLabel: adapter.label,
-      turnSelector,
-      assistantTurnSelector: adapter.selectors.assistantTurn,
+      get turnSelector() {
+        return params.turn ?? adapter.selectors.userTurn ?? turnSelector;
+      },
+      get assistantTurnSelector() {
+        return adapter.selectors.assistantTurn;
+      },
       conversationIdAttribute: params.conversationIdAttribute,
       accountIdAttributes: params.accountIdAttributes,
       turnItemSelector: params.turnItem,
-      scrollContainerSelector: params.scrollContainer ?? adapter.selectors.scrollContainer,
+      get scrollContainerSelector() {
+        return params.scrollContainer ?? adapter.selectors.scrollContainer;
+      },
       yieldWhenSelector: params.yieldWhen,
       position: params.position ?? 'right',
       pluginId: context.pluginId,

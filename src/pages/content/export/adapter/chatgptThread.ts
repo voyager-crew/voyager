@@ -4,6 +4,9 @@ import type {
   ExtractedContent,
 } from '@/features/export/services/DOMContentExtractor';
 
+import { chatgptExportData, chatgptTurnSelector, CHATGPT_USER_BUBBLE } from './chatgptExportData';
+import { chatgptStreamingSelector } from './chatgptExportLocators';
+import { chatgptHistoryPendingSelector, chatgptThreadListSelector } from './chatgptHistoryLocators';
 import { mergeExtractedContent } from './chatgptShared';
 
 /**
@@ -25,12 +28,11 @@ import { mergeExtractedContent } from './chatgptShared';
  * - Conversations opened earlier in the tab stay in the DOM under a
  *   `display: none` ancestor, each with its own `main`.
  */
-export const TURN_ITEM_SELECTOR = '[data-turn-key]';
+export const TURN_ITEM_SELECTOR = chatgptExportData['export.turnItem'];
 const TURN_KEY_ATTRIBUTE = 'data-turn-key';
-export const USER_BUBBLE_SELECTOR = '[data-user-message-bubble]';
+export const USER_BUBBLE_SELECTOR = CHATGPT_USER_BUBBLE;
 /** The block that holds a prompt's bubble, its uploads and its action row. */
-const USER_UNIT_SELECTOR = '[data-chatgpt-search-unit-key]';
-export const ASSISTANT_REPLY_SELECTOR = '[data-chatgpt-selection-message-id]';
+const USER_UNIT_SELECTOR = chatgptExportData['export.userUnit'];
 const REPLY_ID_ATTRIBUTE = 'data-chatgpt-selection-message-id';
 const MESSAGE_IDS_ATTRIBUTE = 'data-chatgpt-search-message-ids';
 /** The attributes {@link readTurnKey} and {@link readTurnFingerprint} read. */
@@ -39,24 +41,16 @@ export const TURN_VERSION_ATTRIBUTES: readonly string[] = [
   MESSAGE_IDS_ATTRIBUTE,
   REPLY_ID_ATTRIBUTE,
 ];
-const HISTORY_PENDING_SELECTOR = '[role="status"]';
-/** The list's own wrapper: the history spinner and the items, nothing of the page around them. */
-const THREAD_LIST_SELECTOR = '[data-chatgpt-conversation-selection-target]';
-const ROOT_CANDIDATES = ['main', '[role="main"]'];
+const ROOT_CANDIDATES = chatgptExportData['export.roots'];
 
 // Unverified on the live DOM: no generated image, upload or streaming reply was
 // on screen when the selectors above were measured. These are the earlier
 // DOM's selectors, kept so those cases still export if ChatGPT kept them.
-const IMAGEGEN_SELECTOR = '[class*="group/imagegen-image"]';
+const IMAGEGEN_SELECTOR = chatgptExportData['export.imageGeneration'];
 const STOP_GENERATING_SELECTOR = [
   '[data-testid="stop-button"]',
   'button[aria-label*="stop generating" i]',
   'button[aria-label*="停止生成"]',
-].join(',');
-const STREAMING_SELECTOR = [
-  '[data-message-streaming="true"]',
-  '[data-is-streaming="true"]',
-  '.result-streaming',
 ].join(',');
 const RENDERED_CONTENT_SELECTOR =
   'img, svg, canvas, pre, table, [data-math-source], [role="math"], .katex';
@@ -138,7 +132,7 @@ export function findMountedTurnItem(root: ParentNode, turnKey: string): HTMLElem
  * items lie.
  */
 export function findThreadExtent(item: Element): HTMLElement | null {
-  const list = item.parentElement?.closest(THREAD_LIST_SELECTOR);
+  const list = item.parentElement?.closest(chatgptThreadListSelector(item));
   if (!list) return null;
   let node: Element | null = item.parentElement;
   while (node && node.parentElement !== list) node = node.parentElement;
@@ -165,7 +159,7 @@ export function readTurnFingerprint(item: Element): string {
       if (id) ids.add(id);
     }
   }
-  for (const reply of item.querySelectorAll(ASSISTANT_REPLY_SELECTOR)) {
+  for (const reply of item.querySelectorAll(chatgptTurnSelector('assistantTurn'))) {
     const id = reply.getAttribute(REPLY_ID_ATTRIBUTE)?.trim();
     if (id) ids.add(id);
   }
@@ -185,8 +179,8 @@ export function hasRenderedThread(doc: Document = document): boolean {
  * sr-only live regions or one inside a streaming item, do not count.
  */
 export function hasPendingHistory(root: ParentNode, firstItem: Element | null): boolean {
-  const scope = firstItem?.closest(THREAD_LIST_SELECTOR) ?? root;
-  for (const status of scope.querySelectorAll(HISTORY_PENDING_SELECTOR)) {
+  const scope = firstItem?.closest(chatgptThreadListSelector(root)) ?? root;
+  for (const status of scope.querySelectorAll(chatgptHistoryPendingSelector(scope, firstItem))) {
     if (status.closest(TURN_ITEM_SELECTOR)) continue;
     if (!isRendered(status)) continue;
     if (
@@ -200,15 +194,18 @@ export function hasPendingHistory(root: ParentNode, firstItem: Element | null): 
 }
 
 export function isChatGptThreadGenerating(root: ParentNode = document): boolean {
-  return root.querySelector(`${STOP_GENERATING_SELECTOR},${STREAMING_SELECTOR}`) !== null;
+  return (
+    root.querySelector(`${STOP_GENERATING_SELECTOR},${chatgptStreamingSelector(false, root)}`) !==
+    null
+  );
 }
 
 export function findUserBubble(item: Element): HTMLElement | null {
-  return item.querySelector<HTMLElement>(USER_BUBBLE_SELECTOR);
+  return item.querySelector<HTMLElement>(chatgptTurnSelector('userTurn'));
 }
 
 export function findAssistantReply(item: Element): HTMLElement | null {
-  return item.querySelector<HTMLElement>(ASSISTANT_REPLY_SELECTOR);
+  return item.querySelector<HTMLElement>(chatgptTurnSelector('assistantTurn'));
 }
 
 /** Where a prompt's selection checkbox goes: its whole block, not just the bubble. */
@@ -229,7 +226,11 @@ export function hasRenderedContent(element: Element): boolean {
  * marker, or the composer shows a stop button (a reply started mid-crawl).
  */
 export function isItemGenerating(root: ParentNode, item: Element): boolean {
-  if (item.matches(STREAMING_SELECTOR) || item.querySelector(STREAMING_SELECTOR)) return true;
+  if (
+    item.matches(chatgptStreamingSelector(false, item)) ||
+    item.querySelector(chatgptStreamingSelector(false, item))
+  )
+    return true;
   return isChatGptThreadGenerating(root);
 }
 
@@ -254,7 +255,7 @@ export function extractUserMessage(
     unit === bubble
       ? []
       : topLevelOnly(
-          Array.from(unit.querySelectorAll('img, [role="group"][aria-label]')).filter(
+          Array.from(unit.querySelectorAll(chatgptExportData['export.uploadCandidates'])).filter(
             (element) => !bubble.contains(element) && !element.closest('button'),
           ),
         );

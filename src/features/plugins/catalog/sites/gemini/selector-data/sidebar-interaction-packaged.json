@@ -1,0 +1,8 @@
+{
+  "widthButtons": ["bard-sidenav button"],
+  "widthIcon": ["mat-icon[fonticon]"],
+  "menuItem": ["[role=\"menuitem\"], [role=\"menuitemradio\"], .mat-mdc-menu-item"],
+  "optionsButton": [
+    "[data-test-id*=\"options\"], [aria-label*=\"选项\"], [aria-label*=\"Options\"], [aria-label*=\"More\"]"
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "navigation.anchorSteps": [":scope > nav > .empty-space", ":scope > nav > .bottom-actions"],
+  "navigation.empty": [":scope > .empty-space"],
+  "navigation.bottom": [":scope > .bottom-actions"]
+}

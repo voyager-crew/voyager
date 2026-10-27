@@ -193,6 +193,7 @@ describe('persistentExportToolbar', () => {
           tooltip: 'Export chat history',
           onClick: vi.fn(),
         });
+        handle.root.dataset.gvPlatform = 'chatgpt';
         await settle();
         return handle.root;
       }

@@ -1,0 +1,11 @@
+{
+  "exportToolbar.controls": [
+    "top-bar-actions",
+    ".top-bar-actions",
+    "[data-test-id=\"top-bar-actions\"]",
+    "side-nav-sparkle-button",
+    "side-nav-menu-button",
+    "[data-test-id*=\"upgrade\" i]",
+    "[aria-label*=\"upgrade\" i]"
+  ]
+}

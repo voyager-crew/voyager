@@ -12,17 +12,26 @@ import {
   extractCodeFromCodeElement,
   readDrawnDiagramBlock,
 } from './exportCodeBlocks';
+import {
+  DEFAULT_EXPORT_CODE_PROFILE,
+  closestExportCodeHost,
+  type ExportCodeProfile,
+} from './exportCodeProfile';
 import type { ExportContentDialect, ExtractedContentFlags } from './exportContentDialect';
+import { resolveExportMessageContent } from './exportContentRoots';
 import {
   shouldSkipElement,
   normalizeText,
   escapeHtml,
-  escapeHtmlAttribute,
   queryOutsideThoughts,
 } from './exportDomPolicy';
 import { processInlineContent, extractTable, extractList } from './exportRichText';
 import type { ProcessedInlineContent } from './exportRichText';
+import { getExportReadProfiles } from './exportSiteData';
 import { extractUserContent } from './exportUserContent';
+import { processYouTubeCovers } from './exportYouTubeCovers';
+
+export { processYouTubeCovers } from './exportYouTubeCovers';
 
 export interface ExtractedContent {
   text: string;
@@ -49,6 +58,7 @@ function hasBlocksBesideTable(container: Element): boolean {
 }
 
 export function createContentExtractor(dialect: ExportContentDialect): ContentExtractor {
+  const readProfiles = getExportReadProfiles(dialect.siteId);
   function extractAssistantContent(element: HTMLElement): ExtractedContent {
     const result: ExtractedContent = {
       text: '',
@@ -60,36 +70,11 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       hasCode: false,
     };
 
-    // Prefer the message-content we were given. querySelector skips the root, so
-    // passing <message-content> used to collapse onto an inner .markdown and
-    // drop sibling search/generated images (copy-as-image illustrations).
-    const givenMessageContent =
-      element.tagName.toLowerCase() === 'message-content' &&
-      !element.closest('model-thoughts, .thoughts-container, .thoughts-content')
-        ? element
-        : null;
-    let messageContent = givenMessageContent || queryOutsideThoughts(element, 'message-content');
+    const messageContent =
+      dialect.resolveAssistantContent?.(element) ??
+      resolveExportMessageContent(element, dialect.siteId);
 
-    if (!messageContent) {
-      messageContent = queryOutsideThoughts(
-        element,
-        '.markdown-main-panel, .markdown, .model-response-text',
-      );
-    }
-
-    if (
-      !messageContent &&
-      (element.classList.contains('markdown') ||
-        element.tagName.toLowerCase() === 'message-content')
-    ) {
-      messageContent = element;
-    }
-
-    if (!messageContent) {
-      // Last resort: use element directly
-      console.warn('[DOMContentExtractor] Response container not found, using element directly');
-      messageContent = element;
-    }
+    const codeProfile = dialect.resolveCodeProfile?.(messageContent) ?? DEFAULT_EXPORT_CODE_PROFILE;
 
     // Don't clone! Angular custom elements may lose content when cloned
     // Instead, skip model-thoughts during processNodes
@@ -97,8 +82,15 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     const textParts: string[] = [];
     const processedImageSrcs = new Set<string>();
 
-    const markdownDiv = messageContent.querySelector('.markdown, .markdown-main-panel');
-    processNodes(markdownDiv || messageContent, htmlParts, textParts, result, processedImageSrcs);
+    const markdownDiv = messageContent.querySelector(readProfiles['export.walkMarkdown']);
+    processNodes(
+      markdownDiv || messageContent,
+      htmlParts,
+      textParts,
+      result,
+      processedImageSrcs,
+      codeProfile,
+    );
 
     // Helper function to search in both light DOM and shadow DOM
     const searchAll = (root: Element, selector: string): Element[] => {
@@ -124,13 +116,13 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     };
 
     // Also search for raw code elements regardless of presence of code-block
-    const altCodeBlocks = searchAll(messageContent, 'pre > code, [data-test-id="code-content"]');
+    const altCodeBlocks = searchAll(messageContent, readProfiles['export.rawCode']);
     altCodeBlocks.forEach((codeEl) => {
       // Avoid duplicates if already processed
       if ((codeEl as Element & { processedByGV?: boolean }).processedByGV) return;
       // Skip if inside a code-block (already handled by processNodes)
-      if (codeEl.closest && codeEl.closest('code-block')) return;
-      const extracted = extractCodeFromCodeElement(codeEl as HTMLElement);
+      if (closestExportCodeHost(codeEl, codeProfile, true)) return;
+      const extracted = extractCodeFromCodeElement(codeEl as HTMLElement, codeProfile);
       if (extracted.text) {
         (codeEl as Element & { processedByGV?: boolean }).processedByGV = true;
         result.hasCode = true;
@@ -141,9 +133,8 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     // Note: tables and code-blocks were already processed via processNodes()
 
     const leftoverRoot =
-      (messageContent.closest(
-        'model-response, .model-response, .presented-response-container, .response-container, response-container',
-      ) as HTMLElement | null) || messageContent;
+      (messageContent.closest(readProfiles['export.responseOwner']) as HTMLElement | null) ||
+      messageContent;
     processYouTubeCovers(leftoverRoot, htmlParts, textParts, result);
     if (markdownDiv) {
       dialect.collectAssistantImages?.(
@@ -166,11 +157,11 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     if (!combinedText) {
       const fallbackContainer =
         (messageContent as HTMLElement) ||
-        queryOutsideThoughts<HTMLElement>(element, 'message-content') ||
+        queryOutsideThoughts<HTMLElement>(element, readProfiles['export.messageContent']) ||
         (element as HTMLElement);
       try {
         const plain =
-          readTextOutsideEmptyBlocks(fallbackContainer) ??
+          readTextOutsideEmptyBlocks(fallbackContainer, codeProfile) ??
           ((fallbackContainer as HTMLElement).innerText || fallbackContainer.textContent || '');
         combinedText = normalizeText(plain);
       } catch {
@@ -183,7 +174,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
   }
 
   /** Whether the dialect claims `element` as a code block that exports as nothing. */
-  function isEmptyClaimedBlock(element: Element): boolean {
+  function isEmptyClaimedBlock(element: Element, codeProfile: ExportCodeProfile): boolean {
     const textParts: string[] = [];
     const flags = { hasImages: false, hasFormulas: false, hasTables: false, hasCode: false };
     const claimed = dialect.extractCodeBlock(
@@ -193,6 +184,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       flags,
       element.localName,
       false,
+      codeProfile,
     );
     return Boolean(claimed) && !textParts.join('').trim();
   }
@@ -202,7 +194,10 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
    * null when it holds none. A host-drawn chart's labels are no reply text (ChatGPT's
    * Mermaid preview would otherwise export as "StartFinish").
    */
-  function readTextOutsideEmptyBlocks(container: Element): string | null {
+  function readTextOutsideEmptyBlocks(
+    container: Element,
+    codeProfile: ExportCodeProfile,
+  ): string | null {
     let skipped = false;
     const walker = document.createTreeWalker(
       container,
@@ -210,7 +205,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       (node) => {
         if (!(node instanceof Element)) return NodeFilter.FILTER_ACCEPT;
         if (shouldSkipElement(node)) return NodeFilter.FILTER_REJECT;
-        if (!isEmptyClaimedBlock(node)) return NodeFilter.FILTER_SKIP;
+        if (!isEmptyClaimedBlock(node, codeProfile)) return NodeFilter.FILTER_SKIP;
         skipped = true;
         return NodeFilter.FILTER_REJECT;
       },
@@ -227,7 +222,8 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     htmlParts: string[],
     textParts: string[],
     flags: ExtractedContentFlags,
-    processedImageSrcs: Set<string> = new Set<string>(),
+    processedImageSrcs: Set<string>,
+    codeProfile: ExportCodeProfile,
   ): void {
     const children = Array.from(container.children);
     const appendInlineContent = (processed: ProcessedInlineContent): void => {
@@ -265,7 +261,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     // Check for Shadow DOM
     const shadowRoot = container instanceof Element ? container.shadowRoot : null;
     if (shadowRoot) {
-      processNodes(shadowRoot, htmlParts, textParts, flags, processedImageSrcs);
+      processNodes(shadowRoot, htmlParts, textParts, flags, processedImageSrcs, codeProfile);
     }
 
     for (const child of children) {
@@ -277,7 +273,14 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       }
 
       if (child.shadowRoot && child.children.length === 0) {
-        processNodes(child.shadowRoot, htmlParts, textParts, flags, processedImageSrcs);
+        processNodes(
+          child.shadowRoot,
+          htmlParts,
+          textParts,
+          flags,
+          processedImageSrcs,
+          codeProfile,
+        );
         continue;
       }
 
@@ -300,10 +303,10 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
         continue;
       }
 
-      const exportCodeBlocks = findExportCodeBlocks(child);
+      const exportCodeBlocks = findExportCodeBlocks(child, codeProfile);
       const directExportCodeBlock = exportCodeBlocks.find((element) => element === child);
       if (directExportCodeBlock) {
-        const content = extractExportCodeBlock(directExportCodeBlock);
+        const content = extractExportCodeBlock(directExportCodeBlock, codeProfile);
         if (content) {
           htmlParts.push(content.html);
         }
@@ -331,14 +334,16 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       }
 
       // Extract code block via the per-platform adapter
-      if (dialect.extractCodeBlock(child, htmlParts, textParts, flags, tagName, false)) {
+      if (
+        dialect.extractCodeBlock(child, htmlParts, textParts, flags, tagName, false, codeProfile)
+      ) {
         continue;
       }
 
       // Traverse containers that own export blocks instead of consuming only their first
       // descendant. This keeps prose, code, and Mermaid output in DOM order.
       if (tagName !== 'ul' && tagName !== 'ol' && exportCodeBlocks.length > 0) {
-        processNodes(child, htmlParts, textParts, flags);
+        processNodes(child, htmlParts, textParts, flags, new Set<string>(), codeProfile);
         continue;
       }
 
@@ -348,7 +353,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       // A wrapper around the whole reply also "contains a table": exporting it as one
       // dropped every heading, paragraph and list beside the table.
       if (!isTable && (tableBlock || child.querySelector('table')) && hasBlocksBesideTable(child)) {
-        processNodes(child, htmlParts, textParts, flags, processedImageSrcs);
+        processNodes(child, htmlParts, textParts, flags, processedImageSrcs, codeProfile);
         continue;
       }
       if (isTable || tableBlock || child.querySelector('table')) {
@@ -406,7 +411,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
 
       // Lists
       if (tagName === 'ul' || tagName === 'ol') {
-        const listContent = extractList(child as HTMLElement, dialect);
+        const listContent = extractList(child as HTMLElement, dialect, 0, codeProfile);
         if (listContent.hasFormulas) flags.hasFormulas = true;
         if (listContent.hasCode) flags.hasCode = true;
         htmlParts.push(listContent.html);
@@ -417,7 +422,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
       if (tagName === 'blockquote') {
         const quoteHtml: string[] = [];
         const quoteText: string[] = [];
-        processNodes(child, quoteHtml, quoteText, flags, processedImageSrcs);
+        processNodes(child, quoteHtml, quoteText, flags, processedImageSrcs, codeProfile);
         htmlParts.push(`<blockquote>${quoteHtml.join('')}</blockquote>`);
         const markdown = quoteText
           .join('')
@@ -444,7 +449,7 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
           if (processed.hasFormulas) flags.hasFormulas = true;
           appendInlineContent(processed);
         } else {
-          processNodes(child, htmlParts, textParts, flags, processedImageSrcs);
+          processNodes(child, htmlParts, textParts, flags, processedImageSrcs, codeProfile);
         }
         continue;
       }
@@ -466,77 +471,6 @@ export function createContentExtractor(dialect: ExportContentDialect): ContentEx
     extractUserContent: (element) => extractUserContent(element, dialect),
     extractAssistantContent,
   };
-}
-
-/**
- * Extract YouTube video cover thumbnails as clickable cover images.
- *
- * Gemini renders a video as
- *   `.attachment-container.youtube > … > youtube-block > single-video > … > img.thumbnail`
- * plus an `<iframe>` player that can't be exported. The custom elements
- * (youtube-block / single-video / default-player) stop processNodes' generic
- * recursion, so the cover is otherwise dropped. Here we emit the cover image
- * linked to the watch URL so it survives Markdown / PDF / image exports.
- *
- * Deduped across call sites via a `processedByGV` marker on the <img>.
- * Returns true if at least one cover was emitted.
- */
-export function processYouTubeCovers(
-  scope: Element,
-  htmlParts: string[],
-  textParts: string[],
-  flags: ExtractedContentFlags,
-): boolean {
-  const thumbs = scope.querySelectorAll<HTMLImageElement>(
-    '.attachment-container.youtube img.thumbnail, youtube-block img.thumbnail, single-video img.thumbnail',
-  );
-  const videoIdFrom = (u: string | null | undefined): string => {
-    const m = (u || '').match(/(?:\/vi\/|[?&]v=|youtu\.be\/|embed\/)([\w-]{11})/);
-    return m ? m[1] : '';
-  };
-  let emitted = false;
-  for (const imgEl of Array.from(thumbs)) {
-    const marked = imgEl as Element & { processedByGV?: boolean };
-    if (marked.processedByGV) continue;
-    let src = imgEl.src || imgEl.getAttribute('src') || '';
-    if (!src || src === 'about:blank') continue;
-    marked.processedByGV = true;
-
-    const card =
-      imgEl.closest('single-video, youtube-block, .attachment-container.youtube') ||
-      imgEl.parentElement ||
-      scope;
-    let videoId = videoIdFrom(src);
-    if (!videoId) {
-      const ref = card.querySelector('a[href*="youtu"], iframe[src*="youtube"]') as
-        | HTMLAnchorElement
-        | HTMLIFrameElement
-        | null;
-      videoId = videoIdFrom(
-        (ref as HTMLAnchorElement | null)?.href || (ref as HTMLIFrameElement | null)?.src,
-      );
-    }
-    // Prefer a stable cover URL when we know the id and the live src isn't a ytimg URL.
-    if (videoId && !/ytimg\.com|img\.youtube\.com/.test(src)) {
-      src = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-    }
-    const watchUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : '';
-    const titleRaw =
-      (imgEl.alt && imgEl.alt.trim()) ||
-      card.querySelector('.video-title, [class*="title"]')?.textContent?.trim() ||
-      'YouTube video';
-    const title = normalizeText(titleRaw);
-
-    flags.hasImages = true;
-    const imgHtml = `<img src="${escapeHtmlAttribute(src)}" alt="${escapeHtmlAttribute(title)}" />`;
-    htmlParts.push(
-      watchUrl ? `<a href="${escapeHtmlAttribute(watchUrl)}">${imgHtml}</a>` : imgHtml,
-    );
-    const mdAlt = title.replace(/\]/g, '\\]');
-    textParts.push(watchUrl ? `\n[![${mdAlt}](${src})](${watchUrl})\n` : `\n![${mdAlt}](${src})\n`);
-    emitted = true;
-  }
-  return emitted;
 }
 
 /**

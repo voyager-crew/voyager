@@ -1,55 +1,16 @@
+import {
+  COPY_IMAGE_BUTTON_TEST_ID,
+  resolveResponseActionTargets,
+  type ResponseActionTarget,
+} from './responseActionTargets';
+
 export type ResponseActionCopyImageOptions = {
   label: string;
   tooltip: string;
   onClick: (button: HTMLElement) => void;
 };
 
-const COPY_BUTTON_TEST_ID = 'copy-button';
-const MORE_BUTTON_TEST_ID = 'more-menu-button';
-const COPY_IMAGE_BUTTON_TEST_ID = 'gv-copy-image-button';
-const COPY_ICON_NAME = 'content_copy';
-const COPY_BUTTON_ARIA_PATTERNS = [/^copy\b/i, /复制/];
 const ACTION_BUTTON_SELECTOR = 'button, gem-icon-button, [role="button"]';
-const COPY_ICON_SELECTOR =
-  'mat-icon[fonticon="content_copy"], mat-icon[data-mat-icon-name="content_copy"]';
-// The exact set of containers Gemini uses for the per-response action bar.
-// We MUST scope copy-button searches to one of these — walking past it (e.g.,
-// up to `document.body`) accidentally finds disabled template/hidden copy
-// buttons that belong to a totally different button family (stock Material
-// `mdc-icon-button` instead of Gemini's `gem-button-*`), producing a button
-// that's the wrong size, mis-centered, and inherits `pointer-events: none`.
-const ACTION_BAR_SELECTOR =
-  'message-actions, .message-actions, .actions-container-v2, .buttons-container-v2';
-// Preferred clone sources when the action bar has no copy-button (e.g.,
-// image-generation responses). Sibling buttons in the same bar share Gemini's
-// `gem-button-*` sizing/centering, so the cloned button visually matches.
-const SIBLING_CLONE_SOURCE_TEST_IDS = [
-  'share-button',
-  'thumb-up-button',
-  'regenerate-button',
-  'thumb-down-button',
-];
-const ACTION_ROOT_SELECTOR = [
-  'message-actions',
-  '.message-actions',
-  '.actions-container-v2',
-  '.buttons-container-v2',
-  '[data-test-id="copy-button"]',
-  '[data-test-id="more-menu-button"]',
-  ACTION_BUTTON_SELECTOR,
-  'mat-icon',
-].join(', ');
-const ASSISTANT_SCOPE_SELECTOR = [
-  '[data-message-author-role="assistant"]',
-  '[data-message-author-role="model"]',
-  'article[data-author="assistant"]',
-  'article[data-turn="assistant"]',
-  'article[data-turn="model"]',
-  '.model-response',
-  'model-response',
-  '.response-container',
-  '.presented-response-container',
-].join(', ');
 
 type BoundCopyImageButton = HTMLElement & {
   __gvCopyImageHandler?: (event: Event) => void;
@@ -155,79 +116,6 @@ function updateButtonIcon(button: HTMLElement): void {
   icon.innerHTML = `<svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true" focusable="false" style="width: 100%; height: 100%; display: block; pointer-events: none;"><path d="${COPY_IMAGE_SVG_PATH}"/></svg>`;
 }
 
-function findButtonByTestId(container: HTMLElement, testId: string): HTMLElement | null {
-  const escaped =
-    typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(testId) : testId;
-  return (container.querySelector(`[data-test-id="${escaped}"]`) as HTMLElement | null) ?? null;
-}
-
-function findCopyButtonInContainer(container: HTMLElement): HTMLElement | null {
-  // Legacy: test-id="copy-button"
-  const byTestId = findButtonByTestId(container, COPY_BUTTON_TEST_ID);
-  if (byTestId) return byTestId;
-
-  // gem UI: button has no test-id, identify by mat-icon[fonticon="content_copy"]
-  // and aria-label starting with "Copy" (English) / 含 "复制" (Chinese) — we still
-  // try other locales by checking icon first and only filter aria as a sanity check.
-  const iconCandidates = Array.from(container.querySelectorAll<HTMLElement>(COPY_ICON_SELECTOR));
-  if (iconCandidates.length === 0) {
-    iconCandidates.push(
-      ...Array.from(container.querySelectorAll<HTMLElement>('mat-icon')).filter(
-        (icon) => icon.textContent?.trim() === COPY_ICON_NAME,
-      ),
-    );
-  }
-
-  for (const icon of iconCandidates) {
-    const el = icon.closest(ACTION_BUTTON_SELECTOR) as HTMLElement | null;
-    if (!el || !container.contains(el)) continue;
-    const aria = el.getAttribute('aria-label') || '';
-    // Skip if aria-label looks unrelated (defensive — most copy buttons match the patterns)
-    if (aria && !COPY_BUTTON_ARIA_PATTERNS.some((re) => re.test(aria))) continue;
-    return el;
-  }
-  return null;
-}
-
-function findActionContainerFromMoreButton(moreButton: HTMLElement): HTMLElement | null {
-  if (!moreButton.closest(ASSISTANT_SCOPE_SELECTOR)) return null;
-  // Stop at the immediate action bar that owns this more-button. Do NOT walk
-  // farther looking for a copy-button — image responses don't have one in the
-  // bar, and the broader DOM contains hidden/template copy buttons that have
-  // the wrong styling (see SIBLING_CLONE_SOURCE_TEST_IDS for why).
-  return moreButton.closest(ACTION_BAR_SELECTOR) as HTMLElement | null;
-}
-
-function isButtonUsable(el: HTMLElement): boolean {
-  if (el instanceof HTMLButtonElement && el.disabled) return false;
-  if (el.getAttribute('aria-disabled') === 'true') return false;
-  // We deliberately don't gate on geometry — on-hover sibling buttons may be
-  // size-0 between hovers, but their style classes (which is all we care
-  // about) are still correct to clone.
-  return true;
-}
-
-function findCloneSource(container: HTMLElement, moreButton: HTMLElement): HTMLElement {
-  // Preferred: a real copy-button in the same bar (text-response path —
-  // perfect style match).
-  const copy = findCopyButtonInContainer(container);
-  if (copy && isButtonUsable(copy)) return copy;
-
-  // Fallback: any sibling action button. They all share the same
-  // `gem-button-*` size/centering, so the cloned button stays visually
-  // consistent with the bar.
-  for (const testId of SIBLING_CLONE_SOURCE_TEST_IDS) {
-    const el = findButtonByTestId(container, testId);
-    if (el && el !== moreButton && isButtonUsable(el)) return el;
-  }
-
-  // Last resort: the more-button itself. Always present (we needed it to find
-  // the container in the first place) but its tooltip wraps differently and
-  // its icon container has slightly different padding — accept the cosmetic
-  // mismatch over not injecting at all.
-  return moreButton;
-}
-
 function bindButtonClick(
   button: HTMLElement,
   interactive: HTMLElement,
@@ -252,21 +140,6 @@ function bindButtonClick(
   interactive.addEventListener('click', handler);
 }
 
-function isAssistantActionContainer(container: HTMLElement): boolean {
-  return !!container.closest(ASSISTANT_SCOPE_SELECTOR);
-}
-
-function mayContainAssistantActionRoot(root: ParentNode): boolean {
-  if (!(root instanceof HTMLElement)) return true;
-  if (root.closest(ASSISTANT_SCOPE_SELECTOR)) return true;
-  return !!root.querySelector(ASSISTANT_SCOPE_SELECTOR);
-}
-
-function shouldProbeDirectActionRoot(root: HTMLElement): boolean {
-  if (!root.closest(ASSISTANT_SCOPE_SELECTOR)) return false;
-  return !!(root.matches(ACTION_ROOT_SELECTOR) || root.closest(ACTION_ROOT_SELECTOR));
-}
-
 function ensureButtonPosition(
   container: HTMLElement,
   copyImageButton: HTMLElement,
@@ -283,15 +156,12 @@ function ensureButtonPosition(
 }
 
 function injectIntoActionContainer(
-  container: HTMLElement,
+  { container, moreButton, cloneSource }: ResponseActionTarget,
   options: ResponseActionCopyImageOptions,
 ): HTMLElement | null {
-  if (!isAssistantActionContainer(container)) return null;
-
-  const moreButton = findButtonByTestId(container, MORE_BUTTON_TEST_ID);
-  if (!(moreButton instanceof HTMLElement)) return null;
-
-  const existing = findButtonByTestId(container, COPY_IMAGE_BUTTON_TEST_ID);
+  const existing = container.querySelector<HTMLElement>(
+    `[data-test-id="${COPY_IMAGE_BUTTON_TEST_ID}"]`,
+  );
   if (existing) {
     const interactive = updateButtonLabelAndTooltip(existing, options.label, options.tooltip);
     ensureButtonEnabled(existing, interactive);
@@ -300,8 +170,8 @@ function injectIntoActionContainer(
     ensureButtonPosition(container, existing, moreButton);
     return existing;
   }
+  if (!cloneSource) return null;
 
-  const cloneSource = findCloneSource(container, moreButton);
   const cloned = cloneSource.cloneNode(true) as HTMLElement;
   cloned.setAttribute('data-test-id', COPY_IMAGE_BUTTON_TEST_ID);
   cloned.removeAttribute('id');
@@ -325,40 +195,10 @@ export function injectResponseActionCopyImageButtons(
   root: ParentNode,
   options: ResponseActionCopyImageOptions,
 ): HTMLElement[] {
-  if (!mayContainAssistantActionRoot(root)) return [];
-
-  const moreButtons: HTMLElement[] = [];
-  if (root instanceof HTMLElement && root.getAttribute('data-test-id') === MORE_BUTTON_TEST_ID) {
-    moreButtons.push(root);
-  }
-  moreButtons.push(
-    ...Array.from(root.querySelectorAll<HTMLElement>(`[data-test-id="${MORE_BUTTON_TEST_ID}"]`)),
-  );
-
-  if (
-    moreButtons.length === 0 &&
-    root instanceof HTMLElement &&
-    shouldProbeDirectActionRoot(root)
-  ) {
-    const directContainer = findActionContainerFromMoreButton(root);
-    if (directContainer) {
-      const maybeInjected = injectIntoActionContainer(directContainer, options);
-      return maybeInjected ? [maybeInjected] : [];
-    }
-  }
-
-  const visitedContainers = new Set<HTMLElement>();
-  const injected: HTMLElement[] = [];
-
-  for (const moreButton of moreButtons) {
-    const container = findActionContainerFromMoreButton(moreButton);
-    if (!container || visitedContainers.has(container)) continue;
-    visitedContainers.add(container);
-    const maybeInjected = injectIntoActionContainer(container, options);
-    if (maybeInjected) injected.push(maybeInjected);
-  }
-
-  return injected;
+  const targets = resolveResponseActionTargets(root);
+  return targets
+    .map((target) => injectIntoActionContainer(target, options))
+    .filter((button): button is HTMLElement => button !== null);
 }
 
 /** Remove every copy-as-image button injected under `root`. */

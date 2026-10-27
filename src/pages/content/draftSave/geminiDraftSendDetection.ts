@@ -1,7 +1,6 @@
-import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
+import { findGeminiSendButton } from '@/core/gemini/composer/send';
+import { getBundledGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
 import { getSendKeyCoordinator } from '@/core/services/composer/sendKeys/sendKeyCoordinator';
-import { findSendButton } from '@/core/services/composer/sendKeys/sendKeyDom';
-import { SEND_SITE_POLICIES } from '@/core/services/composer/sendKeys/sendSitePolicies';
 import type { DraftPolicy } from '@/features/plugins/verbs/draftSave/draftPolicy';
 
 import { isSendKeyboardEvent } from '../sendBehavior/sendButton';
@@ -20,7 +19,8 @@ export function startGeminiDraftSendDetection({ doc, policy, onSent, onIntent, s
   stop(): void;
 } {
   const view = doc.defaultView ?? window;
-  const userSelector = getGeminiTurnSelectors('turn.userWithHosts').join(',');
+  // Remote turn discovery must never supply the evidence that deletes a saved draft.
+  const userSelector = getBundledGeminiTurnSelectors('turn.userWithHosts').join(',');
   const normalize = (text: string) => policy.sanitize.fn(text).replace(/\s+/g, ' ').trim();
   let stopped = false;
   let intent: {
@@ -97,7 +97,8 @@ export function startGeminiDraftSendDetection({ doc, policy, onSent, onIntent, s
       policy.isEmpty(field)
     )
       return;
-    if (!findSendButton(field, SEND_SITE_POLICIES.gemini.sendContainerSelectors)) return;
+    // Follow the coordinator's independently checked send owner even if the draft read fell back.
+    if (!findGeminiSendButton(field)) return;
     clear();
     const turns = new Set(doc.querySelectorAll(userSelector));
     intent = {
@@ -132,7 +133,7 @@ export function startGeminiDraftSendDetection({ doc, policy, onSent, onIntent, s
     }
     const field = policy.findInput(doc);
     if (!field) return;
-    const button = findSendButton(field, SEND_SITE_POLICIES.gemini.sendContainerSelectors);
+    const button = findGeminiSendButton(field);
     if (button?.contains(event.target)) arm(field);
   }
   function submit(event: Event): void {

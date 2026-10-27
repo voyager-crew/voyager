@@ -10,6 +10,7 @@ import type { ExportSite } from '../exportSite';
 import { createCatalogExportSite } from './catalogSite';
 import { createChatGptExportSite } from './chatgpt';
 import { createGeminiExportSite } from './gemini';
+import { createGenericExportSite } from './generic';
 
 /** One export site per registered exporter, keyed like the adapter factories. */
 const EXPORT_SITE_FACTORIES: Record<ExportHostId, (adapter: ExportPlatformAdapter) => ExportSite> =
@@ -17,6 +18,7 @@ const EXPORT_SITE_FACTORIES: Record<ExportHostId, (adapter: ExportPlatformAdapte
     gemini: createGeminiExportSite,
     chatgpt: createChatGptExportSite,
     catalog: (adapter) => createCatalogExportSite(adapter.site),
+    generic: createGenericExportSite,
   };
 
 /** The conversation export for the current host. */

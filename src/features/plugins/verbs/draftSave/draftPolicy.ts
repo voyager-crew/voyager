@@ -87,7 +87,13 @@ export function catalogDraftPolicy(adapter: SiteAdapter): DraftPolicy {
       return written;
     },
     sanitize: { fn: (text) => text, stages: NO_SANITIZE_STAGES },
-    sendDetection: { kind: 'catalog', sendButton: adapter.selectors.sendButton },
+    sendDetection: {
+      kind: 'catalog',
+      // An alias can move after activation; the adapter proves it again at the actual click.
+      get sendButton() {
+        return adapter.selectors.sendButton;
+      },
+    },
     flushOnPageHide: true,
     restoreIdentity: () => '',
   };

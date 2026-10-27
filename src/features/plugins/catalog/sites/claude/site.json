@@ -10,7 +10,8 @@
     "sidebar": "nav[aria-label], [data-testid=\"menu-sidebar\"], [data-testid=\"sidebar\"]",
     "scrollContainer": "[data-autoscroll-container=\"true\"]",
     "composerRoot": "[data-composer-card-holder] > div",
-    "sendButton": "[data-testid=\"chat-input-send\"]"
+    "sendButton": "[data-testid=\"chat-input-send\"]",
+    "sidePanel": "iframe[src*=\"claudeusercontent.com\"]"
   },
   "theme": {
     "hostSelector": ":root",

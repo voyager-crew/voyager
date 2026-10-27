@@ -7,6 +7,8 @@
  * saved by dragging is theirs.
  */
 
+import { readInputPlacement } from '@/core/services/composer/inputPlacement';
+
 import { findChatInput } from '../chatInput';
 
 export const PROMPT_TRIGGER_ELEMENT_ID = 'gv-pm-trigger';
@@ -60,9 +62,14 @@ function fitsViewport(box: Box): boolean {
 function composerElement(): HTMLElement | null {
   const input = findChatInput();
   return (
-    input?.closest<HTMLElement>(
-      'form, .text-input-field, input-area-v2, input-container, .input-area, ms-prompt-input-wrapper, chat-message',
-    ) ?? input
+    (input
+      ? readInputPlacement(
+          'input.clearance',
+          (selector) => input.closest<HTMLElement>(selector),
+          input.ownerDocument,
+          false,
+        )
+      : null) ?? input
   );
 }
 

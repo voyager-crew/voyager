@@ -1,3 +1,9 @@
+import { resolveGeminiAnswerElement } from '@/core/gemini/content/reads';
+import {
+  GEMINI_TURN_PROFILE_KEYS,
+  getGeminiSelectorView,
+  type GeminiSelectorView,
+} from '@/core/gemini/selectors';
 /**
  * Reads the conversation shown on the page into export turns and selectable messages.
  *
@@ -6,24 +12,28 @@
  * Gemini's thinking panel and Deep Research immersive nodes, starred-turn
  * lookup, and appending Canvas document content to responses that reference it.
  */
-import { filterTopLevel } from '@/core/utils/array';
 import {
   type ContentExtractor,
   createContentExtractor,
   extractTurnContent,
 } from '@/features/export/services/DOMContentExtractor';
 import { queryOutsideThoughts } from '@/features/export/services/exportDomPolicy';
+import {
+  getExportReadProfiles,
+  type ExportReadProfiles,
+} from '@/features/export/services/exportSiteData';
 import type { CanvasDoc, ChatTurn as ExportChatTurn } from '@/features/export/types/export';
 
 import { isServerTurnId } from '../fork/turnId';
 import { historyTimestampStore } from '../timestamp/historyTimestamps';
+import { buildGeminiAdapter } from './adapter/platform/gemini';
 import type { ExportPlatformAdapter } from './adapter/platformAdapters';
 import { assistantHasCanvasDoc, extractAllCanvasDocs, isAnyCanvasOpen } from './canvasDocExtractor';
+import { findAssistantForTurn, pickAssistantExportElement } from './conversationDom';
 import {
-  filterOutDeepResearchImmersiveNodes,
-  findAssistantForTurn,
-  pickAssistantExportElement,
-} from './conversationDom';
+  resolveConversationTurnOperation,
+  type ConversationTurnDom,
+} from './conversationTurnOperation';
 import { resolveUniqueExportTurnIds } from './selectionIds';
 import { groupSelectedMessagesByTurn } from './selectionUtils';
 import { geminiConversationIdFromLocation } from './sidebarConversationNavigation';
@@ -91,16 +101,19 @@ function normalizeText(text: string | null): string {
   }
 }
 
-function extractAssistantText(el: HTMLElement): string {
+function extractAssistantText(
+  el: HTMLElement,
+  profiles: ExportReadProfiles,
+  view?: GeminiSelectorView,
+): string {
   // Prefer direct text from message container if available (connected to DOM)
   // Use queryOutsideThoughts to avoid matching the message-content inside
   // the expanded thinking/reasoning panel.
   try {
-    const mc = queryOutsideThoughts<HTMLElement>(
-      el,
-      'message-content, .markdown, .markdown-main-panel',
-    );
-    if (mc) {
+    const bundled = () =>
+      queryOutsideThoughts<HTMLElement>(el, profiles['export.collectorAnswer']) ?? el;
+    const mc = view ? resolveGeminiAnswerElement(el, bundled, view) : bundled();
+    if (mc !== el) {
       const raw = mc.textContent || mc.innerText || '';
       const txt = normalizeText(raw);
       if (txt) return txt;
@@ -216,39 +229,31 @@ function buildTurnsForSelectedMessages(
 
 export function createConversationCollector(adapter: ExportPlatformAdapter): ConversationCollector {
   const extractor = createContentExtractor(adapter);
+  const profiles = getExportReadProfiles(adapter.site.id);
+  const canvas = adapter.canvas ?? { assistantHasCanvasDoc, extractAllCanvasDocs, isAnyCanvasOpen };
   let cachedCanvasDocs: CanvasDoc[] | null = null;
 
   const conversationRoot = (): HTMLElement =>
-    adapter.resolveConversationRoot(adapter.getUserSelectors(), document);
+    resolveConversationTurnOperation(
+      adapter,
+      (turns) => turns,
+      ({ users }) => users.length > 0,
+    ).root;
 
-  const topUserElement = (): HTMLElement | null => {
-    const selectors = adapter.getUserSelectors();
-    const root = adapter.resolveConversationRoot(selectors, document);
-    const all = filterOutDeepResearchImmersiveNodes(
-      Array.from(root.querySelectorAll<HTMLElement>(selectors.join(','))),
+  const topUserElement = (): HTMLElement | null =>
+    resolveConversationTurnOperation(
+      adapter,
+      ({ users }) => users[0] ?? null,
+      (user) => user !== null,
     );
-    if (!all.length) return null;
-    const topLevel = filterTopLevel(all);
-    return topLevel.length > 0 ? topLevel[0] : null;
-  };
 
-  const collectChatPairs = (starredIds: ReadonlySet<string> = new Set()): ChatTurn[] => {
-    const userSelectors = adapter.getUserSelectors();
-    const root = adapter.resolveConversationRoot(userSelectors, document);
-    const assistantSelectors = adapter.getAssistantSelectors();
-    const userNodeList = filterOutDeepResearchImmersiveNodes(
-      Array.from(root.querySelectorAll<HTMLElement>(userSelectors.join(','))),
-    );
-    if (!userNodeList || userNodeList.length === 0) return [];
-    const users = filterTopLevel(userNodeList);
+  const readChatPairs = (
+    { users, assistants, userSelector, assistantSelector, view }: ConversationTurnDom,
+    starredIds: ReadonlySet<string>,
+  ): ChatTurn[] => {
     if (users.length === 0) return [];
 
     const uniqueTurnIds = resolveUniqueExportTurnIds(users);
-
-    const assistantsAll = filterOutDeepResearchImmersiveNodes(
-      Array.from(root.querySelectorAll<HTMLElement>(assistantSelectors.join(','))),
-    );
-    const assistants = filterTopLevel(assistantsAll);
 
     const nativeConversationId = geminiConversationIdFromLocation();
     const pairs: ChatTurn[] = [];
@@ -260,10 +265,10 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
         uEl,
         users[i + 1],
         assistants,
-        userSelectors.join(','),
-        assistantSelectors.join(','),
+        userSelector,
+        assistantSelector,
       );
-      const aText = aEl ? extractAssistantText(aEl) : '';
+      const aText = aEl ? extractAssistantText(aEl, profiles, view) : '';
       const turnId = uniqueTurnIds[i];
       const turnIdAliases =
         turnId && nativeConversationId && isServerTurnId(turnId)
@@ -273,7 +278,9 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
             : [];
       const starred = turnIdAliases.some((alias) => starredIds.has(alias));
       if (uText || aText) {
-        const finalAssistantEl = aEl ? pickAssistantExportElement(aEl) : undefined;
+        const finalAssistantEl = aEl
+          ? (adapter.selectAssistantExportElement?.(aEl) ?? pickAssistantExportElement(aEl, view))
+          : undefined;
         pairs.push({
           turnId,
           user: uText,
@@ -283,32 +290,46 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
           assistantElement: finalAssistantEl,
           assistantHostElement: aEl || undefined,
         });
-        // Canvas document content injection: if this assistant response references
-        // a Canvas doc, append full Canvas content directly into the DOM element
-        // so DOMContentExtractor can pick it up.
-        // Guard against duplicate injection (collectChatPairs may be called multiple times).
-        if (
-          aEl &&
-          assistantHasCanvasDoc(aEl) &&
-          (isAnyCanvasOpen() || (cachedCanvasDocs && cachedCanvasDocs.length > 0)) &&
-          finalAssistantEl &&
-          !finalAssistantEl.querySelector(`.${CANVAS_EXPORT_SECTION_CLASS}`)
-        ) {
-          const canvasDocs =
-            cachedCanvasDocs && cachedCanvasDocs.length > 0
-              ? cachedCanvasDocs
-              : extractAllCanvasDocs();
-          if (canvasDocs.length > 0) {
-            appendCanvasDocSections(
-              finalAssistantEl.querySelector('.markdown, .markdown-main-panel') || finalAssistantEl,
-              canvasDocs,
-            );
-          }
-        }
       }
     }
     return pairs;
   };
+
+  const collectWithExtractor = (starredIds: ReadonlySet<string> = new Set()) => {
+    const { pairs, view } = resolveConversationTurnOperation(
+      adapter,
+      (turns) => ({ pairs: readChatPairs(turns, starredIds), view: turns.view }),
+      (result) => result.pairs.length > 0,
+    );
+    // Only the accepted read may append Canvas content to the live response.
+    for (const { assistantHostElement: host, assistantElement: target } of pairs) {
+      if (
+        !host ||
+        !target ||
+        !canvas.assistantHasCanvasDoc(host) ||
+        !(canvas.isAnyCanvasOpen() || (cachedCanvasDocs && cachedCanvasDocs.length > 0)) ||
+        target.querySelector(`.${CANVAS_EXPORT_SECTION_CLASS}`)
+      )
+        continue;
+      const docs = cachedCanvasDocs?.length ? cachedCanvasDocs : canvas.extractAllCanvasDocs();
+      if (docs.length > 0) {
+        appendCanvasDocSections(
+          target.querySelector(profiles['export.walkMarkdown']) || target,
+          docs,
+        );
+      }
+    }
+    return {
+      pairs,
+      extractor:
+        adapter.site.id === 'gemini'
+          ? createContentExtractor(buildGeminiAdapter(adapter.site, view))
+          : extractor,
+    };
+  };
+
+  const collectChatPairs = (starredIds?: ReadonlySet<string>): ChatTurn[] =>
+    collectWithExtractor(starredIds).pairs;
 
   const selectionMessagesFromPairs = (pairsInput: ChatTurn[]): ExportMessage[] => {
     const messages = buildExportMessagesFromPairs(pairsInput);
@@ -327,29 +348,34 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
     collectChatPairs,
     collectSelectionMessages: () => selectionMessagesFromPairs(collectChatPairs()),
     turnsForMessageIds: (selectedMessageIds, starredIds) => {
-      const pairs = collectChatPairs(starredIds);
+      const { pairs, extractor: acceptedExtractor } = collectWithExtractor(starredIds);
       if (selectedMessageIds.size === 0) return [];
       const selectedMessages = selectionMessagesFromPairs(pairs).filter((message) =>
         selectedMessageIds.has(message.messageId),
       );
-      return buildTurnsForSelectedMessages(selectedMessages, extractor);
+      return buildTurnsForSelectedMessages(selectedMessages, acceptedExtractor);
     },
     assistantMessageIdFor: (trigger) => {
       if (!trigger) return null;
 
-      const assistantHost = trigger.closest(
-        '.response-container, response-container, .model-response, model-response',
-      ) as HTMLElement | null;
-      if (!assistantHost) return null;
+      const repairedTurns =
+        adapter.site.id === 'gemini' &&
+        GEMINI_TURN_PROFILE_KEYS.some((key) => getGeminiSelectorView().remoteKeys.has(key));
+      const assistantHost = repairedTurns
+        ? null
+        : trigger.closest<HTMLElement>(profiles['export.menuResponseOwner']);
+      if (!repairedTurns && !assistantHost) return null;
 
       const messages = buildExportMessagesFromPairs(collectChatPairs());
       const target = messages.find((message) => {
         if (message.role !== 'assistant') return false;
         const host = message.hostElement;
+        // The collected host already passed the whole-turn proof, even after a native tag rename.
+        if (repairedTurns) return host.contains(trigger);
         return (
           host === assistantHost ||
           host.contains(assistantHost) ||
-          assistantHost.contains(host) ||
+          assistantHost?.contains(host) ||
           host.contains(trigger)
         );
       });
@@ -359,7 +385,7 @@ export function createConversationCollector(adapter: ExportPlatformAdapter): Con
     topUserElement,
     conversationRoot,
     snapshotOpenCanvasDocs: () => {
-      if (isAnyCanvasOpen()) cachedCanvasDocs = extractAllCanvasDocs();
+      if (canvas.isAnyCanvasOpen()) cachedCanvasDocs = canvas.extractAllCanvasDocs();
     },
     releaseCanvasDocs: () => {
       cachedCanvasDocs = null;

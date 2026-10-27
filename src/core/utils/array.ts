@@ -2,6 +2,11 @@
  * Array utilities
  */
 
+/** Compare an ordered collection by identity, including its length. */
+export function sameItems<T>(left: readonly T[], right: readonly T[]): boolean {
+  return left.length === right.length && left.every((item, index) => item === right[index]);
+}
+
 /**
  * Filter array to only top-level elements (remove nested duplicates)
  */

@@ -3,6 +3,8 @@ import {
   normalizeGemsSidebarCount,
 } from '@/core/utils/gemsSidebarValues';
 
+import { gemsPackagedSelectors, readGemsList } from './selectorQueries';
+
 /** Single gem as we cache and render it. Keep this small — chrome.storage. */
 export interface GemMetadata {
   /** Slug parsed out of `/gem/<id>`. Doubles as a stable React-style key. */
@@ -37,38 +39,7 @@ export const DEFAULT_COUNT = DEFAULT_GEMS_SIDEBAR_COUNT;
  * Pure / side-effect-free so the scraper can be unit-tested in isolation.
  */
 export function scrapeGemsFromDocument(doc: Document = document): GemMetadata[] {
-  const list = doc.querySelector('[data-test-id="your-gems-list"]');
-  if (!list) return [];
-
-  const rows = list.querySelectorAll('bot-list-row');
-  const items: GemMetadata[] = [];
-
-  rows.forEach((row) => {
-    const anchor = row.querySelector<HTMLAnchorElement>('a.bot-row, a[href*="/gem/"]');
-    const href = anchor?.getAttribute('href') ?? '';
-    const parsed = parseGemHref(href);
-    if (!anchor || !parsed) return;
-
-    const { id, path } = parsed;
-
-    // Gemini's title is split across `.title-container > div`. Reading the
-    // anchor's textContent and stripping the logo-letter prefix yields the
-    // most reliable name across Angular re-renders.
-    const titleEl =
-      anchor.querySelector('.title-container') ?? anchor.querySelector('.bot-title-inner');
-    const rawName = titleEl?.textContent?.trim();
-    if (!rawName) return;
-
-    const descriptionEl = anchor.querySelector('.bot-desc');
-    const description = descriptionEl?.textContent?.trim() || undefined;
-
-    const iconEl = anchor.querySelector('.bot-logo-text');
-    const iconLetter = iconEl?.textContent?.trim() || undefined;
-
-    items.push({ id, href: path, name: rawName, description, iconLetter });
-  });
-
-  return items;
+  return readGemsList(doc).rows.flatMap(({ metadata }) => (metadata ? [metadata] : []));
 }
 
 /**
@@ -150,9 +121,10 @@ export function gemItemsEqual(a: GemMetadata[], b: GemMetadata[]): boolean {
 export function readGemMetadata(pathname: string, doc: Document = document): GemMetadata | null {
   const parsed = parseGemHref(pathname);
   if (!parsed) return null;
-  const name = doc.querySelector('.bot-name-container')?.textContent?.trim();
+  const name = doc.querySelector(gemsPackagedSelectors.currentName)?.textContent?.trim();
   if (!name) return null;
-  const iconLetter = doc.querySelector('.bot-logo-text')?.textContent?.trim() || undefined;
+  const iconLetter =
+    doc.querySelector(gemsPackagedSelectors.currentIcon)?.textContent?.trim() || undefined;
   return { id: parsed.id, href: parsed.path, name, iconLetter };
 }
 

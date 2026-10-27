@@ -21,6 +21,17 @@ export interface DiagramExport {
 export type DiagramExportProvider = () => DiagramExport | null;
 
 const providers = new WeakMap<Element, DiagramExportProvider>();
+const hiddenSources = new WeakSet<Element>();
+
+/** Only the renderer that hides a native block can preserve its visibility proof. */
+export function ownDiagramSource(block: Element): () => void {
+  hiddenSources.add(block);
+  return () => hiddenSources.delete(block);
+}
+
+export function isOwnedDiagramSource(block: Element): boolean {
+  return hiddenSources.has(block) && block.hasAttribute('data-gv-diagram-hidden');
+}
 
 /** Registers `read` for `block`; the returned withdraw only removes this registration. */
 export function provideDiagramExport(block: Element, read: DiagramExportProvider): () => void {

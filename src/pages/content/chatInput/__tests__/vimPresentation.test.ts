@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createVimEditor } from '../vimDomEditor';
 import {
   setupVimTestEnvironment,
+  setVimTestSite,
   setVisibleRect,
   createQuestionInput,
   addToolboxLabel,
@@ -58,6 +59,7 @@ describe('Vim presentation', () => {
   });
 
   it('floats the cross-site HUD above the composer instead of covering its input row', () => {
+    setVimTestSite('chatgpt.com');
     document.body.innerHTML =
       '<form><div id="prompt-textarea" contenteditable="true">hello</div></form>';
     const input = document.getElementById('prompt-textarea')!;
@@ -90,6 +92,7 @@ describe('Vim presentation', () => {
   });
 
   it('floats the cross-site edit HUD below the card without covering host controls', () => {
+    setVimTestSite('chatgpt.com');
     document.body.innerHTML =
       '<div><textarea aria-label="Edit message">hello</textarea><button>Cancel</button><button>Save</button></div>';
     const input = document.querySelector('textarea')!;

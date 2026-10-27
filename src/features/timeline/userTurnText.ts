@@ -1,4 +1,11 @@
-const USER_CONTENT_SELECTOR = '[data-user-message-bubble], .query-text, .ds-collapsible-text';
+import { getPageSelectorSiteId, getSiteSelectorView } from '@/core/selectors';
+
+import { timelineSiteData } from './siteTextData';
+import {
+  isCompleteUserText,
+  ownsTimelineUserText,
+  USER_TEXT_ATTACHMENT_PREVIEW,
+} from './userTextProof';
 const EXCLUDED_SELECTOR =
   'button, [role="button"], script, style, template, model-response, [data-message-author-role="assistant"], [data-conversation-role="assistant"]';
 const BLOCK_TAGS = new Set([
@@ -49,7 +56,8 @@ function injected(element: Element): boolean {
  * Full user prompt as plain text, read from the connected original so host CSS decides what is hidden.
  * Reads computed styles for the whole turn: call it only when a star needs text, never per collect.
  */
-export function userTurnText(element: HTMLElement): string {
+export function userTurnText(element: HTMLElement, url?: string): string {
+  const userContentSelector = timelineSiteData(element.ownerDocument, url)['timeline.userText'];
   const styles = new Map<Element, CSSStyleDeclaration>();
   const style = (node: Element): CSSStyleDeclaration => {
     let value = styles.get(node);
@@ -74,41 +82,82 @@ export function userTurnText(element: HTMLElement): string {
     }
     return true;
   };
-  const content = element.matches(USER_CONTENT_SELECTOR)
+  const bundledMatch = element.matches(userContentSelector)
     ? element
-    : (Array.from(element.querySelectorAll(USER_CONTENT_SELECTOR)).find(reachable) ?? element);
+    : Array.from(element.querySelectorAll(userContentSelector)).find(reachable);
+  const bundledContent = bundledMatch ?? element;
 
-  let text = '';
-  let syntheticNewline = false;
-  const append = (value: string): void => {
-    text += value;
-    if (value) syntheticNewline = false;
+  const extract = (content: Element, excludeAttachments = false): string => {
+    let text = '';
+    let syntheticNewline = false;
+    const append = (value: string): void => {
+      text += value;
+      if (value) syntheticNewline = false;
+    };
+    const newline = () => {
+      if (text && !text.endsWith('\n')) {
+        text += '\n';
+        syntheticNewline = true;
+      }
+    };
+    const visit = (node: Node, root = false): void => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const parent = node.parentElement;
+        if (!parent || !invisible(parent)) append((node.nodeValue ?? '').replace(/\r\n?/g, '\n'));
+        return;
+      }
+      if (
+        !(node instanceof Element) ||
+        (!root && excluded(node)) ||
+        (excludeAttachments && node.matches(USER_TEXT_ATTACHMENT_PREVIEW))
+      )
+        return;
+      if (node.tagName === 'BR') {
+        if (!invisible(node)) append('\n');
+        return;
+      }
+      const block = BLOCK_TAGS.has(node.tagName);
+      if (block) newline();
+      const latex = node.getAttribute(LATEX_ATTRIBUTE);
+      // The rendered formula's own visibility decides whether its source belongs to the prompt.
+      if (latex === null) node.childNodes.forEach((child) => visit(child));
+      else if (!invisible(node)) append(latex.replace(/\r\n?/g, '\n'));
+      if (block) newline();
+    };
+    visit(content, true);
+    return syntheticNewline ? text.slice(0, -1) : text;
   };
-  const newline = () => {
-    if (text && !text.endsWith('\n')) {
-      text += '\n';
-      syntheticNewline = true;
+  const site = getPageSelectorSiteId(element.ownerDocument);
+  const view = site ? getSiteSelectorView(site) : null;
+  let sameSite = true;
+  if (url) {
+    try {
+      sameSite = new URL(url).hostname === element.ownerDocument.location.hostname;
+    } catch {
+      sameSite = false;
     }
-  };
-  const visit = (node: Node, root = false): void => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      const parent = node.parentElement;
-      if (!parent || !invisible(parent)) append((node.nodeValue ?? '').replace(/\r\n?/g, '\n'));
-      return;
+  }
+  if (sameSite && site && view?.remoteKeys.has('timeline.userText')) {
+    try {
+      const selector = view.profiles['timeline.userText'].join(',');
+      const candidate = element.matches(selector)
+        ? element
+        : Array.from(element.querySelectorAll(selector)).find(reachable);
+      if (
+        candidate instanceof HTMLElement &&
+        reachable(candidate) &&
+        !excluded(candidate) &&
+        ownsTimelineUserText(candidate, site)
+      ) {
+        // Gemini preview tags are metadata; another site's same-named tag remains authored text.
+        const excludeAttachments = site === 'gemini';
+        const value = extract(candidate, excludeAttachments);
+        // Attachments precede Gemini's body; only the complete authored text can prove a repair.
+        if (isCompleteUserText(value, extract(bundledContent, excludeAttachments))) return value;
+      }
+    } catch {
+      // Keep the original text preference if this operation cannot prove complete prompt text.
     }
-    if (!(node instanceof Element) || (!root && excluded(node))) return;
-    if (node.tagName === 'BR') {
-      if (!invisible(node)) append('\n');
-      return;
-    }
-    const block = BLOCK_TAGS.has(node.tagName);
-    if (block) newline();
-    const latex = node.getAttribute(LATEX_ATTRIBUTE);
-    // The rendered formula's own visibility decides whether its source belongs to the prompt.
-    if (latex === null) node.childNodes.forEach((child) => visit(child));
-    else if (!invisible(node)) append(latex.replace(/\r\n?/g, '\n'));
-    if (block) newline();
-  };
-  visit(content, true);
-  return syntheticNewline ? text.slice(0, -1) : text;
+  }
+  return extract(bundledContent);
 }

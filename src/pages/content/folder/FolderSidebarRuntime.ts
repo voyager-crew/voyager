@@ -8,9 +8,11 @@ import type { NativeSidebarObserver } from './NativeSidebarObserver';
 import { NotebooksAnchorToggle } from './notebooksAnchorToggle';
 import {
   type FolderAnchor,
-  findAnchor,
-  findNotebooks,
+  type GeminiSidebarMount,
   findSidebar,
+  findSidebarMount,
+  findSidebarNotebooks,
+  findSidebarVisibilityHost,
   isSidebarOpen,
   removeStrayFolderPanels,
 } from './sidebarMountDom';
@@ -168,17 +170,19 @@ export class FolderSidebarRuntime {
     const operation = this.waitForSidebar()
       .then((sidebar) => {
         if (!sidebar || !this.isCurrent(generation) || this.mode !== 'sidebar') return;
-        this.sidebarElement = sidebar;
-        const anchor = this.findAnchor(sidebar);
-        const parent = anchor?.parentElement;
-        if (!anchor || !parent) return;
+        const mount = findSidebarMount(this.anchorPreference);
+        if (!mount) return;
+        const { sidebar: mountSidebar, anchor } = mount;
+        const parent = anchor.parentElement;
+        if (!parent) return;
+        this.sidebarElement = mountSidebar;
 
         removeStrayFolderPanels(parent);
         const panel = this.options.createPanel();
         this.panelElement = panel;
         parent.insertBefore(panel, anchor);
-        this.options.onPanelMount(panel, sidebar);
-        this.bindNativeSidebar(sidebar);
+        this.options.onPanelMount(panel, mountSidebar);
+        this.bindNativeSidebar(mountSidebar);
         this.observePosition();
         this.ensureNotebooksButton();
         this.observeVisibility();
@@ -281,27 +285,25 @@ export class FolderSidebarRuntime {
     });
   }
 
-  private findAnchor(sidebar: HTMLElement): HTMLElement | null {
-    return findAnchor(sidebar, this.anchorPreference);
-  }
-
-  private isMountedInCurrentSidebar(sidebar = findSidebar()): boolean {
+  private isMountedInCurrentSidebar(
+    mount: GeminiSidebarMount | null = findSidebarMount(this.anchorPreference),
+  ): boolean {
     return !!(
       this.panelElement &&
       document.body.contains(this.panelElement) &&
-      sidebar &&
-      document.body.contains(sidebar) &&
-      sidebar.contains(this.panelElement) &&
-      this.findAnchor(sidebar)
+      mount &&
+      document.body.contains(mount.sidebar) &&
+      mount.sidebar.contains(this.panelElement)
     );
   }
 
   private enforcePosition(): void {
     if (!this.running || this.mode !== 'sidebar' || !this.panelElement?.isConnected) return;
-    const anchor = this.sidebarElement && this.findAnchor(this.sidebarElement);
+    const mount = findSidebarMount(this.anchorPreference);
+    const anchor = mount?.sidebar === this.sidebarElement ? mount.anchor : null;
     const parent = anchor?.parentElement;
     if (!anchor || !parent) return;
-    this.ensureNotebooksButton();
+    this.ensureNotebooksButton(mount);
     if (
       this.panelElement.parentElement !== parent ||
       this.panelElement.nextElementSibling !== anchor
@@ -312,9 +314,9 @@ export class FolderSidebarRuntime {
 
   private observePosition(): void {
     this.positionObserver?.disconnect();
+    const mount = findSidebarMount(this.anchorPreference);
     const target =
-      (this.sidebarElement && this.findAnchor(this.sidebarElement)?.parentElement) ??
-      this.sidebarElement;
+      mount?.sidebar === this.sidebarElement ? (mount.anchor.parentElement ?? mount.sidebar) : null;
     if (!target) return;
     this.positionObserver = new MutationObserver(() => {
       if (this.positionRaf !== null) return;
@@ -335,7 +337,7 @@ export class FolderSidebarRuntime {
 
   private observeVisibility(): void {
     this.visibilityObserver?.disconnect();
-    const host = document.querySelector('chat-app') ?? document.querySelector('#app-root');
+    const host = findSidebarVisibilityHost();
     if (!host) return;
     this.visibilityObserver = new MutationObserver(() => this.updateVisibility());
     this.visibilityObserver.observe(host, {
@@ -356,9 +358,10 @@ export class FolderSidebarRuntime {
   private async recover(): Promise<void> {
     if (!this.running || this.mode !== 'sidebar' || this.remounting || this.recoveryInFlight)
       return;
-    const sidebar = findSidebar();
-    const anchor = sidebar && this.findAnchor(sidebar);
-    if (this.isMountedInCurrentSidebar(sidebar)) {
+    const mount = findSidebarMount(this.anchorPreference);
+    const sidebar = mount?.sidebar ?? null;
+    const anchor = mount?.anchor ?? null;
+    if (this.isMountedInCurrentSidebar(mount)) {
       this.anchorMissingSince = null;
       nativeHealthReporter.reportFound('folders');
       if (sidebar && this.sidebarElement !== sidebar) {
@@ -406,10 +409,7 @@ export class FolderSidebarRuntime {
     nativeHealthReporter.reportMissing('folders', {
       route: 'any',
       status: 'degraded',
-      recheck: () => {
-        const sidebar = findSidebar();
-        return !!sidebar && !!this.findAnchor(sidebar);
-      },
+      recheck: () => findSidebarMount(this.anchorPreference) !== null,
       expected: () => this.running && this.mode === 'sidebar' && isSidebarOpen(),
     });
   }
@@ -470,12 +470,15 @@ export class FolderSidebarRuntime {
     this.options.floating.close();
   }
 
-  private ensureNotebooksButton(): void {
+  private ensureNotebooksButton(mount = findSidebarMount(this.anchorPreference)): void {
     if (!this.running || this.mode !== 'sidebar') {
       this.anchorToggle.cleanup();
       return;
     }
-    this.anchorToggle.ensure(findNotebooks(this.sidebarElement));
+    const notebooks = mount ? findSidebarNotebooks(mount.view) : null;
+    this.anchorToggle.ensure(
+      notebooks?.sidebar === this.sidebarElement ? notebooks.notebooks : null,
+    );
   }
 
   refreshLanguage(): void {

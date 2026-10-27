@@ -38,7 +38,10 @@ describe('TimelineTurns summary extraction', () => {
     setElementTop(turn, 0);
     container.appendChild(turn);
 
-    const markers = new TimelineTurns().collect(container, '.user-query-bubble-with-background');
+    const markers = new TimelineTurns().plan(
+      container,
+      '.user-query-bubble-with-background',
+    ).markers;
 
     expect(markers).toHaveLength(1);
     expect(markers[0]?.summary).toBe('嗯嗯！');
@@ -55,7 +58,10 @@ describe('TimelineTurns summary extraction', () => {
     setElementTop(turn, 0);
     container.appendChild(turn);
 
-    const markers = new TimelineTurns().collect(container, '.user-query-bubble-with-background');
+    const markers = new TimelineTurns().plan(
+      container,
+      '.user-query-bubble-with-background',
+    ).markers;
 
     expect(markers).toHaveLength(1);
     expect(markers[0]?.summary).toBe('Hello world');
@@ -78,7 +84,10 @@ describe('TimelineTurns summary extraction', () => {
     container.appendChild(first);
     container.appendChild(second);
 
-    const markers = new TimelineTurns().collect(container, '.user-query-bubble-with-background');
+    const markers = new TimelineTurns().plan(
+      container,
+      '.user-query-bubble-with-background',
+    ).markers;
 
     expect(markers).toHaveLength(2);
     expect(markers[0]?.id).not.toBe(markers[1]?.id);
@@ -111,7 +120,10 @@ describe('TimelineTurns summary extraction', () => {
 
     container.append(first, firstResponse, second, secondResponse);
 
-    const markers = new TimelineTurns().collect(container, '.user-query-bubble-with-background');
+    const markers = new TimelineTurns().plan(
+      container,
+      '.user-query-bubble-with-background',
+    ).markers;
 
     expect(markers).toHaveLength(2);
     expect(markers[0]?.assistantSummary).toBe(
@@ -136,7 +148,10 @@ describe('TimelineTurns summary extraction', () => {
     container.appendChild(first);
     container.appendChild(second);
 
-    const markers = new TimelineTurns().collect(container, '.user-query-bubble-with-background');
+    const markers = new TimelineTurns().plan(
+      container,
+      '.user-query-bubble-with-background',
+    ).markers;
 
     expect(markers).toHaveLength(1);
     expect(markers[0]?.summary).toBe('same content');

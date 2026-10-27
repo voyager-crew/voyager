@@ -18,10 +18,13 @@ vi.mock('../promptPrefs', () => ({
 }));
 
 let trigger: PromptTrigger | undefined;
+const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 
 async function mount(options: { hiddenByUser?: boolean; attention?: boolean; url?: string } = {}) {
   const onAttentionChange = vi.fn();
-  const site = resolvePromptSiteAdapter(options.url ?? 'https://gemini.google.com/app');
+  const url = options.url ?? 'https://gemini.google.com/app';
+  Object.defineProperty(window, 'location', { configurable: true, value: new URL(url) });
+  const site = resolvePromptSiteAdapter(url);
   trigger = await mountPromptTrigger({
     mascotLogo: false,
     hiddenByUser: options.hiddenByUser ?? false,
@@ -42,6 +45,8 @@ beforeEach(() => {
 afterEach(() => {
   trigger?.destroy();
   trigger = undefined;
+  vi.useRealTimers();
+  Object.defineProperty(window, 'location', originalLocation);
 });
 
 describe('prompt trigger visibility', () => {
@@ -182,4 +187,65 @@ describe('prompt trigger default spot', () => {
     expect(ball.style.right).toBe('120px');
     expect(ball.style.bottom).toBe('90px');
   });
+
+  it('follows a late FAB on the next frame and again after 350 ms while mounted', async () => {
+    vi.useFakeTimers();
+    const { ball } = await mount();
+    expect(ball.style.right).toBe('');
+
+    mountMaterialFab(new DOMRect(900, 700, 40, 40));
+    vi.advanceTimersToNextFrame();
+    expect(ball.style.right).toBe('134px');
+
+    document.querySelector('.mat-mdc-button-touch-target')!.remove();
+    mountMaterialFab(new DOMRect(800, 600, 40, 40));
+    vi.advanceTimersByTime(350);
+    expect(ball.style.right).toBe('234px');
+    expect(ball.style.bottom).toBe('130px');
+  });
+
+  it('a destroyed prompt trigger still repositions itself after 350 ms', async () => {
+    vi.useFakeTimers();
+    mountMaterialFab(new DOMRect(900, 700, 40, 40));
+    const { ball } = await mount();
+    vi.advanceTimersToNextFrame();
+    expect(ball.style.right).toBe('134px');
+
+    trigger!.destroy();
+    document.querySelector('.mat-mdc-button-touch-target')!.remove();
+    mountMaterialFab(new DOMRect(800, 600, 40, 40));
+    vi.advanceTimersByTime(350);
+
+    expect(ball.style.right).toBe('134px');
+    expect(ball.style.bottom).toBe('30px');
+  });
+
+  it('a destroyed prompt trigger still repositions itself on the next frame', async () => {
+    vi.useFakeTimers();
+    const { ball } = await mount();
+    expect(ball.style.right).toBe('');
+    trigger!.destroy();
+    mountMaterialFab(new DOMRect(900, 700, 40, 40));
+
+    vi.advanceTimersToNextFrame();
+
+    expect(ball.style.right).toBe('');
+    expect(ball.style.bottom).toBe('');
+  });
+
+  it.each([false, true])(
+    'a saved prompt trigger position is constrained on the next frame only while mounted (destroyed=%s)',
+    async (destroyed) => {
+      vi.useFakeTimers();
+      vi.mocked(readPromptPref).mockResolvedValueOnce({ right: 2000, bottom: 2000 });
+      const { ball } = await mount();
+      expect(ball.style.right).toBe('2000px');
+      if (destroyed) trigger!.destroy();
+
+      vi.advanceTimersToNextFrame();
+
+      expect(ball.style.right).toBe(destroyed ? '2000px' : '974px');
+      expect(ball.style.bottom).toBe(destroyed ? '2000px' : '718px');
+    },
+  );
 });

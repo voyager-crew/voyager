@@ -2962,8 +2962,8 @@
     "description": "Shown when no plugins are available"
   },
   "pluginsRefresh": {
-    "message": "Check for plugin updates now",
-    "description": "Tooltip for the manual plugin-update check button"
+    "message": "Check for updates now",
+    "description": "Label and tooltip for the manual catalog update check button"
   },
   "pluginSourceBuiltin": {
     "message": "Built in",
@@ -3302,12 +3302,12 @@
     "description": "Note shown when a plugin update is held back because it needs a newer Voyager; {version} is the held-back version"
   },
   "pluginsOnlineUpdates": {
-    "message": "Plugin online updates",
-    "description": "Label for the switch that allows online plugin update checks for this site"
+    "message": "Online updates",
+    "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "Checks voyager.nagi.fun for plugin updates for this site — only the site name is sent, no cookies or page content. When off, only the refresh button above connects.",
-    "description": "Explains what the online plugin update check sends and when it runs"
+    "message": "Checks voyager.nagi.fun for plugin updates and page detection fixes for supported sites. Sends the site name, no cookies or page content. Off stops automatic checks. You can still check manually.",
+    "description": "Explains shared catalog updates, supported-site page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {
     "message": "Check every",

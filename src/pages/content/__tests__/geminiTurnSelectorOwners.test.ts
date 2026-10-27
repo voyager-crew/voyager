@@ -267,7 +267,7 @@ describe('Gemini turn selector owners', () => {
       const summarized = ALL_ASSISTANT.filter((id) => {
         document.body.innerHTML = `<main><div class="gv-test-user">prompt</div>${ASSISTANT_SHAPES[id]}</main>`;
         const main = document.querySelector('main') as HTMLElement;
-        const [marker] = new TimelineTurns().collect(main, '.gv-test-user');
+        const [marker] = new TimelineTurns().plan(main, '.gv-test-user').markers;
         return marker?.assistantSummary === id;
       });
       expect(summarized).toEqual(

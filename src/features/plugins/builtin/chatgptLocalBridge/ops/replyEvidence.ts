@@ -1,3 +1,4 @@
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 /**
  * A reply that will not finish, and what the page shows around it.
  *
@@ -10,6 +11,7 @@
  */
 import type { SiteAdapter } from '@/features/plugins/types';
 
+import { touchesRepairedChatgptReplyContent } from '../../chatgptReplyContent';
 import {
   USER_UNIT_SELECTOR,
   hasStopControl,
@@ -18,12 +20,12 @@ import {
   turnStateOf,
 } from './pageReaders';
 
-const INTERRUPTED_COPY = [/^connection interrupted\b/i, /^连接已中断/];
+const INTERRUPTED_COPY = chatgptPageData.interruptedCopy.map((source) => new RegExp(source, 'i'));
 /** Quick test of the whole turn before looking for the notice element. */
-const INTERRUPTED_ANYWHERE = /connection interrupted|连接已中断/i;
+const INTERRUPTED_ANYWHERE = new RegExp(chatgptPageData.interruptedAnywhere, 'i');
 const NOTICE_MAX_CHARS = 200;
-const REPLY_BODY_SELECTOR = '[data-markdown-text-style="assistant-message"]';
-const NOTICE_SELECTOR = '[role="alert"], [role="status"], [aria-live]';
+const REPLY_BODY_SELECTOR = chatgptPageData.assistantMarkdown;
+const NOTICE_SELECTOR = chatgptPageData.replyNotice;
 const TEXT_MAX_CHARS = 300;
 const LIST_MAX = 8;
 
@@ -34,6 +36,7 @@ const OWN_TEXT_SELECTOR = `${USER_UNIT_SELECTOR}, ${REPLY_BODY_SELECTOR}`;
 /** A short element that opens with the copy and holds none of the prompt's or the reply's text. */
 function isNotice(element: Element): boolean {
   if (element.closest(OWN_TEXT_SELECTOR) || element.querySelector(OWN_TEXT_SELECTOR)) return false;
+  if (touchesRepairedChatgptReplyContent(element)) return false;
   const text = flat(element.textContent);
   return (
     text.length > 0 &&
@@ -58,7 +61,7 @@ export function interruptionNotice(item: HTMLElement): string | null {
     inTurn ??
     innermost(
       Array.from(document.querySelectorAll(NOTICE_SELECTOR)).filter(
-        (element) => !element.closest('[data-turn-key]') && isNotice(element),
+        (element) => !element.closest(chatgptPageData.turnItem) && isNotice(element),
       ),
     );
   return found ? flat(found.textContent) : null;
@@ -76,7 +79,7 @@ export function replyEvidence(
     .filter(Boolean)
     .slice(0, LIST_MAX);
   const afterReply = reply
-    ? Array.from(item.querySelectorAll('button'))
+    ? Array.from(item.querySelectorAll(chatgptPageData.replyActions))
         .filter(
           (button) =>
             !reply.contains(button) &&

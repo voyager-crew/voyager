@@ -249,10 +249,10 @@ export function insertQuotedSelection(range: Range): boolean {
   const selectedText = extractTextWithLatex(range).trim();
   if (!selectedText) return false;
 
-  let input = findChatInput();
+  let input = findChatInput({ online: true });
   if (!input) {
     // Input collapse hides the editor before Quote can expand it; other hidden editors stay untouched.
-    const folded = findChatInput({ requireVisible: false });
+    const folded = findChatInput({ requireVisible: false, online: true });
     if (folded?.closest(`.${COLLAPSED_CLASS}`)) input = folded;
   }
   if (input) {

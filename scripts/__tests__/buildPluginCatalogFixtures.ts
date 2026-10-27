@@ -94,8 +94,8 @@ export function makeFixtureCatalog(overrides: FixtureOverrides = {}): string {
   return catalogDir;
 }
 
-/** Hosts Voyager ships with; no catalog file may ever be published for them (D14). */
-export const PACKAGED_HOSTS = [
+/** Native hosts receive locator data while official plugins remain packaged (D14). */
+export const NATIVE_HOSTS = [
   'gemini.google.com',
   'business.gemini.google',
   'aistudio.google.com',

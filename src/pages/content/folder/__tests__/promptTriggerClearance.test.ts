@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// @vitest-environment-options { "url": "https://chatgpt.com/" }
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { readContentStyle } from '@/tests/contentStyle';
@@ -21,6 +23,7 @@ vi.mock('@/core/utils/browser', () => ({
 
 const originalWidth = window.innerWidth;
 const originalHeight = window.innerHeight;
+const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 
 /** The ball where `.gv-pm-trigger` puts it: 46px, 18px in from the bottom-right corner. */
 function cornerBall(): Box {
@@ -47,7 +50,9 @@ function placeBall(box: Box): void {
 function placeComposer(
   box: Box,
   markup = '<form><textarea id="prompt-textarea"></textarea></form>',
+  hostname = 'chatgpt.com',
 ): HTMLElement {
+  Object.defineProperty(window, 'location', { configurable: true, value: { hostname } });
   const holder = document.createElement('main');
   holder.innerHTML = markup;
   const composer = holder.firstElementChild as HTMLElement;
@@ -103,6 +108,7 @@ afterEach(() => {
   document.body.className = '';
   setWindowSize(originalWidth, originalHeight);
   vi.restoreAllMocks();
+  Object.defineProperty(window, 'location', originalLocation);
 });
 
 describe('floating folder surfaces stay off the Prompt Manager ball', () => {
@@ -186,6 +192,7 @@ describe('floating folder surfaces stay off the Prompt Manager ball', () => {
     placeComposer(
       composer,
       '<div class="text-input-field"><rich-textarea><div contenteditable="true" role="textbox"></div></rich-textarea></div>',
+      'gemini.google.com',
     );
 
     const fab = fabBox(mountFab());
@@ -201,6 +208,7 @@ describe('floating folder surfaces stay off the Prompt Manager ball', () => {
     placeComposer(
       composer,
       '<div class="input-area"><textarea></textarea><button>Send</button></div>',
+      'aistudio.google.com',
     );
     const defaultFab = fabBox(mountFab());
     expect(overlaps(defaultFab, composer)).toBe(false);

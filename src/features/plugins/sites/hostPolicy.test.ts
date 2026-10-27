@@ -13,7 +13,6 @@ import {
   allowsNativeHandler,
   allowsPluginTheme,
   allowsPluginThemeForSite,
-  allowsRemoteCatalog,
   hostPolicyRefusal,
   isStaticallyInjectedHost,
   manifestHostPolicyIssues,
@@ -62,12 +61,10 @@ describe('packaged host policy', () => {
     expect(isStaticallyInjectedHost('google.com')).toBe(false);
   });
 
-  it('never allows the remote catalog or a plugin theme on the four Google hosts', () => {
+  it('keeps native themes packaged while catalog sites can supply a theme', () => {
     for (const host of PACKAGED_HOSTS) {
-      expect(allowsRemoteCatalog(host)).toBe(false);
       expect(allowsPluginTheme(`https://${host}/app`)).toBe(false);
     }
-    expect(allowsRemoteCatalog('chatgpt.com')).toBe(true);
     expect(allowsPluginTheme('https://chatgpt.com/c/1')).toBe(true);
   });
 

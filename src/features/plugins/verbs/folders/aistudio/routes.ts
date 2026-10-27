@@ -3,19 +3,21 @@
  * state, so these never assign `location`.
  */
 import { logger } from '@/core/services/LoggerService';
-
-const NATIVE_LIBRARY_LINK =
-  '.nav-content a[href="/library"], .nav-content a[href$="aistudio.google.com/library"]';
+import {
+  aistudioLibraryFallbackPath,
+  readAIStudioLibraryLink,
+} from '@/pages/content/folder/aistudioLocatorReads';
+import { readAIStudioPromptLink } from '@/pages/content/folder/aistudioNavigationReads';
 
 /** Opens /library: the nav's own Library link, else the History API. */
 export function openLibraryInApp(): void {
-  const link = document.querySelector<HTMLAnchorElement>(NATIVE_LIBRARY_LINK);
+  const link = readAIStudioLibraryLink();
   if (link) {
     link.click();
     return;
   }
   try {
-    window.history.pushState({}, '', '/library');
+    window.history.pushState({}, '', aistudioLibraryFallbackPath());
     window.dispatchEvent(new PopStateEvent('popstate'));
   } catch {}
 }
@@ -25,9 +27,13 @@ export function openLibraryInApp(): void {
  * History API refuses, the page stays where it is. Returns whether it navigated.
  */
 export function openPromptInApp(promptId: string, url: string): boolean {
-  const link = document.querySelector<HTMLAnchorElement>(
-    `ms-prompt-history-v3 a.prompt-link[href*="/prompts/${promptId}"]`,
-  );
+  const escapedId = Array.from(promptId, (character) => {
+    const code = character.charCodeAt(0);
+    return code <= 31 || code === 127 || character === '"' || character === '\\'
+      ? `\\${code.toString(16)} `
+      : character;
+  }).join('');
+  const link = readAIStudioPromptLink(promptId, escapedId);
   if (link) {
     link.click();
     return true;

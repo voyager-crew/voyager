@@ -15,11 +15,13 @@ import {
   setLightweightDragImage,
 } from './nativeConversationDrag';
 import { getNativeConversationElements } from './nativeSidebarDom';
+import { isOutsideFolderSelection } from './selectionBoundaries';
 import {
   SelectionToolbarHost,
   type SelectionToolbarOptions,
   flashInvalidSelection,
 } from './selectionToolbar';
+import { isPackagedNativeConversationRow } from './sidebarConversationQueries';
 import type { ConversationReference } from './types';
 
 export interface FolderSelectionOptions {
@@ -40,18 +42,6 @@ export interface FolderSelectionOptions {
   /** Folder chats joined or left the selection: the tree shows them again. */
   onFolderSelectionChange(): void;
 }
-
-/**
- * Voyager's own body-level layers: shadow surfaces (folder menus, pickers,
- * panels, confirms and toasts) and the folder dialogs. A press in one belongs
- * to the selection.
- */
-const VOYAGER_LAYER_SELECTOR = [
-  '[data-gv-shadow-surface]',
-  '.gv-folder-menu',
-  '.gv-folder-dialog-overlay',
-  '.gv-color-picker-dialog',
-].join(', ');
 
 function debug(level: 'log' | 'warn', ...args: unknown[]): void {
   try {
@@ -135,6 +125,7 @@ export class FolderSelection {
 
   /** Lets a Gemini sidebar row join the selection and be dragged into folders. */
   makeConversationDraggable(element: HTMLElement): void {
+    if (!isPackagedNativeConversationRow(element)) return;
     this.options.nativeSelection?.()?.bindRow?.(element);
     if (this.boundRows.has(element)) return;
     const release = bindNativeConversationRow(
@@ -310,24 +301,20 @@ export class FolderSelection {
     this.cleanupSelectionArtifacts();
   }
 
-  /** Whether a click lands outside every surface multi-select belongs to. */
-  private isOutsideSelection(target: HTMLElement): boolean {
-    const isInsideSidebar =
-      this.options.runtime.sidebar?.contains(target) ||
-      !!target.closest('[data-test-id="overflow-container"]');
-    const isInsideFolderContainer = this.options.runtime.panel?.contains(target);
-    const isInsideMultiSelectHost = this.toolbar.containsFloating(target);
-    // Menus, dialogs and other overlays, the page's and Voyager's
-    const isOnOverlay = target.closest(
-      `.cdk-overlay-container, .mat-mdc-dialog-container, ${VOYAGER_LAYER_SELECTOR}`,
-    );
-    return !isInsideSidebar && !isInsideFolderContainer && !isInsideMultiSelectHost && !isOnOverlay;
-  }
-
   private setupOutsideClickHandler(): void {
     this.removeOutsideClickHandler();
     const handler = (e: MouseEvent) => {
-      if (!this.isOutsideSelection(e.target as HTMLElement)) return;
+      const target = e.target as HTMLElement;
+      if (
+        !isOutsideFolderSelection(
+          target,
+          this.options.runtime.sidebar,
+          this.options.runtime.panel,
+          this.toolbar.containsFloating(target),
+        )
+      ) {
+        return;
+      }
       debug('log', 'Click outside sidebar detected, exiting multi-select mode');
       this.exitMultiSelectMode();
     };

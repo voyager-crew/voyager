@@ -38,7 +38,7 @@ const WRITE_FAILED = { ok: false, error: 'write_failed' } as const;
 /**
  * The plugin under `id` as the page's own host lists it: the cached remote
  * catalog needs `host` (a remote-only plugin, a remote-updated schema), and
- * `catalogHostFromUrl` is undefined on Gemini / AI Studio, which never read it.
+ * `catalogHostFromUrl` is undefined on hosts without online catalog support.
  */
 async function findListedManifest(id: string, pageUrl: string) {
   const context = { url: pageUrl, host: catalogHostFromUrl(pageUrl) };

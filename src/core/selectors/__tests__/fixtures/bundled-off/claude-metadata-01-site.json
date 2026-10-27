@@ -1,0 +1,66 @@
+[
+  [
+    "site.json",
+    {
+      "id": "claude",
+      "matches": ["https://claude.ai/*", "https://*.frame.claudeusercontent.com/*"],
+      "theme": {
+        "hostSelector": ":root",
+        "lightSelector": ":root[data-mode=\"light\"]",
+        "darkSelector": ":root[data-mode=\"dark\"]"
+      },
+      "brandColor": "#d97757",
+      "capabilities": ["chat", "sidebar", "composer", "darkMode"],
+      "conversationIdPattern": "^/chat/([^/?#]+)",
+      "export": {
+        "version": 1,
+        "read": "virtual",
+        "messageKey": "data-turn-key",
+        "generating": "[data-testid=\"assistant-message\"][data-is-streaming=\"true\"]"
+      },
+      "folders": {
+        "format": 1,
+        "sidebar": "[data-testid=\"sidebar\"]",
+        "rows": {
+          "row": "[data-row-key^=\"chat:\"]",
+          "link": "a[href]",
+          "title": ["[data-row-label]"],
+          "observe": ["aria-current"],
+          "drag": "pointer"
+        },
+        "mount": {
+          "anchors": [
+            {
+              "id": "above-recents",
+              "steps": [
+                {
+                  "find": "[data-testid=\"sidebar-recents\"]"
+                }
+              ]
+            }
+          ]
+        },
+        "hideFiled": {
+          "rows": "[data-testid=\"sidebar-recents\"] [data-row-key^=\"chat:\"]",
+          "keepShown": [":has([aria-current=\"page\"])"]
+        },
+        "rowMenu": {
+          "trigger": "button[aria-haspopup=\"menu\"][id]",
+          "menu": "[role=\"menu\"][data-open][aria-labelledby]",
+          "item": "[role=\"menuitem\"]",
+          "open": "press",
+          "template": "[data-testid=\"rename-chat-trigger\"]",
+          "after": "lastSubmenu",
+          "strip": ["data-testid", "aria-keyshortcuts"],
+          "iconHolder": "[data-cds=\"Icon\"]"
+        },
+        "page": {
+          "placeholderTitles": {
+            "any": ["Claude", "New chat", "New session", "Untitled"]
+          },
+          "titleSuffix": "\\s+-\\s+Claude$"
+        }
+      }
+    }
+  ]
+]

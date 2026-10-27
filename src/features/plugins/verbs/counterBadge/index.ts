@@ -4,6 +4,8 @@
  * (`target: "assistantTurn"`). See `count.ts` for the metrics and `badge.ts`
  * for why the label never reaches copied or exported text.
  */
+import { hasPageSemanticFixes } from '@/core/selectors/semanticSnapshot';
+
 import type { ManifestIssue } from '../../manifest/validate';
 import { getPrimitiveContract } from '../contracts';
 import type { Primitive } from '../types';
@@ -59,7 +61,13 @@ export const counterBadgePrimitive: Primitive<CounterBadgeParams> = {
     const { doc, adapter } = context;
     const selector = adapter?.selectors[params.target];
     if (!selector) return;
-    context.setTargetCounter(() => doc.querySelectorAll(selector).length);
+    const checked = hasPageSemanticFixes(
+      adapter,
+      params.target === 'composer' ? ['composer', 'composerRoot', 'sendButton'] : ['assistantTurn'],
+      doc,
+    );
+    const readSelector = () => (checked ? adapter!.selectors[params.target] : selector);
+    context.setTargetCounter(() => doc.querySelectorAll(readSelector()).length);
 
     // One effect owns styles, observers and badges, so unmount removes them together.
     scope.effect(() => {
@@ -76,8 +84,21 @@ export const counterBadgePrimitive: Primitive<CounterBadgeParams> = {
                 composer: selector,
                 composerRoot: adapter?.selectors.composerRoot,
                 metric: params.metric,
+                ...(checked
+                  ? {
+                      resolveSelectors: () => ({
+                        composer: adapter!.selectors.composer,
+                        composerRoot: adapter!.selectors.composerRoot,
+                      }),
+                    }
+                  : {}),
               })
-            : startTurnBadges({ doc, turn: selector, metric: params.metric });
+            : startTurnBadges({
+                doc,
+                turn: selector,
+                metric: params.metric,
+                ...(checked ? { resolveTurn: readSelector } : {}),
+              });
       } catch (error) {
         style.remove();
         throw error;

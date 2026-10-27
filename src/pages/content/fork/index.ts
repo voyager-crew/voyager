@@ -8,6 +8,7 @@
  */
 import browser from 'webextension-polyfill';
 
+import { GEMINI_PACKAGED_FORK } from '@/core/gemini/content/packaged';
 import { StorageKeys } from '@/core/types/common';
 
 import { historyTimestampStore } from '../timestamp/historyTimestamps';
@@ -63,11 +64,11 @@ function ensureTurnId(el: HTMLElement, index: number): string {
 }
 
 function resolveUserMessageHost(userEl: HTMLElement): HTMLElement {
-  const preferred =
-    userEl.querySelector<HTMLElement>('.user-query-bubble-with-background') ||
-    userEl.querySelector<HTMLElement>('user-query-content .user-query-bubble-with-background') ||
-    userEl.querySelector<HTMLElement>('.user-query-bubble-container');
-  return preferred || userEl;
+  for (const selector of GEMINI_PACKAGED_FORK['fork.userHost']) {
+    const preferred = userEl.querySelector<HTMLElement>(selector);
+    if (preferred) return preferred;
+  }
+  return userEl;
 }
 
 export function startFork(): () => void {

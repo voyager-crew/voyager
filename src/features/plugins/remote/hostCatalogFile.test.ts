@@ -156,9 +156,17 @@ describe('validateHostCatalogFile', () => {
       file([VALID], { site: { ...site, selectors: { userTurn: '[' } } }),
       'chat.deepseek.com',
     );
-    expect(invalid?.site).toBeUndefined();
-    expect(invalid?.issues.some((issue) => issue.path === 'site.selectors.userTurn')).toBe(true);
-    // Plugins still load when only the site section is bad.
+    expect(invalid?.site?.id).toBe('deepseek');
+    expect(invalid?.siteIssues.some((issue) => issue.path === 'site.selectors.userTurn')).toBe(
+      true,
+    );
+    // The complete turn group and plugin list survive a malformed semantic locator.
+    document.body.innerHTML =
+      '<div class="ds-message"><span class="ds-collapsible-text">Kept question</span></div>';
+    expect(document.querySelector(invalid!.site!.selectors.userTurn)?.textContent).toBe(
+      'Kept question',
+    );
+    document.body.replaceChildren();
     expect(invalid?.manifests).toHaveLength(1);
   });
 

@@ -2,6 +2,7 @@ import type { ExportAttachment } from '../types/export';
 import type { ExtractedContent } from './DOMContentExtractor';
 import type { ExportContentDialect } from './exportContentDialect';
 import { normalizeText, escapeHtml, escapeHtmlAttribute } from './exportDomPolicy';
+import { getExportReadProfiles } from './exportSiteData';
 
 export function extractUserContent(
   element: HTMLElement,
@@ -26,7 +27,11 @@ export function extractUserContent(
   // Extract user message text. Each platform exposes its own DOM shape
   // (Gemini's .query-text-line paragraphs vs. ChatGPT's plain text node),
   // so the actual extraction strategy is delegated to the platform adapter.
-  const textLines = element.querySelectorAll<HTMLElement>('.query-text-line');
+  const textLines =
+    adapter.getUserTextLines?.(element) ??
+    element.querySelectorAll<HTMLElement>(
+      getExportReadProfiles(adapter.siteId)['export.userLinesFallback'],
+    );
   const textParts: string[] = [];
   adapter.extractUserText(textLines, textParts, element);
 
@@ -78,6 +83,7 @@ function extractUserAttachments(
   adapter: ExportContentDialect,
 ): ExportAttachment[] {
   const candidates = adapter.getUserAttachmentCandidates(element);
+  const previewOwner = getExportReadProfiles(adapter.siteId)['export.attachmentPreviewOwner'];
   const attachments: ExportAttachment[] = [];
   const seen = new Set<string>();
 
@@ -96,7 +102,7 @@ function extractUserAttachments(
     if (!name) return;
 
     const type = name.match(/\.([a-z0-9]{1,12})$/i)?.[1].toLowerCase() ?? 'file';
-    const preview = candidate.closest('user-query-file-preview') ?? candidate;
+    const preview = candidate.closest(previewOwner) ?? candidate;
     const isImage =
       /^(?:avif|bmp|gif|heic|heif|jpe?g|png|svg|tiff?|webp)$/i.test(type) &&
       !!preview.querySelector('img');

@@ -1,0 +1,5 @@
+{
+  "sentChips.lines": [".query-text-line", ".query-text"],
+  "sentChips.anchor": ".query-text",
+  "sentChips.toggle": ".luminous-toggle-container"
+}

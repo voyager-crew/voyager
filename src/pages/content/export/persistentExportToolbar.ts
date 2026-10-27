@@ -5,7 +5,6 @@
 // back into showExportDialog when clicked. Where it sits is `toolbarPlacement.ts`.
 import { createDownloadIcon } from '@/core/icons/promptManagerIcons';
 
-import { turnSelectorFor } from './toolbarAvoidance';
 import { isToolbarPlaced, startToolbarPlacement, stopToolbarPlacement } from './toolbarPlacement';
 import { readToolbarSpot, writeToolbarSpot } from './toolbarPosition';
 
@@ -19,7 +18,10 @@ export type PersistentExportToolbarOptions = {
    * toolbar can still be dragged, but its spot is not remembered.
    */
   siteId?: string;
-  /** The host's conversation turns; controls inside them are never avoided. */
+  /**
+   * The site's own conversation turns (`siteTurnSelector`), added to its
+   * layout data's `turns`; controls inside them are never avoided.
+   */
   turnSelector?: string;
 };
 
@@ -44,7 +46,7 @@ function placeToolbar(
   const siteId = options.siteId;
   const placement = startToolbarPlacement(root, {
     handle: button,
-    turnSelector: turnSelectorFor(options.turnSelector),
+    siteTurnSelector: options.turnSelector,
     onSpotChange: (spot) => {
       if (siteId) void writeToolbarSpot(siteId, spot);
     },

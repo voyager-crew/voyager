@@ -1,0 +1,32 @@
+{
+  "sidebar.overflow": ["[data-test-id=\"overflow-container\"]"],
+  "sidebar.notebooks": [
+    "expandable-section[storagekey=\"notebooks\"]",
+    "expandable-section[data-test-id=\"notebooks-expandable-section\"]"
+  ],
+  "sidebar.recents": ["expandable-section[data-test-id=\"chats-expandable-section\"]"],
+  "sidebar.allConversations": ["[data-test-id=\"all-conversations\"]"],
+  "sidebar.history": [".chat-history"],
+  "sidebar.section": ["expandable-section"],
+  "sidebar.row": ["[data-test-id=\"conversation\"]"],
+  "sidebar.rowContainer": [".chat-history", "[class*=\"conversation\"]"],
+  "sidebar.openHost": ["chat-app.side-nav-open", "#app-root.side-nav-open"],
+  "sidebar.host": ["bard-sidenav", "side-nav"],
+  "sidebar.visibilityHost": ["chat-app", "#app-root"],
+  "sidebar.links": [
+    "[data-test-id=\"conversation\"] a[href]",
+    "a[data-test-id=\"conversation\"][href]"
+  ],
+  "sidebar.conversationLinks": ["a[href*=\"/app/\"]", "a[href*=\"/gem/\"]"],
+  "sidebar.title": [
+    ".title-text",
+    ".gds-label-l",
+    ".conversation-title-text",
+    "[data-test-id=\"conversation-title\"]",
+    "h3"
+  ],
+  "sidebar.titleFallback": [".gds-body-m", ".gds-label-m", ".subtitle"],
+  "sidebar.scroller": ["infinite-scroller"],
+  "sidebar.interactionButton": ["bard-sidenav button", "bard-sidenav [role=\"button\"]"],
+  "sidebar.forkRoots": ["bard-sidenav", "[data-test-id=\"all-conversations\"]"]
+}

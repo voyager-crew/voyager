@@ -1,3 +1,5 @@
+import { getPageSelectorSiteId, getSiteSelectorView } from '@/core/selectors';
+import { readInputPlacement } from '@/core/services/composer/inputPlacement';
 import type { HighlightPlatform } from '@/core/types/highlight';
 import { SiteRegistry } from '@/features/plugins/sites/registry';
 import type { PromptSiteAdapter, PromptTriggerSpot } from '@/features/prompt/PromptSiteAdapter';
@@ -14,7 +16,12 @@ type SiteFacts = Omit<PromptSiteAdapter, 'highlightPlatform'>;
  * and AI Studio's floating action button, when the page has one.
  */
 function besideMaterialFab(ballHeight: number): PromptTriggerSpot | null {
-  const fab = Array.from(document.querySelectorAll('span.mat-mdc-button-touch-target'))
+  const fab = readInputPlacement(
+    'input.fab',
+    (selector) => Array.from(document.querySelectorAll(selector)),
+    document,
+    false,
+  )
     .map((el) => el.getBoundingClientRect())
     .filter((r) => r.width > 0 && r.height > 0)
     .sort((a, b) => a.bottom + a.right - (b.bottom + b.right))
@@ -56,7 +63,12 @@ const OTHER: SiteFacts = {
  */
 const CATALOG: SiteFacts = {
   ...OTHER,
-  defaultTriggerSpot: () => null,
+  defaultTriggerSpot: (height) => {
+    const site = getPageSelectorSiteId();
+    return site && getSiteSelectorView(site).remoteKeys.has('input.fab')
+      ? besideMaterialFab(height)
+      : null;
+  },
   scheme: () => getScheme(),
 };
 
@@ -66,7 +78,7 @@ function siteFacts(url: string): SiteFacts {
     case 'gemini':
       return GEMINI;
     case 'aistudio':
-      return OTHER;
+      return { ...OTHER, scheme: () => getScheme() };
     default:
       return adapter ? CATALOG : OTHER;
   }

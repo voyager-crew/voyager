@@ -12,6 +12,7 @@ import {
   readDiagramExport,
 } from '@/features/plugins/verbs/diagramExportRegistry';
 
+import { captureExportSite, exportSiteSnapshot } from '../adapter/exportSiteSnapshot';
 import type { ExportPlatformAdapter } from '../adapter/platformAdapters';
 import type { ExportSelectionOptions } from '../adapter/type';
 import { throwIfExportCancelled } from '../exportCancellation';
@@ -147,7 +148,7 @@ export function captureCatalogWindow(
   adapter: ExportPlatformAdapter,
   root: ParentNode = document,
 ): CatalogSnapshot[] {
-  return mountedSnapshots(site, root, createContentExtractor(adapter));
+  return mountedSnapshots(exportSiteSnapshot(site), root, createContentExtractor(adapter));
 }
 
 function waitForSample(delay: number, signal?: AbortSignal): Promise<void> {
@@ -168,11 +169,12 @@ function waitForSample(delay: number, signal?: AbortSignal): Promise<void> {
 
 /** Read a catalog site's mounted DOM or crawl its virtual list without retaining live bodies. */
 export async function readCatalogConversation(
-  site: SiteAdapter,
+  provided: SiteAdapter,
   adapter: ExportPlatformAdapter,
   options: ExportSelectionOptions,
   timingOverrides: Partial<CatalogReadTiming> = {},
 ): Promise<CatalogReadResult> {
+  const { site, remoteKeys } = captureExportSite(provided);
   const timing = { ...DEFAULT_TIMING, ...timingOverrides };
   const descriptor = site.export;
   const selector = site.selectors.scrollContainer;
@@ -184,6 +186,14 @@ export async function readCatalogConversation(
   const doc = document;
   const scroller = doc.querySelector<HTMLElement>(selector);
   if (!scroller) return { snapshots: [], completeness: 'unknown' };
+  const currentRoot = (): boolean => {
+    if (!remoteKeys.has('scrollContainer')) return true;
+    const currentSelector = site.selectors.scrollContainer;
+    // A scroll wait can outlive the DOM proof; never continue in a reused or newly foreign root.
+    return (
+      !!currentSelector && scroller.isConnected && doc.querySelector(currentSelector) === scroller
+    );
+  };
   const expectedRoute = routeKey(options.expectedUrl ?? location.href);
   const extractor = createContentExtractor(adapter);
   if (descriptor.read === 'mounted') {
@@ -217,6 +227,7 @@ export async function readCatalogConversation(
     throwIfExportCancelled(options.signal);
     if (blocked) return blocked;
     if (routeKey(location.href) !== expectedRoute) blocked = 'route';
+    else if (!currentRoot()) blocked = 'identity';
     else if (descriptor.generating && doc.querySelector(descriptor.generating))
       blocked = 'generating';
     else if (Date.now() - started >= timing.timeoutMs) blocked = 'timeout';
@@ -306,18 +317,22 @@ export async function readCatalogConversation(
   } finally {
     observer.disconnect();
     try {
-      scroller.scrollTop = initialTop;
-      scroller.scrollLeft = initialLeft;
+      if (currentRoot()) {
+        scroller.scrollTop = initialTop;
+        scroller.scrollLeft = initialLeft;
+      }
       // A virtualizer may correct scroll asynchronously; resolve preparation only after restoration settles.
       const restoreStarted = Date.now();
       let stable = 0;
       let height = scroller.scrollHeight;
       while (
         scroller.isConnected &&
+        currentRoot() &&
         stable < timing.stableSamples &&
         Date.now() - restoreStarted < timing.topTimeoutMs
       ) {
         await waitForSample(timing.pollMs);
+        if (!currentRoot()) break;
         const top = Math.min(
           initialTop,
           Math.max(0, scroller.scrollHeight - scroller.clientHeight),

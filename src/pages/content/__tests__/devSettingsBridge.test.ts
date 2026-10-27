@@ -106,6 +106,68 @@ describe('dev settings bridge', () => {
     expect(chrome.storage.sync.set).not.toHaveBeenCalled();
   });
 
+  it.each([
+    'chat.deepseek.com',
+    'gemini.google.com',
+    'business.gemini.google',
+    'aistudio.google.com',
+    'aistudio.google.cn',
+    'custom.example',
+  ])('round-trips the %s catalog cache through local storage', async (host) => {
+    const key = `${StorageKeys.PLUGIN_HOST_CATALOG_PREFIX}${host}`;
+    const entry = { host, status: 'ok', manifests: [] };
+    vi.mocked(chrome.storage.local.set).mockResolvedValue(undefined);
+    vi.mocked(chrome.storage.local.get).mockResolvedValueOnce({ [key]: entry } as never);
+
+    postFromPage({
+      source: DEV_SETTINGS_REQUEST_SOURCE,
+      id: 5,
+      action: 'set',
+      area: 'local',
+      values: { [key]: entry },
+    });
+    postFromPage({
+      source: DEV_SETTINGS_REQUEST_SOURCE,
+      id: 6,
+      action: 'get',
+      area: 'local',
+      keys: [key],
+    });
+
+    await vi.waitFor(() =>
+      expect(replies).toEqual([
+        { source: DEV_SETTINGS_RESULT_SOURCE, id: 5, ok: true },
+        { source: DEV_SETTINGS_RESULT_SOURCE, id: 6, ok: true, values: { [key]: entry } },
+      ]),
+    );
+    expect(chrome.storage.local.set).toHaveBeenCalledWith({ [key]: entry });
+  });
+
+  it.each([
+    ['in sync storage', 'sync', 'chat.deepseek.com'],
+    ['with a path after the host', 'local', 'chat.deepseek.com/x'],
+    ['with a port', 'local', 'localhost:3000'],
+    // Catalog eligibility validates a concrete DNS name, including native and custom hosts.
+    ['for a wildcard instead of a concrete host', 'local', '*.example.com'],
+  ])('refuses a plugin catalog key %s and writes nothing', async (_, area, host) => {
+    const key = `${StorageKeys.PLUGIN_HOST_CATALOG_PREFIX}${host}`;
+    postFromPage({
+      source: DEV_SETTINGS_REQUEST_SOURCE,
+      id: 8,
+      action: 'set',
+      area,
+      values: { [key]: {} },
+    });
+
+    await vi.waitFor(() =>
+      expect(replies).toEqual([
+        { source: DEV_SETTINGS_RESULT_SOURCE, id: 8, ok: false, error: `unknown keys: ${key}` },
+      ]),
+    );
+    expect(chrome.storage.sync.set).not.toHaveBeenCalled();
+    expect(chrome.storage.local.set).not.toHaveBeenCalled();
+  });
+
   it('ignores messages from other windows', async () => {
     vi.mocked(chrome.storage.sync.get).mockResolvedValue({} as never);
     postFromPage(

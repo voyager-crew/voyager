@@ -8,8 +8,9 @@
  */
 
 import { LAYER_ATTR } from '@/core/ui/layer';
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/generated-ui-packaged.json';
 
-const GENERATED_UI_FRAME_SELECTOR = 'iframe[src*="gemini-code-immersive"]';
+const GENERATED_UI_FRAME_SELECTOR = packaged['generatedUi.frames'];
 const GENERATED_UI_SCREENSHOT_MESSAGE_TYPE = 'gv.generatedUi.captureVisibleTab';
 const GENERATED_UI_CAPTURE_PERMISSION_MESSAGE_TYPE = 'gv.generatedUi.ensureCapturePermission';
 const GENERATED_UI_SCREENSHOT_SECTION_CLASS = 'gv-generated-ui-screenshot-section';
@@ -62,18 +63,18 @@ function insertGeneratedUiScreenshot(frame: HTMLIFrameElement, dataUrl: string):
   section.appendChild(img);
 
   const anchor =
-    (frame.closest('.attachment-container') as HTMLElement | null) ||
-    (frame.closest('response-element') as HTMLElement | null);
+    (frame.closest(packaged['generatedUi.attachment']) as HTMLElement | null) ||
+    (frame.closest(packaged['generatedUi.response']) as HTMLElement | null);
   if (anchor?.parentElement) {
     anchor.insertAdjacentElement('afterend', section);
     return;
   }
 
   const container =
-    (frame.closest('message-content') as HTMLElement | null)?.querySelector(
-      '.markdown, .markdown-main-panel',
+    (frame.closest(packaged['generatedUi.message']) as HTMLElement | null)?.querySelector(
+      packaged['generatedUi.markdown'],
     ) ||
-    (frame.closest('.markdown, .markdown-main-panel, message-content') as HTMLElement | null) ||
+    (frame.closest(packaged['generatedUi.container']) as HTMLElement | null) ||
     frame.parentElement;
   container?.appendChild(section);
 }

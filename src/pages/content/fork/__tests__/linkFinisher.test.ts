@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { mountRealGeminiSidebar } from '@/core/gemini/sidebar/__tests__/realSidebarFixture';
 import { logger } from '@/core/services/LoggerService';
 import { capturePageIdentity } from '@/pages/content/selectionToolbar/pageIdentity';
 
+import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
+import { installGeminiTurnPatch } from '../../__tests__/geminiOnlineTurnFixture';
 import { ForkNodesService } from '../ForkNodesService';
 import type { PendingForkData } from '../forkLaunch';
 import { handoffPendingForkLink, startForkLinkFinisher } from '../linkFinisher';
@@ -14,6 +17,7 @@ vi.mock('@/core/services/composer/sendKeys/sendKeyCoordinator', () => ({
 
 describe('the page-owned fork first-send finisher', () => {
   let stopCore: () => void;
+  let stopSelectors: (() => void) | undefined;
   let linked: ReturnType<typeof vi.fn<() => Promise<void>>>;
   let finished: ReturnType<typeof vi.fn<() => void>>;
   let pending: PendingForkData;
@@ -83,6 +87,8 @@ describe('the page-owned fork first-send finisher', () => {
 
   afterEach(() => {
     stopCore();
+    stopSelectors?.();
+    stopSelectors = undefined;
     vi.clearAllTimers();
     vi.useRealTimers();
     vi.restoreAllMocks();
@@ -98,6 +104,40 @@ describe('the page-owned fork first-send finisher', () => {
     expect(logger.warn).toHaveBeenCalledOnce();
     expect(finished).toHaveBeenCalledOnce();
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('a repaired fork draft loses its first-send link because a shared dialog wraps the app', async () => {
+    const composer = input().closest('.text-input-field')!;
+    document.querySelector('main')!.remove();
+    const page = mountRealGeminiSidebar();
+    page.chatWindow.append(composer);
+    const shell = document.createElement('div');
+    shell.setAttribute('role', 'dialog');
+    page.main.before(shell);
+    shell.append(page.main);
+    stopSelectors = await installGeminiSelectorPatch({ 'composer.draftCandidates': ['#input'] });
+    const preview = document.createElement('div');
+    preview.setAttribute('role', 'dialog');
+    input().before(preview);
+    preview.append(input());
+    handoff();
+    send();
+    go('/app/wrong-preview');
+    sentTurn();
+    await flush();
+    expect(ForkNodesService.addForkNode).not.toHaveBeenCalled();
+
+    go('/app');
+    preview.before(input());
+    handoff();
+    send();
+    go('/app/actual-branch');
+    sentTurn('First request', '2222222222222222');
+    await flush();
+    expect(ForkNodesService.addForkNode).toHaveBeenCalledTimes(2);
+    expect(ForkNodesService.addForkNode).toHaveBeenLastCalledWith(
+      expect.objectContaining({ conversationId: 'actual-branch' }),
+    );
   });
 
   it.each(['slot', 'email', 'Gem'])('abandons a handoff when its %s changes', async (change) => {
@@ -197,6 +237,78 @@ describe('the page-owned fork first-send finisher', () => {
     expect(ForkNodesService.addForkNode).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ turnId: 'u-0' }),
+    );
+  });
+
+  it.each(['online host', 'bundled fallback'])(
+    'links the same account-scoped first-send server id using the %s',
+    async (kind) => {
+      stopSelectors = await installGeminiTurnPatch({
+        'turn.userWithHosts': [kind === 'online host' ? '.online-user' : '.missing-user'],
+      });
+      history.replaceState({}, '', '/u/1/app');
+      handoff();
+      send();
+      go('/u/1/app/branch');
+      const container = sentTurn();
+      if (kind === 'online host') container.firstElementChild!.className = 'online-user';
+      await flush();
+
+      expect(ForkNodesService.addForkNode).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          turnId: 's-b7603911375615a5',
+          conversationId: 'branch',
+          conversationUrl: `${location.origin}/u/1/app/branch`,
+        }),
+      );
+      expect(linked).toHaveBeenCalledOnce();
+    },
+  );
+
+  it('a remote host added after send cannot link the fork to an unrelated turn', async () => {
+    const earlier = sentTurn('Earlier request', 'aaaaaaaaaaaaaaaa');
+    earlier.firstElementChild!.classList.add('online-host');
+    stopSelectors = await installGeminiTurnPatch({ 'turn.userWithHosts': ['.online-host'] });
+    handoff();
+    send();
+    go('/app/branch');
+    document
+      .querySelector('main')!
+      .insertAdjacentHTML(
+        'beforeend',
+        '<div class="conversation-container" id="cccccccccccccccc"><div class="online-host">First request</div></div>',
+      );
+    sentTurn();
+    await flush();
+    expect(ForkNodesService.addForkNode).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ turnId: 's-b7603911375615a5', conversationId: 'branch' }),
+    );
+    expect(linked).toHaveBeenCalledOnce();
+  });
+
+  it('does not link an earlier identical prompt that only the bundled profile would find', async () => {
+    stopSelectors = await installGeminiTurnPatch({ 'turn.userWithHosts': ['.online-host'] });
+    // An earlier turn with the same text and no server id, matched online by its host element.
+    const earlier = document.createElement('div');
+    earlier.className = 'online-host';
+    const bubble = document.createElement('div');
+    bubble.className = 'user-query-bubble-with-background';
+    bubble.textContent = 'First request';
+    earlier.append(bubble);
+    document.querySelector('main')!.append(earlier);
+    handoff();
+    send();
+    go('/app/branch');
+    await flush();
+    expect(ForkNodesService.addForkNode).not.toHaveBeenCalled();
+
+    sentTurn().classList.add('online-host');
+    await flush();
+    expect(ForkNodesService.addForkNode).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ turnId: 's-b7603911375615a5', conversationId: 'branch' }),
     );
   });
 

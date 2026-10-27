@@ -22,6 +22,7 @@
  */
 import type { Result } from '@/core/types/common';
 
+import { BUNDLED_LOCATOR_SITES } from '../../../core/selectors/sites';
 import type { ManifestIssue } from '../manifest/validate';
 import type { SiteAdapter, SiteCapability, SiteThemeDescriptor } from '../types';
 import { isSafeRegexSource } from './safeRegex';
@@ -32,6 +33,7 @@ import {
 } from './sections/bridgePolicyData';
 import { type SiteExportConfig, readExportConfig } from './sections/exportData';
 import { type FoldersSection, readFoldersSection } from './sections/foldersData';
+import { type SiteLocatorProfiles, readSiteLocators } from './sections/locatorData';
 import { type ModelPickerSection, readModelPickerSection } from './sections/modelPickerData';
 import { type PageHooksSection, readPageHooksSection } from './sections/pageHooksData';
 import { type ProjectsSection, readProjectsSection } from './sections/projectsData';
@@ -56,6 +58,7 @@ export interface SiteAdapterData {
   readonly pageHooks?: PageHooksSection;
   readonly bridge?: BridgePolicySection;
   readonly folders?: FoldersSection;
+  readonly locators?: SiteLocatorProfiles;
 }
 
 const SITE_CAPABILITIES = ['chat', 'sidebar', 'composer', 'darkMode'] as const;
@@ -168,12 +171,13 @@ function readSelectors(
   raw: unknown,
   issues: ManifestIssue[],
   unknownKeys: ManifestIssue[],
+  fallback?: Readonly<Record<string, string>>,
 ): Record<string, string> {
   const selectors: Record<string, string> = {};
   if (raw === undefined) return selectors;
   if (!isRecord(raw)) {
     issues.push({ path: 'selectors', message: 'must be an object' });
-    return selectors;
+    return fallback ? { ...fallback } : selectors;
   }
   for (const [key, value] of Object.entries(raw)) {
     if (!isSemanticSelectorKey(key)) {
@@ -189,6 +193,21 @@ function readSelectors(
       continue;
     }
     selectors[key] = value;
+  }
+  if (fallback && issues.length) {
+    // A malformed composer member must not mix another composer with a bundled Send button.
+    const groups = [
+      ['composer', 'composerRoot', 'sendButton'],
+      ['userTurn', 'assistantTurn'],
+    ];
+    const rejected = new Set(issues.map((issue) => issue.path.slice('selectors.'.length)));
+    for (const group of groups) {
+      if (group.some((key) => rejected.has(key))) group.forEach((key) => rejected.add(key));
+    }
+    for (const key of rejected) {
+      if (fallback[key]) selectors[key] = fallback[key];
+      else delete selectors[key];
+    }
   }
   return selectors;
 }
@@ -227,11 +246,11 @@ export function validateSiteAdapterData(input: unknown): Result<SiteAdapter, Man
  * selector keys and optional sections (`sectionIssues`).
  */
 export function readSiteAdapterData(input: unknown): SiteAdapterDataRead {
-  const { result, sectionIssues } = parseSiteAdapterData(input);
+  const { result, sectionIssues } = parseSiteAdapterData(input, true);
   return { result, sectionIssues };
 }
 
-function parseSiteAdapterData(input: unknown): SiteAdapterDataParse {
+function parseSiteAdapterData(input: unknown, tolerateSemantic = false): SiteAdapterDataParse {
   if (!isRecord(input)) {
     return {
       result: { success: false, error: [{ path: '', message: 'site must be an object' }] },
@@ -249,6 +268,7 @@ function parseSiteAdapterData(input: unknown): SiteAdapterDataParse {
   const pageHooksRead = readPageHooksSection(input.pageHooks, isValidSelectorSyntax);
   const bridgeRead = readBridgePolicySection(input.bridge);
   const foldersRead = readFoldersSection(input.folders, isValidSelectorSyntax);
+  const locatorsRead = readSiteLocators(input.locators, input.id, isValidSelectorSyntax);
 
   if (!nonEmptyString(input.id) || !SITE_ID_PATTERN.test(input.id)) {
     issues.push({ path: 'id', message: 'must match ^[a-z][a-z0-9-]*$' });
@@ -274,15 +294,26 @@ function parseSiteAdapterData(input: unknown): SiteAdapterDataParse {
     issues.push({ path: 'catalogRevision', message: 'must be a non-negative safe integer' });
   }
 
-  const selectors = readSelectors(input.selectors, issues, unknownKeys);
+  const semanticIssues: ManifestIssue[] = [];
+  const bundledSelectors = tolerateSemantic
+    ? BUNDLED_LOCATOR_SITES.find((site) => site.id === input.id)?.selectors
+    : undefined;
+  const selectors = readSelectors(
+    input.selectors,
+    bundledSelectors ? semanticIssues : issues,
+    unknownKeys,
+    bundledSelectors,
+  );
   const theme = readTheme(input.theme, issues);
   const sectionIssues = [
     ...unknownKeys,
+    ...semanticIssues,
     ...modelPickerRead.issues,
     ...projectsRead.issues,
     ...pageHooksRead.issues,
     ...bridgeRead.issues,
     ...foldersRead.issues,
+    ...locatorsRead.issues,
   ];
 
   if (input.brandColor !== undefined && !isHexColor(input.brandColor)) {
@@ -377,6 +408,7 @@ function parseSiteAdapterData(input: unknown): SiteAdapterDataParse {
         ...(bridgeRead.policy ? { bridge: bridgeRead.policy } : {}),
         ...(foldersRead.folders ? { folders: foldersRead.folders } : {}),
         ...(exportConfig ? { export: exportConfig } : {}),
+        ...(locatorsRead.locators ? { locators: locatorsRead.locators } : {}),
       },
     },
   };
@@ -405,5 +437,6 @@ export function siteAdapterToData(adapter: SiteAdapter): SiteAdapterData {
     ...(adapter.pageHooks ? { pageHooks: { ...adapter.pageHooks } } : {}),
     ...(adapter.bridge ? { bridge: bridgePolicySectionToData(adapter.bridge) } : {}),
     ...(adapter.folders ? { folders: { ...adapter.folders } } : {}),
+    ...(adapter.locators ? { locators: { ...adapter.locators } } : {}),
   };
 }

@@ -224,17 +224,17 @@ describe('hasEnabledPluginForUrl', () => {
   });
 });
 
-describe('native surfaces are never catalog hosts', () => {
-  it('gives Gemini and AI Studio pages no catalog host at all', () => {
+describe('native locator catalog host', () => {
+  it('admits Gemini Enterprise and AI Studio to the same catalog channel', () => {
     for (const url of [
-      'https://gemini.google.com/app/1',
       'https://business.gemini.google/',
       'https://aistudio.google.com/prompts',
       'https://aistudio.google.cn/',
     ]) {
-      expect(catalogHostFromUrl(url)).toBeUndefined();
+      expect(catalogHostFromUrl(url)).toBe(new URL(url).hostname);
     }
-    expect(isEligibleCatalogHost('gemini.google.com')).toBe(false);
+    expect(catalogHostFromUrl('https://gemini.google.com/u/2/app/1')).toBe('gemini.google.com');
+    expect(isEligibleCatalogHost('gemini.google.com')).toBe(true);
     expect(isEligibleCatalogHost('claude.ai')).toBe(true);
   });
 });

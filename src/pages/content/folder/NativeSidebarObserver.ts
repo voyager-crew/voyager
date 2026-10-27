@@ -1,3 +1,7 @@
+import { getNativeConversationElements } from './nativeSidebarDom';
+import { readCompleteNativeConversationRows } from './sidebarConversationQueries';
+import { readNativeSidebarMutations } from './sidebarMutationQueries';
+
 export interface NativeSidebarObserverCallbacks {
   isDestroyed: () => boolean;
   /** `pass` is one token per drain: every row of a drain shares it, and the drain edits no folder. */
@@ -77,7 +81,13 @@ export class NativeSidebarObserver {
     // Full sweeps (init, reinit, recovery) go through the same budgeted
     // drain as observer bursts so a large Recents list never blocks one
     // frame for the whole sweep (issue #753).
-    const conversations = root.querySelectorAll('[data-test-id="conversation"]');
+    const conversations =
+      root instanceof HTMLElement
+        ? getNativeConversationElements(root)
+        : readCompleteNativeConversationRows(
+            () => root,
+            () => root,
+          );
     conversations.forEach((conv) => {
       this.enhancementQueue.add(conv as HTMLElement);
     });
@@ -165,8 +175,8 @@ export class NativeSidebarObserver {
     const mutations = this.mutationBatchQueue;
     this.mutationBatchQueue = [];
 
-    // Title-sync detection: short-circuits, debounced downstream.
-    if (this.mutationsMayAffectNativeConversationTitles(mutations)) {
+    const observed = readNativeSidebarMutations(mutations);
+    if (observed.titlesChanged) {
       this.scheduleNativeConversationTitleSync();
     }
 
@@ -174,19 +184,7 @@ export class NativeSidebarObserver {
     // tick frequently touch the same row; the per-element work
     // (makeConversationDraggable, applyHideArchivedToConversation) is
     // idempotent but the upfront DOM queries are not free.
-    const addedConversations = new Set<HTMLElement>();
-    for (const mutation of mutations) {
-      mutation.addedNodes.forEach((node) => {
-        if (!(node instanceof HTMLElement)) return;
-        if (node.matches('[data-test-id="conversation"]')) {
-          addedConversations.add(node);
-        }
-        const nested = node.querySelectorAll('[data-test-id="conversation"]');
-        nested.forEach((conv) => addedConversations.add(conv as HTMLElement));
-      });
-    }
-
-    addedConversations.forEach((convEl) => {
+    observed.rows.forEach((convEl) => {
       if (!convEl.isConnected) return; // re-removed within the same batch
       // Drag listeners + hide-archived state are deferred to the budgeted
       // drain — both are idempotent and tolerate a few frames of latency
@@ -200,47 +198,6 @@ export class NativeSidebarObserver {
     // row at a time. A detached DOM node is therefore not deletion evidence.
     // Native deletion is tracked from the explicit Delete action in
     // NativeConversationMenus and confirmed after the UI settles.
-  }
-
-  private mutationsMayAffectNativeConversationTitles(mutations: MutationRecord[]): boolean {
-    for (const mutation of mutations) {
-      if (mutation.type === 'characterData') {
-        if (mutation.target.parentElement?.closest('[data-test-id="conversation"]')) return true;
-        continue;
-      }
-
-      if (mutation.type === 'attributes') {
-        if (
-          mutation.target instanceof Element &&
-          mutation.target.closest('[data-test-id="conversation"]')
-        ) {
-          return true;
-        }
-        continue;
-      }
-
-      if (mutation.type !== 'childList') continue;
-
-      if (
-        mutation.target instanceof Element &&
-        mutation.target.closest('[data-test-id="conversation"]')
-      ) {
-        return true;
-      }
-
-      for (const node of Array.from(mutation.addedNodes)) {
-        if (this.nodeTouchesNativeConversation(node)) return true;
-      }
-    }
-
-    return false;
-  }
-
-  private nodeTouchesNativeConversation(node: Node): boolean {
-    if (!(node instanceof Element)) return false;
-    if (node.matches('[data-test-id="conversation"]')) return true;
-    if (node.closest('[data-test-id="conversation"]')) return true;
-    return !!node.querySelector('[data-test-id="conversation"]');
   }
 
   clearTitleSync(): void {

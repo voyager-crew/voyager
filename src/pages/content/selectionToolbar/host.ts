@@ -1,5 +1,12 @@
 import browser from 'webextension-polyfill';
 
+import { hasGeminiBoundaryConflict } from '@/core/gemini/domBoundary';
+import {
+  getGeminiSelectorView,
+  resolveGeminiTurnOperation,
+  type GeminiTurnView,
+} from '@/core/gemini/selectors';
+import { isOriginalGeminiTranscriptElement } from '@/core/gemini/turnOwnership';
 import { StorageKeys } from '@/core/types/common';
 import { getAssistantTurnSelectors, getUserTurnSelectors } from '@/core/utils/selectors';
 
@@ -62,8 +69,12 @@ interface SelectionToolbarHost {
 const registry = new Map<string, Registration>();
 let activeHost: SelectionToolbarHost | null = null;
 
-const getQuoteableMessageSelector = (): string =>
-  ['.conversation-container', ...getUserTurnSelectors(), ...getAssistantTurnSelectors()].join(', ');
+const getQuoteableMessageSelector = (view: GeminiTurnView): string =>
+  [
+    '.conversation-container',
+    ...getUserTurnSelectors(view),
+    ...getAssistantTurnSelectors(view),
+  ].join(', ');
 
 function sortedRegistrations(): Registration[] {
   return Array.from(registry.values()).sort(
@@ -274,13 +285,24 @@ function createHost(): SelectionToolbarHost {
     const anchor = selection.anchorNode;
     const element =
       anchor?.nodeType === Node.TEXT_NODE ? anchor.parentElement : (anchor as HTMLElement | null);
+    const remoteTurns = [...getGeminiSelectorView().remoteKeys].some((key) =>
+      key.startsWith('turn.'),
+    );
     const mainContent = document.querySelector('main');
-    if (mainContent && !mainContent.contains(element)) return null;
+    if (!remoteTurns && mainContent && !mainContent.contains(element)) return null;
     if (
-      element?.closest('nav') ||
-      element?.closest('[role="navigation"]') ||
-      element?.closest('.sidebar') ||
-      element?.closest('.mat-drawer') ||
+      (remoteTurns
+        ? element &&
+          (!isOriginalGeminiTranscriptElement(element) ||
+            hasGeminiBoundaryConflict(
+              element,
+              element.closest('chat-window, .conversation-container'),
+              'nav, [role="navigation"], .sidebar, .mat-drawer',
+            ))
+        : element?.closest('nav') ||
+          element?.closest('[role="navigation"]') ||
+          element?.closest('.sidebar') ||
+          element?.closest('.mat-drawer')) ||
       element?.closest('[contenteditable="true"]')
     ) {
       return null;
@@ -291,8 +313,14 @@ function createHost(): SelectionToolbarHost {
       candidate.commonAncestorContainer instanceof Element
         ? candidate.commonAncestorContainer
         : candidate.commonAncestorContainer.parentElement;
-    const quoteable = getQuoteableMessageSelector();
-    if (!element?.closest(quoteable) || !commonAncestor?.closest(quoteable)) return null;
+    const { value: insideMessage } = resolveGeminiTurnOperation(
+      (view) => {
+        const quoteable = getQuoteableMessageSelector(view);
+        return !!element?.closest(quoteable) && !!commonAncestor?.closest(quoteable);
+      },
+      (inside) => inside,
+    );
+    if (!insideMessage) return null;
     return candidate;
   }
 

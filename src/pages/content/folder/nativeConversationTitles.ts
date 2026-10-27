@@ -1,3 +1,7 @@
+import { getBundledGeminiSelectorView, type GeminiSelectorView } from '@/core/gemini/selectors';
+import { geminiSidebarSelector } from '@/core/gemini/sidebar/queries';
+import { geminiTitleSelectors } from '@/core/gemini/sidebar/titleProof';
+
 import {
   extractConversationIdFromHref,
   normalizeConversationId,
@@ -19,13 +23,16 @@ export function extractNativeDragTitle(element: HTMLElement, conversationId?: st
   return title || 'Untitled';
 }
 
-export function extractNativeConversationTitle(conversationEl: HTMLElement): string | null {
+/** Persistent callers default to packaged evidence; passive collectors pass their operation view. */
+export function extractNativeConversationTitle(
+  conversationEl: HTMLElement,
+  view: GeminiSelectorView = getBundledGeminiSelectorView(),
+): string | null {
   const scope =
-    (conversationEl.closest('[data-test-id="conversation"]') as HTMLElement) || conversationEl;
+    (conversationEl.closest(geminiSidebarSelector('sidebar.row', view)) as HTMLElement) ||
+    conversationEl;
   // 1) Known title selectors
-  const titleEl = scope.querySelector(
-    '.title-text, .gds-label-l, .conversation-title-text, [data-test-id="conversation-title"], h3',
-  );
+  const titleEl = scope.querySelector(geminiSidebarSelector('sidebar.title', view));
   let title = titleEl?.textContent?.trim() || null;
   if (title && !isGemLabel(title)) {
     debugLog('extractTitle(selectors):', title);
@@ -33,9 +40,8 @@ export function extractNativeConversationTitle(conversationEl: HTMLElement): str
   }
 
   // 2) Link attributes
-  const link = scope.querySelector(
-    'a[href*="/app/"], a[href*="/gem/"]',
-  ) as HTMLAnchorElement | null;
+  const candidate = scope.querySelector(geminiSidebarSelector('sidebar.conversationLinks', view));
+  const link = candidate instanceof HTMLAnchorElement ? candidate : null;
   const aria = link?.getAttribute('aria-label')?.trim();
   if (aria && !isGemLabel(aria)) {
     debugLog('extractTitle(link aria-label):', aria);
@@ -55,7 +61,7 @@ export function extractNativeConversationTitle(conversationEl: HTMLElement): str
   }
 
   // 4) Fallbacks on common labels
-  title = extractFallbackTitle(scope);
+  title = extractFallbackTitle(scope, view);
   if (title && !isGemLabel(title)) {
     debugLog('extractTitle(fallback):', title);
     return title;
@@ -78,7 +84,9 @@ export function extractNativeConversationTitle(conversationEl: HTMLElement): str
 export function buildNativeConversationTitleMap(): Map<string, string> {
   const map = new Map<string, string>();
   try {
-    const conversations = document.querySelectorAll('[data-test-id="conversation"]');
+    const conversations = document.querySelectorAll(
+      geminiSidebarSelector('sidebar.row', getBundledGeminiSelectorView()),
+    );
     for (const convEl of Array.from(conversations)) {
       const element = convEl as HTMLElement;
       const title = extractNativeConversationTitle(element);
@@ -100,7 +108,7 @@ export function buildNativeConversationTitleMap(): Map<string, string> {
       }
 
       const link = element.querySelector(
-        'a[href*="/app/"], a[href*="/gem/"]',
+        geminiSidebarSelector('sidebar.conversationLinks', getBundledGeminiSelectorView()),
       ) as HTMLAnchorElement | null;
       if (link) {
         register(extractConversationIdFromHref(link.href));
@@ -132,7 +140,9 @@ export function lookupNativeConversationTitle(
 export function syncConversationTitleFromNative(conversationId: string): string | null {
   try {
     // Try to find the conversation in the native sidebar by its ID
-    const conversations = document.querySelectorAll('[data-test-id="conversation"]');
+    const conversations = document.querySelectorAll(
+      geminiSidebarSelector('sidebar.row', getBundledGeminiSelectorView()),
+    );
     for (const convEl of Array.from(conversations)) {
       // Check if this conversation matches the ID
       const jslog = convEl.getAttribute('jslog');
@@ -147,7 +157,7 @@ export function syncConversationTitleFromNative(conversationId: string): string 
 
       // Also check by href
       const link = convEl.querySelector(
-        'a[href*="/app/"], a[href*="/gem/"]',
+        geminiSidebarSelector('sidebar.conversationLinks', getBundledGeminiSelectorView()),
       ) as HTMLAnchorElement | null;
       if (link && link.href.includes(conversationId)) {
         const currentTitle = extractNativeConversationTitle(convEl as HTMLElement);
@@ -163,10 +173,14 @@ export function syncConversationTitleFromNative(conversationId: string): string 
   return null;
 }
 
-export function extractFallbackTitle(conversationEl: HTMLElement): string | null {
+export function extractFallbackTitle(
+  conversationEl: HTMLElement,
+  view: GeminiSelectorView = getBundledGeminiSelectorView(),
+): string | null {
   try {
     const scope =
-      (conversationEl.closest('[data-test-id="conversation"]') as HTMLElement) || conversationEl;
+      (conversationEl.closest(geminiSidebarSelector('sidebar.row', view)) as HTMLElement) ||
+      conversationEl;
     // Prefer explicit attributes if present
     const aria = scope.getAttribute('aria-label');
     if (aria && aria.trim()) {
@@ -179,12 +193,20 @@ export function extractFallbackTitle(conversationEl: HTMLElement): string | null
       return titleAttr.trim();
     }
     // Try a common inner label
-    const label = scope.querySelector('.gds-body-m, .gds-label-m, .subtitle');
+    const label = scope.querySelector(geminiSidebarSelector('sidebar.titleFallback', view));
     const labelText = label?.textContent?.trim();
     if (labelText && !isGemLabel(labelText)) {
       debugLog('fallbackTitle(label-ish):', labelText);
       return labelText;
     }
+    const onlineTitle = [
+      'sidebar.row',
+      'sidebar.title',
+      'sidebar.titleFallback',
+      'sidebar.conversationLinks',
+    ] as const;
+    // Generic row text must not conceal failed online title reads from the operation fallback.
+    if (onlineTitle.some((key) => view.remoteKeys.has(key))) return null;
     // Fall back to trimmed text content (first line, clipped)
     const raw = scope.textContent?.trim() || '';
     if (raw) {
@@ -253,14 +275,6 @@ const DISALLOWED_PAGE_TITLES = new Set([
   'محادثة جديدة', // ar
 ]);
 
-const PAGE_TITLE_SELECTORS = [
-  '.conversation-title-container [data-test-id="conversation-title"]',
-  'top-bar-actions [data-test-id="conversation-title"]',
-  '.top-bar-actions [data-test-id="conversation-title"]',
-  '.conversation-title-container .conversation-title.gds-title-m',
-  'top-bar-actions .conversation-title.gds-title-m',
-];
-
 /**
  * Extract conversation info from the current page URL and top-bar title.
  * Used exclusively for the top-right conversation header menu (not sidebar).
@@ -297,7 +311,7 @@ export function extractConversationInfoFromPage(): NativeConversationInfo | null
 }
 
 function readTopBarTitle(): string | null {
-  for (const sel of PAGE_TITLE_SELECTORS) {
+  for (const sel of geminiTitleSelectors('sidebar.pageTitle')) {
     try {
       const text = document.querySelector(sel)?.textContent?.trim();
       if (text && !DISALLOWED_PAGE_TITLES.has(text)) return text;

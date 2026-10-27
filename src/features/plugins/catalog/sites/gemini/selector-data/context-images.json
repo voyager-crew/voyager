@@ -1,0 +1,9 @@
+{
+  "context.images": [
+    "user-query-file-preview img",
+    ".preview-image",
+    "generated-image img",
+    "single-image img",
+    ".attachment-container.generated-images img"
+  ]
+}

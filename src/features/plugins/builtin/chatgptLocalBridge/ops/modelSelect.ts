@@ -10,7 +10,7 @@ import type { SiteAdapter } from '@/features/plugins/types';
 
 import type { OpContext } from '../opContext';
 import { readMode, readPageLanguage } from './conversationReady';
-import { findComposerField } from './pageReaders';
+import { composerFormOf, findComposerField } from './pageReaders';
 
 export async function runModelSelect(
   ctx: OpContext,
@@ -38,7 +38,10 @@ export async function runModelSelect(
     ctx,
     data,
     target,
-    () => findComposerField(adapter)?.closest('form') ?? document,
+    () => {
+      const field = findComposerField(adapter);
+      return field ? composerFormOf(field) : document;
+    },
     adapter?.pageHooks?.modelPickerTrigger,
     adapter?.pageHooks?.effortControl,
   );

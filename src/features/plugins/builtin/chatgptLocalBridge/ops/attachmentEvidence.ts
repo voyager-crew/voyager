@@ -1,3 +1,4 @@
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 /**
  * Read-only views of ChatGPT's composer attachments, for `composer.attach`.
  * Measured live on 2026-10-17 (zh-CN UI): the composer form holds four
@@ -13,17 +14,10 @@
 import { hasComposerAttachments } from '@/features/plugins/builtin/chatgptTemporaryHandoff/composerDelivery';
 import { isRendered } from '@/pages/content/export/adapter/chatgptThread';
 
-const FILE_INPUT_SELECTOR = 'input[type="file"]';
+const FILE_INPUT_SELECTOR = chatgptPageData.fileInput;
 const NOT_A_CARD = 'input, textarea, select, script, style, template';
-const BUSY_SELECTOR = [
-  '[aria-busy="true"]',
-  '[data-state="loading"]',
-  '[data-state="uploading"]',
-  '[data-state="pending"]',
-  '.animate-spin',
-].join(', ');
-const NOTICE_SELECTOR =
-  '[role="alert"], [role="status"], [data-sonner-toast], [data-radix-toast-viewport] li, [class*="toast" i]';
+const BUSY_SELECTOR = chatgptPageData.attachmentBusy.join(', ');
+const NOTICE_SELECTOR = chatgptPageData.attachmentNotice;
 
 const fold = (text: string): string => text.normalize('NFC').toLowerCase();
 
@@ -127,10 +121,10 @@ export interface AttachmentInventory {
   readonly unexpected: number;
 }
 
-const CONTROL_SELECTOR = 'button, [role="button"]';
+const CONTROL_SELECTOR = chatgptPageData.attachmentControl;
 /** Measured 2026-10-18: each attachment card is one child of the composer's attachment area. */
-const ATTACHMENT_CARD_SELECTOR = '[data-composer-attachments] > *';
-const MARKER_ATTRIBUTES = ['data-attachment-id', 'data-file-id'] as const;
+const ATTACHMENT_CARD_SELECTOR = chatgptPageData.attachmentCards;
+const MARKER_ATTRIBUTES = chatgptPageData.attachmentMarkerAttributes;
 
 function controlLabel(element: Element): string {
   const own = `${element.getAttribute('aria-label') ?? ''} ${element.getAttribute('title') ?? ''}`;
@@ -238,7 +232,7 @@ export function uploadBusySignals(form: Element, field: Element): string[] {
   const signals: string[] = [];
   const outsideField = (element: Element) => !field.contains(element) && isRendered(element);
   if (queryAll(form, BUSY_SELECTOR).some(outsideField)) signals.push('busy-marker');
-  const progress = queryAll(form, 'progress, [role~="progressbar"]').filter(outsideField);
+  const progress = queryAll(form, chatgptPageData.attachmentProgress).filter(outsideField);
   if (progress.some(isUnfinishedProgress)) signals.push('progress');
   return signals;
 }

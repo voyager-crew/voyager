@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// @vitest-environment-options { "url": "https://gemini.google.com/app" }
 /**
  * An extension update leaves the old content script running beside the new
  * one until the new one claims the page (`contentScriptHandoff.ts`). Each copy

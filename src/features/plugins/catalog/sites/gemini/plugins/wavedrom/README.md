@@ -28,8 +28,8 @@ plugin off removes every panel and shows the code again.
 ## Delivery and control
 
 - Ships inside the extension and updates only with a Voyager release. It is
-  never published to or replaced by the online plugin catalog, and Gemini pages
-  make no catalog request for it.
+  never published to or replaced by the online plugin catalog. Gemini, including Enterprise,
+  can receive page-locator fixes through the shared Online updates setting.
 - Controlled by the WaveDrom switch in Voyager's Gemini settings (`gvWaveDromEnabled`, on unless set
   to `false`). It has no switch or settings of its own.
 - Needs no extra site access: Voyager's content script already runs on Gemini.

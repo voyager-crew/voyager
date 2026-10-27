@@ -25,7 +25,7 @@ content clones remain until selection ends; incremental extraction is outside th
 claims completeness only after stable top and bottom boundaries with no interruption or
 identity ambiguity and configured generation detection. The runner warns before selection for partial/unknown reads and stops
 on generation or route changes. The primitive's scope owns its toolbar, dialog and active run.
-The `export` descriptor (including `read`, `messageKey`, `title` and `generating`) accepts remote updates like other selectors: catalog maintainers are trusted to maintain these export completeness and reading policies.
+The `export` descriptor’s `title` and `generating` locators can use catalog updates. Its `read` and `messageKey` policies remain packaged: remote data cannot change virtual-history completeness or exported message identity.
 
 | Change                                                                               | Owner                                                                                |
 | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
@@ -47,6 +47,7 @@ The `export` descriptor (including `read`, `messageKey`, `title` and `generating
 | Always-visible toolbar (lr26 Gemini, ChatGPT and other plugin hosts)                 | `persistentExportToolbar.ts`, `exportEntryGate.ts`                                   |
 | Where that toolbar sits and which host controls it keeps clear of                    | `toolbarPlacement.ts`, `toolbarAvoidance.ts`, `toolbarOcclusion.ts`                  |
 | Dragging that toolbar and remembering its spot per site                              | `toolbarDrag.ts`, `toolbarPosition.ts`                                               |
+| The site's layout data that toolbar avoids, and its conversation-turn selector       | `toolbarTargets.ts` (`exportLayout.*` in each site's `selector-data/`)               |
 | Dictionaries, language reads and the `t()` used by every export surface              | `exportLocale.ts`                                                                    |
 | Progress, outcome and problem toasts of every export surface                         | `src/features/export/ui/exportToasts.ts`                                             |
 

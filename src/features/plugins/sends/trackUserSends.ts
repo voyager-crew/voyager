@@ -12,23 +12,22 @@
  * nowhere (ChatGPT's temporary chats) report nothing. Everything here fails
  * closed: a missed send is fine, a send pinned to the wrong turn is not.
  */
+import { getPageSelectorSiteId, getSiteSelectorView } from '@/core/selectors';
+import { hasComposerAttachments, readComposerText } from '@/core/services/composer/draft';
 import { textWithLatexSource } from '@/core/utils/userLatexSource';
-import {
-  hasComposerAttachments,
-  readComposerText,
-} from '@/features/plugins/builtin/chatgptTemporaryHandoff/composerDelivery';
 import { isTemporaryChat } from '@/features/plugins/builtin/chatgptTemporaryHandoff/handoff';
 import type { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import { matchesAnyPattern } from '@/features/plugins/sites/matchPattern';
 import { parseSiteConversation } from '@/features/plugins/sites/siteConversation';
 import type { SiteAdapter } from '@/features/plugins/types';
 import { isSendActionButton } from '@/pages/content/sendBehavior/sendButton';
-import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 
-import { type SendInputs, sendInputsOf } from './sendInputs';
+import { startPendingSend } from './pendingSend';
+import { sendInputsOf } from './sendInputs';
+import { prepareSendTargets, type TrackingTargets, type SendTargetSource } from './sendTargets';
 
 /** A site's send inputs (`sendInputsOf`), plus how to tell a chat the host keeps nowhere. */
-export interface SendSite extends SendInputs {
+export interface SendSite extends SendTargetSource {
   /** Whether the open chat is one the host keeps nowhere. */
   readonly isEphemeral?: () => boolean;
 }
@@ -52,8 +51,15 @@ export function isEphemeralChat(siteId: string): boolean {
 
 /** `adapter`'s send inputs, or `null` when it lacks any (see `sendInputsOf`). */
 export function sendSiteOf(adapter: SiteAdapter | null): SendSite | null {
+  // Keep capability discovery usable by Node; page snapshots belong to the send owner.
   const inputs = sendInputsOf(adapter);
-  return inputs && { ...inputs, isEphemeral: EPHEMERAL_CHECKS[inputs.siteId] };
+  if (!inputs) return null;
+  // Freeze candidates, not today's proof: Angular/React may mount the repaired editor later.
+  const selectorView =
+    typeof document !== 'undefined' && getPageSelectorSiteId(document) === inputs.siteId
+      ? getSiteSelectorView(inputs.siteId)
+      : undefined;
+  return { ...inputs, selectorView, isEphemeral: EPHEMERAL_CHECKS[inputs.siteId] };
 }
 
 /** The key `attributes` give the user turn `turn`, from it or its nearest ancestor holding one. */
@@ -74,20 +80,6 @@ export function sendConversationKey(site: SendSite, href: string): string | null
   return parseSiteConversation(namespace, href)?.key ?? null;
 }
 
-/** A send whose message never showed up (the host was still answering, say) is forgotten after this. */
-const PENDING_SEND_MS = 30_000;
-
-type PendingSend = {
-  readonly sentAt: number;
-  /** The chat it was sent in. */
-  readonly conversationKey: string;
-  /** User turns on the page when it was sent. */
-  readonly known: ReadonlySet<string>;
-  /** The prompt it submitted, without whitespace; empty for a file sent alone. */
-  readonly prompt: string;
-  readonly disposers: Array<() => void | Promise<void>>;
-};
-
 /** Text compared without whitespace, which the composer and the rendered message lay out differently. */
 const compact = (text: string): string => text.replace(/[\s\u200b]+/g, '');
 
@@ -101,50 +93,32 @@ export function trackUserSends(
   report: (send: UserSend) => void,
   doc: Document = document,
 ): void {
-  let pending: PendingSend | null = null;
+  const targetsFor = prepareSendTargets(site, doc);
+  let stopPending: (() => void) | null = null;
+  scope.effect(() => () => {
+    stopPending?.();
+    stopPending = null;
+  });
   /** Set while one submission's events arrive: its Enter or click, then its form's submit. */
   let submitting = false;
 
-  const keyedTurns = (): Array<{ turn: Element; key: string }> =>
-    Array.from(doc.querySelectorAll(site.userTurn), (turn) => ({
+  const keyedTurns = (selector: string): Array<{ turn: Element; key: string }> =>
+    Array.from(doc.querySelectorAll(selector), (turn) => ({
       turn,
       key: readTurnKey(turn, site.turnKeyAttributes),
     })).filter((entry): entry is { turn: Element; key: string } => entry.key !== null);
   const routeConversation = (): string | null => sendConversationKey(site, location.href);
-
-  const forget = (): void => {
-    pending?.disposers.forEach((dispose) => void dispose());
-    pending = null;
-  };
-
-  const check = (): void => {
-    if (!pending) return;
-    // A send adds the newest turn; older ones mounting while it settles are not it.
-    const newest = keyedTurns().at(-1);
-    if (!newest || pending.known.has(newest.key)) return;
-    // Exactly its prompt: a refused prompt stays unsent, and the chat's own last
-    // message hydrating next must not pass for it. A file sent alone has no prompt.
-    if (pending.prompt !== '' && compact(textWithLatexSource(newest.turn)) !== pending.prompt)
-      return;
-    const { conversationKey, sentAt } = pending;
-    forget();
-    if (routeConversation() === conversationKey)
-      report({ conversationKey, turnKey: newest.key, at: sentAt });
-  };
-
-  const onRoute = (): void => {
-    if (!pending) return;
-    // Leaving the chat: its old turns would take the send's place.
-    if (routeConversation() !== pending.conversationKey) forget();
-    else check();
-  };
 
   /** Whether a submit carries a prompt or a file; the host sends nothing from an empty composer. */
   const hasDraft = (fields: readonly Element[], form: Element | null): boolean =>
     fields.some((field) => field instanceof HTMLElement && readComposerText(field).trim() !== '') ||
     (form !== null && hasComposerAttachments(form));
 
-  const onSend = (fields: readonly Element[], form: Element | null): void => {
+  const onSend = (
+    fields: readonly Element[],
+    form: Element | null,
+    targets: TrackingTargets,
+  ): void => {
     if (scope.isDisposed || submitting || site.isEphemeral?.()) return;
     // An empty submit sends nothing; armed, it would claim whichever chat's turn mounted next.
     if (!hasDraft(fields, form)) return;
@@ -157,26 +131,39 @@ export function trackUserSends(
     // One submission dispatches its events in one task; a later send is its own, with its own time.
     submitting = true;
     scope.timer(() => (submitting = false), 0);
-    forget();
-    pending = {
-      sentAt: Date.now(),
-      conversationKey,
-      known: new Set(keyedTurns().map(({ key }) => key)),
-      prompt,
-      disposers: [
-        scope.observe(doc.body, { childList: true, subtree: true }, check),
-        scope.effect(() => watchRouteChanges(onRoute), 'user-sends:route'),
-        scope.timer(forget, PENDING_SEND_MS),
-      ],
-    };
+    stopPending?.();
+    stopPending = startPendingSend(
+      {
+        sentAt: Date.now(),
+        conversationKey,
+        known: new Set(keyedTurns(targets.userTurn).map(({ key }) => key)),
+        prompt,
+      },
+      {
+        doc,
+        signal: scope.signal,
+        conversation: routeConversation,
+        report,
+        newest: () => {
+          const newest = keyedTurns(targetsFor.readUserTurn?.() ?? targetsFor.bundled.userTurn).at(
+            -1,
+          );
+          return newest
+            ? { key: newest.key, readPrompt: () => compact(textWithLatexSource(newest.turn)) }
+            : null;
+        },
+      },
+    );
   };
 
-  const composerForm = (target: Element): HTMLFormElement | null => {
-    const form = target.closest('form');
-    return form?.querySelector(site.composer) ? form : null;
+  const composerForm = (target: Element, selectors: TrackingTargets): Element | null => {
+    // A repaired editor may no longer match the bundled root selector; keep its proved owner.
+    const form = selectors.remoteComposer ? selectors.provedRoot : target.closest('form');
+    if (selectors.remoteComposer && !form?.contains(target)) return null;
+    return form?.querySelector(selectors.composer) ? form : null;
   };
-  const sendFrom = (form: HTMLFormElement): void =>
-    onSend(Array.from(form.querySelectorAll(site.composer)), form);
+  const sendFrom = (form: Element, targets: TrackingTargets): void =>
+    onSend(Array.from(form.querySelectorAll(targets.composer)), form, targets);
 
   // Capture phase: these run before the host handles the send and renders its message.
   scope.on(
@@ -184,8 +171,17 @@ export function trackUserSends(
     'keydown',
     (event) => {
       if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
-      const field = event.target instanceof Element ? event.target.closest(site.composer) : null;
-      if (field) onSend([field], field.closest('form'));
+      if (!(event.target instanceof Element)) return;
+      // One event owns one proof; later DOM mutations only need to prove the resulting turns.
+      const targets = targetsFor.read?.() ?? targetsFor.bundled;
+      const field = event.target.closest(targets.composer);
+      if (field) {
+        onSend(
+          [field],
+          targets.remoteComposer ? composerForm(field, targets) : field.closest('form'),
+          targets,
+        );
+      }
     },
     { capture: true },
   );
@@ -193,10 +189,30 @@ export function trackUserSends(
     doc,
     'click',
     (event) => {
-      const button = event.target instanceof Element ? event.target.closest('button') : null;
-      if (!button || button.disabled || !isSendActionButton(button)) return;
-      const form = composerForm(button);
-      if (form) sendFrom(form);
+      if (!(event.target instanceof Element)) return;
+      const nativeButton = event.target.closest('button');
+      const isBundledSend =
+        nativeButton instanceof HTMLButtonElement &&
+        !nativeButton.disabled &&
+        isSendActionButton(nativeButton);
+      // Sidebar/menu clicks must never run the remote transcript and composer proofs.
+      if (
+        !isBundledSend &&
+        (!targetsFor.candidateSendButton || !event.target.closest(targetsFor.candidateSendButton))
+      )
+        return;
+      const targets = targetsFor.read?.() ?? targetsFor.bundled;
+      const selector = targets.remoteComposer ? targets.sendButton : 'button';
+      const button =
+        targets.remoteComposer && selector ? event.target.closest(selector) : nativeButton;
+      if (targets.remoteComposer) {
+        if (!button || button.matches(':disabled, [aria-disabled="true"]')) return;
+      } else if (!isBundledSend) {
+        return;
+      }
+      if (!button) return;
+      const form = composerForm(button, targets);
+      if (form) sendFrom(form, targets);
     },
     { capture: true },
   );
@@ -204,8 +220,10 @@ export function trackUserSends(
     doc,
     'submit',
     (event) => {
-      const form = event.target instanceof Element ? composerForm(event.target) : null;
-      if (form) sendFrom(form);
+      if (!(event.target instanceof Element)) return;
+      const targets = targetsFor.read?.() ?? targetsFor.bundled;
+      const form = composerForm(event.target, targets);
+      if (form) sendFrom(form, targets);
     },
     { capture: true },
   );

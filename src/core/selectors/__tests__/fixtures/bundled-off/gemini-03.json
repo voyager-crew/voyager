@@ -1,0 +1,355 @@
+[
+  [
+    "composer.json/composer.candidates",
+    [
+      "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+      "#prompt-textarea[contenteditable=\"true\"]",
+      "[data-composer-markdown][contenteditable=\"true\"]",
+      "rich-textarea [contenteditable=\"true\"]",
+      "div[contenteditable=\"true\"][role=\"textbox\"]",
+      ".input-area textarea",
+      "textarea[placeholder*=\"Ask\"]",
+      "textarea"
+    ]
+  ],
+  [
+    "composer.json/composer.draftCandidates",
+    [
+      "rich-textarea [contenteditable=\"true\"]",
+      "div[contenteditable=\"true\"][role=\"textbox\"]",
+      ".input-area textarea",
+      "textarea[placeholder*=\"Ask\"]"
+    ]
+  ],
+  [
+    "composer.json/composer.sendContainers",
+    [
+      ".text-input-field",
+      "ms-prompt-box",
+      "ms-prompt-input-wrapper",
+      "ms-prompt-input",
+      "ms-chat-turn-input",
+      "ms-autosize-textarea",
+      ".prompt-input-wrapper",
+      ".prompt-input-container",
+      ".user-query-container.edit-mode",
+      ".edit-container",
+      "chat-message",
+      "form",
+      "[role=\"dialog\"]",
+      ".mat-mdc-dialog-container"
+    ]
+  ],
+  ["content-packaged.json/export.presentedAncestor", [".presented-response-container"]],
+  [
+    "content-packaged.json/export.presentedContent",
+    [".presented-response-container, .response-content"]
+  ],
+  ["content-packaged.json/export.responseElement", ["response-element"]],
+  ["content-packaged.json/export.userImages", ["user-query-file-preview img, .preview-image"]],
+  [
+    "content-packaged.json/export.uploadedFiles",
+    ["user-query-file-preview [data-test-id=\"uploaded-file\"]"]
+  ],
+  ["content-packaged.json/export.filePreviews", ["user-query-file-preview .new-file-preview-file"]],
+  [
+    "content-packaged.json/content.timelinePreview",
+    [
+      "message-content, .markdown, .markdown-main-panel, .presented-response-container, .response-content, response-element"
+    ]
+  ],
+  [
+    "content-packaged.json/content.highlightRoot",
+    [
+      "message-content",
+      ".markdown-main-panel",
+      ".markdown",
+      ".response-content",
+      "response-element"
+    ]
+  ],
+  ["content-packaged.json/export.messageContent", "message-content"],
+  [
+    "content-packaged.json/export.thoughts",
+    "model-thoughts, .thoughts-container, .thoughts-content"
+  ],
+  ["content-packaged.json/export.rawCode", "pre > code, [data-test-id=\"code-content\"]"],
+  ["content-packaged.json/export.codeOwner", "code-block"],
+  [
+    "content-packaged.json/export.responseOwner",
+    "model-response, .model-response, .presented-response-container, .response-container, response-container"
+  ],
+  ["content-packaged.json/export.walkMarkdown", ".markdown, .markdown-main-panel"],
+  ["content-packaged.json/export.markdown", [".markdown, .markdown-main-panel"]],
+  [
+    "content-packaged.json/export.assistantFallback",
+    [".markdown-main-panel, .markdown, .model-response-text"]
+  ],
+  ["content-packaged.json/export.fallbackClass", "markdown"],
+  ["content-packaged.json/export.sourcePrompt", ".attachment-container.search-images"],
+  ["content-packaged.json/export.sourcePromptMarkup", "attachment-container.search-images"],
+  [
+    "content-packaged.json/export.collectorAnswer",
+    "message-content, .markdown, .markdown-main-panel"
+  ],
+  [
+    "content-packaged.json/export.menuResponseOwner",
+    ".response-container, response-container, .model-response, model-response"
+  ],
+  ["content-packaged.json/export.userLinesFallback", ".query-text-line"],
+  ["content-packaged.json/export.attachmentPreviewOwner", "user-query-file-preview"],
+  ["content.json/content.answer", ["message-content", ".markdown, .markdown-main-panel"]],
+  ["content.json/content.userLines", [".query-text-line"]],
+  [
+    "context-images.json/context.images",
+    [
+      "user-query-file-preview img",
+      ".preview-image",
+      "generated-image img",
+      "single-image img",
+      ".attachment-container.generated-images img"
+    ]
+  ],
+  ["context-text.json/context.users", ["div.user-query-container"]],
+  ["context-text.json/context.responses", [".response-content"]],
+  [
+    "conversation.json/conversation.roots",
+    ["#chat-history", "infinite-scroller.chat-history", "chat-window-content", "main"]
+  ],
+  ["deep-research-packaged.json/deepResearch.items", [".item-container"]],
+  [
+    "deep-research-packaged.json/deepResearch.reportCandidates",
+    [".markdown, .markdown-main-panel, message-content"]
+  ],
+  ["deep-research-packaged.json/deepResearch.panel", "deep-research-immersive-panel"],
+  ["deep-research-packaged.json/deepResearch.thinkingPanels", "thinking-panel"],
+  ["deep-research-packaged.json/deepResearch.thought", "thought-item"],
+  ["deep-research-packaged.json/deepResearch.thoughtHeader", ".thought-header"],
+  [
+    "deep-research-packaged.json/deepResearch.thoughtContent",
+    ".gds-body-m.gds-italic:not(.thought-header)"
+  ],
+  ["deep-research-packaged.json/deepResearch.browseList", "browse-chip-list"],
+  [
+    "deep-research-packaged.json/deepResearch.browseLinks",
+    "browse-web-chip a[data-test-id=\"browse-chip-link\"]"
+  ],
+  ["deep-research-packaged.json/deepResearch.browseDomain", "[data-test-id=\"domain-name\"]"],
+  ["deep-research-packaged.json/deepResearch.browseTitle", "[data-test-id=\"title\"]"],
+  ["deep-research-packaged.json/deepResearch.documentTitle", "title"],
+  ["deep-research-packaged.json/deepResearch.reportHeadings", ["h1", "h2", "[role=\"heading\"]"]],
+  ["deep-research-packaged.json/deepResearch.menuPanel", ".mat-mdc-menu-panel[role=\"menu\"]"],
+  ["deep-research-packaged.json/deepResearch.menuContent", ".mat-mdc-menu-content"],
+  [
+    "deep-research-packaged.json/deepResearch.menuShare",
+    "[data-test-id=\"share-button-tooltip-container\"], [data-test-id=\"share-drive-button\"], [data-test-id=\"share-classroom-button\"]"
+  ],
+  [
+    "deep-research-packaged.json/deepResearch.menuExport",
+    "[data-test-id=\"export-to-docs-button\"], [data-test-id=\"copy-button\"]"
+  ],
+  ["export-entry-packaged.json/exportEntry.logo", ["[data-test-id=\"logo\"]", ".logo"]],
+  [
+    "export-entry-packaged.json/exportToolbar.broadControls",
+    ["[aria-label*=\"pro\" i]", "[aria-label*=\"advanced\" i]"]
+  ],
+  ["export-entry-packaged.json/exportToolbar.canvasOwner", "inline-preview, immersive-panel"],
+  [
+    "export-entry-packaged.json/exportToolbar.canvasContent",
+    "immersive-editor, code-immersive-panel"
+  ],
+  [
+    "export-entry-packaged.json/exportToolbar.inactiveCanvas",
+    "deep-research-immersive-panel, [hidden], [aria-hidden=\"true\"]"
+  ],
+  ["export-entry-packaged.json/canvasEntry.downloadItem", "gem-menu-item[value=\"download_md\"]"],
+  ["export-entry-packaged.json/canvasEntry.owner", "inline-preview, immersive-panel"],
+  ["export-entry-packaged.json/canvasEntry.editor", "immersive-editor .ProseMirror"],
+  [
+    "export-layout-packaged.json/controls",
+    [
+      "top-bar-actions",
+      ".top-bar-actions",
+      "[data-test-id=\"top-bar-actions\"]",
+      "side-nav-sparkle-button",
+      "side-nav-menu-button",
+      "[data-test-id*=\"upgrade\" i]",
+      "[aria-label*=\"upgrade\" i]",
+      "#conversation-header-actions",
+      "[data-testid=\"share-chat-button\"]",
+      "[data-testid=\"conversation-options-button\"]"
+    ]
+  ],
+  [
+    "export-layout-packaged.json/broadControls",
+    ["[aria-label*=\"pro\" i]", "[aria-label*=\"advanced\" i]"]
+  ],
+  ["export-layout-packaged.json/canvasOwner", "inline-preview, immersive-panel"],
+  ["export-layout-packaged.json/canvasContent", "immersive-editor, code-immersive-panel"],
+  ["export-layout-packaged.json/fullscreenCanvas", "immersive-panel"],
+  [
+    "export-layout-packaged.json/inactiveCanvas",
+    "deep-research-immersive-panel, [hidden], [aria-hidden=\"true\"]"
+  ],
+  ["export-layout-packaged.json/turns", "user-query, model-response, [data-message-author-role]"],
+  ["export-layout-packaged.json/interactive", "button, a[href], [role=\"button\"]"],
+  [
+    "export-layout-packaged.json/overlaySidebar",
+    [
+      "[data-test-id=\"side-nav\"]",
+      "side-navigation",
+      "mat-sidenav",
+      "aside",
+      "nav",
+      ".side-nav",
+      ".sidenav",
+      ".chat-history-nav"
+    ]
+  ],
+  ["export-layout-packaged.json/fallbackRoot", "main"],
+  [
+    "export-layout-packaged.json/alignmentCanvas",
+    [
+      "#chat-history",
+      "infinite-scroller.chat-history",
+      ".chat-history-scroll-container",
+      "chat-window-content",
+      "main chat-window-content"
+    ]
+  ],
+  [
+    "export-layout-packaged.json/alignmentComposer",
+    [
+      "rich-textarea",
+      "[aria-label*=\"Enter a prompt\"]",
+      "[aria-label*=\"prompt\"]",
+      "[aria-label*=\"Gemini\"]",
+      "[contenteditable=\"true\"][aria-label]"
+    ]
+  ],
+  [
+    "export-toolbar.json/exportToolbar.controls",
+    [
+      "top-bar-actions",
+      ".top-bar-actions",
+      "[data-test-id=\"top-bar-actions\"]",
+      "side-nav-sparkle-button",
+      "side-nav-menu-button",
+      "[data-test-id*=\"upgrade\" i]",
+      "[aria-label*=\"upgrade\" i]"
+    ]
+  ],
+  [
+    "extended.json/title.export",
+    [".gds-label-l", ".conversation-title-text", "[data-test-id=\"conversation-title\"]", "h3"]
+  ],
+  [
+    "extended.json/title.active",
+    [
+      "mat-list-item.mdc-list-item--activated [mat-line]",
+      "mat-list-item[aria-current=\"page\"] [mat-line]",
+      ".conversation-list-item.active .conversation-title",
+      ".active-conversation .title"
+    ]
+  ],
+  [
+    "extended.json/title.activeExport",
+    [
+      "mat-list-item.mdc-list-item--activated [mat-line]",
+      "mat-list-item[aria-current=\"page\"] [mat-line]"
+    ]
+  ],
+  [
+    "extended.json/title.activeResearch",
+    [
+      "mat-list-item.mdc-list-item--activated [mat-line]",
+      "mat-list-item[aria-current=\"page\"] [mat-line]",
+      ".conversation-list-item.active .conversation-title"
+    ]
+  ],
+  [
+    "extended.json/conversation.roots",
+    ["#chat-history", "infinite-scroller.chat-history", "chat-window-content", "main"]
+  ],
+  [
+    "extended.json/sidebar.pageTitle",
+    [
+      ".conversation-title-container [data-test-id=\"conversation-title\"]",
+      "top-bar-actions [data-test-id=\"conversation-title\"]",
+      ".top-bar-actions [data-test-id=\"conversation-title\"]",
+      ".conversation-title-container .conversation-title.gds-title-m",
+      "top-bar-actions .conversation-title.gds-title-m"
+    ]
+  ],
+  [
+    "extended.json/sidebar.newChat",
+    [
+      "[data-test-id=\"new-chat-button\"] a[href]",
+      "a[data-test-id=\"new-chat-button\"]",
+      "[data-test-id=\"new-chat-button\"] button",
+      "button[data-test-id=\"new-chat-button\"]"
+    ]
+  ],
+  ["extended.json/sidebar.actionsContainer", [".conversation-actions-container"]],
+  [
+    "extended.json/sidebar.toggleButton",
+    [
+      "button[aria-label=\"Open sidebar\"]",
+      "button[aria-label=\"Close sidebar\"]",
+      "side-nav-sparkle-button button",
+      "button[data-test-id=\"side-nav-menu-button\"]",
+      "side-nav-menu-button button"
+    ]
+  ],
+  ["extended.json/deepResearch.items", [".item-container"]],
+  [
+    "extended.json/deepResearch.reportCandidates",
+    [".markdown, .markdown-main-panel, message-content"]
+  ],
+  ["extended.json/deepResearch.panel", ["deep-research-immersive-panel"]],
+  ["extended.json/deepResearch.thinkingPanels", ["thinking-panel"]],
+  ["extended.json/sentChips.lines", [".query-text-line", ".query-text"]],
+  ["extended.json/sentChips.anchor", [".query-text"]],
+  ["extended.json/project.modelAnchor", [".model-picker-container"]],
+  ["extended.json/project.inputAnchor", ["rich-textarea"]],
+  ["extended.json/project.fontSource", [".model-picker-container button"]],
+  ["extended.json/sidebarWidth.candidates", ["bard-sidenav button"]],
+  ["extended.json/code.buttons", [".buttons"]],
+  ["extended.json/generatedImage.container", ["generated-image,.generated-image-container"]],
+  ["extended.json/canvas.documentEditors", ["immersive-editor"]],
+  ["extended.json/canvasEntry.menus", ["gem-menu[role=\"menu\"]"]],
+  ["fork-packaged.json/fork.input", ["rich-textarea [contenteditable=\"true\"]"]],
+  [
+    "fork-packaged.json/fork.userHost",
+    [
+      ".user-query-bubble-with-background",
+      "user-query-content .user-query-bubble-with-background",
+      ".user-query-bubble-container"
+    ]
+  ],
+  ["fork-packaged.json/fork.copyButton", ["button[data-test-id=\"copy-button\"]"]],
+  [
+    "fork-packaged.json/fork.copyIcon",
+    [
+      "button mat-icon[fonticon=\"content_copy\"], button mat-icon[data-mat-icon-name=\"content_copy\"]"
+    ]
+  ],
+  ["fork-packaged.json/fork.sentTextLines", [".query-text-line"]],
+  ["formula-packaged.json/formula.container", [".math-inline", ".math-block"]],
+  ["formula-packaged.json/formula.display", ".math-block, .math-display"],
+  ["formula-packaged.json/formula.inline", ".math-inline"],
+  [
+    "formula-packaged.json/formula.presentation",
+    ".math-inline, .math-display, .math-block, ms-katex, .katex, .katex-display"
+  ],
+  ["formula-packaged.json/formula.quote", ".math-inline, .math-block"],
+  ["gems-packaged.json/link", "a.bot-row, a[href*=\"/gem/\"]"],
+  ["gems-packaged.json/nativeLink", "a[href]"],
+  ["gems-packaged.json/nativeRow", "bot-list-row"],
+  ["gems-packaged.json/titleEvidence", ".bot-title"],
+  ["gems-packaged.json/descriptionEvidence", ".bot-desc-container"],
+  ["gems-packaged.json/iconEvidence", "bot-logo"],
+  ["gems-packaged.json/currentName", ".bot-name-container"],
+  ["gems-packaged.json/currentIcon", ".bot-logo-text"],
+  ["gems-packaged.json/moreEntry", "[data-test-id=\"overflow-side-nav-entry-button\"]"]
+]

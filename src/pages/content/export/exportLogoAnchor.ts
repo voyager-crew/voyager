@@ -8,9 +8,12 @@
 // toolbar mounts right away, while keeping the original wait for older layouts
 // where the logo may mount slightly after navigation.
 
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/export-entry-packaged.json';
+
 export type WaitForElement = (selector: string, timeoutMs?: number) => Promise<Element | null>;
 
-const LOGO_SELECTOR = '[data-test-id="logo"], .logo';
+const LOGO_SELECTORS = packaged['exportEntry.logo'];
+const LOGO_SELECTOR = LOGO_SELECTORS.join(', ');
 
 export async function resolveExportLogoAnchor(
   waitForElement: WaitForElement,
@@ -26,6 +29,7 @@ export async function resolveExportLogoAnchor(
 
   // Older layout where the logo may still mount post-navigation: keep waiting.
   return (
-    (await waitForElement('[data-test-id="logo"]', 6000)) || (await waitForElement('.logo', 2000))
+    (await waitForElement(LOGO_SELECTORS[0], 6000)) ||
+    (await waitForElement(LOGO_SELECTORS[1], 2000))
   );
 }

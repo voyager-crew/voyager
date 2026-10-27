@@ -1,0 +1,4 @@
+{
+  "menu.panels": [".mat-mdc-menu-panel[role=\"menu\"], gem-menu"],
+  "menu.content": [".mat-mdc-menu-content"]
+}

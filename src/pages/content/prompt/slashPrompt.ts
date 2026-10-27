@@ -17,11 +17,11 @@ import type { PromptScheme } from '@/features/prompt/PromptSiteAdapter';
 import { isPromptTemplate } from '@/features/prompt/model/promptTemplate';
 import { getTranslationSync } from '@/utils/i18n';
 
-import { CHAT_INPUT_SELECTOR } from '../chatInput/index';
 import { followGeminiSendKey } from '../sendBehavior/followSendKey';
 import { findClosestSendActionButton, isSendKeyboardEvent } from '../sendBehavior/sendButton';
-import { type TemplateFillHandle, openTemplateFill } from './PromptTemplateFill';
-import { findPromptInputForSendButton, inputFromTarget } from './slashComposerInput';
+import { type TemplateFillHandle } from './PromptTemplateFill';
+import { createPromptSendReplay } from './promptPageScope';
+import { openScopedTemplateFill } from './scopedTemplateFill';
 import {
   type PromptQuery,
   TOKEN_CLASS,
@@ -31,10 +31,16 @@ import {
   placeCaretAtInputStart,
   readText,
 } from './slashComposerText';
-import { hideGhost, removeGhost, showGhost } from './slashGhost';
+import {
+  inputFromTarget,
+  findPromptInputForSendButton,
+  findSlashFormInput,
+  isInsideSlashInput,
+} from './slashInputTargets';
 import { ghostSuffix, isPromptItem, matchSlashPrompts } from './slashMatch';
 import { createPromptPlacements, syncEditedPromptText } from './slashPlacements';
 import { SLASH_PREVIEW_ID, createSlashPreview } from './slashPreview';
+import { hideGhost, removeGhost, showGhost } from './slashPromptView';
 
 const ROOT_ID = 'gv-pm-slash-root';
 const LIST_ID = 'gv-pm-slash-list';
@@ -86,8 +92,9 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
 
   /* Outlives `close()` on purpose: accepting a template closes the result list
    * and then opens this, so tearing it down here would dismiss it instantly.
-   * Only `destroy` owns its lifetime. */
+   * Page/account changes and `destroy` close it. */
   let templateFill: TemplateFillHandle | null = null;
+  const sendReplay = createPromptSendReplay();
 
   function close(): void {
     root.hidden = true;
@@ -143,7 +150,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
     hideInputValue: boolean,
   ): void {
     templateFill?.close();
-    templateFill = openTemplateFill({
+    templateFill = openScopedTemplateFill({
       text: prompt.text,
       name: prompt.name?.trim() || undefined,
       // Anchored to the composer, not to the result list: the list has just
@@ -379,7 +386,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
       event.stopPropagation();
       event.stopImmediatePropagation();
       expandTokensForSend(input);
-      window.setTimeout(() => {
+      sendReplay.schedule(() => {
         input.dispatchEvent(
           new KeyboardEvent('keydown', {
             key: 'Enter',
@@ -391,7 +398,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
             shiftKey: event.shiftKey,
           }),
         );
-      }, 0);
+      });
     }
   }
 
@@ -407,26 +414,26 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
   function onPointerDown(event: Event): void {
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest(`#${ROOT_ID}, #${SLASH_PREVIEW_ID}`)) return;
-    if (!target?.closest(CHAT_INPUT_SELECTOR)) close();
+    if (!target || !isInsideSlashInput(target)) close();
   }
 
   function onSubmit(event: Event): void {
     const form = event.target instanceof HTMLFormElement ? event.target : null;
     if (!form) return;
-    const input = form.querySelector<HTMLElement>(CHAT_INPUT_SELECTOR);
+    const input = findSlashFormInput(form);
     if (!input || !placements.has(input)) return;
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
     expandTokensForSend(input);
     const submitter = event instanceof SubmitEvent ? event.submitter : null;
-    window.setTimeout(() => {
+    sendReplay.schedule(() => {
       if (submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement) {
         form.requestSubmit(submitter);
       } else {
         form.requestSubmit();
       }
-    }, 0);
+    });
   }
 
   function onClick(event: Event): void {
@@ -439,7 +446,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
     event.stopPropagation();
     event.stopImmediatePropagation();
     expandTokensForSend(input);
-    window.setTimeout(() => button.click(), 0);
+    sendReplay.schedule(() => button.click());
   }
 
   function onPointerOver(event: PointerEvent): void {
@@ -486,6 +493,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
 
   return {
     destroy: () => {
+      sendReplay.destroy();
       effectiveSendKey.stop();
       templateFill?.close();
       templateFill = null;

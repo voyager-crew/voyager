@@ -47,7 +47,8 @@ describe('TimelineTurns turn ids', () => {
     });
     container.append(...repeats);
 
-    const markers = new TimelineTurns().collect(container, '.user');
+    const fresh = new TimelineTurns();
+    const markers = fresh.commit(fresh.plan(container, '.user'));
     expect(markers.map((marker) => marker.element)).toEqual(repeats);
     expect(markers.map((marker) => marker.baseN)).toEqual([0, 0.5, 1]);
   });
@@ -62,7 +63,7 @@ describe('TimelineTurns turn ids', () => {
     const second = createUserTurn('second loaded turn', 100);
     container.append(first, second);
 
-    markers = turns.collect(container, '.user', markers);
+    markers = turns.commit(turns.plan(container, '.user', markers));
 
     const firstId = markers[0]!.id;
     const secondId = markers[1]!.id;
@@ -72,7 +73,7 @@ describe('TimelineTurns turn ids', () => {
     setElementTop(second, 200);
     container.prepend(older);
 
-    markers = turns.collect(container, '.user', markers);
+    markers = turns.commit(turns.plan(container, '.user', markers));
 
     const ids = markers.map((marker) => marker.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -91,7 +92,7 @@ describe('TimelineTurns turn ids', () => {
     const second = createUserTurn('second loaded turn', 100);
     container.append(first, second);
 
-    markers = turns.collect(container, '.user', markers);
+    markers = turns.commit(turns.plan(container, '.user', markers));
 
     const firstId = markers[0]!.id;
 
@@ -101,7 +102,7 @@ describe('TimelineTurns turn ids', () => {
     setElementTop(second, 200);
     container.prepend(older);
 
-    markers = turns.collect(container, '.user', markers);
+    markers = turns.commit(turns.plan(container, '.user', markers));
 
     const ids = markers.map((marker) => marker.id);
     expect(new Set(ids).size).toBe(ids.length);

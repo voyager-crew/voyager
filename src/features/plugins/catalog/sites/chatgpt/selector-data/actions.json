@@ -1,0 +1,17 @@
+{
+  "bridge.replyContent": ["[data-markdown-text-style=\"assistant-message\"]"],
+  "actions.temporaryToggle": [
+    "[data-testid=\"temporary-chat-toggle\"]",
+    "button[aria-label*=\"temporary chat\" i]",
+    "button[aria-label*=\"临时聊天\"]",
+    "button[aria-label*=\"暫時聊天\"]"
+  ],
+  "actions.newChat": [
+    "a[data-testid=\"create-new-chat-button\"], a[href=\"/\"], a[href^=\"/u/\"][href$=\"/\"]"
+  ],
+  "actions.shareButton": ["[data-testid=\"share-chat-button\"]"],
+  "actions.thinking": [
+    "span.loading-shimmer, [aria-busy=\"true\"], [role=\"progressbar\"], progress, .result-streaming, [data-message-streaming=\"true\"], [data-is-streaming=\"true\"]"
+  ],
+  "actions.homeLink": ["nav a[href=\"/\"]"]
+}

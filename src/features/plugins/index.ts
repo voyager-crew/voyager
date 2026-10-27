@@ -13,7 +13,7 @@ import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContex
 
 import { PluginHost } from './runtime/PluginHost';
 import { PLUGIN_STATUS_MESSAGE } from './runtime/messages';
-import type { OfficialAdmission } from './runtime/officialAdmission';
+import type { PluginHostOptions } from './runtime/pluginHostOptions';
 
 export { PluginHost } from './runtime/PluginHost';
 export type { PluginHostOptions } from './runtime/PluginHost';
@@ -80,10 +80,12 @@ const onStatusRequest = (
   sendResponse({ ok: true, statuses: host?.getStatuses() ?? [] });
 };
 
-export function startPluginHost(options: { admission?: OfficialAdmission } = {}): () => void {
+export function startPluginHost(
+  options: Pick<PluginHostOptions, 'admission' | 'initialAdapter' | 'legacySettings'> = {},
+): () => void {
   if (host) return () => {};
   try {
-    host = new PluginHost({ admission: options.admission });
+    host = new PluginHost(options);
     void host.start();
     document.addEventListener(PLUGIN_SCOPES_DEBUG_EVENT, dumpScopeLedgers);
     chrome.runtime?.onMessage?.addListener(onStatusRequest);

@@ -35,7 +35,7 @@ export class TimelineStarText {
 
   /** Reads styles of one turn; collection never does, so capture happens only at a star press. */
   capture(marker: TimelineMarker | undefined): string | undefined {
-    return marker?.element.isConnected ? userTurnText(marker.element) : undefined;
+    return marker?.element.isConnected ? userTurnText(marker.element, this.policy.url) : undefined;
   }
 
   private get current(): boolean {
@@ -90,7 +90,7 @@ export class TimelineStarText {
       const inputs = JSON.stringify([message.content, message.starredAt, marker.element.outerHTML]);
       const attempt = this.attempts.get(message.turnId);
       if (attempt?.element === marker.element && attempt.inputs === inputs) return [];
-      const text = getBackfillStarText(message, userTurnText(marker.element));
+      const text = getBackfillStarText(message, userTurnText(marker.element, this.policy.url));
       if (text === undefined) {
         this.attempts.set(message.turnId, { element: marker.element, inputs });
         return [];

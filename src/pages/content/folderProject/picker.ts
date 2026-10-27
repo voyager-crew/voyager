@@ -4,6 +4,8 @@ import { getTranslationSyncUnsafe } from '@/utils/i18n';
 
 import { getFolderColor, isDarkMode } from '../folder/folderColors';
 import { newChatFolderIsFor, pendingNewChatFolder, takeNewChatFolder } from './pendingFolder';
+import { startPickerWork, waitForProjectAnchor } from './pickerWork';
+import { readProjectPlacement } from './placement';
 
 /**
  * Folders and the account they belong to, read together in one step: an
@@ -25,6 +27,7 @@ interface FolderProjectPickerOptions {
    */
   currentAccount?: () => string | null;
   canMount: () => boolean;
+  onAccountChange?: (listener: () => void) => () => void;
   /** `account`: whose folders `folder` came from (its snapshot's). */
   onSelect: (folder: Folder | null, source: 'user' | 'pending', account: string | null) => void;
 }
@@ -42,37 +45,6 @@ function showSelectedFolder(chip: HTMLButtonElement, folder: Folder): void {
   label.textContent = folder.name;
   chip.replaceChildren(icon, label);
   chip.dataset.selected = folder.id;
-}
-
-/**
- * Waits for an element matching the selector to appear and have nonzero height.
- *
- * @param selector - CSS selector to query
- * @param timeoutMs - Maximum wait time in milliseconds
- * @returns Matched element, or null on timeout
- */
-function waitForElement(selector: string, timeoutMs: number): Promise<HTMLElement | null> {
-  return new Promise((resolve) => {
-    const existing = document.querySelector<HTMLElement>(selector);
-    if (existing && existing.getBoundingClientRect().height > 0) {
-      resolve(existing);
-      return;
-    }
-    const deadline = Date.now() + timeoutMs;
-    const check = () => {
-      const el = document.querySelector<HTMLElement>(selector);
-      if (el && el.getBoundingClientRect().height > 0) {
-        resolve(el);
-        return;
-      }
-      if (Date.now() > deadline) {
-        resolve(null);
-        return;
-      }
-      requestAnimationFrame(check);
-    };
-    requestAnimationFrame(check);
-  });
 }
 
 export function createFolderProjectPicker(options: FolderProjectPickerOptions): {
@@ -93,8 +65,9 @@ export function createFolderProjectPicker(options: FolderProjectPickerOptions): 
   let pickerDropdown: HTMLElement | null = null;
   /** Whose folders the open options list; `undefined` while none are listed. */
   let listedAccount: string | null | undefined;
-  /** Bumped whenever listed options go stale, so a load still running lists nothing. */
-  let listing = 0;
+  let listing: ReturnType<typeof startPickerWork> | null = null;
+  let mounting: ReturnType<typeof startPickerWork> | null = null;
+  let pending: ReturnType<typeof startPickerWork> | null = null;
 
   const accountNow = (): string | null => options.currentAccount?.() ?? null;
   /** Whether options read for `account` may still be picked. */
@@ -102,7 +75,8 @@ export function createFolderProjectPicker(options: FolderProjectPickerOptions): 
     !options.currentAccount || accountNow() === account;
 
   function closeDropdown(): void {
-    listing += 1;
+    listing?.cancel();
+    listing = null;
     listedAccount = undefined;
     if (!pickerDropdown) return;
     pickerDropdown.hidden = true;
@@ -114,11 +88,14 @@ export function createFolderProjectPicker(options: FolderProjectPickerOptions): 
     if (listedAccount !== undefined && !stillShows(listedAccount)) closeDropdown();
   }
 
-  async function populateDropdown(dropdown: HTMLElement, chip: HTMLButtonElement): Promise<void> {
+  async function populateDropdown(
+    dropdown: HTMLElement,
+    chip: HTMLButtonElement,
+    isCurrent: () => boolean,
+  ): Promise<void> {
     dropdown.innerHTML = '';
-    const run = ++listing;
     const { account, folders: allFolders } = await options.loadFolders();
-    if (run !== listing) return;
+    if (!isCurrent() || !stillShows(account)) return;
     listedAccount = account;
     // A handoff the first mount could not take (its folders had not loaded) takes them now.
     const pendingId = pendingFolderFor(account);
@@ -263,7 +240,7 @@ export function createFolderProjectPicker(options: FolderProjectPickerOptions): 
     chip.textContent = t('folderAsProject_selectFolder');
 
     // Match font-size from the model picker button so it scales with Gemini's CSS
-    const modelBtn = document.querySelector<HTMLElement>('.model-picker-container button');
+    const modelBtn = readProjectPlacement('project.fontSource');
     if (modelBtn) {
       chip.style.fontSize = getComputedStyle(modelBtn).fontSize;
     }
@@ -278,16 +255,21 @@ export function createFolderProjectPicker(options: FolderProjectPickerOptions): 
       e.stopPropagation();
       const isOpen = !dropdown.hidden;
       if (!isOpen) {
-        void populateDropdown(dropdown, chip);
+        listing?.cancel();
+        listing = startPickerWork({
+          onAccountChange: options.onAccountChange,
+          currentAccount: options.currentAccount,
+          run: (_signal, isCurrent) => populateDropdown(dropdown, chip, isCurrent),
+        });
       }
+      if (isOpen) closeDropdown();
       dropdown.hidden = isOpen;
       chip.setAttribute('aria-expanded', String(!isOpen));
     });
 
     const closeOnOutsideClick = (e: MouseEvent) => {
       if (!container.contains(e.target as Node)) {
-        dropdown.hidden = true;
-        chip.setAttribute('aria-expanded', 'false');
+        closeDropdown();
       }
     };
     document.addEventListener('click', closeOnOutsideClick);
@@ -317,10 +299,13 @@ export function createFolderProjectPicker(options: FolderProjectPickerOptions): 
 
   async function applyPendingFolderSelection(
     chip: HTMLButtonElement,
+    isCurrent: () => boolean,
     snapshot: () => Promise<FolderSnapshot> | FolderSnapshot = options.loadFolders,
   ): Promise<void> {
     if (!pendingFolderFor(accountNow())) return;
     const { account, folders } = await snapshot();
+    // A finished load cannot take a handoff for a removed picker or another account.
+    if (!isCurrent() || !stillShows(account) || !chip.isConnected) return;
     const pendingId = pendingFolderFor(account);
     const folder = pendingId ? folders.find((f) => f.id === pendingId) : undefined;
     if (!folder || !takeNewChatFolder(folder.id)) return;
@@ -335,69 +320,82 @@ export function createFolderProjectPicker(options: FolderProjectPickerOptions): 
   // ============================================================================
 
   function remove(): void {
+    mounting?.cancel();
+    mounting = null;
+    pending?.cancel();
+    pending = null;
     pickerCleanup?.();
     pickerCleanup = null;
     pickerContainer?.remove();
     pickerContainer = null;
     pickerChip = null;
     // The removed dropdown goes with its picker; a load still running lists nothing.
-    listing += 1;
+    listing?.cancel();
+    listing = null;
     listedAccount = undefined;
     pickerDropdown = null;
   }
 
-  async function show(): Promise<void> {
-    if (pickerContainer) return; // Already present
+  function applyPendingTo(chip: HTMLButtonElement, snapshot = options.loadFolders): Promise<void> {
+    pending?.cancel();
+    pending = startPickerWork({
+      onAccountChange: options.onAccountChange,
+      currentAccount: options.currentAccount,
+      run: (_signal, isCurrent) => applyPendingFolderSelection(chip, isCurrent, snapshot),
+    });
+    return pending.done;
+  }
 
-    // Target the model-picker-container inside trailing-actions-wrapper (right side)
-    const modelPicker = await waitForElement('.model-picker-container', 5000);
-
-    // Guard: feature toggled off while we were waiting (slow page load) — the
-    // disable path already ran remove(), so injecting now would leave a
-    // picker and its document listener behind with nothing to clean them up.
-    // Guard: if we navigated away while waiting, abort
-    if (!options.canMount()) return;
-    // Guard: don't inject twice
-    if (document.querySelector('.gv-fp-picker-container')) return;
-
+  async function mount(signal: AbortSignal, isCurrent: () => boolean): Promise<void> {
+    let anchor = await waitForProjectAnchor(
+      () => readProjectPlacement('project.modelAnchor'),
+      5000,
+      signal,
+    );
+    if (!isCurrent() || !options.canMount()) return;
+    if (!anchor?.parentElement) {
+      anchor = await waitForProjectAnchor(
+        () => readProjectPlacement('project.inputAnchor'),
+        3000,
+        signal,
+      );
+    }
+    // Old waits must not attach a picker after a route/account change or an off/on cycle.
+    if (
+      !isCurrent() ||
+      !anchor?.parentElement ||
+      !options.canMount() ||
+      document.querySelector('.gv-fp-picker-container')
+    )
+      return;
     const { element, cleanup, chip } = buildFolderPicker();
-
-    if (modelPicker?.parentElement) {
-      // Insert before the model picker in trailing-actions-wrapper
-      modelPicker.parentElement.insertBefore(element, modelPicker);
-      pickerContainer = element;
-      pickerCleanup = cleanup;
-      pickerChip = chip;
-      void applyPendingFolderSelection(chip);
-      return;
-    }
-
-    // Fallback: insert before rich-textarea (original behavior). The picker (and
-    // its document-level outside-click listener) is already built — every abort
-    // below must run its cleanup or the listener leaks.
-    const richTextarea = await waitForElement('rich-textarea', 3000);
-    if (!richTextarea || !options.canMount() || document.querySelector('.gv-fp-picker-container')) {
-      cleanup();
-      return;
-    }
-
-    const parent = richTextarea.parentElement;
-    if (!parent) {
-      cleanup();
-      return;
-    }
-
-    parent.insertBefore(element, richTextarea);
+    anchor.parentElement.insertBefore(element, anchor);
     pickerContainer = element;
     pickerCleanup = cleanup;
     pickerChip = chip;
-    void applyPendingFolderSelection(chip);
+    void applyPendingTo(chip);
+  }
+
+  async function show(): Promise<void> {
+    if (pickerContainer) return;
+    if (!mounting)
+      mounting = startPickerWork({
+        onAccountChange: options.onAccountChange,
+        currentAccount: options.currentAccount,
+        run: mount,
+      });
+    const current = mounting;
+    await current.done;
+    if (mounting === current) mounting = null;
   }
 
   async function retryPending(): Promise<void> {
     if (!pickerChip || !pickerContainer?.isConnected) return;
-    // Called when the folders finished loading: loading again here would announce another load.
-    await applyPendingFolderSelection(pickerChip, options.loadedFolders ?? options.loadFolders);
+    // Called after load: loading again would announce another load.
+    await applyPendingTo(
+      pickerChip,
+      async () => options.loadedFolders?.() ?? options.loadFolders(),
+    );
   }
 
   function resetChoice(): void {
@@ -408,7 +406,7 @@ export function createFolderProjectPicker(options: FolderProjectPickerOptions): 
   }
 
   async function applyPending(): Promise<void> {
-    if (pickerChip && pickerContainer?.isConnected) await applyPendingFolderSelection(pickerChip);
+    if (pickerChip && pickerContainer?.isConnected) await applyPendingTo(pickerChip);
     else await show();
   }
 

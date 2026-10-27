@@ -356,7 +356,7 @@ describe('PluginHost: official plugins bound to legacy switches', () => {
     host.stop();
   });
 
-  it('never asks for a catalog on Gemini, with an official plugin on by default and enabled in the map', async () => {
+  it('an enabled Gemini official plugin leaves its locator check to page startup', async () => {
     mockPluginState({ [FORMULA_ID]: { enabled: true, installedAt: 1 } });
     const legacy = deferredLegacy();
     const admission = createOfficialAdmission();

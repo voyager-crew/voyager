@@ -2,9 +2,8 @@ import { requireBundledSiteAdapter } from '../../catalog/sites';
 import type { SiteAdapter } from '../../types';
 
 /**
- * Thin shell over `catalog/sites/aistudio/site.json`. AI Studio ships with the
- * extension, so this data is packaged only: no remote catalog ever replaces it
- * (`hostPolicy.allowsRemoteCatalog`). AI Studio toggles theme on <body> rather
- * than the `.theme-host` element Gemini uses. Edit the JSON, not this file.
+ * Packaged AI Studio defaults; guarded page-locator fixes use the shared catalog.
+ * Theme and identity stay packaged. AI Studio owns its theme on <body>.
+ * Edit the JSON, not this shell.
  */
 export const aistudioAdapter: SiteAdapter = requireBundledSiteAdapter('aistudio');

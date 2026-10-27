@@ -161,36 +161,42 @@ describe('HostCatalogRefresher', () => {
     expect(manual.fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('a forced (manual) check bypasses the switch, the interval and backoff', async () => {
+  it('a forced check bypasses the interval and backoff while online updates are on', async () => {
     const { refresher, fetchImpl } = harness({
       entry: entry({ lastAttemptAt: 10 * HOUR - 1, failureCount: 5 }),
-      settings: { onlineUpdatesEnabled: false, checkInterval: 'manual' },
+      settings: { onlineUpdatesEnabled: true, checkInterval: 'manual' },
       eligible: false,
     });
     expect((await refresher.refresh(HOST, { force: true })).status).toBe('unchanged');
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
-  it('never fetches for a page without an enabled plugin (Gemini, AI Studio, cold hosts)', async () => {
+  it('never fetches for a plugin page without an enabled plugin', async () => {
     const { refresher, fetchImpl } = harness({ eligible: false });
     expect(await refresher.refresh(HOST)).toEqual({ ok: true, status: 'ineligible' });
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('never fetches for Gemini or AI Studio, even on a forced check', async () => {
-    const { refresher, fetchImpl } = harness({ eligible: true });
-    for (const host of [
-      'gemini.google.com',
-      'business.gemini.google',
-      'aistudio.google.com',
-      'aistudio.google.cn',
-    ]) {
-      expect(await refresher.refresh(host, { force: true })).toEqual({
-        ok: true,
-        status: 'invalid-host',
-      });
+  it('fetches and stores each native host in the shared catalog channel', async () => {
+    const { refresher, fetchImpl, saved } = harness({
+      eligible: true,
+      respond: (url) => ({
+        status: 200,
+        body: {
+          ...catalogFile([]),
+          host: new URL(url).pathname
+            .split('/')
+            .at(-1)!
+            .replace(/\.json$/, ''),
+        },
+      }),
+    });
+    const hosts = ['business.gemini.google', 'aistudio.google.com', 'aistudio.google.cn'];
+    for (const host of hosts) {
+      expect((await refresher.refresh(host, { force: true })).status).toBe('updated');
     }
-    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(fetchImpl).toHaveBeenCalledTimes(hosts.length);
+    expect(saved.map((entry) => entry.host)).toEqual(hosts);
   });
 
   it('rejects hosts that cannot name a file and a build with the channel off', async () => {
@@ -308,9 +314,10 @@ describe('HostCatalogRefresher', () => {
       expect(saved.at(-1)).toMatchObject({ status: 'unknown', failureCount: 1 });
 
       // The host is no longer pinned in flight: a forced retry starts a new request.
-      void refresher.refresh(HOST, { force: true });
-      await vi.advanceTimersByTimeAsync(0);
+      fetchImpl.mockResolvedValueOnce({ ok: true, status: 200, json: async () => catalogFile() });
+      expect((await refresher.refresh(HOST, { force: true })).status).toBe('updated');
       expect(fetchImpl).toHaveBeenCalledTimes(2);
+      expect(vi.getTimerCount()).toBe(0);
     } finally {
       vi.useRealTimers();
     }

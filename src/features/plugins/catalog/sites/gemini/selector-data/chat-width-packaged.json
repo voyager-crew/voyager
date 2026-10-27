@@ -1,0 +1,22 @@
+{
+  "chatWidth.userTurn": [
+    ".user-query-bubble-container",
+    ".user-query-container",
+    "user-query-content",
+    "user-query",
+    "div[aria-label=\"User message\"]",
+    "article[data-author=\"user\"]",
+    "[data-message-author-role=\"user\"]"
+  ],
+  "chatWidth.assistantTurn": [
+    "model-response",
+    ".model-response",
+    "response-container",
+    ".response-container",
+    ".presented-response-container",
+    "[aria-label=\"Gemini response\"]",
+    "[data-message-author-role=\"assistant\"]",
+    "[data-message-author-role=\"model\"]",
+    "article[data-author=\"assistant\"]"
+  ]
+}

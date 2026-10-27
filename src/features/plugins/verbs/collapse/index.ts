@@ -1,6 +1,8 @@
 /** Generic content-height policy over the same state/observer engine as code collapse. */
 import { createCodeBlockToggleIcon } from '@/core/icons/codeCollapseIcons';
-import { createCollapseEngine } from '@/core/ui/collapse/engine';
+import { hasPageSemanticFixes } from '@/core/selectors/semanticSnapshot';
+import { nativeDomDecorations } from '@/core/services/NativeDomDecorationService';
+import { createCollapseEngine, type CollapseReadSession } from '@/core/ui/collapse/engine';
 import { createCollapseToggle } from '@/core/ui/collapse/toggle';
 import { getTranslationSync, onCachedLanguageChange } from '@/utils/i18n';
 
@@ -90,21 +92,57 @@ export const collapsePrimitive: Primitive<CollapseParams> = {
 
   activate(scope, params, context) {
     const { doc, adapter } = context;
-    const selector = adapter?.selectors[params.target ?? 'userTurn'];
-    if (!selector) return;
-    context.setTargetCounter(() => doc.querySelectorAll(selector).length);
+    const target = params.target ?? 'userTurn';
+    const selector = adapter?.selectors[target];
+    if (!adapter || !selector) return;
+    const remote = hasPageSemanticFixes(adapter, [target], doc);
+    const currentSelector = () => (remote ? (adapter.selectors[target] ?? selector) : selector);
+    context.setTargetCounter(() => doc.querySelectorAll(currentSelector()).length);
     const maxPx = params.maxPx ?? DEFAULT_MAX_PX;
     // Instance-scoped rules keep different plugins' height caps from overriding each other.
     const instance = `gv-collapse-${crypto.randomUUID()}`;
     const collapsedClass = `${instance}-collapsed`;
+    const decorationOwner = {};
+    const accepts = (host: HTMLElement) => host instanceof HTMLElement && !host.isContentEditable;
+    const content = (host: HTMLElement) => host;
+    const actions = (host: HTMLElement) => host.parentElement;
     const running = createCollapseEngine(
       {
         root: () => doc.body,
         hostSelector: selector,
-        accepts: (host) => host instanceof HTMLElement && !host.isContentEditable,
-        content: (host) => host,
+        ...(remote
+          ? {
+              resolveHosts(ownerRoot: ParentNode): CollapseReadSession {
+                // A once-valid alias can move into a dialog; each pass re-proves before changing layout.
+                const hosts = Array.from(
+                  ownerRoot.querySelectorAll<HTMLElement>(currentSelector()),
+                );
+                return {
+                  hosts,
+                  closest: (element) =>
+                    hosts.find((host) => host === element || host.contains(element)) ?? null,
+                  matches: (element) => hosts.includes(element as HTMLElement),
+                  accepts,
+                  content,
+                  actions,
+                };
+              },
+              claim(host: HTMLElement) {
+                // Only this instance's classes on an already accepted native target are decorations.
+                nativeDomDecorations.acquire(host, instance, decorationOwner);
+                nativeDomDecorations.acquire(host, collapsedClass, decorationOwner);
+                return true;
+              },
+              release(host: HTMLElement) {
+                nativeDomDecorations.release(host, instance, decorationOwner);
+                nativeDomDecorations.release(host, collapsedClass, decorationOwner);
+              },
+            }
+          : {}),
+        accepts,
+        content,
         isLong: (content) => content.scrollHeight > maxPx + COLLAPSE_HEIGHT_SLACK_PX,
-        actions: (host) => host.parentElement,
+        actions,
         collapseByDefault: params.startCollapsed ?? true,
       },
       {

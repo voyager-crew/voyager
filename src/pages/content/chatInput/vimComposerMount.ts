@@ -1,3 +1,7 @@
+import { getSiteSelectorView } from '@/core/selectors';
+import { resolvePlacementViewOperation } from '@/core/selectors/placement';
+import { inputSiteId, packagedInputSelector } from '@/core/services/composer/siteInputData';
+
 /** Keep the HUD near its configured composer without attaching it to the page body. */
 
 /** Badge height plus its gap: the strip above the mount the badge renders into. */
@@ -33,21 +37,45 @@ function unclippedMount(mount: HTMLElement | null): HTMLElement | null {
 export function getVimComposerMount(
   input: HTMLElement | null,
   configuredSelector: string | null,
+  acceptWrapper = false,
 ): HTMLElement | null {
   if (!input) return null;
-  if (input.matches('#prompt-textarea[contenteditable="true"]')) {
-    return unclippedMount(input.closest('form'));
-  }
-  if (input.matches('[data-testid="chat-input"][contenteditable="true"]')) {
-    return unclippedMount(input.closest('fieldset'));
+  const doc = input.ownerDocument;
+  const site = inputSiteId(doc);
+  const view = site ? getSiteSelectorView(site) : null;
+  const mountKeys = ['vim.mountInput', 'vim.mountRoot', 'vim.mountChatInput', 'vim.mountChatRoot'];
+  if (!view || !mountKeys.some((key) => view.remoteKeys.has(key))) {
+    if (input.matches(packagedInputSelector('vim.mountInput', doc)))
+      return unclippedMount(input.closest(packagedInputSelector('vim.mountRoot', doc)));
+    if (input.matches(packagedInputSelector('vim.mountChatInput', doc)))
+      return unclippedMount(input.closest(packagedInputSelector('vim.mountChatRoot', doc)));
+  } else {
+    const readPair = (inputKey: string, rootKey: string): HTMLElement | null => {
+      const read = (get: (key: string) => string): HTMLElement | null =>
+        input.matches(get(inputKey)) ? unclippedMount(input.closest(get(rootKey))) : null;
+      return site
+        ? resolvePlacementViewOperation(getSiteSelectorView(site), [inputKey, rootKey], (view) =>
+            read((key) => view.profiles[key].join(',')),
+          )
+        : read((key) => packagedInputSelector(key, doc));
+    };
+    const native = readPair('vim.mountInput', 'vim.mountRoot');
+    if (native) return native;
+    const chat = readPair('vim.mountChatInput', 'vim.mountChatRoot');
+    if (chat) return chat;
   }
   if (!configuredSelector) return null;
+  let composer = input;
   try {
-    if (!input.matches(configuredSelector)) return null;
+    if (!input.matches(configuredSelector)) {
+      const wrapper = acceptWrapper ? input.closest<HTMLElement>(configuredSelector) : null;
+      if (!wrapper) return null;
+      composer = wrapper;
+    }
   } catch {
     return null;
   }
-  const parent = input.parentElement;
+  const parent = composer.parentElement;
   return parent &&
     parent !== input.ownerDocument.body &&
     parent !== input.ownerDocument.documentElement

@@ -1,3 +1,6 @@
+import { findGeminiNewChat } from '@/core/gemini/sidebar/actions';
+import { closestGeminiSidebarElement } from '@/core/gemini/sidebar/queries';
+
 import { handOffNewChatFolder } from '../folderProject/pendingFolder';
 import { watchRouteChanges } from '../utils/routeWatcher';
 import { normalizeConversationId, resolveConversationRouteId } from './folderConversationIdentity';
@@ -11,13 +14,6 @@ import { findNativeConversationLinkById, triggerNativeConversationClick } from '
 import type { ConversationReference } from './types';
 
 const FOLDER_NAVIGATION_CONFIRM_DELAY_MS = 1200;
-/** Gemini's own "New chat" control in its sidebar, an in-app route to the new-chat page. */
-const NATIVE_NEW_CHAT_SELECTOR = [
-  '[data-test-id="new-chat-button"] a[href]',
-  'a[data-test-id="new-chat-button"]',
-  '[data-test-id="new-chat-button"] button',
-  'button[data-test-id="new-chat-button"]',
-].join(', ');
 
 interface FolderNavigationOptions {
   getContext(): {
@@ -186,7 +182,8 @@ export class FolderNavigation {
         console.warn('[folder] could not open a new chat; the folder stays pending');
       }
     };
-    const link = document.querySelector<HTMLElement>(NATIVE_NEW_CHAT_SELECTOR);
+    // Gemini's own sidebar control is an in-app route to the new-chat page.
+    const link = findGeminiNewChat();
     if (!link) {
       spaNavigate();
       return;
@@ -401,7 +398,7 @@ export class FolderNavigation {
       if (this.options.getContext().isDestroyed) return;
       const target = e.target as HTMLElement | null;
       if (!target) return;
-      const a = target.closest('a[href*="/app/"], a[href*="/gem/"]') as HTMLAnchorElement | null;
+      const a = closestGeminiSidebarElement(target, 'sidebar.conversationLinks');
       if (a) {
         this.schedule(() => this.highlightActiveConversation(), 0);
       }

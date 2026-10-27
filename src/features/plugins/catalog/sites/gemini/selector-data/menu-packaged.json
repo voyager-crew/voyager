@@ -1,0 +1,9 @@
+{
+  "menu.nativePanels": "[role=\"menu\"], gem-menu",
+  "menu.items": "button.mat-mdc-menu-item, gem-menu-item",
+  "menu.sidebar": "[data-test-id=\"overflow-container\"], [data-test-id=\"all-conversations\"]",
+  "menu.expandedTrigger": "[aria-haspopup=\"menu\"][aria-expanded=\"true\"]",
+  "menu.backdrop": ".cdk-overlay-backdrop",
+  "menu.conversationTriggers": "[data-test-id=\"actions-menu-button\"], [data-test-id=\"conversation-actions-menu-icon-button\"]",
+  "menu.responseTrigger": "[data-test-id=\"more-menu-button\"]"
+}

@@ -62,7 +62,9 @@ export const quoteReplyPrimitive: Primitive<QuoteReplyParams> = {
     const selector = adapter?.selectors.assistantTurn;
     const view = doc.defaultView;
     if (!selector || !adapter?.selectors.composer || !view) return;
-    context.setTargetCounter(() => doc.querySelectorAll(selector).length);
+    context.setTargetCounter(
+      () => doc.querySelectorAll(adapter.selectors.assistantTurn ?? selector).length,
+    );
 
     // One ledger entry removes the UI and its watchers synchronously, including during a restart.
     scope.effect(() => {
@@ -92,7 +94,10 @@ export const quoteReplyPrimitive: Primitive<QuoteReplyParams> = {
       };
       const allowedTurn = (range: Range): Element | null => {
         if (range.collapsed) return null;
-        const turn = enclosingElement(range.commonAncestorContainer)?.closest(selector);
+        // The frozen catalog data still needs current response ownership at selection and click.
+        const turn = enclosingElement(range.commonAncestorContainer)?.closest(
+          adapter.selectors.assistantTurn ?? selector,
+        );
         if (
           !turn?.isConnected ||
           !turn.contains(range.startContainer) ||

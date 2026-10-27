@@ -1,0 +1,301 @@
+[
+  [
+    "research-pack.json/researchPack.actionBars",
+    [".buttons-container-v2", ".actions-container-v2", "message-actions", ".message-actions"]
+  ],
+  [
+    "response-actions.json/responseActions.bars",
+    ["message-actions, .message-actions, .actions-container-v2, .buttons-container-v2"]
+  ],
+  ["sent-chips-packaged.json/sentChips.lines", [".query-text-line", ".query-text"]],
+  ["sent-chips-packaged.json/sentChips.anchor", ".query-text"],
+  ["sent-chips-packaged.json/sentChips.toggle", ".luminous-toggle-container"],
+  [
+    "sent-chips.json/sentChips.bubbles",
+    [".user-query-bubble-with-background", ".user-query-bubble-container", ".user-query-container"]
+  ],
+  ["sidebar-hover.json/sidebarHover.dialogs", [".mat-mdc-dialog-container"]],
+  ["sidebar-hover.json/sidebarHover.menus", [".mat-mdc-menu-panel"]],
+  ["sidebar-interaction-packaged.json/widthButtons", ["bard-sidenav button"]],
+  ["sidebar-interaction-packaged.json/widthIcon", ["mat-icon[fonticon]"]],
+  [
+    "sidebar-interaction-packaged.json/menuItem",
+    ["[role=\"menuitem\"], [role=\"menuitemradio\"], .mat-mdc-menu-item"]
+  ],
+  [
+    "sidebar-interaction-packaged.json/optionsButton",
+    [
+      "[data-test-id*=\"options\"], [aria-label*=\"选项\"], [aria-label*=\"Options\"], [aria-label*=\"More\"]"
+    ]
+  ],
+  [
+    "sidebar-packaged.json/pageTitle",
+    [
+      ".conversation-title-container [data-test-id=\"conversation-title\"]",
+      "top-bar-actions [data-test-id=\"conversation-title\"]",
+      ".top-bar-actions [data-test-id=\"conversation-title\"]",
+      ".conversation-title-container .conversation-title.gds-title-m",
+      "top-bar-actions .conversation-title.gds-title-m"
+    ]
+  ],
+  ["sidebar-packaged.json/sidenav", ["bard-sidenav"]],
+  ["sidebar-packaged.json/content", ["bard-sidenav side-navigation-content"]],
+  ["sidebar-packaged.json/contentInner", ["bard-sidenav side-navigation-content > div"]],
+  [
+    "sidebar-packaged.json/newChat",
+    [
+      "[data-test-id=\"new-chat-button\"] a[href]",
+      "a[data-test-id=\"new-chat-button\"]",
+      "[data-test-id=\"new-chat-button\"] button",
+      "button[data-test-id=\"new-chat-button\"]"
+    ]
+  ],
+  ["sidebar-packaged.json/actionsContainer", [".conversation-actions-container"]],
+  [
+    "sidebar-packaged.json/toggleButton",
+    [
+      "button[aria-label=\"Open sidebar\"]",
+      "button[aria-label=\"Close sidebar\"]",
+      "side-nav-sparkle-button button",
+      "button[data-test-id=\"side-nav-menu-button\"]",
+      "side-nav-menu-button button"
+    ]
+  ],
+  ["sidebar-packaged.json/toggleHost", ["side-nav-menu-button", "side-nav-sparkle-button"]],
+  ["sidebar-packaged.json/toggleLegacyHost", ["side-nav-menu-button"]],
+  ["sidebar-packaged.json/toggleIcon", ["mat-icon[fonticon]"]],
+  [
+    "sidebar-titles.json/title.export",
+    [".gds-label-l", ".conversation-title-text", "[data-test-id=\"conversation-title\"]", "h3"]
+  ],
+  [
+    "sidebar-titles.json/title.active",
+    [
+      "mat-list-item.mdc-list-item--activated [mat-line]",
+      "mat-list-item[aria-current=\"page\"] [mat-line]",
+      ".conversation-list-item.active .conversation-title",
+      ".active-conversation .title"
+    ]
+  ],
+  [
+    "sidebar-titles.json/title.activeExport",
+    [
+      "mat-list-item.mdc-list-item--activated [mat-line]",
+      "mat-list-item[aria-current=\"page\"] [mat-line]"
+    ]
+  ],
+  [
+    "sidebar-titles.json/title.activeResearch",
+    [
+      "mat-list-item.mdc-list-item--activated [mat-line]",
+      "mat-list-item[aria-current=\"page\"] [mat-line]",
+      ".conversation-list-item.active .conversation-title"
+    ]
+  ],
+  [
+    "sidebar-width.json/sidebarWidth.buttons",
+    [
+      "bard-sidenav .close-sidenav-button",
+      "bard-sidenav button[aria-label=\"Close sidebar\"]",
+      "bard-sidenav button[aria-label=\"Open sidebar\"]"
+    ]
+  ],
+  ["sidebar.json/sidebar.overflow", ["[data-test-id=\"overflow-container\"]"]],
+  [
+    "sidebar.json/sidebar.notebooks",
+    [
+      "expandable-section[storagekey=\"notebooks\"]",
+      "expandable-section[data-test-id=\"notebooks-expandable-section\"]"
+    ]
+  ],
+  [
+    "sidebar.json/sidebar.recents",
+    ["expandable-section[data-test-id=\"chats-expandable-section\"]"]
+  ],
+  ["sidebar.json/sidebar.allConversations", ["[data-test-id=\"all-conversations\"]"]],
+  ["sidebar.json/sidebar.history", [".chat-history"]],
+  ["sidebar.json/sidebar.section", ["expandable-section"]],
+  ["sidebar.json/sidebar.row", ["[data-test-id=\"conversation\"]"]],
+  ["sidebar.json/sidebar.rowContainer", [".chat-history", "[class*=\"conversation\"]"]],
+  ["sidebar.json/sidebar.openHost", ["chat-app.side-nav-open", "#app-root.side-nav-open"]],
+  ["sidebar.json/sidebar.host", ["bard-sidenav", "side-nav"]],
+  ["sidebar.json/sidebar.visibilityHost", ["chat-app", "#app-root"]],
+  [
+    "sidebar.json/sidebar.links",
+    ["[data-test-id=\"conversation\"] a[href]", "a[data-test-id=\"conversation\"][href]"]
+  ],
+  ["sidebar.json/sidebar.conversationLinks", ["a[href*=\"/app/\"]", "a[href*=\"/gem/\"]"]],
+  [
+    "sidebar.json/sidebar.title",
+    [
+      ".title-text",
+      ".gds-label-l",
+      ".conversation-title-text",
+      "[data-test-id=\"conversation-title\"]",
+      "h3"
+    ]
+  ],
+  ["sidebar.json/sidebar.titleFallback", [".gds-body-m", ".gds-label-m", ".subtitle"]],
+  ["sidebar.json/sidebar.scroller", ["infinite-scroller"]],
+  [
+    "sidebar.json/sidebar.interactionButton",
+    ["bard-sidenav button", "bard-sidenav [role=\"button\"]"]
+  ],
+  ["sidebar.json/sidebar.forkRoots", ["bard-sidenav", "[data-test-id=\"all-conversations\"]"]],
+  [
+    "slash.json/slash.candidates",
+    [
+      "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+      "#prompt-textarea[contenteditable=\"true\"]",
+      "[data-composer-markdown][contenteditable=\"true\"]",
+      "rich-textarea [contenteditable=\"true\"]",
+      "div[contenteditable=\"true\"][role=\"textbox\"]",
+      ".input-area textarea",
+      "textarea[placeholder*=\"Ask\"]",
+      "textarea"
+    ]
+  ],
+  [
+    "timeline-packaged.json/timeline.userText",
+    "[data-user-message-bubble], .query-text, .ds-collapsible-text"
+  ],
+  [
+    "timeline-packaged.json/guide.overlays",
+    ["[role=\"menu\"]", "[role=\"dialog\"]", "[role=\"alertdialog\"]"]
+  ],
+  [
+    "timeline.json/timeline.userText",
+    ["[data-user-message-bubble], .query-text, .ds-collapsible-text"]
+  ],
+  [
+    "turn.json/turn.user",
+    [
+      ".user-query-bubble-with-background",
+      ".user-query-bubble-container",
+      ".user-query-container",
+      "user-query-content .user-query-bubble-with-background",
+      "div[aria-label=\"User message\"]",
+      "article[data-author=\"user\"]",
+      "article[data-turn=\"user\"]",
+      "[data-message-author-role=\"user\"]",
+      "div[role=\"listitem\"][data-user=\"true\"]"
+    ]
+  ],
+  [
+    "turn.json/turn.userWithHosts",
+    [
+      ".user-query-bubble-with-background",
+      ".user-query-bubble-container",
+      ".user-query-container",
+      "user-query-content .user-query-bubble-with-background",
+      "user-query-content",
+      "user-query",
+      "div[aria-label=\"User message\"]",
+      "article[data-author=\"user\"]",
+      "article[data-turn=\"user\"]",
+      "[data-message-author-role=\"user\"]",
+      "div[role=\"listitem\"][data-user=\"true\"]"
+    ]
+  ],
+  [
+    "turn.json/turn.assistant",
+    [
+      "[aria-label=\"Gemini response\"]",
+      "[data-message-author-role=\"assistant\"]",
+      "[data-message-author-role=\"model\"]",
+      "article[data-author=\"assistant\"]",
+      "article[data-turn=\"assistant\"]",
+      "article[data-turn=\"model\"]",
+      ".model-response",
+      "model-response",
+      ".response-container"
+    ]
+  ],
+  ["turn.json/turn.assistantFallback", ["div[role=\"listitem\"]:not([data-user=\"true\"])"]],
+  [
+    "turn.json/turn.assistantWithHosts",
+    [
+      "[aria-label=\"Gemini response\"]",
+      "[data-message-author-role=\"assistant\"]",
+      "[data-message-author-role=\"model\"]",
+      "article[data-author=\"assistant\"]",
+      "article[data-turn=\"assistant\"]",
+      "article[data-turn=\"model\"]",
+      "model-response",
+      ".model-response",
+      "response-container",
+      ".response-container",
+      ".presented-response-container",
+      "div[role=\"listitem\"]:not([data-user=\"true\"])"
+    ]
+  ],
+  ["usage-packaged.json/daily", ".gxu-currently"],
+  ["usage-packaged.json/weekly", ".gxu-weekly"],
+  ["usage-packaged.json/reset", "[class*=\"reset-time\"]"],
+  ["usage-packaged.json/header", ".usage-metrics-header"],
+  ["usage.json/usage.root", ["usage-metrics-window", ".usage-metrics-container"]],
+  ["user-latex.json/userLatex.lines", ["p.query-text-line"]],
+  [
+    "vim-packaged.json/vim.editable",
+    ["input, textarea, select, [contenteditable=\"true\"], [role=\"textbox\"]"]
+  ],
+  [
+    "vim-packaged.json/vim.editInputs",
+    [
+      ".query-content.edit-mode textarea",
+      ".edit-container textarea",
+      "textarea[aria-label=\"Edit prompt\"]",
+      "textarea[aria-label=\"Edit message\"]"
+    ]
+  ],
+  [
+    "vim-packaged.json/vim.sendTarget",
+    [
+      ".update-button",
+      "button[aria-label*=\"Send\"]",
+      "button[aria-label*=\"send\"]",
+      "button[data-tooltip*=\"Send\"]",
+      "button[data-tooltip*=\"send\"]",
+      "button mat-icon[fonticon=\"send\"]",
+      "[data-send-button]",
+      ".send-button",
+      "button[aria-label*=\"Update\"]",
+      "button[aria-label*=\"Save\"]",
+      "button[aria-label*=\"更新\"]"
+    ]
+  ],
+  ["vim-packaged.json/vim.editForm", ["mat-form-field.edit-form, .edit-form"]],
+  ["vim-packaged.json/vim.host", [".text-input-field, input-area-v2, input-container"]],
+  ["vim-packaged.json/vim.inputFallback", ["rich-textarea"]],
+  [
+    "vim-packaged.json/vim.hud",
+    [
+      "toolbox-drawer .toolbox-drawer-button-label-icon-text",
+      "toolbox-drawer .toolbox-drawer-button-label",
+      "toolbox-drawer .toolbox-drawer-button-container",
+      "toolbox-drawer button",
+      "toolbox-drawer .toolbox-drawer-container",
+      "[class*=\"toolbox-drawer\"] .toolbox-drawer-button-label-icon-text",
+      "[class*=\"toolbox-drawer\"] button",
+      "button[aria-label*=\"Tools\"]",
+      "button[aria-label*=\"tools\"]",
+      "button[aria-label*=\"工具\"]",
+      "button[aria-label*=\"ツール\"]",
+      "button[aria-label*=\"도구\"]"
+    ]
+  ],
+  ["vim.json/vim.configuredComposer", ["input-area-v2, rich-textarea, .text-input-field"]],
+  [
+    "vim.json/vim.candidates",
+    [
+      "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+      "#prompt-textarea[contenteditable=\"true\"]",
+      "[data-composer-markdown][contenteditable=\"true\"]",
+      "rich-textarea [contenteditable=\"true\"]",
+      "div[contenteditable=\"true\"][role=\"textbox\"]",
+      ".input-area textarea",
+      "textarea[placeholder*=\"Ask\"]",
+      "textarea"
+    ]
+  ]
+]

@@ -10,11 +10,13 @@
  * Uses the `side-nav-menu-button` to toggle sidebar state.
  */
 
+import { closestGeminiSidebarElement } from '@/core/gemini/sidebar/queries';
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/sidebar-interaction-packaged.json';
 import { type Dispose, PluginScope } from '@/features/plugins/runtime/pluginScope';
 
 import { createFullHide } from './fullHide';
 import { createHoverIntent } from './hoverIntent';
-import { findSidebarToggle, isSidebarCollapsed, isSidebarToggleTarget } from './sidebarDom';
+import { getSidebarToggleState, isSidebarCollapsed, isSidebarToggleTarget } from './sidebarDom';
 
 const STYLE_ID = 'gv-sidebar-auto-hide-style';
 const OBSERVER_DEBOUNCE_MS = 100;
@@ -101,23 +103,19 @@ export function createSidebarHideController(isLocked: () => boolean) {
 
     if (!enabled) return;
 
-    const menuItem = target.closest(
-      '[role="menuitem"], [role="menuitemradio"], .mat-mdc-menu-item',
-    );
+    const menuItem = target.closest(packaged.menuItem.join(', '));
     if (menuItem) {
       hover.pause(MENU_CLICK_PAUSE_MS);
       return;
     }
 
-    const sidebarButton = target.closest('bard-sidenav button, bard-sidenav [role="button"]');
+    const sidebarButton = closestGeminiSidebarElement(target, 'sidebar.interactionButton');
     if (sidebarButton) {
       hover.pause(MENU_CLICK_PAUSE_MS);
       return;
     }
 
-    const optionsButton = target.closest(
-      '[data-test-id*="options"], [aria-label*="选项"], [aria-label*="Options"], [aria-label*="More"]',
-    );
+    const optionsButton = target.closest(packaged.optionsButton.join(', '));
     if (optionsButton) {
       hover.pause(MENU_CLICK_PAUSE_MS);
       return;
@@ -127,12 +125,11 @@ export function createSidebarHideController(isLocked: () => boolean) {
   // ─── Sidebar Toggle ────────────────────────────────────────────────────
 
   function clickToggleButton(): boolean {
-    const btn = findSidebarToggle();
+    const { button: btn, collapsed: wasCollapsed } = getSidebarToggleState();
     if (!btn) return false;
 
     internalToggleClickDepth += 1;
     try {
-      const wasCollapsed = isSidebarCollapsed();
       if (fullHideEnabled) fullHide.beforeToggle(wasCollapsed);
       btn.click();
 

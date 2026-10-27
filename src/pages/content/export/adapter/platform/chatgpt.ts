@@ -3,14 +3,17 @@ import type { ExtractedContent } from '@/features/export/services/DOMContentExtr
 import { escapeHtml, escapeHtmlAttribute } from '@/features/export/services/exportDomPolicy';
 import type { SiteAdapter } from '@/features/plugins/types';
 
+import { chatgptCodeLanguageLabel } from '../chatgptCodeLanguage';
+import { chatgptExportData } from '../chatgptExportData';
+import { chatgptLoggedOutAssistantSelector } from '../chatgptExportLocators';
 import {
   DESKTOP_TURN_SELECTOR,
-  LOGGED_OUT_ASSISTANT_SELECTOR,
   LOGGED_OUT_MESSAGE_SELECTOR,
   isChatGptLoggedOutConversation,
   resolveChatGptLoggedOutThread,
 } from '../chatgptLoggedOutDom';
 import { resolveVisibleConversationRoot } from '../chatgptThread';
+import { exportSiteSnapshot } from '../exportSiteSnapshot';
 import type { ExportPlatformAdapter } from './contract';
 
 /** The logged-out page's tab title is ChatGPT's marketing copy, never the conversation's name. */
@@ -24,9 +27,7 @@ function extractTitle(): string {
   const title = isLoggedOutPage() ? '' : document.title?.trim();
   if (title && title !== 'ChatGPT' && title !== 'New chat') return title;
 
-  const active = document.querySelector(
-    'nav a[aria-current="page"], #stage-slideover-sidebar a[aria-current="page"]',
-  );
+  const active = document.querySelector(chatgptExportData['export.activeConversation']);
   const activeTitle = active?.textContent?.trim();
   if (activeTitle) return activeTitle;
 
@@ -74,16 +75,16 @@ function extractUserImage(element: HTMLElement): NodeListOf<HTMLImageElement> {
 }
 
 function getUserAttachmentCandidates(element: HTMLElement): HTMLElement[] | undefined {
-  return Array.from(element.querySelectorAll<HTMLElement>('[role="group"][aria-label]')).filter(
-    (candidate) => {
-      const name = candidate.getAttribute('aria-label')?.trim();
-      const buttonName = candidate
-        .querySelector<HTMLElement>('[data-default-action] button[aria-label]')
-        ?.getAttribute('aria-label')
-        ?.trim();
-      return !!name && name === buttonName;
-    },
-  );
+  return Array.from(
+    element.querySelectorAll<HTMLElement>(chatgptExportData['export.userAttachments']),
+  ).filter((candidate) => {
+    const name = candidate.getAttribute('aria-label')?.trim();
+    const buttonName = candidate
+      .querySelector<HTMLElement>(chatgptExportData['export.attachmentAction'])
+      ?.getAttribute('aria-label')
+      ?.trim();
+    return !!name && name === buttonName;
+  });
 }
 
 const USER_TEXT_BLOCK_TAGS = new Set([
@@ -196,25 +197,23 @@ export function chatgptExtractFormula(
   return true;
 }
 
-/** ChatGPT's current code block: a `div`, not a `pre`, with its source in a `code`. */
-const CODE_BLOCK_SELECTOR = '[data-markdown-copy="code-block"]';
 /** Block chrome ChatGPT leaves out of its own copy: language label, wrap and copy buttons. */
-const COPY_EXCLUDED_SELECTOR = '[data-markdown-copy="exclude"]';
-const CODE_LANGUAGE_LABEL_SELECTOR = `${COPY_EXCLUDED_SELECTOR} .truncate`;
+const COPY_EXCLUDED_SELECTOR = chatgptExportData['export.copyExcluded'];
 /** ChatGPT's own Mermaid drawing; the finished chart keeps no source to export. */
-const MERMAID_PREVIEW_SELECTOR = '[data-chatgpt-mermaid-preview]';
+const MERMAID_PREVIEW_SELECTOR = chatgptExportData['export.mermaidPreview'];
 const LANGUAGE_ID = /^[a-z0-9_+#.-]{1,32}$/i;
 const PLAIN_TEXT_IDS = new Set(['plaintext', 'plain', 'text', 'txt']);
 
 /** The header label names the language, localized: 纯文本 or "Plain text" mean none. */
 function readCodeLanguageLabel(block: Element): string {
-  const label = block.querySelector(CODE_LANGUAGE_LABEL_SELECTOR)?.textContent?.trim() ?? '';
+  const label = chatgptCodeLanguageLabel(block);
   if (!LANGUAGE_ID.test(label)) return '';
   const language = label.toLowerCase();
   return PLAIN_TEXT_IDS.has(language) ? '' : language;
 }
 
 function extractCodeBlock(
+  codeBlockSelector: string,
   child: Element,
   htmlParts: string[],
   textParts: string[],
@@ -225,7 +224,7 @@ function extractCodeBlock(
   if (child.matches(MERMAID_PREVIEW_SELECTOR) && !child.querySelector('pre, code')) return true;
   // ChatGPT dropped `pre` and `language-*` for this block; read it by its copy markers, or
   // its header label and buttons export as prose.
-  if (tagName !== 'pre' && !child.matches(CODE_BLOCK_SELECTOR)) return;
+  if (tagName !== 'pre' && !child.matches(codeBlockSelector)) return;
   const codeElement =
     Array.from(child.querySelectorAll('code')).find(
       (code) => !code.closest(COPY_EXCLUDED_SELECTOR),
@@ -235,7 +234,7 @@ function extractCodeBlock(
   const className = (codeElement.getAttribute('class') || '').toLowerCase();
   const language =
     className.match(/language-([a-z0-9]+)/i)?.[1] ??
-    readCodeLanguageLabel(child.querySelector(CODE_BLOCK_SELECTOR) ?? child);
+    readCodeLanguageLabel(child.querySelector(codeBlockSelector) ?? child);
   if (code.trim()) {
     flags.hasCode = true;
     htmlParts.push(`<pre><code class="language-${language}">${escapeHtml(code)}</code></pre>`);
@@ -271,11 +270,16 @@ export function chatgptExtractInlineFormula(
   return true;
 }
 
-export function buildChatGptAdapter(site: SiteAdapter): ExportPlatformAdapter {
+export function buildChatGptAdapter(provided: SiteAdapter): ExportPlatformAdapter {
+  const site = exportSiteSnapshot(provided);
   return {
     site,
+    siteId: site.id,
     getUserSelectors: () => [site.selectors.userTurn],
-    getAssistantSelectors: () => [site.selectors.assistantTurn, LOGGED_OUT_ASSISTANT_SELECTOR],
+    getAssistantSelectors: () => [
+      site.selectors.assistantTurn,
+      chatgptLoggedOutAssistantSelector(),
+    ],
     extractConversationTitle: extractTitle,
     extractConversationIdFromUrl: extractId,
     resolveConversationRoot: resolveRoot,
@@ -284,7 +288,9 @@ export function buildChatGptAdapter(site: SiteAdapter): ExportPlatformAdapter {
     getUserAttachmentCandidates,
     extractAssistantImage,
     extractFormula: chatgptExtractFormula,
-    extractCodeBlock,
+    // Reprove the frozen catalog value at extraction time; a later DOM may invalidate its host.
+    extractCodeBlock: (child, html, text, flags, tag) =>
+      extractCodeBlock(site.selectors.codeBlock, child, html, text, flags, tag),
     extractInlineFormula: chatgptExtractInlineFormula,
   };
 }

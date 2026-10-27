@@ -1,4 +1,11 @@
+import composerPackaged from '@/features/plugins/catalog/sites/gemini/selector-data/composer-packaged.json';
+
 import { getTranslationSync } from '../../../utils/i18n';
+import {
+  readCollapseInput,
+  isPackagedInputRelated,
+  resolveInputCollapseContainer,
+} from './targets';
 
 export const STYLE_ID = 'gemini-voyager-input-collapse';
 export const COLLAPSED_CLASS = 'gv-input-collapsed';
@@ -162,47 +169,7 @@ export function getInputContainer(): HTMLElement | null {
   // Safety check for test environments and edge cases
   if (typeof document === 'undefined') return null;
 
-  const textarea = document.querySelector('rich-textarea');
-  if (!textarea) return null;
-
-  let current = textarea.parentElement;
-  let bestCandidate: HTMLElement | null = null;
-
-  // Traverse up to 8 levels
-  for (let i = 0; i < 8; i++) {
-    if (!current) break;
-
-    // Check computed style for background color to find the visual "island"
-    const style = window.getComputedStyle(current);
-    const hasBackground =
-      style.backgroundColor !== 'rgba(0, 0, 0, 0)' && style.backgroundColor !== 'transparent';
-    const isFlex = style.display.includes('flex');
-
-    // Check for specific Gemini/Material classes or roles
-    // We prioritize the container that has a background color
-    if (hasBackground) {
-      bestCandidate = current as HTMLElement;
-      // If we found a substantial container (flex + background), it's a strong candidate.
-      if (isFlex) {
-        // Continue one more level just in case there's a wrapper, but update bestCandidate
-      }
-    }
-
-    // Stop if we hit the limit or dangerous nodes
-    if (
-      current.tagName === 'MAIN' ||
-      current.tagName === 'BODY' ||
-      current.classList.contains('content-wrapper')
-    ) {
-      break;
-    }
-
-    current = current.parentElement;
-  }
-
-  // If we found a candidate with a background, use it.
-  // Otherwise fallback to heuristic parents.
-  return bestCandidate || textarea.parentElement?.parentElement || textarea.parentElement;
+  return resolveInputCollapseContainer(document);
 }
 
 /**
@@ -210,19 +177,16 @@ export function getInputContainer(): HTMLElement | null {
  */
 export function isInputEmpty(container: HTMLElement): boolean {
   // Check the text content of the rich-textarea
-  const textarea =
-    container.querySelector('rich-textarea') ||
-    container.querySelector('textarea') ||
-    container.querySelector('[contenteditable="true"]');
-  if (!textarea) return true;
+  const input = readCollapseInput(container);
+  if (!input.element) return true;
 
   // Check for attachments. If attachments exist, the input is not considered empty.
   const attachmentsArea =
-    container.querySelector('uploader-file-preview') ||
-    container.querySelector('.file-preview-wrapper');
+    container.querySelector(composerPackaged['composer.uploadPreview']) ||
+    container.querySelector(composerPackaged['composer.uploadPreviewFallback']);
   if (attachmentsArea) return false;
 
-  const text = textarea.textContent?.trim() || '';
+  const text = input.text.trim();
   return text.length === 0;
 }
 
@@ -255,28 +219,7 @@ export function ensurePlaceholder(container: HTMLElement) {
 export function isInputRelatedElement(element: HTMLElement, container: HTMLElement): boolean {
   if (!element) return false;
 
-  // Check if the element is or is inside known input-related containers
-  const INPUT_RELATED_SELECTORS = [
-    // Material/CDK overlays (menus, dialogs, autocomplete dropdowns)
-    '.cdk-overlay-container',
-    '.mat-mdc-menu-panel',
-    '.mat-mdc-dialog-container',
-    '.ng-trigger',
-    // Model selector and related UI
-    '[role="listbox"]',
-    '[role="option"]',
-    '[role="combobox"]',
-    // Attachment and file-related UI
-    '[data-test-id*="attachment"]',
-    '[data-test-id*="upload"]',
-    '[data-test-id*="file"]',
-  ];
-
-  // Combine selectors into a single string for better performance
-  const combinedSelector = INPUT_RELATED_SELECTORS.join(', ');
-  if (element.matches(combinedSelector) || element.closest(combinedSelector)) {
-    return true;
-  }
+  if (isPackagedInputRelated(element)) return true;
 
   // Additional heuristic: check if element is within a reasonable proximity
   // to the input container (within 5 levels up, but not the body/main)

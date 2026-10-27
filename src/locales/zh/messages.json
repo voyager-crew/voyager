@@ -2962,8 +2962,8 @@
     "description": "Shown when no plugins are available"
   },
   "pluginsRefresh": {
-    "message": "立即检查插件更新",
-    "description": "Tooltip for the manual plugin-update check button"
+    "message": "立即检查更新",
+    "description": "Label and tooltip for the manual catalog update check button"
   },
   "pluginSourceBuiltin": {
     "message": "内置",
@@ -3302,12 +3302,12 @@
     "description": "Note shown when a plugin update is held back because it needs a newer Voyager; {version} is the held-back version"
   },
   "pluginsOnlineUpdates": {
-    "message": "插件在线更新",
-    "description": "Label for the switch that allows online plugin update checks for this site"
+    "message": "在线更新",
+    "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "会向 voyager.nagi.fun 查询此网站的插件更新。只发送网站名称，不发送 Cookie 或页面内容。关闭后，只有上方的刷新按钮会联网。",
-    "description": "Explains what the online plugin update check sends and when it runs"
+    "message": "向 voyager.nagi.fun 检查插件更新及受支持网站的页面识别修复。只发送网站名称，不发送 Cookie 或页面内容。关闭后停止自动检查，仍可手动检查。",
+    "description": "Explains shared catalog updates, supported-site page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {
     "message": "检查频率",

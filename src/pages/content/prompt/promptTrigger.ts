@@ -127,6 +127,16 @@ export async function mountPromptTrigger({
   }
 
   // Restore the saved position; otherwise place next to the host button
+  let placementFrame: number | null = null;
+  let placementTimer: number | null = null;
+  // Deferred placement must not read the page after teardown or a sidebar remount.
+  function cancelPlacement(): void {
+    if (placementFrame !== null) cancelAnimationFrame(placementFrame);
+    if (placementTimer !== null) window.clearTimeout(placementTimer);
+    placementFrame = null;
+    placementTimer = null;
+  }
+
   try {
     const pos = await readPromptPref<PromptTriggerSpot | null>(
       StorageKeys.PROMPT_TRIGGER_POSITION,
@@ -136,12 +146,12 @@ export async function mountPromptTrigger({
       trigger.style.bottom = `${Math.max(6, Math.round(pos.bottom))}px`;
       trigger.style.right = `${Math.max(6, Math.round(pos.right))}px`;
       // Constrain position after restore to handle window resize/split screen
-      requestAnimationFrame(constrain);
+      placementFrame = requestAnimationFrame(constrain);
     } else {
       // defer a bit to wait for host DOM
       placeAtDefaultSpot();
-      requestAnimationFrame(placeAtDefaultSpot);
-      window.setTimeout(placeAtDefaultSpot, 350);
+      placementFrame = requestAnimationFrame(placeAtDefaultSpot);
+      placementTimer = window.setTimeout(placeAtDefaultSpot, 350);
     }
   } catch {
     placeAtDefaultSpot();
@@ -262,6 +272,7 @@ export async function mountPromptTrigger({
       }
     },
     destroy: () => {
+      cancelPlacement();
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       trigger.remove();

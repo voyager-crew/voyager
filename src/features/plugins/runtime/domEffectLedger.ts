@@ -1,3 +1,6 @@
+import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
+import { nativeDomDecorations } from '@/core/services/NativeDomDecorationService';
+
 /**
  * DomEffectLedger — the engine-level, ref-counted record of every class,
  * attribute and inline style the declarative plugins wrote (see the
@@ -30,11 +33,21 @@ export class DomEffectLedger {
   /** Expands `style` attribute values and `setStyle` entries into longhands. */
   private styleParser: InlineStyleParser | null = null;
 
-  constructor(private readonly doc: Document) {}
+  constructor(
+    private readonly doc: Document,
+    private readonly trackNativeDecorations = false,
+  ) {}
 
   addClass(id: string, el: Element, className: string): void {
     const perEl = mapGet(this.classOwners, el, () => new Map<string, Set<string>>());
     const owners = mapGet(perEl, className, () => new Set<string>());
+    // Native decorations must not make later guarded semantic reads mistake the host for our UI.
+    if (
+      this.trackNativeDecorations &&
+      !hasVoyagerOwner(el) &&
+      !el.closest('[data-gv-component], [data-gv-layer], [data-gv-plugin]')
+    )
+      nativeDomDecorations.acquire(el, className, this);
     owners.add(id);
     // (Re)assert the class — also re-heals an SPA re-render that stripped it.
     if (!el.classList.contains(className)) el.classList.add(className);
@@ -63,6 +76,7 @@ export class DomEffectLedger {
     for (const [el, perEl] of this.classOwners) {
       for (const [className, owners] of perEl) {
         if (owners.delete(id) && owners.size === 0) {
+          if (this.trackNativeDecorations) nativeDomDecorations.release(el, className, this);
           el.classList.remove(className);
           perEl.delete(className);
         }
@@ -95,7 +109,10 @@ export class DomEffectLedger {
   restoreDetached(): void {
     for (const [el, perEl] of this.classOwners) {
       if (this.doc.contains(el)) continue;
-      for (const className of perEl.keys()) el.classList.remove(className);
+      for (const className of perEl.keys()) {
+        if (this.trackNativeDecorations) nativeDomDecorations.release(el, className, this);
+        el.classList.remove(className);
+      }
       this.classOwners.delete(el);
     }
 

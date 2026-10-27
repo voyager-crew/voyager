@@ -4,11 +4,12 @@ import { chatGptTurnHash, loadChatGptStarHashes } from '@/features/savedLibrary/
 
 import type { ExportMessage } from '../conversationCollector';
 import type { ExportTurnReader } from '../exportSite';
+import { chatgptTurnSelector } from './chatgptExportData';
 import {
-  LOGGED_OUT_ASSISTANT_SELECTOR,
-  LOGGED_OUT_MESSAGE_SELECTOR,
-  resolveChatGptLoggedOutThread,
-} from './chatgptLoggedOutDom';
+  chatgptLoggedOutAssistantSelector,
+  chatgptStreamingSelector,
+} from './chatgptExportLocators';
+import { LOGGED_OUT_MESSAGE_SELECTOR, resolveChatGptLoggedOutThread } from './chatgptLoggedOutDom';
 import { assertActive } from './chatgptShared';
 import {
   isChatGptThreadGenerating,
@@ -18,13 +19,11 @@ import {
 import type { ExportPlatformAdapter } from './platform/contract';
 import type { ExportSelectionOptions } from './type';
 
-const LOGGED_OUT_USER_SELECTOR = '[data-user-message-bubble]';
 /**
  * A reply still streaming: its message carries `data-message-streaming` with an
  * empty value (measured live). Its Stop button sits outside `main`, where the
  * desktop check looks, so that check alone never fires on this page.
  */
-const STREAMING_MESSAGE_SELECTOR = '[data-message-streaming]:not([data-message-streaming="false"])';
 
 /**
  * Reads ChatGPT's logged-out conversation page (see `chatgptLoggedOutDom.ts`),
@@ -47,7 +46,10 @@ export function createChatGptLoggedOutReader(
         if (hostElement.parentElement?.closest(LOGGED_OUT_MESSAGE_SELECTOR)) return [];
         const role = hostElement.getAttribute('data-message-role');
         if (role !== 'user' && role !== 'assistant') return [];
-        const selector = role === 'user' ? LOGGED_OUT_USER_SELECTOR : LOGGED_OUT_ASSISTANT_SELECTOR;
+        const selector =
+          role === 'user'
+            ? chatgptTurnSelector('userTurn')
+            : chatgptLoggedOutAssistantSelector(thread);
         const exportElement = hostElement.matches(selector)
           ? hostElement
           : hostElement.querySelector<HTMLElement>(selector);
@@ -94,7 +96,7 @@ export function createChatGptLoggedOutReader(
       const hashes = await loadChatGptStarHashes(captured.expectedUrl);
       assertActive(captured);
       if (
-        resolveChatGptLoggedOutThread()?.querySelector(STREAMING_MESSAGE_SELECTOR) ||
+        resolveChatGptLoggedOutThread()?.querySelector(chatgptStreamingSelector(true)) ||
         isChatGptThreadGenerating(resolveVisibleConversationRoot())
       ) {
         throw new Error('chatgpt_export_response_still_generating');

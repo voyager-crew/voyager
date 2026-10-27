@@ -2962,8 +2962,8 @@
     "description": "Shown when no plugins are available"
   },
   "pluginsRefresh": {
-    "message": "Rechercher les mises à jour d'extensions maintenant",
-    "description": "Tooltip for the manual plugin-update check button"
+    "message": "Rechercher les mises à jour maintenant",
+    "description": "Label and tooltip for the manual catalog update check button"
   },
   "pluginSourceBuiltin": {
     "message": "Intégrée",
@@ -3302,12 +3302,12 @@
     "description": "Note shown when a plugin update is held back because it needs a newer Voyager; {version} is the held-back version"
   },
   "pluginsOnlineUpdates": {
-    "message": "Mises à jour en ligne des extensions",
-    "description": "Label for the switch that allows online plugin update checks for this site"
+    "message": "Mises à jour en ligne",
+    "description": "Label for the shared online catalog updates switch"
   },
   "pluginsOnlineUpdatesHint": {
-    "message": "Consulte voyager.nagi.fun pour les mises à jour d'extensions de ce site — seul le nom du site est envoyé, sans cookies ni contenu de page. Désactivé, seul le bouton d'actualisation ci-dessus se connecte.",
-    "description": "Explains what the online plugin update check sends and when it runs"
+    "message": "Vérifie les mises à jour des extensions et les correctifs de détection des pages des sites compatibles sur voyager.nagi.fun. Seul le nom du site est envoyé, sans cookies ni contenu de page. La désactivation arrête les vérifications automatiques. Vous pouvez toujours vérifier manuellement.",
+    "description": "Explains shared catalog updates, supported-site page detection fixes, request contents and the off setting"
   },
   "pluginsCheckInterval": {
     "message": "Fréquence de vérification",

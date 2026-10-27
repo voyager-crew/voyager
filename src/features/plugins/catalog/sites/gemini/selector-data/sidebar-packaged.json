@@ -1,0 +1,29 @@
+{
+  "pageTitle": [
+    ".conversation-title-container [data-test-id=\"conversation-title\"]",
+    "top-bar-actions [data-test-id=\"conversation-title\"]",
+    ".top-bar-actions [data-test-id=\"conversation-title\"]",
+    ".conversation-title-container .conversation-title.gds-title-m",
+    "top-bar-actions .conversation-title.gds-title-m"
+  ],
+  "sidenav": ["bard-sidenav"],
+  "content": ["bard-sidenav side-navigation-content"],
+  "contentInner": ["bard-sidenav side-navigation-content > div"],
+  "newChat": [
+    "[data-test-id=\"new-chat-button\"] a[href]",
+    "a[data-test-id=\"new-chat-button\"]",
+    "[data-test-id=\"new-chat-button\"] button",
+    "button[data-test-id=\"new-chat-button\"]"
+  ],
+  "actionsContainer": [".conversation-actions-container"],
+  "toggleButton": [
+    "button[aria-label=\"Open sidebar\"]",
+    "button[aria-label=\"Close sidebar\"]",
+    "side-nav-sparkle-button button",
+    "button[data-test-id=\"side-nav-menu-button\"]",
+    "side-nav-menu-button button"
+  ],
+  "toggleHost": ["side-nav-menu-button", "side-nav-sparkle-button"],
+  "toggleLegacyHost": ["side-nav-menu-button"],
+  "toggleIcon": ["mat-icon[fonticon]"]
+}

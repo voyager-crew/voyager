@@ -5,10 +5,16 @@
  * Navigation goes through the sidebar's own link (a native SPA route change).
  * A hard navigation to the target URL happens only when no sidebar link exists.
  */
+import { getBundledGeminiSelectorView } from '@/core/gemini/selectors';
+import { geminiSidebarSelector } from '@/core/gemini/sidebar/queries';
+
 import { showExportAlert } from '../../../features/export/ui/exportToasts';
 import { waitForAnyElement } from './domWait';
 import type { ExportTranslate } from './exportLocale';
-import { resolveSidebarConversationTarget } from './sidebarConversationTarget';
+import {
+  findRepairedSidebarConversationLink,
+  resolveSidebarConversationTarget,
+} from './sidebarConversationTarget';
 
 function conversationIdFromPathname(pathname: string): string | null {
   const appMatch = pathname.match(/\/app\/([^/?#]+)/);
@@ -40,16 +46,23 @@ function escapeCssAttributeValue(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-function findSidebarConversationLinkById(conversationId: string): HTMLAnchorElement | null {
+function findSidebarConversationLinkById(
+  conversationId: string,
+  trigger: HTMLElement,
+): HTMLAnchorElement | null {
   const escapedConversationId = escapeCssAttributeValue(conversationId);
   const byJslog = document.querySelector(
     `[data-test-id="conversation"][jslog*="c_${escapedConversationId}"] a[href]`,
   ) as HTMLAnchorElement | null;
   if (byJslog) return byJslog;
 
+  const repaired = findRepairedSidebarConversationLink(trigger, conversationId);
+  if (repaired) return repaired;
+
   const links = Array.from(
     document.querySelectorAll<HTMLAnchorElement>(
-      '[data-test-id="conversation"] a[href], a[data-test-id="conversation"][href]',
+      // Export target association and navigation are deliberately packaged-only.
+      geminiSidebarSelector('sidebar.links', getBundledGeminiSelectorView()),
     ),
   );
   for (const link of links) {
@@ -85,14 +98,15 @@ async function navigateToConversationAndWait(
   conversationId: string,
   fallbackUrl: string,
   userSelectors: () => string[],
+  trigger: HTMLElement,
 ): Promise<boolean> {
   const currentConversationId = geminiConversationIdFromLocation();
   if (currentConversationId === conversationId) {
-    const existing = await waitForAnyElement(userSelectors(), 8000);
+    const existing = await waitForAnyElement(userSelectors, 8000);
     return !!existing;
   }
 
-  const link = findSidebarConversationLinkById(conversationId);
+  const link = findSidebarConversationLinkById(conversationId, trigger);
   if (link) {
     triggerNativeClick(link);
   } else if (fallbackUrl) {
@@ -103,7 +117,7 @@ async function navigateToConversationAndWait(
 
   const routeReady = await waitForConversationUrl(conversationId, 12000);
   if (!routeReady) return false;
-  const contentReady = await waitForAnyElement(userSelectors(), 15000);
+  const contentReady = await waitForAnyElement(userSelectors, 15000);
   return !!contentReady;
 }
 
@@ -127,6 +141,7 @@ export async function openSidebarConversationForExport(
     target.conversationId,
     target.url,
     userSelectors,
+    trigger,
   );
   if (!ready) {
     showExportAlert(t('export_error_conversation_open_failed'), t);

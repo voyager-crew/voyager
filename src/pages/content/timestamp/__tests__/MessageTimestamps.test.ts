@@ -137,7 +137,7 @@ describe('MessageTimestamps', () => {
       owner,
       aliases,
       update,
-      collect: () => update(turns.collect(document.body, '.user', markers)),
+      collect: () => update(turns.commit(turns.plan(document.body, '.user', markers))),
       get markers() {
         return markers;
       },

@@ -1,6 +1,20 @@
+import { GEMINI_FORMULA_PACKAGED } from '@/core/gemini/math/formula';
+
 import { isDisplayMode } from './formulaSource';
 
 const IGNORED_INTERACTION_CLASS = 'gv-formula-copy-ignored';
+
+function inlineSelector(doc: Document): string {
+  return doc.location?.hostname === 'gemini.google.com'
+    ? GEMINI_FORMULA_PACKAGED['formula.inline']
+    : '.math-inline';
+}
+
+function presentationSelector(doc: Document): string {
+  return doc.location?.hostname === 'gemini.google.com'
+    ? GEMINI_FORMULA_PACKAGED['formula.presentation']
+    : '.math-inline, .math-display, .math-block, ms-katex, .katex, .katex-display';
+}
 
 // Gemini renders prose arrows as inline data-math elements. Treat an
 // arrow-only token as presentation, while formulas containing operands stay
@@ -78,7 +92,10 @@ export class FormulaInteraction {
       for (const record of records) {
         if (record.type === 'attributes') {
           if (record.target instanceof HTMLElement) {
-            refreshRoots.add(record.target.closest<HTMLElement>('.math-inline') ?? record.target);
+            refreshRoots.add(
+              record.target.closest<HTMLElement>(inlineSelector(record.target.ownerDocument)) ??
+                record.target,
+            );
           }
           continue;
         }
@@ -88,7 +105,7 @@ export class FormulaInteraction {
             if (this.containsMathSource(node)) {
               refreshRoots.add(
                 node instanceof HTMLElement
-                  ? (node.closest<HTMLElement>('.math-inline') ?? node)
+                  ? (node.closest<HTMLElement>(inlineSelector(node.ownerDocument)) ?? node)
                   : node,
               );
             }
@@ -97,7 +114,7 @@ export class FormulaInteraction {
 
         const inlineContainer =
           record.target instanceof HTMLElement
-            ? record.target.closest<HTMLElement>('.math-inline')
+            ? record.target.closest<HTMLElement>(inlineSelector(record.target.ownerDocument))
             : null;
         if (inlineContainer) {
           const removedRelevantMath = Array.from(record.removedNodes).some(
@@ -146,7 +163,9 @@ export class FormulaInteraction {
 
   private refreshArrowExclusions(root: ParentNode): void {
     const inlineContainer =
-      root instanceof HTMLElement ? root.closest<HTMLElement>('.math-inline') : null;
+      root instanceof HTMLElement
+        ? root.closest<HTMLElement>(inlineSelector(root.ownerDocument))
+        : null;
     const scanRoot: ParentNode = inlineContainer ?? root;
 
     if (scanRoot instanceof HTMLElement && scanRoot.classList.contains(IGNORED_INTERACTION_CLASS)) {
@@ -175,7 +194,7 @@ export class FormulaInteraction {
   private setInteractionIgnored(mathElement: HTMLElement, ignored: boolean): void {
     const exactElements = new Set<HTMLElement>([mathElement]);
     const presentationContainer = mathElement.closest(
-      '.math-inline, .math-display, .math-block, ms-katex, .katex, .katex-display',
+      presentationSelector(mathElement.ownerDocument),
     );
 
     for (const katexElement of mathElement.querySelectorAll<HTMLElement>('.katex')) {
@@ -207,7 +226,7 @@ export class FormulaInteraction {
     if (
       !this.observeGeminiArrows ||
       !element.hasAttribute('data-math') ||
-      element.closest('.math-inline') === null ||
+      element.closest(inlineSelector(element.ownerDocument)) === null ||
       isDisplayMode(element)
     )
       return false;

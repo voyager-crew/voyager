@@ -1,11 +1,12 @@
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/export-entry-packaged.json';
+
 import {
   createMenuItemFromNativeTemplate,
   updateMenuItemTemplateLabel,
 } from '../shared/nativeMenuItemTemplate';
+import { canvasMenuForCleanup, canvasMenuSelector, canvasMenuSource } from './menuTargets';
 
-export const CANVAS_MENU_SELECTOR = 'gem-menu[role="menu"]';
-const DOWNLOAD_ITEM_SELECTOR = 'gem-menu-item[value="download_md"]';
-const CANVAS_OWNER_SELECTOR = 'inline-preview, immersive-panel';
+const DOWNLOAD_ITEM_SELECTOR = packaged['canvasEntry.downloadItem'];
 export const CANVAS_MARKDOWN_BUTTON_CLASS = 'gv-canvas-copy-markdown-btn';
 
 export type CanvasMenuInjectionOptions = {
@@ -14,23 +15,12 @@ export type CanvasMenuInjectionOptions = {
 };
 
 export function findCanvasProseMirrorRoot(menuPanel: HTMLElement): HTMLElement | null {
-  if (document.querySelector('deep-research-immersive-panel')) return null;
-  const trigger = menuPanel.id
-    ? Array.from(document.querySelectorAll<HTMLElement>('[aria-controls], [aria-owns]')).find(
-        (element) =>
-          `${element.getAttribute('aria-controls') || ''} ${element.getAttribute('aria-owns') || ''}`
-            .split(/\s+/)
-            .includes(menuPanel.id),
-      )
-    : null;
-  // Inline and expanded Canvas editors coexist; a document-wide query copies the wrong one.
-  const owner = (trigger || menuPanel).closest(CANVAS_OWNER_SELECTOR);
-  return owner?.querySelector<HTMLElement>('immersive-editor .ProseMirror') ?? null;
+  return canvasMenuSource(menuPanel);
 }
 
 export function isCanvasExportMenuPanel(menuPanel: HTMLElement): boolean {
   return (
-    menuPanel.matches(CANVAS_MENU_SELECTOR) &&
+    menuPanel.matches(canvasMenuSelector(menuPanel.ownerDocument)) &&
     !!menuPanel.querySelector(DOWNLOAD_ITEM_SELECTOR) &&
     !!findCanvasProseMirrorRoot(menuPanel)
   );
@@ -109,7 +99,8 @@ function focusMenuItem(items: HTMLElement[], target: HTMLElement): void {
 }
 
 export function removeCanvasCopyMarkdownButton(button: HTMLElement): void {
-  const panel = button.closest<HTMLElement>(CANVAS_MENU_SELECTOR);
+  // Inner menu wrappers do not own the native items that receive focus on removal.
+  const panel = canvasMenuForCleanup(button);
   if (panel && button.contains(document.activeElement)) {
     const items = menuItems(panel);
     const nativeItem = items.find((item) => item !== button);
@@ -134,4 +125,18 @@ export function navigateCanvasMenu(menuPanel: HTMLElement, event: KeyboardEvent)
   event.preventDefault();
   event.stopImmediatePropagation();
   focusMenuItem(items, items[next]);
+}
+
+/** Discovery is pure; retries and DOM insertion start only after the whole local scan is accepted. */
+export function resolveCanvasEntryPanels(root: ParentNode): HTMLElement[] {
+  const selector = canvasMenuSelector(
+    root instanceof Document ? root : (root.ownerDocument ?? document),
+  );
+  const panels: HTMLElement[] = [];
+  if (root instanceof HTMLElement) {
+    const closest = root.closest<HTMLElement>(selector);
+    if (closest) panels.push(closest);
+  }
+  panels.push(...root.querySelectorAll<HTMLElement>(selector));
+  return [...new Set(panels)];
 }

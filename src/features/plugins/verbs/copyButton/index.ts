@@ -11,6 +11,7 @@
  * `format` only accepts "text" for now; another format is added as a new
  * accepted value, so a manifest that names "text" keeps working.
  */
+import { hasPageSemanticFixes } from '@/core/selectors/semanticSnapshot';
 import { createToaster } from '@/core/ui/toast/toaster';
 import { getTranslationSync, onCachedLanguageChange } from '@/utils/i18n';
 
@@ -71,16 +72,30 @@ export const copyButtonPrimitive: Primitive<CopyButtonParams> = {
     const { doc, adapter } = context;
     const selector = adapter?.selectors[params.target];
     if (!selector) return;
+    const checked = hasPageSemanticFixes(adapter, [params.target, 'assistantTurn'], doc);
+    const targets = () =>
+      doc.querySelectorAll<HTMLElement>(checked ? adapter!.selectors[params.target] : selector);
     const turn = adapter?.selectors.assistantTurn;
     // Replies, not thinking or code blocks: a conversation without one is not a plugin with no effect.
     const counted = NESTED_TARGETS.includes(params.target) && turn ? turn : selector;
-    context.setTargetCounter(() => doc.querySelectorAll(counted).length);
+    context.setTargetCounter(
+      () =>
+        doc.querySelectorAll(
+          checked
+            ? (adapter!.selectors[
+                NESTED_TARGETS.includes(params.target) && turn ? 'assistantTurn' : params.target
+              ] ?? counted)
+            : counted,
+        ).length,
+    );
 
     const buttons = new Map<HTMLElement, CopyButton>();
     const hosts = new WeakSet<Node>();
     const toaster = createToaster();
 
     const copy = async (element: HTMLElement): Promise<void> => {
+      // A once-valid alias may now point at another message or a dialog preview.
+      if (checked && !Array.from(targets()).includes(element)) return;
       let copied = false;
       try {
         // Read on click, with no await before writeText, so the click still allows the write.
@@ -107,10 +122,16 @@ export const copyButtonPrimitive: Primitive<CopyButtonParams> = {
 
     const scan = (): void => {
       if (scope.isDisposed) return;
+      const current = targets();
       for (const [element, button] of Array.from(buttons)) {
-        if (!element.isConnected || button.host.nextElementSibling !== element) remove(element);
+        if (
+          !element.isConnected ||
+          button.host.nextElementSibling !== element ||
+          (checked && !Array.from(current).includes(element))
+        )
+          remove(element);
       }
-      for (const element of doc.querySelectorAll<HTMLElement>(selector)) {
+      for (const element of current) {
         if (buttons.has(element)) continue;
         const button = createCopyButton(doc, params.target, () => void copy(element));
         hosts.add(button.host);

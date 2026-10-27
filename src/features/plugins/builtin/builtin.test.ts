@@ -81,14 +81,12 @@ describe('BUILTIN_PLUGINS', () => {
     expect(timeline).toBeDefined();
     expect(timeline?.matches).toEqual(['https://claude.ai/*']);
     expect(timeline?.contributes.styles ?? []).toEqual([]);
-    // Its behaviour is the turnNavigator primitive; Claude keeps the guide
-    // closed while an artifact frame is open, and names each thread's conversation.
-    expect(timeline?.contributes.domOps).toEqual([
+    // The manifest fixes conversation identity; guide behavior is covered by the runtime tests.
+    expect(timeline?.contributes.domOps).toMatchObject([
       {
         op: 'native',
         handler: 'turnNavigator',
         params: {
-          yieldWhen: 'iframe[src*="claudeusercontent.com"]',
           conversationIdAttribute: 'data-conv-id',
         },
       },

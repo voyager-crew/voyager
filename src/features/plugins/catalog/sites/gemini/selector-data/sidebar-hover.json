@@ -1,0 +1,4 @@
+{
+  "sidebarHover.dialogs": [".mat-mdc-dialog-container"],
+  "sidebarHover.menus": [".mat-mdc-menu-panel"]
+}

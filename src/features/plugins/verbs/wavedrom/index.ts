@@ -54,7 +54,7 @@ function waveDromDiagram(): CodeBlockDiagram {
     },
     install(doc) {
       const release = leaseDiagramStyle(doc, WAVEDROM_STYLES_ID, () =>
-        createWaveDromView(fullscreen).createStyles(PANEL_BG[theme]),
+        createWaveDromView().createStyles(PANEL_BG[theme]),
       );
       return () => {
         fullscreen.close();

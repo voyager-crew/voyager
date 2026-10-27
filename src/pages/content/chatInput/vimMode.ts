@@ -6,6 +6,7 @@ import { expandInputWithCursorAtEnd } from '../inputCollapse';
 import { createVimCommands, shouldIgnoreKey } from './vimCommands';
 import type { VimMode } from './vimCommands';
 import { createVimEditor, getInputText, getCaretOffset } from './vimDomEditor';
+import { createGeminiVimComposerResolver, type ResolveVimComposer } from './vimGeminiComposer';
 import { createVimInputTargets, isEditableTarget, getSendButtonTarget } from './vimInputTargets';
 import { scrollCaretIntoView } from './vimLayout';
 import { createVimPresentation } from './vimPresentation';
@@ -20,6 +21,7 @@ interface StartInputVimModeOptions {
    * for still gets Vim on the right element.
    */
   composerSelector?: string;
+  resolveComposer?: ResolveVimComposer;
   /**
    * Stops Vim the moment it aborts, before the returned cleanup is called. A
    * plugin scope tears down in reverse order and may still be waiting on a
@@ -29,6 +31,10 @@ interface StartInputVimModeOptions {
 }
 
 let configuredComposerSelector: string | null = null;
+let configuredResolver: ResolveVimComposer | null = null;
+const resolveGeminiComposer = createGeminiVimComposerResolver(() => configuredComposerSelector);
+const resolveComposer: ResolveVimComposer = (options) =>
+  (configuredResolver ?? resolveGeminiComposer)(options);
 
 const MODE_CLASS_PREFIX = 'gv-input-vim-mode-';
 /**
@@ -55,6 +61,7 @@ let sendReconcileTimer: number | null = null;
 
 const { findVimInput, findVimInputFromTarget } = createVimInputTargets(
   () => configuredComposerSelector,
+  resolveComposer,
 );
 const view = createVimPresentation(
   () => ({
@@ -63,6 +70,10 @@ const view = createVimPresentation(
     mode: commands.mode,
     buffer: commands.buffer,
     composerSelector: configuredComposerSelector,
+    acceptedComposerSelector: (input) => {
+      const accepted = resolveComposer({ doc: document, requireVisible: false });
+      return accepted.element === input && accepted.repaired ? accepted.composerSelector : null;
+    },
   }),
   findVimInput,
 );
@@ -374,6 +385,7 @@ function setupStorageListener(): void {
 
 function cleanup(): void {
   configuredComposerSelector = null;
+  configuredResolver = null;
   isEnabled = false;
   deactivateListener();
   editor.clearUndoStack();
@@ -409,6 +421,7 @@ export async function startInputVimMode(
   signal?.addEventListener('abort', stop, { once: true });
 
   configuredComposerSelector = options.composerSelector?.trim() || null;
+  configuredResolver = options.resolveComposer ?? null;
   if (options.forceEnabled) {
     isEnabled = true;
   } else {

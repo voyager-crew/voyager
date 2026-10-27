@@ -1,3 +1,4 @@
+import { locatorSiteForHost } from '@/core/selectors/sites';
 /**
  * HostCatalogRefresher — the ONLY network writer for the remote plugin catalog.
  *
@@ -7,14 +8,14 @@
  * per host at a time (single flight across every open tab), validates it and
  * writes the per-host cache entry.
  *
- * Gates, in order (a manual `force` skips all but the first):
+ * Gates, in order (manual `force` skips the switch, scheduling and page eligibility):
  *   1. build flag          — a build compiled without the remote channel never fetches;
  *   2. host shape          — only plain hostnames get a file name;
  *   3. user settings       — online-update switch, check interval, failure backoff,
  *                            writer-version staleness (hostCatalogPolicy);
  *   4. page eligibility    — at least one ENABLED plugin (bundled or already
- *                            cached remote) targets the host. Gemini / AI Studio
- *                            never pass this gate, so they produce zero requests.
+ *                            cached remote) targets the host, or packaged locator
+ *                            data serves the current supported site.
  *
  * Privacy: the request carries no cookies, no extension identifier and no
  * page content — only the host name in the path.
@@ -32,6 +33,12 @@ import {
   loadHostCatalogCache,
   saveHostCatalogCache,
 } from './hostCatalogCache';
+import {
+  runHostCatalogCheck,
+  subscribeCatalogUpdatesOff,
+  type CatalogCheckPreparation,
+  type CatalogCheckWrite,
+} from './hostCatalogCheckMachine';
 import { validateHostCatalogFile } from './hostCatalogFile';
 import {
   decideHostCatalogRefresh,
@@ -75,6 +82,7 @@ export interface HostCatalogRefresherOptions {
   readonly isHostEligible?: (host: string, entry: HostCatalogCacheEntry | null) => Promise<boolean>;
   /** Bound on one fetch including body parsing; defaults to 15 s. */
   readonly timeoutMs?: number;
+  readonly subscribeOff?: (off: () => void) => () => void;
 }
 
 /**
@@ -85,6 +93,7 @@ export async function defaultIsHostEligible(
   host: string,
   entry: HostCatalogCacheEntry | null,
 ): Promise<boolean> {
+  if (locatorSiteForHost(host)) return true;
   const [snapshot, state] = await Promise.all([listPluginManifests(), loadPluginState()]);
   const manifests = entry?.status === 'ok' ? [...snapshot, ...entry.manifests] : snapshot;
   return hasEnabledPluginForHost(manifests, state, host);
@@ -108,6 +117,7 @@ export class HostCatalogRefresher {
   ) => Promise<boolean>;
   private readonly inFlight = new Map<string, Promise<HostCatalogRefreshResult>>();
   private readonly timeoutMs: number;
+  private readonly subscribeOff: (off: () => void) => () => void;
 
   constructor(options: HostCatalogRefresherOptions = {}) {
     this.baseUrl = options.baseUrl ?? resolvePluginCatalogBaseUrl();
@@ -120,6 +130,7 @@ export class HostCatalogRefresher {
     this.saveEntry = options.saveEntry ?? saveHostCatalogCache;
     this.isHostEligible = options.isHostEligible ?? defaultIsHostEligible;
     this.timeoutMs = options.timeoutMs ?? DEFAULT_HOST_CATALOG_TIMEOUT_MS;
+    this.subscribeOff = options.subscribeOff ?? subscribeCatalogUpdatesOff;
   }
 
   /** Single flight per host: concurrent callers share one network pass. */
@@ -141,10 +152,50 @@ export class HostCatalogRefresher {
     return pass;
   }
 
-  private async perform(host: string, force: boolean): Promise<HostCatalogRefreshResult> {
+  private perform(host: string, force: boolean): Promise<HostCatalogRefreshResult> {
+    return runHostCatalogCheck({
+      timeoutMs: this.timeoutMs,
+      // D4: an explicit manual check remains authorized when automatic updates are off.
+      subscribeOff: force ? () => () => {} : this.subscribeOff,
+      prepare: (signal) => this.prepare(host, force, signal),
+      fetch: ({ entry, attemptedAt }, signal) =>
+        this.fetchCandidate(host, entry, attemptedAt, signal),
+      save: this.saveEntry,
+      failure: ({ entry, attemptedAt }, reason) => {
+        logger.warn('Host catalog refresh failed', { host, error: reason });
+        return {
+          entry: {
+            host,
+            status: entry?.status ?? 'unknown',
+            manifests: entry?.status === 'ok' ? entry.manifests : [],
+            fetchedAt: entry?.fetchedAt ?? 0,
+            lastAttemptAt: attemptedAt,
+            failureCount: (entry?.failureCount ?? 0) + 1,
+            extensionVersion: entry?.extensionVersion || this.extensionVersion,
+            ...(entry?.generatedAt ? { generatedAt: entry.generatedAt } : {}),
+            ...(entry?.site ? { site: entry.site } : {}),
+            ...(entry?.revoked ? { revoked: entry.revoked } : {}),
+          },
+          result: { ok: true, status: 'failed', reason, checkedAt: attemptedAt },
+        };
+      },
+    });
+  }
+
+  private async prepare(
+    host: string,
+    force: boolean,
+    signal: AbortSignal,
+  ): Promise<CatalogCheckPreparation> {
+    const disabled: CatalogCheckPreparation = {
+      kind: 'settled',
+      result: { ok: true, status: 'skipped', reason: 'disabled' },
+    };
+    const settings = await this.loadSettings();
+    if (signal.aborted || (!force && !settings.onlineUpdatesEnabled)) return disabled;
     const entry = await this.loadEntry(host);
+    if (signal.aborted) return disabled;
     if (!force) {
-      const settings = await this.loadSettings();
       const decision = decideHostCatalogRefresh({
         entry,
         now: this.now(),
@@ -152,50 +203,25 @@ export class HostCatalogRefresher {
         interval: settings.checkInterval,
         extensionVersion: this.extensionVersion,
       });
-      if (!decision.refresh) return { ok: true, status: 'skipped', reason: decision.reason };
-      if (!(await this.isHostEligible(host, entry))) return { ok: true, status: 'ineligible' };
+      if (!decision.refresh)
+        return {
+          kind: 'settled',
+          result: { ok: true, status: 'skipped', reason: decision.reason },
+        };
+      const eligible = await this.isHostEligible(host, entry);
+      if (signal.aborted) return disabled;
+      if (!eligible) return { kind: 'settled', result: { ok: true, status: 'ineligible' } };
     }
-
-    const now = this.now();
-    const controller = new AbortController();
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const timeout = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => {
-        controller.abort();
-        reject(new Error(`timeout after ${this.timeoutMs}ms`));
-      }, this.timeoutMs);
-    });
-    try {
-      return await Promise.race([this.fetchAndStore(host, entry, now, controller.signal), timeout]);
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error);
-      logger.warn('Host catalog refresh failed', { host, error: reason });
-      // Keep whatever the previous entry contributed; only record the attempt.
-      await this.saveEntry({
-        host,
-        status: entry?.status ?? 'unknown',
-        manifests: entry?.status === 'ok' ? entry.manifests : [],
-        fetchedAt: entry?.fetchedAt ?? 0,
-        lastAttemptAt: now,
-        failureCount: (entry?.failureCount ?? 0) + 1,
-        extensionVersion: entry?.extensionVersion || this.extensionVersion,
-        ...(entry?.generatedAt ? { generatedAt: entry.generatedAt } : {}),
-        ...(entry?.site ? { site: entry.site } : {}),
-        ...(entry?.revoked ? { revoked: entry.revoked } : {}),
-      });
-      return { ok: true, status: 'failed', reason, checkedAt: now };
-    } finally {
-      if (timer !== undefined) clearTimeout(timer);
-    }
+    return { kind: 'ready', context: { entry, attemptedAt: this.now() } };
   }
 
-  /** The network half of a pass; `signal` lets the timeout abort the request. */
-  private async fetchAndStore(
+  /** Fetch and validate a candidate only; the machine owns permission to commit it. */
+  private async fetchCandidate(
     host: string,
     entry: HostCatalogCacheEntry | null,
     now: number,
     signal: AbortSignal,
-  ): Promise<HostCatalogRefreshResult> {
+  ): Promise<CatalogCheckWrite> {
     const response = await this.fetchImpl(hostCatalogFileUrl(this.baseUrl, host), {
       cache: 'no-cache',
       credentials: 'omit',
@@ -203,16 +229,18 @@ export class HostCatalogRefresher {
       signal,
     });
     if (response.status === 404) {
-      await this.saveEntry({
-        host,
-        status: 'missing',
-        manifests: [],
-        fetchedAt: now,
-        lastAttemptAt: now,
-        failureCount: 0,
-        extensionVersion: this.extensionVersion,
-      });
-      return { ok: true, status: 'missing', checkedAt: now };
+      return {
+        entry: {
+          host,
+          status: 'missing',
+          manifests: [],
+          fetchedAt: now,
+          lastAttemptAt: now,
+          failureCount: 0,
+          extensionVersion: this.extensionVersion,
+        },
+        result: { ok: true, status: 'missing', checkedAt: now },
+      };
     }
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
@@ -243,8 +271,10 @@ export class HostCatalogRefresher {
       ...(validation.site ? { site: siteAdapterToData(validation.site) } : {}),
     };
     const changed = hostCatalogSignature(entry) !== hostCatalogSignature(next);
-    await this.saveEntry(next);
-    return { ok: true, status: changed ? 'updated' : 'unchanged', checkedAt: now };
+    return {
+      entry: next,
+      result: { ok: true, status: changed ? 'updated' : 'unchanged', checkedAt: now },
+    };
   }
 }
 

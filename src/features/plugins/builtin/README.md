@@ -49,9 +49,16 @@ Only execution moved; no stored data did.
 
 Gemini draft slots are per pathname, not per account; the catalog draft primitive's `gvDraft:<site>:…` keys were not adopted for Gemini, because stripping `/u/N/` would merge accounts' new-chat drafts and lose the old ones. Account-level draft isolation would be a separate migration. A cloud restore may turn a local plugin off but never on (`clampLocalPluginsEnabled`, `storage/pluginState.ts`).
 
-### Zero catalog requests
+### Catalog page data
 
-Gemini and AI Studio pages make no plugin-catalog request (D14 in [remote/DECISIONS.md](../remote/DECISIONS.md)); announcements, cloud sync and existing integrations follow their own rules. One rule, `hostPolicy.allowsRemoteCatalog`, holds at four layers: the background refuses a refresh for these hosts before looking at `force`; the page and popup neither request nor read a cached catalog, site override or kill switch for them (`remote/hostCatalogPolicy.ts`, `HostCatalogSource`); `catalog:build` validates their manifests but writes no host file (`scripts/lib/buildPluginCatalog.ts`); and tests assert zero catalog fetches. The price is that their plugins and selector fixes ship only with an extension release, so the popup offers no online update on these sites.
+Every supported site can receive its own page-locator fixes through the single online catalog
+(D14 in [remote/DECISIONS.md](../remote/DECISIONS.md)). The shared **Online updates**
+setting governs automatic requests; manual checks remain available while it is off. Its host file
+carries `site.locators`, while official plugins, CSS, identity and interaction
+protocols stay packaged. Gemini Enterprise uses Gemini profiles and guards; both
+AI Studio hosts use AI Studio profiles.
+The page takes one resolved profile snapshot at startup; new fixes or disabling
+updates apply after a user refresh, without automatic reload or native remount.
 
 ### Accounts and navigation
 

@@ -4,18 +4,11 @@
  */
 import { normalizeText } from '@/core/utils/text';
 
+import { aistudioPackagedSelector, aistudioPackagedList } from './aistudioLocatorReads';
 import { parseDragPayload } from './dragPayload';
 import type { DragData } from './types';
 
-const PROMPT_LINK_SELECTORS = [
-  'a[href^="/prompts/"]',
-  'a[href^="/u/"][href*="/prompts/"]',
-  'a[href*="://aistudio.google.com/prompts/"]',
-  'a[href*="://aistudio.google.com/u/"][href*="/prompts/"]',
-  'a[href*="://aistudio.google.cn/prompts/"]',
-  'a[href*="://aistudio.google.cn/u/"][href*="/prompts/"]',
-];
-export const PROMPT_LINK_SELECTOR = PROMPT_LINK_SELECTORS.join(', ');
+export const PROMPT_LINK_SELECTOR = aistudioPackagedSelector('history.links');
 
 /** Drag data for a prompt the page links to. */
 export type PromptDragData = DragData & { conversationId: string };
@@ -106,8 +99,9 @@ export function extractPromptId(anchor: HTMLAnchorElement): string {
 function extractPromptTitle(anchor: HTMLAnchorElement | null): string | null {
   if (!anchor) return null;
   return (
-    normalizeText(anchor.getAttribute('aria-label')) ||
-    normalizeText(anchor.getAttribute('title')) ||
+    aistudioPackagedList('history.titleAttributes')
+      .map((attribute) => normalizeText(anchor.getAttribute(attribute)))
+      .find(Boolean) ||
     normalizeText(anchor.textContent) ||
     null
   );
@@ -139,7 +133,7 @@ export function collectNativePromptTitles(): Map<string, string> {
     const promptId = extractPromptIdFromHref(anchorHref(anchor));
     const title = promptId ? extractPromptTitle(anchor) : null;
     if (!promptId || !title) return;
-    const tier = anchor.classList.contains('prompt-link') ? preferred : titles;
+    const tier = anchor.matches(aistudioPackagedSelector('history.preferred')) ? preferred : titles;
     if (!tier.has(promptId)) tier.set(promptId, title);
   });
   preferred.forEach((title, promptId) => titles.set(promptId, title));

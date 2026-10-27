@@ -17,6 +17,7 @@ import {
   moveCursorToEndOfElement,
   shouldDisableAutoCollapse,
 } from './dom';
+import { findCollapseElement } from './targets';
 
 type LanguageListener = Parameters<typeof browser.storage.onChanged.addListener>[0];
 
@@ -98,10 +99,7 @@ export function expand(container: HTMLElement, moveCursorToEnd: boolean = false)
   container.classList.remove(COLLAPSED_CLASS);
 
   // Auto-focus the Quill editor
-  const editor =
-    container.querySelector('.ql-editor') ||
-    container.querySelector('[contenteditable]') ||
-    container.querySelector('rich-textarea');
+  const editor = findCollapseElement(container, 'inputCollapse.focus');
   if (!(editor instanceof HTMLElement)) return;
 
   const focusEditor = (): void => {

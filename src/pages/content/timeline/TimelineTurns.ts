@@ -1,8 +1,24 @@
+import { GEMINI_PACKAGED_CONTENT } from '@/core/gemini/content/packaged';
+import { getGeminiTurnView, type GeminiTurnView } from '@/core/gemini/selectors';
 import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
-import { hashString } from '@/core/utils/hash';
 import type { TimelineMarker } from '@/features/timeline/types';
 
-import { makeStableTurnId, readServerTurnId } from '../fork/turnId';
+import { readServerTurnId } from '../fork/turnId';
+import { planTimelineTurnIds, type TimelineTurnIdAssignment } from './timelineTurnIds';
+
+interface TextSnapshot {
+  readonly raw: string;
+  readonly summary: string;
+}
+
+export interface TimelineTurnPlan {
+  readonly mountedCount: number;
+  readonly markers: TimelineMarker[];
+  readonly ids: readonly TimelineTurnIdAssignment[];
+  readonly userText: ReadonlyMap<HTMLElement, TextSnapshot>;
+  readonly assistantText: ReadonlyMap<HTMLElement, TextSnapshot>;
+}
+
 /** Accessibility prefixes injected by Gemini's DOM that should be stripped from previews effectively globally. */
 // Anchored to the start, so it only strips leading invisible characters and can
 // never split an emoji sequence in the label body.
@@ -12,7 +28,7 @@ const TURN_LABEL_PREFIXES =
 const VISUALLY_HIDDEN_CLASS_FRAGMENT = 'visually-hidden';
 const INJECTED_UI_SELECTOR = '.gv-fork-btn, .gv-fork-indicator-group';
 const ASSISTANT_PREVIEW_CONTENT_SELECTOR =
-  'message-content, .markdown, .markdown-main-panel, .presented-response-container, .response-content, response-element';
+  GEMINI_PACKAGED_CONTENT['content.timelinePreview'].join(',');
 const ASSISTANT_PREVIEW_EXCLUDED_SELECTOR =
   'model-thoughts, .thoughts-container, .thoughts-content, deep-research-immersive-panel';
 
@@ -20,13 +36,28 @@ const ASSISTANT_PREVIEW_EXCLUDED_SELECTOR =
 export class TimelineTurns {
   private readonly turnIdByIndex = new Map<number, string>();
 
-  collect(
+  plan(
     container: HTMLElement,
     selector: string,
     previousMarkers: readonly TimelineMarker[] = [],
-  ): TimelineMarker[] {
-    let elements = this.filterTopLevel(Array.from(container.querySelectorAll(selector)));
-    if (elements.length === 0) return [];
+    view: GeminiTurnView = getGeminiTurnView(),
+  ): TimelineTurnPlan {
+    const userText = new Map<HTMLElement, TextSnapshot>();
+    const assistantText = new Map<HTMLElement, TextSnapshot>();
+    const rawElements = Array.from(container.querySelectorAll(selector));
+    const mountedCount = rawElements.length;
+    let elements = this.filterTopLevel(rawElements);
+    if (elements.length === 0) {
+      return { mountedCount, markers: [], ids: [], userText, assistantText };
+    }
+    const readText = (element: HTMLElement): string => {
+      const raw = element.textContent || '';
+      const cached = userText.get(element) ?? this.turnTextCache.get(element);
+      if (cached?.raw === raw) return cached.summary;
+      const summary = this.extractTurnText(element);
+      userText.set(element, { raw, summary });
+      return summary;
+    };
     // `offsetTop` is relative to each turn's own positioned wrapper, the same for every turn, so
     // repeated prompts ("continue") collapsed into one marker; measure within the conversation.
     const contentTop = container.getBoundingClientRect().top - container.scrollTop;
@@ -35,20 +66,41 @@ export class TimelineTurns {
     );
     const offsetOf = (element: HTMLElement): number => offsets.get(element) ?? 0;
     const firstOffset = offsetOf(elements[0]);
-    elements = this.dedupeByTextAndOffset(elements, firstOffset, offsetOf);
+    elements = this.dedupeByTextAndOffset(elements, firstOffset, offsetOf, readText);
     const span = Math.max(1, offsetOf(elements[elements.length - 1]) - firstOffset);
-    const summaries = this.collectAssistantSummaries(elements, container);
-    const owners = this.collectExistingTurnIdOwners(elements);
-    const previousOwners = this.collectPreviousMarkerElementsById(previousMarkers);
-    const usedIds = new Set<string>();
-    return elements.map((element, index) => ({
-      id: this.ensureTurnId(element, index, usedIds, owners, previousOwners),
+    const summaries = this.collectAssistantSummaries(elements, container, view, assistantText);
+    const ids = planTimelineTurnIds(
+      elements.map((element) => ({
+        element,
+        serverId: readServerTurnId(element),
+        existingId: element.dataset?.turnId?.trim() || '',
+        summary: readText(element),
+      })),
+      { turnIdByIndex: new Map(this.turnIdByIndex), previousMarkers },
+    );
+    const markers = elements.map((element, index) => ({
+      id: ids[index].id,
       element,
-      summary: this.getTurnTextCached(element),
+      summary: readText(element),
       assistantSummary: summaries.get(element) ?? '',
       baseN: Math.max(0, Math.min(1, (offsetOf(element) - firstOffset) / span)),
       starred: false,
     }));
+    return { mountedCount, markers, ids, userText, assistantText };
+  }
+
+  commit(plan: TimelineTurnPlan): TimelineMarker[] {
+    plan.ids.forEach(({ element, index, id, writeDom }) => {
+      if (writeDom) {
+        try {
+          if (element.dataset) element.dataset.turnId = id;
+        } catch {}
+      }
+      this.turnIdByIndex.set(index, id);
+    });
+    plan.userText.forEach((text, element) => this.turnTextCache.set(element, text));
+    plan.assistantText.forEach((text, element) => this.assistantTextCache.set(element, text));
+    return plan.markers;
   }
   private normalizeText(text: string | null): string {
     try {
@@ -119,13 +171,16 @@ export class TimelineTurns {
 
   private assistantTextCache = new WeakMap<HTMLElement, { raw: string; summary: string }>();
 
-  private getAssistantTextCached(element: HTMLElement): string {
+  private getAssistantTextCached(
+    element: HTMLElement,
+    pending: Map<HTMLElement, TextSnapshot>,
+  ): string {
     const raw = element.textContent || '';
-    const cached = this.assistantTextCache.get(element);
+    const cached = pending.get(element) ?? this.assistantTextCache.get(element);
     if (cached && cached.raw === raw) return cached.summary;
 
     const summary = this.extractAssistantText(element);
-    this.assistantTextCache.set(element, { raw, summary });
+    pending.set(element, { raw, summary });
     return summary;
   }
 
@@ -153,13 +208,15 @@ export class TimelineTurns {
   private collectAssistantSummaries(
     userTurns: HTMLElement[],
     conversationContainer: HTMLElement,
+    view: GeminiTurnView,
+    pending: Map<HTMLElement, TextSnapshot>,
   ): Map<HTMLElement, string> {
     const summaries = new Map<HTMLElement, string>();
     if (!conversationContainer || userTurns.length === 0) return summaries;
 
     const assistantCandidates = Array.from(
       conversationContainer.querySelectorAll<HTMLElement>(
-        getGeminiTurnSelectors('turn.assistant').join(','),
+        getGeminiTurnSelectors('turn.assistant', view).join(','),
       ),
     ).filter(
       (candidate) =>
@@ -187,7 +244,7 @@ export class TimelineTurns {
       if (!assistant) break;
       if (nextUserTurn && !isBefore(assistant, nextUserTurn)) continue;
 
-      const summary = this.getAssistantTextCached(assistant);
+      const summary = this.getAssistantTextCached(assistant, pending);
       if (summary) summaries.set(userTurn, summary);
       assistantIndex += 1;
     }
@@ -221,12 +278,13 @@ export class TimelineTurns {
     elements: HTMLElement[],
     firstTurnOffset: number,
     offsetOf: (element: HTMLElement) => number,
+    readText: (element: HTMLElement) => string,
   ): HTMLElement[] {
     const seen = new Set<string>();
     const out: HTMLElement[] = [];
 
     for (const el of elements) {
-      const normalizedText = this.getTurnTextCached(el);
+      const normalizedText = readText(el);
 
       const offsetFromStart = offsetOf(el) - firstTurnOffset;
       const key = `${normalizedText}|${Math.round(offsetFromStart)}`;
@@ -236,129 +294,5 @@ export class TimelineTurns {
       out.push(el);
     }
     return out;
-  }
-
-  private collectExistingTurnIdOwners(elements: HTMLElement[]): Map<string, HTMLElement[]> {
-    const owners = new Map<string, HTMLElement[]>();
-    elements.forEach((el) => {
-      const id = el.dataset?.turnId?.trim() || '';
-      if (!id) return;
-      const existing = owners.get(id);
-      if (existing) {
-        existing.push(el);
-      } else {
-        owners.set(id, [el]);
-      }
-    });
-    return owners;
-  }
-
-  private collectPreviousMarkerElementsById(
-    markers: readonly TimelineMarker[],
-  ): Map<string, Set<HTMLElement>> {
-    const elementsById = new Map<string, Set<HTMLElement>>();
-    markers.forEach((marker) => {
-      let elements = elementsById.get(marker.id);
-      if (!elements) {
-        elements = new Set<HTMLElement>();
-        elementsById.set(marker.id, elements);
-      }
-      elements.add(marker.element);
-    });
-    return elementsById;
-  }
-
-  private shouldKeepExistingTurnId(
-    id: string,
-    el: HTMLElement,
-    usedIds: Set<string>,
-    existingTurnIdOwners: Map<string, HTMLElement[]>,
-    previousMarkerElementsById: Map<string, Set<HTMLElement>>,
-  ): boolean {
-    if (usedIds.has(id)) return false;
-
-    const owners = existingTurnIdOwners.get(id) ?? [];
-    if (owners.length <= 1) return true;
-
-    const previousOwners = previousMarkerElementsById.get(id);
-    if (!previousOwners || previousOwners.size === 0) return owners[0] === el;
-    if (previousOwners.has(el)) return true;
-
-    return !owners.some((owner) => owner !== el && previousOwners.has(owner));
-  }
-
-  private allocateTurnId(
-    el: HTMLElement,
-    index: number,
-    usedIds: Set<string>,
-    existingTurnIdOwners: Map<string, HTMLElement[]>,
-  ): string {
-    const basis = this.getTurnTextCached(el) || `user-${index}`;
-    const candidates = [
-      this.turnIdByIndex.get(index) || '',
-      makeStableTurnId(index),
-      `u-${index}-${hashString(basis)}`,
-    ];
-
-    for (const candidate of candidates) {
-      if (!candidate || usedIds.has(candidate)) continue;
-      if (existingTurnIdOwners.has(candidate)) continue;
-      return candidate;
-    }
-
-    const base = `u-${index}-${hashString(`${basis}|dedupe`)}`;
-    let suffix = 0;
-    let candidate = base;
-    while (usedIds.has(candidate) || existingTurnIdOwners.has(candidate)) {
-      suffix += 1;
-      candidate = `${base}-${suffix}`;
-    }
-    return candidate;
-  }
-
-  private ensureTurnId(
-    el: Element,
-    index: number,
-    usedIds: Set<string>,
-    existingTurnIdOwners: Map<string, HTMLElement[]>,
-    previousMarkerElementsById: Map<string, Set<HTMLElement>>,
-  ): string {
-    const asEl = el as HTMLElement & { dataset?: DOMStringMap & { turnId?: string } };
-
-    // Gemini's response id is the canonical identity. It survives full reloads
-    // and partial DOM windows, unlike every positional fallback.
-    const serverId = readServerTurnId(asEl);
-    if (serverId && !usedIds.has(serverId)) {
-      try {
-        if (asEl.dataset) asEl.dataset.turnId = serverId;
-      } catch {}
-      usedIds.add(serverId);
-      this.turnIdByIndex.set(index, serverId);
-      return serverId;
-    }
-
-    const existingId = asEl.dataset?.turnId?.trim() || '';
-    if (
-      existingId &&
-      this.shouldKeepExistingTurnId(
-        existingId,
-        asEl,
-        usedIds,
-        existingTurnIdOwners,
-        previousMarkerElementsById,
-      )
-    ) {
-      usedIds.add(existingId);
-      this.turnIdByIndex.set(index, existingId);
-      return existingId;
-    }
-
-    const id = this.allocateTurnId(asEl, index, usedIds, existingTurnIdOwners);
-    try {
-      if (asEl.dataset) asEl.dataset.turnId = id;
-    } catch {}
-    usedIds.add(id);
-    this.turnIdByIndex.set(index, id);
-    return id;
   }
 }

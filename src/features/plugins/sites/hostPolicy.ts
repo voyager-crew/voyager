@@ -6,8 +6,8 @@
  *   - static injection: the main content script is declared for these hosts in
  *     `manifest.json`, with matching `host_permissions`, so they never need a
  *     dynamic registration or an optional host grant;
- *   - remote catalog: never. No catalog file is looked up or published for
- *     these hosts (D14, the zero-request promise for Gemini);
+ *   - remote catalog: all supported pages may read locator profiles through
+ *     the shared channel. Native plugins, identity and theme stay packaged;
  *   - plugin theme: never. Gemini and AI Studio keep Voyager's own accent;
  *   - catalog data stores (catalog outline, send times, ...): not theirs.
  *     Voyager's native timeline owns that data here, whether or not the site
@@ -116,11 +116,6 @@ export function packagedSitesForPatterns(patterns: readonly string[]): readonly 
 /** True for gemini.google.com, business.gemini.google, aistudio.google.com/.cn. */
 export function isStaticallyInjectedHost(host: string): boolean {
   return policyForHost(host) !== undefined;
-}
-
-/** False for every packaged host, always: they never touch the remote catalog. */
-export function allowsRemoteCatalog(host: string): boolean {
-  return policyForHost(host) === undefined;
 }
 
 function siteAllowsPluginTheme(siteId: string): boolean {

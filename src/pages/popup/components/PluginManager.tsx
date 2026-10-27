@@ -347,9 +347,7 @@ export function PluginManager({
           );
         })}
 
-        {/* Online-catalog controls. Hidden on hosts that can never have a
-            catalog (Gemini, AI Studio, anything with a port or wildcard), where
-            the switch would promise a check that never runs. */}
+        {/* Online-catalog controls require a concrete HTTPS host without a port or wildcard. */}
         <PluginCatalogControls catalogHost={catalogHost} {...catalog} />
       </CardContent>
     </Card>

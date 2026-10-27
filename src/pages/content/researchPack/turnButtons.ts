@@ -7,18 +7,14 @@
  * mutations, so it cannot fight the copy-as-image button, which keeps itself
  * right before the "more" button.
  */
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/research-pack-packaged.json';
+
+import { resolveResearchActionBars } from './actionTargets';
 import { RESPONSE_HOST_SELECTOR, readSelectionWithin, resolveAnswerElement } from './turnCapture';
 
 export const ADD_BUTTON_CLASS = 'gv-rp-add-btn';
 
-const ACTION_BAR_SELECTORS = [
-  '.buttons-container-v2',
-  '.actions-container-v2',
-  'message-actions',
-  '.message-actions',
-] as const;
-const THOUGHTS_SELECTOR = 'model-thoughts, .thoughts-container, .thoughts-content';
-const DEEP_RESEARCH_PANEL_SELECTOR = 'deep-research-immersive-panel';
+const DEEP_RESEARCH_PANEL_SELECTOR = packaged['researchPack.deepResearch'];
 
 // Material Symbols "playlist_add" (viewBox 0 -960 960 960), inline so it never
 // depends on the page's icon font.
@@ -29,16 +25,6 @@ export interface AddButtonOptions {
   label: string;
   /** `selectedText` is the user's selection inside this answer, or ''. */
   onAdd: (host: HTMLElement, selectedText: string, button: HTMLButtonElement) => void;
-}
-
-/** Gemini's action bar for one answer, ignoring any inside the thinking panel. */
-export function findActionBar(host: HTMLElement): HTMLElement | null {
-  for (const selector of ACTION_BAR_SELECTORS) {
-    for (const bar of Array.from(host.querySelectorAll<HTMLElement>(selector))) {
-      if (!bar.closest(THOUGHTS_SELECTOR)) return bar;
-    }
-  }
-  return null;
 }
 
 function createAddButton(options: AddButtonOptions): HTMLButtonElement {
@@ -88,10 +74,12 @@ function createAddButton(options: AddButtonOptions): HTMLButtonElement {
  */
 export function ensureAddButtons(root: ParentNode, options: AddButtonOptions): number {
   let added = 0;
-  for (const host of Array.from(root.querySelectorAll<HTMLElement>(RESPONSE_HOST_SELECTOR))) {
-    if (host.closest(DEEP_RESEARCH_PANEL_SELECTOR)) continue;
-    if (host.querySelector(`.${ADD_BUTTON_CLASS}`)) continue;
-    const bar = findActionBar(host);
+  const hosts = Array.from(root.querySelectorAll<HTMLElement>(RESPONSE_HOST_SELECTOR)).filter(
+    (host) =>
+      !host.closest(DEEP_RESEARCH_PANEL_SELECTOR) && !host.querySelector(`.${ADD_BUTTON_CLASS}`),
+  );
+  const bars = resolveResearchActionBars(hosts);
+  for (const bar of bars) {
     if (!bar) continue;
     bar.appendChild(createAddButton(options));
     added += 1;

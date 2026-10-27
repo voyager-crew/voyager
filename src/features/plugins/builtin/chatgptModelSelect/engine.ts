@@ -163,20 +163,18 @@ export async function selectModel(
   target: ResolvedTarget,
   /** Where the trigger sits, read afresh: the composer may be mounted anew meanwhile. */
   scopeOf: () => ParentNode,
-  /** The site's trigger marker (`pageHooks.modelPickerTrigger`), else the measured one. */
-  marker?: string,
-  /** The site's effort row marker (`pageHooks.effortControl`), else the measured one. */
+  triggerMarker?: string,
   effortControl?: string,
 ): Promise<Omit<ModelSelectResult, 'previous'> & { previous: ModelSelection }> {
   const awaitTrigger = (): Promise<HTMLElement | null> =>
-    ctx.waitFor(() => findTrigger(scopeOf(), data, marker), {
+    ctx.waitFor(() => findTrigger(scopeOf(), data, triggerMarker), {
       timeoutMs: budget(ctx, TRIGGER_TIMEOUT_MS),
       minGapMs: MIN_GAP_MS,
     });
   /** Whether `button` is no longer the page's trigger (removed, or another took its place). */
   const replaced = (button: HTMLElement): boolean => {
     if (!button.isConnected) return true;
-    const current = findTrigger(scopeOf(), data, marker);
+    const current = findTrigger(scopeOf(), data, triggerMarker);
     return current !== null && current !== button;
   };
   const openWith = async (button: HTMLElement): Promise<HTMLElement | 'replaced' | null> => {

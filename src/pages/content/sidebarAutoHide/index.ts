@@ -1,7 +1,7 @@
 import type { Dispose } from '@/features/plugins/runtime/pluginScope';
 
 import { createSidebarHideController } from './controller';
-import { findSidebarToggle, isSidebarCollapsed } from './sidebarDom';
+import { getSidebarToggleState } from './sidebarDom';
 
 type SidebarHideFeature = 'autoHide' | 'fullHide';
 let controller: ReturnType<typeof createSidebarHideController> | null = null;
@@ -36,7 +36,10 @@ export function acquireSidebarHide(feature: SidebarHideFeature): Dispose {
 export function keepSidebarExpanded(): () => void {
   keepExpandedLocks += 1;
   if (controller) controller.keepExpanded();
-  else if (isSidebarCollapsed()) findSidebarToggle()?.click();
+  else {
+    const { button, collapsed } = getSidebarToggleState();
+    if (collapsed) button?.click();
+  }
 
   let released = false;
   return () => {

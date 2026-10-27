@@ -1,0 +1,89 @@
+{
+  "userTurns": [
+    ".user-query-bubble-with-background",
+    ".user-query-bubble-container",
+    ".user-query-container",
+    "user-query-content .user-query-bubble-with-background",
+    "div[aria-label=\"User message\"]",
+    "article[data-author=\"user\"]",
+    "article[data-turn=\"user\"]",
+    "[data-message-author-role=\"user\"]",
+    "div[role=\"listitem\"][data-user=\"true\"]"
+  ],
+  "assistantTurns": [
+    "[aria-label=\"Gemini response\"]",
+    "[data-message-author-role=\"assistant\"]",
+    "[data-message-author-role=\"model\"]",
+    "article[data-author=\"assistant\"]",
+    "article[data-turn=\"assistant\"]",
+    "article[data-turn=\"model\"]",
+    ".model-response",
+    "model-response",
+    ".response-container",
+    "div[role=\"listitem\"]:not([data-user=\"true\"])"
+  ],
+  "roots": ["#chat-history", "infinite-scroller.chat-history", "chat-window-content", "main"],
+  "assistantElements": {
+    "content": "message-content",
+    "markdown": ".markdown, .markdown-main-panel",
+    "presentedAncestor": ".presented-response-container",
+    "presentedContent": ".presented-response-container, .response-content",
+    "responseElement": "response-element"
+  },
+  "userImages": "user-query-file-preview img, .preview-image",
+  "uploadedFiles": "user-query-file-preview [data-test-id=\"uploaded-file\"]",
+  "filePreviews": "user-query-file-preview .new-file-preview-file",
+  "images": {
+    "imageExport.generatedHosts": [
+      "generated-image",
+      "single-image",
+      ".attachment-container.generated-images"
+    ],
+    "imageExport.preferredImages": ["img.image", "img.hero-image", "img.spark-licensed-portrait"],
+    "imageExport.sourceAnchor": ["a.source"],
+    "imageExport.caption": ["figcaption", ".caption", ".image-caption", ".attribution"],
+    "imageExport.sourceLabel": [".source .label"],
+    "imageExport.youtubeThumbnails": [
+      ".attachment-container.youtube img.thumbnail",
+      "youtube-block img.thumbnail",
+      "single-video img.thumbnail"
+    ],
+    "imageExport.youtubeCard": ["single-video", "youtube-block", ".attachment-container.youtube"],
+    "imageExport.youtubeTitle": [".video-title", "[class*=\"title\"]"],
+    "imageExport.searchHosts": [
+      ".attachment-container.search-images",
+      ".image-container[data-full-size-image-uri]"
+    ]
+  },
+  "canvas": {
+    "canvas.documentEditors": ["immersive-editor"],
+    "canvas.proseMirror": ".ProseMirror",
+    "canvas.documentTitles": [
+      "[data-test-id=\"canvas-title\"]",
+      ".canvas-title",
+      ".immersive-editor-header h1",
+      ".immersive-editor-title",
+      "h1",
+      "h2"
+    ],
+    "canvas.documentTitleInputs": [
+      "input[aria-label*=\"title\" i]",
+      "textarea[aria-label*=\"title\" i]"
+    ],
+    "canvas.codeEditor": "xap-code-editor",
+    "canvas.codeLines": ".view-lines",
+    "canvas.codeLine": ".view-line",
+    "canvas.codeTitle": "h2.title-text",
+    "canvas.codeLanguage": ".xap-monaco-container",
+    "canvas.indicators": ["immersive-entry-chip", "canvas-create-button", "[class*=\"canvas\"]"],
+    "canvas.codePanels": ["code-immersive-panel"]
+  },
+  "title": {
+    "heading": ".gds-label-l, .conversation-title-text, [data-test-id=\"conversation-title\"], h3",
+    "links": "a[href*=\"/app/\"], a[href*=\"/gem/\"]",
+    "active": [
+      "mat-list-item.mdc-list-item--activated [mat-line]",
+      "mat-list-item[aria-current=\"page\"] [mat-line]"
+    ]
+  }
+}

@@ -39,6 +39,7 @@ import {
   loadExportDictionaries,
   readExportLanguage,
 } from './exportLocale';
+import { hasExportSearchImages } from './exportSearchImages';
 import {
   type ExportSelectionConfirmation,
   startExportSelectionSession,
@@ -218,7 +219,7 @@ export function createExportRunner(deps: ExportRunnerDeps): ExportRunner {
     // 1. Find Top Node
     if (state.attempt > 0) {
       logger.debug('[Gemini Voyager] Resuming export... waiting for content load.');
-      await waitForAnyElement(history.userSelectors(), 15000, signal);
+      await waitForAnyElement(history.userSelectors, 15000, signal);
       throwIfExportCancelled(signal);
     }
 
@@ -240,7 +241,10 @@ export function createExportRunner(deps: ExportRunnerDeps): ExportRunner {
       return;
     }
 
-    const fingerprintSelectors = [...history.userSelectors(), ...history.assistantSelectors()];
+    const fingerprintSelectors = history.fingerprintSelectors?.() ?? [
+      ...history.userSelectors(),
+      ...history.assistantSelectors(),
+    ];
     const beforeFingerprint = computeConversationFingerprint(
       document.body,
       fingerprintSelectors,
@@ -393,10 +397,8 @@ export function createExportRunner(deps: ExportRunnerDeps): ExportRunner {
 
         let includeImageSource = true;
         if (state.format === 'markdown') {
-          const hasSearchImages = turnsForExport.some(
-            (turn) =>
-              turn.assistantContent?.html.includes('attachment-container.search-images') ||
-              turn.assistantElement?.querySelector('.attachment-container.search-images') != null,
+          const hasSearchImages = turnsForExport.some((turn) =>
+            hasExportSearchImages(turn, site.id),
           );
           if (hasSearchImages) {
             const sources = await askConfirm<'include' | 'exclude'>({

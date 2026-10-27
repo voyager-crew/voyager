@@ -6,8 +6,7 @@
  * remote adapter on a key it does not know and quietly keeps its bundled
  * selectors; from that release on, the key alone is dropped. So a key newer
  * than the oldest consumer can be published only once that consumer is
- * tolerant. Sites that are never published (Gemini, AI Studio) are not
- * checked: their `site.json` only reaches the build it ships in.
+ * tolerant. Every concrete host is checked, including Gemini Enterprise and AI Studio.
  */
 import { engineSatisfied } from '../semver';
 import { SEMANTIC_KEY_SINCE_VERSION, isSemanticSelectorKey } from './semanticKeys';

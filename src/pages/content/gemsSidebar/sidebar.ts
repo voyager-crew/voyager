@@ -1,9 +1,9 @@
-import { GEMS_NAV_ENTRY_SELECTOR, gemsAnchorMayBeDisturbed, watchGemsAnchor } from './anchorGuard';
+import { gemsAnchorMayBeDisturbed, watchGemsAnchor } from './anchorGuard';
 import { resolveGemHref, type GemMetadata } from './catalog';
+import { findGemsSidebarLocation, type GemsSidebarLocation } from './location';
 import {
   CHEVRON_SVG,
   createGemsSection,
-  findGemsSectionNav,
   gemsSectionMayBeDisturbed,
   setGemsSectionExpanded,
 } from './section';
@@ -29,27 +29,6 @@ export function createGemsSidebarView(
   // Without a native Gems entry the list lives in Voyager's own section after the top nav.
   let injectedSection: HTMLElement | null = null;
   let sectionNav: HTMLElement | null = null;
-
-  function findOverflow(): Element | null {
-    return document.querySelector('[data-test-id="overflow-container"]');
-  }
-
-  /**
-   * Locate the visible Gemini-native Gems nav entry inside the sidebar overflow
-   * container. There are typically two `gem-nav-list-item` elements with this
-   * test id (one in the always-on top nav, one in a hidden alternate layout);
-   * we want the one with non-zero geometry.
-   */
-  function findGemsNavEntry(): HTMLElement | null {
-    const overflow = findOverflow();
-    if (!overflow) return null;
-    const entries = Array.from(overflow.querySelectorAll(GEMS_NAV_ENTRY_SELECTOR));
-    for (const el of entries) {
-      if (!(el instanceof HTMLElement)) continue;
-      if (el.getBoundingClientRect().height > 0) return el;
-    }
-    return null;
-  }
 
   /**
    * Build the inline list element. Returns `null` when there's nothing to show
@@ -158,14 +137,14 @@ export function createGemsSidebarView(
   }
 
   /** Insert / refresh / remove the list based on current state. */
-  function renderSection(gemsEntry: HTMLElement | null = findGemsNavEntry()): void {
+  function renderSection(location: GemsSidebarLocation | null = findGemsSidebarLocation()): void {
+    const gemsEntry = location?.entry ?? null;
     if (getCount() <= 0) {
       cleanupSection();
       return;
     }
 
-    const overflow = gemsEntry?.parentElement ? null : findOverflow();
-    const nav = overflow ? findGemsSectionNav(overflow) : null;
+    const nav = location?.nav ?? null;
     if (!gemsEntry?.parentElement && !nav) {
       // No anchor yet — try again on the next mutation.
       return;
@@ -237,13 +216,13 @@ export function createGemsSidebarView(
    */
   function enforcePosition(): void {
     if (stopped || getCount() <= 0) return;
-    const gemsEntry = findGemsNavEntry();
-    const overflow = gemsEntry?.parentElement ? null : findOverflow();
-    const nav = overflow ? findGemsSectionNav(overflow) : null;
+    const location = findGemsSidebarLocation();
+    const gemsEntry = location?.entry ?? null;
+    const nav = location?.nav ?? null;
     if (!gemsEntry?.parentElement && !nav) return;
 
     if (!injectedList || !injectedList.isConnected) {
-      renderSection(gemsEntry);
+      renderSection(location);
       return;
     }
     if (gemsEntry?.parentElement) placeAfterEntry(gemsEntry, injectedList);
@@ -265,7 +244,7 @@ export function createGemsSidebarView(
   function setupPositionEnforcer(): void {
     if (stopped || getCount() <= 0) return;
 
-    const overflow = findOverflow();
+    const overflow = findGemsSidebarLocation()?.overflow;
     if (!overflow) {
       if (positionRetryTimer === null) {
         positionRetryTimer = window.setTimeout(() => {

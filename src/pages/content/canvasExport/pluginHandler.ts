@@ -8,12 +8,12 @@ import type { TranslationKey } from '@/utils/translations';
 import { convertCanvasDomToMarkdown } from './markdownConverter';
 import {
   CANVAS_MARKDOWN_BUTTON_CLASS,
-  CANVAS_MENU_SELECTOR,
   closeCanvasMenuOverlay,
   findCanvasProseMirrorRoot,
   injectCanvasCopyMarkdownButton,
   navigateCanvasMenu,
   removeCanvasCopyMarkdownButton,
+  resolveCanvasEntryPanels,
   updateCanvasCopyLabel,
 } from './menuInjection';
 
@@ -148,13 +148,9 @@ export function activateGeminiCanvasCopy(scope: PluginScope): void {
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
         if (!(node instanceof HTMLElement)) continue;
-        const closest = node.closest<HTMLElement>(CANVAS_MENU_SELECTOR);
-        if (closest) schedule(closest);
-        node
-          .querySelectorAll<HTMLElement>(CANVAS_MENU_SELECTOR)
-          .forEach((panel) => schedule(panel));
+        resolveCanvasEntryPanels(node).forEach((panel) => schedule(panel));
       }
     }
   });
-  document.querySelectorAll<HTMLElement>(CANVAS_MENU_SELECTOR).forEach((panel) => schedule(panel));
+  resolveCanvasEntryPanels(document).forEach((panel) => schedule(panel));
 }

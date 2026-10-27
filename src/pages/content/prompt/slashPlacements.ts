@@ -12,16 +12,14 @@
  * The records are module-level so `expandAllPromptTokens` can run without a
  * live controller.
  */
-import { createPackageIcon } from '@/core/icons/promptManagerIcons';
 import type { PromptScheme } from '@/features/prompt/PromptSiteAdapter';
 
-import { CHAT_INPUT_SELECTOR, insertTextIntoChatInput } from '../chatInput/index';
+import { insertTextIntoChatInput } from '../chatInput/index';
 import {
   type PromptQuery,
   TOKEN_CLASS,
   TOKEN_SPACER,
   type TokenPrompt,
-  createQueryRange,
   dispatchInput,
   findTextBoundary,
   getInputSelectionOffsets,
@@ -29,8 +27,8 @@ import {
   readText,
   restoreCaretAfterInput,
   restoreCaretAfterPrompt,
-  setCaretAfter,
 } from './slashComposerText';
+import { findSlashTokenInput } from './slashInputTargets';
 import {
   INPUT_PROMPT_SELECTION_CLASS,
   TEXTAREA_HAS_TOKEN_CLASS,
@@ -39,7 +37,13 @@ import {
   createMarkerLayer,
   stripAllMarkers,
 } from './slashMarkers';
-import { applyPromptTokenColor } from './slashTheme';
+import {
+  replaceContentEditableQuery,
+  replaceTextareaQuery,
+  isTextareaPromptOnlyValue,
+  getAtomicPromptGap,
+  findPromptTokenBeforeCaret,
+} from './slashTokenEditing';
 
 type BindPreview = (target: HTMLElement, text: string) => void;
 
@@ -264,63 +268,6 @@ function rememberPrompt(input: HTMLElement, prompt: TokenPrompt, start: number):
   selectedPrompts.set(input, selected);
 }
 
-function isTextareaPromptOnlyValue(inputText: string, selected: SelectedPrompt[]): boolean {
-  return (
-    selected.length === 1 &&
-    selected[0].start === 0 &&
-    inputText === `${selected[0].name}${TOKEN_SPACER}`
-  );
-}
-
-function createPromptToken(
-  prompt: TokenPrompt,
-  bindPreview: BindPreview,
-  scheme: PromptScheme,
-): HTMLSpanElement {
-  const token = document.createElement('span');
-  token.className = TOKEN_CLASS;
-  token.contentEditable = 'false';
-  token.dataset.gvPromptId = prompt.id;
-  token.dataset.gvPromptName = prompt.name!.trim();
-  token.dataset.gvPromptText = prompt.text;
-  if (prompt.gvSourceText) token.dataset.gvPromptSource = prompt.gvSourceText;
-  token.setAttribute('role', 'button');
-  token.setAttribute('aria-label', prompt.name!.trim());
-  // The icon carries no text, so everything that reads this token by its text -
-  // `expandPromptTokens`, `isTextareaPromptOnlyValue`, `readText` - still sees
-  // exactly the prompt's name.
-  token.append(createPackageIcon(14), prompt.name!.trim());
-  applyPromptTokenColor(token, scheme);
-  bindPreview(token, prompt.text);
-  return token;
-}
-
-function replaceContentEditableQuery(
-  query: PromptQuery,
-  prompt: TokenPrompt,
-  bindPreview: BindPreview,
-  scheme: PromptScheme,
-): boolean {
-  const range = createQueryRange(query);
-  if (!range) return false;
-  range.deleteContents();
-  const token = createPromptToken(prompt, bindPreview, scheme);
-  range.insertNode(token);
-  const spacer = document.createTextNode(TOKEN_SPACER);
-  token.after(spacer);
-  setCaretAfter(query.input, spacer);
-  dispatchInput(query.input);
-  return true;
-}
-
-function replaceTextareaQuery(query: PromptQuery, prompt: TokenPrompt): boolean {
-  const textarea = query.input as HTMLTextAreaElement;
-  textarea.focus();
-  textarea.setRangeText(`${prompt.name!.trim()}${TOKEN_SPACER}`, query.start, query.end, 'end');
-  dispatchInput(textarea);
-  return true;
-}
-
 /**
  * Carry an edit to every place the send path might read it from.
  *
@@ -393,7 +340,7 @@ function expandPromptTokens(input?: HTMLElement | null): void {
   }
   for (const token of tokens) {
     const body = token.dataset.gvPromptText || token.textContent || '';
-    const tokenInput = input || token.closest<HTMLElement>(CHAT_INPUT_SELECTOR);
+    const tokenInput = input || findSlashTokenInput(token);
     if (!tokenInput) continue;
     const range = document.createRange();
     range.selectNode(token);
@@ -483,37 +430,6 @@ function refreshPromptStarts(
       );
     }
   }
-}
-
-function getAtomicPromptGap(range: Range): string | null {
-  const contents = range.cloneContents();
-  if (contents.querySelector('*')) return null;
-  const gap = contents.textContent || '';
-  return gap === '' || gap === TOKEN_SPACER ? gap : null;
-}
-
-function findPromptTokenBeforeCaret(
-  input: HTMLElement,
-  promptId: string,
-  startOffset: number,
-  caretRange: Range,
-): { token: HTMLElement; start: number } | null {
-  const candidates = Array.from(input.querySelectorAll<HTMLElement>(`.${TOKEN_CLASS}`))
-    .filter((candidate) => candidate.dataset.gvPromptId === promptId)
-    .map((token) => {
-      const prefixRange = document.createRange();
-      prefixRange.selectNodeContents(input);
-      prefixRange.setEndBefore(token);
-      return { token, start: prefixRange.toString().length };
-    });
-  const candidatesBeforeCaret = candidates.filter(({ token }) => {
-    const tokenRange = document.createRange();
-    tokenRange.selectNode(token);
-    return tokenRange.compareBoundaryPoints(Range.END_TO_END, caretRange) <= 0;
-  });
-  const exact = candidatesBeforeCaret.find((candidate) => candidate.start === startOffset);
-  if (exact) return exact;
-  return candidatesBeforeCaret.sort((left, right) => right.start - left.start)[0] || null;
 }
 
 function handlePromptBackspace(input: HTMLElement): PromptBackspaceResult | null {
@@ -612,7 +528,7 @@ function handlePromptBackspace(input: HTMLElement): PromptBackspaceResult | null
 export function expandAllPromptTokens(): void {
   const inputs = new Set<HTMLElement>();
   document.querySelectorAll<HTMLElement>(`.${TOKEN_CLASS}`).forEach((token) => {
-    const input = token.closest<HTMLElement>(CHAT_INPUT_SELECTOR);
+    const input = findSlashTokenInput(token);
     if (input) inputs.add(input);
   });
   for (const input of inputs) expandPromptTokens(input);

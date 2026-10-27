@@ -14,6 +14,7 @@ import type { FoldersSection } from '@/features/plugins/sites/sections/foldersDa
 import { HideArchivedSetting } from '@/pages/content/folder/aistudioHideArchived';
 import { LibraryPage } from '@/pages/content/folder/aistudioLibraryPage';
 import { clearArchivedRows, isLibraryPath } from '@/pages/content/folder/aistudioLibraryTable';
+import { readAIStudioHistoryRoot } from '@/pages/content/folder/aistudioLocatorReads';
 import {
   bindPromptDragSources,
   hasStoredPrompts,
@@ -158,7 +159,7 @@ export class AIStudioFoldersView implements AIStudioFolderView {
     const isLibraryPage = isLibraryPath();
     const mountSignal = await waitForPanelAnchor(this.dom.nav, this.lifetime.signal);
     if (this.lifetime.signal.aborted) return;
-    this.historyRoot = document.querySelector<HTMLElement>('ms-prompt-history-v3');
+    this.historyRoot = readAIStudioHistoryRoot();
     if (!mountSignal) return;
     document.documentElement.classList.add('gv-aistudio-root');
     await this.session.load();

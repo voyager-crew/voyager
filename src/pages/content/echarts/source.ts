@@ -458,27 +458,6 @@ export const parseEChartsOption = async (code: string): Promise<Record<string, u
   return null;
 };
 
-export function getCodeBlockLanguage(codeEl: Element): string | null {
-  const codeBlock = codeEl.closest('.code-block, code-block');
-  if (!codeBlock) return null;
-  const decoration = codeBlock.querySelector('.code-block-decoration');
-  if (!decoration) return null;
-  const langSpan = decoration.querySelector(':scope > span');
-  const language = langSpan?.textContent?.trim().toLowerCase();
-  return language || null;
-}
-
-export function isEChartsLanguageEligible(codeEl: Element): boolean {
-  const language = getCodeBlockLanguage(codeEl);
-  return (
-    !language ||
-    language === 'echarts' ||
-    language === 'echart' ||
-    language === 'chart' ||
-    isGenericLanguageLabel(language)
-  );
-}
-
 /**
  * Whether a code block is an ECharts option, from its language label
  * (lowercase, null when the block has none) and its source. Shared by Gemini

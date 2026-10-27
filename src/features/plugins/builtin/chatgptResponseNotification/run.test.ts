@@ -2,6 +2,8 @@
 // @vitest-environment-options { "url": "https://chatgpt.com/c/conv-1" }
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { initializeSiteSelectors } from '@/core/selectors';
+
 import { chatgptAdapter } from '../../sites/adapters/chatgpt';
 import { createChatGptResponseNotificationRun } from './run';
 
@@ -13,6 +15,7 @@ vi.mock('@/pages/content/responseNotification/foregroundCompletionToast', () => 
 
 let stopRun: (() => void) | null = null;
 let turnCount = 0;
+let stopSelectors: (() => void) | undefined;
 
 function setPageState(visibility: 'visible' | 'hidden', focused: boolean): void {
   Object.defineProperty(document, 'visibilityState', { value: visibility, configurable: true });
@@ -145,6 +148,8 @@ describe('ChatGPT response completion notification', () => {
   afterEach(() => {
     stopRun?.();
     stopRun = null;
+    stopSelectors?.();
+    stopSelectors = undefined;
     vi.useRealTimers();
     vi.restoreAllMocks();
     document.body.innerHTML = '';
@@ -261,8 +266,16 @@ describe('ChatGPT response completion notification', () => {
     expect(notifyCalls()).toHaveLength(0);
   });
 
-  it('reads replies through the site adapter it is given', async () => {
+  it('ON without an accepted repair still notifies from the bundled reply', async () => {
     const page = mountPage();
+    const selectors = initializeSiteSelectors('chatgpt', {
+      host: 'chatgpt.com',
+      doc: document,
+      lifetime: new AbortController().signal,
+      read: async () => null,
+    });
+    stopSelectors = selectors.stop;
+    await selectors.ready;
     const adapter = {
       ...chatgptAdapter,
       selectors: { ...chatgptAdapter.selectors, assistantTurn: '[data-redesigned-reply]' },
@@ -274,7 +287,7 @@ describe('ChatGPT response completion notification', () => {
     const stop = showStop(page.form);
     await settle(1000);
     const reply = rendered(document.createElement('div'));
-    reply.setAttribute('data-redesigned-reply', '');
+    reply.setAttribute('data-chatgpt-selection-message-id', 'verified-reply');
     reply.textContent = 'OK';
     turn.append(reply);
     showActions(turn);

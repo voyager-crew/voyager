@@ -3,7 +3,6 @@
 // changes, and hidden while a fullscreen Canvas needs the corner.
 import {
   type AvoidanceContext,
-  CANVAS_OWNER_SELECTOR,
   type MeasuredControls,
   type ToolbarSpot,
   classifyAvoidanceMutations,
@@ -14,13 +13,18 @@ import {
 } from './toolbarAvoidance';
 import { attachToolbarDrag } from './toolbarDrag';
 import { type ToolbarOcclusion, detectToolbarOcclusion } from './toolbarOcclusion';
+import {
+  bundledExportLayoutData,
+  exportLayoutData,
+  readExportLayout,
+  toolbarTurnSelector,
+} from './toolbarTargets';
 
 export const RIGHT_OFFSET_PROPERTY = '--gv-persistent-export-right';
 const HIDDEN_CLASS = 'gv-hidden';
 const DRAGGING_CLASS = 'gv-persistent-export-toolbar--dragging';
 /** Steps under a host dialog's backdrop instead of floating over the dimmed page. */
 const UNDER_MODAL_CLASS = 'gv-persistent-export-toolbar--under-modal';
-const INACTIVE_CANVAS_SELECTOR = 'deep-research-immersive-panel, [hidden], [aria-hidden="true"]';
 /**
  * Least time between re-measurements started by unlabeled controls appearing.
  * Those also stream in with replies and sidebar rows, and each re-measure
@@ -40,7 +44,8 @@ const FALLBACK_SIZE = { width: 80, height: 36 };
 export type ToolbarPlacementOptions = {
   /** The element the user drags; the toolbar's button. */
   handle: HTMLElement;
-  turnSelector: string;
+  /** The site's own turns (`siteTurnSelector`), added to its layout data's `turns`. */
+  siteTurnSelector?: string;
   /** The user dropped the toolbar: the spot to remember, or null when it snapped back to the dock. */
   onSpotChange: (spot: ToolbarSpot | null) => void;
 };
@@ -77,7 +82,20 @@ export function startToolbarPlacement(
   };
   let size = FALLBACK_SIZE;
   let appliedOffset = root.style.getPropertyValue(RIGHT_OFFSET_PROPERTY);
-  const context = (): AvoidanceContext => ({ turnSelector: options.turnSelector, spot });
+  // One layout read session per measurement: each remote field is proved at most once.
+  const context = (): AvoidanceContext => {
+    const layout = exportLayoutData(root);
+    return {
+      layout,
+      turnSelector: toolbarTurnSelector(layout.turns, options.siteTurnSelector),
+      spot,
+    };
+  };
+  /** The last measurement's turns, so mutation filtering skips the same turns it ignored. */
+  let turnSelector = toolbarTurnSelector(
+    bundledExportLayoutData(root).turns,
+    options.siteTurnSelector,
+  );
 
   const applyRight = (offset: number) => {
     const next = `${offset}px`;
@@ -124,9 +142,11 @@ export function startToolbarPlacement(
       return;
     }
     applyTop(spot ? clampTop(spot.top, measureSize().height) : null);
+    const current = context();
+    turnSelector = current.turnSelector;
     const { offset, watched, hidden, canvas, rowHosts, occluders } = measureTopRightControls(
       root,
-      context(),
+      current,
     );
     const during = occluders.length > 0 ? detectToolbarOcclusion(root, occluders) : null;
     if (during) {
@@ -137,11 +157,18 @@ export function startToolbarPlacement(
     // Fullscreen Canvas puts Collapse under this pill; its own Export menu remains available.
     root.classList.toggle(
       HIDDEN_CLASS,
-      canvas.some(
-        (editor) =>
-          editor.closest(CANVAS_OWNER_SELECTOR)?.matches('immersive-panel') &&
-          !editor.closest(INACTIVE_CANVAS_SELECTOR),
-      ),
+      canvas.some((editor) => {
+        const owner = readExportLayout('canvasOwner', (selector) => editor.closest(selector), root);
+        return (
+          !!owner &&
+          !!readExportLayout(
+            'fullscreenCanvas',
+            (selector) => (owner.matches(selector) ? owner : null),
+            root,
+          ) &&
+          !readExportLayout('inactiveCanvas', (selector) => editor.closest(selector), root)
+        );
+      }),
     );
     last = { watched, hidden, canvas };
     measured = indexMeasuredControls(watched, hidden, canvas);
@@ -187,7 +214,7 @@ export function startToolbarPlacement(
 
   const observer = new MutationObserver((mutations) => {
     if (frameId !== null) return;
-    const trigger = classifyAvoidanceMutations(mutations, root, measured, options.turnSelector);
+    const trigger = classifyAvoidanceMutations(mutations, root, measured, turnSelector);
     if (trigger !== 'none') onTrigger(trigger);
   });
   observer.observe(document.body, {

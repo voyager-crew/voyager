@@ -7,6 +7,15 @@ import {
   resolveEChartsExportContainer,
 } from '@/pages/content/echarts/exportBridge';
 
+import {
+  DEFAULT_EXPORT_CODE_PROFILE,
+  cloneExportCodeProfile,
+  closestExportCodeHost,
+  exportCodeHosts,
+  firstExportCodeHost,
+  matchesExportCodeHost,
+  type ExportCodeProfile,
+} from './exportCodeProfile';
 import { escapeHtml, normalizeText, stripExportArtifacts } from './exportDomPolicy';
 
 const MERMAID_WRAPPER_SELECTOR = '.gv-mermaid-wrapper';
@@ -82,12 +91,15 @@ export function echartsExportHtml(diagram: HTMLElement): string | null {
   }
 }
 
-function extractMermaidContent(wrapper: HTMLElement): { html: string; text: string } | null {
+function extractMermaidContent(
+  wrapper: HTMLElement,
+  profile: ExportCodeProfile,
+): { html: string; text: string } | null {
   const renderedSvg = wrapper.querySelector<SVGSVGElement>(MERMAID_RENDERED_SVG_SELECTOR);
   const lightExportSvg = wrapper
     .querySelector<HTMLTemplateElement>(MERMAID_LIGHT_EXPORT_TEMPLATE_SELECTOR)
     ?.content.querySelector<SVGSVGElement>('svg');
-  const codeBlock = wrapper.querySelector<HTMLElement>('code-block, .code-block');
+  const codeBlock = firstExportCodeHost(wrapper, profile);
   const codeContent = codeBlock ? extractCodeBlock(codeBlock, 'mermaid') : { html: '', text: '' };
   const renderedTheme = wrapper.getAttribute(MERMAID_THEME_ATTRIBUTE);
   const svg =
@@ -98,9 +110,12 @@ function extractMermaidContent(wrapper: HTMLElement): { html: string; text: stri
   return codeContent.text ? codeContent : null;
 }
 
-function extractWavedromContent(wrapper: HTMLElement): { html: string; text: string } | null {
+function extractWavedromContent(
+  wrapper: HTMLElement,
+  profile: ExportCodeProfile,
+): { html: string; text: string } | null {
   const renderedSvg = wrapper.querySelector<SVGSVGElement>(WAVEDROM_RENDERED_SVG_SELECTOR);
-  const codeBlock = wrapper.querySelector<HTMLElement>('code-block, .code-block');
+  const codeBlock = firstExportCodeHost(wrapper, profile);
   const codeContent = codeBlock ? extractCodeBlock(codeBlock, 'wavedrom') : { html: '', text: '' };
 
   if (renderedSvg) return { html: waveDromExportHtml(renderedSvg), text: codeContent.text };
@@ -111,11 +126,12 @@ function extractWavedromContent(wrapper: HTMLElement): { html: string; text: str
 function extractEchartsContent(
   wrapper: HTMLElement,
   renderedWrapper: HTMLElement = wrapper,
+  profile: ExportCodeProfile = DEFAULT_EXPORT_CODE_PROFILE,
 ): { html: string; text: string } | null {
   const diagram =
     resolveEChartsExportContainer(renderedWrapper) ??
     renderedWrapper.querySelector<HTMLElement>(ECHARTS_RENDERED_DIAGRAM_SELECTOR);
-  const codeBlock = wrapper.querySelector<HTMLElement>('code-block, .code-block');
+  const codeBlock = firstExportCodeHost(wrapper, profile);
   const codeContent = codeBlock ? extractCodeBlock(codeBlock, 'echarts') : { html: '', text: '' };
 
   const html = diagram ? echartsExportHtml(diagram) : null;
@@ -124,8 +140,11 @@ function extractEchartsContent(
 }
 
 /** Keep hidden diagram sources and nested code shells out of the shared DOM-order walk. */
-export function findExportCodeBlocks(container: Element): HTMLElement[] {
-  const selector = `${MERMAID_WRAPPER_SELECTOR}, ${WAVEDROM_WRAPPER_SELECTOR}, ${ECHARTS_WRAPPER_SELECTOR}, code-block, .code-block`;
+export function findExportCodeBlocks(
+  container: Element,
+  profile: ExportCodeProfile = DEFAULT_EXPORT_CODE_PROFILE,
+): HTMLElement[] {
+  const selector = `${MERMAID_WRAPPER_SELECTOR}, ${WAVEDROM_WRAPPER_SELECTOR}, ${ECHARTS_WRAPPER_SELECTOR}, ${profile.blocks}`;
   const elements = [
     ...(container.matches(selector) ? [container as HTMLElement] : []),
     ...Array.from(container.querySelectorAll<HTMLElement>(selector)),
@@ -141,13 +160,15 @@ export function findExportCodeBlocks(container: Element): HTMLElement[] {
     if (element.matches(ECHARTS_WRAPPER_SELECTOR)) {
       return true;
     }
+    if (profile.acceptedHosts && !matchesExportCodeHost(element, profile)) return false;
     if (
       element.closest(
         `${MERMAID_WRAPPER_SELECTOR}, ${WAVEDROM_WRAPPER_SELECTOR}, ${ECHARTS_WRAPPER_SELECTOR}`,
       )
     )
       return false;
-    if (element.parentElement?.closest('code-block, .code-block')) return false;
+    if (element.parentElement && closestExportCodeHost(element.parentElement, profile))
+      return false;
     return true;
   });
 }
@@ -172,7 +193,10 @@ export function extractCodeBlock(
   };
 }
 
-export function extractCodeFromCodeElement(codeEl: HTMLElement): { html: string; text: string } {
+export function extractCodeFromCodeElement(
+  codeEl: HTMLElement,
+  profile: ExportCodeProfile = DEFAULT_EXPORT_CODE_PROFILE,
+): { html: string; text: string } {
   const code = codeEl.textContent || '';
   // Try to infer language from class names like "language-python"
   let language = '';
@@ -182,7 +206,7 @@ export function extractCodeFromCodeElement(codeEl: HTMLElement): { html: string;
     language = langMatch[1];
   } else {
     // Try to find a nearby header label inside a surrounding code-block component
-    const parentBlock = codeEl.closest('code-block') as HTMLElement | null;
+    const parentBlock = closestExportCodeHost(codeEl, profile, true);
     if (parentBlock) {
       const label = parentBlock.querySelector('.code-block-decoration');
       if (label) {
@@ -207,10 +231,12 @@ export function readDrawnDiagramBlock(element: Element): { html: string; text: s
 
 export function extractExportCodeBlock(
   element: HTMLElement,
+  profile: ExportCodeProfile = DEFAULT_EXPORT_CODE_PROFILE,
 ): { html: string; text: string } | null {
-  if (element.matches(MERMAID_WRAPPER_SELECTOR)) return extractMermaidContent(element);
-  if (element.matches(WAVEDROM_WRAPPER_SELECTOR)) return extractWavedromContent(element);
-  if (element.matches(ECHARTS_WRAPPER_SELECTOR)) return extractEchartsContent(element);
+  if (element.matches(MERMAID_WRAPPER_SELECTOR)) return extractMermaidContent(element, profile);
+  if (element.matches(WAVEDROM_WRAPPER_SELECTOR)) return extractWavedromContent(element, profile);
+  if (element.matches(ECHARTS_WRAPPER_SELECTOR))
+    return extractEchartsContent(element, element, profile);
   return readDrawnDiagramBlock(element) ?? extractCodeBlock(element);
 }
 
@@ -229,6 +255,7 @@ function replaceWithHtml(element: Element, html: string): void {
 export function serializeListHtml(
   element: HTMLElement,
   readHostCodeBlock?: (block: HTMLElement) => string | null,
+  liveProfile: ExportCodeProfile = DEFAULT_EXPORT_CODE_PROFILE,
 ): string {
   const liveEchartsWrappers = Array.from(
     element.querySelectorAll<HTMLElement>(ECHARTS_WRAPPER_SELECTOR),
@@ -238,6 +265,7 @@ export function serializeListHtml(
   const ownedSelector = `[${DIAGRAM_OWNER_ATTR}]`;
   const liveDiagramBlocks = Array.from(element.querySelectorAll<HTMLElement>(ownedSelector));
   const cleanList = element.cloneNode(true) as HTMLElement;
+  const profile = cloneExportCodeProfile(element, cleanList, liveProfile);
   const clonedDiagramBlocks = Array.from(cleanList.querySelectorAll<HTMLElement>(ownedSelector));
   stripExportArtifacts(cleanList);
   // After stripping, which would drop the <style> inside a drawn SVG; before the
@@ -248,7 +276,7 @@ export function serializeListHtml(
     if (drawn && cleanList.contains(clone)) replaceWithHtml(clone, drawn.html);
   });
   cleanList.querySelectorAll<HTMLElement>(MERMAID_WRAPPER_SELECTOR).forEach((wrapper) => {
-    const content = extractMermaidContent(wrapper);
+    const content = extractMermaidContent(wrapper, profile);
     if (!content) return;
 
     const replacement = document.createElement('div');
@@ -258,7 +286,7 @@ export function serializeListHtml(
     }
   });
   cleanList.querySelectorAll<HTMLElement>(WAVEDROM_WRAPPER_SELECTOR).forEach((wrapper) => {
-    const content = extractWavedromContent(wrapper);
+    const content = extractWavedromContent(wrapper, profile);
     if (!content) return;
 
     const replacement = document.createElement('div');
@@ -268,7 +296,7 @@ export function serializeListHtml(
     }
   });
   cleanList.querySelectorAll<HTMLElement>(ECHARTS_WRAPPER_SELECTOR).forEach((wrapper, index) => {
-    const content = extractEchartsContent(wrapper, liveEchartsWrappers[index] ?? wrapper);
+    const content = extractEchartsContent(wrapper, liveEchartsWrappers[index] ?? wrapper, profile);
     if (!content) return;
 
     const replacement = document.createElement('div');
@@ -277,14 +305,15 @@ export function serializeListHtml(
       wrapper.replaceWith(replacement.firstElementChild);
     }
   });
-  cleanList.querySelectorAll<HTMLElement>('code-block, .code-block').forEach((codeBlock) => {
+  exportCodeHosts(cleanList, profile).forEach((codeBlock) => {
+    if (profile.acceptedHosts && !matchesExportCodeHost(codeBlock, profile)) return;
     if (
       codeBlock.closest(
         `${MERMAID_WRAPPER_SELECTOR}, ${WAVEDROM_WRAPPER_SELECTOR}, ${ECHARTS_WRAPPER_SELECTOR}`,
       )
     )
       return;
-    if (codeBlock.parentElement?.closest('code-block, .code-block')) return;
+    if (codeBlock.parentElement && closestExportCodeHost(codeBlock.parentElement, profile)) return;
 
     const content = extractCodeBlock(codeBlock);
     const replacement = document.createElement('div');

@@ -1,0 +1,51 @@
+[
+  [
+    "site.json",
+    {
+      "id": "deepseek",
+      "matches": ["https://chat.deepseek.com/*"],
+      "theme": {
+        "hostSelector": "body",
+        "lightSelector": "body.light",
+        "darkSelector": "body.dark"
+      },
+      "brandColor": "#4d6bfe",
+      "capabilities": ["chat", "composer", "darkMode"],
+      "conversationIdPattern": "^/a/chat/s/([^/?#]+)",
+      "export": {
+        "version": 1,
+        "read": "virtual",
+        "messageKey": "data-virtual-list-item-key"
+      },
+      "folders": {
+        "format": 1,
+        "sidebar": "div:not(.ds-scroll-area):has(> .ds-scroll-area a[href^=\"/a/chat/s/\"]:not(.ds-virtual-list *))",
+        "rows": {
+          "row": "a[href^=\"/a/chat/s/\"]",
+          "drag": "link"
+        },
+        "mount": {
+          "anchors": [
+            {
+              "id": "above-history",
+              "steps": [
+                {
+                  "find": ".ds-scroll-area > :has(> * > a[href^=\"/a/chat/s/\"])"
+                },
+                {
+                  "find": ":has(> a[href^=\"/a/chat/s/\"])"
+                }
+              ]
+            }
+          ]
+        },
+        "page": {
+          "placeholderTitles": {
+            "any": ["New chat", "新对话", "新對話", "新しいチャット", "DeepSeek", "DSeek"]
+          },
+          "titleSuffix": "\\s+-\\s+(?:DeepSeek|DSeek)$"
+        }
+      }
+    }
+  ]
+]

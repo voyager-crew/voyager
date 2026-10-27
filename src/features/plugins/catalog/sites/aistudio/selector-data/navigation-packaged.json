@@ -1,0 +1,10 @@
+{
+  "history.preferred": [".prompt-link"],
+  "history.observe": ["title", "aria-label", "href"],
+  "history.titleAttributes": ["aria-label", "title"],
+  "library.dropLink": ["a[href*=\"/prompts/\"]"],
+  "navigation.anchorSteps": [" > nav > .empty-space", " > nav > .bottom-actions"],
+  "navigation.empty": [":scope > .empty-space"],
+  "navigation.bottom": [":scope > .bottom-actions"],
+  "navigation.expanded": [".expanded"]
+}

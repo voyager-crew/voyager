@@ -1,4 +1,5 @@
 import type { ExtractedContent } from './DOMContentExtractor';
+import type { ExportCodeProfile } from './exportCodeProfile';
 
 export type ExtractedContentFlags = Pick<
   ExtractedContent,
@@ -10,6 +11,10 @@ export type ExtractedContentFlags = Pick<
  * message. A hook that returns true has consumed the element.
  */
 export interface ExportContentDialect {
+  readonly siteId?: string;
+  resolveAssistantContent?: (element: HTMLElement) => HTMLElement;
+  resolveCodeProfile?: (element: HTMLElement) => ExportCodeProfile;
+  getUserTextLines?: (element: HTMLElement) => NodeListOf<HTMLElement>;
   extractUserImage: (element: HTMLElement) => NodeListOf<HTMLImageElement>;
   extractUserText: (
     textLines: NodeListOf<HTMLElement>,
@@ -53,6 +58,7 @@ export interface ExportContentDialect {
     flags: ExtractedContentFlags,
     tagName?: string,
     DEBUG?: boolean,
+    codeProfile?: ExportCodeProfile,
   ) => boolean | undefined;
   extractInlineFormula: (
     el: Element,

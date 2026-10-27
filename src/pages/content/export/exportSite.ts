@@ -107,5 +107,7 @@ export interface ExportSite {
   readonly history?: {
     userSelectors(): string[];
     assistantSelectors(): string[];
+    /** Both sides read from one accepted view before a preload click. */
+    fingerprintSelectors?(): string[];
   };
 }

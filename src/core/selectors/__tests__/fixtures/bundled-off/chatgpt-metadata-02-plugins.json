@@ -1,0 +1,370 @@
+[
+  [
+    "plugins/collapse-long-messages/plugin.json",
+    {
+      "id": "voyager.chatgpt-collapse-long-messages",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "contributes": {
+        "settings": {
+          "maxHeight": {
+            "type": "number",
+            "label": "Collapsed text height (px)",
+            "minLabel": "Shorter",
+            "maxLabel": "Taller",
+            "default": 320,
+            "min": 80,
+            "max": 2000
+          },
+          "startCollapsed": {
+            "type": "boolean",
+            "label": "Collapse long messages initially",
+            "default": true
+          }
+        },
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "collapse",
+            "params": {
+              "target": "userTurn",
+              "maxPx": "{{maxHeight}}",
+              "startCollapsed": "{{startCollapsed}}"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/composer-counter/plugin.json",
+    {
+      "id": "voyager.chatgpt-composer-counter",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "contributes": {
+        "settings": {
+          "metric": {
+            "type": "select",
+            "label": "What to count",
+            "default": "chars",
+            "options": [
+              {
+                "value": "chars",
+                "label": "Characters"
+              },
+              {
+                "value": "words",
+                "label": "Words"
+              },
+              {
+                "value": "cjkChars",
+                "label": "CJK characters"
+              },
+              {
+                "value": "lines",
+                "label": "Lines"
+              }
+            ]
+          }
+        },
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "counterBadge",
+            "params": {
+              "target": "composer",
+              "metric": "{{metric}}"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/ctrl-enter-send/plugin.json",
+    {
+      "id": "voyager.chatgpt-ctrl-enter-send",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "sendShortcut",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/diagram-rendering/plugin.json",
+    {
+      "id": "voyager.chatgpt-diagram-rendering",
+      "engine": ">=1.7.0",
+      "tier": "declarative",
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "requires": {
+        "handlers": ["echarts", "wavedrom"]
+      },
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "echarts",
+            "params": {
+              "language": "[data-markdown-copy=\"exclude\"] .truncate"
+            }
+          },
+          {
+            "op": "native",
+            "handler": "wavedrom",
+            "params": {
+              "language": "[data-markdown-copy=\"exclude\"] .truncate"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/folders/plugin.json",
+    {
+      "id": "voyager.chatgpt-folders",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "requires": {
+        "handlers": ["folders"]
+      },
+      "contributes": {
+        "settings": {
+          "hideFiledChats": {
+            "type": "boolean",
+            "label": "Hide chats already in folders from the sidebar list",
+            "default": false
+          }
+        },
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "folders",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/quote-reply/plugin.json",
+    {
+      "id": "voyager.chatgpt-quote-reply",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "quoteReply",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/reading-typography/plugin.json",
+    {
+      "id": "voyager.chatgpt-reading-typography",
+      "engine": ">=1.4.0",
+      "tier": "declarative",
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "requires": {
+        "semantic": ["assistantTurn"]
+      },
+      "contributes": {
+        "settings": {
+          "fontSizeEnabled": {
+            "type": "boolean",
+            "label": "Custom text size",
+            "default": false
+          },
+          "fontSize": {
+            "type": "number",
+            "enabledBy": "fontSizeEnabled",
+            "label": "Text size (%)",
+            "minLabel": "Small",
+            "maxLabel": "Large",
+            "default": 100,
+            "min": 80,
+            "max": 150
+          },
+          "spacingEnabled": {
+            "type": "boolean",
+            "label": "Custom spacing",
+            "default": false
+          },
+          "lineHeight": {
+            "type": "number",
+            "enabledBy": "spacingEnabled",
+            "label": "Line height (%)",
+            "minLabel": "Tight",
+            "maxLabel": "Loose",
+            "default": 160,
+            "min": 120,
+            "max": 220
+          },
+          "paragraphSpacing": {
+            "type": "number",
+            "enabledBy": "spacingEnabled",
+            "label": "Paragraph spacing (px)",
+            "minLabel": "Tight",
+            "maxLabel": "Loose",
+            "default": 16,
+            "min": 0,
+            "max": 24
+          }
+        },
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ],
+        "domOps": [
+          {
+            "op": "addClass",
+            "target": {
+              "kind": "semantic",
+              "key": "assistantTurn"
+            },
+            "className": "gv-plugin-chatgpt-reading-typography"
+          },
+          {
+            "op": "setAttribute",
+            "target": {
+              "kind": "semantic",
+              "key": "assistantTurn"
+            },
+            "name": "data-gv-font-size",
+            "value": "{{fontSizeEnabled}}"
+          },
+          {
+            "op": "setAttribute",
+            "target": {
+              "kind": "semantic",
+              "key": "assistantTurn"
+            },
+            "name": "data-gv-spacing",
+            "value": "{{spacingEnabled}}"
+          },
+          {
+            "op": "setStyle",
+            "target": "body",
+            "styles": {
+              "--gv-plugin-reading-text-size": "{{fontSize}}%",
+              "--gv-plugin-reading-text-scale": "{{fontSize}}",
+              "--gv-plugin-reading-line-height": "{{lineHeight}}",
+              "--gv-plugin-reading-paragraph-spacing": "{{paragraphSpacing}}px"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/reading-width/plugin.json",
+    {
+      "id": "voyager.chatgpt-reading-width",
+      "engine": ">=1.2.0",
+      "tier": "declarative",
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "contributes": {
+        "settings": {
+          "width": {
+            "type": "number",
+            "label": "Reading width (px)",
+            "minLabel": "Narrower",
+            "maxLabel": "Wider",
+            "default": 768,
+            "min": 600,
+            "max": 1600
+          },
+          "centerConversation": {
+            "type": "boolean",
+            "label": "Center conversation content",
+            "default": false
+          }
+        },
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ],
+        "domOps": [
+          {
+            "op": "addClass",
+            "target": "body",
+            "className": "gv-plugin-chatgpt-readable"
+          },
+          {
+            "op": "setStyle",
+            "target": "body",
+            "styles": {
+              "--gv-plugin-reading-width": "{{width}}px"
+            }
+          },
+          {
+            "op": "setAttribute",
+            "target": "body",
+            "name": "data-gv-center-conversation",
+            "value": "{{centerConversation}}"
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/site-check/plugin.json",
+    {
+      "id": "voyager.chatgpt-site-check",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "siteCheck",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/user-latex/plugin.json",
+    {
+      "id": "voyager.chatgpt-user-latex",
+      "engine": ">=1.7.0",
+      "tier": "declarative",
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "requires": {
+        "handlers": ["userLatex"]
+      },
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "userLatex",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ]
+]

@@ -1,7 +1,15 @@
+import { getSiteSelectorView } from '@/core/selectors';
+import { nativeSiteComposerRoot } from '@/core/services/composer/siteInputReads';
 import { readChatGptConversationPath } from '@/features/folder/sites/chatgptIdentity';
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 import type { SiteAdapter } from '@/features/plugins/types';
 
-import { chatgptAdapter } from '../../sites/adapters/chatgpt';
+import {
+  BUNDLED_NOTIFICATION_SELECTORS,
+  type ChatgptNotificationSelectors,
+  hasNotificationSelectorFixes,
+  notificationSelectorsOf,
+} from '../chatgptNotificationSelectors';
 
 /**
  * Read-only views of the ChatGPT page that the completion run inspects, as
@@ -28,7 +36,7 @@ import { chatgptAdapter } from '../../sites/adapters/chatgpt';
 
 // The `[data-turn-key]` item that holds one prompt and its reply; the adapter
 // only lists it as a key attribute (`turnKeyAttributes`), not as a container.
-const TURN_SELECTOR = '[data-turn-key]';
+const TURN_SELECTOR = chatgptPageData.turnItem;
 // The adapter's `assistantTurn` names the reply by this attribute; its value is the reply id.
 const REPLY_ID_ATTRIBUTE = 'data-chatgpt-selection-message-id';
 const LEGACY_STOP_SELECTOR = '[data-testid="stop-button"]';
@@ -37,27 +45,6 @@ const LEGACY_STOP_SELECTOR = '[data-testid="stop-button"]';
 const STOP_LABEL = /^(?:stop(?: streaming| generating)?|停止(?:生成)?)$/i;
 const ACTION_SCOPE_MAX_PARENT_DEPTH = 6;
 const MAX_TITLE_LENGTH = 80;
-
-interface ChatGptSelectors {
-  readonly userTurn: string;
-  readonly assistantTurn: string;
-  readonly composer: string;
-  readonly composerRoot: string;
-  readonly sendButton: string;
-}
-
-function selectorsOf(adapter: SiteAdapter | null): ChatGptSelectors {
-  // A published override may drop a key; the bundled site.json has them all.
-  const pick = (key: keyof ChatGptSelectors): string =>
-    adapter?.selectors[key] ?? chatgptAdapter.selectors[key];
-  return {
-    userTurn: pick('userTurn'),
-    assistantTurn: pick('assistantTurn'),
-    composer: pick('composer'),
-    composerRoot: pick('composerRoot'),
-    sendButton: pick('sendButton'),
-  };
-}
 
 function isRendered(element: Element): boolean {
   if (!(element instanceof HTMLElement)) return false;
@@ -103,14 +90,21 @@ export interface ChatGptPage {
   getPromptForReply(reply: HTMLElement | null): string;
 }
 
-export function createChatGptPage(adapter: SiteAdapter | null): ChatGptPage {
-  const selectors = selectorsOf(adapter);
-
+function readPage(selectors: ChatgptNotificationSelectors): ChatGptPage {
+  // Cached OFF aliases keep the baseline closest-root checks without new ownership inference.
+  const online = getSiteSelectorView('chatgpt').semanticSource !== 'adapter';
+  const repairedComposer = online && selectors.composer !== BUNDLED_NOTIFICATION_SELECTORS.composer;
+  const repairedRoot =
+    online && selectors.composerRoot !== BUNDLED_NOTIFICATION_SELECTORS.composerRoot;
   /** The roots of the rendered composers; a hidden earlier conversation keeps its own. */
   const composerRoots = (): Element[] => {
     const roots = new Set<Element>();
     for (const composer of queryAll(selectors.composer)) {
-      const root = closest(composer, selectors.composerRoot);
+      if (!(composer instanceof HTMLElement)) continue;
+      const root =
+        repairedComposer && !repairedRoot
+          ? nativeSiteComposerRoot('chatgpt', composer)
+          : closest(composer, selectors.composerRoot);
       if (root && isRendered(composer)) roots.add(root);
     }
     return [...roots];
@@ -150,7 +144,13 @@ export function createChatGptPage(adapter: SiteAdapter | null): ChatGptPage {
     isStopControlTarget: (target) => {
       if (!(target instanceof Element)) return false;
       const button = target.closest('button');
-      if (!button || !closest(button, selectors.composerRoot)) return false;
+      if (
+        !button ||
+        (repairedComposer || repairedRoot
+          ? !composerRoots().some((root) => root.contains(button))
+          : !closest(button, selectors.composerRoot))
+      )
+        return false;
       if (hasStopLabel(button)) return true;
       // Work mode's 选择项目 / 文件 buttons also draw inline svgs, but carry visible text.
       return (
@@ -184,6 +184,21 @@ export function createChatGptPage(adapter: SiteAdapter | null): ChatGptPage {
   };
 }
 
+/** Freeze data at startup; prove each current operation's DOM only when the data differs. */
+export function createChatGptPage(adapter: SiteAdapter | null): ChatGptPage {
+  if (!hasNotificationSelectorFixes()) return readPage(notificationSelectorsOf(adapter));
+  // A page can start before its renamed thread/composer mounts; reprove each current operation.
+  const current = () => readPage(notificationSelectorsOf(adapter));
+  return {
+    hasLabelledStopControl: () => current().hasLabelledStopControl(),
+    isAwaitingReply: () => current().isAwaitingReply(),
+    isStopControlTarget: (target) => current().isStopControlTarget(target),
+    isSendGesture: (event) => current().isSendGesture(event),
+    getLatestReply: () => current().getLatestReply(),
+    getPromptForReply: (reply) => current().getPromptForReply(reply),
+  };
+}
+
 /** Which reply, and what it says: a regenerated reply gets a new id, a new send a new node. */
 export function getReplyIdentity(reply: HTMLElement): string {
   return `${reply.getAttribute(REPLY_ID_ATTRIBUTE) ?? ''}|${normalizeText(reply.textContent)}`;
@@ -207,7 +222,7 @@ function actionScope(reply: HTMLElement): HTMLElement | null {
 export function hasReplyActions(reply: HTMLElement): boolean {
   const scope = actionScope(reply);
   if (!scope) return false;
-  return Array.from(scope.querySelectorAll('button')).some(
+  return Array.from(scope.querySelectorAll(chatgptPageData.replyActions)).some(
     (button) =>
       !reply.contains(button) &&
       !!(reply.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING),

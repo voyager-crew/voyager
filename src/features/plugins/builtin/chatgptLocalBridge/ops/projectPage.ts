@@ -10,6 +10,7 @@ import {
   type ProjectFile,
   type ProjectSummary,
 } from '@/features/bridge/protocol';
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
 import type { LocalizedLabels } from '@/features/plugins/sites/sections/modelPickerData';
 import type { ProjectsSection } from '@/features/plugins/sites/sections/projectsData';
 import type { SiteAdapter } from '@/features/plugins/types';
@@ -179,7 +180,8 @@ export function fileRows(data: ProjectsSection): FileRow[] {
     if (titled.length !== 1 || actions.length !== 1) continue;
     const name = (titled[0].getAttribute('title') ?? '').trim();
     if (!name) continue;
-    const uploadedAt = row.querySelector('time[datetime]')?.getAttribute('datetime') ?? null;
+    const uploadedAt =
+      row.querySelector(chatgptPageData.sourceUploadedAt)?.getAttribute('datetime') ?? null;
     rows.push({ name, uploadedAt, row, actions: actions[0] });
   }
   return rows;
@@ -193,7 +195,7 @@ export function filesOf(rows: readonly FileRow[]): ProjectFile[] {
 export function findUploadInput(data: ProjectsSection): HTMLInputElement | null {
   return (
     Array.from(document.querySelectorAll<HTMLInputElement>(data.sources.fileInput)).find(
-      (input) => !input.closest('form'),
+      (input) => !input.closest(chatgptPageData.composerRootFallback),
     ) ?? null
   );
 }

@@ -1,3 +1,4 @@
+import { GENERATED_IMAGE_PACKAGED, findGeneratedPreviewForButton } from './generatedImageTargets';
 import {
   IMAGE_HEALTH_SAMPLE_SIZE,
   type ImageHealthFingerprint,
@@ -40,14 +41,13 @@ export function createImageHealthMonitor(fetchImage: (url: string) => Promise<HT
   const findPreviewImageForDownloadButton = (
     button: HTMLButtonElement,
   ): HTMLImageElement | null => {
-    const generatedImage = button.closest('generated-image,.generated-image-container');
-    const inlineImage = generatedImage?.querySelector<HTMLImageElement>('img');
+    const inlineImage = findGeneratedPreviewForButton(button);
     if (inlineImage) return inlineImage;
 
-    const dialog = button.closest('expansion-dialog,[role="dialog"],.cdk-overlay-pane');
+    const dialog = button.closest(GENERATED_IMAGE_PACKAGED['generatedImage.dialog']);
     return (
       dialog?.querySelector<HTMLImageElement>(
-        'generated-image img, img[src^="blob:"], img[src*="googleusercontent.com"]',
+        GENERATED_IMAGE_PACKAGED['generatedImage.dialogImage'],
       ) ?? null
     );
   };

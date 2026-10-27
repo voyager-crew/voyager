@@ -1,5 +1,11 @@
+import { remoteGeminiActionsContainer } from '@/core/gemini/sidebar/actions';
+import { GEMINI_PACKAGED_SIDEBAR_SELECTORS } from '@/core/gemini/sidebar/packaged';
+
 import { extractConversationId } from './nativeConversationIds';
-import { getNativeConversationRoot } from './nativeSidebarDom';
+import {
+  isPackagedNativeConversationRow,
+  packagedConversationRoot,
+} from './sidebarConversationQueries';
 
 const ARCHIVED_CLASS = 'gv-conversation-archived';
 const ARCHIVED_ACTIONS_CLASS = 'gv-conversation-archived-actions';
@@ -31,6 +37,7 @@ export class NativeArchivedRows {
 
   /** Applies the setting to a single native conversation row. */
   apply(conv: HTMLElement, pass: object): void {
+    if (!isPackagedNativeConversationRow(conv)) return;
     if (!this.options.isHidingArchived()) {
       if (
         conv.classList.contains(ARCHIVED_CLASS) ||
@@ -78,14 +85,16 @@ export class NativeArchivedRows {
       return this.legacyActionsProbe.present;
     }
     const present =
-      getNativeConversationRoot(this.options.getSidebar()).querySelector(
-        '.conversation-actions-container',
+      packagedConversationRoot(this.options.getSidebar()).querySelector(
+        GEMINI_PACKAGED_SIDEBAR_SELECTORS.actionsContainer,
       ) !== null;
     this.legacyActionsProbe = { present, at: now };
     return present;
   }
 
   private actionsContainerOf(conversationEl: HTMLElement): HTMLElement | null {
+    const repaired = remoteGeminiActionsContainer(conversationEl);
+    if (repaired) return repaired;
     // When no legacy actions container exists anywhere under the conversation
     // root, neither the sibling walk nor the parent querySelector below can
     // match — skip both (issue #753).
@@ -98,13 +107,13 @@ export class NativeArchivedRows {
     while (sibling) {
       if (
         sibling instanceof HTMLElement &&
-        sibling.classList.contains('conversation-actions-container')
+        sibling.matches(GEMINI_PACKAGED_SIDEBAR_SELECTORS.actionsContainer)
       ) {
         return sibling;
       }
       sibling = sibling.nextElementSibling;
     }
 
-    return parent.querySelector<HTMLElement>('.conversation-actions-container');
+    return parent.querySelector<HTMLElement>(GEMINI_PACKAGED_SIDEBAR_SELECTORS.actionsContainer);
   }
 }

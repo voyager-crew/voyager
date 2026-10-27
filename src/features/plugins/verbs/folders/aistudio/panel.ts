@@ -6,8 +6,18 @@
  * `folders` section.
  */
 import { createLibraryIcon } from '@/core/icons/folderIcons';
+import { getBundledSiteSelectorView, getSiteSelectorView } from '@/core/selectors';
 import { AISTUDIO_ROOT_BUCKET_ID } from '@/features/folder/constants';
 import { isLibraryPath } from '@/pages/content/folder/aistudioLibraryTable';
+import {
+  aistudioPackagedList,
+  readAIStudioHistoryRoot,
+} from '@/pages/content/folder/aistudioLocatorReads';
+import { readAIStudioNavigationSlot } from '@/pages/content/folder/aistudioNavigationReads';
+import {
+  readAIStudioNavChild,
+  readAIStudioSidebar,
+} from '@/pages/content/folder/aistudioNavigationReads';
 import type { TreeActions } from '@/pages/content/folder/floatingTree/shared';
 import {
   type FolderHeaderAction,
@@ -17,6 +27,7 @@ import { folderHeaderActions } from '@/pages/content/folder/folderHeader/folderH
 import type { FolderData } from '@/pages/content/folder/types';
 
 import { type PanelSection, mountPanelSection } from '../panelSection';
+import { waitForAIStudioAnchor } from './panelAnchorWait';
 import { openLibraryInApp } from './routes';
 import { AISTUDIO_TREE_CSS, AISTUDIO_TREE_HOST_CLASS, AISTUDIO_TREE_SITE } from './tree';
 
@@ -77,12 +88,40 @@ export function updateLibraryShortcut(root: ParentNode | null): void {
 }
 
 /** Stable insertion anchors: Angular renders the nav shell before its children. */
-function panelAnchorSelector(nav: string): string {
-  return [
-    'ms-prompt-history-v3',
-    `${nav} > nav > .empty-space`,
-    `${nav} > nav > .bottom-actions`,
-  ].join(', ');
+function findPanelAnchor(nav: string): HTMLElement | null {
+  const view = getSiteSelectorView('aistudio');
+  if (
+    ![
+      'navigation.sidebar',
+      'navigation.historyRoot',
+      'navigation.navChild',
+      'navigation.anchorSteps',
+      'navigation.empty',
+      'navigation.bottom',
+    ].some((key) => view.remoteKeys.has(key))
+  ) {
+    // Keep the installed path's single document-order query when there is no online repair.
+    return document.querySelector<HTMLElement>(
+      [
+        ...getBundledSiteSelectorView('aistudio').profiles['navigation.historyRoot'],
+        ...aistudioPackagedList('navigation.anchorSteps').map((step) => `${nav}${step}`),
+      ].join(', '),
+    );
+  }
+  const history = readAIStudioHistoryRoot();
+  const sidebar = readAIStudioSidebar(document, nav);
+  const child = readAIStudioNavChild(sidebar);
+  const anchor =
+    (sidebar ? readAIStudioNavigationSlot(sidebar, 'navigation.anchorSteps') : null) ??
+    (child
+      ? (readAIStudioNavigationSlot(child, 'navigation.empty') ??
+        readAIStudioNavigationSlot(child, 'navigation.bottom'))
+      : null);
+  if (!history) return anchor;
+  if (!anchor) return history;
+  return history.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING
+    ? history
+    : anchor;
 }
 
 /**
@@ -99,11 +138,18 @@ export function insertFolderPanel(
     (historyRoot.parentElement ?? historyRoot).insertAdjacentElement('beforebegin', container);
     return true;
   }
-  const navContent = document.querySelector(nav);
-  const navElement = navContent?.querySelector(':scope > nav') ?? null;
+  const navContent = readAIStudioSidebar(document, nav);
+  const navElement = readAIStudioNavChild(navContent);
+  const preferred =
+    navContent && getSiteSelectorView('aistudio').remoteKeys.has('navigation.anchorSteps')
+      ? readAIStudioNavigationSlot(navContent, 'navigation.anchorSteps')
+      : null;
   const anchor =
-    navElement?.querySelector(':scope > .empty-space') ??
-    navElement?.querySelector(':scope > .bottom-actions');
+    preferred ??
+    (navElement
+      ? (readAIStudioNavigationSlot(navElement, 'navigation.empty') ??
+        readAIStudioNavigationSlot(navElement, 'navigation.bottom'))
+      : null);
   const parent = navElement ?? navContent;
   if (anchor) anchor.insertAdjacentElement('beforebegin', container);
   else if (parent) parent.appendChild(container);
@@ -121,7 +167,7 @@ export function watchPanelMount(
   isMounted: () => boolean,
   onDetached: () => void,
 ): (() => void) | null {
-  const navContent = document.querySelector(nav);
+  const navContent = readAIStudioSidebar(document, nav);
   if (!navContent) return null;
   let lastReinjectAt = 0;
   const observer = new MutationObserver(() => {
@@ -146,26 +192,5 @@ export function waitForPanelAnchor(
   signal: AbortSignal,
   timeoutMs = 10000,
 ): Promise<HTMLElement | null> {
-  const selector = panelAnchorSelector(nav);
-  return new Promise((resolve) => {
-    const found = document.querySelector<HTMLElement>(selector);
-    if (found || signal.aborted) return resolve(signal.aborted ? null : found);
-    let timer = 0;
-    const finish = (anchor: HTMLElement | null) => {
-      observer.disconnect();
-      clearTimeout(timer);
-      signal.removeEventListener('abort', onAbort);
-      resolve(anchor);
-    };
-    const onAbort = () => finish(null);
-    const observer = new MutationObserver(() => {
-      const anchor = document.querySelector<HTMLElement>(selector);
-      if (anchor) finish(anchor);
-    });
-    try {
-      observer.observe(document.body, { childList: true, subtree: true });
-    } catch {}
-    timer = window.setTimeout(() => finish(null), timeoutMs);
-    signal.addEventListener('abort', onAbort, { once: true });
-  });
+  return waitForAIStudioAnchor(() => findPanelAnchor(nav), signal, timeoutMs);
 }

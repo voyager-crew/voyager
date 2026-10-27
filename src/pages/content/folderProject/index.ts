@@ -7,18 +7,21 @@
  */
 import { isImeKeyEvent } from '@/core/services/composer/sendKeys/sendKeyIntent';
 import { StorageKeys } from '@/core/types/common';
+import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/project-packaged.json';
 
 import { findChatInput } from '../chatInput/index';
 import type { GeminiFolderSession } from '../folder/session/geminiFolderSession';
 import { followGeminiSendKey } from '../sendBehavior/followSendKey';
 import { setInputText } from '../utils/inputHelper';
 import { watchRouteChanges } from '../utils/routeWatcher';
+import { resolveProjectInput } from './inputTargets';
 import {
   buildInstructionBlock,
   hasInstructionBlock,
   stripInstructionBlock,
 } from './instructionBlock';
 import { clearNewChatFolder, onNewChatFolder, pendingNewChatFolder } from './pendingFolder';
+import { createPendingProjectSend } from './pendingSend';
 import { type FolderSnapshot, createFolderProjectPicker } from './picker';
 
 /**
@@ -46,31 +49,27 @@ let selectedFolderName: string | null = null;
 let selectedFolderInstructions: string | null = null;
 /** Whose folders the selection came from (`FolderProjectFolders.folderAccount`). */
 let selectedFolderAccount: string | null = null;
+/** The input whose remote read prepared instructions, retained while that composer is connected. */
+let preparedRemoteInput: HTMLElement | null = null;
 /** The page's folder session, once started; it answers whose folders the page shows. */
 let folderSource: FolderProjectFolders | null = null;
 let picker: ReturnType<typeof createFolderProjectPicker> | null = null;
 let lastHref = '';
 let stopRouteWatcher: (() => void) | null = null;
 let ctrlEnterSendEnabled = false;
-let pendingSend = false;
-let pendingSendResetTimer: ReturnType<typeof setTimeout> | null = null;
+const pendingSend = createPendingProjectSend(() => {
+  if (isNewChatPath(window.location.pathname)) clearPreparedInstructions();
+});
 let sendClickListener: ((e: Event) => void) | null = null;
 let sendKeydownListener: ((e: KeyboardEvent) => void) | null = null;
 let sidebarNavClickListener: ((e: Event) => void) | null = null;
 let effectiveSendKey: ReturnType<typeof followGeminiSendKey> | null = null;
 
-const SEND_BUTTON_SELECTOR =
-  'button[aria-label*="Send"], button[aria-label*="send"], ' +
-  'button[data-tooltip*="Send"], button[data-tooltip*="send"], ' +
-  '[data-send-button], .send-button';
+const SEND_BUTTON_SELECTOR = packaged['project.send'].join(', ');
 
 // Sidebar conversation links: /app/<convId>, /u/0/app/<convId>, /gem/<gemId>/<convId>.
 // Used by sidebarNavClickListener to cancel pendingSend before URL change.
 const CONVERSATION_HREF_PATTERN = /\/(u\/\d+\/)?(app|gem\/[^/]+)\/[^/?#]+/;
-
-// pendingSend lifetime — must exceed worst-case first-response latency
-// (PDF/paper analysis can take 30+ s before URL updates).
-const PENDING_SEND_TIMEOUT_MS = 60_000;
 
 // ============================================================================
 // URL helpers
@@ -114,14 +113,18 @@ function readInputText(input: HTMLElement): string {
 }
 
 function clearPendingSendState(): void {
-  if (pendingSendResetTimer !== null) {
-    clearTimeout(pendingSendResetTimer);
-    pendingSendResetTimer = null;
-  }
-  pendingSend = false;
+  pendingSend.clear();
 }
 
-function clearPreparedInstructions(input: HTMLElement | null = findChatInput()): void {
+function clearPreparedInstructions(input?: HTMLElement | null): void {
+  // Gemini can carry the private block into a remounted composer; clean the current draft then.
+  input =
+    input === undefined
+      ? preparedRemoteInput?.isConnected
+        ? preparedRemoteInput
+        : findChatInput()
+      : input;
+  preparedRemoteInput = null;
   if (!input) return;
 
   const currentText = readInputText(input);
@@ -176,27 +179,15 @@ function choiceMayActOnSend(input: HTMLElement | null): boolean {
   return false;
 }
 
-function prepareInputForSend(input: HTMLElement | null): void {
+function prepareInputForSend(input: HTMLElement | null, online: boolean): void {
   if (!input || !selectedFolderInstructions || !selectedFolderName) return;
   if (!selectionBelongsToPage()) return;
 
   const currentText = stripInstructionBlock(readInputText(input));
   const combined = `${buildInstructionBlock(selectedFolderName, selectedFolderInstructions)}${currentText}`;
   setInputText(input, combined);
-}
-
-function schedulePendingSendReset(): void {
-  if (pendingSendResetTimer !== null) {
-    clearTimeout(pendingSendResetTimer);
-  }
-
-  pendingSendResetTimer = setTimeout(() => {
-    if (!pendingSend) return;
-    clearPendingSendState();
-    if (isNewChatPath(window.location.pathname)) {
-      clearPreparedInstructions();
-    }
-  }, PENDING_SEND_TIMEOUT_MS);
+  // A later bundled send owns cleanup too; it must retire the earlier remote editor.
+  preparedRemoteInput = online ? input : null;
 }
 
 /** True when the input has no user text (stray instruction block stripped first). */
@@ -205,10 +196,9 @@ function isInputEmpty(input: HTMLElement | null): boolean {
   return stripInstructionBlock(readInputText(input)).trim() === '';
 }
 
-function markPendingSend(input: HTMLElement | null): void {
-  prepareInputForSend(input);
-  pendingSend = true;
-  schedulePendingSendReset();
+function markPendingSend(input: HTMLElement | null, online = false): void {
+  prepareInputForSend(input, online);
+  pendingSend.begin();
 }
 
 /**
@@ -271,9 +261,12 @@ function setupSendDetection(): void {
   sendClickListener = (e: Event) => {
     if (!selectedFolderId) return;
     const target = e.target as HTMLElement;
-    if (!target.closest(SEND_BUTTON_SELECTOR)) return;
-    const input = findChatInput();
-    if (choiceMayActOnSend(input)) markPendingSend(input);
+    const button = target.closest(SEND_BUTTON_SELECTOR);
+    if (!button) return;
+    const operation = resolveProjectInput(button);
+    const input = operation.value;
+    if (choiceMayActOnSend(input))
+      markPendingSend(input, operation.view.remoteKeys.has('project.inputs'));
   };
 
   sendKeydownListener = (e: KeyboardEvent) => {
@@ -285,7 +278,7 @@ function setupSendDetection(): void {
   // Cancel pendingSend when user clicks a sidebar conversation link, so the
   // resulting URL change isn't misattributed to the current send.
   sidebarNavClickListener = (e: Event) => {
-    if (!pendingSend) return;
+    if (!pendingSend.isPending()) return;
     // Plain left-click only — middle/right/modifier clicks open new tabs and
     // leave the current tab's URL on /app.
     if (!(e instanceof MouseEvent)) return;
@@ -344,7 +337,13 @@ function handleNavigation(folders: FolderProjectFolders, prevPath: string, newPa
 
   // User sent their first message: new-chat → conversation
   // Gate on pendingSend to avoid false assignment when clicking sidebar links
-  if (prevWasNewChat && newConvId && pendingSend && selectionBelongsToPage() && selectedFolderId) {
+  if (
+    prevWasNewChat &&
+    newConvId &&
+    pendingSend.isPending() &&
+    selectionBelongsToPage() &&
+    selectedFolderId
+  ) {
     const title = getConversationTitle(newConvId);
     const { isGem, gemId } = extractGemMetadata(newPath);
     folders.addConversationToFolderFromNative(
@@ -405,6 +404,7 @@ function startURLWatcher(folders: FolderProjectFolders): void {
     },
     loadedFolders: () => snapshotOf(folders),
     currentAccount: folders.folderAccount ? () => folders.folderAccount?.() ?? null : undefined,
+    onAccountChange: folders.onAccountChange?.bind(folders),
     canMount: () => featureInitialized && isNewChatPath(window.location.pathname),
     onSelect: (folder, source, account) => {
       selectedFolderId = folder?.id ?? null;

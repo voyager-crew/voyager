@@ -1,6 +1,8 @@
 import type { ExportContentDialect } from '@/features/export/services/exportContentDialect';
 import type { SiteAdapter } from '@/features/plugins/types';
 
+import type { CanvasContentReader } from '../../canvasContent';
+
 /**
  * How Voyager reads one host's conversation DOM: where turns are, and how
  * their content translates into export content.
@@ -12,6 +14,9 @@ import type { SiteAdapter } from '@/features/plugins/types';
  */
 export interface ExportPlatformAdapter extends ExportContentDialect {
   readonly site: SiteAdapter;
+  /** A compatibility reader can keep its own packaged content and Canvas profiles. */
+  readonly selectAssistantExportElement?: (element: HTMLElement) => HTMLElement;
+  readonly canvas?: CanvasContentReader;
 
   getUserSelectors: () => string[];
   getAssistantSelectors: () => string[];

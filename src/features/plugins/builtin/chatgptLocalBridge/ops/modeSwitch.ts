@@ -1,3 +1,5 @@
+import { chatgptPageData } from '@/features/plugins/builtin/chatgptPageData';
+import chatgptSite from '@/features/plugins/catalog/sites/chatgpt/site.json';
 /**
  * The chat/Work switch of a new chat or project page. Structure first: the
  * site's `pageHooks.modeSwitch` group holding exactly two buttons, in a known
@@ -28,9 +30,9 @@ export interface ModeSwitch {
 
 /** How far up from one button of a text-found pair the other may sit. */
 const PAIR_MAX_DEPTH = 3;
-const HOME_STATE_ATTRIBUTE = 'data-state';
+const HOME_STATE_ATTRIBUTE = chatgptPageData.modeHomeStateAttribute;
 /** The project pair's pressed attribute when the site data has none. */
-const DEFAULT_PRESSED_ATTRIBUTE = 'aria-pressed';
+const DEFAULT_PRESSED_ATTRIBUTE = chatgptSite.pageHooks.modeSwitch.pressedAttribute;
 
 function hooksOf(adapter: SiteAdapter | null): PageHooksSection | null {
   return adapter?.pageHooks ?? null;
@@ -68,9 +70,9 @@ function pressableButtons(
   wanted: readonly string[],
   attribute: string,
 ): HTMLButtonElement[] {
-  return Array.from(root.querySelectorAll<HTMLButtonElement>(`button[${attribute}]`)).filter(
-    (button) => wanted.includes(textOf(button)) && isRendered(button),
-  );
+  return Array.from(
+    root.querySelectorAll<HTMLButtonElement>(`${chatgptPageData.modeButton}[${attribute}]`),
+  ).filter((button) => wanted.includes(textOf(button)) && isRendered(button));
 }
 
 /** The one such button nearest to `anchor`, within a few ancestors; else null. */
@@ -106,9 +108,9 @@ function findLabelledProjectSwitch(hooks: PageHooksSection | null): ModeSwitch |
 
 /** The one rendered button whose whole text is one of `wanted`, else null. */
 function uniqueButton(wanted: readonly string[]): HTMLButtonElement | null {
-  const found = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).filter(
-    (button) => wanted.includes(textOf(button)) && isRendered(button),
-  );
+  const found = Array.from(
+    document.querySelectorAll<HTMLButtonElement>(chatgptPageData.modeButton),
+  ).filter((button) => wanted.includes(textOf(button)) && isRendered(button));
   return found.length === 1 ? found[0] : null;
 }
 

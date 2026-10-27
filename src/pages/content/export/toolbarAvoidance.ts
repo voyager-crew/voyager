@@ -1,7 +1,9 @@
 // Where the persistent export toolbar may sit without covering a host control.
-// Known top-right clusters (Gemini, ChatGPT) are found by selector; every host
-// also gets a hit-test of the toolbar's own row, so controls no selector knows
-// about (Claude's header, its file preview panel) are avoided too.
+// Known top-right clusters are found by the site's export layout data
+// (`toolbarTargets.ts`); every host also gets a hit-test of the toolbar's own
+// row, so controls no selector knows about (Claude's header, its file preview
+// panel) are avoided too.
+import { type ExportLayout, exportLayoutMutationData, readExportLayout } from './toolbarTargets';
 
 export const DEFAULT_RIGHT_OFFSET_PX = 84;
 /** Closest the toolbar may sit to a viewport edge. */
@@ -11,34 +13,6 @@ const TOP_RIGHT_MAX_Y_PX = 96;
 const TOP_RIGHT_MIN_LEFT_RATIO = 0.45;
 /** A hit wider than this share of the viewport is a region (a card, a panel), not a control. */
 const MAX_CONTROL_WIDTH_RATIO = 0.5;
-export const CANVAS_OWNER_SELECTOR = 'inline-preview, immersive-panel';
-export const CANVAS_CONTENT_SELECTOR = 'immersive-editor, code-immersive-panel';
-const CANVAS_STRUCTURE_SELECTOR = `${CANVAS_OWNER_SELECTOR}, ${CANVAS_CONTENT_SELECTOR}`;
-/** Selectors specific to top-bar controls. */
-const TOP_RIGHT_CONTROL_SELECTORS = [
-  'top-bar-actions',
-  '.top-bar-actions',
-  '[data-test-id="top-bar-actions"]',
-  'side-nav-sparkle-button',
-  'side-nav-menu-button',
-  '[data-test-id*="upgrade" i]',
-  '[aria-label*="upgrade" i]',
-  // ChatGPT conversation header: Share / more sit in the same top-right cluster.
-  '#conversation-header-actions',
-  '[data-testid="share-chat-button"]',
-  '[data-testid="conversation-options-button"]',
-].join(',');
-/**
- * Broad substring selectors that also match per-message buttons such as
- * "Copy prompt". Tracking hidden matches of these would put every chat turn's
- * ancestry under watch, so only visible ones count, and never ones inside a
- * conversation turn.
- */
-const TOP_RIGHT_BROAD_SELECTORS = ['[aria-label*="pro" i]', '[aria-label*="advanced" i]'].join(',');
-const TOP_RIGHT_AVOIDANCE_SELECTORS = `${TOP_RIGHT_CONTROL_SELECTORS},${TOP_RIGHT_BROAD_SELECTORS}`;
-/** Conversation turns on Gemini (Angular hosts) and ChatGPT (role attribute). */
-const CONVERSATION_TURN_SELECTOR = 'user-query, model-response, [data-message-author-role]';
-export const INTERACTIVE_SELECTOR = 'button, a[href], [role="button"]';
 /** Voyager's own layers and full-page dialog overlays, which can sit above the host header. */
 export const VOYAGER_SURFACE_SELECTOR = [
   '[data-gv-layer]',
@@ -53,32 +27,31 @@ const ROW_PROBE_STEP_PX = 8;
 const COVERING_RATIO = 0.9;
 const MAX_ROW_SHIFTS = 6;
 
+/** Separate lists in the layout data are one avoidance query. */
+function avoidanceSelector(layout: ExportLayout): string {
+  return `${layout.controls.join(',')},${layout.broadControls.join(',')}`;
+}
+
+/** A host control at `element`, per the site's `interactive` layout data. */
+function closestControl(element: Element, toolbarRoot: HTMLElement): HTMLElement | null {
+  return readExportLayout(
+    'interactive',
+    (selector) => element.closest<HTMLElement>(selector),
+    toolbarRoot,
+  );
+}
+
 /** A spot the user dropped the toolbar on: px from the viewport's right edge and top. */
 export type ToolbarSpot = { right: number; top: number };
 
 export type AvoidanceContext = {
-  /** Conversation turns, whose per-message controls are never avoided (see `turnSelectorFor`). */
+  /** This measurement's read session of the site's layout data (`exportLayoutData`). */
+  layout: ExportLayout;
+  /** Conversation turns, whose per-message controls are never avoided (see `toolbarTurnSelector`). */
   turnSelector: string;
   /** The user's spot; null docks the toolbar in the top-right control area. */
   spot: ToolbarSpot | null;
 };
-
-/**
- * The built-in turn selector plus the host's own. A site selector this
- * browser cannot parse falls back to the built-in. It must match messages
- * only: one that matched a header ancestor would put every header control
- * "inside a turn", switching avoidance off for that site.
- */
-export function turnSelectorFor(siteTurnSelector?: string): string {
-  if (!siteTurnSelector) return CONVERSATION_TURN_SELECTOR;
-  const combined = `${CONVERSATION_TURN_SELECTOR}, ${siteTurnSelector}`;
-  try {
-    document.createDocumentFragment().querySelector(combined);
-    return combined;
-  } catch {
-    return CONVERSATION_TURN_SELECTOR;
-  }
-}
 
 /**
  * Left edge of a visible top-right control; `'host'` for a visible top-band
@@ -90,6 +63,7 @@ function classifyTopRightElement(
   element: Element,
   toolbarRoot: HTMLElement,
   turnSelector: string,
+  controlSelector: string,
 ): number | 'host' | 'hidden' | null {
   if (!(element instanceof HTMLElement)) return null;
   if (element === toolbarRoot || toolbarRoot.contains(element)) return null;
@@ -98,7 +72,9 @@ function classifyTopRightElement(
   if (element.closest(turnSelector)) return null;
   const rect = element.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) {
-    return element.matches(TOP_RIGHT_CONTROL_SELECTORS) ? 'hidden' : null;
+    // Broad matches (`broadControls`) also hit per-message buttons such as
+    // "Copy prompt"; tracking hidden ones would watch every turn's ancestry.
+    return element.matches(controlSelector) ? 'hidden' : null;
   }
   if (rect.bottom <= 0 || rect.top >= TOP_RIGHT_MAX_Y_PX) return null;
   // Some Gemini top-bar hosts span the full viewport. Treating those as
@@ -137,13 +113,15 @@ export function measureTopRightControls(
   const occluders: HTMLElement[] = [];
   const row: RowProbe = { turnSelector: context.turnSelector, rowHosts, occluders };
   let leftMost: number | null = null;
-  const selector = `${TOP_RIGHT_AVOIDANCE_SELECTORS},${CANVAS_CONTENT_SELECTOR}`;
+  const { layout } = context;
+  const controls = layout.controls.join(',');
+  const selector = `${avoidanceSelector(layout)},${layout.canvasContent}`;
   for (const element of Array.from(document.querySelectorAll<HTMLElement>(selector))) {
-    if (element.matches(CANVAS_CONTENT_SELECTOR)) {
+    if (element.matches(layout.canvasContent)) {
       canvas.push(element);
       continue;
     }
-    const left = classifyTopRightElement(element, toolbarRoot, context.turnSelector);
+    const left = classifyTopRightElement(element, toolbarRoot, context.turnSelector, controls);
     if (left === null) continue;
     if (left === 'hidden') {
       hidden.push(element as HTMLElement);
@@ -197,13 +175,16 @@ export function hostStackAt(toolbarRoot: HTMLElement, x: number, y: number): Ele
  * layer with a control painted under it: a host backdrop. A page whose own
  * shell is topmost there has no control under it, so it never counts.
  */
-export function coveringLayer(stack: readonly Element[]): HTMLElement | null {
+export function coveringLayer(
+  stack: readonly Element[],
+  toolbarRoot: HTMLElement,
+): HTMLElement | null {
   const topmost = stack[0];
   if (
     !(topmost instanceof HTMLElement) ||
     topmost === document.body ||
     topmost === document.documentElement ||
-    topmost.closest(INTERACTIVE_SELECTOR)
+    closestControl(topmost, toolbarRoot)
   ) {
     return null;
   }
@@ -215,7 +196,7 @@ export function coveringLayer(stack: readonly Element[]): HTMLElement | null {
     return null;
   }
   const coversControl = stack.slice(1).some((element) => {
-    const control = element.closest(INTERACTIVE_SELECTOR);
+    const control = closestControl(element, toolbarRoot);
     return control !== null && !control.contains(topmost);
   });
   return coversControl ? topmost : null;
@@ -238,7 +219,7 @@ function findControlUnderToolbar(
     const stack = hostStackAt(toolbarRoot, x, y);
     const topmost = stack[0];
     // A host's own backdrop does the same; the caller keeps its last offset.
-    const layer = coveringLayer(stack);
+    const layer = coveringLayer(stack, toolbarRoot);
     if (layer) {
       if (!occluders.includes(layer)) occluders.push(layer);
       continue;
@@ -248,7 +229,7 @@ function findControlUnderToolbar(
     if (x === end - 1 && topmost instanceof HTMLElement && !topmost.closest(turnSelector)) {
       rowHosts.push(topmost);
     }
-    const control = topmost?.closest<HTMLElement>(INTERACTIVE_SELECTOR);
+    const control = topmost ? closestControl(topmost, toolbarRoot) : null;
     if (!control || control.closest(turnSelector)) continue;
     if (control.getBoundingClientRect().width > window.innerWidth * MAX_CONTROL_WIDTH_RATIO) {
       continue;
@@ -395,10 +376,10 @@ function isInsideTurn(node: Node, turnSelector: string): boolean {
   return element?.closest(turnSelector) != null;
 }
 
-function addsControlOutsideTurns(node: Node, turnSelector: string): boolean {
+function addsControlOutsideTurns(node: Node, turnSelector: string, interactive: string): boolean {
   if (!(node instanceof Element) || node.matches(turnSelector)) return false;
-  if (node.matches(INTERACTIVE_SELECTOR)) return true;
-  for (const control of Array.from(node.querySelectorAll(INTERACTIVE_SELECTOR))) {
+  if (node.matches(interactive)) return true;
+  for (const control of Array.from(node.querySelectorAll(interactive))) {
     if (!control.closest(turnSelector)) return true;
   }
   return false;
@@ -425,6 +406,10 @@ export function classifyAvoidanceMutations(
 ): AvoidanceTrigger {
   // Let the next update notice the detached toolbar and tear itself down.
   if (!toolbarRoot.isConnected) return 'hard';
+  // Candidate unions avoid document-wide proof scans for unrelated streamed mutations.
+  const layout = exportLayoutMutationData(toolbarRoot);
+  const avoided = avoidanceSelector(layout);
+  const canvasStructure = `${layout.canvasOwner}, ${layout.canvasContent}`;
   let trigger: AvoidanceTrigger = 'none';
   for (const mutation of mutations) {
     const target = mutation.target;
@@ -435,7 +420,7 @@ export function classifyAvoidanceMutations(
       if (measured.hiddenAndAncestors.has(target)) return 'hard';
       if (measured.canvasAndAncestors.has(target)) return 'hard';
       if (isInsideWatchedElement(target, measured)) return 'hard';
-      if (target instanceof Element && target.matches(TOP_RIGHT_AVOIDANCE_SELECTORS)) return 'hard';
+      if (target instanceof Element && target.matches(avoided)) return 'hard';
       continue;
     }
     if (isInsideWatchedElement(target, measured)) return 'hard';
@@ -443,14 +428,15 @@ export function classifyAvoidanceMutations(
     // its text and per-message buttons cannot move the toolbar.
     const inTurn = isInsideTurn(target, turnSelector);
     for (const node of Array.from(mutation.addedNodes)) {
-      if (containsMatch(node, CANVAS_STRUCTURE_SELECTOR)) return 'hard';
+      if (containsMatch(node, canvasStructure)) return 'hard';
       if (inTurn) continue;
-      if (containsMatch(node, TOP_RIGHT_AVOIDANCE_SELECTORS)) return 'hard';
-      if (trigger === 'none' && addsControlOutsideTurns(node, turnSelector)) trigger = 'soft';
+      if (containsMatch(node, avoided)) return 'hard';
+      if (trigger === 'none' && addsControlOutsideTurns(node, turnSelector, layout.interactive))
+        trigger = 'soft';
     }
     for (const node of Array.from(mutation.removedNodes)) {
       if (measured.watchedAndAncestors.has(node)) return 'hard';
-      if (containsMatch(node, CANVAS_STRUCTURE_SELECTOR)) return 'hard';
+      if (containsMatch(node, canvasStructure)) return 'hard';
     }
   }
   return trigger;

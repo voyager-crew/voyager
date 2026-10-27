@@ -1,52 +1,197 @@
 /** Read-only Gemini sidebar queries that decide where the folder panel mounts. */
+import { getBundledGeminiSelectorView, type GeminiSelectorView } from '@/core/gemini/selectors';
+import { acceptsGeminiSidebarElement } from '@/core/gemini/sidebar/proof';
+import {
+  firstVisibleSidebar,
+  geminiSidebarSelector,
+  readGeminiSidebarElements,
+  resolveGeminiSidebarOperation,
+} from '@/core/gemini/sidebar/queries';
+import {
+  isSafePlacementMount,
+  resolvePlacementOperation,
+  resolvePlacementViewOperation,
+} from '@/core/selectors/placement';
 
 export type FolderAnchor = 'above-recents' | 'above-notebooks';
+type SidebarKey = Parameters<typeof geminiSidebarSelector>[0];
+
+function readSidebar(view: GeminiSelectorView): HTMLElement | null {
+  const candidates = readGeminiSidebarElements(document, 'sidebar.overflow', view);
+  const sidebar = firstVisibleSidebar(
+    view.remoteKeys.has('sidebar.overflow')
+      ? candidates.filter(
+          (candidate) =>
+            isSafePlacementMount(candidate) &&
+            candidate !== document.body &&
+            candidate !== document.documentElement &&
+            !candidate.closest('.gv-folder-container, [data-gv-shadow-surface]'),
+        )
+      : candidates,
+  );
+  if (
+    sidebar &&
+    view.remoteKeys.has('sidebar.overflow') &&
+    !readAnchor(sidebar, 'above-recents', view) &&
+    !readNotebooks(sidebar, view) &&
+    !sidebar.querySelector(geminiSidebarSelector('sidebar.row', view))
+  ) {
+    return null;
+  }
+  if (sidebar && view.remoteKeys.has('sidebar.overflow')) {
+    const original = readSidebar(getBundledGeminiSelectorView());
+    if (!acceptsGeminiSidebarElement('sidebar.overflow', sidebar, original)) return null;
+  }
+  return sidebar;
+}
 
 export function findSidebar(): HTMLElement | null {
-  const candidates = Array.from(
-    document.querySelectorAll<HTMLElement>('[data-test-id="overflow-container"]'),
+  return resolveGeminiSidebarOperation(readSidebar, (sidebar) => sidebar !== null).value;
+}
+
+function readNotebooks(sidebar: HTMLElement | null, view: GeminiSelectorView): HTMLElement | null {
+  return resolvePlacementOperation(
+    view,
+    'sidebar.notebooks',
+    (selector) => sidebar?.querySelector<HTMLElement>(selector) ?? null,
   );
+}
+
+export function findSidebarNotebooks(
+  view?: GeminiSelectorView,
+): { sidebar: HTMLElement; notebooks: HTMLElement } | null {
+  return resolveGeminiSidebarOperation(
+    (selected) => {
+      const sidebar = readSidebar(selected);
+      const notebooks = readNotebooks(sidebar, selected);
+      return sidebar && notebooks ? { sidebar, notebooks } : null;
+    },
+    (location) => location !== null,
+    view,
+  ).value;
+}
+
+const SIDEBAR_PLACEMENT_KEYS = [
+  'sidebar.notebooks',
+  'sidebar.recents',
+  'sidebar.allConversations',
+  'sidebar.history',
+  'sidebar.section',
+  'sidebar.rowContainer',
+] as const;
+
+function readAnchor(
+  sidebar: HTMLElement,
+  preference: FolderAnchor,
+  view: GeminiSelectorView,
+): HTMLElement | null {
+  const read = (selected: GeminiSelectorView): HTMLElement | null => {
+    if (preference === 'above-notebooks') {
+      const notebooks = sidebar.querySelector<HTMLElement>(
+        geminiSidebarSelector('sidebar.notebooks', selected),
+      );
+      if (notebooks) return notebooks;
+      if (selected.remoteKeys.has('sidebar.notebooks')) return null;
+    }
+    return readAnchorCandidate(sidebar, selected);
+  };
+  // These six keys only position our panel; the sidebar's data/identity proof stays separate.
+  if (!SIDEBAR_PLACEMENT_KEYS.some((key) => view.remoteKeys.has(key))) return read(view);
+  return resolvePlacementViewOperation(view, SIDEBAR_PLACEMENT_KEYS, (selected) =>
+    read(selected as GeminiSelectorView),
+  );
+}
+
+/** Preserve the original insertion priority, falling back as one placement operation. */
+function readAnchorCandidate(sidebar: HTMLElement, view: GeminiSelectorView): HTMLElement | null {
+  const select = (key: SidebarKey) =>
+    sidebar.querySelector<HTMLElement>(geminiSidebarSelector(key, view));
+  const section = geminiSidebarSelector('sidebar.section', view);
+  const recents = select('sidebar.recents');
+  if (recents) return recents;
+  if (view.remoteKeys.has('sidebar.recents')) return null;
+  for (const key of ['sidebar.allConversations', 'sidebar.history'] as const) {
+    const element = select(key);
+    if (element) {
+      const ancestor = element.closest<HTMLElement>(section);
+      return ancestor ?? (view.remoteKeys.has('sidebar.section') ? null : element);
+    }
+    if (view.remoteKeys.has(key)) return null;
+  }
+  const firstConversation = select('sidebar.row');
+  const ancestor = firstConversation?.closest<HTMLElement>(section);
+  if (ancestor) return ancestor;
+  if (view.remoteKeys.has('sidebar.section')) return null;
   return (
-    candidates.find((candidate) => {
-      const rect = candidate.getBoundingClientRect();
-      return rect.width > 0 && rect.height > 0;
-    }) ??
-    candidates[0] ??
+    firstConversation?.closest<HTMLElement>(geminiSidebarSelector('sidebar.rowContainer', view)) ??
     null
   );
 }
 
-export function findNotebooks(sidebar: HTMLElement | null): HTMLElement | null {
-  // Gemini's redesigned sidebar dropped the section's data-test-id and keys it only by
-  // storagekey, so "above Notebooks" and its corner toggle silently fell back to Recents.
-  return (
-    sidebar?.querySelector<HTMLElement>(
-      'expandable-section[storagekey="notebooks"], expandable-section[data-test-id="notebooks-expandable-section"]',
-    ) ?? null
-  );
+/** The entire mount is reread from the bundle if an online root has no usable anchor. */
+export interface GeminiSidebarMount {
+  sidebar: HTMLElement;
+  anchor: HTMLElement;
+  view: GeminiSelectorView;
 }
 
-export function findAnchor(sidebar: HTMLElement, preference: FolderAnchor): HTMLElement | null {
-  if (preference === 'above-notebooks') {
-    const notebooks = findNotebooks(sidebar);
-    if (notebooks) return notebooks;
-  }
-  const promote = (element: Element | null): Element | null =>
-    element ? (element.closest('expandable-section') ?? element) : null;
-  const firstConversation = sidebar.querySelector('[data-test-id="conversation"]');
-  const candidate =
-    sidebar.querySelector('expandable-section[data-test-id="chats-expandable-section"]') ??
-    promote(sidebar.querySelector('[data-test-id="all-conversations"]')) ??
-    promote(sidebar.querySelector('.chat-history')) ??
-    firstConversation?.closest('expandable-section') ??
-    firstConversation?.closest('.chat-history, [class*="conversation"]');
-  return candidate instanceof HTMLElement ? candidate : null;
+export function findSidebarMount(preference: FolderAnchor): GeminiSidebarMount | null {
+  const operation = resolveGeminiSidebarOperation(
+    (view) => {
+      const sidebar = readSidebar(view);
+      const anchor = sidebar && readAnchor(sidebar, preference, view);
+      return sidebar && anchor ? { sidebar, anchor } : null;
+    },
+    (mount) => mount !== null,
+  );
+  return operation.value ? { ...operation.value, view: operation.view } : null;
+}
+
+export function findSidebarVisibilityHost(): HTMLElement | null {
+  return resolveGeminiSidebarOperation(
+    (view) => {
+      for (const selector of view.profiles['sidebar.visibilityHost']) {
+        const host = document.querySelector(selector);
+        if (!(host instanceof HTMLElement)) continue;
+        if (!view.remoteKeys.has('sidebar.visibilityHost')) return host;
+        const original =
+          getBundledGeminiSelectorView()
+            .profiles['sidebar.visibilityHost'].map((selector) =>
+              document.querySelector<HTMLElement>(selector),
+            )
+            .find(Boolean) ?? null;
+        if (acceptsGeminiSidebarElement('sidebar.visibilityHost', host, original)) return host;
+      }
+      return null;
+    },
+    (host) => host !== null,
+  ).value;
 }
 
 export function isSidebarOpen(): boolean {
-  if (document.querySelector('chat-app.side-nav-open, #app-root.side-nav-open')) return true;
-  const sidebar = document.querySelector('bard-sidenav, side-nav');
-  return sidebar instanceof HTMLElement && sidebar.offsetWidth > 120;
+  return resolveGeminiSidebarOperation(
+    (view) => {
+      // One rejected state member must restore the whole bundled open/host read.
+      let valid = true;
+      const read = (key: 'sidebar.openHost' | 'sidebar.host') => {
+        const candidate = document.querySelector<HTMLElement>(geminiSidebarSelector(key, view));
+        if (!view.remoteKeys.has(key)) return candidate;
+        const original = document.querySelector<HTMLElement>(
+          geminiSidebarSelector(key, getBundledGeminiSelectorView()),
+        );
+        if (acceptsGeminiSidebarElement(key, candidate, original)) return candidate;
+        valid = false;
+        return null;
+      };
+      const open = read('sidebar.openHost');
+      const sidebar = read('sidebar.host');
+      return {
+        found: valid && (open !== null || sidebar instanceof HTMLElement),
+        open: open !== null || (sidebar instanceof HTMLElement && sidebar.offsetWidth > 120),
+      };
+    },
+    (result) => result.found,
+  ).value.open;
 }
 
 /** Gemini can clone a panel unknown to us. Remove only direct Gemini folder siblings. */
