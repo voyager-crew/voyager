@@ -28,6 +28,7 @@ afterEach(() => {
   document.documentElement.removeAttribute(SCHEME_ATTR);
   document.documentElement.className = '';
   document.documentElement.removeAttribute('data-theme');
+  document.documentElement.removeAttribute('data-mode');
   document.body.className = '';
   document.body.replaceChildren();
 });
@@ -35,10 +36,7 @@ afterEach(() => {
 describe('resolveScheme', () => {
   it('reads each shipped class-dialect adapter its own way, DeepSeek included', () => {
     const registry = SiteRegistry.createDefault();
-    const cases: Array<[string, string]> = [
-      ['https://chat.deepseek.com/a/chat/s/1', 'dark'],
-      ['https://claude.ai/chat/1', 'dark'],
-    ];
+    const cases: Array<[string, string]> = [['https://chat.deepseek.com/a/chat/s/1', 'dark']];
 
     for (const [url, expected] of cases) {
       const theme = registry.resolveByUrl(url)?.theme;
@@ -230,14 +228,47 @@ describe('a host element that appears, is replaced, or goes away', () => {
     bridge.stop();
   });
 
-  it('reads Claude, whose light state is the absence of a class', async () => {
+  it('keeps Voyager UI dark on Claude dark mode, which Claude marks with data-mode', async () => {
     const claude = SiteRegistry.createDefault().resolveByUrl('https://claude.ai/chat/1')?.theme;
-    expect(claude?.lightSelector).toBe(':root:not(.dark)');
+    document.documentElement.setAttribute('data-mode', 'light');
     const bridge = startScheme(claude ?? null, document);
-
     expect(getScheme()).toBe('light');
 
-    document.documentElement.className = 'dark';
+    document.documentElement.setAttribute('data-mode', 'dark');
+    await settle();
+    expect(getScheme()).toBe('dark');
+
+    document.documentElement.setAttribute('data-mode', 'light');
+    await settle();
+    expect(getScheme()).toBe('light');
+
+    bridge.stop();
+  });
+
+  it('follows the OS on Claude when its appearance is set to match the system', async () => {
+    const claude = SiteRegistry.createDefault().resolveByUrl('https://claude.ai/chat/1')?.theme;
+    document.documentElement.setAttribute('data-mode', 'system');
+    vi.mocked(window.matchMedia).mockReturnValueOnce({
+      matches: true,
+    } as unknown as MediaQueryList);
+
+    expect(resolveScheme(claude, document)).toBe('dark');
+  });
+
+  it('hears toggles of an attribute only a corrected descriptor names', async () => {
+    document.documentElement.setAttribute('data-mode', 'light');
+    const bridge = startScheme(
+      { hostSelector: ':root', lightSelector: ':root:not(.dark)', darkSelector: ':root.dark' },
+      document,
+    );
+    bridge.setTheme({
+      hostSelector: ':root',
+      lightSelector: ':root:not([data-mode="dark"])',
+      darkSelector: ':root[data-mode="dark"]',
+    });
+    expect(getScheme()).toBe('light');
+
+    document.documentElement.setAttribute('data-mode', 'dark');
     await settle();
     expect(getScheme()).toBe('dark');
 

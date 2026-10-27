@@ -246,12 +246,22 @@
   font-weight: 400;
   font-family: inherit;
   line-height: 1;
+  /* The button is also the drag handle: a touch drag moves it instead of scrolling. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
   transition: background-color 0.15s ease;
 }
 
 .gv-persistent-export-btn:hover,
 .gv-persistent-export-btn:active {
   background: var(--gv-ui-hover);
+}
+
+/* A dragged toolbar keeps the pressed wash and shows a grabbing cursor. */
+.gv-persistent-export-toolbar--dragging .gv-persistent-export-btn {
+  background: var(--gv-ui-hover);
+  cursor: grabbing;
 }
 
 .gv-persistent-export-btn:focus-visible {
@@ -268,6 +278,24 @@
 
 .gv-persistent-export-label {
   white-space: nowrap;
+}
+
+/* Claude's header buttons (Share, the activity panel) are 28px tall at top 8px. */
+.gv-persistent-export-toolbar[data-gv-platform='claude'] {
+  top: 8px;
+}
+
+.gv-persistent-export-toolbar[data-gv-platform='claude'] .gv-persistent-export-btn {
+  height: 28px;
+  padding: 0 10px;
+}
+
+/* Hidden until the remembered spot is read, so it does not show at the dock and then jump.
+ * Also while a host dialog's backdrop covers it: the page under it is inert, and a
+ * fixed toolbar above the dimmed page reads as leaked through. */
+.gv-persistent-export-toolbar--placing,
+.gv-persistent-export-toolbar--under-modal {
+  visibility: hidden;
 }
 
 /* Keep the fallback export entry in the top-right control area even in RTL.

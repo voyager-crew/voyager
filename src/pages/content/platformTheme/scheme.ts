@@ -4,7 +4,7 @@
  *
  * Every host site announces dark mode in its own dialect — Gemini with
  * `.theme-host.dark-theme`, AI Studio with `body.dark-theme`, Claude with
- * `html.dark`, ChatGPT with `html[data-theme="dark"]`, DeepSeek with
+ * `html[data-mode="dark"]`, ChatGPT with `html[data-theme="dark"]`, DeepSeek with
  * `body.dark`. Those selectors already live in each `site.json` as
  * `SiteThemeDescriptor`; nothing used to read them, so `contentStyle.css`
  * named the dialects it happened to know and DeepSeek — added later — matched
@@ -29,10 +29,27 @@ export type Scheme = 'light' | 'dark';
 /**
  * Attributes a host site flips when its theme changes. Most adapters signal
  * through a class; `style` is here because a site can set a custom property
- * instead, and ChatGPT rewrites `data-theme` on `<html>`. `data-color-scheme`
- * is deliberately not listed: no host sets it.
+ * instead, and ChatGPT rewrites `data-theme` on `<html>`. Any other attribute a
+ * descriptor's selectors name is added by `watchedAttributes`.
  */
-const WATCHED_ATTRIBUTES = ['class', 'style', 'data-theme'];
+const BASE_WATCHED_ATTRIBUTES = ['class', 'style', 'data-theme'];
+
+const ATTRIBUTE_NAME = /\[\s*([\w-]+)/g;
+
+/**
+ * The base attributes plus every attribute the descriptor's selectors name.
+ * Claude moved its marker from `html.dark` to `html[data-mode]`; a fixed list
+ * heard none of its toggles, so a descriptor fix (bundled or online) must bring
+ * its own attributes.
+ */
+export function watchedAttributes(theme: SiteThemeDescriptor | null | undefined): string[] {
+  const names = new Set(BASE_WATCHED_ATTRIBUTES);
+  for (const selector of [theme?.hostSelector, theme?.lightSelector, theme?.darkSelector]) {
+    if (!selector) continue;
+    for (const match of selector.matchAll(ATTRIBUTE_NAME)) names.add(match[1].toLowerCase());
+  }
+  return Array.from(names);
+}
 
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
@@ -166,6 +183,7 @@ export function startScheme(
   doc: Document = document,
 ): SchemeBridge {
   let currentTheme = theme;
+  let watched = watchedAttributes(theme);
   let stopped = false;
   let applied: Scheme | null = null;
   const observers: MutationObserver[] = [];
@@ -186,7 +204,7 @@ export function startScheme(
   const observe = (target: Node | null): void => {
     if (!target) return;
     const observer = new MutationObserver(apply);
-    observer.observe(target, { attributes: true, attributeFilter: WATCHED_ATTRIBUTES });
+    observer.observe(target, { attributes: true, attributeFilter: watched });
     observers.push(observer);
   };
 
@@ -246,7 +264,7 @@ export function startScheme(
     releaseHost();
     observedHost = host;
     hostObserver = new MutationObserver(apply);
-    hostObserver.observe(host, { attributes: true, attributeFilter: WATCHED_ATTRIBUTES });
+    hostObserver.observe(host, { attributes: true, attributeFilter: watched });
     // Angular swaps the element rather than re-theming it, and an observer on
     // the element itself hears nothing about its own removal. Watching the
     // parent's children costs one shallow observer and lets the document-wide
@@ -287,6 +305,16 @@ export function startScheme(
         return;
       }
       currentTheme = next;
+      const nextWatched = watchedAttributes(next);
+      if (nextWatched.join() !== watched.join()) {
+        watched = nextWatched;
+        // The root and body observers were built with the old filter.
+        for (const observer of observers) observer.disconnect();
+        observers.length = 0;
+        observe(doc.documentElement);
+        bodyObserved = false;
+        observeBody();
+      }
       releaseHost();
       stopHostWatch();
       apply();

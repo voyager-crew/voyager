@@ -54,6 +54,10 @@ export const CONVERSATION_STORAGE_KEYS = {
   // toolbar is suppressed even if the logo is missing — users keep the menu
   // injections (顶栏 ⋮ / per-response ⋮) as their only export entry.
   PERSISTENT_EXPORT_TOOLBAR_ENABLED: 'gvPersistentExportToolbarEnabled',
+  // Where the user dragged that toolbar, per site: `{ [siteId]: { right, top } }`
+  // in px from the viewport's right edge and top. chrome.storage.local only: a
+  // spot belongs to this device's screen. A missing site uses the default dock.
+  PERSISTENT_EXPORT_TOOLBAR_POSITION: 'gvPersistentExportToolbarPosition',
 
   // AI Studio master toggle
   GV_AISTUDIO_ENABLED: 'gvAIStudioEnabled',

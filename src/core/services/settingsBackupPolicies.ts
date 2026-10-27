@@ -50,6 +50,11 @@ export const NON_SETTINGS_BACKUP_POLICIES = {
     disposition: 'device-local',
     reason: 'Viewport coordinates and panel state should not be restored across different screens.',
   },
+  [StorageKeys.PERSISTENT_EXPORT_TOOLBAR_POSITION]: {
+    storage: 'local',
+    disposition: 'device-local',
+    reason: 'Where the export button was dragged is in viewport coordinates of this screen.',
+  },
   [StorageKeys.CHATGPT_FOLDER_SECTION]: {
     storage: 'local',
     disposition: 'device-local',

@@ -45,6 +45,8 @@ The `export` descriptor (including `read`, `messageKey`, `title` and `generating
 | Gemini export as the `voyager.gemini-export` official plugin                         | `pluginHandler.ts`                                                                   |
 | Logo dropdown button (old Gemini layout) and its re-creation after re-renders        | `logoExportButton.ts`                                                                |
 | Always-visible toolbar (lr26 Gemini, ChatGPT and other plugin hosts)                 | `persistentExportToolbar.ts`, `exportEntryGate.ts`                                   |
+| Where that toolbar sits and which host controls it keeps clear of                    | `toolbarPlacement.ts`, `toolbarAvoidance.ts`, `toolbarOcclusion.ts`                  |
+| Dragging that toolbar and remembering its spot per site                              | `toolbarDrag.ts`, `toolbarPosition.ts`                                               |
 | Dictionaries, language reads and the `t()` used by every export surface              | `exportLocale.ts`                                                                    |
 | Progress, outcome and problem toasts of every export surface                         | `src/features/export/ui/exportToasts.ts`                                             |
 

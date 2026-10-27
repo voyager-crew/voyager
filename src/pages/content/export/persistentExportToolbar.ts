@@ -1,335 +1,69 @@
 // Persistent top-right export toolbar.
 // Mounted as a fallback when Gemini's logo (the usual injection point for the
 // inline export dropdown) is absent — e.g. after the lr26 UI refresh removed
-// [data-test-id="logo"]. Calls back into showExportDialog when clicked.
+// [data-test-id="logo"] — and as the only export entry on other hosts. Calls
+// back into showExportDialog when clicked. Where it sits is `toolbarPlacement.ts`.
 import { createDownloadIcon } from '@/core/icons/promptManagerIcons';
+
+import { turnSelectorFor } from './toolbarAvoidance';
+import { isToolbarPlaced, startToolbarPlacement, stopToolbarPlacement } from './toolbarPlacement';
+import { readToolbarSpot, writeToolbarSpot } from './toolbarPosition';
 
 export type PersistentExportToolbarOptions = {
   label: string;
   tooltip: string;
   onClick: () => void;
+  /**
+   * The host site's id: stamped as `data-gv-platform` for per-site styles,
+   * and the key the user's dragged spot is remembered under. Without it the
+   * toolbar can still be dragged, but its spot is not remembered.
+   */
+  siteId?: string;
+  /** The host's conversation turns; controls inside them are never avoided. */
+  turnSelector?: string;
 };
 
 const TOOLBAR_CLASS = 'gv-persistent-export-toolbar';
 const BUTTON_CLASS = 'gv-persistent-export-btn';
 const ICON_CLASS = 'gv-persistent-export-icon';
 const LABEL_CLASS = 'gv-persistent-export-label';
-const HIDDEN_CLASS = 'gv-hidden';
-const CANVAS_OWNER_SELECTOR = 'inline-preview, immersive-panel';
-const CANVAS_CONTENT_SELECTOR = 'immersive-editor, code-immersive-panel';
-const CANVAS_STRUCTURE_SELECTOR = `${CANVAS_OWNER_SELECTOR}, ${CANVAS_CONTENT_SELECTOR}`;
-const INACTIVE_CANVAS_SELECTOR = 'deep-research-immersive-panel, [hidden], [aria-hidden="true"]';
-const DEFAULT_RIGHT_OFFSET_PX = 84;
-const TOP_RIGHT_GAP_PX = 12;
-const TOP_RIGHT_MAX_Y_PX = 96;
-const TOP_RIGHT_MIN_LEFT_RATIO = 0.45;
-/** Selectors specific to top-bar controls. */
-const TOP_RIGHT_CONTROL_SELECTORS = [
-  'top-bar-actions',
-  '.top-bar-actions',
-  '[data-test-id="top-bar-actions"]',
-  'side-nav-sparkle-button',
-  'side-nav-menu-button',
-  '[data-test-id*="upgrade" i]',
-  '[aria-label*="upgrade" i]',
-  // ChatGPT conversation header: Share / more sit in the same top-right cluster.
-  '#conversation-header-actions',
-  '[data-testid="share-chat-button"]',
-  '[data-testid="conversation-options-button"]',
-].join(',');
-/**
- * Broad substring selectors that also match per-message buttons such as
- * "Copy prompt". Tracking hidden matches of these would put every chat turn's
- * ancestry under watch, so only visible ones count, and never ones inside a
- * conversation turn.
- */
-const TOP_RIGHT_BROAD_SELECTORS = ['[aria-label*="pro" i]', '[aria-label*="advanced" i]'].join(',');
-const TOP_RIGHT_AVOIDANCE_SELECTORS = `${TOP_RIGHT_CONTROL_SELECTORS},${TOP_RIGHT_BROAD_SELECTORS}`;
-/** Conversation turns on Gemini (Angular hosts) and ChatGPT (role attribute). */
-const CONVERSATION_TURN_SELECTOR = 'user-query, model-response, [data-message-author-role]';
-const INTERACTIVE_SELECTOR = 'button, a[href], [role="button"]';
-/** Voyager's own layers and full-page dialog overlays, which can sit above the host header. */
-const VOYAGER_SURFACE_SELECTOR = [
-  '[data-gv-layer]',
-  '.gv-export-dialog-overlay',
-  '.gv-folder-dialog-overlay',
-  '.gv-fi-overlay',
-  '.gv-changelog-overlay',
-  '.gv-chatgpt-handoff-overlay',
-].join(',');
-const ROW_PROBE_STEP_PX = 8;
-const MAX_ROW_SHIFTS = 4;
-const ROW_AVOIDANCE_PLATFORMS = new Set(['chatgpt']);
+/** Hides the toolbar until its remembered spot is read, so it does not jump there visibly. */
+const PLACING_CLASS = 'gv-persistent-export-toolbar--placing';
+const PLACING_TIMEOUT_MS = 800;
 
-type OwnedToolbarRoot = HTMLDivElement & { _gvOwner?: symbol };
+type OwnedToolbarRoot = HTMLDivElement & { _gvOwner?: symbol; _gvRevealTimer?: number };
 type ToolbarButton = HTMLButtonElement & { _gvOnClick?: () => void };
 
-let activeAvoidanceRoot: HTMLDivElement | null = null;
-let activeAvoidanceCleanup: (() => void) | null = null;
-
-const RIGHT_OFFSET_PROPERTY = '--gv-persistent-export-right';
-
-/**
- * Left edge of a visible top-right control; `'host'` for a visible top-band
- * match spanning past the right-side cluster; `'hidden'` for a zero-size
- * top-bar control that an ancestor may reveal later; null when it should be
- * ignored.
- */
-function classifyTopRightElement(
-  element: Element,
-  toolbarRoot: HTMLElement,
-): number | 'host' | 'hidden' | null {
-  if (!(element instanceof HTMLElement)) return null;
-  if (element === toolbarRoot || toolbarRoot.contains(element)) return null;
-  // A turn's visible "Copy prompt" scrolled into the top band is not a top-bar
-  // control; avoiding it pushed the toolbar over the message text.
-  if (element.closest(CONVERSATION_TURN_SELECTOR)) return null;
-  const rect = element.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) {
-    return element.matches(TOP_RIGHT_CONTROL_SELECTORS) ? 'hidden' : null;
-  }
-  if (rect.bottom <= 0 || rect.top >= TOP_RIGHT_MAX_Y_PX) return null;
-  // Some Gemini top-bar hosts span the full viewport. Treating those as
-  // right-side controls makes the computed offset enormous and pushes the
-  // toolbar into the left rail, so only avoid elements whose own left edge is
-  // already in the right-side control cluster.
-  return rect.left >= window.innerWidth * TOP_RIGHT_MIN_LEFT_RATIO ? rect.left : 'host';
-}
-
-type TopRightMeasurement = {
-  offset: number;
-  canvas: HTMLElement[];
-  /** Avoided controls plus full-width hosts whose children can push them left. */
-  watched: HTMLElement[];
-  /** Zero-size matches: kept out of the offset, but an ancestor can reveal them. */
-  hidden: HTMLElement[];
-};
-
-function measureTopRightControls(toolbarRoot: HTMLElement): TopRightMeasurement {
-  const watched: HTMLElement[] = [];
-  const hidden: HTMLElement[] = [];
-  const canvas: HTMLElement[] = [];
-  let leftMost: number | null = null;
-  const selector = `${TOP_RIGHT_AVOIDANCE_SELECTORS},${CANVAS_CONTENT_SELECTOR}`;
-  for (const element of Array.from(document.querySelectorAll<HTMLElement>(selector))) {
-    if (element.matches(CANVAS_CONTENT_SELECTOR)) {
-      canvas.push(element);
-      continue;
-    }
-    const left = classifyTopRightElement(element, toolbarRoot);
-    if (left === null) continue;
-    if (left === 'hidden') {
-      hidden.push(element as HTMLElement);
-      continue;
-    }
-    watched.push(element as HTMLElement);
-    if (left !== 'host') leftMost = Math.min(leftMost ?? window.innerWidth, left);
-  }
-  const offset =
-    leftMost === null
-      ? DEFAULT_RIGHT_OFFSET_PX
-      : Math.max(
-          DEFAULT_RIGHT_OFFSET_PX,
-          Math.ceil(window.innerWidth - leftMost + TOP_RIGHT_GAP_PX),
-        );
-  if (!usesRowAvoidance(toolbarRoot)) return { offset, watched, hidden, canvas };
-  return { offset: avoidControlsInRow(toolbarRoot, offset, watched), watched, hidden, canvas };
-}
-
-function usesRowAvoidance(toolbarRoot: HTMLElement): boolean {
-  return ROW_AVOIDANCE_PLATFORMS.has(toolbarRoot.dataset.gvPlatform ?? '');
-}
-
-// Host markup changes without notice, so also hit-test the toolbar's own row
-// for controls the selector list does not know about.
-function findControlUnderToolbar(toolbarRoot: HTMLElement, right: number): HTMLElement | null {
-  if (typeof document.elementsFromPoint !== 'function') return null;
-  const rect = toolbarRoot.getBoundingClientRect();
-  const y = rect.top + rect.height / 2;
-  const end = window.innerWidth - right;
-  for (let x = end - 1; x > end - rect.width; x -= ROW_PROBE_STEP_PX) {
-    // Voyager's export dialog overlay is topmost over the whole header; taking it
-    // for "nothing here" dropped the offset to the default, right over Share.
-    const topmost = document
-      .elementsFromPoint(x, y)
-      .find(
-        (element) => !toolbarRoot.contains(element) && !element.closest(VOYAGER_SURFACE_SELECTOR),
-      );
-    const control = topmost?.closest<HTMLElement>(INTERACTIVE_SELECTOR);
-    if (control) return control;
-  }
-  return null;
-}
-
-function avoidControlsInRow(
-  toolbarRoot: HTMLElement,
-  initialRight: number,
-  watched: HTMLElement[],
-): number {
-  let right = initialRight;
-  for (let i = 0; i < MAX_ROW_SHIFTS; i++) {
-    const control = findControlUnderToolbar(toolbarRoot, right);
-    if (!control) break;
-    const left = control.getBoundingClientRect().left;
-    if (left < window.innerWidth * TOP_RIGHT_MIN_LEFT_RATIO) break;
-    watched.push(control);
-    right = Math.ceil(window.innerWidth - left + TOP_RIGHT_GAP_PX);
-  }
-  return right;
-}
-
-/** Top-right controls and Canvas content from the last update, for filtering mutations. */
-type MeasuredControls = {
-  watched: ReadonlySet<Element>;
-  /** Every watched element plus its ancestors: attribute changes there can hide or move it. */
-  watchedAndAncestors: ReadonlySet<Node>;
-  /** Every hidden match plus its ancestors: attribute changes there can reveal it. */
-  hiddenAndAncestors: ReadonlySet<Node>;
-  canvasAndAncestors: ReadonlySet<Node>;
-};
-
-function collectWithAncestors(elements: readonly HTMLElement[]): Set<Node> {
-  const nodes = new Set<Node>();
-  for (const element of elements) {
-    for (let node: Node | null = element; node; node = node.parentNode) {
-      if (nodes.has(node)) break;
-      nodes.add(node);
-    }
-  }
-  return nodes;
-}
-
-function indexMeasuredControls(
-  watched: readonly HTMLElement[],
-  hidden: readonly HTMLElement[] = [],
-  canvas: readonly HTMLElement[] = [],
-): MeasuredControls {
-  return {
-    watched: new Set(watched),
-    watchedAndAncestors: collectWithAncestors(watched),
-    hiddenAndAncestors: collectWithAncestors(hidden),
-    canvasAndAncestors: collectWithAncestors(canvas),
-  };
-}
-
-function isInsideWatchedElement(node: Node, measured: MeasuredControls): boolean {
-  for (let el = node instanceof Element ? node : node.parentElement; el; el = el.parentElement) {
-    if (measured.watched.has(el)) return true;
-  }
-  return false;
-}
-
-function containsMatch(node: Node, selector: string): boolean {
-  return (
-    node instanceof Element && (node.matches(selector) || node.querySelector(selector) !== null)
-  );
-}
-
-/**
- * Whether a mutation batch can change the top-right controls the toolbar
- * avoids. Gemini streams sidebar rows and responses under `body`; re-querying
- * the whole document and reading every match's rect for those forced layout on
- * each frame (#1040). Selector and identity checks only — never geometry.
- */
-function mutationsMayMoveTopRightControls(
-  mutations: readonly MutationRecord[],
-  toolbarRoot: HTMLElement,
-  measured: MeasuredControls,
-): boolean {
-  // Let the next update notice the detached toolbar and tear itself down.
-  if (!toolbarRoot.isConnected) return true;
-  // Row avoidance hit-tests unlabeled controls, so any new one may land under the toolbar.
-  const addedSelector = usesRowAvoidance(toolbarRoot)
-    ? `${TOP_RIGHT_AVOIDANCE_SELECTORS},${CANVAS_STRUCTURE_SELECTOR},${INTERACTIVE_SELECTOR}`
-    : `${TOP_RIGHT_AVOIDANCE_SELECTORS},${CANVAS_STRUCTURE_SELECTOR}`;
-  for (const mutation of mutations) {
-    const target = mutation.target;
-    // The toolbar's own offset writes and label updates.
-    if (toolbarRoot.contains(target)) continue;
-    if (mutation.type === 'attributes') {
-      if (measured.watchedAndAncestors.has(target)) return true;
-      if (measured.hiddenAndAncestors.has(target)) return true;
-      if (measured.canvasAndAncestors.has(target)) return true;
-      if (isInsideWatchedElement(target, measured)) return true;
-      if (target instanceof Element && target.matches(TOP_RIGHT_AVOIDANCE_SELECTORS)) return true;
-      continue;
-    }
-    if (isInsideWatchedElement(target, measured)) return true;
-    for (const node of Array.from(mutation.addedNodes)) {
-      if (containsMatch(node, addedSelector)) return true;
-    }
-    for (const node of Array.from(mutation.removedNodes)) {
-      if (measured.watchedAndAncestors.has(node)) return true;
-      if (containsMatch(node, CANVAS_STRUCTURE_SELECTOR)) return true;
-    }
-  }
-  return false;
-}
-
-function installToolbarAvoidance(root: HTMLDivElement): void {
-  if (activeAvoidanceRoot === root) return;
-  activeAvoidanceCleanup?.();
-  activeAvoidanceRoot = root;
-
-  let frameId: number | null = null;
-  let measured = indexMeasuredControls([]);
-  let appliedOffset = root.style.getPropertyValue(RIGHT_OFFSET_PROPERTY);
-  const update = () => {
-    frameId = null;
-    if (!root.isConnected) {
-      activeAvoidanceCleanup?.();
-      return;
-    }
-    const { offset, watched, hidden, canvas } = measureTopRightControls(root);
-    // Fullscreen Canvas puts Collapse under this pill; its own Export menu remains available.
-    root.classList.toggle(
-      HIDDEN_CLASS,
-      canvas.some(
-        (editor) =>
-          editor.closest(CANVAS_OWNER_SELECTOR)?.matches('immersive-panel') &&
-          !editor.closest(INACTIVE_CANVAS_SELECTOR),
-      ),
-    );
-    measured = indexMeasuredControls(watched, hidden, canvas);
-    const next = `${offset}px`;
-    if (next === appliedOffset) return;
-    appliedOffset = next;
-    root.style.setProperty(RIGHT_OFFSET_PROPERTY, next);
-  };
-  const scheduleUpdate = () => {
-    if (frameId !== null) return;
-    frameId = window.requestAnimationFrame(update);
-  };
-
-  const observer = new MutationObserver((mutations) => {
-    if (frameId !== null) return;
-    if (mutationsMayMoveTopRightControls(mutations, root, measured)) scheduleUpdate();
+function placeToolbar(
+  root: OwnedToolbarRoot,
+  button: HTMLElement,
+  options: PersistentExportToolbarOptions,
+): void {
+  // A remount keeps the toolbar where it already is.
+  if (isToolbarPlaced(root)) return;
+  const siteId = options.siteId;
+  const placement = startToolbarPlacement(root, {
+    handle: button,
+    turnSelector: turnSelectorFor(options.turnSelector),
+    onSpotChange: (spot) => {
+      if (siteId) void writeToolbarSpot(siteId, spot);
+    },
   });
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['aria-hidden', 'class', 'hidden', 'style'],
+  if (!siteId) return;
+  root.classList.add(PLACING_CLASS);
+  const reveal = () => root.classList.remove(PLACING_CLASS);
+  // Storage that never answers must not keep the only export entry hidden.
+  root._gvRevealTimer = window.setTimeout(reveal, PLACING_TIMEOUT_MS);
+  void readToolbarSpot(siteId).then((spot) => {
+    window.clearTimeout(root._gvRevealTimer);
+    if (spot && isToolbarPlaced(root)) placement.restoreSpot(spot);
+    reveal();
   });
-  window.addEventListener('resize', scheduleUpdate);
-  scheduleUpdate();
-
-  activeAvoidanceCleanup = () => {
-    if (frameId !== null) {
-      window.cancelAnimationFrame(frameId);
-      frameId = null;
-    }
-    observer.disconnect();
-    window.removeEventListener('resize', scheduleUpdate);
-    if (activeAvoidanceRoot === root) {
-      activeAvoidanceRoot = null;
-      activeAvoidanceCleanup = null;
-    }
-  };
 }
 
-function removeToolbarRoot(root: HTMLDivElement): void {
-  if (activeAvoidanceRoot === root) activeAvoidanceCleanup?.();
+function removeToolbarRoot(root: OwnedToolbarRoot): void {
+  window.clearTimeout(root._gvRevealTimer);
+  stopToolbarPlacement(root);
   try {
     root.remove();
   } catch {}
@@ -343,6 +77,7 @@ function buildToolbarDom(options: PersistentExportToolbarOptions): {
   const root = document.createElement('div');
   root.className = TOOLBAR_CLASS;
   root.setAttribute('data-gv-component', 'persistent-export-toolbar');
+  if (options.siteId) root.setAttribute('data-gv-platform', options.siteId);
 
   const button = document.createElement('button');
   button.type = 'button';
@@ -386,7 +121,7 @@ export function mountPersistentExportToolbar(
     if (labelEl) labelEl.textContent = options.label;
     existing._gvOwner = owner;
     button._gvOnClick = options.onClick;
-    installToolbarAvoidance(existing);
+    placeToolbar(existing, button, options);
     return {
       root: existing,
       button,
@@ -427,7 +162,7 @@ export function mountPersistentExportToolbar(
   });
 
   document.body.appendChild(root);
-  installToolbarAvoidance(root);
+  placeToolbar(root, button, options);
 
   return {
     root,
