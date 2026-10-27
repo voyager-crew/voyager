@@ -14,6 +14,10 @@ describe('published host fragments without generic HTML friction', () => {
     'main',
     'input',
     'a[href]',
+    'A[HREF]',
+    '[ARIA-LABEL]',
+    '[ROLE]',
+    '[HIDDEN]',
     '[role="dialog"]',
     "[role='button']",
     '[role=menuitem]',
@@ -71,11 +75,40 @@ describe('equivalent host locator spellings', () => {
     expect(failures[0].reason).toContain('bypasses contract');
   });
 
-  it.each(['[data-test-id="Conversation-Title"]', '.Conversation-title-text'])(
+  it.each([
+    'data-message-author-role',
+    'data-user-message-bubble',
+    'data-mode-id',
+    'data-chatgpt-selection-message-id',
+    'data-app-action-timeline-scroll',
+    'data-mobile-thread',
+    'data-assistant-markdown-root',
+    'data-chatgpt-conversation-selection-target',
+  ])('uppercase presence names cannot bypass the published %s host owner', (attribute) => {
+    const owner = document.createElement('article');
+    owner.setAttribute(attribute, 'native owner');
+    document.body.appendChild(owner);
+    for (const locator of [
+      `[${attribute}]`,
+      `[${attribute.toUpperCase()}]`,
+      `[ ${attribute.toUpperCase()} ]`,
+      `ARTICLE[${attribute.toUpperCase()}]`,
+    ]) {
+      expect(Array.from(document.querySelectorAll(locator))).toEqual([owner]);
+      const failures = inspectLocatorSource(
+        consumer,
+        `document.querySelectorAll(${JSON.stringify(locator)});`,
+      );
+      expect(failures).toEqual([expect.objectContaining({ line: 1 })]);
+      expect(failures[0].reason).toContain('bypasses contract');
+    }
+  });
+
+  it.each(['[data-test-id="Conversation-Title"]', '.Conversation-title-text', '#Prompt-textarea'])(
     'preserves case-sensitive host names in %s',
     (locator) => {
       document.body.innerHTML =
-        '<div class="conversation-title-text" data-test-id="conversation-title"></div>';
+        '<div id="prompt-textarea" class="conversation-title-text" data-test-id="conversation-title"></div>';
       expect(
         document.querySelector('[data-test-id="conversation-title"].conversation-title-text'),
       ).toBe(document.body.firstElementChild);

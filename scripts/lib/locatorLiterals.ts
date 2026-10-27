@@ -84,7 +84,7 @@ function balancedEnd(value: string, start: number): number {
   return value.length;
 }
 
-/** Equivalent CSS attribute quotes and HTML type casing identify the same locator. */
+/** Equivalent CSS attribute quotes and HTML type/attribute casing identify the same locator. */
 export function canonicalLocator(value: string): string {
   let result = '';
   for (let index = 0; index < value.length;) {
@@ -95,9 +95,13 @@ export function canonicalLocator(value: string): string {
       const match = attribute.match(
         /^\[\s*([\w:-]+)\s*([~|^$*]?=)\s*(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)'|([^\s\]]+))\s*([is])?\s*\]$/i,
       );
+      // HTML attribute names are case-insensitive even when no value is specified.
+      const presence = attribute.match(/^\[\s*([\w:-]+)\s*\]$/);
       result += match
         ? `[${match[1].toLowerCase()}${match[2]}${JSON.stringify(match[3] ?? match[4] ?? match[5])}${match[6] ? ` ${match[6].toLowerCase()}` : ''}]`
-        : attribute;
+        : presence
+          ? `[${presence[1].toLowerCase()}]`
+          : attribute;
       index = end;
     } else if (char === '\\') {
       result += value.slice(index, index + 2);
