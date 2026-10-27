@@ -6,13 +6,16 @@
  * leaves - long enough to cross the gap onto the card, where long prompts can
  * be read and scrolled. Entering the card cancels a pending hide; leaving it
  * schedules one. One card is reused for every row, and scrolling the list or
- * the page dismisses it so it never hangs over rows that moved away.
+ * the page dismisses it so it never hangs over rows that moved away. Rows the
+ * pointer crosses on its way to the card wait (see `safeTriangle.ts`).
  */
 import { highlightTemplateVariables } from './PromptTemplateFill';
 import { renderPromptMarkdown } from './promptMarkdownLoader';
+import { createAimedRows } from './safeTriangle';
 
 const OPEN_DELAY_MS = 250;
 const HIDE_GRACE_MS = 150;
+const VISIBLE_CLASS = 'gv-pm-tooltip-visible';
 
 export interface PromptPreview {
   /** Shows `text` while the pointer rests on `target`; a press on `target` dismisses it. */
@@ -41,6 +44,21 @@ export function createPromptPreview({ panel, scrollRoot }: PromptPreviewOptions)
   let hideTimer: number | null = null;
   let targetHovered = false;
   let cardHovered = false;
+  /** The row the card last showed. */
+  let shownTarget: HTMLElement | null = null;
+
+  // The diagonal to the card crosses other rows. Entering one started its open
+  // timer and leaving it before the timer fired hid the card mid-way.
+  const rows = createAimedRows({
+    card: () => (card?.classList.contains(VISIBLE_CLASS) ? card : null),
+    owner: () => shownTarget,
+    onAim: () => {
+      // The pointer is off its row: from here the card's own hover, or the
+      // row the aim hands over to, decides when it closes.
+      targetHovered = false;
+      clearHideTimer();
+    },
+  });
 
   function clearOpenTimer(): void {
     if (openTimer !== null) {
@@ -59,11 +77,12 @@ export function createPromptPreview({ panel, scrollRoot }: PromptPreviewOptions)
   function hide(): void {
     clearOpenTimer();
     clearHideTimer();
+    rows.stop();
     renderToken += 1;
     targetHovered = false;
     cardHovered = false;
     if (card) {
-      card.classList.remove('gv-pm-tooltip-visible');
+      card.classList.remove(VISIBLE_CLASS);
     }
   }
 
@@ -85,6 +104,7 @@ export function createPromptPreview({ panel, scrollRoot }: PromptPreviewOptions)
     // Entering the tooltip cancels any pending hide; leaving schedules it.
     // This is what lets the user glide from row → gap → tooltip and scroll.
     el.addEventListener('mouseenter', () => {
+      rows.stop();
       cardHovered = true;
       clearHideTimer();
     });
@@ -117,7 +137,7 @@ export function createPromptPreview({ panel, scrollRoot }: PromptPreviewOptions)
     el.style.left = '0px';
     el.style.top = '0px';
     el.style.visibility = 'hidden';
-    el.classList.add('gv-pm-tooltip-visible');
+    el.classList.add(VISIBLE_CLASS);
     const targetRect = target.getBoundingClientRect();
     const tipRect = el.getBoundingClientRect();
     const vw = window.innerWidth;
@@ -166,6 +186,7 @@ export function createPromptPreview({ panel, scrollRoot }: PromptPreviewOptions)
     body.textContent = fullText;
     body.classList.add('gv-pm-tooltip-raw');
     el.setAttribute('data-gv-theme', panel.getAttribute('data-gv-theme') || '');
+    shownTarget = target;
     position(target);
 
     const token = ++renderToken;
@@ -186,7 +207,7 @@ export function createPromptPreview({ panel, scrollRoot }: PromptPreviewOptions)
   }
 
   function attach(target: HTMLElement, fullText: string): void {
-    target.addEventListener('mouseenter', () => {
+    const enter = (): void => {
       targetHovered = true;
       clearHideTimer();
       clearOpenTimer();
@@ -194,8 +215,8 @@ export function createPromptPreview({ panel, scrollRoot }: PromptPreviewOptions)
         openTimer = null;
         if (targetHovered) show(target, fullText);
       }, OPEN_DELAY_MS);
-    });
-    target.addEventListener('mouseleave', () => {
+    };
+    const leave = (): void => {
       targetHovered = false;
       // Cancel a pending open (user left before it showed) — otherwise give
       // them the grace window to cross onto the tooltip.
@@ -205,7 +226,8 @@ export function createPromptPreview({ panel, scrollRoot }: PromptPreviewOptions)
         return;
       }
       scheduleHide();
-    });
+    };
+    rows.bind(target, enter, leave);
     // A click/press activates the prompt; dismiss the hover preview immediately.
     target.addEventListener('mousedown', hide);
   }
