@@ -76,8 +76,9 @@ export function createExportEntrypoint(exportSite: ExportSite) {
           label,
           tooltip,
           onClick: () => void showExportDialog(dict, lang, { signal: options.signal }),
+          siteId: exportSite.id,
+          turnSelector: entryPoints.turnSelector,
         });
-        toolbarHandle.root.setAttribute('data-gv-platform', exportSite.id);
       };
       const unmountToolbar = () => {
         exportRunner.cancel();
@@ -230,6 +231,7 @@ export function createExportEntrypoint(exportSite: ExportSite) {
           label,
           tooltip,
           onClick: () => void openDialog(),
+          siteId: exportSite.id,
         });
       } else if (!enabled && toolbarHandle) {
         toolbarHandle.remove();

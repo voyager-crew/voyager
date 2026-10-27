@@ -163,6 +163,7 @@
   "EXPORT_IMAGE_WIDTH": "gvExportImageWidth",
   "EXPORT_SPEAKER_LABELS": "gvExportSpeakerLabels",
   "PERSISTENT_EXPORT_TOOLBAR_ENABLED": "gvPersistentExportToolbarEnabled",
+  "PERSISTENT_EXPORT_TOOLBAR_POSITION": "gvPersistentExportToolbarPosition",
   "GV_AISTUDIO_ENABLED": "gvAIStudioEnabled",
   "GV_SHOW_MESSAGE_TIMESTAMPS": "gvShowMessageTimestamps",
   "GV_MESSAGE_TIMESTAMPS": "gvMessageTimestamps",

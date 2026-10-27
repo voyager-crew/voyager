@@ -298,7 +298,7 @@ describe('persistentExportToolbar', () => {
     header.remove();
   });
 
-  it('leaves the Gemini toolbar on its selector-based offset', async () => {
+  it('moves left of an unlabeled header control on Gemini too', async () => {
     vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(1280);
     const control = document.createElement('button');
     document.body.appendChild(control);
@@ -314,7 +314,7 @@ describe('persistentExportToolbar', () => {
 
     await nextFrame();
 
-    expect(handle.root.style.getPropertyValue('--gv-persistent-export-right')).toBe('84px');
+    expect(handle.root.style.getPropertyValue('--gv-persistent-export-right')).toBe('163px');
     control.remove();
   });
 

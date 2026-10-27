@@ -13,6 +13,7 @@ import {
   readCatalogConversation,
   type CatalogSnapshot,
 } from './catalogReader';
+import { siteTurnSelector } from './siteTurnSelector';
 
 /** Keep consecutive prompts separate; selecting only a reply keeps its original exchange. */
 function selectedTurns(
@@ -179,6 +180,7 @@ export function createCatalogExportSite(site: SiteAdapter): ExportSite {
     title: adapter.extractConversationTitle,
     entryPoints: {
       kind: 'toolbar',
+      turnSelector: siteTurnSelector(site),
       isConversationPage: (_doc, url) =>
         Boolean(
           site.conversationIdPattern &&
