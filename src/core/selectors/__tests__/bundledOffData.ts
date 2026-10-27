@@ -9,6 +9,7 @@ import type { InputSiteId } from '@/core/services/composer/siteInputData';
 import { timelineSiteData } from '@/features/timeline/siteTextData';
 
 import type { SiteSelectorView } from '../types';
+import { bundledOffCatalogData } from './bundledOffCatalogData';
 
 export type BundledOffEntry = readonly [key: string, value: unknown];
 const SOURCE_ROOT = join(process.cwd(), 'src');
@@ -64,5 +65,6 @@ export function bundledOffData(
     const data: unknown = JSON.parse(readFileSync(join(SOURCE_ROOT, file), 'utf8'));
     entries.push([file, data]);
   }
+  if (site) entries.push(...bundledOffCatalogData(site));
   return entries;
 }

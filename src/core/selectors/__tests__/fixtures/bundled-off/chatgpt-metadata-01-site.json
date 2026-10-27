@@ -1,0 +1,316 @@
+[
+  [
+    "site.json",
+    {
+      "id": "chatgpt",
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "theme": {
+        "hostSelector": "html",
+        "lightSelector": "html[data-theme=\"light\"]",
+        "darkSelector": "html[data-theme=\"dark\"]"
+      },
+      "brandColor": "#0ea5e9",
+      "capabilities": ["chat", "sidebar", "composer", "darkMode"],
+      "conversationIdPattern": "^(?:/u/[^/]+)?(?:/g/[^/]+)?/c/([^/?#]+)",
+      "turnKeyAttributes": ["data-turn-key", "data-message-id"],
+      "modelPicker": {
+        "format": 1,
+        "triggerLabels": {
+          "zh-CN": ["选择 ChatGPT 模型"],
+          "en": ["Select ChatGPT model"]
+        },
+        "effortStatus": {
+          "zh-CN": "{label}，第 {position} 项，共 {count} 项。",
+          "en": "{label}, {position} of {count}."
+        },
+        "models": {
+          "gpt-6": {
+            "labels": {
+              "zh-CN": ["GPT-6"],
+              "en": ["GPT-6"]
+            },
+            "efforts": [
+              {
+                "id": "instant",
+                "labels": {
+                  "zh-CN": ["即时"],
+                  "en": ["Instant"]
+                }
+              },
+              {
+                "id": "medium",
+                "labels": {
+                  "zh-CN": ["中"],
+                  "en": ["Medium"]
+                }
+              },
+              {
+                "id": "high",
+                "labels": {
+                  "zh-CN": ["高"],
+                  "en": ["High"]
+                }
+              },
+              {
+                "id": "extra-high",
+                "labels": {
+                  "zh-CN": ["极高"],
+                  "en": ["Extra High"]
+                }
+              },
+              {
+                "id": "pro",
+                "labels": {
+                  "zh-CN": ["Pro"],
+                  "en": ["Pro"]
+                }
+              }
+            ]
+          },
+          "gpt-5.6-sol": {
+            "labels": {
+              "zh-CN": ["GPT-5.6 Sol"]
+            }
+          }
+        },
+        "presets": {
+          "pro": {
+            "mode": "chat",
+            "model": "gpt-6",
+            "effort": "pro"
+          },
+          "extra-high": {
+            "mode": "chat",
+            "model": "gpt-6",
+            "effort": "extra-high"
+          },
+          "high": {
+            "mode": "chat",
+            "model": "gpt-6",
+            "effort": "high"
+          },
+          "medium": {
+            "mode": "chat",
+            "model": "gpt-6",
+            "effort": "medium"
+          },
+          "instant": {
+            "mode": "chat",
+            "model": "gpt-6",
+            "effort": "instant"
+          }
+        }
+      },
+      "projects": {
+        "format": 2,
+        "projectPagePattern": "^/g/(g-p-[0-9a-f]{32})(?:-[^/?#]*)?/project/?$",
+        "projectRoutePattern": "^/g/(g-p-[0-9a-f]{32})(?:-[^/?#]*)?(?:/|$)",
+        "projectPath": "/g/{projectId}/project",
+        "sourcesQuery": "tab=sources",
+        "sidebar": {
+          "row": "[data-app-action-sidebar-project-row]",
+          "idAttribute": "data-app-action-sidebar-project-id",
+          "labelAttribute": "data-app-action-sidebar-project-label"
+        },
+        "createButton": "button[data-app-action-sidebar-project-create]",
+        "createDialog": {
+          "dialog": "[role=\"dialog\"]",
+          "nameInput": "input[name=\"project-name\"]",
+          "submit": "button[type=\"submit\"]"
+        },
+        "titleTemplates": ["ChatGPT - {name}"],
+        "views": {
+          "chat": "[role=\"tablist\"] [role=\"tab\"][id$=\"-chats-tab\"]",
+          "sources": "[role=\"tablist\"] [role=\"tab\"][id$=\"-sources-tab\"]"
+        },
+        "chatComposerLabels": {
+          "en": ["New chat in {name}"],
+          "zh-CN": ["在“{name}”中新建聊天", "在\"{name}\"中新建聊天"],
+          "zh-TW": ["在 {name} 中開始新對話"],
+          "ja-JP": ["{name} で新しいチャット"],
+          "ko-KR": ["{name}의 새 채팅"],
+          "fr-FR": ["Nouveau chat dans {name}"],
+          "es-ES": ["Nuevo chat en {name}"],
+          "pt-BR": ["Novo chat em {name}"],
+          "ru-RU": ["Новый чат в {name}"],
+          "ar": ["دردشة جديدة في {name}"]
+        },
+        "sources": {
+          "fileInput": "main input[type=\"file\"]",
+          "row": "main li",
+          "rowName": "[title]",
+          "rowActions": "button[aria-haspopup=\"menu\"]",
+          "removeIcon": "use[href$=\"#trash-light-16\"]"
+        }
+      },
+      "pageHooks": {
+        "format": 1,
+        "modeSwitch": {
+          "group": "[data-app-shell-header-obstacle] [role=\"group\"]",
+          "button": "button[aria-pressed]",
+          "pressedAttribute": "aria-pressed",
+          "order": ["chat", "work"]
+        },
+        "modes": {
+          "chat": {
+            "composerLabels": {
+              "en": ["Ask ChatGPT"],
+              "zh-CN": ["询问 ChatGPT"],
+              "zh-TW": ["問問 ChatGPT"],
+              "ja-JP": ["ChatGPT に聞く"],
+              "ko-KR": ["ChatGPT에게 물어보세요"],
+              "fr-FR": ["Demander à ChatGPT"],
+              "es-ES": ["Pregunta a ChatGPT"],
+              "pt-BR": ["Pergunte ao ChatGPT"],
+              "ru-RU": ["Спросить ChatGPT"],
+              "ar": ["اسأل ChatGPT"]
+            },
+            "switchLabels": {
+              "en": ["Chat"],
+              "zh-CN": ["聊天"],
+              "zh-TW": ["對話"],
+              "ja-JP": ["Chat"],
+              "ko-KR": ["Chat"],
+              "fr-FR": ["Chat"],
+              "es-ES": ["Chat"],
+              "pt-BR": ["Chat"],
+              "ru-RU": ["Чат"],
+              "ar": ["الدردشة"]
+            }
+          },
+          "work": {
+            "composerLabels": {
+              "en": ["Work with ChatGPT"],
+              "zh-CN": ["使用 ChatGPT Work"],
+              "zh-TW": ["與 ChatGPT 一起工作"],
+              "ja-JP": ["Work モードで作成"],
+              "ko-KR": ["ChatGPT로 Work 시작"],
+              "fr-FR": ["Travailler avec ChatGPT"],
+              "es-ES": ["Trabajar con ChatGPT"],
+              "pt-BR": ["Trabalhe com o ChatGPT"],
+              "ru-RU": ["Работайте с ChatGPT"],
+              "ar": ["استخدم وضع العمل مع ChatGPT"]
+            },
+            "switchLabels": {
+              "en": ["Work"],
+              "zh-CN": ["工作"],
+              "zh-TW": ["工作"],
+              "ja-JP": ["Work"],
+              "ko-KR": ["Work"],
+              "fr-FR": ["Work"],
+              "es-ES": ["Work"],
+              "pt-BR": ["Work"],
+              "ru-RU": ["Работа"],
+              "ar": ["العمل"]
+            }
+          }
+        },
+        "modelPickerTrigger": "button[aria-haspopup=\"menu\"][data-composer-navigation-target=\"reasoning\"]",
+        "effortControl": "[role=\"menuitem\"][data-reasoning-slider=\"true\"]",
+        "replyFailed": ["^thinking failed[.!]?(?:\\s+retry)?$"],
+        "rateLimit": [
+          "too many requests",
+          "sending too many requests",
+          "temporarily limited access",
+          "please wait a few minutes",
+          "rate limit(?:ed)?",
+          "usage cap",
+          "you've reached"
+        ],
+        "accountBlocked": [["suspicious activity detected", "secure your account"]]
+      },
+      "folders": {
+        "format": 1,
+        "sidebar": ":is(nav, #stage-slideover-sidebar):has([data-app-action-sidebar-scroll])",
+        "rows": {
+          "row": "[role=\"listitem\"]",
+          "link": "a[href]",
+          "observe": [
+            "target",
+            "role",
+            "data-sidebar-project-container-id",
+            "aria-expanded",
+            "aria-current"
+          ],
+          "drag": "pointer"
+        },
+        "mount": {
+          "anchors": [
+            {
+              "id": "above-recents",
+              "steps": [
+                {
+                  "find": "[data-sidebar-project-container-id=\"chats\"]",
+                  "closest": "[data-chatgpt-project-conversation-drop-target]"
+                }
+              ]
+            }
+          ]
+        },
+        "hideFiled": {
+          "rows": "[data-sidebar-project-container-id=\"chats\"] [role=\"listitem\"]",
+          "keepShown": ["[aria-current=\"page\"]", ":has([aria-current=\"page\"])"]
+        },
+        "rowMenu": {
+          "trigger": "button[aria-haspopup=\"menu\"][id]",
+          "menu": "[role=\"menu\"][aria-labelledby]",
+          "item": "[role=\"menuitem\"]",
+          "open": "expanded",
+          "after": "firstSubmenu",
+          "strip": ["data-radix-collection-item"],
+          "rename": {
+            "plainItem": 0
+          }
+        },
+        "page": {
+          "placeholderTitles": {
+            "any": ["ChatGPT"],
+            "byLanguage": {
+              "en": ["New chat"],
+              "zh": ["新聊天", "新对话", "新對話"],
+              "ja": ["新しいチャット"],
+              "ko": ["새 채팅"],
+              "es": ["Nuevo chat"],
+              "fr": ["Nouveau chat", "Nouvelle discussion"],
+              "de": ["Neuer Chat"],
+              "pt": ["Novo chat", "Nova conversa"],
+              "it": ["Nuova chat"],
+              "nl": ["Nieuwe chat"],
+              "pl": ["Nowy czat"],
+              "tr": ["Yeni sohbet"],
+              "ru": ["Новый чат"],
+              "uk": ["Новий чат"],
+              "ar": ["محادثة جديدة", "دردشة جديدة"],
+              "hi": ["नई चैट"],
+              "id": ["Obrolan baru"],
+              "vi": ["Đoạn chat mới"],
+              "th": ["แชทใหม่"]
+            },
+            "fallbackLanguage": "en"
+          }
+        }
+      },
+      "bridge": {
+        "format": 1,
+        "allow": [
+          "conversation.open",
+          "conversation.ready",
+          "conversation.close",
+          "model.inspect",
+          "model.select",
+          "composer.attach",
+          "composer.send",
+          "turns.waitReply",
+          "turns.read",
+          "files.download",
+          "project.list",
+          "project.create",
+          "project.open",
+          "project.files",
+          "project.upload",
+          "project.remove"
+        ]
+      }
+    }
+  ]
+]

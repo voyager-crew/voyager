@@ -1,0 +1,334 @@
+[
+  [
+    "plugins/cjk-render-fix/plugin.json",
+    {
+      "id": "voyager.claude-cjk-render-fix",
+      "version": "1.1.0",
+      "engine": ">=1.2.0",
+      "tier": "declarative",
+      "matches": ["https://claude.ai/*"],
+      "contributes": {
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/composer-counter/plugin.json",
+    {
+      "id": "voyager.claude-composer-counter",
+      "version": "1.0.0",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://claude.ai/*"],
+      "contributes": {
+        "settings": {
+          "metric": {
+            "type": "select",
+            "label": "What to count",
+            "default": "chars",
+            "options": [
+              {
+                "value": "chars",
+                "label": "Characters"
+              },
+              {
+                "value": "words",
+                "label": "Words"
+              },
+              {
+                "value": "cjkChars",
+                "label": "CJK characters"
+              },
+              {
+                "value": "lines",
+                "label": "Lines"
+              }
+            ]
+          }
+        },
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "counterBadge",
+            "params": {
+              "target": "composer",
+              "metric": "{{metric}}"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/ctrl-enter-send/plugin.json",
+    {
+      "id": "voyager.claude-ctrl-enter-send",
+      "version": "1.0.0",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://claude.ai/*", "https://*.frame.claudeusercontent.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "sendShortcut",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/draft-save/plugin.json",
+    {
+      "id": "voyager.claude-draft-save",
+      "version": "1.0.0",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://claude.ai/*"],
+      "requires": {
+        "handlers": ["draftSave"]
+      },
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "draftSave",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/export/plugin.json",
+    {
+      "id": "voyager.claude-export",
+      "version": "1.0.0",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://claude.ai/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "conversationExport",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/folders/plugin.json",
+    {
+      "id": "voyager.claude-folders",
+      "version": "1.1.0",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://claude.ai/*"],
+      "requires": {
+        "handlers": ["folders"]
+      },
+      "contributes": {
+        "settings": {
+          "hideFiledChats": {
+            "type": "boolean",
+            "label": "Hide chats already in folders from the sidebar list",
+            "default": false
+          }
+        },
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "folders",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/quote-reply/plugin.json",
+    {
+      "id": "voyager.claude-quote-reply",
+      "version": "1.0.0",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://claude.ai/*", "https://*.frame.claudeusercontent.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "quoteReply",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/reading-typography/plugin.json",
+    {
+      "id": "voyager.claude-reading-typography",
+      "version": "1.0.0",
+      "engine": ">=1.4.0",
+      "tier": "declarative",
+      "matches": ["https://claude.ai/*"],
+      "requires": {
+        "semantic": ["assistantTurn"]
+      },
+      "contributes": {
+        "settings": {
+          "fontSizeEnabled": {
+            "type": "boolean",
+            "label": "Custom text size",
+            "default": false
+          },
+          "fontSize": {
+            "type": "number",
+            "enabledBy": "fontSizeEnabled",
+            "label": "Text size (%)",
+            "minLabel": "Small",
+            "maxLabel": "Large",
+            "default": 100,
+            "min": 80,
+            "max": 150
+          },
+          "spacingEnabled": {
+            "type": "boolean",
+            "label": "Custom spacing",
+            "default": false
+          },
+          "lineHeight": {
+            "type": "number",
+            "enabledBy": "spacingEnabled",
+            "label": "Line height (%)",
+            "minLabel": "Tight",
+            "maxLabel": "Loose",
+            "default": 160,
+            "min": 120,
+            "max": 220
+          },
+          "paragraphSpacing": {
+            "type": "number",
+            "enabledBy": "spacingEnabled",
+            "label": "Paragraph spacing (px)",
+            "minLabel": "Tight",
+            "maxLabel": "Loose",
+            "default": 16,
+            "min": 0,
+            "max": 24
+          }
+        },
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ],
+        "domOps": [
+          {
+            "op": "addClass",
+            "target": {
+              "kind": "semantic",
+              "key": "assistantTurn"
+            },
+            "className": "gv-plugin-claude-reading-typography"
+          },
+          {
+            "op": "setAttribute",
+            "target": {
+              "kind": "semantic",
+              "key": "assistantTurn"
+            },
+            "name": "data-gv-font-size",
+            "value": "{{fontSizeEnabled}}"
+          },
+          {
+            "op": "setAttribute",
+            "target": {
+              "kind": "semantic",
+              "key": "assistantTurn"
+            },
+            "name": "data-gv-spacing",
+            "value": "{{spacingEnabled}}"
+          },
+          {
+            "op": "setStyle",
+            "target": "body",
+            "styles": {
+              "--gv-plugin-reading-text-size": "{{fontSize}}%",
+              "--gv-plugin-reading-line-height": "{{lineHeight}}",
+              "--gv-plugin-reading-paragraph-spacing": "{{paragraphSpacing}}px"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/reading-width/plugin.json",
+    {
+      "id": "voyager.claude-reading-width",
+      "version": "1.4.1",
+      "engine": ">=1.2.0",
+      "tier": "declarative",
+      "matches": ["https://claude.ai/*", "https://*.frame.claudeusercontent.com/*"],
+      "contributes": {
+        "settings": {
+          "width": {
+            "type": "number",
+            "label": "Reading width (px)",
+            "minLabel": "Narrower",
+            "maxLabel": "Wider",
+            "default": 768,
+            "min": 600,
+            "max": 1600
+          }
+        },
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ],
+        "domOps": [
+          {
+            "op": "addClass",
+            "target": "body",
+            "className": "gv-plugin-claude-readable"
+          },
+          {
+            "op": "setStyle",
+            "target": "body",
+            "styles": {
+              "--gv-plugin-reading-width": "{{width}}px"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/site-check/plugin.json",
+    {
+      "id": "voyager.claude-site-check",
+      "version": "1.0.0",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://claude.ai/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "siteCheck",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ]
+]

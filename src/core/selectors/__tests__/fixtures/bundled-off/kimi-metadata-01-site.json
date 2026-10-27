@@ -1,0 +1,65 @@
+[
+  [
+    "site.json",
+    {
+      "id": "kimi",
+      "matches": ["https://www.kimi.com/*"],
+      "theme": {
+        "hostSelector": "html",
+        "lightSelector": "html.light",
+        "darkSelector": "html.dark"
+      },
+      "brandColor": "#1783ff",
+      "capabilities": ["chat", "sidebar", "composer", "darkMode"],
+      "conversationIdPattern": "^/chat/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[a-z0-9]{20})/?$",
+      "routeWords": ["chat"],
+      "export": {
+        "version": 1,
+        "read": "virtual",
+        "messageKey": "data-archer-id"
+      },
+      "folders": {
+        "format": 1,
+        "sidebar": "aside.next-sidebar",
+        "rows": {
+          "row": ".next-sidebar-history-item__link[href^=\"/chat/\"]",
+          "observe": ["aria-current"],
+          "drag": "link"
+        },
+        "hideFiled": {
+          "rows": ".next-sidebar-history-item:has(> .next-sidebar-history-item__link[href^=\"/chat/\"])"
+        },
+        "mount": {
+          "anchors": [
+            {
+              "id": "above-history",
+              "steps": [
+                {
+                  "find": ".next-sidebar__section--history"
+                }
+              ]
+            }
+          ]
+        },
+        "page": {
+          "placeholderTitles": {
+            "any": [
+              "New chat",
+              "New Chat",
+              "新对话",
+              "新對話",
+              "新しいチャット",
+              "새 채팅",
+              "Nouveau chat",
+              "Nuevo chat",
+              "Novo chat",
+              "Новый чат",
+              "محادثة جديدة"
+            ]
+          },
+          "titleSuffix": "\\s+-\\s+Kimi$"
+        }
+      }
+    }
+  ]
+]

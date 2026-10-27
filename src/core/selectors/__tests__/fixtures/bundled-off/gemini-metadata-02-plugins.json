@@ -1,0 +1,335 @@
+[
+  [
+    "plugins/chat-font-size/plugin.json",
+    {
+      "id": "voyager.gemini-chat-font-size",
+      "version": "1.0.0",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://gemini.google.com/*"],
+      "contributes": {
+        "settings": {
+          "fontSize": {
+            "type": "number",
+            "label": "Chat font size (%)",
+            "minLabel": "Small",
+            "maxLabel": "Large",
+            "default": 100,
+            "min": 80,
+            "max": 150
+          }
+        },
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/chat-line-height/plugin.json",
+    {
+      "id": "voyager.gemini-chat-line-height",
+      "version": "1.0.0",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://gemini.google.com/*"],
+      "contributes": {
+        "settings": {
+          "lineHeight": {
+            "type": "number",
+            "label": "Line height (%)",
+            "minLabel": "Tight",
+            "maxLabel": "Loose",
+            "default": 160,
+            "min": 120,
+            "max": 220
+          },
+          "paragraphSpacing": {
+            "type": "number",
+            "label": "Paragraph spacing (px)",
+            "minLabel": "Tight",
+            "maxLabel": "Loose",
+            "default": 12,
+            "min": 0,
+            "max": 24
+          }
+        },
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/code-collapse/plugin.json",
+    {
+      "id": "voyager.gemini-code-collapse",
+      "version": "1.0.0",
+      "engine": ">=1.9.0",
+      "tier": "declarative",
+      "matches": ["https://gemini.google.com/*"],
+      "requires": {
+        "handlers": ["codeCollapse"],
+        "semantic": ["assistantTurn", "codeBlock"]
+      },
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "codeCollapse",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/ctrl-enter-send/plugin.json",
+    {
+      "id": "voyager.gemini-ctrl-enter-send",
+      "version": "1.0.0",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://gemini.google.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "sendShortcut",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/draft-save/plugin.json",
+    {
+      "id": "voyager.gemini-draft-save",
+      "version": "1.0.0",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://gemini.google.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "draftSave",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/echarts/plugin.json",
+    {
+      "id": "voyager.gemini-echarts",
+      "version": "1.0.0",
+      "engine": ">=1.9.0",
+      "tier": "declarative",
+      "matches": ["https://gemini.google.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "echarts",
+            "params": {
+              "language": ".code-block-decoration > span",
+              "code": "code[data-test-id=\"code-content\"]",
+              "copyButton": true,
+              "exportImage": true
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/folders/plugin.json",
+    {
+      "id": "voyager.gemini-folders",
+      "version": "1.0.0",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://gemini.google.com/*"],
+      "requires": {
+        "handlers": ["folders"]
+      },
+      "contributes": {
+        "settings": {
+          "hideFiledChats": {
+            "type": "boolean",
+            "label": "Hide chats already in folders from the sidebar list",
+            "default": false
+          }
+        },
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "folders",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/formula-copy/plugin.json",
+    {
+      "id": "voyager.gemini-formula-copy",
+      "version": "1.0.0",
+      "engine": ">=1.3.0",
+      "tier": "declarative",
+      "matches": ["https://gemini.google.com/*"],
+      "requires": {
+        "handlers": ["formulaCopy"]
+      },
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "formulaCopy",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/hide-input-halo/plugin.json",
+    {
+      "id": "voyager.gemini-hide-input-halo",
+      "version": "1.0.0",
+      "engine": ">=1.8.0",
+      "tier": "declarative",
+      "matches": ["https://gemini.google.com/*"],
+      "contributes": {
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/mermaid/plugin.json",
+    {
+      "id": "voyager.gemini-mermaid",
+      "version": "1.0.0",
+      "engine": ">=1.9.0",
+      "tier": "declarative",
+      "matches": ["https://gemini.google.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "mermaid",
+            "params": {
+              "language": ".code-block-decoration > span",
+              "code": "code[data-test-id=\"code-content\"]",
+              "copyButton": true,
+              "exportImage": true
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/site-check/plugin.json",
+    {
+      "id": "voyager.gemini-site-check",
+      "version": "1.0.0",
+      "engine": ">=1.10.0",
+      "tier": "declarative",
+      "matches": ["https://gemini.google.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "siteCheck",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/user-latex/plugin.json",
+    {
+      "id": "voyager.gemini-user-latex",
+      "version": "1.0.0",
+      "engine": ">=1.9.0",
+      "tier": "declarative",
+      "matches": ["https://gemini.google.com/*"],
+      "requires": {
+        "handlers": ["userLatex"]
+      },
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "userLatex",
+            "params": {
+              "turn": "p.query-text-line",
+              "unit": "turn"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/vim-input/plugin.json",
+    {
+      "id": "voyager.gemini-vim-input",
+      "version": "1.0.0",
+      "engine": ">=1.4.0",
+      "tier": "declarative",
+      "matches": ["https://gemini.google.com/*"],
+      "requires": {
+        "handlers": ["vimInput"],
+        "semantic": ["composer"]
+      },
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "vimInput",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
+    "plugins/wavedrom/plugin.json",
+    {
+      "id": "voyager.gemini-wavedrom",
+      "version": "1.0.0",
+      "engine": ">=1.9.0",
+      "tier": "declarative",
+      "matches": ["https://gemini.google.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "wavedrom",
+            "params": {
+              "language": ".code-block-decoration > span",
+              "code": "code[data-test-id=\"code-content\"]",
+              "copyButton": true,
+              "exportImage": true
+            }
+          }
+        ]
+      }
+    }
+  ]
+]

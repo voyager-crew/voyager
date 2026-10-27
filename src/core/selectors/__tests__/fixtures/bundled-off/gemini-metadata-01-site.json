@@ -1,0 +1,55 @@
+[
+  [
+    "site.json",
+    {
+      "id": "gemini",
+      "matches": ["https://gemini.google.com/*", "https://business.gemini.google/*"],
+      "theme": {
+        "hostSelector": ".theme-host",
+        "lightSelector": ".theme-host.light-theme",
+        "darkSelector": ".theme-host.dark-theme"
+      },
+      "capabilities": ["chat", "sidebar", "composer", "darkMode"],
+      "folders": {
+        "format": 1,
+        "sidebar": "[data-test-id=\"overflow-container\"]",
+        "rows": {
+          "row": "[data-test-id=\"conversation\"]",
+          "link": "a[href*=\"/app/\"], a[href*=\"/gem/\"]",
+          "idSources": [
+            {
+              "attribute": "jslog",
+              "pattern": "[\",\\[](c_[a-f0-9]+)[\",\\]]"
+            }
+          ],
+          "drag": "html5"
+        },
+        "mount": {
+          "anchors": [
+            {
+              "id": "above-recents",
+              "steps": [
+                {
+                  "find": "expandable-section[data-test-id=\"chats-expandable-section\"]"
+                },
+                {
+                  "find": "[data-test-id=\"all-conversations\"]",
+                  "closest": "expandable-section"
+                }
+              ]
+            },
+            {
+              "id": "above-notebooks",
+              "steps": [
+                {
+                  "find": "expandable-section[storagekey=\"notebooks\"], expandable-section[data-test-id=\"notebooks-expandable-section\"]"
+                }
+              ]
+            }
+          ],
+          "default": "above-recents"
+        }
+      }
+    }
+  ]
+]

@@ -40,7 +40,7 @@ function snapshot(site: string): unknown[] {
     });
 }
 
-it('OFF preserves every bundled key and ordered value on every host and custom profile', async () => {
+it('OFF preserves bundled profiles and runtime catalog values on every host and custom profile', async () => {
   vi.stubEnv('VOYAGER_PLUGIN_CATALOG_REMOTE', 'on');
   storageRead('sync', {
     [StorageKeys.PLUGIN_ONLINE_UPDATES_ENABLED]: false,
