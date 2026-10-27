@@ -34,26 +34,67 @@ export function foreignSiteValue(
   );
 }
 
-function baselineEntries(root: string, site: string): Map<string, readonly string[]> {
-  const fixtures = join(root, 'src/core/selectors/__tests__/fixtures/bundled-off');
-  const entries = new Map<string, readonly string[]>();
-  for (const file of readdirSync(fixtures).filter(
-    (file) => file.startsWith(`${site}-`) && file.endsWith('.json'),
-  )) {
-    const data: unknown = JSON.parse(readFileSync(join(fixtures, file), 'utf8'));
-    if (!Array.isArray(data)) throw new Error(`Invalid OFF snapshot: ${file}`);
-    for (const row of data) {
-      if (Array.isArray(row) && typeof row[0] === 'string') entries.set(row[0], strings(row[1]));
-    }
-  }
-  return entries;
+export interface SiteFragmentBaselineEntry {
+  readonly sites: readonly string[];
+  readonly row: string;
+  readonly values: readonly string[];
+  readonly reason: string;
+}
+
+/** OFF snapshots can be updated; they must never grant a new ownership exemption. */
+export function readSiteFragmentBaseline(root: string): readonly SiteFragmentBaselineEntry[] {
+  const file = 'scripts/lib/siteFragmentBaseline.json';
+  const data: unknown = JSON.parse(readFileSync(join(root, file), 'utf8'));
+  if (
+    !data ||
+    typeof data !== 'object' ||
+    !('header' in data) ||
+    typeof data.header !== 'string' ||
+    !data.header.trim() ||
+    !('baseline' in data) ||
+    data.baseline !== '6fa19b4ae' ||
+    !('entries' in data) ||
+    !Array.isArray(data.entries)
+  )
+    throw new Error(`Invalid frozen ownership baseline: ${file}`);
+  return data.entries.map((entry: unknown, index): SiteFragmentBaselineEntry => {
+    if (
+      !entry ||
+      typeof entry !== 'object' ||
+      !('reason' in entry) ||
+      typeof entry.reason !== 'string' ||
+      !entry.reason.trim()
+    )
+      throw new Error(`${file} entry ${index} needs a reviewed reason`);
+    if (
+      !('sites' in entry) ||
+      !Array.isArray(entry.sites) ||
+      !entry.sites.length ||
+      !entry.sites.every(
+        (site: unknown): site is string =>
+          typeof site === 'string' && Object.hasOwn(SITE_DIALECTS, site),
+      ) ||
+      !('row' in entry) ||
+      typeof entry.row !== 'string' ||
+      !/^[\w-]+\.json\/[^/]+$/.test(entry.row) ||
+      !('values' in entry) ||
+      !Array.isArray(entry.values) ||
+      !entry.values.length ||
+      !entry.values.every((value: unknown): value is string => typeof value === 'string' && !!value)
+    )
+      throw new Error(`${file} entry ${index} must identify exact sites, row and values`);
+    return { sites: entry.sites, row: entry.row, values: entry.values, reason: entry.reason };
+  });
 }
 
 export function inspectSiteFragmentOwnership(root: string): LocatorViolation[] {
   const failures: LocatorViolation[] = [];
   const sitesPath = 'src/features/plugins/catalog/sites';
+  const exemptions = readSiteFragmentBaseline(root);
   for (const site of Object.keys(SITE_DIALECTS)) {
-    const baseline = baselineEntries(root, site);
+    const baseline = new Map<string, readonly string[]>();
+    for (const entry of exemptions.filter((entry) => entry.sites.includes(site)))
+      baseline.set(entry.row, [...(baseline.get(entry.row) ?? []), ...entry.values]);
     const dir = `${sitesPath}/${site}/selector-data`;
     for (const name of readdirSync(join(root, dir)).filter((name) => name.endsWith('.json'))) {
       const file = `${dir}/${name}`;

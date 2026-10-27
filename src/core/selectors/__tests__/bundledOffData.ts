@@ -12,6 +12,15 @@ import type { SiteSelectorView } from '../types';
 
 export type BundledOffEntry = readonly [key: string, value: unknown];
 const SOURCE_ROOT = join(process.cwd(), 'src');
+const SHARED_BUNDLED_FILES = [
+  'core/services/composer/generic-input.json',
+  'features/timeline/generic-text.json',
+  'pages/content/export/generic-layout.json',
+  'pages/content/export/adapter/platform/generic-profile.json',
+  'pages/content/sendBehavior/send-protocol.json',
+  'pages/content/prompt/prompt-input-protocol.json',
+  'features/export/services/shared-content.json',
+] as const;
 
 /** Capture ordered data, including packaged consumers outside the online view. */
 export function bundledOffData(
@@ -49,16 +58,11 @@ export function bundledOffData(
         throw new Error(`Expected a locator fragment: ${site}/${file}`);
       for (const entry of Object.entries(data)) entries.push([`${file}/${entry[0]}`, entry[1]]);
     }
-  } else {
-    for (const file of [
-      'core/services/composer/generic-input.json',
-      'features/timeline/generic-text.json',
-      'pages/content/export/generic-layout.json',
-      'pages/content/export/adapter/platform/generic-profile.json',
-    ]) {
-      const data: unknown = JSON.parse(readFileSync(join(SOURCE_ROOT, file), 'utf8'));
-      entries.push([file, data]);
-    }
+  }
+  // Shared fallbacks and protocols still run on known hosts; profiles alone miss their order.
+  for (const file of SHARED_BUNDLED_FILES) {
+    const data: unknown = JSON.parse(readFileSync(join(SOURCE_ROOT, file), 'utf8'));
+    entries.push([file, data]);
   }
   return entries;
 }
