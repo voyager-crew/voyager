@@ -1,4 +1,16 @@
+import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
+import {
+  getBundledGeminiSelectorView,
+  getGeminiSelectorView,
+  type GeminiSelectorView,
+} from '@/core/gemini/selectors';
+import {
+  geminiSidebarSelector,
+  resolveGeminiSidebarOperation,
+} from '@/core/gemini/sidebar/queries';
 import { geminiTitleSelectors } from '@/core/gemini/sidebar/titleProof';
+
+import { isUsableSidebarObservationRow } from '../folder/sidebarConversationQueries';
 
 export type SidebarConversationTarget = {
   conversationId: string;
@@ -11,6 +23,8 @@ type ConversationCandidate = SidebarConversationTarget & {
 };
 
 const SIDEBAR_CONVERSATION_SELECTOR = '[data-test-id="conversation"]';
+const FOREIGN_ROW_OWNER =
+  'main, [role="main"], form, dialog, [role="dialog"], [role="alertdialog"], [role="menu"], [contenteditable]:not([contenteditable="false"])';
 
 function normalizeText(value: string | null | undefined): string {
   return String(value || '')
@@ -94,8 +108,85 @@ function getCandidateFromScope(scope: HTMLElement): ConversationCandidate | null
   };
 }
 
+/** A renamed row must retain the native link, account and jslog identity protocol. */
+function nativeLinkedConversationRow(
+  link: HTMLAnchorElement,
+  bundled: GeminiSelectorView,
+): HTMLElement | null {
+  if (hasVoyagerOwner(link) || link.closest(FOREIGN_ROW_OWNER)) return null;
+  // Surviving native rows already have exact element identity; a nested alias cannot replace one.
+  if (link.closest(geminiSidebarSelector('sidebar.row', bundled))) return null;
+  let row: HTMLElement | null = link;
+  // Generic click instrumentation on the anchor must not shadow its conversation's c_ID owner.
+  while (row && !extractConversationIdFromJslog(row.getAttribute('jslog'))) row = row.parentElement;
+  if (!row) return null;
+  const sidebar = row.closest(
+    `${geminiSidebarSelector('sidebar.host', bundled)}, nav, aside, [role="navigation"]`,
+  );
+  if (!sidebar || sidebar === row) return null;
+  // Virtualized hidden rows must not win the nearest-title fallback for a visible menu.
+  for (let owner: HTMLElement | null = link; owner; owner = owner.parentElement) {
+    if (owner.hidden || owner.getAttribute('aria-hidden') === 'true') return null;
+    const style = getComputedStyle(owner);
+    if (
+      style.display === 'none' ||
+      style.visibility === 'hidden' ||
+      style.visibility === 'collapse' ||
+      style.contentVisibility === 'hidden'
+    )
+      return null;
+  }
+
+  let url: URL;
+  try {
+    url = new URL(link.href, window.location.href);
+  } catch {
+    return null;
+  }
+  const route = url.pathname.match(/^(\/u\/\d+)?\/(?:app|gem\/[^/]+)\/([^/?#]+)\/?$/);
+  const account = window.location.pathname.match(/^\/u\/\d+(?=\/)/)?.[0] ?? '';
+  if (
+    url.origin !== window.location.origin ||
+    !route ||
+    (route[1] ?? '') !== account ||
+    extractConversationIdFromJslog(row.getAttribute('jslog')) !== route[2]
+  )
+    return null;
+
+  const links = row === link ? [link] : Array.from(row.querySelectorAll('a[href]'));
+  return links.length === 1 && links[0] === link ? row : null;
+}
+
+function readConversationScopes(): HTMLElement[] {
+  return (
+    resolveGeminiSidebarOperation(
+      (view) => {
+        const scopes = Array.from(
+          document.querySelectorAll<HTMLElement>(geminiSidebarSelector('sidebar.row', view)),
+        );
+        if (!view.remoteKeys.has('sidebar.row')) return scopes;
+
+        const bundled = getBundledGeminiSelectorView();
+        const expected = new Set(
+          document.querySelectorAll<HTMLElement>(geminiSidebarSelector('sidebar.row', bundled)),
+        );
+        for (const link of document.querySelectorAll<HTMLAnchorElement>('a[href]')) {
+          const row = nativeLinkedConversationRow(link, bundled);
+          if (row) expected.add(row);
+        }
+        // A partial alias would make a nearby menu export a different conversation.
+        return scopes.length === expected.size &&
+          scopes.every((row) => expected.has(row) && isUsableSidebarObservationRow(row, view))
+          ? scopes
+          : null;
+      },
+      (scopes) => scopes !== null && scopes.length > 0,
+    ).value ?? []
+  );
+}
+
 function collectConversationCandidates(): ConversationCandidate[] {
-  const scopes = Array.from(document.querySelectorAll<HTMLElement>(SIDEBAR_CONVERSATION_SELECTOR));
+  const scopes = readConversationScopes();
   const out: ConversationCandidate[] = [];
 
   scopes.forEach((scope) => {
@@ -128,19 +219,11 @@ function pickNearestByVerticalDistance(
   return best;
 }
 
-export function resolveSidebarConversationTarget(
-  trigger: HTMLElement,
-): SidebarConversationTarget | null {
+function resolveConversationCandidate(trigger: HTMLElement): ConversationCandidate | null {
   const directScope = trigger.closest(SIDEBAR_CONVERSATION_SELECTOR) as HTMLElement | null;
   if (directScope) {
     const direct = getCandidateFromScope(directScope);
-    if (direct) {
-      return {
-        conversationId: direct.conversationId,
-        url: direct.url,
-        title: direct.title,
-      };
-    }
+    if (direct) return direct;
   }
 
   const candidates = collectConversationCandidates();
@@ -154,20 +237,30 @@ export function resolveSidebarConversationTarget(
       return title.length > 0 && title === normalizedHint;
     });
     const picked = pickNearestByVerticalDistance(trigger, titleMatched);
-    if (picked) {
-      return {
-        conversationId: picked.conversationId,
-        url: picked.url,
-        title: picked.title,
-      };
-    }
+    if (picked) return picked;
   }
 
-  const nearest = pickNearestByVerticalDistance(trigger, candidates);
-  if (!nearest) return null;
-  return {
-    conversationId: nearest.conversationId,
-    url: nearest.url,
-    title: nearest.title,
-  };
+  return pickNearestByVerticalDistance(trigger, candidates);
+}
+
+export function resolveSidebarConversationTarget(
+  trigger: HTMLElement,
+): SidebarConversationTarget | null {
+  const candidate = resolveConversationCandidate(trigger);
+  return candidate
+    ? { conversationId: candidate.conversationId, url: candidate.url, title: candidate.title }
+    : null;
+}
+
+/** Use the proven row's native SPA link when a renamed row no longer matches the ID lookup. */
+export function findRepairedSidebarConversationLink(
+  trigger: HTMLElement,
+  conversationId: string,
+): HTMLAnchorElement | null {
+  if (!getGeminiSelectorView().remoteKeys.has('sidebar.row')) return null;
+  const candidate = resolveConversationCandidate(trigger);
+  if (!candidate || candidate.conversationId !== conversationId) return null;
+  return candidate.element instanceof HTMLAnchorElement
+    ? candidate.element
+    : candidate.element.querySelector<HTMLAnchorElement>('a[href]');
 }

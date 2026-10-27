@@ -11,7 +11,7 @@ export const CONTENT_UI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] =
       '.mat-mdc-dialog-container': 1,
     },
     reason:
-      'Native batch-delete row selection binds original conversation identity; outside-press exclusions keep native conversation rows, confirmation menus/dialogs and Voyager overlays inside the destructive-selection flow. Both are fixed deletion/identity protocols.',
+      'bindRows attaches long-press/click handlers that create the confirmed destructive selection; original native row identity must authorize those handlers independently of online observation aliases. The second row selector and overflow/overlay/dialog exclusions define outside-press boundaries while confirmation/deletion is pending. Design §6 retains this destructive selection/action protocol; a page-location update cannot add a selectable deletion target or dismiss its confirmation.',
   },
   {
     file: 'src/pages/content/codeBlockCollapse/geminiSite.ts',

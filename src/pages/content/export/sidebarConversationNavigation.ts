@@ -11,7 +11,10 @@ import { geminiSidebarSelector } from '@/core/gemini/sidebar/queries';
 import { showExportAlert } from '../../../features/export/ui/exportToasts';
 import { waitForAnyElement } from './domWait';
 import type { ExportTranslate } from './exportLocale';
-import { resolveSidebarConversationTarget } from './sidebarConversationTarget';
+import {
+  findRepairedSidebarConversationLink,
+  resolveSidebarConversationTarget,
+} from './sidebarConversationTarget';
 
 function conversationIdFromPathname(pathname: string): string | null {
   const appMatch = pathname.match(/\/app\/([^/?#]+)/);
@@ -43,12 +46,18 @@ function escapeCssAttributeValue(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-function findSidebarConversationLinkById(conversationId: string): HTMLAnchorElement | null {
+function findSidebarConversationLinkById(
+  conversationId: string,
+  trigger: HTMLElement,
+): HTMLAnchorElement | null {
   const escapedConversationId = escapeCssAttributeValue(conversationId);
   const byJslog = document.querySelector(
     `[data-test-id="conversation"][jslog*="c_${escapedConversationId}"] a[href]`,
   ) as HTMLAnchorElement | null;
   if (byJslog) return byJslog;
+
+  const repaired = findRepairedSidebarConversationLink(trigger, conversationId);
+  if (repaired) return repaired;
 
   const links = Array.from(
     document.querySelectorAll<HTMLAnchorElement>(
@@ -89,6 +98,7 @@ async function navigateToConversationAndWait(
   conversationId: string,
   fallbackUrl: string,
   userSelectors: () => string[],
+  trigger: HTMLElement,
 ): Promise<boolean> {
   const currentConversationId = geminiConversationIdFromLocation();
   if (currentConversationId === conversationId) {
@@ -96,7 +106,7 @@ async function navigateToConversationAndWait(
     return !!existing;
   }
 
-  const link = findSidebarConversationLinkById(conversationId);
+  const link = findSidebarConversationLinkById(conversationId, trigger);
   if (link) {
     triggerNativeClick(link);
   } else if (fallbackUrl) {
@@ -131,6 +141,7 @@ export async function openSidebarConversationForExport(
     target.conversationId,
     target.url,
     userSelectors,
+    trigger,
   );
   if (!ready) {
     showExportAlert(t('export_error_conversation_open_failed'), t);

@@ -10,7 +10,7 @@ export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
       'a[href*="/gem/"]': 1,
     },
     reason:
-      'Dynamic conversation-ID-specific lookup retains native identity association and escaping. These are packaged identity/navigation paths, not general-purpose remote sidebar discovery.',
+      'Two escaped current-conversation-ID jslog/href lookups select only the already known route identity, and the third original closest binds a found descendant to that native row before reading title text. This design §6 dynamic identity association stays packaged, while title.export/sidebar descendant reads retain their separate guarded contracts.',
   },
   {
     file: 'src/pages/content/export/adapter/platform/geminiContentView.ts',
@@ -182,7 +182,7 @@ export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
       '[data-test-id="conversation"]': 1,
     },
     reason:
-      'Dynamic conversation-ID-specific lookup retains native identity association and escaping. These are packaged identity/navigation paths, not general-purpose remote sidebar discovery.',
+      'The escaped requested-ID jslog lookup and packaged fallback preserve the native navigation action/identity protocol (design §6); this selector is not broad row discovery. Newly repaired targets use a separately revalidated native link from the accepted sidebar.row result before the existing fallback, without changing OFF queries or creating a reload path.',
   },
   {
     file: 'src/pages/content/export/sidebarConversationTarget.ts',
@@ -191,6 +191,6 @@ export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
       '[data-test-id="conversation"]': 1,
     },
     reason:
-      'Original conversation row association plus standard native anchor traversal supplies href/jslog identity for menu/navigation targeting. Those identity and action-association rules stay packaged independently of repaired sidebar discovery.',
+      'The sole original conversation selector binds a nested native menu trigger directly to its immutable row owner (design §6 action/identity association). Broad conversation discovery now reads sidebar.row through the guarded contract; renamed rows are independently proved by same-origin/current-account href, native jslog ID owner, rendered sidebar ancestry and complete row identities. Standard anchor traversal parses the accepted row fixed URL/ID protocol.',
   },
 ];

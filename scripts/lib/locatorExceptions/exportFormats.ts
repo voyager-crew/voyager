@@ -37,6 +37,6 @@ export const EXPORT_FORMATS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
       'a[href*="/gem/"]': 1,
     },
     reason:
-      'Dynamic conversation-ID-specific lookup retains native identity association and escaping. These are packaged identity/navigation paths, not general-purpose remote sidebar discovery. Original [data-test-id=conversation] closest establishes conversation identity before separately guarded title.export text reads.',
+      'Two escaped current-conversation-ID jslog/href lookups select only the already known route identity, and the third original closest binds a found descendant to that native row before reading title text. This design §6 dynamic identity association stays packaged, while title.export/sidebar descendant reads retain their separate guarded contracts.',
   },
 ];

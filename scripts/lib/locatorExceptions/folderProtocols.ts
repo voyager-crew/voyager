@@ -89,7 +89,7 @@ export const FOLDER_PROTOCOLS_LITERAL_EXCEPTIONS: readonly LocatorLiteralExcepti
       'a[href*="/gem/"]': 1,
     },
     reason:
-      'Native menu-trigger-to-row association and parsed conversation-ID-specific navigation are fixed action/identity protocols. findNativeConversationLinkById rechecks parsed ID equality. isConversationInDOM is native deletion evidence and deliberately falls back from online sidebar mounts to packaged ownership; locators cannot cause data deletion by hiding an existing row.',
+      'One original conversation closest plus sibling-actions/history-item ancestry binds a native menu trigger to its fixed row owner. The escaped jslog/href selectors and link scan locate an already requested parsed conversation ID for native navigation/actions; findNativeConversationElement is used only by native rename/delete and preserves parsed-ID equality. Three original conversation queries in isConversationInDOM provide independent post-confirmation deletion evidence and deliberately restore the packaged root, so an online alias cannot hide a still-present chat and remove stored data (design §6 identity/action/deletion protocols). Ordinary sidebar enumeration already uses the published contract.',
   },
   {
     file: 'src/pages/content/folder/selectionBoundaries.ts',
