@@ -12,6 +12,7 @@
 
 The [remote catalog](../../features/plugins/remote/README.md) owns transport and cache details.
 `bun run selectors:check` enforces published-literal and site-import boundaries plus per-site loader parity; the complete OFF snapshots in `__tests__/bundledOffParity.test.ts` pin values and ordering. Both run in `verify:pr` and CI.
+Literal exceptions pin reviewed occurrence counts; barrel re-exports and dynamic/glob imports retain site ownership. The [frozen foreign-dialect baseline](../../../scripts/lib/siteFragmentBaseline.json) alone preserves reviewed `6fa19b4ae` fallback rows; updating an OFF snapshot cannot grant an ownership exemption.
 
 ## Source and boundaries
 

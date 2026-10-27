@@ -130,3 +130,16 @@ export function selectorImportOwner(file: string, site: string, binding?: string
     return true;
   return SITE_MODULES[file] === site;
 }
+
+/** A site-prefixed native module remains owned when its directory is a shared subsystem. */
+export function namedSelectorSite(file: string): string | undefined {
+  return file.match(/(?:^|\/)(gemini|aistudio|chatgpt|claude|deepseek|kimi)(?=[A-Z./_-])/)?.[1];
+}
+
+/** A variable filename must still stay beneath one statically owned site's loader. */
+export function selectorPatternImportOwner(file: string, site: string): boolean {
+  return (
+    (file === 'src/core/gemini/selectors/bundle.ts' && site === 'gemini') ||
+    (Object.hasOwn(SHARED_LOADERS, file) && Object.values(SHARED_LOADERS[file]).includes(site))
+  );
+}

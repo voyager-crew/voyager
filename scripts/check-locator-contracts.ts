@@ -1,16 +1,22 @@
 import { readFileSync } from 'node:fs';
-import { resolve, relative } from 'node:path';
+import { resolve } from 'node:path';
 import ts from 'typescript';
 
 import { getBundledSiteSelectorView } from '../src/core/selectors/bundle';
 import { SITE_SELECTOR_CONTRACTS } from '../src/core/selectors/contracts';
 import { readPublishedSiteLocators } from './lib/buildSiteLocators';
+import { isHtmlConstruction } from './lib/locatorConstruction';
+import { inspectLocatorImports, type ModuleReader } from './lib/locatorImports';
 import { LOCATOR_LITERAL_EXCEPTIONS } from './lib/locatorLiteralExceptions';
-import { selectorImportOwner } from './lib/selectorImportOwners';
+import {
+  locatorLiterals,
+  matchedPublishedLocators,
+  selectorListMembers,
+} from './lib/locatorLiterals';
 import { inspectSiteFragmentOwnership } from './lib/siteFragmentOwnership';
 
 const ROOT = process.cwd();
-const TEST = /(?:^|\/)(?:__tests__|tests)\/|\.(?:test|spec)\.[cm]?[jt]sx?$/;
+const TEST = /(?:^|\/)__tests__\/|\.(?:test|spec)\.[cm]?[jt]sx?$/;
 
 export interface LocatorViolation {
   readonly file: string;
@@ -26,62 +32,18 @@ export function publishedLocatorValues(): ReadonlyMap<string, readonly string[]>
       const bundled = view.profiles[key];
       if (!bundled) throw new Error(`${site}:${key} has no bundled profile`);
       for (const value of bundled)
-        values.set(value, [...(values.get(value) ?? []), `${site}:${key}`]);
+        for (const member of new Set([value, ...selectorListMembers(value)]))
+          values.set(member, [...(values.get(member) ?? []), `${site}:${key}`]);
     }
   }
   return values;
-}
-
-/** §6 DOM construction names are HTML protocol, never host lookup instructions. */
-function isHtmlConstruction(node: ts.StringLiteralLike, file: string): boolean {
-  if (!['textarea', 'h3', 'li', 'nav', 'form', 'main'].includes(node.text)) return false;
-  const call = node.parent;
-  if (!ts.isCallExpression(call)) return false;
-  if (ts.isPropertyAccessExpression(call.expression))
-    return call.expression.name.text === 'createElement' && call.arguments[0] === node;
-  const index =
-    file === 'src/features/plugins/verbs/siteCheck/panel.ts'
-      ? 1
-      : [
-            'src/pages/content/researchPack/panel.ts',
-            'src/pages/content/researchPack/templatesSection.ts',
-          ].includes(file)
-        ? 0
-        : -1;
-  return (
-    index >= 0 &&
-    ts.isIdentifier(call.expression) &&
-    call.expression.text === 'el' &&
-    call.arguments[index] === node
-  );
-}
-
-function importedPath(node: ts.StringLiteralLike): boolean {
-  return (
-    ts.isImportDeclaration(node.parent) ||
-    ts.isExternalModuleReference(node.parent) ||
-    ts.isExportDeclaration(node.parent) ||
-    (ts.isCallExpression(node.parent) &&
-      (node.parent.expression.kind === ts.SyntaxKind.ImportKeyword ||
-        (ts.isIdentifier(node.parent.expression) && node.parent.expression.text === 'require')))
-  );
-}
-
-function resolvedImport(file: string, specifier: string): string | null {
-  const path = specifier.startsWith('@/')
-    ? `src/${specifier.slice(2)}`
-    : specifier.startsWith('@src/')
-      ? `src/${specifier.slice(5)}`
-      : specifier.startsWith('.')
-        ? relative(ROOT, resolve(ROOT, file, '..', specifier))
-        : null;
-  return path?.replaceAll('\\', '/') ?? null;
 }
 
 export function inspectLocatorSource(
   file: string,
   text: string,
   values = publishedLocatorValues(),
+  readModule?: ModuleReader,
 ): LocatorViolation[] {
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
   const failures: LocatorViolation[] = [];
@@ -92,31 +54,29 @@ export function inspectLocatorSource(
       reason,
     });
   }
-  function visit(node: ts.Node): void {
-    if (ts.isStringLiteralLike(node)) {
-      const path = importedPath(node) ? resolvedImport(file, node.text) : null;
-      const match = path?.match(
-        /^src\/features\/plugins\/catalog\/sites\/([^/]+)\/selector-data\//,
+  inspectLocatorImports(file, source, fail, readModule);
+  if (TEST.test(file)) return failures;
+  const literals = locatorLiterals(source)
+    .filter(({ node, text }) => !isHtmlConstruction(node, file, text))
+    .map((literal) => ({ literal, matched: matchedPublishedLocators(literal, values) }))
+    .filter(({ matched }) => matched.length > 0);
+  const counts = new Map<string, number>();
+  for (const { matched } of literals)
+    for (const value of matched) counts.set(value, (counts.get(value) ?? 0) + 1);
+  for (const { literal, matched } of literals) {
+    const unreviewed = matched.filter((value) => {
+      const exception = LOCATOR_LITERAL_EXCEPTIONS.find(
+        (entry) => entry.file === file && Object.hasOwn(entry.values, value),
       );
-      const binding = ts.isImportDeclaration(node.parent)
-        ? node.parent.importClause?.name?.text
-        : undefined;
-      if (match && !selectorImportOwner(file, match[1], binding))
-        fail(node, `cross-site selector-data import ${node.text} (owner: ${match[1]})`);
-      if (!TEST.test(file) && values.has(node.text) && !isHtmlConstruction(node, file)) {
-        const exception = LOCATOR_LITERAL_EXCEPTIONS.find(
-          (entry) => entry.file === file && entry.values.includes(node.text),
-        );
-        if (!exception)
-          fail(
-            node,
-            `published locator ${JSON.stringify(node.text)} bypasses contract (${values.get(node.text)?.join(', ')})`,
-          );
-      }
-    }
-    ts.forEachChild(node, visit);
+      return !exception || exception.values[value] !== counts.get(value);
+    });
+    if (!unreviewed.length) continue;
+    const display = literal.text.length > 180 ? `${literal.text.slice(0, 177)}…` : literal.text;
+    fail(
+      literal.node,
+      `published locator ${JSON.stringify(display)} bypasses contract (${unreviewed.map((value) => `${JSON.stringify(value)}: ${values.get(value)?.join(', ')}`).join('; ')}); missing review or reviewed occurrence count changed`,
+    );
   }
-  visit(source);
   return failures;
 }
 
@@ -159,5 +119,7 @@ if (import.meta.main) {
     console.error(`${failure.file}:${failure.line}: ${failure.reason}`);
   if (failures.length) process.exitCode = 1;
   else
-    console.log('Locator contracts: published literals, site imports and per-site loaders pass.');
+    process.stdout.write(
+      'Locator contracts: published literals, site imports and per-site loaders pass.\n',
+    );
 }
