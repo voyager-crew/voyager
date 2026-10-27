@@ -386,13 +386,18 @@ export class ModelPickerDom {
   public starAnchor(item: HTMLElement, kind: 'model' | 'thinking') {
     const containerKey =
       kind === 'model' ? 'modelPicker.modelTitleContainer' : 'modelPicker.thinkingTitleContainer';
-    const container = resolvePlacementOperation(this.view, containerKey, (selector) =>
-      item.querySelector<HTMLElement>(selector),
+    const container = resolvePlacementOperation(
+      this.view,
+      containerKey,
+      (selector) => item.querySelector<HTMLElement>(selector),
+      { decorationOwner: hasNativeItemRole(item) ? item : undefined },
     );
     const title =
       container?.querySelector<HTMLElement>(
         this.selector(kind === 'model' ? 'modelPicker.modelLabel' : 'modelPicker.thinkingLabel'),
       ) ?? null;
+    // Moving a title into our wrapper still requires the native label's identity, even for Tier B placement.
+    if (this.remote && title) assertPickerLabel(item, title, kind, this.view);
     return { container, title };
   }
 }

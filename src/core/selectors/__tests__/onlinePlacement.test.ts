@@ -17,7 +17,6 @@ const keys = [
   'input.clearance',
   'input.fab',
   'vim.host',
-  'vim.hud',
   'vim.inputFallback',
   'vim.mountInput',
   'vim.mountRoot',
@@ -80,6 +79,29 @@ for (const [site, host] of sites)
         expect(await fixture.measure()).toBe(bundled);
         fixture.target.removeAttribute('contenteditable');
         expect(await fixture.measure()).toBe(moved);
+        if (!key.startsWith('vim.')) return;
+        for (const [tag, attributes] of [
+          ['a', { href: '/another-chat' }],
+          ['div', { role: 'button' }],
+          ['div', { role: 'link' }],
+          ['div', { role: 'menuitem' }],
+          ['div', { role: 'tab' }],
+          ['div', { role: 'option' }],
+          ['summary', {}],
+          ['label', {}],
+          ['select', {}],
+          ['pre', {}],
+          ['code', {}],
+        ] as const) {
+          const target = fixture.target;
+          const forbidden = document.createElement(tag);
+          for (const [name, value] of Object.entries(attributes))
+            forbidden.setAttribute(name, value);
+          target.before(forbidden);
+          forbidden.append(target);
+          expect(await fixture.measure()).toBe(bundled);
+          forbidden.replaceWith(target);
+        }
       },
     );
   });

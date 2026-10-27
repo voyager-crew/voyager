@@ -22,7 +22,7 @@ Parts: [1](PACKAGED_CHATGPT.md), [2](PACKAGED_CHATGPT_SOURCES.md), [3](PACKAGED_
 | `scrollContainer`        | A / online      | Chooses the conversation viewport for navigation; must own every proved turn.                                               |
 | `sendButton`             | A / online      | Drives host send; native action and disabled-state evidence stays independent.                                              |
 | `sendControls`           | §6 / packaged   | Native send-control fallback supplies independent action evidence.                                                          |
-| `sidebar`                | B / online      | Positions Voyager sidebar UI; host navigation retains separate URL/identity rules.                                          |
+| `sidebar`                | B / online      | Declarative ops retain exactly baseline site-override trust in both modes; native placement follows the Tier B mount rule.  |
 | `sourceBusy`             | §6 / packaged   | Native busy-state attribute is independent upload protocol.                                                                 |
 | `sourceUploadedAt`       | A / packaged    | Exported upload time uses a fixed source attribute; another attribute cannot prove its meaning.                             |
 | `submit`                 | §6 / packaged   | HTML submit/form association is the independent send protocol.                                                              |
@@ -41,7 +41,7 @@ Parts: [1](PACKAGED_CHATGPT.md), [2](PACKAGED_CHATGPT_SOURCES.md), [3](PACKAGED_
 | `vim.editInputs`         | §6 / packaged   | Native inline-edit grammar governs focus and keyboard ownership.                                                            |
 | `vim.editable`           | §6 / packaged   | Native editable grammar governs keyboard and write behavior.                                                                |
 | `vim.host`               | B / online      | Composer host only mounts the Voyager Vim HUD.                                                                              |
-| `vim.hud`                | B / online      | Ordered candidates only place the Voyager Vim HUD.                                                                          |
+| `vim.hud`                | B / packaged    | Baseline Tools-button decoration and ordered fallbacks cannot use the shared non-interactive mount rule.                    |
 | `vim.inputFallback`      | B / online      | Only the matched node’s parent is used as a HUD mount.                                                                      |
 | `vim.mountChatInput`     | B / online      | Chat-input probe only chooses a Voyager HUD mount.                                                                          |
 | `vim.mountChatRoot`      | B / online      | Chat-root probe only chooses a Voyager HUD mount.                                                                           |

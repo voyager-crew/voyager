@@ -53,7 +53,7 @@ Parts: [1](PACKAGED_DATA.md), [2](PACKAGED_SURFACES.md), [3](PACKAGED_CONTENT.md
 | `vim.editInputs`          | §6 / packaged   | Native inline-edit grammar governs focus and keyboard ownership.                                                                                      |
 | `vim.editable`            | §6 / packaged   | Native editable grammar governs keyboard and write behavior.                                                                                          |
 | `vim.host`                | B / online      | Composer host only mounts the Voyager Vim HUD.                                                                                                        |
-| `vim.hud`                 | B / online      | Ordered candidates only place the Voyager Vim HUD.                                                                                                    |
+| `vim.hud`                 | B / packaged    | Baseline Tools-button decoration and ordered fallbacks cannot use the shared non-interactive mount rule.                                              |
 | `vim.inputFallback`       | B / online      | Only the matched node’s parent is used as a HUD mount.                                                                                                |
 | `vim.mountChatInput`      | B / online      | Chat-input probe only chooses a Voyager HUD mount.                                                                                                    |
 | `vim.mountChatRoot`       | B / online      | Chat-root probe only chooses a Voyager HUD mount.                                                                                                     |

@@ -1,7 +1,7 @@
 import { getPageSelectorSiteId, getSiteSelectorView } from '@/core/selectors';
 
 import { timelineSiteData } from './siteTextData';
-import { isUserTextSubset, ownsTimelineUserText } from './userTextProof';
+import { isCompleteUserText, ownsTimelineUserText } from './userTextProof';
 const EXCLUDED_SELECTOR =
   'button, [role="button"], script, style, template, model-response, [data-message-author-role="assistant"], [data-conversation-role="assistant"]';
 const BLOCK_TAGS = new Set([
@@ -78,9 +78,10 @@ export function userTurnText(element: HTMLElement, url?: string): string {
     }
     return true;
   };
-  const bundledContent = element.matches(userContentSelector)
+  const bundledMatch = element.matches(userContentSelector)
     ? element
-    : (Array.from(element.querySelectorAll(userContentSelector)).find(reachable) ?? element);
+    : Array.from(element.querySelectorAll(userContentSelector)).find(reachable);
+  const bundledContent = bundledMatch ?? element;
 
   const extract = (content: Element): string => {
     let text = '';
@@ -140,11 +141,11 @@ export function userTurnText(element: HTMLElement, url?: string): string {
         ownsTimelineUserText(candidate, site)
       ) {
         const value = extract(candidate);
-        // A locator cannot turn hidden controls or a clipped word into the saved prompt summary.
-        if (isUserTextSubset(value, extract(element))) return value;
+        // Surviving prompt content prevents filenames or only its first line becoming saved text.
+        if (isCompleteUserText(value, extract(bundledContent), !!bundledMatch)) return value;
       }
     } catch {
-      // Keep the original text preference if this operation cannot prove the new subset.
+      // Keep the original text preference if this operation cannot prove complete prompt text.
     }
   }
   return extract(bundledContent);

@@ -75,5 +75,26 @@ it.each(KEYS)(
     await show(original);
     remote.removeAttribute('contenteditable');
     await show(remote);
+    for (const [tag, attributes] of [
+      ['a', { href: '/another-chat' }],
+      ['div', { role: 'button' }],
+      ['div', { role: 'link' }],
+      ['div', { role: 'menuitem' }],
+      ['div', { role: 'tab' }],
+      ['div', { role: 'option' }],
+      ['summary', {}],
+      ['label', {}],
+      ['select', {}],
+      ['pre', {}],
+      ['code', {}],
+    ] as const) {
+      const target = remote;
+      const forbidden = document.createElement(tag);
+      for (const [name, value] of Object.entries(attributes)) forbidden.setAttribute(name, value);
+      target.before(forbidden);
+      forbidden.append(target);
+      await show(original);
+      forbidden.replaceWith(target);
+    }
   },
 );

@@ -1,9 +1,21 @@
 import { getBundledSiteSelectorView } from './bundle';
 import type { SiteSelectorView } from './types';
 
-/** A catalog mount may move our UI, but must never insert it into the host editor. */
-export function isSafePlacementMount(element: Element): boolean {
-  return isSafePlacementTarget(element) && !element.closest('button');
+const INTERACTIVE_MOUNT =
+  'button, a[href], [role="button"], [role="link"], [role="menuitem"], [role="menuitemradio"], [role="tab"], [role="option"], summary, label, pre, code';
+
+/** Catalog mounts must not make Voyager controls activate a host action or alter copied code. */
+export function isSafePlacementMount(element: Element, decorationOwner?: HTMLElement): boolean {
+  if (!isSafePlacementTarget(element)) return false;
+  const interactive = element.closest(INTERACTIVE_MOUNT);
+  if (!interactive) return true;
+  // Picker stars already decorate native menu rows; only that row may be crossed, never a nested control.
+  return (
+    interactive === decorationOwner &&
+    (decorationOwner.localName === 'gem-menu-item' ||
+      decorationOwner.matches('button[role="menuitem"], button[role="menuitemradio"]')) &&
+    (!decorationOwner.parentElement || isSafePlacementMount(decorationOwner.parentElement))
+  );
 }
 
 function isSafePlacementTarget(element: Element): boolean {
@@ -17,6 +29,8 @@ interface PlacementOptions {
   /** Pure measurement can inspect controls; only the final insertion target is a mount. */
   readonly mount?: boolean;
   readonly fallback?: readonly string[];
+  /** Narrow exception for the existing star decoration inside a native picker button row. */
+  readonly decorationOwner?: HTMLElement;
 }
 
 export function resolvePlacementViewOperation<T extends PlacementResult>(
@@ -30,7 +44,10 @@ export function resolvePlacementViewOperation<T extends PlacementResult>(
     try {
       const value = read(view);
       const nodes = value === null ? [] : Array.isArray(value) ? value : [value as Element];
-      if (nodes.length && nodes.every(mount ? isSafePlacementMount : isSafePlacementTarget))
+      if (
+        nodes.length &&
+        nodes.every((node) => (mount ? isSafePlacementMount(node) : isSafePlacementTarget(node)))
+      )
         return value;
     } catch {
       // A rejected placement retries the complete operation with bundled candidates.
@@ -67,7 +84,11 @@ export function resolvePlacementListOperation<T extends PlacementResult>(
       const elements = value === null ? [] : Array.isArray(value) ? value : [value as Element];
       if (
         elements.length > 0 &&
-        elements.every(options.mount === false ? isSafePlacementTarget : isSafePlacementMount)
+        elements.every((element) =>
+          options.mount === false
+            ? isSafePlacementTarget(element)
+            : isSafePlacementMount(element, options.decorationOwner),
+        )
       )
         return value;
     } catch {
@@ -94,7 +115,11 @@ export function placementSelector(
       const matches = Array.from(root.querySelectorAll(selector));
       if (
         matches.length &&
-        matches.every(options.mount === false ? isSafePlacementTarget : isSafePlacementMount)
+        matches.every((element) =>
+          options.mount === false
+            ? isSafePlacementTarget(element)
+            : isSafePlacementMount(element, options.decorationOwner),
+        )
       )
         selected = selector === remote.join(',') ? remote : selected;
       return matches;

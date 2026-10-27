@@ -79,7 +79,7 @@ const cases: PlacementCase[] = [
     (key) => ({
       key,
       markup:
-        '<gem-menu-item id="host"><div class="label-container" id="bundled"></div></gem-menu-item>',
+        '<button role="menuitem" data-mode-id="fast" id="host"><div class="label-container" id="bundled"></div></button>',
       target: () =>
         new ModelPickerDom(getGeminiSelectorView()).starAnchor(
           document.getElementById('host')!,
@@ -118,7 +118,7 @@ const cases: PlacementCase[] = [
 ];
 
 it.each(cases)(
-  '$key moves real Voyager UI and falls back for missing or editable targets',
+  '$key does not mount Voyager controls inside host actions or copied code',
   async ({ key, markup, target, show }) => {
     vi.useFakeTimers();
     vi.stubGlobal('location', new URL('https://gemini.google.com/app/abcdef1234'));
@@ -146,6 +146,30 @@ it.each(cases)(
     await show(bundled!);
     cleanup();
     repaired.removeAttribute('contenteditable');
+    expect(target()).toBe(repaired);
+    if (key === 'project.fontSource') return;
+    for (const [tag, attributes] of [
+      ['a', { href: '/app/another-chat' }],
+      ['div', { role: 'button' }],
+      ['div', { role: 'link' }],
+      ['div', { role: 'menuitem' }],
+      ['div', { role: 'tab' }],
+      ['div', { role: 'option' }],
+      ['summary', {}],
+      ['label', {}],
+      ['select', {}],
+      ['pre', {}],
+      ['code', {}],
+    ] as const) {
+      const forbidden = document.createElement(tag);
+      for (const [name, value] of Object.entries(attributes)) forbidden.setAttribute(name, value);
+      repaired.before(forbidden);
+      forbidden.append(repaired);
+      expect(target(), `inside ${tag} ${JSON.stringify(attributes)}`).toBe(bundled);
+      await show(bundled!);
+      cleanup();
+      forbidden.replaceWith(repaired);
+    }
     expect(target()).toBe(repaired);
   },
 );

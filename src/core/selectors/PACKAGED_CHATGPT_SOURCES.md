@@ -43,7 +43,7 @@ Parts: [1](PACKAGED_CHATGPT.md), [2](PACKAGED_CHATGPT_SOURCES.md), [3](PACKAGED_
 | `genericComposer`                | A / packaged    | Last editor fallback; another generic editable cannot prove main-composer identity.                                          |
 | `guide.overlays`                 | §6 / packaged   | Native menu/dialog association is the guide interaction safety floor.                                                        |
 | `handoffObservedAttributes`      | §6 / packaged   | Observed attribute names are an event protocol, not locators.                                                                |
-| `headerActions`                  | B / online      | Places Voyager header controls without selecting a host action.                                                              |
+| `headerActions`                  | B / online      | Declarative ops retain exactly baseline site-override trust in both modes; native placement follows the Tier B mount rule.   |
 | `inactiveCanvas`                 | B / bundle copy | Inactive Canvas probe only decides Voyager UI visibility. Online counterpart: `exportLayout.inactiveCanvas`.                 |
 | `input.candidates`               | A / online      | Selects the editor that receives text; requires native editor ownership.                                                     |
 | `input.clearance`                | B / online      | Clearance probe only positions Voyager prompt UI.                                                                            |

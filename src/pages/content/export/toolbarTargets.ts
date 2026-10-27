@@ -45,7 +45,7 @@ export function readExportLayout<T extends Element | readonly Element[] | null>(
     : read(list.join(','));
 }
 
-/** Getters resolve only the field the current geometry operation reads. */
+/** One read session per measurement: each field is proved at most once in that frame. */
 export function exportLayoutData(root?: HTMLElement): typeof gemini {
   const fallback = bundledExportLayoutData(root);
   const doc = root?.ownerDocument ?? document;
@@ -59,22 +59,41 @@ export function exportLayoutData(root?: HTMLElement): typeof gemini {
   for (const key of Object.keys(fallback) as (keyof typeof fallback)[]) {
     const original = fallback[key];
     if (typeof original === 'boolean') continue;
+    let value: string | string[] | undefined;
     Object.defineProperty(result, key, {
       enumerable: true,
       get: () => {
-        const value = placementSelector(view, `exportLayout.${key}`, doc, { mount: false });
-        return Array.isArray(original) ? [value] : value;
+        if (value === undefined) {
+          const selected = placementSelector(view, `exportLayout.${key}`, doc, { mount: false });
+          value = Array.isArray(original) ? [selected] : selected;
+        }
+        return value;
       },
     });
   }
   return result;
 }
 
-export function resolveExportToolbarControls(root?: HTMLElement): { readonly selector: string } {
-  return { selector: exportLayoutData(root).controls.join(',') };
-}
-
-/** Measurements and mutation admission share the packaged control set. */
-export function exportToolbarMutationControls(root?: HTMLElement): string {
-  return exportLayoutData(root).controls.join(',');
+/** Prefilter only: a candidate mutation schedules the guarded measurement, never placement. */
+export function exportLayoutMutationData(root?: HTMLElement): typeof gemini {
+  const fallback = bundledExportLayoutData(root);
+  const site = root?.dataset.gvPlatform || getPageSelectorSiteId(root?.ownerDocument);
+  if (!site || !Object.hasOwn(LAYOUTS, site)) return fallback;
+  const view = getSiteSelectorView(site);
+  if (!Object.keys(fallback).some((key) => view.remoteKeys.has(`exportLayout.${key}`)))
+    return fallback;
+  const result = { ...fallback };
+  for (const key of Object.keys(fallback) as (keyof typeof fallback)[]) {
+    const original = fallback[key];
+    if (typeof original === 'boolean' || !view.remoteKeys.has(`exportLayout.${key}`)) continue;
+    const candidates = [
+      ...(Array.isArray(original) ? original : [original]),
+      ...view.profiles[`exportLayout.${key}`],
+    ];
+    Object.defineProperty(result, key, {
+      enumerable: true,
+      value: Array.isArray(original) ? candidates : candidates.join(','),
+    });
+  }
+  return result;
 }

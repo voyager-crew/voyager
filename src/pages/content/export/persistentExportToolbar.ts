@@ -4,12 +4,7 @@
 // [data-test-id="logo"]. Calls back into showExportDialog when clicked.
 import { createDownloadIcon } from '@/core/icons/promptManagerIcons';
 
-import {
-  exportLayoutData,
-  readExportLayout,
-  exportToolbarMutationControls,
-  resolveExportToolbarControls,
-} from './toolbarTargets';
+import { exportLayoutData, exportLayoutMutationData, readExportLayout } from './toolbarTargets';
 
 export type PersistentExportToolbarOptions = {
   label: string;
@@ -88,8 +83,8 @@ function measureTopRightControls(toolbarRoot: HTMLElement): TopRightMeasurement 
   const hidden: HTMLElement[] = [];
   const canvas: HTMLElement[] = [];
   let leftMost: number | null = null;
-  const { selector: controls } = resolveExportToolbarControls(toolbarRoot);
   const layout = exportLayoutData(toolbarRoot);
+  const controls = layout.controls.join(',');
   const selector = `${controls},${layout.broadControls.join(',')},${layout.canvasContent}`;
   for (const element of Array.from(document.querySelectorAll<HTMLElement>(selector))) {
     if (element.matches(layout.canvasContent)) {
@@ -112,12 +107,8 @@ function measureTopRightControls(toolbarRoot: HTMLElement): TopRightMeasurement 
           DEFAULT_RIGHT_OFFSET_PX,
           Math.ceil(window.innerWidth - leftMost + TOP_RIGHT_GAP_PX),
         );
-  if (!usesRowAvoidance(toolbarRoot)) return { offset, watched, hidden, canvas };
+  if (!layout.avoidRow) return { offset, watched, hidden, canvas };
   return { offset: avoidControlsInRow(toolbarRoot, offset, watched), watched, hidden, canvas };
-}
-
-function usesRowAvoidance(toolbarRoot: HTMLElement): boolean {
-  return exportLayoutData(toolbarRoot).avoidRow;
 }
 
 // Host markup changes without notice, so also hit-test the toolbar's own row
@@ -225,10 +216,11 @@ function mutationsMayMoveTopRightControls(
   // Let the next update notice the detached toolbar and tear itself down.
   if (!toolbarRoot.isConnected) return true;
   // Row avoidance hit-tests unlabeled controls, so any new one may land under the toolbar.
-  const layout = exportLayoutData(toolbarRoot);
+  // Candidate unions avoid document-wide proof scans for unrelated streamed mutations.
+  const layout = exportLayoutMutationData(toolbarRoot);
   const canvasStructure = `${layout.canvasOwner}, ${layout.canvasContent}`;
-  const avoidanceSelector = `${exportToolbarMutationControls(toolbarRoot)},${layout.broadControls.join(',')}`;
-  const addedSelector = usesRowAvoidance(toolbarRoot)
+  const avoidanceSelector = `${layout.controls.join(',')},${layout.broadControls.join(',')}`;
+  const addedSelector = layout.avoidRow
     ? `${avoidanceSelector},${canvasStructure},${layout.interactive}`
     : `${avoidanceSelector},${canvasStructure}`;
   for (const mutation of mutations) {

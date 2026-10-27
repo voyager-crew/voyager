@@ -57,10 +57,11 @@ export function withPageSemanticSelectors(
   return selectors ? { ...adapter, selectors } : adapter;
 }
 
-/** Native/declarative consumers resolve the same frozen profiles at each DOM read. */
+/** Resolve frozen profiles per read, preserving baseline declarative placement-key overrides. */
 export function withGuardedPageAdapter(
   adapter: SiteAdapter | null,
   doc: Document,
+  purpose: 'native' | 'declarative' = 'native',
 ): SiteAdapter | null {
   if (!adapter || adapter.id === 'gemini' || getPageSelectorSiteId(doc) !== adapter.id)
     return adapter;
@@ -68,7 +69,11 @@ export function withGuardedPageAdapter(
   for (const key of Object.keys(adapter.selectors)) {
     Object.defineProperty(selectors, key, {
       enumerable: true,
-      get: () => pageSemanticSelector(adapter, key, doc) ?? ':not(*)',
+      get: () =>
+        // Declarative ops keep the pre-contract site override trust; native placement still uses Tier B.
+        purpose === 'declarative' && (key === 'sidebar' || key === 'headerActions')
+          ? adapter.selectors[key]
+          : (pageSemanticSelector(adapter, key, doc) ?? ':not(*)'),
     });
   }
   return { ...adapter, selectors };

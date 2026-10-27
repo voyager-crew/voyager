@@ -342,3 +342,28 @@ it('a bundled fallback does not certify a pre-existing wrapper for a later remot
     }),
   ]);
 });
+
+it('a repaired star container cannot move a description when the row name still reads correctly', async () => {
+  const scene = pickerScene();
+  const native = scene.rows.pro.querySelector<HTMLElement>('.label')!;
+  const preview = document.createElement('div');
+  preview.className = 'description-container';
+  preview.innerHTML = '<span class="duplicate-title">3.1 Pro</span>';
+  const duplicate = preview.firstElementChild!;
+  scene.rows.pro.append(preview);
+  retire = await installGeminiSelectorPatch({
+    'modelPicker.modelTitleContainer': ['.description-container'],
+    'modelPicker.modelLabel': ['[data-fixture-label], .duplicate-title'],
+  });
+  await mountStars(scene);
+  const button = star(scene.rows.pro);
+  expect(duplicate.parentElement).toBe(preview);
+  expect(button.parentElement).toBe(native.parentElement);
+  button.click();
+  await vi.advanceTimersByTimeAsync(0);
+  expect(preferenceBytes()).toEqual([
+    JSON.stringify({
+      [StorageKeys.DEFAULT_MODEL]: { id: OCT_2026_MODEL_IDS.pro, name: '3.1 Pro' },
+    }),
+  ]);
+});

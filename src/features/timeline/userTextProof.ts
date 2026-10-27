@@ -4,12 +4,19 @@ import { acceptsGeminiTurnView, readGeminiTurnCollection } from '@/core/gemini/t
 import { getBundledSiteSelectorView, getSiteSelectorView } from '@/core/selectors';
 import { guardedChatgptSemanticSelector } from '@/core/selectors/chatgptSemantics';
 
-/** Whole normalized words from one proved user turn, never a fragment of another token. */
-export function isUserTextSubset(candidate: string, reference: string): boolean {
+/** Preserve the complete known prompt; without it, only a whole-word turn prefix is evidence. */
+export function isCompleteUserText(
+  candidate: string,
+  reference: string,
+  hasBundledContent: boolean,
+): boolean {
   const normalize = (text: string) => text.replace(/\s+/g, ' ').trim();
   const actual = normalize(candidate);
   const expected = normalize(reference);
-  return actual.length > 0 && ` ${expected} `.includes(` ${actual} `);
+  if (!actual) return false;
+  return hasBundledContent
+    ? actual === expected
+    : expected === actual || expected.startsWith(`${actual} `);
 }
 
 export function ownsTimelineUserText(element: HTMLElement, site: string): boolean {

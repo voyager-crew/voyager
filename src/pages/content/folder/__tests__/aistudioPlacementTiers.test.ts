@@ -74,5 +74,26 @@ it.each(cases)(
     expect(mount()).toBe(original);
     document.getElementById('target')!.removeAttribute('contenteditable');
     expect(mount()).toBe(moved);
+    for (const [tag, attributes] of [
+      ['a', { href: '/another-chat' }],
+      ['div', { role: 'button' }],
+      ['div', { role: 'link' }],
+      ['div', { role: 'menuitem' }],
+      ['div', { role: 'tab' }],
+      ['div', { role: 'option' }],
+      ['summary', {}],
+      ['label', {}],
+      ['select', {}],
+      ['pre', {}],
+      ['code', {}],
+    ] as const) {
+      const target = document.getElementById('target')!;
+      const forbidden = document.createElement(tag);
+      for (const [name, value] of Object.entries(attributes)) forbidden.setAttribute(name, value);
+      target.before(forbidden);
+      forbidden.append(target);
+      expect(mount()).toBe(original);
+      forbidden.replaceWith(target);
+    }
   },
 );

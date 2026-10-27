@@ -8,6 +8,7 @@ import {
   resolveGeminiSidebarOperation,
 } from '@/core/gemini/sidebar/queries';
 import {
+  isSafePlacementMount,
   resolvePlacementOperation,
   resolvePlacementViewOperation,
 } from '@/core/selectors/placement';
@@ -15,20 +16,18 @@ import {
 export type FolderAnchor = 'above-recents' | 'above-notebooks';
 type SidebarKey = Parameters<typeof geminiSidebarSelector>[0];
 
-function isNativeMountElement(element: HTMLElement): boolean {
-  return (
-    element !== document.body &&
-    element !== document.documentElement &&
-    !element.closest('.gv-folder-container, [data-gv-shadow-surface]') &&
-    // Folder clicks must not bubble through a remotely matched native action or overlay.
-    !element.closest('button, a[href], [role="button"], [role="menuitem"], [role="dialog"]')
-  );
-}
-
 function readSidebar(view: GeminiSelectorView): HTMLElement | null {
   const candidates = readGeminiSidebarElements(document, 'sidebar.overflow', view);
   const sidebar = firstVisibleSidebar(
-    view.remoteKeys.has('sidebar.overflow') ? candidates.filter(isNativeMountElement) : candidates,
+    view.remoteKeys.has('sidebar.overflow')
+      ? candidates.filter(
+          (candidate) =>
+            isSafePlacementMount(candidate) &&
+            candidate !== document.body &&
+            candidate !== document.documentElement &&
+            !candidate.closest('.gv-folder-container, [data-gv-shadow-surface], [role="dialog"]'),
+        )
+      : candidates,
   );
   if (
     sidebar &&

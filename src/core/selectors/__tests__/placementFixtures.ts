@@ -26,7 +26,6 @@ export function vimFixture(key: string): PlacementFixture {
     '<toolbox-drawer><div id="baseline" class="toolbox-drawer-container"></div></toolbox-drawer>';
   let markup = '';
   let selector = '#target';
-  if (key === 'vim.hud') markup = `${hud}<section id="target"></section>`;
   if (key === 'vim.host')
     markup = `${hud}<section id="target"><textarea id="input"></textarea></section>`;
   if (key === 'vim.inputFallback') {

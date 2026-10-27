@@ -34,6 +34,7 @@ export function createHostEngine(options: HostEngineOptions): DeclarativeEngine 
     doc: options.doc,
     trackNativeDecorations,
     adapter: withGuardedPageAdapter(options.adapter, options.doc),
+    targetAdapter: withGuardedPageAdapter(options.adapter, options.doc, 'declarative'),
     onHealthChange: (id, noEffect) => {
       logger.info('Plugin health changed', { id, noEffect });
     },

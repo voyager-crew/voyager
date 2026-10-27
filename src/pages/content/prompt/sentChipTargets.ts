@@ -7,7 +7,7 @@ import {
 import { resolvePlacementOperation } from '@/core/selectors/placement';
 import { locatorSiteForHost } from '@/core/selectors/sites';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/sent-chips-packaged.json';
-import { isUserTextSubset } from '@/features/timeline/userTextProof';
+import { isCompleteUserText } from '@/features/timeline/userTextProof';
 
 export interface SentChipTarget {
   bubble: HTMLElement;
@@ -42,15 +42,14 @@ export function readSentChipTargets(root: ParentNode): SentChipTarget[] {
       let lines = bundledLines;
       if (selected.remoteKeys.has('sentChips.lines')) {
         const remote = firstList(bubble, selected.profiles['sentChips.lines']);
-        const native = bubble.querySelector('.query-text') ?? bubble;
         const text = remote.map((node) => node.textContent ?? '').join(' ');
         const reference = bundledLines.length
           ? bundledLines.map((node) => node.textContent ?? '').join(' ')
-          : (native.textContent ?? '');
-        // A chip must describe the sent user text, never another saved prompt found nearby.
+          : (bubble.textContent ?? '');
+        // Partial lines and filenames must not label a different saved prompt as the sent text.
         if (
           remote.length &&
-          isUserTextSubset(text, reference) &&
+          isCompleteUserText(text, reference, bundledLines.length > 0) &&
           remote.every(
             (node) =>
               !node.closest('model-response, [contenteditable="true"], input, textarea, button'),

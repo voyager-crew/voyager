@@ -42,7 +42,8 @@ for (const [site, host, template] of sites)
       await run.ready;
     }
     const turn = () => document.getElementById('turn')!;
-    it('a renamed text region preserves the same saved prompt and can select complete words', async () => {
+    const hasBundledContent = site === 'chatgpt' || site === 'deepseek';
+    it('a renamed text region preserves the same saved prompt and only falls back to prefixes without bundled content', async () => {
       document.body.innerHTML = template.replace(
         'BODY',
         '<div class="renamed"><span class="prefix">Hello world</span> again</div>',
@@ -51,6 +52,45 @@ for (const [site, host, template] of sites)
       await patch('.renamed');
       expect(userTurnText(turn())).toBe(before);
       await patch('.prefix');
+      expect(userTurnText(turn())).toBe(hasBundledContent ? 'Hello world again' : 'Hello world');
+    });
+    it.each(['.attachment', '.first-line'])(
+      '%s cannot replace a complete bundled prompt with a filename or one line',
+      async (selector) => {
+        document.body.innerHTML = template.replace(
+          'BODY',
+          '<div class="query-text"><p class="first-line">Explain the proof</p><p>Keep every step</p></div><span class="attachment">notes.pdf</span>',
+        );
+        const before = userTurnText(turn());
+        expect(before).toContain('Explain the proof\nKeep every step');
+        await patch(selector);
+        expect(userTurnText(turn())).toBe(before);
+      },
+    );
+    it('the whole prompt remains identical through bundled and repaired text reads', async () => {
+      document.body.innerHTML = template.replace(
+        'BODY',
+        '<div class="query-text complete"><p>Explain the proof</p><p>Keep every step</p></div>',
+      );
+      const before = userTurnText(turn());
+      await patch('.complete');
+      expect(userTurnText(turn())).toBe(before);
+    });
+    it('a middle word cannot become the prompt when its original text wrapper is gone', async () => {
+      document.body.innerHTML = template.replace(
+        'BODY',
+        'Explain <span class="middle">the proof</span> completely',
+      );
+      const before = userTurnText(turn());
+      await patch('.middle');
+      expect(userTurnText(turn())).toBe(before);
+    });
+    it('the beginning of a word cannot become a complete prompt prefix', async () => {
+      document.body.innerHTML = template.replace(
+        'BODY',
+        '<span class="clipped-prefix">Hel</span>lo world',
+      );
+      await patch('.clipped-prefix');
       expect(userTurnText(turn())).toBe('Hello world');
     });
     it('a clipped word cannot replace the saved user prompt', async () => {
@@ -65,7 +105,7 @@ for (const [site, host, template] of sites)
         site === 'deepseek'
           ? '<div class="ds-collapsible-text"><span class="clipped">Hello</span> world</div>'
           : '<span class="clipped">Hello</span> world';
-      expect(userTurnText(turn())).toBe('Hello');
+      expect(userTurnText(turn())).toBe(hasBundledContent ? 'Hello world' : 'Hello');
     });
     it('a preview that looks like a turn cannot supply a remote saved summary', async () => {
       document.body.innerHTML = `<dialog>${template.replace('BODY', '<span class="prefix">Hello</span> world')}</dialog>`;
@@ -76,12 +116,14 @@ for (const [site, host, template] of sites)
       if (site === 'deepseek')
         turn().innerHTML =
           '<div class="ds-collapsible-text"><span class="prefix">Hello</span> world</div>';
-      expect(userTurnText(turn())).toBe('Hello');
+      expect(userTurnText(turn())).toBe(hasBundledContent ? 'Hello world' : 'Hello');
     });
     it('another site policy cannot borrow the current page text repair', async () => {
       document.body.innerHTML = template.replace('BODY', '<span class="prefix">Hello</span> world');
       await patch('.prefix');
-      expect(userTurnText(turn(), `https://${host}/`)).toBe('Hello');
+      expect(userTurnText(turn(), `https://${host}/`)).toBe(
+        hasBundledContent ? 'Hello world' : 'Hello',
+      );
       expect(userTurnText(turn(), 'https://custom.example/chat')).toBe('Hello world');
       expect(userTurnText(turn(), 'https://other.example/chat')).toBe('Hello world');
     });
@@ -91,7 +133,7 @@ for (const [site, host, template] of sites)
       await patch('.prefix');
       expect(userTurnText(turn())).toBe('Hello world');
       document.body.innerHTML = template.replace('BODY', '<span class="prefix">Hello</span> world');
-      expect(userTurnText(turn())).toBe('Hello');
+      expect(userTurnText(turn())).toBe(hasBundledContent ? 'Hello world' : 'Hello');
     });
     it.each([
       '<form>',
@@ -111,6 +153,6 @@ for (const [site, host, template] of sites)
         'BODY',
         '<div class="query-text">Original prompt <span class="prefix">complete</span></div>',
       );
-      expect(userTurnText(turn())).toBe('complete');
+      expect(userTurnText(turn())).toBe('Original prompt complete');
     });
   });

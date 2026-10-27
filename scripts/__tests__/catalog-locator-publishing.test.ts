@@ -100,7 +100,6 @@ const PUBLISHED_KEYS = [
   'input.clearance',
   'input.fab',
   'vim.host',
-  'vim.hud',
   'vim.inputFallback',
   'vim.mountInput',
   'vim.mountRoot',
