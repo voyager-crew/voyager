@@ -84,8 +84,8 @@ function balancedEnd(value: string, start: number): number {
   return value.length;
 }
 
-/** Equivalent CSS attribute quotes and HTML type/attribute casing identify the same locator. */
-export function canonicalLocator(value: string): string {
+/** Ignore spelling-only differences without changing quoted values or host-name casing. */
+function canonicalLocatorSpelling(value: string, keepInsensitiveFlag: boolean): string {
   let result = '';
   for (let index = 0; index < value.length;) {
     const char = value[index];
@@ -97,8 +97,9 @@ export function canonicalLocator(value: string): string {
       );
       // HTML attribute names are case-insensitive even when no value is specified.
       const presence = attribute.match(/^\[\s*([\w:-]+)\s*\]$/);
+      // Attribute flags cannot make a copied published host landmark an independent proof.
       result += match
-        ? `[${match[1].toLowerCase()}${match[2]}${JSON.stringify(match[3] ?? match[4] ?? match[5])}${match[6] ? ` ${match[6].toLowerCase()}` : ''}]`
+        ? `[${match[1].toLowerCase()}${match[2]}${JSON.stringify(match[3] ?? match[4] ?? match[5])}${keepInsensitiveFlag && match[6]?.toLowerCase() === 'i' ? ' i' : ''}]`
         : presence
           ? `[${presence[1].toLowerCase()}]`
           : attribute;
@@ -106,6 +107,16 @@ export function canonicalLocator(value: string): string {
     } else if (char === '\\') {
       result += value.slice(index, index + 2);
       index += 2;
+    } else if (/[ \t\r\n\f]/.test(char)) {
+      while (index < value.length && /[ \t\r\n\f]/.test(value[index])) index++;
+      // Preserve a descendant combinator; whitespace around explicit combinators adds no identity.
+      if (
+        result &&
+        index < value.length &&
+        !/[>+~|,(]/.test(result.slice(-1)) &&
+        !/[>+~|,)]/.test(value[index])
+      )
+        result += ' ';
     } else {
       const name = value.slice(index).match(/^[\w\-\uE000]+/)?.[0];
       if (name) {
@@ -121,9 +132,11 @@ export function canonicalLocator(value: string): string {
   return result;
 }
 
-/** A compound can embed a published class, attribute or tag beside extra constraints. */
-export function selectorLiteralParts(value: string): string[] {
-  value = canonicalLocator(withoutComments(value));
+export function canonicalLocator(value: string): string {
+  return canonicalLocatorSpelling(value, false);
+}
+
+function canonicalSelectorParts(value: string): string[] {
   const result = new Set([value]);
   for (const compound of compounds(value)) {
     result.add(compound);
@@ -142,7 +155,7 @@ export function selectorLiteralParts(value: string): string[] {
         index += name?.length ?? 1;
         if (compound[index] === '(') {
           const end = balancedEnd(compound, index);
-          for (const part of selectorLiteralParts(compound.slice(index + 1, end - 1)))
+          for (const part of canonicalSelectorParts(compound.slice(index + 1, end - 1)))
             result.add(part);
           index = end;
         }
@@ -151,6 +164,47 @@ export function selectorLiteralParts(value: string): string[] {
     }
   }
   return [...result].filter(Boolean);
+}
+
+/** Keep i provenance beside the exact spelling; only flagged attribute values may fold. */
+export function selectorLiteralParts(value: string): string[] {
+  const text = withoutComments(value);
+  return [
+    ...new Set([
+      ...canonicalSelectorParts(canonicalLocator(text)),
+      ...canonicalSelectorParts(canonicalLocatorSpelling(text, true)),
+    ]),
+  ];
+}
+
+function regexLiteral(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function insensitiveAttributePattern(value: string): RegExp | null {
+  if (!value.includes(' i]')) return null;
+  let pattern = '';
+  let insensitive = false;
+  for (let index = 0; index < value.length;) {
+    const end = value[index] === '[' ? balancedEnd(value, index) : index + 1;
+    const part = value.slice(index, end);
+    const attribute = part.match(/^(\[[\w:-]+[~|^$*]?=)("(?:\\.|[^"\\])*") i\]$/);
+    if (attribute) {
+      insensitive = true;
+      pattern +=
+        regexLiteral(attribute[1]) +
+        [...attribute[2]]
+          .map((char) =>
+            /[a-zA-Z]/.test(char)
+              ? `[${char.toLowerCase()}${char.toUpperCase()}]`
+              : regexLiteral(char),
+          )
+          .join('') +
+        '\\]';
+    } else pattern += regexLiteral(part);
+    index = end;
+  }
+  return insensitive ? new RegExp(`^${pattern.replaceAll(HOLE, '.*')}$`) : null;
 }
 
 function stringPattern(node: ts.Node): string | null {
@@ -232,6 +286,9 @@ export function matchedPublishedLocators(
   const matches = new Set<string>();
   for (const part of literal.parts) {
     if (published.has(part)) matches.add(part);
+    const insensitive = insensitiveAttributePattern(part);
+    if (insensitive)
+      for (const value of published.keys()) if (insensitive.test(value)) matches.add(value);
     // Punctuation-only interpolation (IDs, timestamps, CSS values) proves no host name.
     if (
       !part.includes(HOLE) ||
@@ -240,12 +297,7 @@ export function matchedPublishedLocators(
       !/[a-zA-Z][\w-]+/.test(part.replaceAll(HOLE, ''))
     )
       continue;
-    const pattern = new RegExp(
-      `^${part
-        .split(HOLE)
-        .map((piece) => piece.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-        .join('.*')}$`,
-    );
+    const pattern = new RegExp(`^${part.split(HOLE).map(regexLiteral).join('.*')}$`);
     for (const value of published.keys())
       if (compounds(value).length === 1 && pattern.test(value)) matches.add(value);
   }

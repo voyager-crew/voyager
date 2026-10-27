@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import ts from 'typescript';
 
@@ -46,6 +46,7 @@ export function inspectLocatorSource(
   text: string,
   values = publishedLocatorValues(),
   readModule?: ModuleReader,
+  options: { readonly completeFile?: boolean } = {},
 ): LocatorViolation[] {
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
   const failures: LocatorViolation[] = [];
@@ -64,13 +65,24 @@ export function inspectLocatorSource(
   const counts = new Map<string, number>();
   for (const { matched } of literals)
     for (const value of matched) counts.set(value, (counts.get(value) ?? 0) + 1);
+  const reviewed = new Map(
+    LOCATOR_LITERAL_EXCEPTIONS.filter((entry) => entry.file === file).flatMap((entry) =>
+      Object.entries(entry.values).map(
+        ([value, count]) => [canonicalLocator(value), count] as const,
+      ),
+    ),
+  );
+  // A complete-file scan must retire reviews whose last native occurrence disappeared.
+  if (options.completeFile)
+    for (const value of reviewed.keys())
+      if (!counts.has(value))
+        failures.push({
+          file,
+          line: 1,
+          reason: `stale locator exception ${JSON.stringify(value)} has no occurrence; remove its review`,
+        });
   for (const { literal, matched } of literals) {
-    const unreviewed = matched.filter((value) => {
-      const exception = LOCATOR_LITERAL_EXCEPTIONS.find(
-        (entry) => entry.file === file && Object.hasOwn(entry.values, value),
-      );
-      return !exception || exception.values[value] !== counts.get(value);
-    });
+    const unreviewed = matched.filter((value) => reviewed.get(value) !== counts.get(value));
     if (!unreviewed.length) continue;
     const display = literal.text.length > 180 ? `${literal.text.slice(0, 177)}…` : literal.text;
     fail(
@@ -106,10 +118,17 @@ export async function checkLocatorContracts(): Promise<readonly LocatorViolation
   const values = publishedLocatorValues();
   const failures = [...inspectSiteLoaders(), ...inspectSiteFragmentOwnership(ROOT)];
   const glob = new Bun.Glob('src/**/*.{ts,tsx}');
-  for (const file of [...glob.scanSync({ cwd: ROOT })].sort()) {
+  // Missing owner files must not hide their obsolete exception entries from the scan.
+  const files = new Set([
+    ...glob.scanSync({ cwd: ROOT }),
+    ...LOCATOR_LITERAL_EXCEPTIONS.map((entry) => entry.file),
+  ]);
+  for (const file of [...files].sort()) {
     // Test fixtures may intentionally import multiple sites; shipped source has no such exception.
     if (TEST.test(file)) continue;
-    failures.push(...inspectLocatorSource(file, readFileSync(resolve(ROOT, file), 'utf8'), values));
+    const path = resolve(ROOT, file);
+    const text = existsSync(path) ? readFileSync(path, 'utf8') : '';
+    failures.push(...inspectLocatorSource(file, text, values, undefined, { completeFile: true }));
   }
   return failures;
 }
