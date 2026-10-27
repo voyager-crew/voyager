@@ -100,7 +100,7 @@ it('a renamed application shell proves its open state through the native sidebar
   expect(findSidebarVisibilityHost()).toBe(replacement);
   expect(isSidebarOpen()).toBe(true);
   replacement.classList.remove('side-nav-open');
-  expect(findSidebarVisibilityHost()).toBeNull();
+  expect(findSidebarVisibilityHost()).toBe(replacement);
   expect(isSidebarOpen()).toBe(false);
 });
 

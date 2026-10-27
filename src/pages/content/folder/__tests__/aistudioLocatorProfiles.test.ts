@@ -8,6 +8,7 @@ import { openLibraryInApp } from '@/features/plugins/verbs/folders/aistudio/rout
 
 import { getLibraryPromptRows, libraryPromptData } from '../aistudioLibraryTable';
 import { readAIStudioLibraryTableSelector } from '../aistudioLocatorReads';
+import { mountRealAIStudioNavigation } from './realAIStudioNavigationFixture';
 
 const stops: Array<() => void> = [];
 async function patch(locators: Record<string, readonly string[]>) {
@@ -84,8 +85,10 @@ describe('AI Studio catalog locator operations', () => {
   });
 
   it('a renamed Library control navigates only to the independently verified library URL', async () => {
-    document.body.innerHTML =
-      '<nav><a id="library" href="/library">Library</a><a id="wrong" href="/prompts/other">Other</a></nav>';
+    history.replaceState(null, '', '/u/1/library');
+    const { navigation } = mountRealAIStudioNavigation();
+    navigation.innerHTML =
+      '<a id="library" href="/u/1/library">Library</a><a id="wrong" href="/u/1/prompts/other">Other</a>';
     const library = document.getElementById('library')!;
     const wrong = document.getElementById('wrong')!;
     const clickLibrary = vi.spyOn(library, 'click').mockImplementation(() => {});
@@ -94,15 +97,16 @@ describe('AI Studio catalog locator operations', () => {
     openLibraryInApp();
     expect(clickLibrary).toHaveBeenCalledTimes(1);
     await patch({ 'navigation.libraryLink': ['#wrong'] });
-    history.replaceState(null, '', '/prompts/current');
+    history.replaceState(null, '', '/u/1/prompts/current');
     openLibraryInApp();
-    expect(location.pathname).toBe('/library');
+    expect(location.pathname).toBe('/u/1/library');
     expect(clickWrong).not.toHaveBeenCalled();
   });
 
   it('a remote Library alias cannot navigate from account 1 to account 0', async () => {
     history.replaceState(null, '', '/u/1/prompts/current');
-    document.body.innerHTML = '<nav><a id="library" href="/u/0/library">Library</a></nav>';
+    const { navigation } = mountRealAIStudioNavigation();
+    navigation.innerHTML = '<a id="library" href="/u/0/library">Library</a>';
     const link = document.getElementById('library') as HTMLAnchorElement;
     const click = vi.spyOn(link, 'click').mockImplementation(() => {});
     await patch({ 'navigation.libraryLink': ['#library'] });

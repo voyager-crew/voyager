@@ -4,6 +4,10 @@ Each of these cost a wrong fix or a wrong click before it was measured. Add a li
 
 ## Gemini
 
+- Captured 2026-10-27: one `<main>` under `chat-app` wraps both
+  `side-navigation-v2 > bard-sidenav-container > bard-sidenav[role="navigation"]`
+  (sidebar) and `bard-sidenav-content … chat-window` (chat). A sidebar inside
+  `main` belongs to the app; the shared landmark alone does not make it chat content.
 - A user turn's `textContent` is **not** the message. The bubble also carries a
   screen-reader "You said" prefix and the copy/edit/expand controls, which render
   through a Material Symbols icon font whose glyph _is_ the element's text — so
@@ -14,6 +18,14 @@ Each of these cost a wrong fix or a wrong click before it was measured. Add a li
 - Text typed after a slash token lands on the prompt's **own last line**, with no
   newline between them. Anything that assumes a line boundary between the
   template and the person's words never fires.
+
+## AI Studio
+
+- Captured 2026-10-27 on `/library`: `app-root > ms-app > div.banner-and-app-container > div.makersuite-layout`
+  has two siblings: `ms-navbar-v2 > div.nav-content.v3-left-nav > nav` (sidebar)
+  and `div[role="main"].layout-wrapper` (content). This sidebar is the page's only
+  `nav`/`[role="navigation"]`; Voyager mounts its folder tree inside that `nav`.
+  The sidebar is outside main, so a nav inside main is content navigation.
 
 ## Claude
 

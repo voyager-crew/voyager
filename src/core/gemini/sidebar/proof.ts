@@ -37,6 +37,16 @@ export function isOriginalGeminiSidebarNode(element: Element): boolean {
   return owner !== null && originalElement(element, owner);
 }
 
+function isUniqueSidebarOwner(owner: Element): boolean {
+  const owners = new Set<Element>();
+  for (const native of owner.ownerDocument.querySelectorAll(SIDEBAR)) {
+    const candidate = getGeminiSidebarOwner(native);
+    if (candidate && originalElement(candidate, candidate)) owners.add(candidate);
+  }
+  // A complete native-looking copy outside the chat or overlays is still an ambiguous owner.
+  return owners.size === 1 && owners.has(owner);
+}
+
 /** Native sidebar content remains independently identifiable when a containing tag is renamed. */
 function sidebarRegion(element: HTMLElement): boolean {
   if (
@@ -45,7 +55,7 @@ function sidebarRegion(element: HTMLElement): boolean {
   )
     return false;
   const owner = getGeminiSidebarOwner(element);
-  if (!owner) return false;
+  if (!owner || !isUniqueSidebarOwner(owner)) return false;
   const content = Array.from(owner.querySelectorAll(CONTENT)).filter((node) =>
     originalElement(node, owner),
   );
@@ -55,6 +65,8 @@ function sidebarRegion(element: HTMLElement): boolean {
 function sidebarHost(element: HTMLElement): boolean {
   if (element.querySelector('main, [role="main"], chat-window')) return false;
   const contents = element.querySelectorAll('side-navigation-content');
+  const owner = getGeminiSidebarOwner(contents[0] ?? element);
+  if (!owner || !isUniqueSidebarOwner(owner)) return false;
   if (contents.length === 1 && contents[0].parentElement === element) return true;
   return (
     element.matches('nav, aside, [role="navigation"]') &&
@@ -64,10 +76,19 @@ function sidebarHost(element: HTMLElement): boolean {
   );
 }
 
-function stateOwner(element: HTMLElement): boolean {
+function stateOwner(
+  key: 'sidebar.openHost' | 'sidebar.visibilityHost',
+  element: HTMLElement,
+): boolean {
   if (element.matches('bard-sidenav-container')) return false;
   const sidebar = element.querySelector(SIDEBAR);
-  return sidebar !== null && sidebar.closest('.side-nav-open') === element;
+  if (!sidebar) return false;
+  if (key === 'sidebar.openHost') return sidebar.closest('.side-nav-open') === element;
+  const mains = Array.from(element.ownerDocument.querySelectorAll('main, [role="main"]')).filter(
+    (main) => !main.parentElement?.closest('main, [role="main"]'),
+  );
+  // Closing removes the state class; the native app still directly owns its outer main.
+  return mains.length === 1 && mains[0].parentElement === element;
 }
 
 /** Proof belongs to the operation's original element, never to a remote locator's spelling. */
@@ -81,7 +102,8 @@ export function acceptsGeminiSidebarElement(
   if (!originalElement(element, getGeminiSidebarOwner(element) ?? element)) return false;
   if (key === 'sidebar.overflow') return sidebarRegion(element);
   if (key === 'sidebar.host') return sidebarHost(element);
-  if (key === 'sidebar.openHost' || key === 'sidebar.visibilityHost') return stateOwner(element);
+  if (key === 'sidebar.openHost' || key === 'sidebar.visibilityHost')
+    return stateOwner(key, element);
   if (key === 'sidebar.interactionButton')
     return element.matches('button, [role="button"]') && !!element.closest(SIDEBAR);
   return false;

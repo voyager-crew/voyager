@@ -19,6 +19,7 @@ import {
   readAIStudioSidebar,
 } from '../aistudioNavigationReads';
 import { bindPromptDragSources, watchPromptHistory } from '../aistudioPromptHistory';
+import { mountRealAIStudioNavigation } from './realAIStudioNavigationFixture';
 
 const stops: Array<() => void | Promise<void>> = [];
 async function patch(locators: Record<string, readonly string[]>) {
@@ -119,8 +120,9 @@ describe('AI Studio navigation catalog repairs', () => {
 
   it('a prompt-link repair clicks the exact prompt ID and account instead of a matching prefix', async () => {
     history.replaceState(null, '', '/u/1/library');
-    document.body.innerHTML =
-      '<aside class="nav-content v3-left-nav"><a id="prefix" class="repaired" href="/u/1/prompts/a-suffix">Other</a><a id="target" href="/u/1/prompts/a">Alpha</a></aside>';
+    const { navigation } = mountRealAIStudioNavigation();
+    navigation.innerHTML =
+      '<a id="prefix" class="repaired" href="/u/1/prompts/a-suffix">Other</a><a id="target" href="/u/1/prompts/a">Alpha</a>';
     const wrong = vi.spyOn(node('prefix'), 'click').mockImplementation(() => {});
     const right = vi.spyOn(node('target'), 'click').mockImplementation(() => {});
     await patch({ 'navigation.promptLink': ['a.repaired'] });
@@ -137,7 +139,8 @@ describe('AI Studio navigation catalog repairs', () => {
 
   it('renamed history click controls notify only for original same-account prompt anchors', async () => {
     vi.useFakeTimers();
-    document.body.innerHTML =
+    const { navigation } = mountRealAIStudioNavigation();
+    navigation.innerHTML =
       '<section id="history"><a class="repaired" id="link" href="/prompts/a"><span>Alpha</span></a><a class="repaired" id="foreign" href="https://example.com/prompts/b">Foreign</a></section>';
     await patch({ 'history.click': ['a.repaired'] });
     const onPromptClick = vi.fn();
@@ -160,7 +163,8 @@ describe('AI Studio navigation catalog repairs', () => {
   });
 
   it('a history row repair drags one prompt and cannot make the entire list draggable', async () => {
-    document.body.innerHTML =
+    const { navigation } = mountRealAIStudioNavigation();
+    navigation.innerHTML =
       '<section id="history"><article class="row" id="a"><span><a href="/prompts/a">Alpha</a></span></article><article class="row" id="b"><span><a href="/prompts/b">Beta</a></span></article></section>';
     await patch({ 'history.dragHosts': ['#history'] });
     bindPromptDragSources(node('history'));
@@ -259,14 +263,16 @@ it.each([
   'data-gv-component="preview"',
   'data-gv-plugin="preview"',
 ])('a %s preview cannot supply the Library navigation control', async (owner) => {
-  document.body.innerHTML = `<section ${owner}><nav><a class="library" href="/library">Preview</a></nav></section>`;
+  const { navigation } = mountRealAIStudioNavigation();
+  history.replaceState(null, '', '/u/1/library');
+  navigation.innerHTML = `<section ${owner}><a class="library" href="/u/1/library">Preview</a></section>`;
   await patch({ 'navigation.libraryLink': ['a.library'] });
   const { openLibraryInApp } = await import('@/features/plugins/verbs/folders/aistudio/routes');
   const link = document.querySelector<HTMLAnchorElement>('a')!;
   const click = vi.spyOn(link, 'click').mockImplementation(() => {});
   openLibraryInApp();
   expect(click).not.toHaveBeenCalled();
-  document.querySelector('section')!.replaceWith(document.querySelector('nav')!);
+  document.querySelector('section')!.replaceWith(link);
   openLibraryInApp();
   expect(click).toHaveBeenCalledTimes(1);
 });

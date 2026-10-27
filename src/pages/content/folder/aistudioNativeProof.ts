@@ -1,7 +1,7 @@
 import { hasVoyagerOwner } from '@/core/gemini/composer/ownedInput';
 import { aistudioAdapter } from '@/features/plugins/sites/adapters/aistudio';
 
-const NAVIGATION = `nav, aside, [role="navigation"], ${aistudioAdapter.folders!.sidebar}`;
+const NAVIGATION = 'nav, [role="navigation"]';
 const OVERLAY = 'dialog, [role="dialog"], [role="alertdialog"], [role="menu"]';
 
 export function aistudioAccountPrefix(pathname: string): string {
@@ -17,11 +17,16 @@ export function isOriginalAIStudioNavigation(element: Element): boolean {
     return false;
   // AI Studio has no proved app-root protocol here; copied navigation and a composer cannot certify an overlay.
   if (element.closest(OVERLAY)) return false;
-  const navigation = element.closest(NAVIGATION);
-  const content = element.closest('main, [role="main"]');
-  if (!content) return true;
-  // A host's main may wrap the whole app; only a main inside the native navigation is foreign.
-  return navigation !== null && navigation !== content && content.contains(navigation);
+  // The captured navbar is beside main; content tabs and breadcrumbs cannot supply sidebar links.
+  if (element.closest('main, [role="main"]')) return false;
+  const navigations = element.ownerDocument.querySelectorAll(NAVIGATION);
+  if (navigations.length !== 1) return false;
+  const sidebar = navigations[0].parentElement;
+  return Boolean(
+    sidebar?.matches(aistudioAdapter.folders!.sidebar) &&
+    sidebar.parentElement?.matches('ms-navbar-v2') &&
+    sidebar.contains(element),
+  );
 }
 
 export function nativeAIStudioPromptAnchor(anchor: Element): anchor is HTMLAnchorElement {
