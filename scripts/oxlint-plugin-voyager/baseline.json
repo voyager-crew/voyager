@@ -34,7 +34,6 @@
       "src/pages/content/__tests__/geminiExportPlugin.test.ts": 5,
       "src/pages/content/__tests__/nativeSelectorStartup.test.ts": 1,
       "src/pages/content/__tests__/pluginOwnedFeatures.test.ts": 2,
-      "src/pages/content/chatInput/__tests__/vimMode.test.ts": 4,
       "src/pages/content/coachmark/__tests__/coachmark.test.ts": 2,
       "src/pages/content/defaultModel/__tests__/autoApply.test.ts": 1,
       "src/pages/content/draftSave/__tests__/draftSave.test.ts": 2,
