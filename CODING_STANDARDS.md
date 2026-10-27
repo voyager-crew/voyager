@@ -17,6 +17,16 @@ A test earns its place by the **regression** it catches: it fails on a plausible
 - **Deleting tests**: judge each case by the regression it catches. A category (timers, DOM, mocks, long, slow) is never the reason.
 - **Moving code**: when a responsibility is extracted, its valuable regression assertions move with it. Prose, formatting and other reversible changes without a behavior change need no new tests.
 
+## Types
+
+An `as` tells the compiler to stop checking; nothing checks at runtime. Prefer code where the types are **proven**: narrowing that the compiler follows, so a later type change breaks the build at every affected site.
+
+- **Boundaries**: storage reads (sync data from other devices and older versions), runtime and window messages (MAIN-world scripts), and parsed JSON (imports, catalog host files) arrive as `unknown`. Parse once where they enter into the domain type, drop or repair bad entries there, and trust the type inside. `JSON.parse(raw) as unknown` handed to a parser is the right shape; `JSON.parse(raw) as PromptItem[]` is a finding.
+- **Type guards** verify everything their name claims. A guard named `isX` that checks less hides the bug behind a safe-sounding name.
+- **Variants**: mutually exclusive states are a discriminated union on a literal tag, never a bag of optional fields. Async phases use `startMachine`.
+- **Literal tables** use `satisfies`, which checks without widening. A `switch` over a union ends with `default: { const _exhaustive: never = value; }` so a new variant fails to compile.
+- **Elsewhere**: in new code, ask for narrowing when a guard, `instanceof` or a generic (`querySelector<HTMLElement>`) expresses the same thing. `as const`, a cast after validation, and test fixtures are fine; `any` is a finding. Lint flags casts through `unknown`.
+
 ## Structure
 
 - Extract cohesive data operations or complete lifecycle responsibilities from large managers. Helpers take explicit inputs and have one state owner; the whole manager is never passed in. Each step works on its own and keeps existing callers and data.
