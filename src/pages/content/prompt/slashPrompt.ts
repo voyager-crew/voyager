@@ -17,31 +17,27 @@ import type { PromptScheme } from '@/features/prompt/PromptSiteAdapter';
 import { isPromptTemplate } from '@/features/prompt/model/promptTemplate';
 import { getTranslationSync } from '@/utils/i18n';
 
-import { CHAT_INPUT_SELECTOR, findChatInput } from '../chatInput/index';
+import { CHAT_INPUT_SELECTOR } from '../chatInput/index';
 import { followGeminiSendKey } from '../sendBehavior/followSendKey';
 import { findClosestSendActionButton, isSendKeyboardEvent } from '../sendBehavior/sendButton';
 import { type TemplateFillHandle, openTemplateFill } from './PromptTemplateFill';
+import { findPromptInputForSendButton, inputFromTarget } from './slashComposerInput';
 import {
   type PromptQuery,
   TOKEN_CLASS,
   completeQuery,
-  createQueryRange,
   getPromptQuery,
   getQueryAnchorRect,
   placeCaretAtInputStart,
   readText,
 } from './slashComposerText';
-import { syncMarkerTypography } from './slashMarkers';
+import { hideGhost, removeGhost, showGhost } from './slashGhost';
 import { ghostSuffix, isPromptItem, matchSlashPrompts } from './slashMatch';
 import { createPromptPlacements, syncEditedPromptText } from './slashPlacements';
 import { SLASH_PREVIEW_ID, createSlashPreview } from './slashPreview';
 
 const ROOT_ID = 'gv-pm-slash-root';
 const LIST_ID = 'gv-pm-slash-list';
-const GHOST_ID = 'gv-pm-slash-ghost';
-
-const SEND_COMPOSER_SELECTOR =
-  'form, .text-input-field, .input-area, ms-prompt-input-wrapper, chat-message';
 
 export interface SlashPromptController {
   destroy: () => void;
@@ -52,73 +48,6 @@ interface SlashPromptOptions {
   scheme: () => PromptScheme;
   initialItems?: PromptItem[];
   initialCtrlEnterSend?: boolean;
-}
-
-function ghostElement(): HTMLElement {
-  const existing = document.getElementById(GHOST_ID);
-  if (existing) return existing;
-  const ghost = document.createElement('span');
-  ghost.id = GHOST_ID;
-  ghost.className = GHOST_ID;
-  ghost.setAttribute('aria-hidden', 'true');
-  document.body.appendChild(ghost);
-  return ghost;
-}
-
-function hideGhost(): void {
-  document.getElementById(GHOST_ID)?.classList.remove('gv-pm-slash-ghost-visible');
-}
-
-function showGhost(query: PromptQuery, name: string, scheme: PromptScheme): void {
-  const suffix = ghostSuffix(query.query, name);
-  const range = createQueryRange(query);
-  // A textarea has no range to measure against, and the query may be scrolled
-  // out of view inside the composer.
-  if (!suffix || !range || typeof range.getBoundingClientRect !== 'function') {
-    hideGhost();
-    return;
-  }
-  const rect = range.getBoundingClientRect();
-  if (rect.height <= 0) {
-    hideGhost();
-    return;
-  }
-  const ghost = ghostElement();
-  ghost.textContent = suffix;
-  ghost.dataset.gvTheme = scheme;
-  syncMarkerTypography(ghost, query.input, null);
-  ghost.style.left = `${Math.round(rect.right)}px`;
-  ghost.style.top = `${Math.round(rect.top)}px`;
-  ghost.style.height = `${Math.round(rect.height)}px`;
-  ghost.classList.add('gv-pm-slash-ghost-visible');
-}
-
-function inputFromTarget(target: EventTarget | null): HTMLElement | null {
-  if (!(target instanceof Element)) return null;
-  if (target.closest('.gv-pm-panel, .gv-pm-slash-root, .gv-pm-slash-tooltip')) return null;
-  const input = target.closest<HTMLElement>(CHAT_INPUT_SELECTOR);
-  if (!input) return null;
-  if (findChatInput({ requireVisible: false }) !== input) return null;
-  if (input instanceof HTMLTextAreaElement) return input;
-  if (input.isContentEditable || input.getAttribute('contenteditable') === 'true') return input;
-  return null;
-}
-
-function findPromptInputForSendButton(
-  button: HTMLElement,
-  hasPrompt: (input: HTMLElement) => boolean,
-): HTMLElement | null {
-  let ancestor = button.parentElement;
-  while (ancestor && ancestor !== document.body) {
-    if (ancestor.matches(SEND_COMPOSER_SELECTOR)) {
-      const input = Array.from(ancestor.querySelectorAll<HTMLElement>(CHAT_INPUT_SELECTOR)).find(
-        (candidate) => hasPrompt(candidate),
-      );
-      if (input) return input;
-    }
-    ancestor = ancestor.parentElement;
-  }
-  return null;
 }
 
 export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromptController {
@@ -305,13 +234,12 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
         tags.appendChild(tagEl);
       }
       row.appendChild(tags);
-      row.addEventListener('mouseenter', () => {
+      preview.bindRow(row, () => {
         root.dataset.gvInteraction = 'pointer';
         selectedIndex = index;
         renderSelectionState();
         preview.show(row, prompt.text);
       });
-      row.addEventListener('mouseleave', preview.scheduleHide);
       row.addEventListener('mousedown', (event) => {
         if (event.button !== 0) return;
         event.preventDefault();
@@ -576,7 +504,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
       placements.destroy();
       root.remove();
       preview.destroy();
-      document.getElementById(GHOST_ID)?.remove();
+      removeGhost();
     },
   };
 }

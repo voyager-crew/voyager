@@ -11,13 +11,22 @@ import type { PromptScheme } from '@/features/prompt/PromptSiteAdapter';
 import { parsePromptTemplate } from '@/features/prompt/model/promptTemplate';
 import { matchSentPrompt } from '@/features/prompt/model/promptTextMatch';
 
+import { createAimedRows } from './safeTriangle';
+
 export const SLASH_PREVIEW_ID = 'gv-pm-slash-tooltip';
 const TOOLTIP_VALUE_CLASS = 'gv-pm-slash-tooltip-value';
+const TOOLTIP_VISIBLE_CLASS = 'gv-pm-slash-tooltip-visible';
 const TOOLTIP_HIDE_GRACE_MS = 150;
 
 export interface SlashPreview {
   /** Shows the card while the pointer is over `target`. */
   bind: (target: HTMLElement, text: string) => void;
+  /**
+   * Wires a result row: `onEnter` runs when the pointer enters it, and leaving
+   * schedules a hide. While the pointer is on its way from the row it previews
+   * to the card, the rows it crosses wait instead of swapping the card.
+   */
+  bindRow: (row: HTMLElement, onEnter: () => void) => void;
   show: (target: HTMLElement, text: string) => void;
   /** Hides after a grace period that entering the card cancels. */
   scheduleHide: () => void;
@@ -40,6 +49,19 @@ export function createSlashPreview({
   scheme,
 }: SlashPreviewOptions): SlashPreview {
   let hideTimer: number | null = null;
+  /** The element the card last showed. */
+  let shownTarget: HTMLElement | null = null;
+
+  // Moving up from a lower row to the card crosses every row above it, and
+  // each one used to swap the card, so a lower row's card was unreachable.
+  const rows = createAimedRows({
+    card: () => {
+      const card = document.getElementById(SLASH_PREVIEW_ID);
+      return card?.classList.contains(TOOLTIP_VISIBLE_CLASS) ? card : null;
+    },
+    owner: () => shownTarget,
+    onAim: cancelHide,
+  });
 
   function cancelHide(): void {
     if (hideTimer === null) return;
@@ -47,12 +69,22 @@ export function createSlashPreview({
     hideTimer = null;
   }
 
+  function conceal(): void {
+    rows.stop();
+    document.getElementById(SLASH_PREVIEW_ID)?.classList.remove(TOOLTIP_VISIBLE_CLASS);
+  }
+
   function scheduleHide(): void {
     cancelHide();
     hideTimer = window.setTimeout(() => {
       hideTimer = null;
-      document.getElementById(SLASH_PREVIEW_ID)?.classList.remove('gv-pm-slash-tooltip-visible');
+      conceal();
     }, TOOLTIP_HIDE_GRACE_MS);
+  }
+
+  function enterCard(): void {
+    rows.stop();
+    cancelHide();
   }
 
   function ensureCard(): HTMLDivElement {
@@ -62,7 +94,7 @@ export function createSlashPreview({
     tooltip.id = SLASH_PREVIEW_ID;
     tooltip.className = 'gv-pm-slash-tooltip';
     tooltip.setAttribute('role', 'tooltip');
-    tooltip.addEventListener('mouseenter', cancelHide);
+    tooltip.addEventListener('mouseenter', enterCard);
     tooltip.addEventListener('mouseleave', scheduleHide);
     document.body.appendChild(tooltip);
     return tooltip;
@@ -70,13 +102,14 @@ export function createSlashPreview({
 
   function show(target: HTMLElement, text: string): void {
     cancelHide();
+    shownTarget = target;
     const tooltip = ensureCard();
     tooltip.scrollTop = 0;
     paintTooltipBody(tooltip, text, target, onValuesEdited);
     tooltip.dataset.gvTheme = scheme();
     tooltip.style.left = '0px';
     tooltip.style.top = '0px';
-    tooltip.classList.add('gv-pm-slash-tooltip-visible');
+    tooltip.classList.add(TOOLTIP_VISIBLE_CLASS);
     const targetRect = target.getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
     const padding = 8;
@@ -124,7 +157,7 @@ export function createSlashPreview({
 
   function hide(): void {
     cancelHide();
-    document.getElementById(SLASH_PREVIEW_ID)?.classList.remove('gv-pm-slash-tooltip-visible');
+    conceal();
   }
 
   return {
@@ -132,6 +165,7 @@ export function createSlashPreview({
       target.addEventListener('mouseenter', () => show(target, text));
       target.addEventListener('mouseleave', scheduleHide);
     },
+    bindRow: (row, onEnter) => rows.bind(row, onEnter, scheduleHide),
     show,
     scheduleHide,
     hide,
