@@ -50,6 +50,23 @@ export const NON_SETTINGS_BACKUP_POLICIES = {
     disposition: 'device-local',
     reason: 'Viewport coordinates and panel state should not be restored across different screens.',
   },
+  // These live in local storage (promptPrefs); listed as sync settings, the
+  // backup exported their defaults and a restore wrote keys nothing reads.
+  [StorageKeys.PROMPT_PANEL_POSITION]: {
+    storage: 'local',
+    disposition: 'device-local',
+    reason: 'Where the prompt panel was placed is in viewport coordinates of this screen.',
+  },
+  [StorageKeys.PROMPT_PANEL_LOCKED]: {
+    storage: 'local',
+    disposition: 'device-local',
+    reason: 'The panel lock pins the panel at its local position, so it stays with that position.',
+  },
+  [StorageKeys.PROMPT_TRIGGER_POSITION]: {
+    storage: 'local',
+    disposition: 'device-local',
+    reason: 'Where the prompt button was dragged is in viewport coordinates of this screen.',
+  },
   [StorageKeys.PERSISTENT_EXPORT_TOOLBAR_POSITION]: {
     storage: 'local',
     disposition: 'device-local',
