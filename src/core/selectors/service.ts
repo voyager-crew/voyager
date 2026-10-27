@@ -9,6 +9,7 @@ import {
   type HydrationState,
   createHydrationEffects,
   hydrationTransition,
+  SITE_SELECTOR_STARTUP_TIMEOUT_MS,
 } from './hydration';
 import { startSemanticSource } from './semanticSource';
 import { BUNDLED_LOCATOR_SITES, locatorSiteForHost } from './sites';
@@ -20,7 +21,7 @@ export interface SiteSelectorInitialization {
   readonly doc: Document;
   readonly lifetime: AbortSignal;
   readonly read: () => Promise<unknown>;
-  /** Shares the host’s initial settings read without blocking profile readiness. */
+  /** Shares the host’s initial settings read; OFF can settle before its cached adapter. */
   readonly readOnlineUpdates?: () => Promise<boolean>;
   readonly invalidatedBy?: (invalidate: () => void) => () => void;
   readonly bundledRevision?: number;
@@ -29,8 +30,6 @@ export interface SiteSelectorInitialization {
 
 export interface SiteSelectorLifetime {
   readonly ready: Promise<SiteSelectorSettlement>;
-  /** Freeze the view already available before the first native feature mounts. */
-  readonly useAvailableSnapshot: (raw?: unknown) => void;
   readonly stop: () => void;
   readonly isCurrent: () => boolean;
 }
@@ -80,8 +79,9 @@ export class SiteSelectorService<Key extends string = string> {
         transition: hydrationTransition,
         effects: createHydrationEffects({
           lifetime: input.lifetime,
-          timeoutMs: input.timeoutMs ?? 250,
+          timeoutMs: input.timeoutMs ?? SITE_SELECTOR_STARTUP_TIMEOUT_MS,
           read: input.read,
+          readOnlineUpdates: input.readOnlineUpdates,
           toView: (raw) => toRemoteView(this.siteId, raw, input),
           invalidatedBy: input.invalidatedBy,
           install: (view) => {
@@ -99,21 +99,6 @@ export class SiteSelectorService<Key extends string = string> {
     this.active = hydration;
     return {
       ready,
-      useAvailableSnapshot: (raw) => {
-        if (hydration.state.status !== 'reading') return;
-        if (raw === undefined) {
-          hydration.send({ type: 'use-available' });
-          return;
-        }
-        // The storage value can be ready before its async wrappers deliver the read event.
-        let view: SiteSelectorView | null = null;
-        try {
-          view = toRemoteView(this.siteId, raw, input);
-        } catch {
-          // Match the ordinary read's whole-view fallback on validation failure.
-        }
-        hydration.send({ type: 'read', view });
-      },
       stop: () => {
         semanticSource?.send({ type: 'retire' });
         hydration.send({ type: 'retire' });

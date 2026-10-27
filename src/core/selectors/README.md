@@ -62,12 +62,33 @@ The first adapter and settings reads are shared with PluginHost. Cached adapter
 selection uses the same revision/identity rule at first mount and later reloads,
 regardless of Online updates. The switch governs profile hydration and whether
 semantic reads use the adapter or the guarded snapshot.
-Native features add no catalog wait. At their first mount, after the existing
-settings/coverage reads, they fix the snapshot already available. If cache
-hydration is still pending, that page keeps the bundle and later catalog results
-cannot switch it; a subsequent page load can try again. A timely eligible cache
-supplies the first mount. Once ready, the profile snapshot stays fixed until the
-user refreshes the page; consumer proofs still run against the current DOM.
+
+### Startup readiness
+
+The first page-locator consumer waits for the existing `ready` before reading its
+view. Its deadline is 250 ms from page-selector startup, shared by all consumers;
+each mount does not start another wait. With Online updates on, an eligible
+cached repair read within that deadline supplies the first consumer read, even
+when the native mount was scheduled before storage answered.
+
+OFF releases readiness as soon as the shared settings read identifies it, even
+while the cache read is pending. Missing, stale or unchanged site data releases
+readiness as soon as the local read identifies it, without waiting for unresolved
+settings. A compiled-off channel returns immediately without new storage reads.
+These paths add no DOM queries and preserve bundled values, ordering and query
+cost. Their added wait is only the shared read needed to identify the path;
+already completed reads need only Promise continuations, with no timer wait.
+Cache errors and rejected settings reads fall back; ordinary settings errors keep
+the existing legacy defaults. Hung reads cannot extend the wait past the deadline.
+Settings changes or retirement also settle pending work. Once the page view is
+frozen, late results cannot replace it; a later page load can try again. Consumer
+proofs still run against the current DOM.
+
+[`pageSelectorAdapter.ts`](../../pages/content/pageSelectorAdapter.ts) separately
+bounds cached adapter resolution with `startMachine`, using the same startup
+deadline. An early OFF snapshot therefore does not discard an eligible cached
+adapter arriving within the cap: PluginHost retains baseline adapter precedence.
+An error, timeout or retirement resolves that pending adapter read to the bundle.
 
 [`semanticSource.ts`](semanticSource.ts) separately resolves the initial semantic
 read mode through `startMachine`, reusing that same settings read without delaying
@@ -76,6 +97,8 @@ ready, subsequent semantic reads use the baseline adapter; this cannot install
 late profiles. A settings change while the read is pending, a read failure or
 teardown invalidates that result. Once the mode settles, later setting changes
 require a page refresh.
+
+### Operation guards
 
 Validation caps each site's profiles at 65,536 UTF-8 bytes, each ordered list at
 32 entries and each locator at 2,048 UTF-16 code units. Empty strings and unsafe

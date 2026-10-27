@@ -9,4 +9,4 @@
 - Gemini 与 AI Studio 的官方插件、CSS 和 native 协议继续留在包内。所有站点的 host admission、账号、ID、删除/重命名、点击与输入协议、模型元数据、ARIA 关联和 clone sanitizer 不由定位更新改变。设计 §6 协议继续打包；保留在包内的 Tier A 定位项须逐 key 说明为何无法独立证明替代值。本地插件不能绕过这些边界。
 - ON 时按 D21 分两级。Tier A 包括 host 点击、发送、停止、删除、输入、导航、开菜单，持久化或导出的内容，以及决定 conversation/turn/account/Gem/folder/project 归属的定位项；独立证据不成立时整次读取回到 bundle。Tier B 只决定 Voyager UI 的挂载、插入、对齐和避让，信任自有目录，不要求独立 proof；零命中或挂载到 contenteditable、input、textarea 等 host 表单控件内时回退 bundle。混合用途不能按 Tier B 放宽。
 - 两级都使用 literal allowlist、groups、大小限制与按组语法拒绝。未知 key 忽略。`remoteKeys`、分级和 consumer guards 由包内代码控制；OFF 或无 remote data 保持 `6fa19b4ae` 的值、顺序、行为和成本，新增检查不进入 bundled path。
-- 共用的 per-site hydration 使用 `startMachine`，从同一 resolved catalog site data 建立 snapshot。native 启动不额外等 catalog：在原有 settings/coverage 读取之后、首次挂载之前固定已就绪的 snapshot；缓存未读完则本页固定 bundle，迟到结果不能切换，可在后续页面加载重试。snapshot 固定到用户自行刷新；新数据、撤回和关闭更新不自动重载页面，也不重挂 native 功能。
+- 共用的 per-site hydration 与独立 adapter read 使用 `startMachine`，复用首次 catalog/settings 读取；首个 consumer 的有界等待、页面 snapshot 冻结与 baseline adapter precedence 统一遵循[启动就绪规则](../../../core/selectors/README.md#startup-readiness)。新数据、撤回和关闭更新在用户刷新后生效，不自动重载页面或重挂 native 功能。

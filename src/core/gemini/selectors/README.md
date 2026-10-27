@@ -70,15 +70,10 @@ The source directory is
 
 ## Page and operation ownership
 
-The content-script claim starts hydration alongside PluginHost, before native
-feature mounts. Hydration is a `startMachine` flow with a 250 ms deadline.
-Native features do not wait for it: after their existing setting reads, the first
-mount fixes the snapshot already available. A pending cache read then settles on
-the bundle; a subsequent page load can try again. A timely eligible cache can
-supply the first mount. Catalog settings changes during a pending read, an error
-or the deadline also settle on the bundle; late results cannot replace that
-decision. Once ready, the page snapshot stays fixed until its claim ends. New downloads and turning the switch off take
-effect after a user refresh, without automatic reload or remount.
+The content-script claim starts hydration alongside PluginHost. The first
+consumer follows the shared [startup readiness rule](../../selectors/README.md#startup-readiness)
+before reading its frozen page view. New downloads and turning the switch off
+take effect after a user refresh, without automatic reload or remount.
 
 Operation acceptance and mount rejection follow the [shared invariants and
 mount rule](../../selectors/README.md#tier-b-mount-rule). Gemini's model

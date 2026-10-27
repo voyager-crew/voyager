@@ -21,6 +21,8 @@ Copy this checklist and tick it off:
 
 ## 1. Load the build
 
+`dist_chrome_dev` compiles the catalog channel off; checks of online data build it with `VOYAGER_PLUGIN_CATALOG_REMOTE=on`.
+
 Chrome loads the unpacked `dist_chrome_dev` of the main checkout, which reloads itself about a second after its build id changes (`src/pages/background/devAutoReload.ts`). Build it with `bun run dev:chrome`, or once with the `exec` command in `nodemon.chrome.json` and `__DEV__=true`. From a worktree, build there and copy the build id last, so the reload never sees a half-copied bundle (a reload mid-copy can read a partial manifest and leave the extension disabled for a permission increase): `rsync -a --delete --exclude .voyager-build-ready dist_chrome_dev/ <main checkout>/dist_chrome_dev/`, then `cp dist_chrome_dev/.voyager-build-ready <main checkout>/dist_chrome_dev/`. Production checks use `bun run build:chrome` / `dist_chrome`, reloaded through an extension tool (with chrome-devtools-mcp, `list_extensions` and `reload_extension`); Safari uses `update-safari-extension`.
 
 Only the main agent loads or reloads extensions, and every extension keeps its load path; a delegated agent asks the main agent instead. When the Claude in Chrome tools report no connected browser, ask the person to run `/chrome` and choose Reconnect, then to quit and reopen Chrome if that fails.

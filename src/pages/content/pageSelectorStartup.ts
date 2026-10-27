@@ -13,6 +13,7 @@ import { sendCatalogRefreshRequest } from '@/features/plugins/runtime/pluginHost
 import { SiteRegistry } from '@/features/plugins/sites/registry';
 import type { SiteAdapter } from '@/features/plugins/types';
 
+import { startPageSelectorAdapter } from './pageSelectorAdapter';
 import { pageSelectorSettings } from './pageSelectorSettings';
 
 interface PageSelectorStartupInput {
@@ -23,7 +24,6 @@ interface PageSelectorStartupInput {
 
 export interface PageSelectorStartup {
   readonly ready: Promise<void>;
-  readonly useAvailableSnapshot: () => void;
   readonly stop: () => void;
   readonly isCurrent: () => boolean;
   readonly initialAdapter?: Promise<SiteAdapter | null>;
@@ -39,7 +39,7 @@ function locatorHost(url: string): string | null {
   }
 }
 
-/** Reuse PluginHost's adapter/settings reads; no additional storage gate on the bundled path. */
+/** Share PluginHost's reads and bound the first page-locator consumer by hydration.ready. */
 export function startPageSelectors(input: PageSelectorStartupInput): PageSelectorStartup {
   const host = locatorHost(input.url);
   if (!host || !isRemotePluginCatalogEnabledAtBuild() || input.lifetime.aborted) {
@@ -47,7 +47,6 @@ export function startPageSelectors(input: PageSelectorStartupInput): PageSelecto
     let stopped = false;
     return {
       ready: Promise.resolve(),
-      useAvailableSnapshot: () => {},
       stop: () => {
         stopped = true;
       },
@@ -60,12 +59,14 @@ export function startPageSelectors(input: PageSelectorStartupInput): PageSelecto
   const bundle = registry.resolveByUrl(input.url);
   const legacySettings = pageSelectorSettings(input.url);
   // Adapter precedence is identical at startup and reload, even when locator hydration is OFF.
-  let availableAdapter: SiteAdapter | null | undefined;
-  const adapterRead = loadHostCatalogCache(host).then((entry) => {
-    const override = siteAdapterFromEntry(entry, EXTENSION_VERSION);
-    const candidate = resolveSiteAdapterForUrl(input.url, registry, override);
-    availableAdapter = candidate;
-    return candidate;
+  const adapter = startPageSelectorAdapter({
+    bundled: bundle,
+    lifetime: input.lifetime,
+    read: async () => {
+      const entry = await loadHostCatalogCache(host);
+      const override = siteAdapterFromEntry(entry, EXTENSION_VERSION);
+      return resolveSiteAdapterForUrl(input.url, registry, override);
+    },
   });
   const hydration = initializeSiteSelectors(siteId, {
     host,
@@ -74,7 +75,7 @@ export function startPageSelectors(input: PageSelectorStartupInput): PageSelecto
     readOnlineUpdates: async () =>
       (await legacySettings.load())[StorageKeys.PLUGIN_ONLINE_UPDATES_ENABLED] !== false,
     read: async () => {
-      const candidate = await adapterRead;
+      const { adapter: candidate } = await adapter.ready;
       // A missing/stale cache needs no switch read before starting the page.
       if (candidate === bundle || !hasSiteSelectorChanges(siteId, candidate)) {
         return null;
@@ -92,8 +93,9 @@ export function startPageSelectors(input: PageSelectorStartupInput): PageSelecto
       return () => chrome.storage.onChanged.removeListener(onChanged);
     },
   });
-  const ready = hydration.ready.then((settlement) => {
-    if ((settlement !== 'read' && settlement !== 'available') || !hydration.isCurrent()) return;
+  const ready = hydration.ready.then(async (settlement) => {
+    if (settlement !== 'read' || !hydration.isCurrent()) return;
+    if ((await adapter.ready).by !== 'read') return;
     // Reuse the host's switch read, but never hold bundled feature startup behind it.
     void legacySettings.load().then(
       (settings) => {
@@ -103,26 +105,15 @@ export function startPageSelectors(input: PageSelectorStartupInput): PageSelecto
       () => {}, // A retired extension cannot request a refresh; the host owns read diagnostics.
     );
   });
-  const initialAdapter = hydration.ready.then(() => adapterRead);
+  const initialAdapter = hydration.ready.then(async () => (await adapter.ready).adapter);
   return {
     ready,
-    useAvailableSnapshot: () => {
-      // Consume completed storage reads synchronously; Promise plumbing is not another startup wait.
-      const candidate = availableAdapter;
-      const settings = legacySettings.current();
-      if (settings?.[StorageKeys.PLUGIN_ONLINE_UPDATES_ENABLED] === false) {
-        hydration.useAvailableSnapshot(null);
-      } else if (candidate === undefined) {
-        hydration.useAvailableSnapshot();
-      } else if (candidate === bundle || !hasSiteSelectorChanges(siteId, candidate)) {
-        hydration.useAvailableSnapshot(null);
-      } else {
-        hydration.useAvailableSnapshot(settings === undefined ? undefined : candidate);
-      }
-    },
     initialAdapter,
     legacySettings,
-    stop: hydration.stop,
+    stop: () => {
+      adapter.stop();
+      hydration.stop();
+    },
     isCurrent: hydration.isCurrent,
   };
 }

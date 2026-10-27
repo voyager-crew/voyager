@@ -31,7 +31,7 @@
 - 功能有一个异步结果可能比所在阶段活得更久，而且关闭或换阶段时要按阶段决定这个结果的去留，用 `startMachine`，每个阶段一个 scope，离开阶段即作废迟到的回调。例子：批量删除（确认中、执行中）、导出选择、默认模型锁定。
 - 只给真正有阶段、会被打断的那条轴建状态机。彼此正交的维度（例如草稿的「恢复」「保存去抖」「发送意图」）不要强行合并成一个 union。
 
-定位数据的 Tier A/Tier B 是同步读取策略，不是新的异步阶段：Tier A 在操作时验证独立页面证据，Tier B 按[共享挂载规则](../../src/core/selectors/README.md#shared-snapshot-and-guards)回退。两级共用现有 catalog 检查、hydration 与 semantic-source 状态机；新 key 不得另加加载流程或延迟 native 挂载。分级与包内协议边界见 [D21](../../src/features/plugins/remote/DECISIONS.md)。
+定位数据的 Tier A/Tier B 是同步读取策略，不是新的异步阶段：Tier A 在操作时验证独立页面证据，Tier B 按[共享挂载规则](../../src/core/selectors/README.md#shared-snapshot-and-guards)回退。两级共用 catalog 检查、hydration、adapter-read 与 semantic-source 状态机，首个 consumer 遵循[启动就绪规则](../../src/core/selectors/README.md#startup-readiness)；新增 key 复用这些流程。分级与包内协议边界见 [D21](../../src/features/plugins/remote/DECISIONS.md)。
 
 ## 3. 阶段 A：已做的改造
 
@@ -50,6 +50,7 @@
 | AI Studio 批量删除：`folder/aistudioLibrarySelection.ts`                                    | `idle \| selecting \| confirming \| deleting`                                                         | 同上，用于 `/library` 行；确认与删除阶段监视路由和账号上下文                                                               | `folder/__tests__/aistudioLibraryBatchDeleteReload.test.ts`                                                                                |
 | 在线目录检查：`src/features/plugins/remote/hostCatalogCheckMachine.ts` / `hostCatalogCheck` | `preparing \| fetching{context} \| committing{write} \| recording{context,reason} \| settled{result}` | OFF 取消准备/拉取并丢弃迟到响应；超时中止拉取并记录失败；已开始的缓存写入收尾后释放 host，保留共享缓存                     | `src/features/plugins/remote/hostCatalogCancellation.test.ts`                                                                              |
 | 站点定位数据的页面启动加载：`src/core/selectors/hydration.ts` + `service.ts`                | `reading \| settled{by, view} \| retired{view}`                                                       | 读取 catalog site data 期间更新设置变化或到截止时间，直接用内置定位数据就绪；离开页面后迟到的读取不再生效                  | `src/core/selectors/__tests__/service.test.ts`                                                                                             |
+| 首次缓存 adapter 读取：`pageSelectorAdapter.ts`                                             | `reading \| settled{result} \| retired`                                                               | 独立约束 PluginHost 的首次 adapter 读取；定位 snapshot 提前以 OFF 就绪时，仍保留期限内到达的 baseline adapter precedence   | `__tests__/pageSelectorAdapter.test.ts`                                                                                                    |
 
 各独立页面操作及跨站点定位流程见[页面操作登记表](STATE_MACHINE_PAGE_FLOWS.md)。
 

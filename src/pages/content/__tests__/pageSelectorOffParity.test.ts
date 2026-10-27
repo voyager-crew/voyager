@@ -90,7 +90,6 @@ it('OFF keeps a cached composer usable when the native mount precedes the cache 
   });
   stops.push(startup.stop);
   await startup.legacySettings!.load();
-  startup.useAvailableSnapshot();
   await startup.ready;
   const bundle = claudeSite;
   finish({

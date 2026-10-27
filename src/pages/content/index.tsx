@@ -63,10 +63,12 @@ const pageLifetime = new AbortController();
 // One per content-script instance: initializeFeatures admits packaged official
 // plugins where their native modules used to start, then closes it.
 const officialAdmission = createOfficialAdmission();
+let selectorsReady = Promise.resolve();
 const promptManager = createPromptManagerEngine(
   resolvePromptSiteAdapter(location.href),
   cleanupManager,
   pageLifetime.signal,
+  () => selectorsReady,
 );
 const geminiRenderers = createGeminiRendererStartup(
   officialAdmission,
@@ -96,13 +98,15 @@ const showOnboardingCoachmarks = createOnboardingCoachmarks(timelineCoachmarkLif
 const { settle, adopt } = createPageSteps(pageLifetime.signal);
 
 /** Mount a native feature for this page: one that settles after retirement stops at once. */
-function mountForPage(feature: NativeFeature): Promise<StopNativeFeature> {
-  return mountNativeFeature(cleanupManager, feature, pageLifetime.signal);
+function mountForPage(
+  feature: NativeFeature,
+  beforeMount?: () => Promise<void>,
+): Promise<StopNativeFeature> {
+  return mountNativeFeature(cleanupManager, feature, pageLifetime.signal, beforeMount);
 }
 
 let initialized = false;
 let initializationTimer: number | null = null;
-let useAvailableSelectors = () => {};
 let selectorCurrent = () => true;
 
 /**
@@ -120,14 +124,14 @@ async function initializeFeatures(): Promise<void> {
       return;
     }
 
-    await settle(promptManager.startComposerFeatures(useAvailableSelectors));
+    await settle(promptManager.startComposerFeatures());
 
     const delay = (ms: number) => settle(yieldToIdle(ms));
 
     // Custom-website coverage and Gemini Enterprise end initialization here.
     const entry = await enterInitialization(location, document, {
       settle,
-      beforeMount: useAvailableSelectors,
+      beforeMount: () => selectorsReady,
       followCoverage: (host) => promptManager.followCoverage(host),
       mountEdgeNotice: () => mountForPage(NATIVE_FEATURES.edgeFinalVersionNotice),
       startEnterprisePanel: () => promptManager.startPanel(),
@@ -327,7 +331,7 @@ function handleVisibilityChange(): void {
       CleanupPositions.CleanupPageSelectors,
     );
     selectorCurrent = selectorStartup.isCurrent;
-    useAvailableSelectors = selectorStartup.useAvailableSnapshot;
+    selectorsReady = selectorStartup.ready;
     cleanupManager.registerCleanupFunction(
       startPluginHost({
         admission: officialAdmission,
@@ -400,7 +404,7 @@ function handleVisibilityChange(): void {
         officialAdmission.close();
         if (isPluginSubframe) return;
         // A research pack sent from Gemini with "Continue in …" lands here.
-        void mountForPage(NATIVE_FEATURES.researchPackReceiver);
+        void mountForPage(NATIVE_FEATURES.researchPackReceiver, () => selectorsReady);
         // Same path as custom websites: the Prompt Manager mounts only while
         // this host is in the user's custom-website list, which is what the
         // popup's "enable Prompt Manager on <site>" toggle edits.

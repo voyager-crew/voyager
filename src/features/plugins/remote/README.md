@@ -152,23 +152,13 @@ bundle before its profiles can apply. Missing or empty `site.locators` restores
 only its namespaced profiles on the next page load. A complete withdrawal also
 restores admitted `site.selectors` values to their packaged values.
 
-Shared per-site hydration is a `startMachine` flow. It shares PluginHost’s first
-adapter and settings reads, but adapter precedence does not depend on the
-online-updates switch or the locator snapshot's settlement. Native startup adds
-no catalog wait: after its existing settings/coverage reads, the first native
-mount fixes whichever snapshot is already available. If catalog storage has not
-settled by then, that page keeps bundled profiles; a later page load can try
-again. A timely eligible cache still supplies the first native mount. Changes to
-update settings during hydration, an error, timeout or page teardown cannot adopt
-late data. After readiness, the profile snapshot stays fixed until the page is
-loaded again. An independent `startMachine` in
-[`semanticSource.ts`](../../../core/selectors/semanticSource.ts) shares the same
-initial settings read without delaying profile readiness. That read can still
-select OFF semantics after profiles are ready, restoring baseline adapter reads
-without installing late profiles. Settings changes during the pending read,
-read failures and teardown invalidate its result. Once this mode settles,
-new page-locator fixes, withdrawals and switching updates off therefore
-take effect after a user refresh, with no automatic reload or native remount.
+Shared per-site hydration and cached adapter resolution use `startMachine` and
+share PluginHost’s first adapter and settings reads. The
+[startup readiness rule](../../../core/selectors/README.md#startup-readiness)
+defines the bounded first-consumer wait, frozen page view and independent
+baseline adapter precedence. New page-locator fixes, withdrawals and switching
+updates off take effect after a user refresh, with no automatic reload or native
+remount.
 The page requests a due catalog check after hydration; opening the popup only
 reads the cache, and its refresh button requests a manual check.
 

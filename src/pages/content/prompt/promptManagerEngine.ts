@@ -34,7 +34,7 @@ export interface PromptManagerEngine {
    * Slash completion, following its popup setting, and sent-prompt chips.
    * Does nothing on a site without slash completion.
    */
-  startComposerFeatures(beforeMount?: () => void): Promise<void>;
+  startComposerFeatures(): Promise<void>;
   /** Mounts the panel for the rest of the page. */
   startPanel(): Promise<void>;
   /**
@@ -107,6 +107,7 @@ export function createPromptManagerEngine(
   adapter: PromptSiteAdapter,
   cleanup: CleanupManager,
   lifetime?: AbortSignal,
+  beforeMount?: () => Promise<void>,
 ): PromptManagerEngine {
   const retired = (): boolean => lifetime?.aborted === true;
   const slash: NativeFeature = {
@@ -162,19 +163,14 @@ export function createPromptManagerEngine(
   }
 
   return {
-    async startComposerFeatures(beforeMount) {
+    async startComposerFeatures() {
       if (!adapter.slash) return;
-      const slashToggle = createNativeFeatureToggle(cleanup, {
-        ...slash,
-        start: () => {
-          beforeMount?.();
-          return slash.start();
-        },
-      });
+      const slashToggle = createNativeFeatureToggle(cleanup, slash, lifetime, beforeMount);
       follow(slashToggle);
       const enabled = await readSlashEnabled();
-      // Reuse the existing setting wait; native startup must not wait for catalog storage too.
-      beforeMount?.();
+      // Otherwise a fast native setting read freezes out an already-cached first-load repair.
+      await beforeMount?.();
+      if (retired()) return;
       await applyInitial(slashToggle, enabled, 'slash completion');
 
       // Chips restore what a sent slash token looked like. They follow the
@@ -188,18 +184,23 @@ export function createPromptManagerEngine(
     },
 
     async startPanel() {
-      await mountNativeFeature(cleanup, panel, lifetime);
+      await mountNativeFeature(cleanup, panel, lifetime, beforeMount);
     },
 
     async followCoverage(host) {
-      const coverage = createNativeFeatureToggle(cleanup, {
-        ...panel,
-        toggle: {
-          key: StorageKeys.PROMPT_CUSTOM_WEBSITES,
-          isEnabled: (value) => customWebsitesIncludeHost(value, host),
-          areas: ['sync'],
+      const coverage = createNativeFeatureToggle(
+        cleanup,
+        {
+          ...panel,
+          toggle: {
+            key: StorageKeys.PROMPT_CUSTOM_WEBSITES,
+            isEnabled: (value) => customWebsitesIncludeHost(value, host),
+            areas: ['sync'],
+          },
         },
-      });
+        lifetime,
+        beforeMount,
+      );
       follow(coverage);
       await applyInitial(coverage, await readPromptCoverage(host), 'the Prompt Manager');
     },

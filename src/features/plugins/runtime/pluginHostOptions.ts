@@ -38,7 +38,7 @@ export interface PluginHostOptions {
   readonly admission?: OfficialAdmission;
   /** Injectable for tests; native surfaces read every binding, other pages only shared visual keys. */
   readonly legacySettings?: LegacySettingsSource;
-  /** Page hydration shares the host's first adapter read instead of gating host startup. */
+  /** Shared first adapter read, settled after bounded page-locator readiness. */
   readonly initialAdapter?: Promise<SiteAdapter | null>;
   /**
    * The device class this page runs on; a plugin without it in

@@ -68,12 +68,18 @@ function stopAfterRetirement(feature: NativeFeature, stop: StopNativeFeature): v
  * and would never reach it. Returns a no-op stop in that case. A cleanup run
  * that does not abort it (`beforeunload`, which the user may cancel) leaves
  * later mounts registering as before.
+ * `beforeMount` shares the page's bounded selector readiness for consumers that
+ * would otherwise capture the bundled view while catalog storage is pending.
  */
 export async function mountNativeFeature(
   manager: CleanupManager,
   feature: NativeFeature,
   lifetime?: AbortSignal,
+  beforeMount?: () => Promise<void>,
 ): Promise<StopNativeFeature> {
+  if (lifetime?.aborted) return stopRetired;
+  // A first-load repair must settle before the feature captures its page view.
+  if (beforeMount) await beforeMount();
   if (lifetime?.aborted) return stopRetired;
   const stop = await feature.start();
   if (lifetime?.aborted) {
@@ -115,6 +121,7 @@ export function createNativeFeatureToggle(
   manager: CleanupManager,
   feature: NativeFeature,
   lifetime?: AbortSignal,
+  beforeMount?: () => Promise<void>,
 ): NativeFeatureToggleController {
   const toggle = feature.toggle;
   if (!toggle) throw new Error(`${feature.id}: createNativeFeatureToggle needs a toggle`);
@@ -146,7 +153,7 @@ export function createNativeFeatureToggle(
     const enabled = desired;
     desired = null;
     if (enabled && !stop) {
-      const mounted = await mountNativeFeature(manager, feature, lifetime);
+      const mounted = await mountNativeFeature(manager, feature, lifetime, beforeMount);
       // The page retired while it started: the mount already stopped it.
       if (lifetime?.aborted) return;
       stop = mounted;

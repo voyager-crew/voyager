@@ -2,7 +2,6 @@
  * One page's selector hydration, as explicit state for `startMachine`.
  *
  *   reading ─read─▶ settled{by: 'read'}
- *   reading ─native mount─▶ settled{by: 'available'}         (bundled view)
  *   reading ─deadline/invalidated─▶ settled{by: 'fallback'}   (bundled view)
  *   reading | settled ─retire─▶ retired
  *
@@ -14,14 +13,16 @@ import type { StateEffects } from '@/features/plugins/runtime/stateMachine';
 
 import type { SiteSelectorView } from './types';
 
+export const SITE_SELECTOR_STARTUP_TIMEOUT_MS = 250;
+
 /** How hydration ended: the stored read in time, the bundle, or the page retired first. */
-export type SiteSelectorSettlement = 'read' | 'available' | 'fallback' | 'retired';
+export type SiteSelectorSettlement = 'read' | 'fallback' | 'retired';
 
 export type HydrationState =
   | { readonly status: 'reading' }
   | {
       readonly status: 'settled';
-      readonly by: 'read' | 'available' | 'fallback';
+      readonly by: 'read' | 'fallback';
       /** The remote view this page installed, if any. */
       readonly view: SiteSelectorView | null;
     }
@@ -30,8 +31,6 @@ export type HydrationState =
 export type HydrationEvent =
   | { readonly type: 'read'; readonly view: SiteSelectorView | null }
   | { readonly type: 'deadline' }
-  /** Native startup uses the snapshot already available without waiting for catalog storage. */
-  | { readonly type: 'use-available' }
   /** The stored data changed while it was being read. */
   | { readonly type: 'invalidated' }
   | { readonly type: 'retire' };
@@ -43,7 +42,6 @@ export function hydrationTransition(state: HydrationState, event: HydrationEvent
   }
   if (state.status !== 'reading') return state;
   if (event.type === 'read') return { status: 'settled', by: 'read', view: event.view };
-  if (event.type === 'use-available') return { status: 'settled', by: 'available', view: null };
   return { status: 'settled', by: 'fallback', view: null };
 }
 
@@ -51,6 +49,8 @@ export interface HydrationPorts {
   readonly lifetime: AbortSignal;
   readonly timeoutMs: number;
   read(): Promise<unknown>;
+  /** OFF releases native consumers even if the independent cached-adapter read is pending. */
+  readOnlineUpdates?(): Promise<boolean>;
   /** The remote view a stored file yields, or null; throws when a selector does not parse. */
   toView(raw: unknown): SiteSelectorView | null;
   /** Subscribes to changes that make a pending read stale; returns the unsubscribe. */
@@ -73,6 +73,17 @@ export function createHydrationEffects(
       }
       // A stalled extension API must not hold feature startup behind a network-sized timeout.
       stay.scope.timer(() => stay.send({ type: 'deadline' }), ports.timeoutMs);
+      const { readOnlineUpdates } = ports;
+      if (readOnlineUpdates) {
+        void Promise.resolve()
+          .then(() => (stay.signal.aborted ? false : readOnlineUpdates()))
+          .then(
+            (enabled) => {
+              if (!enabled) stay.send({ type: 'invalidated' });
+            },
+            () => stay.send({ type: 'invalidated' }),
+          );
+      }
       void Promise.resolve()
         .then(() => (stay.signal.aborted ? null : ports.read()))
         .then((raw) => {
