@@ -19,6 +19,7 @@ import codeProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/
 import composerProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/composer.json';
 import contentProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/content.json';
 import contextImageProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/context-images.json';
+import contextTextProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/context-text.json';
 import extendedProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/extended.json';
 import gemsProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/gems.json';
 import generatedImageProfiles from '@/features/plugins/catalog/sites/gemini/selector-data/generated-image.json';
@@ -48,7 +49,11 @@ import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
 import { GEMINI_CANVAS_CODE_PROFILE_KEYS } from './canvasKeys';
 import { GEMINI_CODE_PROFILE_KEYS } from './codeKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
-import { GEMINI_CONTENT_PROFILE_KEYS, GEMINI_CONTEXT_IMAGE_PROFILE_KEYS } from './contentKeys';
+import {
+  GEMINI_CONTENT_PROFILE_KEYS,
+  GEMINI_CONTEXT_IMAGE_PROFILE_KEYS,
+  GEMINI_CONTEXT_TEXT_PROFILE_KEYS,
+} from './contentKeys';
 import { GEMINI_EXTENDED_KEYS } from './extendedKeys';
 import { GEMINI_GEMS_PROFILE_KEYS } from './gemsKeys';
 import { GEMINI_GENERATED_IMAGE_PROFILE_KEYS } from './generatedImageKeys';
@@ -116,6 +121,7 @@ function readBundle(): GeminiSelectorProfiles {
     ...readGroup(menuProfiles, GEMINI_MENU_PROFILE_KEYS, 'menu'),
     ...readGroup(contentProfiles, GEMINI_CONTENT_PROFILE_KEYS, 'content'),
     ...readGroup(contextImageProfiles, GEMINI_CONTEXT_IMAGE_PROFILE_KEYS, 'context-images'),
+    ...readGroup(contextTextProfiles, GEMINI_CONTEXT_TEXT_PROFILE_KEYS, 'context-text'),
     ...readGroup(responseActionProfiles, GEMINI_RESPONSE_ACTION_PROFILE_KEYS, 'response-actions'),
     ...readGroup(researchPackProfiles, GEMINI_RESEARCH_PACK_PROFILE_KEYS, 'research-pack'),
     ...readGroup(usageProfiles, GEMINI_USAGE_PROFILE_KEYS, 'usage'),

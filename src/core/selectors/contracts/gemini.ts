@@ -5,6 +5,7 @@ import { GEMINI_COMPOSER_PROFILE_KEYS } from '../../gemini/selectors/composerKey
 import {
   GEMINI_CONTENT_PROFILE_KEYS,
   GEMINI_CONTEXT_IMAGE_PROFILE_KEYS,
+  GEMINI_CONTEXT_TEXT_PROFILE_KEYS,
 } from '../../gemini/selectors/contentKeys';
 import { GEMINI_EXTENDED_KEYS } from '../../gemini/selectors/extendedKeys';
 import { GEMINI_GEMS_PROFILE_KEYS } from '../../gemini/selectors/gemsKeys';
@@ -60,6 +61,7 @@ export const GEMINI_SELECTOR_FILES = [
   { file: 'gems.json', keys: GEMINI_GEMS_PROFILE_KEYS },
   { file: 'content.json', keys: GEMINI_CONTENT_PROFILE_KEYS },
   { file: 'context-images.json', keys: GEMINI_CONTEXT_IMAGE_PROFILE_KEYS },
+  { file: 'context-text.json', keys: GEMINI_CONTEXT_TEXT_PROFILE_KEYS },
   { file: 'response-actions.json', keys: GEMINI_RESPONSE_ACTION_PROFILE_KEYS },
   { file: 'research-pack.json', keys: GEMINI_RESEARCH_PACK_PROFILE_KEYS },
   { file: 'usage.json', keys: GEMINI_USAGE_PROFILE_KEYS },

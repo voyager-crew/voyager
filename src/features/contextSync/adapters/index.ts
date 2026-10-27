@@ -1,10 +1,12 @@
+import { getBundledGeminiSelectorView } from '@/core/gemini/selectors';
+
 import { AdapterConfig } from '../types';
 
 export const ADAPTERS: Record<string, AdapterConfig> = {
   // gemini
   'gemini.google.com': {
-    user_selector: ['div.user-query-container'],
-    ai_selector: ['.response-content'],
+    user_selector: [...getBundledGeminiSelectorView().profiles['context.users']],
+    ai_selector: [...getBundledGeminiSelectorView().profiles['context.responses']],
   },
   // default
   default: {

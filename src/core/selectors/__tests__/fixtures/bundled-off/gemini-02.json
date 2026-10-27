@@ -132,6 +132,8 @@
       ".attachment-container.generated-images img"
     ]
   ],
+  ["profiles/context.users", ["div.user-query-container"]],
+  ["profiles/context.responses", [".response-content"]],
   [
     "profiles/responseActions.bars",
     ["message-actions, .message-actions, .actions-container-v2, .buttons-container-v2"]

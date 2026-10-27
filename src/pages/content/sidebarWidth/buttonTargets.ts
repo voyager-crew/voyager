@@ -59,7 +59,9 @@ export function getSidebarWidthActionButtons(): HTMLElement[] {
   )
     return bundled;
   if (bundled.length) return bundled;
-  const native = Array.from(document.querySelectorAll<HTMLButtonElement>('bard-sidenav button'))
+  const native = Array.from(
+    document.querySelectorAll<HTMLButtonElement>(packaged.widthButtons.join(', ')),
+  )
     .filter(
       (button) =>
         !button.closest('[role="dialog"], [role="menu"], [data-gv-layer]') &&

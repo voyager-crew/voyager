@@ -5,7 +5,11 @@ import { GEMINI_ACTIVITY_PROFILE_KEYS } from './activityKeys';
 import { GEMINI_CANVAS_CODE_PROFILE_KEYS } from './canvasKeys';
 import { GEMINI_CODE_PROFILE_KEYS } from './codeKeys';
 import { GEMINI_COMPOSER_PROFILE_KEYS } from './composerKeys';
-import { GEMINI_CONTENT_PROFILE_KEYS, GEMINI_CONTEXT_IMAGE_PROFILE_KEYS } from './contentKeys';
+import {
+  GEMINI_CONTENT_PROFILE_KEYS,
+  GEMINI_CONTEXT_IMAGE_PROFILE_KEYS,
+  GEMINI_CONTEXT_TEXT_PROFILE_KEYS,
+} from './contentKeys';
 import { GEMINI_EXTENDED_KEYS, GEMINI_EXTENDED_GROUPS } from './extendedKeys';
 import { GEMINI_GEMS_NAV_PROFILE_KEYS, GEMINI_GEMS_CATALOG_PROFILE_KEYS } from './gemsKeys';
 import { GEMINI_GENERATED_IMAGE_PROFILE_KEYS } from './generatedImageKeys';
@@ -114,6 +118,8 @@ export const GEMINI_SELECTOR_PROFILE_KEYS = [
   'content.answer',
   'content.userLines',
   'context.images',
+  'context.users',
+  'context.responses',
   'responseActions.bars',
   'researchPack.actionBars',
   'usage.root',
@@ -150,6 +156,7 @@ export const GEMINI_SELECTOR_PROFILE_GROUPS: readonly (readonly GeminiSelectorPr
   GEMINI_GEMS_CATALOG_PROFILE_KEYS,
   GEMINI_CONTENT_PROFILE_KEYS,
   GEMINI_CONTEXT_IMAGE_PROFILE_KEYS,
+  GEMINI_CONTEXT_TEXT_PROFILE_KEYS,
   GEMINI_RESPONSE_ACTION_PROFILE_KEYS,
   GEMINI_RESEARCH_PACK_PROFILE_KEYS,
   GEMINI_USAGE_PROFILE_KEYS,

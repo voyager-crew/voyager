@@ -60,6 +60,8 @@ Parts: [1](PACKAGED_DATA.md), [2](PACKAGED_SURFACES.md), [3](PACKAGED_CONTENT.md
 | `content.userLines`                | A / online      | Supplies saved/exported prompt text; complete native user-turn ownership is required.                                                                 |
 | `contentInner`                     | §6 / packaged   | Native sidebar inner-content grammar supplies independent state/layout evidence.                                                                      |
 | `context.images`                   | A / online      | Supplies images for stored/exported context; native source and turn ownership are required.                                                           |
+| `context.users`                    | A / online      | Captured prompt bodies require complete independently owned turns and native content leaves.                                                          |
+| `context.responses`                | A / online      | Captured reply bodies require complete independently owned turns and native content leaves.                                                           |
 | `controls`                         | B / bundle copy | Avoids native controls when placing the Voyager export button. Online counterpart: `exportLayout.controls`.                                           |
 | `conversation.roots`               | A / online      | Scopes conversation operations; must be the scrolling common ancestor of every proved turn.                                                           |
 | `currentIcon`                      | A / packaged    | Current Gem icon has no independent canonical source outside the native icon field.                                                                   |

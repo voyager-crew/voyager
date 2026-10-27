@@ -15,7 +15,7 @@ const THOUGHTS_AND_ACTIONS =
   'model-thoughts, .thoughts-container, .thoughts-content, message-actions, .message-actions';
 
 /** The native content leaves are independent of every online locator. */
-function contentLeaves(root: Element): Node[] {
+export function readGeminiContentLeaves(root: Element): Node[] {
   const leaves: Node[] = [];
   const visit = (node: Node): void => {
     if (node instanceof Element) {
@@ -97,10 +97,10 @@ export function resolveGeminiAnswerElement(
       const expected = fallback();
       return candidate === expected ? candidate : expected;
     }
-    const native = contentLeaves(host);
+    const native = readGeminiContentLeaves(host);
     return native.length > 0 &&
       preservesGeminiContentFrames(candidate, host) &&
-      sameItems(contentLeaves(candidate), native)
+      sameItems(readGeminiContentLeaves(candidate), native)
       ? candidate
       : fallback();
   } catch {
@@ -135,7 +135,10 @@ export function readGeminiUserLines(
           !node.parentElement?.closest('user-query-file-preview') &&
           (!node.parentElement || !hasVoyagerOwner(node.parentElement, host)),
       );
-    const complete = sameItems(text(native.flatMap(contentLeaves)), text(contentLeaves(host)));
+    const complete = sameItems(
+      text(native.flatMap(readGeminiContentLeaves)),
+      text(readGeminiContentLeaves(host)),
+    );
     return native.length > 0 && complete && sameItems(Array.from(candidates), native)
       ? candidates
       : bundled;

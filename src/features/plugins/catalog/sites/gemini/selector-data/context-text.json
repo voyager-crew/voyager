@@ -1,0 +1,4 @@
+{
+  "context.users": ["div.user-query-container"],
+  "context.responses": [".response-content"]
+}

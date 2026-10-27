@@ -110,6 +110,8 @@
       ".attachment-container.generated-images img"
     ]
   ],
+  ["context-text.json/context.users", ["div.user-query-container"]],
+  ["context-text.json/context.responses", [".response-content"]],
   [
     "conversation.json/conversation.roots",
     ["#chat-history", "infinite-scroller.chat-history", "chat-window-content", "main"]

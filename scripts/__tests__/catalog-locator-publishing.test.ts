@@ -77,6 +77,8 @@ const PUBLISHED_KEYS = [
   'content.answer',
   'content.userLines',
   'context.images',
+  'context.users',
+  'context.responses',
   'responseActions.bars',
   'researchPack.actionBars',
   'usage.root',
