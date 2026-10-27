@@ -62,7 +62,7 @@ for (const [site, host] of sites)
       },
     );
 
-    it('editable roles refuse measurement targets while slider and scrollbar stay measurable', async () => {
+    it('editable roles refuse measurement targets while scrollbar stays mountable and measurable', async () => {
       jsdom.reconfigure({ url: `https://${host}/` });
       document.body.innerHTML = '<section id="baseline"></section><section id="target"></section>';
       const run = initializeSiteSelectors(site, {
@@ -88,7 +88,7 @@ for (const [site, host] of sites)
           { mount: false, fallback: ['#baseline'] },
         );
       expect(read()).toBe(target);
-      for (const role of ['searchbox', 'spinbutton']) {
+      for (const role of ['searchbox', 'spinbutton', 'slider']) {
         target.setAttribute('role', role);
         expect(read()).toBe(baseline);
         // Bundled reads retain the original mount and measurement behavior with updates off.
@@ -101,10 +101,8 @@ for (const [site, host] of sites)
           ),
         ).toBe(target);
       }
-      for (const role of ['slider', 'scrollbar']) {
-        target.setAttribute('role', role);
-        expect(read()).toBe(target);
-      }
+      target.setAttribute('role', 'scrollbar');
+      expect(read()).toBe(target);
       expect(
         resolvePlacementOperation(
           getSiteSelectorView(site),

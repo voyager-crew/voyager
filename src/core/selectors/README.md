@@ -93,6 +93,7 @@ Tier B covers export-toolbar layout, HUD and prompt UI placement, insertion
 slots, alignment and avoidance probes. It needs no ownership proof: a matching
 value from the official catalog is trusted, as existing site overrides were.
 Zero matches fall back for that operation. <a id="tier-b-mount-rule"></a>The shared mount rule walks composed ancestors, including shadow roots and assigned slots. It rejects contenteditable, input, textarea, select, option, button, linked anchors, summary, label, pre and code, and these ARIA roles: textbox, combobox, searchbox, spinbutton, button, link, menuitem, menuitemcheckbox, menuitemradio, switch, checkbox, radio, treeitem, tab, option and slider. A model-title decoration may cross only its independently validated native picker-row boundary; nested controls and code still fail.
+Measurements share the editable-role exclusions: textbox, combobox, searchbox, spinbutton and slider. A scrollbar role alone remains a valid mount and measurement target.
 Literal allowlists, group rejection, syntax checks and size limits apply to both
 tiers. A mixed-use locator is Tier A unless placement has its own separate key.
 
