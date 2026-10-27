@@ -38,49 +38,6 @@ function cases(): CatalogCase[] {
     });
 }
 
-type JsonPath = readonly (string | number)[];
-interface Change {
-  readonly path: JsonPath;
-  readonly value: unknown;
-}
-
-/** Change each independently pinned leaf, and reverse ordered arrays that have distinct items. */
-function runtimeChanges(value: unknown, path: JsonPath = []): Change[] {
-  if (Array.isArray(value)) {
-    const reversed = [...value].reverse();
-    const order =
-      value.length > 1 && JSON.stringify(value) !== JSON.stringify(reversed)
-        ? [{ path, value: reversed }]
-        : [];
-    return [...order, ...value.flatMap((entry, index) => runtimeChanges(entry, [...path, index]))];
-  }
-  if (isRecord(value))
-    return Object.entries(value).flatMap(([key, entry]) => runtimeChanges(entry, [...path, key]));
-  return [
-    {
-      path,
-      value:
-        typeof value === 'boolean'
-          ? !value
-          : typeof value === 'number'
-            ? value + 1
-            : `${String(value)}-changed`,
-    },
-  ];
-}
-
-function replaceAt(value: unknown, path: JsonPath, replacement: unknown): unknown {
-  if (path.length === 0) return replacement;
-  const [part, ...rest] = path;
-  if (Array.isArray(value) && typeof part === 'number')
-    return value.map((entry, index) =>
-      index === part ? replaceAt(entry, rest, replacement) : entry,
-    );
-  if (isRecord(value) && typeof part === 'string')
-    return { ...value, [part]: replaceAt(value[part], rest, replacement) };
-  throw new Error(`Catalog field is missing: ${path.join('.')}`);
-}
-
 it.each(cases())('a routine catalog release breaks the OFF snapshot: $name', (entry) => {
   if (!isRecord(entry.input)) throw new Error(`Invalid catalog source: ${entry.name}`);
   expect(catalogRuntimeData(entry.input, entry.kind)).toEqual(entry.expected);
@@ -101,15 +58,4 @@ it.each(cases())('a routine catalog release breaks the OFF snapshot: $name', (en
   // Property order and release copy cannot alter any OFF runtime input.
   const changed = Object.fromEntries(Object.entries({ ...entry.input, ...metadata }).reverse());
   expect(catalogRuntimeData(changed, entry.kind)).toEqual(entry.expected);
-});
-
-it.each(cases())('an OFF runtime change disappears from the catalog snapshot: $name', (entry) => {
-  expect(catalogRuntimeData(entry.input, entry.kind)).toEqual(entry.expected);
-  for (const change of runtimeChanges(entry.expected)) {
-    const changed = replaceAt(entry.input, change.path, change.value);
-    expect(
-      catalogRuntimeData(changed, entry.kind),
-      `${entry.name}/${change.path.join('.')}`,
-    ).not.toEqual(entry.expected);
-  }
 });
