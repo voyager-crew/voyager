@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
 import { confirmDriver } from '@/tests/confirmDriver';
@@ -9,7 +9,7 @@ import { nativeHealthReporter } from '../../nativeHealth';
 import { makeTurns, mountThreadFixture } from '../adapter/__tests__/chatgptThreadFixture';
 import { buildChatGptAdapter } from '../adapter/platform/chatgpt';
 import type { ChatTurn, ConversationCollector, ExportMessage } from '../conversationCollector';
-import type { ExportDictionaries } from '../exportLocale';
+import { type ExportDictionaries, loadExportDictionaries } from '../exportLocale';
 import type { ExportSite, ExportTurnReader, ExportTurnSession } from '../exportSite';
 import { PENDING_EXPORT_SESSION_KEY, createPendingExportState } from '../pendingExportState';
 import { createChatGptExportSite } from '../sites/chatgpt';
@@ -123,6 +123,9 @@ function clickBarAction(action: string): void {
 }
 
 describe('createExportRunner', () => {
+  // A resumed run awaits lazily imported locale files: a cold import takes real time, not fake.
+  beforeAll(() => loadExportDictionaries());
+
   beforeEach(() => {
     vi.useFakeTimers();
     document.body.innerHTML = '';
@@ -257,7 +260,8 @@ describe('createExportRunner', () => {
     // Older history never arrives, so the crawl gives up on the whole thread (issue #1071).
     mountThreadFixture({ turns: makeTurns(8), initiallyLoaded: 3, historyDelayMs: Infinity });
     const chatgpt = createChatGptExportSite(buildChatGptAdapter(chatgptAdapter));
-    const fastCrawl = { pollMs: 1, settleMs: 4, historyIdleMs: 25, historyStallMs: 150 };
+    // Polls run jsdom's slow getComputedStyle; 1 ms ones timed this out under load.
+    const fastCrawl = { pollMs: 10, settleMs: 4, historyIdleMs: 25, historyStallMs: 150 };
     const runner = createExportRunner({
       site: {
         ...chatgpt,

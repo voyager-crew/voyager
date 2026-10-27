@@ -119,6 +119,10 @@ afterEach(async () => {
 
 async function nextPass(): Promise<void> {
   await settle(5);
+  // The send tracker ends one submission on a 0 ms timer. jsdom's frame interval can fire
+  // before that timer when the event loop is late, so a frame alone left the next Enter
+  // inside the previous submission; a 0 ms timer queued after it always fires after it.
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
   await settle(20);
 }
