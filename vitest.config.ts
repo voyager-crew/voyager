@@ -20,6 +20,14 @@ export default defineConfig({
     // also swallows `?raw` imports. The bundled plugin catalog is plain CSS
     // read as text, so let Vite serve it for real; app CSS stays stubbed.
     css: { include: [/src\/features\/plugins\/catalog\/.*\.css(?:\?raw)?$/] },
+    // khroma imports `.//index.js`. The VM pools' loader joins that as a URL
+    // and keeps the `//`, so the module's own `../` imports miss; Vite's
+    // resolver does not. Both Mermaid builds import khroma, so Vite loads all three.
+    server: {
+      deps: {
+        inline: [/\/node_modules\/(?:mermaid|mermaid-legacy)\/dist\//, /\/node_modules\/khroma\//],
+      },
+    },
     // `--changed` follows imports only. Tests read stylesheets and locale files
     // from disk and app CSS is stubbed, so a change to either runs everything.
     // Anchored at the root: a leading `**` never crosses `.claude/worktrees`.
