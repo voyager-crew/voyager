@@ -20,6 +20,7 @@ import {
   HighlightImportExportService,
   highlightImportExportService,
 } from '@/features/backup/services/HighlightImportExportService';
+import { nativeStartPointSiteForHost } from '@/features/plugins/sites/hostPolicy';
 
 import { isTrustedExtensionPageSender } from './runtimeMessageRouting';
 
@@ -101,12 +102,7 @@ export async function notifyHighlightChanged(
     const targets = tabs.filter((tab) => {
       if (typeof tab.id !== 'number' || !tab.url) return false;
       try {
-        const hostname = new URL(tab.url).hostname;
-        return (
-          hostname === 'gemini.google.com' ||
-          hostname === 'aistudio.google.com' ||
-          hostname === 'aistudio.google.cn'
-        );
+        return nativeStartPointSiteForHost(new URL(tab.url).hostname) !== null;
       } catch {
         return false;
       }

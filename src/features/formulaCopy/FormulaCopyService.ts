@@ -9,6 +9,7 @@ import { logger } from '@/core';
 import { StorageKeys } from '@/core/types/common';
 import type { ILogger } from '@/core/types/common';
 import { createToaster } from '@/core/ui/toast/toaster';
+import { packagedSiteForUrl } from '@/features/plugins/sites/hostPolicy';
 import { getTranslationSyncUnsafe } from '@/utils/i18n';
 
 import { FormulaInteraction } from './FormulaInteraction';
@@ -88,9 +89,7 @@ export class FormulaCopyService {
       toastDuration: config.toastDuration ?? 2000,
       maxTraversalDepth: config.maxTraversalDepth ?? 10,
       observeGeminiArrows:
-        config.observeGeminiArrows ??
-        (window.location.hostname === 'gemini.google.com' ||
-          window.location.hostname === 'business.gemini.google'),
+        config.observeGeminiArrows ?? packagedSiteForUrl(window.location.href) === 'gemini',
     };
     this.interaction = new FormulaInteraction(this.config.observeGeminiArrows);
     this.currentFormat = config.format ?? 'latex';

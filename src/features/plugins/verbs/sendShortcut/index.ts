@@ -8,6 +8,7 @@ import { resolveComposerOperation } from '@/core/services/composer/siteComposerO
 import { nativeSiteComposerRoot } from '@/core/services/composer/siteInputReads';
 import { isGeminiEnterpriseEnvironment } from '@/core/utils/gemini';
 
+import { packagedSiteForUrl } from '../../sites/hostPolicy';
 import { claimComposerEnter } from '../composerEnterOwner';
 import { getPrimitiveContract } from '../contracts';
 import type { Primitive } from '../types';
@@ -95,13 +96,7 @@ export const sendShortcutPrimitive: Primitive<SendShortcutParams> = {
         : null;
     const adapter = readAdapter();
     const mode = params.mode ?? 'ctrlEnterSends';
-    const host = doc.location.hostname;
-    const site =
-      host === 'gemini.google.com' || host === 'business.gemini.google'
-        ? 'gemini'
-        : host === 'aistudio.google.com' || host === 'aistudio.google.cn'
-          ? 'aistudio'
-          : null;
+    const site = packagedSiteForUrl(doc.location.href);
     if (site) {
       if (site === 'gemini' && isGeminiEnterpriseEnvironment(doc.location, doc)) {
         throw new Error('Send shortcuts are unavailable on Gemini Enterprise');

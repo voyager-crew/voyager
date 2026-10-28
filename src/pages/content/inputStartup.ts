@@ -14,6 +14,7 @@ import { CleanupPositions } from '@/core/types/cleanupPositions';
 import { StorageKeys } from '@/core/types/common';
 import type { CleanupManager } from '@/core/utils/cleanupManager';
 import type { OfficialAdmissionController } from '@/features/plugins/runtime/officialAdmission';
+import { nativeStartPointSiteForHost } from '@/features/plugins/sites/hostPolicy';
 
 import { setCollapseWhenNotEmpty } from './inputCollapse/runtime';
 
@@ -21,9 +22,7 @@ type StorageChanges = Record<string, chrome.storage.StorageChange>;
 
 /** Enterprise on its own host and catalog sites create no page send coordinator. */
 export function sendKeySiteForHost(hostname: string): SendSiteId | null {
-  if (hostname === 'gemini.google.com') return 'gemini';
-  if (hostname === 'aistudio.google.com' || hostname === 'aistudio.google.cn') return 'aistudio';
-  return null;
+  return nativeStartPointSiteForHost(hostname);
 }
 
 /** Create before PluginHost and stop after every registrant has released its mode. */

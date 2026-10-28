@@ -6,6 +6,7 @@
  * response snapshot.
  */
 import { StorageKeys } from '@/core/types/common';
+import { packagedSiteForUrl } from '@/features/plugins/sites/hostPolicy';
 
 export const HIGHLIGHT_SCHEMA_VERSION = 1 as const;
 export const HIGHLIGHT_EXPORT_FORMAT = 'gemini-voyager.annotations.v1' as const;
@@ -348,9 +349,7 @@ export function isHighlightConversationUrl(value: string, platform: HighlightPla
   try {
     const url = new URL(value);
     if (url.protocol !== 'https:') return false;
-    return platform === 'gemini'
-      ? url.hostname === 'gemini.google.com' || url.hostname === 'business.gemini.google'
-      : url.hostname === 'aistudio.google.com' || url.hostname === 'aistudio.google.cn';
+    return packagedSiteForUrl(url.href) === platform;
   } catch {
     return false;
   }

@@ -6,6 +6,8 @@
  *   - static injection: the main content script is declared for these hosts in
  *     `manifest.json`, with matching `host_permissions`, so they never need a
  *     dynamic registration or an optional host grant;
+ *   - native start points: consumer Gemini and AI Studio only. Business gets
+ *     the Enterprise panel, not the native feature initialization chain;
  *   - remote catalog: all supported pages may read locator profiles through
  *     the shared channel. Native plugins, identity and theme stay packaged;
  *   - plugin theme: never. Gemini and AI Studio keep Voyager's own accent;
@@ -57,6 +59,12 @@ export const AISTUDIO_MATCHES: readonly string[] = [
   'https://aistudio.google.cn/*',
 ];
 
+/** Consumer Gemini and AI Studio run the native feature initialization chain. */
+export const NATIVE_START_POINT_MATCHES: readonly string[] = [
+  ...SHARED_TIMELINE_MATCHES,
+  ...AISTUDIO_MATCHES,
+];
+
 function hostsOf(matches: readonly string[]): readonly string[] {
   return matches.map((pattern) =>
     pattern
@@ -76,6 +84,11 @@ export const PACKAGED_HOST_POLICIES: readonly PackagedHostPolicy[] = [
   },
 ];
 
+/** Every statically injected match pattern, in packaged policy order. */
+export const PACKAGED_MATCHES: readonly string[] = PACKAGED_HOST_POLICIES.flatMap(
+  (policy) => policy.matches,
+);
+
 /**
  * Primitives opened on a site although no owner entry hands them over: a new
  * capability with no native counterpart. Empty for now.
@@ -89,12 +102,18 @@ const POLICY_BY_HOST: ReadonlyMap<string, PackagedHostPolicy> = new Map(
   PACKAGED_HOST_POLICIES.flatMap((policy) => policy.hosts.map((host) => [host, policy] as const)),
 );
 
+const NATIVE_START_POINT_HOSTS: ReadonlySet<string> = new Set(hostsOf(NATIVE_START_POINT_MATCHES));
+
 function isPackagedSiteId(siteId: string): siteId is PackagedSiteId {
   return PACKAGED_HOST_POLICIES.some((policy) => policy.siteId === siteId);
 }
 
+function normalizeHost(host: string): string {
+  return host.trim().toLowerCase();
+}
+
 function policyForHost(host: string): PackagedHostPolicy | undefined {
-  return POLICY_BY_HOST.get(host.trim().toLowerCase());
+  return POLICY_BY_HOST.get(normalizeHost(host));
 }
 
 /** The packaged site `url` is on, judged by its actual hostname. */
@@ -116,6 +135,12 @@ export function packagedSitesForPatterns(patterns: readonly string[]): readonly 
 /** True for gemini.google.com, business.gemini.google, aistudio.google.com/.cn. */
 export function isStaticallyInjectedHost(host: string): boolean {
   return policyForHost(host) !== undefined;
+}
+
+/** The packaged site whose native start points run on this host; Business is excluded. */
+export function nativeStartPointSiteForHost(host: string): PackagedSiteId | null {
+  const policy = policyForHost(host);
+  return policy && NATIVE_START_POINT_HOSTS.has(normalizeHost(host)) ? policy.siteId : null;
 }
 
 function siteAllowsPluginTheme(siteId: string): boolean {

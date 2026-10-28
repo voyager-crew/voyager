@@ -1,17 +1,18 @@
 import { GEMINI_FORMULA_PACKAGED } from '@/core/gemini/math/formula';
+import { nativeStartPointSiteForHost } from '@/features/plugins/sites/hostPolicy';
 
 import { isDisplayMode } from './formulaSource';
 
 const IGNORED_INTERACTION_CLASS = 'gv-formula-copy-ignored';
 
 function inlineSelector(doc: Document): string {
-  return doc.location?.hostname === 'gemini.google.com'
+  return nativeStartPointSiteForHost(doc.location?.hostname ?? '') === 'gemini'
     ? GEMINI_FORMULA_PACKAGED['formula.inline']
     : '.math-inline';
 }
 
 function presentationSelector(doc: Document): string {
-  return doc.location?.hostname === 'gemini.google.com'
+  return nativeStartPointSiteForHost(doc.location?.hostname ?? '') === 'gemini'
     ? GEMINI_FORMULA_PACKAGED['formula.presentation']
     : '.math-inline, .math-display, .math-block, ms-katex, .katex, .katex-display';
 }

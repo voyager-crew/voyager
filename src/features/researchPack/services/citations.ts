@@ -1,13 +1,11 @@
+import { isStaticallyInjectedHost } from '@/features/plugins/sites/hostPolicy';
+
 import { RESEARCH_PACK_LIMITS, type ResearchPackCitation } from './types';
 
 const TRACKING_PARAM_PATTERN = /^(utm_[a-z]+|gclid|fbclid|mc_cid|mc_eid)$/i;
 
 /** Hosts whose links are the chat app's own chrome, never a cited source. */
 const INTERNAL_HOSTS = new Set([
-  'gemini.google.com',
-  'business.gemini.google',
-  'aistudio.google.com',
-  'aistudio.google.cn',
   'accounts.google.com',
   'myaccount.google.com',
   'support.google.com',
@@ -66,7 +64,7 @@ export function normalizeCitationUrl(raw: string, baseUrl?: string): string | nu
 
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
   const host = url.hostname.toLowerCase();
-  if (INTERNAL_HOSTS.has(host)) return null;
+  if (isStaticallyInjectedHost(host) || INTERNAL_HOSTS.has(host)) return null;
 
   url.hash = '';
   for (const key of Array.from(url.searchParams.keys())) {

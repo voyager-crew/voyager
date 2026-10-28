@@ -17,7 +17,9 @@ vi.mock('../watermarkOpenTabs', () => ({
 const originalScripting = Object.getOwnPropertyDescriptor(chrome, 'scripting');
 
 describe('MAIN-world registrations', () => {
-  const registerContentScripts = vi.fn(async () => {});
+  const registerContentScripts = vi.fn(
+    async (_scripts: chrome.scripting.RegisteredContentScript[]) => {},
+  );
   const unregisterContentScripts = vi.fn(async () => {});
 
   beforeEach(() => {
@@ -37,6 +39,35 @@ describe('MAIN-world registrations', () => {
     vi.restoreAllMocks();
     if (originalScripting) Object.defineProperty(chrome, 'scripting', originalScripting);
     else Reflect.deleteProperty(chrome, 'scripting');
+  });
+
+  it('keeps watermark interception off Business while observing completion there', async () => {
+    vi.spyOn(chrome.storage.sync, 'get').mockImplementation(async () => ({
+      [StorageKeys.WATERMARK_DOWNLOAD_ENABLED]: true,
+      [StorageKeys.RESPONSE_COMPLETE_NOTIFICATION_ENABLED]: true,
+    }));
+    const registration = createMainWorldRegistration();
+    await registration.registerFetchInterceptor();
+    await registration.syncResponseCompleteObserverRegistration();
+
+    const scripts = registerContentScripts.mock.calls.flatMap(([registered]) => registered);
+    const fetch = scripts.find((script) => script.id === 'gv-fetch-interceptor');
+    const response = scripts.find((script) => script.id === 'gv-response-complete-observer');
+    expect(new Set(fetch?.matches)).toEqual(
+      new Set([
+        'https://gemini.google.com/*',
+        'https://aistudio.google.com/*',
+        'https://aistudio.google.cn/*',
+      ]),
+    );
+    expect(new Set(response?.matches)).toEqual(
+      new Set([
+        'https://gemini.google.com/*',
+        'https://business.gemini.google/*',
+        'https://aistudio.google.com/*',
+        'https://aistudio.google.cn/*',
+      ]),
+    );
   });
 
   it('serializes an enable followed by disable while an earlier settings read is pending', async () => {

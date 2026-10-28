@@ -5,6 +5,7 @@ import {
   storageQuotaService,
 } from '@/core/services/StorageQuotaService';
 import { StorageKeys } from '@/core/types/common';
+import { packagedSiteForUrl } from '@/features/plugins/sites/hostPolicy';
 
 export type StorageQuotaWarningLevel = 'normal' | 'warning' | 'critical';
 
@@ -40,17 +41,7 @@ function isWarningLevel(value: unknown): value is StorageQuotaWarningLevel {
 
 function isSupportedWarningTarget(url: string | undefined): boolean {
   if (!url) return false;
-  try {
-    const hostname = new URL(url).hostname;
-    return (
-      hostname === 'gemini.google.com' ||
-      hostname === 'business.gemini.google' ||
-      hostname === 'aistudio.google.com' ||
-      hostname === 'aistudio.google.cn'
-    );
-  } catch {
-    return false;
-  }
+  return packagedSiteForUrl(url) !== null;
 }
 
 export function resolveStorageQuotaWarningTransition(

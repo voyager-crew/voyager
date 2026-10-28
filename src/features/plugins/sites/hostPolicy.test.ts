@@ -16,6 +16,7 @@ import {
   hostPolicyRefusal,
   isStaticallyInjectedHost,
   manifestHostPolicyIssues,
+  nativeStartPointSiteForHost,
   packagedSiteForUrl,
   usesCatalogDataStores,
 } from './hostPolicy';
@@ -54,11 +55,40 @@ describe('packaged host policy', () => {
   });
 
   it('recognizes the statically injected hosts and nothing else', () => {
-    expect(isStaticallyInjectedHost('gemini.google.com')).toBe(true);
-    expect(isStaticallyInjectedHost('Business.Gemini.Google')).toBe(true);
+    for (const host of PACKAGED_HOSTS) {
+      expect(isStaticallyInjectedHost(host)).toBe(true);
+      expect(isStaticallyInjectedHost(host.toUpperCase())).toBe(true);
+    }
     expect(isStaticallyInjectedHost(' aistudio.google.cn ')).toBe(true);
     expect(isStaticallyInjectedHost('claude.ai')).toBe(false);
     expect(isStaticallyInjectedHost('google.com')).toBe(false);
+  });
+
+  it('normalizes native host answers consistently with static injection', () => {
+    for (const [host, nativeSite] of [
+      ['gemini.google.com', 'gemini'],
+      ['business.gemini.google', null],
+      ['aistudio.google.com', 'aistudio'],
+      ['aistudio.google.cn', 'aistudio'],
+    ] as const) {
+      for (const input of [host, host.toUpperCase(), ` ${host} `, ` ${host.toUpperCase()} `]) {
+        expect(isStaticallyInjectedHost(input)).toBe(true);
+        expect(nativeStartPointSiteForHost(input)).toBe(nativeSite);
+      }
+    }
+    expect(nativeStartPointSiteForHost('claude.ai')).toBeNull();
+  });
+
+  it.each([
+    'gemini.google.com.example.com',
+    'xgemini.google.com',
+    'aistudio.google.com.evil.test',
+    'business.gemini.google.example.com',
+    'aistudio.google.cn.example.com',
+  ])('does not treat the lookalike %s as a packaged host', (host) => {
+    expect(isStaticallyInjectedHost(host)).toBe(false);
+    expect(nativeStartPointSiteForHost(host)).toBeNull();
+    expect(packagedSiteForUrl(`https://${host}/`)).toBeNull();
   });
 
   it('keeps native themes packaged while catalog sites can supply a theme', () => {

@@ -7,6 +7,10 @@ import {
 } from '@/core/utils/extensionContext';
 import { startPluginHost } from '@/features/plugins';
 import { createOfficialAdmission } from '@/features/plugins/runtime/officialAdmission';
+import {
+  isStaticallyInjectedHost,
+  nativeStartPointSiteForHost,
+} from '@/features/plugins/sites/hostPolicy';
 import { resolvePluginPlatformId } from '@/features/plugins/sites/registry';
 import { SiteRegistry } from '@/features/plugins/sites/registry';
 import { initI18n } from '@/utils/i18n';
@@ -140,7 +144,7 @@ async function initializeFeatures(): Promise<void> {
     if (entry !== 'start-points') return;
     admitSiteCheck(officialAdmission, location.href);
 
-    if (location.hostname === 'gemini.google.com') {
+    if (nativeStartPointSiteForHost(location.hostname) === 'gemini') {
       await startGeminiPage({
         settle,
         adopt,
@@ -157,24 +161,20 @@ async function initializeFeatures(): Promise<void> {
       });
     }
 
-    if (
-      location.hostname === 'gemini.google.com' ||
-      location.hostname === 'aistudio.google.com' ||
-      location.hostname === 'aistudio.google.cn'
-    ) {
+    if (nativeStartPointSiteForHost(location.hostname) !== null) {
       await settle(promptManager.startPanel());
       await delay(HEAVY_FEATURE_INIT_DELAY);
     }
 
     // Not on Gemini Enterprise (returned above): the native diagram renderers
     // never ran there, and the official manifests do not match it.
-    if (location.hostname === 'gemini.google.com') {
+    if (nativeStartPointSiteForHost(location.hostname) === 'gemini') {
       // Mermaid, WaveDrom and ECharts (lazy-loaded), then user message LaTeX.
       await settle(geminiRenderers.startRenderers());
       await delay(LIGHT_FEATURE_INIT_DELAY);
     }
 
-    if (location.hostname === 'aistudio.google.com' || location.hostname === 'aistudio.google.cn') {
+    if (nativeStartPointSiteForHost(location.hostname) === 'aistudio') {
       // Check if user has disabled Voyager on AI Studio
       const aiStudioEnabled = await settle(
         new Promise<boolean>((resolve) => {
@@ -356,7 +356,7 @@ function handleVisibilityChange(): void {
     ) => {
       if (
         (areaName !== 'sync' && areaName !== 'local') ||
-        location.hostname !== 'gemini.google.com'
+        nativeStartPointSiteForHost(location.hostname) !== 'gemini'
       ) {
         return;
       }
@@ -365,12 +365,8 @@ function handleVisibilityChange(): void {
     };
 
     // Quick check: only run on supported websites
-    const hostname = location.hostname.toLowerCase();
-    const isSupportedSite =
-      hostname.includes('gemini.google.com') ||
-      hostname.includes('business.gemini.google') ||
-      hostname.includes('aistudio.google.com') ||
-      hostname.includes('aistudio.google.cn');
+    // Only exact packaged hosts get native initialization, never hostname lookalikes.
+    const isSupportedSite = isStaticallyInjectedHost(location.hostname);
     if (!isPluginSubframe && (isSupportedSite || pluginPlatformId)) {
       void mountForPage(NATIVE_FEATURES.remoteAnnouncements);
     }

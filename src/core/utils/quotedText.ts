@@ -1,4 +1,5 @@
 import { GEMINI_FORMULA_PACKAGED } from '@/core/gemini/math/formula';
+import { nativeStartPointSiteForHost } from '@/features/plugins/sites/hostPolicy';
 
 /** Prefix each selected line, including blank lines, for a Markdown quote. */
 export function formatQuotedText(text: string): string {
@@ -11,7 +12,7 @@ export function formatQuotedText(text: string): string {
 /** Replace Gemini math in a detached selection clone, leaving the host untouched. */
 export function replaceMathWithLatex(root: DocumentFragment): void {
   const containers =
-    root.ownerDocument.location?.hostname === 'gemini.google.com'
+    nativeStartPointSiteForHost(root.ownerDocument.location?.hostname ?? '') === 'gemini'
       ? GEMINI_FORMULA_PACKAGED['formula.quote']
       : '.math-inline, .math-block';
   for (const container of Array.from(root.querySelectorAll(containers))) {

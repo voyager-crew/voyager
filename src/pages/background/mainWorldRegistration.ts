@@ -5,23 +5,17 @@ import { readPlatformFormFactor } from '@/core/utils/formFactor';
 import { WATERMARK_STORAGE_KEYS, resolveWatermarkSettings } from '@/core/utils/watermarkSettings';
 import { packagedPluginRunsOn } from '@/features/plugins/runtime/packagedFormFactor';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
+import { NATIVE_START_POINT_MATCHES, PACKAGED_MATCHES } from '@/features/plugins/sites/hostPolicy';
 
 import { injectWatermarkInterceptorIntoOpenTabs } from './watermarkOpenTabs';
 
 const FETCH_INTERCEPTOR_SCRIPT_ID = 'gv-fetch-interceptor';
 const RESPONSE_COMPLETE_OBSERVER_SCRIPT_ID = 'gv-response-complete-observer';
 
-// Gemini domains where the watermark fetch interceptor should run.
-const GEMINI_FETCH_INTERCEPTOR_MATCHES = [
-  'https://gemini.google.com/*',
-  'https://aistudio.google.com/*',
-  'https://aistudio.google.cn/*',
-];
-
-const GEMINI_RESPONSE_COMPLETE_OBSERVER_MATCHES = [
-  ...GEMINI_FETCH_INTERCEPTOR_MATCHES,
-  'https://business.gemini.google/*',
-];
+// Business has no watermark interception, so fetch only runs at native start points.
+const GEMINI_FETCH_INTERCEPTOR_MATCHES = [...NATIVE_START_POINT_MATCHES];
+// Completion observation also serves Business, so it covers every packaged host.
+const GEMINI_RESPONSE_COMPLETE_OBSERVER_MATCHES = [...PACKAGED_MATCHES];
 
 export function createMainWorldRegistration() {
   async function doRegisterFetchInterceptor(injectOpenTabs: boolean): Promise<void> {

@@ -2,6 +2,7 @@ import {
   GEMINI_FORMULA_PACKAGED,
   GEMINI_FORMULA_CONTAINER_SELECTOR,
 } from '@/core/gemini/math/formula';
+import { nativeStartPointSiteForHost } from '@/features/plugins/sites/hostPolicy';
 
 /**
  * Find the nearest math element in the DOM tree
@@ -16,7 +17,7 @@ export function findMathElement(target: Element): HTMLElement | null {
 
   // 2. Try Gemini's .math-inline, .math-block containers
   const containerSelector =
-    target.ownerDocument.location?.hostname === 'gemini.google.com'
+    nativeStartPointSiteForHost(target.ownerDocument.location?.hostname ?? '') === 'gemini'
       ? GEMINI_FORMULA_CONTAINER_SELECTOR
       : '.math-inline, .math-block';
   const geminiContainer = target.closest(containerSelector);
@@ -102,7 +103,7 @@ export function extractLatexSource(element: HTMLElement): string | null {
 export function isDisplayMode(element: HTMLElement): boolean {
   // 1. Gemini: check for a block/display container
   const display =
-    element.ownerDocument.location?.hostname === 'gemini.google.com'
+    nativeStartPointSiteForHost(element.ownerDocument.location?.hostname ?? '') === 'gemini'
       ? GEMINI_FORMULA_PACKAGED['formula.display']
       : '.math-block, .math-display';
   if (element.closest(display) !== null) {
