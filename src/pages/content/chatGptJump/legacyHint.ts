@@ -1,4 +1,5 @@
 import { createToaster } from '@/core/ui/toast/toaster';
+import { isUserEvent } from '@/core/utils/userEvent';
 import { CHATGPT_CONVERSATION_ID_ATTRIBUTE } from '@/features/plugins/builtin';
 import { createTranslator, initI18n } from '@/utils/i18n';
 
@@ -85,7 +86,7 @@ export function startChatGptLegacyJumpHint(): () => void {
     clearTimeout(expiry);
   };
   const onUserInput = (event: Event): void => {
-    if (event.isTrusted) disarm();
+    if (isUserEvent(event)) disarm();
   };
   const check = (): void => {
     if (!armed) return;

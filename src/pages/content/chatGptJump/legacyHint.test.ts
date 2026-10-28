@@ -1,5 +1,4 @@
 // @vitest-environment-options { "url": "https://chatgpt.com/c/example#gv-turn-turn-one" }
-import { createRequire } from 'node:module';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { initI18n } from '@/utils/i18n';
@@ -7,6 +6,8 @@ import { initI18n } from '@/utils/i18n';
 import { startChatGptJump } from './index';
 import { startChatGptLegacyJumpHint } from './legacyHint';
 
+const userEvents = vi.hoisted(() => new WeakSet<Event>());
+vi.mock('@/core/utils/userEvent', () => ({ isUserEvent: (event: Event) => userEvents.has(event) }));
 vi.mock('webextension-polyfill', () => ({
   default: {
     storage: {
@@ -24,12 +25,10 @@ function toasts(): NodeListOf<Element> | undefined {
     .querySelector('[data-gv-layer="toast"]')
     ?.shadowRoot?.querySelectorAll('.gv-toast');
 }
-/** jsdom marks every script-dispatched event untrusted; fire it as the browser does for real input. */
+/** jsdom marks every script-dispatched event untrusted; fire it as the user's own input. */
 function userInput(event: Event): void {
-  const jsdomUtils = createRequire(import.meta.url)('jsdom/lib/jsdom/living/generated/utils.js');
-  const impl = jsdomUtils.implForWrapper(event);
-  impl.isTrusted = true;
-  jsdomUtils.implForWrapper(document.body)._dispatch(impl);
+  userEvents.add(event);
+  document.body.dispatchEvent(event);
 }
 function renderTurn(conversationId: string): void {
   document.body.innerHTML = `<div data-turn-key="t"><div data-chatgpt-selection-conversation-id="${conversationId}" data-chatgpt-selection-message-id="m2">Antwort</div></div>`;
