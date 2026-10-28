@@ -4,13 +4,14 @@
  *
  * Every pair (A, B) of the site's official plugins runs through one real
  * `DeclarativeEngine`, configured as `PluginHost` configures its own, on a
- * fresh copy of the site's page (`pluginPairFixtures.ts`), in both enable
- * orders:
+ * fresh copy of the site's page (`pluginPairFixtures.ts`):
  *
- *  - disable equivalence: enabling A then B and disabling A leaves the page
- *    exactly as enabling B alone does (and the same for disabling B);
- *  - clean teardown: disabling the second one too restores the pristine page,
- *    so both disable orders are covered for both enable orders;
+ *  - disable equivalence: one page per pair chains both enable orders with
+ *    both disable orders, and disabling either one leaves the page exactly as
+ *    enabling the other alone does;
+ *  - re-enable: that chain enables a plugin again on the page it was just
+ *    disabled from, and the mount must still end as the plugin alone does;
+ *  - clean teardown: disabling the last one restores the pristine page;
  *  - order report: when the page with both differs between enable orders, the
  *    difference is collected and printed, not asserted, since a last writer
  *    may legitimately win;
@@ -84,11 +85,6 @@ interface PluginCase {
   readonly manifest: PluginManifest;
   /** The id without its `voyager.<site>-` prefix, for test names. */
   readonly short: string;
-}
-
-interface OrderedPair {
-  readonly first: PluginCase;
-  readonly second: PluginCase;
 }
 
 // ---- composer keys ----------------------------------------------------------
@@ -219,10 +215,6 @@ export function definePluginPairMatrix(siteId: string, options: PairMatrixOption
         else pairs.push([plugins[i], plugins[j]]);
       }
     }
-    const ordered: OrderedPair[] = pairs.flatMap(([a, b]) => [
-      { first: a, second: b },
-      { first: b, second: a },
-    ]);
     const keyPairs = pairs.filter(([a, b]) =>
       [a, b].some((plugin) =>
         handlers(plugin.manifest).some(
@@ -364,44 +356,49 @@ export function definePluginPairMatrix(siteId: string, options: PairMatrixOption
       },
     );
 
-    const disableCases = ordered.flatMap(({ first, second }) =>
-      (['first', 'second'] as const).map((released) => ({
-        first,
-        second,
-        released,
-        name:
-          released === 'first'
-            ? `enable ${first.short} → ${second.short}, disable ${first.short} then ${second.short}`
-            : `enable ${first.short} → ${second.short}, disable ${second.short} then ${first.short}`,
-      })),
-    );
-
-    for (const testCase of disableCases) {
-      const skip = skipFor(skips, 'dom', testCase.first.short, testCase.second.short);
-      const title = `${siteId}: ${testCase.name}`;
+    for (const [a, b] of pairs) {
+      const skip = skipFor(skips, 'dom', a.short, b.short);
+      const title = `${siteId}: ${a.short} + ${b.short} toggle in every enable and disable order on one page and tear down clean`;
       if (skip) {
         it.skip(`${title} — TODO: ${skip.todo}`, () => {});
         continue;
       }
       it(title, async () => {
-        const { first, second, released } = testCase;
-        const [gone, kept] = released === 'first' ? [first, second] : [second, first];
-        const keptAlone = await aloneReference(kept);
-
+        const onlyA = await aloneReference(a);
+        const onlyB = await aloneReference(b);
         const pristine = freshPage();
         const engine = newEngine();
-        await enable(engine, first);
-        await enable(engine, second);
-        const both = pageSnapshot();
-        const key = `${first.manifest.id}|${second.manifest.id}`;
-        if (!together.has(key)) together.set(key, both);
+        /**
+         * With `held` enabled, enables `added` and then disables `gone`: the page must be the
+         * other one's alone. The first page with both in an order goes to the order report.
+         */
+        const toggle = async (
+          held: PluginCase,
+          added: PluginCase,
+          gone: PluginCase,
+        ): Promise<void> => {
+          await enable(engine, added);
+          const key = `${held.manifest.id}|${added.manifest.id}`;
+          if (!together.has(key)) together.set(key, pageSnapshot());
+          await disable(engine, gone);
+          const kept = gone === held ? added : held;
+          expect(
+            pageSnapshot(),
+            `enabled ${held.short} → ${added.short}, disabling ${gone.short} leaves exactly ${kept.short}`,
+          ).toEqual(kept === a ? onlyA : onlyB);
+        };
 
-        await disable(engine, gone);
-        expect(pageSnapshot(), `disabling ${gone.short} leaves exactly ${kept.short}`).toEqual(
-          keptAlone,
-        );
-        await disable(engine, kept);
-        expect(pageSnapshot(), 'disabling both restores the page').toEqual(pristine);
+        await enable(engine, a);
+        await toggle(a, b, a);
+        // Each later step re-enables, on the same page, the plugin the step before disabled.
+        await toggle(b, a, a);
+        await toggle(b, a, b);
+        await toggle(a, b, b);
+        await disable(engine, a);
+        expect(
+          pageSnapshot(),
+          `enabled ${a.short} → ${b.short}, disabling ${b.short} then ${a.short} restores the page`,
+        ).toEqual(pristine);
       });
     }
 
