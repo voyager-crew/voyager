@@ -3,6 +3,14 @@ import { configDefaults, defineConfig } from 'vitest/config';
 
 import { getCatalogRevision } from './scripts/lib/catalogRevision';
 
+/** Test files the VM pools cannot load; they keep the default pool. */
+const FORKS_ONLY = [
+  // The VM pools' CommonJS loader wraps a module's source, so its script's shebang no longer parses.
+  'scripts/generate-sponsors.test.js',
+  // Imports the Vite config, whose Tailwind plugin calls `module.register`; the VM pools refuse it.
+  'src/core/utils/__tests__/manifestPermissions.test.ts',
+];
+
 export default defineConfig({
   define: {
     'import.meta.env.VOYAGER_CATALOG_REVISION': JSON.stringify(
@@ -13,6 +21,17 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/tests/vmRealm.ts', './src/tests/setup.ts'],
+    // Each file gets a fresh jsdom realm in a reused worker thread instead of a
+    // fresh process, which halves the run. vmRealm.ts gives that realm the
+    // globals the default pool had.
+    pool: 'vmThreads',
+    // A worker keeps every finished file's VM context until it is recycled, by
+    // default at RAM / workers. At 2GB, three workers peak near 6.5GB, not 8.4GB.
+    vmMemoryLimit: '2GB',
+    projects: [
+      { extends: true, test: { name: 'vm', exclude: FORKS_ONLY } },
+      { extends: true, test: { name: 'forks', include: FORKS_ONLY, pool: 'forks' } },
+    ],
     // Agent and local worktrees are full checkouts inside the repo; their
     // copies of the suite belong to their own runs.
     exclude: [...configDefaults.exclude, '.claude/worktrees/**', '.worktrees/**'],
