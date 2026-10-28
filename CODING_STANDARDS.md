@@ -14,6 +14,7 @@ A test earns its place by the **regression** it catches: it fails on a plausible
   - _Vacuous_: cannot fail, such as asserting that a selector the code no longer uses is never queried, or checking a value a mock fixed.
 - **Bug fixes**: add a regression test only when coverage has a genuine gap; otherwise extend or rely on the existing test. Name it after the symptom, and put a one-line why-comment at the code that prevents the bug. A test added by a `fix(...)` commit stays unless another case catches the same regression.
 - **Time**: drive time with fake timers or await the event the code emits. Virtual time is cheap but the DOM work it triggers is not, so a long wait is one clock jump plus a short window, not a scan of every tick. Lint flags real sleeps, per-test timeouts and unlinked skips.
+- **Worker state**: under `vmThreads` the files in a worker share Node's built-ins, their prototypes and `process.env`, so a change left there reaches later files. Tests undo it (`vi.unstubAllEnvs()`, restored spies); a global the test realm lacks goes in `src/tests/vmRealm.ts`, on the realm's own global.
 - **Deleting tests**: judge each case by the regression it catches. A category (timers, DOM, mocks, long, slow) is never the reason.
 - **Moving code**: when a responsibility is extracted, its valuable regression assertions move with it. Prose, formatting and other reversible changes without a behavior change need no new tests.
 
