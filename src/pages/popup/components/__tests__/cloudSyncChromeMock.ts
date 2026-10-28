@@ -1,6 +1,9 @@
+import { act } from 'react';
+
 import { vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import { DEFAULT_SYNC_STATE, type SyncState } from '@/core/types/sync';
 import {
   handlePromptLibraryApplyMessage,
   isPromptLibraryApplyMessage,
@@ -11,6 +14,20 @@ import { createForkMessagesOwner } from '@/pages/background/forkMessages';
 import { createStarredMessagesHandler } from '@/pages/background/starredMessages';
 
 type RuntimeRequest = { type?: string; payload?: unknown };
+
+/** The sync state the popup starts from in these tests: manual mode, not signed in to Drive. */
+export const baseState: SyncState = {
+  ...DEFAULT_SYNC_STATE,
+  mode: 'manual',
+  isAuthenticated: false,
+};
+
+/** Lets the promises the popup started on mount or on a click settle. */
+export async function flushMicrotasks(): Promise<void> {
+  await act(async () => {
+    await Promise.resolve();
+  });
+}
 
 export function createCloudSyncChromeMock(
   sendSyncMessage: (message: RuntimeRequest) => unknown,

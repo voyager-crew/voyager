@@ -4,6 +4,7 @@ import { type Root, createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import { PLATFORM_LOGOS } from '@/core/icons/platformLogos';
 import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
 import { type SyncState, DEFAULT_SYNC_STATE } from '@/core/types/sync';
@@ -191,7 +192,7 @@ describe('CloudSyncSettings platform routing', () => {
     await mount();
     expect(container.textContent).toContain(t.cloudSync);
     const summary = container.querySelector('[data-testid="sync-platform-summary"]');
-    expect(summary?.textContent).toContain(t.platformChatGPT);
+    expect(summary?.textContent).toContain('ChatGPT');
     expect(summary?.textContent).toContain(t.neverUploaded);
     expect(summary?.textContent).toContain(t.neverSynced);
     expect(container.textContent).not.toContain(t.highlightCloudSync);
@@ -402,4 +403,33 @@ describe('CloudSyncSettings platform routing', () => {
     expect(summary?.textContent).toContain(t.neverUploaded);
     expect(summary?.textContent).toContain(t.neverSynced);
   });
+
+  it.each([
+    { url: 'https://gemini.google.com/app', platform: 'gemini', label: 'Gemini' },
+    {
+      url: 'https://aistudio.google.com/prompts/new_chat',
+      platform: 'aistudio',
+      label: 'AI Studio',
+    },
+    { url: 'https://chatgpt.com/', platform: 'chatgpt', label: 'ChatGPT' },
+    { url: 'https://claude.ai/new', platform: 'claude', label: 'Claude' },
+    { url: 'https://chat.deepseek.com/', platform: 'deepseek', label: 'DeepSeek' },
+  ] as const)(
+    'names $label in the platform summary beside its bundled mark',
+    async ({ url, platform, label }) => {
+      installChrome(url);
+      await mount();
+      const summary = container.querySelector('[data-testid="sync-platform-summary"]');
+      const mark = summary?.querySelector('[data-testid="sync-platform-mark"] svg');
+      const drawn = Array.from(mark?.querySelectorAll('path') ?? [], (path) =>
+        path.getAttribute('d'),
+      );
+
+      // Read as one phrase: the plain name, with no decorative emoji before it.
+      expect(summary?.textContent).toContain(`${t.currentPlatform}: ${label}`);
+      expect(mark?.getAttribute('viewBox')).toBe(PLATFORM_LOGOS[platform].viewBox);
+      expect(drawn).toEqual(PLATFORM_LOGOS[platform].paths);
+      expect(summary?.querySelector('img')).toBeNull();
+    },
+  );
 });

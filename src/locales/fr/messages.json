@@ -1142,18 +1142,6 @@
     "message": "Synchro Cloud",
     "description": "Cloud sync section title"
   },
-  "platformChatGPT": {
-    "message": "ChatGPT",
-    "description": "ChatGPT platform label"
-  },
-  "platformClaude": {
-    "message": "Claude",
-    "description": "Claude platform label"
-  },
-  "platformDeepSeek": {
-    "message": "DeepSeek",
-    "description": "DeepSeek platform label"
-  },
   "cloudSyncFoldersDescription": {
     "message": "Synchronisez les dossiers avec Google Drive",
     "description": "ChatGPT folders-only Google Drive sync description"

@@ -1142,18 +1142,6 @@
     "message": "مزامنة سحابية",
     "description": "Cloud sync section title"
   },
-  "platformChatGPT": {
-    "message": "ChatGPT",
-    "description": "ChatGPT platform label"
-  },
-  "platformClaude": {
-    "message": "Claude",
-    "description": "Claude platform label"
-  },
-  "platformDeepSeek": {
-    "message": "DeepSeek",
-    "description": "DeepSeek platform label"
-  },
   "cloudSyncFoldersDescription": {
     "message": "مزامنة المجلدات مع Google Drive",
     "description": "ChatGPT folders-only Google Drive sync description"

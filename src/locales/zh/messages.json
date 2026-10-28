@@ -1134,18 +1134,6 @@
     "message": "云同步",
     "description": "云同步区域标题"
   },
-  "platformChatGPT": {
-    "message": "ChatGPT",
-    "description": "ChatGPT platform label"
-  },
-  "platformClaude": {
-    "message": "Claude",
-    "description": "Claude platform label"
-  },
-  "platformDeepSeek": {
-    "message": "DeepSeek",
-    "description": "DeepSeek platform label"
-  },
   "cloudSyncFoldersDescription": {
     "message": "将文件夹同步到 Google Drive",
     "description": "ChatGPT folders-only Google Drive sync description"

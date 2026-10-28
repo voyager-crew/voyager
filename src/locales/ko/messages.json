@@ -1142,18 +1142,6 @@
     "message": "클라우드 동기화",
     "description": "Cloud sync section title"
   },
-  "platformChatGPT": {
-    "message": "ChatGPT",
-    "description": "ChatGPT platform label"
-  },
-  "platformClaude": {
-    "message": "Claude",
-    "description": "Claude platform label"
-  },
-  "platformDeepSeek": {
-    "message": "DeepSeek",
-    "description": "DeepSeek platform label"
-  },
   "cloudSyncFoldersDescription": {
     "message": "폴더를 Google Drive에 동기화",
     "description": "ChatGPT folders-only Google Drive sync description"
