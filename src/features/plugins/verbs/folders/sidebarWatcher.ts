@@ -70,6 +70,8 @@ export class SidebarWatcher {
   }
 
   private run(): void {
+    // A queued frame can fire while the scope's asynchronous teardown is still draining.
+    if (this.scope.isDisposed) return;
     const sidebar = this.watched.find(this.doc);
     if (sidebar !== this.sidebar) {
       void this.stopSidebar?.();
