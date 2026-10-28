@@ -179,6 +179,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run plugin:check
       - run: bun run selectors:check
+      - run: bun run site-knowledge:check
 
   # ── Native Swift Tests + Xcode Build ─────────────────────────────────
   # app-only (src/public) changes skip this: the Safari web bundle is already
