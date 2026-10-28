@@ -144,6 +144,20 @@ describe('build-plugin-catalog', () => {
     await expect(build(makeTempDir(), otherCatalog)).rejects.toThrow(/selectors\.thinkingBlock/);
   });
 
+  it('refuses route words that make Voyager 2.2.1 discard remote site repairs', async () => {
+    const outDir = makeTempDir();
+    const catalogDir = makeFixtureCatalog({ site: { routeWords: ['new_project'] } });
+    await expect(build(outDir, catalogDir)).rejects.toThrow(
+      /demo\.example:.*2\.2\.1.*discard the whole remote site record:.*new_project/s,
+    );
+
+    const compatibleCatalog = makeFixtureCatalog({ site: { routeWords: ['new-project'] } });
+    await build(outDir, compatibleCatalog);
+    expect(readHostFile(outDir, 'demo.example')).toMatchObject({
+      site: { routeWords: ['new-project'] },
+    });
+  });
+
   it('replaces an older native host file with the current validated site data', async () => {
     const outDir = makeTempDir();
     const hostsDir = join(outDir, 'hosts');

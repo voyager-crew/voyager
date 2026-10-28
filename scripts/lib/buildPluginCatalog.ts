@@ -116,6 +116,8 @@ export const DEFAULT_OUT_DIR = join(repoRoot, 'docs/public/catalog');
 const CONCRETE_HTTPS_MATCH = /^https:\/\/([^/*]+)\/\*$/i;
 /** Plain domain labels; anything else (ports, credentials, `..`) is a mistake. */
 const PLAIN_HOST = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/;
+/** Remove once the oldest remote consumer accepts underscores. */
+const PUBLISHABLE_ROUTE_WORD = /^[a-z0-9-]{1,64}$/;
 
 /** A `sites/<dir>` entry: its validated adapter plus its validated plugins. */
 interface CatalogSite {
@@ -237,6 +239,20 @@ function assertPublishableSemanticKeys(host: string, site: CatalogSite): void {
   );
 }
 
+function assertPublishableRouteWords(host: string, site: CatalogSite): void {
+  const unreadable = (site.adapter.routeWords ?? []).filter(
+    (word) => !PUBLISHABLE_ROUTE_WORD.test(word),
+  );
+  if (unreadable.length === 0) return;
+  throw new Error(
+    [
+      `${host}: sites/${site.dir}/site.json uses route words Voyager 2.2.1 cannot read;`,
+      'that release would discard the whole remote site record:',
+      ...unreadable.map((word) => `  - routeWords: "${word}"`),
+    ].join('\n'),
+  );
+}
+
 /**
  * Build every host file from a catalog directory. Pure: nothing is written and
  * nothing outside `catalogDir` is read.
@@ -292,7 +308,10 @@ export async function buildHostCatalogs(
     }
     const packaged = isStaticallyInjectedHost(host);
     // Strict D14 clients skip these hosts; v1.9 rejects their newer keys, and current readers tolerate them.
-    if (!packaged) assertPublishableSemanticKeys(host, site);
+    if (!packaged) {
+      assertPublishableSemanticKeys(host, site);
+      assertPublishableRouteWords(host, site);
+    }
     const revoked = packaged
       ? []
       : [
