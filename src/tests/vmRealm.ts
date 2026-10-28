@@ -12,9 +12,12 @@
  * classes. Node's built-ins and their prototypes are shared by every file in a
  * worker, so nothing patches them.
  */
+import type { JSDOM } from 'jsdom';
 import { webcrypto } from 'node:crypto';
 import { performance as nodePerformance } from 'node:perf_hooks';
 import * as webStreams from 'node:stream/web';
+
+declare const jsdom: JSDOM | undefined;
 
 /** Rebuilds a value cloned in Node's realm from this realm's built-ins, keeping shared and circular references. */
 function adopt(value: unknown, seen: Map<object, unknown>): unknown {
@@ -143,4 +146,32 @@ for (const name of [
       configurable: true,
     });
   }
+}
+
+// jsdom queues a window's postMessage on the setTimeout of its own module, which
+// is Node's. Under the default pool that is also the test's global, so fake
+// timers deliver the message; here the test's global is jsdom's window, and the
+// message would arrive on the real clock instead. Queue it on this realm's
+// timers, with jsdom's checks and event.
+if (typeof jsdom !== 'undefined' && Object.is(jsdom.window, globalThis)) {
+  globalThis.postMessage = function postMessage(message: unknown, targetOrigin?: unknown): void {
+    if (arguments.length < 2) {
+      throw new TypeError("'postMessage' requires 2 arguments: 'message' and 'targetOrigin'");
+    }
+    const origin = String(targetOrigin);
+    if (origin === '/') return;
+    if (origin !== '*') {
+      let target: URL;
+      try {
+        target = new URL(origin);
+      } catch {
+        throw new DOMException(
+          `Failed to execute 'postMessage' on 'Window': Invalid target origin '${origin}' in a call to 'postMessage'.`,
+          'SyntaxError',
+        );
+      }
+      if (target.origin !== location.origin) return;
+    }
+    setTimeout(() => dispatchEvent(new MessageEvent('message', { data: message })), 0);
+  } as typeof globalThis.postMessage;
 }
