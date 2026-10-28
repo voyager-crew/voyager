@@ -71,10 +71,6 @@
     "message": "实验性",
     "description": "实验性功能标签"
   },
-  "resetPosition": {
-    "message": "重置位置",
-    "description": "重置位置按钮"
-  },
   "resetTimelinePosition": {
     "message": "重置时间线位置",
     "description": "重置时间线位置按钮（在时间线选项中）"
@@ -86,10 +82,6 @@
   "languageSwitchTo": {
     "message": "切换为 {language}",
     "description": "Tooltip on the popup's language button; {language} is the target language's native name (e.g. English, 中文)"
-  },
-  "pm_title": {
-    "message": "Voyager",
-    "description": "面板标题"
   },
   "pm_add": {
     "message": "新增",
@@ -282,42 +274,6 @@
     "message": "请点击浏览器工具栏中的扩展图标打开设置",
     "description": "设置打开失败提示"
   },
-  "pm_backup": {
-    "message": "本地备份",
-    "description": "本地备份按钮"
-  },
-  "pm_backup_tooltip": {
-    "message": "将提示词和文件夹备份到带时间戳的文件夹",
-    "description": "备份按钮提示"
-  },
-  "pm_backup_cancelled": {
-    "message": "备份已取消",
-    "description": "备份取消提示"
-  },
-  "pm_backup_error": {
-    "message": "备份失败",
-    "description": "备份失败提示"
-  },
-  "pm_backup_hint_options": {
-    "message": "功能已集成在 Gemini 页面的提示词管理器中。",
-    "description": "选项页面的备份说明"
-  },
-  "pm_backup_step1": {
-    "message": "打开 Gemini 页面（gemini.google.com）",
-    "description": "备份步骤 1"
-  },
-  "pm_backup_step2": {
-    "message": "点击右下角的扩展图标打开提示词管理器",
-    "description": "备份步骤 2"
-  },
-  "pm_backup_step3": {
-    "message": "点击 \"本地备份\" 按钮，选择备份文件夹",
-    "description": "备份步骤 3"
-  },
-  "pm_backup_note": {
-    "message": "备份将包含所有提示词和文件夹，并保存在带时间戳的文件夹中（格式：backup-YYYYMMDD-HHMMSS）",
-    "description": "备份功能说明"
-  },
   "pm_theme_light": {
     "message": "切换到浅色模式",
     "description": "Theme toggle tooltip - switch to light"
@@ -346,10 +302,6 @@
     "message": "名称重复，改名后可使用 /",
     "description": "名称重复而无法使用 / 快速插入时显示的标记"
   },
-  "pm_prompt_manager": {
-    "message": "提示词管理器",
-    "description": "Button label for returning from the starred library to Prompt Manager"
-  },
   "pm_open_prompt_manager": {
     "message": "打开提示词管理器",
     "description": "从收藏库返回提示词管理器的底部按钮"
@@ -357,10 +309,6 @@
   "pm_starred_library": {
     "message": "收藏库",
     "description": "Prompt Manager starred messages library title and entry button"
-  },
-  "pm_starred_search_placeholder": {
-    "message": "搜索收藏内容",
-    "description": "Search placeholder for starred messages in Prompt Manager"
   },
   "pm_starred_no_results": {
     "message": "没有匹配的星标内容",
@@ -482,25 +430,13 @@
     "message": "输入文件夹名称：",
     "description": "创建文件夹名称提示"
   },
-  "folder_rename_prompt": {
-    "message": "输入新名称：",
-    "description": "重命名文件夹提示"
-  },
   "folder_delete_confirm": {
     "message": "确定删除此文件夹及其所有内容吗？",
     "description": "删除文件夹确认"
   },
-  "folder_create_subfolder": {
-    "message": "创建子文件夹",
-    "description": "创建子文件夹菜单项"
-  },
   "folder_rename": {
     "message": "重命名",
     "description": "重命名文件夹菜单项"
-  },
-  "folder_change_color": {
-    "message": "更改颜色",
-    "description": "更改文件夹颜色菜单项"
   },
   "folder_delete": {
     "message": "删除",
@@ -534,10 +470,6 @@
     "message": "紫色（创意）",
     "description": "紫色文件夹颜色名称"
   },
-  "folder_color_pink": {
-    "message": "粉色（个人）",
-    "description": "粉色文件夹颜色名称"
-  },
   "folder_color_custom": {
     "message": "自定义",
     "description": "自定义文件夹颜色名称"
@@ -546,18 +478,6 @@
     "message": "暂无文件夹",
     "description": "没有文件夹时显示的占位提示"
   },
-  "folder_pin": {
-    "message": "置顶文件夹",
-    "description": "置顶文件夹菜单项"
-  },
-  "folder_unpin": {
-    "message": "取消置顶",
-    "description": "取消置顶文件夹菜单项"
-  },
-  "folder_remove_conversation": {
-    "message": "从文件夹中移除",
-    "description": "移除对话按钮提示"
-  },
   "folder_remove_conversation_action": {
     "message": "移除",
     "description": "从文件夹移除对话确认按钮的短标签"
@@ -565,10 +485,6 @@
   "folder_remove_conversation_confirm": {
     "message": "从此文件夹中移除「{title}」？",
     "description": "移除对话确认"
-  },
-  "conversation_more": {
-    "message": "更多选项",
-    "description": "对话更多选项按钮提示"
   },
   "conversation_move_to_folder": {
     "message": "移动到文件夹",
@@ -1038,110 +954,6 @@
     "message": "无法加载文件夹数据，暂时只能查看，无法编辑。",
     "description": "Notice when folder storage is unreadable and editing is disabled"
   },
-  "backupOptions": {
-    "message": "自动备份",
-    "description": "备份选项区域标签"
-  },
-  "backupEnabled": {
-    "message": "启用自动备份",
-    "description": "启用自动备份开关"
-  },
-  "backupNow": {
-    "message": "立即备份",
-    "description": "立即备份按钮"
-  },
-  "backupSelectFolder": {
-    "message": "选择备份文件夹",
-    "description": "选择备份文件夹按钮"
-  },
-  "backupFolderSelected": {
-    "message": "备份文件夹：{folder}",
-    "description": "显示已选择的备份文件夹"
-  },
-  "backupIncludePrompts": {
-    "message": "包含提示词",
-    "description": "备份中包含提示词开关"
-  },
-  "backupIncludeFolders": {
-    "message": "包含文件夹",
-    "description": "备份中包含文件夹开关"
-  },
-  "backupIntervalLabel": {
-    "message": "备份间隔",
-    "description": "备份间隔标签"
-  },
-  "backupIntervalManual": {
-    "message": "仅手动",
-    "description": "手动备份模式"
-  },
-  "backupIntervalDaily": {
-    "message": "每天",
-    "description": "每天备份间隔"
-  },
-  "backupIntervalWeekly": {
-    "message": "每周（7 天）",
-    "description": "每周备份间隔"
-  },
-  "backupLastBackup": {
-    "message": "上次备份：{time}",
-    "description": "上次备份时间戳"
-  },
-  "backupNever": {
-    "message": "从未",
-    "description": "从未备份过"
-  },
-  "backupSuccess": {
-    "message": "备份创建成功：{prompts} 个提示词、{folders} 个文件夹、{conversations} 个对话",
-    "description": "备份成功消息"
-  },
-  "backupError": {
-    "message": "备份失败：{error}",
-    "description": "备份错误消息"
-  },
-  "backupNotSupported": {
-    "message": "自动备份需要支持文件系统访问 API 的现代浏览器",
-    "description": "浏览器不支持消息"
-  },
-  "backupSelectFolderFirst": {
-    "message": "请先选择备份文件夹",
-    "description": "未选择文件夹警告"
-  },
-  "backupUserCancelled": {
-    "message": "备份已取消",
-    "description": "用户取消文件夹选择"
-  },
-  "backupConfigSaved": {
-    "message": "备份设置已保存",
-    "description": "配置保存消息"
-  },
-  "backupPermissionDenied": {
-    "message": "无法访问此目录。请选择其他位置（例如：文档、下载，或桌面中的自定义文件夹）",
-    "description": "受限目录权限被拒绝"
-  },
-  "backupConfigureInOptions": {
-    "message": "备份功能需要在选项页面中配置。点击下方按钮打开选项页面（点击扩展图标旁的三个点 → 选项）。",
-    "description": "备份配置在选项页面的说明"
-  },
-  "openOptionsPage": {
-    "message": "打开选项页面",
-    "description": "打开选项页面按钮"
-  },
-  "optionsPageSubtitle": {
-    "message": "扩展选项",
-    "description": "选项页副标题"
-  },
-  "optionsComingSoon": {
-    "message": "更多选项即将上线...",
-    "description": "选项页占位提示"
-  },
-  "backupDataAccessNotice": {
-    "message": "数据访问限制",
-    "description": "备份数据访问限制标题"
-  },
-  "backupDataAccessHint": {
-    "message": "由于浏览器安全限制，选项页面无法直接读取 Gemini 页面的提示词和文件夹数据。建议使用 Gemini 页面上的提示词管理器和文件夹导出功能进行手动备份。",
-    "description": "备份数据访问限制说明"
-  },
   "promptManagerOptions": {
     "message": "提示词管理器",
     "description": "提示词管理器选项区域标签"
@@ -1206,10 +1018,6 @@
     "message": "输入网站 URL（例如：chatgpt.com）",
     "description": "自定义网站输入占位符"
   },
-  "customWebsitesHint": {
-    "message": "添加您想要使用提示词管理器的网站。这些网站上只会激活提示词管理器功能。",
-    "description": "自定义网站提示"
-  },
   "addWebsite": {
     "message": "添加网站",
     "description": "添加网站按钮"
@@ -1221,14 +1029,6 @@
   "invalidUrl": {
     "message": "URL 格式无效",
     "description": "无效 URL 错误消息"
-  },
-  "websiteAdded": {
-    "message": "网站已添加",
-    "description": "网站添加成功消息"
-  },
-  "websiteRemoved": {
-    "message": "网站已移除",
-    "description": "网站移除成功消息"
   },
   "permissionDenied": {
     "message": "权限被拒绝。请允许访问此网站。",
@@ -1274,10 +1074,6 @@
     "message": "昨天",
     "description": "昨天日期标签"
   },
-  "daysAgo": {
-    "message": "天前",
-    "description": "天前标签"
-  },
   "loading": {
     "message": "加载中...",
     "description": "加载消息"
@@ -1322,14 +1118,6 @@
     "message": "最后一轮",
     "description": "最后一个时间线节点快捷键标签"
   },
-  "shortcutKey": {
-    "message": "按键",
-    "description": "快捷键按键标签"
-  },
-  "shortcutModifiers": {
-    "message": "修饰键",
-    "description": "快捷键修饰键标签"
-  },
   "shortcutPressKey": {
     "message": "请按下按键…",
     "description": "Shown on a keyboard-shortcut button while it is recording the next key press"
@@ -1341,34 +1129,6 @@
   "resetShortcuts": {
     "message": "恢复默认",
     "description": "重置快捷键按钮"
-  },
-  "shortcutsResetSuccess": {
-    "message": "快捷键已恢复默认设置",
-    "description": "快捷键重置成功消息"
-  },
-  "shortcutsDescription": {
-    "message": "使用键盘快捷键导航时间线节点",
-    "description": "快捷键描述"
-  },
-  "modifierNone": {
-    "message": "无",
-    "description": "无修饰键"
-  },
-  "modifierAlt": {
-    "message": "Alt",
-    "description": "Alt 修饰键"
-  },
-  "modifierCtrl": {
-    "message": "Ctrl",
-    "description": "Ctrl 修饰键"
-  },
-  "modifierShift": {
-    "message": "Shift",
-    "description": "Shift 修饰键"
-  },
-  "modifierMeta": {
-    "message": "Cmd/Win",
-    "description": "Meta/Command/Windows 修饰键"
   },
   "cloudSync": {
     "message": "云同步",
@@ -1438,10 +1198,6 @@
     "message": "服务端口",
     "description": "同步服务端口号"
   },
-  "syncNow": {
-    "message": "立即同步",
-    "description": "立即同步按钮"
-  },
   "lastSynced": {
     "message": "上次同步：{time}",
     "description": "上次同步时间戳"
@@ -1489,10 +1245,6 @@
   "syncRestoreListSeparator": {
     "message": "、",
     "description": "Separator between restored or failed part names in the partial-restore message"
-  },
-  "syncInProgress": {
-    "message": "同步中...",
-    "description": "同步进行中消息"
   },
   "uploadInProgress": {
     "message": "上传中...",
@@ -1564,10 +1316,6 @@
   "syncDownloadFailed": {
     "message": "下载失败",
     "description": "Error message when download fails"
-  },
-  "syncAuthFailed": {
-    "message": "认证失败",
-    "description": "Error message when authentication fails"
   },
   "signOut": {
     "message": "退出登录",
@@ -1937,14 +1685,6 @@
     "message": "IDE 离线",
     "description": "IDE 离线状态"
   },
-  "syncing": {
-    "message": "同步中...",
-    "description": "同步中状态"
-  },
-  "checkServer": {
-    "message": "请在 VS Code 中启动 AI Sync 服务器",
-    "description": "检查服务器提示"
-  },
   "capturing": {
     "message": "正在获取对话...",
     "description": "获取对话状态"
@@ -2004,22 +1744,6 @@
   "gemsUnpin": {
     "message": "取消固定 Gem",
     "description": "Accessible name of the pin button for a pinned gem"
-  },
-  "notebooksHide": {
-    "message": "隐藏笔记本",
-    "description": "隐藏笔记本列表区域的提示"
-  },
-  "notebooksShow": {
-    "message": "显示笔记本",
-    "description": "显示笔记本列表区域的提示"
-  },
-  "foldersHide": {
-    "message": "隐藏文件夹",
-    "description": "Tooltip for hiding Folders section"
-  },
-  "foldersShow": {
-    "message": "显示文件夹",
-    "description": "Tooltip for showing Folders section"
   },
   "sidebarCollapseNudgeTitle": {
     "message": "折叠后还能找回来",
@@ -2205,10 +1929,6 @@
     "message": "选择消息",
     "description": "Selection mode per-message toggle tooltip"
   },
-  "export_select_mode_select_below": {
-    "message": "选择下方消息",
-    "description": "Selection mode top-left button to select messages below current line"
-  },
   "export_select_mode_empty": {
     "message": "请至少选择一条消息进行导出",
     "description": "Selection mode validation when nothing is selected"
@@ -2216,10 +1936,6 @@
   "export_format_image_description": {
     "message": "单张 PNG 图片，便于移动端分享。",
     "description": "Description for Image export format"
-  },
-  "export_image_progress": {
-    "message": "正在生成图片...",
-    "description": "Progress message while generating image export"
   },
   "deepResearchSaveReport": {
     "message": "保存报告",
@@ -2381,17 +2097,9 @@
     "message": "文档",
     "description": "Changelog modal documentation link text"
   },
-  "changelog_recommendation": {
-    "message": "如果 Voyager 帮到了你，欢迎推荐给朋友或发到社媒，记得 @ 作者哦！",
-    "description": "Changelog modal recommendation message"
-  },
   "changelog_follow_cta": {
     "message": "新功能和修复会先在这些地方发布。",
     "description": "Changelog modal follow-me CTA headline"
-  },
-  "changelog_social_xiaohongshu": {
-    "message": "小红书",
-    "description": "Xiaohongshu platform name for social links"
   },
   "changelog_docs_hint": {
     "message": "详细功能见文档",
@@ -2441,21 +2149,9 @@
     "message": "分支",
     "description": "分叉分支标签"
   },
-  "forkOriginal": {
-    "message": "原始",
-    "description": "原始分叉分支标签"
-  },
   "forkCurrent": {
     "message": "当前",
     "description": "当前分叉分支标签"
-  },
-  "forkPreparing": {
-    "message": "准备分叉中...",
-    "description": "分叉准备状态"
-  },
-  "forkPasteHint": {
-    "message": "按回车发送以创建分叉",
-    "description": "分叉粘贴提示文字"
   },
   "forkManualUploadHint": {
     "message": "在 2 分钟内将 {filename} 拖入 Gemini 并发送，即可创建分叉。",
@@ -2536,26 +2232,6 @@
   "aiOrgCopyHint": {
     "message": "复制所有对话和文件夹结构作为提示词。粘贴到 Gemini 中即可获得可导入的文件夹方案。",
     "description": "AI 整理复制按钮下方的提示文字"
-  },
-  "aiOrgCurrentFolders": {
-    "message": "当前文件夹结构",
-    "description": "AI 整理提示中的标题"
-  },
-  "aiOrgUnfiledConversations": {
-    "message": "未归类的对话",
-    "description": "不在任何文件夹中的对话标题"
-  },
-  "aiOrgEmpty": {
-    "message": "空",
-    "description": "AI 整理提示中空文件夹的标签"
-  },
-  "aiOrgInstructions": {
-    "message": "指示",
-    "description": "AI 指示部分的标题"
-  },
-  "aiOrgInstructionsBody": {
-    "message": "根据以上对话和文件夹结构，请将它们重新整理为合理的文件夹层级。输出一个使用以下格式的 JSON 文件，可以直接导入到 Voyager 扩展中（使用「合并」导入策略）。保留已有的合理文件夹，根据需要创建新文件夹，将未归类的对话移入合适的文件夹。每个文件夹需要一个唯一 ID（使用短随机字符串），每个对话必须保留其原始的 conversationId 和 url。",
-    "description": "AI 生成可导入文件夹结构的指示正文"
   },
   "showMessageTimestamps": {
     "message": "显示消息时间",

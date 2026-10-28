@@ -71,10 +71,6 @@
     "message": "Experimental",
     "description": "Experimental feature label"
   },
-  "resetPosition": {
-    "message": "Reset Position",
-    "description": "Reset Position button"
-  },
   "resetTimelinePosition": {
     "message": "Reset Timeline Position",
     "description": "Reset timeline position button in timeline options"
@@ -86,10 +82,6 @@
   "languageSwitchTo": {
     "message": "Switch to {language}",
     "description": "Tooltip on the popup's language button; {language} is the target language's native name (e.g. English, 中文)"
-  },
-  "pm_title": {
-    "message": "Voyager",
-    "description": "Prompt Manager title"
   },
   "pm_add": {
     "message": "Add",
@@ -282,42 +274,6 @@
     "message": "Please click the extension icon in the browser toolbar to open settings",
     "description": "Settings open failed message"
   },
-  "pm_backup": {
-    "message": "Local Backup",
-    "description": "Local backup button"
-  },
-  "pm_backup_tooltip": {
-    "message": "Backup prompts and folders to a timestamped folder",
-    "description": "Backup button tooltip"
-  },
-  "pm_backup_cancelled": {
-    "message": "Backup cancelled",
-    "description": "Backup cancelled hint"
-  },
-  "pm_backup_error": {
-    "message": "Backup failed",
-    "description": "Backup failed hint"
-  },
-  "pm_backup_hint_options": {
-    "message": "The feature is integrated into the Prompt Manager on the Gemini page.",
-    "description": "Backup hint in options page"
-  },
-  "pm_backup_step1": {
-    "message": "Open the Gemini page (gemini.google.com)",
-    "description": "Backup step 1"
-  },
-  "pm_backup_step2": {
-    "message": "Click the extension icon in the bottom-right to open Prompt Manager",
-    "description": "Backup step 2"
-  },
-  "pm_backup_step3": {
-    "message": "Click the \"Local Backup\" button and select a backup folder",
-    "description": "Backup step 3"
-  },
-  "pm_backup_note": {
-    "message": "Backups include all prompts and folders, saved in a timestamped folder (format: backup-YYYYMMDD-HHMMSS)",
-    "description": "Backup feature note"
-  },
   "pm_theme_light": {
     "message": "Switch to light mode",
     "description": "Theme toggle tooltip - switch to light"
@@ -346,10 +302,6 @@
     "message": "Duplicate name. Rename to use /",
     "description": "Badge shown on prompts excluded from slash completion by a duplicate name"
   },
-  "pm_prompt_manager": {
-    "message": "Prompt Manager",
-    "description": "Button label for returning from the starred library to Prompt Manager"
-  },
   "pm_open_prompt_manager": {
     "message": "Open Prompt Manager",
     "description": "Saved Library footer button for returning to Prompt Manager"
@@ -357,10 +309,6 @@
   "pm_starred_library": {
     "message": "Saved Library",
     "description": "Prompt Manager saved stars and highlights library title and entry button"
-  },
-  "pm_starred_search_placeholder": {
-    "message": "Search saved items",
-    "description": "Search placeholder for stars and highlights in Prompt Manager"
   },
   "pm_starred_no_results": {
     "message": "No starred messages match your search",
@@ -482,25 +430,13 @@
     "message": "Enter folder name:",
     "description": "Create folder name prompt"
   },
-  "folder_rename_prompt": {
-    "message": "Enter new name:",
-    "description": "Rename folder prompt"
-  },
   "folder_delete_confirm": {
     "message": "Delete this folder and all its contents?",
     "description": "Delete folder confirmation"
   },
-  "folder_create_subfolder": {
-    "message": "Create subfolder",
-    "description": "Create subfolder menu item"
-  },
   "folder_rename": {
     "message": "Rename",
     "description": "Rename folder menu item"
-  },
-  "folder_change_color": {
-    "message": "Change Color",
-    "description": "Change folder color menu item"
   },
   "folder_delete": {
     "message": "Delete",
@@ -534,10 +470,6 @@
     "message": "Purple",
     "description": "Purple folder color name"
   },
-  "folder_color_pink": {
-    "message": "Pink",
-    "description": "Pink folder color name"
-  },
   "folder_color_custom": {
     "message": "Custom",
     "description": "Custom folder color name"
@@ -546,18 +478,6 @@
     "message": "No folders yet",
     "description": "Empty state placeholder when no folders exist"
   },
-  "folder_pin": {
-    "message": "Pin folder",
-    "description": "Pin folder menu item"
-  },
-  "folder_unpin": {
-    "message": "Unpin folder",
-    "description": "Unpin folder menu item"
-  },
-  "folder_remove_conversation": {
-    "message": "Remove from folder",
-    "description": "Remove conversation button tooltip"
-  },
   "folder_remove_conversation_action": {
     "message": "Remove",
     "description": "Short confirmation button label for removing a conversation from a folder"
@@ -565,10 +485,6 @@
   "folder_remove_conversation_confirm": {
     "message": "Remove \"{title}\" from this folder?",
     "description": "Remove conversation confirmation"
-  },
-  "conversation_more": {
-    "message": "More options",
-    "description": "Conversation more options button tooltip"
   },
   "conversation_move_to_folder": {
     "message": "Move to folder",
@@ -1038,110 +954,6 @@
     "message": "Could not load folder data. Folders are read-only for now.",
     "description": "Notice when folder storage is unreadable and editing is disabled"
   },
-  "backupOptions": {
-    "message": "Auto Backup",
-    "description": "Backup options section label"
-  },
-  "backupEnabled": {
-    "message": "Enable auto backup",
-    "description": "Enable auto backup toggle"
-  },
-  "backupNow": {
-    "message": "Backup Now",
-    "description": "Backup now button"
-  },
-  "backupSelectFolder": {
-    "message": "Select Backup Folder",
-    "description": "Select backup folder button"
-  },
-  "backupFolderSelected": {
-    "message": "Backup folder: {folder}",
-    "description": "Shows selected backup folder"
-  },
-  "backupIncludePrompts": {
-    "message": "Include prompts",
-    "description": "Include prompts in backup toggle"
-  },
-  "backupIncludeFolders": {
-    "message": "Include folders",
-    "description": "Include folders in backup toggle"
-  },
-  "backupIntervalLabel": {
-    "message": "Backup interval",
-    "description": "Backup interval label"
-  },
-  "backupIntervalManual": {
-    "message": "Manual only",
-    "description": "Manual backup mode"
-  },
-  "backupIntervalDaily": {
-    "message": "Daily",
-    "description": "Daily backup interval"
-  },
-  "backupIntervalWeekly": {
-    "message": "Weekly (7 days)",
-    "description": "Weekly backup interval"
-  },
-  "backupLastBackup": {
-    "message": "Last backup: {time}",
-    "description": "Last backup timestamp"
-  },
-  "backupNever": {
-    "message": "Never",
-    "description": "Never backed up"
-  },
-  "backupSuccess": {
-    "message": "Backup created: {prompts} prompts, {folders} folders, {conversations} conversations",
-    "description": "Backup success message"
-  },
-  "backupError": {
-    "message": "Backup failed: {error}",
-    "description": "Backup error message"
-  },
-  "backupNotSupported": {
-    "message": "Auto backup requires a modern browser with File System Access API support",
-    "description": "Browser not supported message"
-  },
-  "backupSelectFolderFirst": {
-    "message": "Please select a backup folder first",
-    "description": "No folder selected warning"
-  },
-  "backupUserCancelled": {
-    "message": "Backup cancelled",
-    "description": "User cancelled folder selection"
-  },
-  "backupConfigSaved": {
-    "message": "Backup settings saved",
-    "description": "Config saved message"
-  },
-  "backupPermissionDenied": {
-    "message": "Cannot access this directory. Please choose a different location (e.g., Documents, Downloads, or a folder in Desktop)",
-    "description": "Permission denied for restricted directory"
-  },
-  "backupConfigureInOptions": {
-    "message": "Backup configuration requires the Options page. Click the button below to open it (click the three dots next to the extension icon → Options).",
-    "description": "Backup configure in options page explanation"
-  },
-  "openOptionsPage": {
-    "message": "Open Options Page",
-    "description": "Open options page button"
-  },
-  "optionsPageSubtitle": {
-    "message": "Extension Options",
-    "description": "Options page subtitle"
-  },
-  "optionsComingSoon": {
-    "message": "More options coming soon...",
-    "description": "Options page placeholder text"
-  },
-  "backupDataAccessNotice": {
-    "message": "Data Access Limitation",
-    "description": "Backup data access limitation title"
-  },
-  "backupDataAccessHint": {
-    "message": "Due to browser security restrictions, this Options page cannot directly access prompts and folder data from Gemini pages. Please use the Prompt Manager and Folder Export features on the Gemini page for manual backups.",
-    "description": "Backup data access limitation explanation"
-  },
   "promptManagerOptions": {
     "message": "Prompt Manager",
     "description": "Prompt Manager options section label"
@@ -1206,10 +1018,6 @@
     "message": "Enter website URL (e.g., chatgpt.com)",
     "description": "Custom websites input placeholder"
   },
-  "customWebsitesHint": {
-    "message": "Add websites where you want to use the Prompt Manager. Only the Prompt Manager will be activated on these sites.",
-    "description": "Custom websites hint"
-  },
   "addWebsite": {
     "message": "Add website",
     "description": "Add website button"
@@ -1221,14 +1029,6 @@
   "invalidUrl": {
     "message": "Invalid URL format",
     "description": "Invalid URL error message"
-  },
-  "websiteAdded": {
-    "message": "Website added",
-    "description": "Website added success message"
-  },
-  "websiteRemoved": {
-    "message": "Website removed",
-    "description": "Website removed success message"
   },
   "permissionDenied": {
     "message": "Permission denied. Please allow access to this website.",
@@ -1274,10 +1074,6 @@
     "message": "Yesterday",
     "description": "Yesterday date label"
   },
-  "daysAgo": {
-    "message": "days ago",
-    "description": "Days ago label"
-  },
   "loading": {
     "message": "Loading...",
     "description": "Loading message"
@@ -1322,14 +1118,6 @@
     "message": "Last turn",
     "description": "Last timeline node shortcut label"
   },
-  "shortcutKey": {
-    "message": "Key",
-    "description": "Shortcut key label"
-  },
-  "shortcutModifiers": {
-    "message": "Modifiers",
-    "description": "Shortcut modifiers label"
-  },
   "shortcutPressKey": {
     "message": "Press a key…",
     "description": "Shown on a keyboard-shortcut button while it is recording the next key press"
@@ -1341,34 +1129,6 @@
   "resetShortcuts": {
     "message": "Reset to defaults",
     "description": "Reset shortcuts button"
-  },
-  "shortcutsResetSuccess": {
-    "message": "Shortcuts reset to defaults",
-    "description": "Shortcuts reset success message"
-  },
-  "shortcutsDescription": {
-    "message": "Navigate timeline nodes using keyboard shortcuts",
-    "description": "Shortcuts description"
-  },
-  "modifierNone": {
-    "message": "None",
-    "description": "No modifier key"
-  },
-  "modifierAlt": {
-    "message": "Alt",
-    "description": "Alt modifier key"
-  },
-  "modifierCtrl": {
-    "message": "Ctrl",
-    "description": "Ctrl modifier key"
-  },
-  "modifierShift": {
-    "message": "Shift",
-    "description": "Shift modifier key"
-  },
-  "modifierMeta": {
-    "message": "Cmd/Win",
-    "description": "Meta/Command/Windows modifier key"
   },
   "cloudSync": {
     "message": "Cloud Sync",
@@ -1438,10 +1198,6 @@
     "message": "Server Port",
     "description": "Port number for the sync server"
   },
-  "syncNow": {
-    "message": "Sync Now",
-    "description": "Sync now button"
-  },
   "lastSynced": {
     "message": "Last synced: {time}",
     "description": "Last sync timestamp"
@@ -1489,10 +1245,6 @@
   "syncRestoreListSeparator": {
     "message": ", ",
     "description": "Separator between restored or failed part names in the partial-restore message"
-  },
-  "syncInProgress": {
-    "message": "Syncing...",
-    "description": "Sync in progress message"
   },
   "uploadInProgress": {
     "message": "Uploading...",
@@ -1564,10 +1316,6 @@
   "syncDownloadFailed": {
     "message": "Download failed",
     "description": "Error message when download fails"
-  },
-  "syncAuthFailed": {
-    "message": "Authentication failed",
-    "description": "Error message when authentication fails"
   },
   "signOut": {
     "message": "Sign out",
@@ -1937,14 +1685,6 @@
     "message": "IDE Offline",
     "description": "IDE Offline status"
   },
-  "syncing": {
-    "message": "Syncing...",
-    "description": "Syncing status"
-  },
-  "checkServer": {
-    "message": "Please start AI Sync server in VS Code",
-    "description": "Check server hint"
-  },
   "capturing": {
     "message": "Capturing dialogue...",
     "description": "Capturing status"
@@ -2004,22 +1744,6 @@
   "gemsUnpin": {
     "message": "Unpin gem",
     "description": "Accessible name of the pin button for a pinned gem"
-  },
-  "notebooksHide": {
-    "message": "Hide Notebooks",
-    "description": "Tooltip for hiding Notebooks list section"
-  },
-  "notebooksShow": {
-    "message": "Show Notebooks",
-    "description": "Tooltip for showing Notebooks list section"
-  },
-  "foldersHide": {
-    "message": "Hide Folders",
-    "description": "Tooltip for hiding Folders section"
-  },
-  "foldersShow": {
-    "message": "Show Folders",
-    "description": "Tooltip for showing Folders section"
   },
   "sidebarCollapseNudgeTitle": {
     "message": "Collapsed sections are still here",
@@ -2205,10 +1929,6 @@
     "message": "Select message",
     "description": "Selection mode per-message toggle tooltip"
   },
-  "export_select_mode_select_below": {
-    "message": "Select messages below",
-    "description": "Selection mode top-left button to select messages below current line"
-  },
   "export_select_mode_empty": {
     "message": "Please select at least one message to export.",
     "description": "Selection mode validation when nothing is selected"
@@ -2216,10 +1936,6 @@
   "export_format_image_description": {
     "message": "Single PNG image, great for mobile sharing.",
     "description": "Description for Image export format"
-  },
-  "export_image_progress": {
-    "message": "Generating image...",
-    "description": "Progress message while generating image export"
   },
   "deepResearchSaveReport": {
     "message": "Save Report",
@@ -2381,17 +2097,9 @@
     "message": "Docs",
     "description": "Changelog modal documentation link text"
   },
-  "changelog_recommendation": {
-    "message": "If Voyager has been helpful, share it with friends or on social media — feel free to tag the author!",
-    "description": "Changelog modal recommendation message"
-  },
   "changelog_follow_cta": {
     "message": "New features and fixes are announced here first.",
     "description": "Changelog modal follow-me CTA headline"
-  },
-  "changelog_social_xiaohongshu": {
-    "message": "Xiaohongshu",
-    "description": "Xiaohongshu platform name for social links"
   },
   "changelog_docs_hint": {
     "message": "Details in docs",
@@ -2441,21 +2149,9 @@
     "message": "Branch",
     "description": "Fork branch label"
   },
-  "forkOriginal": {
-    "message": "Original",
-    "description": "Original fork branch tag"
-  },
   "forkCurrent": {
     "message": "Current",
     "description": "Current fork branch tag"
-  },
-  "forkPreparing": {
-    "message": "Preparing fork...",
-    "description": "Fork preparation status"
-  },
-  "forkPasteHint": {
-    "message": "Press Enter to send and create the fork",
-    "description": "Fork paste hint text"
   },
   "forkManualUploadHint": {
     "message": "Drag {filename} into Gemini and send within 2 minutes to create the fork.",
@@ -2536,26 +2232,6 @@
   "aiOrgCopyHint": {
     "message": "Copies all conversations & folder structure as a prompt. Paste into Gemini to get an importable folder plan.",
     "description": "Hint text below the AI organization copy button"
-  },
-  "aiOrgCurrentFolders": {
-    "message": "Current Folder Structure",
-    "description": "Heading in the AI organization prompt"
-  },
-  "aiOrgUnfiledConversations": {
-    "message": "Unfiled Conversations",
-    "description": "Heading for conversations not in any folder"
-  },
-  "aiOrgEmpty": {
-    "message": "empty",
-    "description": "Label for empty folders in the AI organization prompt"
-  },
-  "aiOrgInstructions": {
-    "message": "Instructions",
-    "description": "Heading for AI instructions section"
-  },
-  "aiOrgInstructionsBody": {
-    "message": "Based on the conversations and folder structure above, please reorganize them into a logical folder hierarchy. Output a JSON file using the exact format below that can be directly imported into the Voyager extension (use the \"Merge\" import strategy). Keep existing well-organized folders, create new ones as needed, and move unfiled conversations into appropriate folders. Each folder needs a unique ID (use a short random string), and each conversation must keep its original conversationId and url.",
-    "description": "Instructions body for AI to generate importable folder structure"
   },
   "showMessageTimestamps": {
     "message": "Show Message Timestamps",

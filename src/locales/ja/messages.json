@@ -71,10 +71,6 @@
     "message": "実験的",
     "description": "Experimental feature label"
   },
-  "resetPosition": {
-    "message": "位置をリセット",
-    "description": "Reset Position button"
-  },
   "resetTimelinePosition": {
     "message": "タイムラインの位置をリセット",
     "description": "Reset timeline position button in timeline options"
@@ -86,10 +82,6 @@
   "languageSwitchTo": {
     "message": "{language} に切り替え",
     "description": "Tooltip on the popup's language button; {language} is the target language's native name (e.g. English, 中文)"
-  },
-  "pm_title": {
-    "message": "Voyager",
-    "description": "Prompt Manager title"
   },
   "pm_add": {
     "message": "追加",
@@ -282,42 +274,6 @@
     "message": "ブラウザツールバーの拡張機能アイコンをクリックして設定を開いてください",
     "description": "Settings open failed message"
   },
-  "pm_backup": {
-    "message": "ローカルバックアップ",
-    "description": "Local backup button"
-  },
-  "pm_backup_tooltip": {
-    "message": "プロンプトとフォルダをタイムスタンプ付きフォルダにバックアップ",
-    "description": "Backup button tooltip"
-  },
-  "pm_backup_cancelled": {
-    "message": "バックアップをキャンセルしました",
-    "description": "Backup cancelled hint"
-  },
-  "pm_backup_error": {
-    "message": "バックアップに失敗しました",
-    "description": "Backup failed hint"
-  },
-  "pm_backup_hint_options": {
-    "message": "この機能は Gemini ページのプロンプトマネージャーに統合されています。",
-    "description": "Backup hint in options page"
-  },
-  "pm_backup_step1": {
-    "message": "Gemini のページ (gemini.google.com) を開きます",
-    "description": "Backup step 1"
-  },
-  "pm_backup_step2": {
-    "message": "右下の拡張機能アイコンをクリックしてプロンプトマネージャーを開きます",
-    "description": "Backup step 2"
-  },
-  "pm_backup_step3": {
-    "message": "「ローカルバックアップ」ボタンをクリックし、バックアップ先フォルダを選択します",
-    "description": "Backup step 3"
-  },
-  "pm_backup_note": {
-    "message": "すべてのプロンプトとフォルダが含まれ、タイムスタンプ付きのフォルダに保存されます (形式：backup-YYYYMMDD-HHMMSS)",
-    "description": "Backup feature note"
-  },
   "pm_theme_light": {
     "message": "ライトモードに切替",
     "description": "Theme toggle tooltip - switch to light"
@@ -346,10 +302,6 @@
     "message": "名前が重複しています。/ で使うには変更してください",
     "description": "名前の重複により / 補完から除外されたプロンプトのバッジ"
   },
-  "pm_prompt_manager": {
-    "message": "プロンプトマネージャー",
-    "description": "Button label for returning from the starred library to Prompt Manager"
-  },
   "pm_open_prompt_manager": {
     "message": "プロンプト管理を開く",
     "description": "Saved Library footer button for returning to Prompt Manager"
@@ -357,10 +309,6 @@
   "pm_starred_library": {
     "message": "保存済みライブラリ",
     "description": "Prompt Manager starred messages library title and entry button"
-  },
-  "pm_starred_search_placeholder": {
-    "message": "保存済み項目を検索",
-    "description": "Search placeholder for starred messages in Prompt Manager"
   },
   "pm_starred_no_results": {
     "message": "検索に一致するスター付きメッセージはありません",
@@ -482,25 +430,13 @@
     "message": "フォルダ名を入力：",
     "description": "Create folder name prompt"
   },
-  "folder_rename_prompt": {
-    "message": "新しい名前を入力：",
-    "description": "Rename folder prompt"
-  },
   "folder_delete_confirm": {
     "message": "このフォルダとその中身をすべて削除しますか？",
     "description": "Delete folder confirmation"
   },
-  "folder_create_subfolder": {
-    "message": "サブフォルダを作成",
-    "description": "Create subfolder menu item"
-  },
   "folder_rename": {
     "message": "名前を変更",
     "description": "Rename folder menu item"
-  },
-  "folder_change_color": {
-    "message": "色を変更",
-    "description": "Change folder color menu item"
   },
   "folder_delete": {
     "message": "削除",
@@ -534,10 +470,6 @@
     "message": "紫",
     "description": "Purple folder color name"
   },
-  "folder_color_pink": {
-    "message": "ピンク",
-    "description": "Pink folder color name"
-  },
   "folder_color_custom": {
     "message": "カスタム",
     "description": "Custom folder color name"
@@ -546,18 +478,6 @@
     "message": "フォルダがありません",
     "description": "Empty state placeholder when no folders exist"
   },
-  "folder_pin": {
-    "message": "フォルダをピン留め",
-    "description": "Pin folder menu item"
-  },
-  "folder_unpin": {
-    "message": "ピン留めを解除",
-    "description": "Unpin folder menu item"
-  },
-  "folder_remove_conversation": {
-    "message": "フォルダから削除",
-    "description": "Remove conversation button tooltip"
-  },
   "folder_remove_conversation_action": {
     "message": "削除",
     "description": "Short confirmation button label for removing a conversation from a folder"
@@ -565,10 +485,6 @@
   "folder_remove_conversation_confirm": {
     "message": "「{title}」をこのフォルダから削除しますか？",
     "description": "Remove conversation confirmation"
-  },
-  "conversation_more": {
-    "message": "その他のオプション",
-    "description": "Conversation more options button tooltip"
   },
   "conversation_move_to_folder": {
     "message": "フォルダへ移動",
@@ -1038,110 +954,6 @@
     "message": "フォルダのデータを読み込めませんでした。現在、フォルダは読み取り専用です。",
     "description": "Notice when folder storage is unreadable and editing is disabled"
   },
-  "backupOptions": {
-    "message": "自動バックアップ",
-    "description": "Backup options section label"
-  },
-  "backupEnabled": {
-    "message": "自動バックアップを有効化",
-    "description": "Enable auto backup toggle"
-  },
-  "backupNow": {
-    "message": "今すぐバックアップ",
-    "description": "Backup now button"
-  },
-  "backupSelectFolder": {
-    "message": "バックアップ先を選択",
-    "description": "Select backup folder button"
-  },
-  "backupFolderSelected": {
-    "message": "バックアップフォルダ：{folder}",
-    "description": "Shows selected backup folder"
-  },
-  "backupIncludePrompts": {
-    "message": "プロンプトを含める",
-    "description": "Include prompts in backup toggle"
-  },
-  "backupIncludeFolders": {
-    "message": "フォルダを含める",
-    "description": "Include folders in backup toggle"
-  },
-  "backupIntervalLabel": {
-    "message": "バックアップ間隔",
-    "description": "Backup interval label"
-  },
-  "backupIntervalManual": {
-    "message": "手動のみ",
-    "description": "Manual backup mode"
-  },
-  "backupIntervalDaily": {
-    "message": "毎日",
-    "description": "Daily backup interval"
-  },
-  "backupIntervalWeekly": {
-    "message": "毎週 (7 日ごと)",
-    "description": "Weekly backup interval"
-  },
-  "backupLastBackup": {
-    "message": "前回のバックアップ：{time}",
-    "description": "Last backup timestamp"
-  },
-  "backupNever": {
-    "message": "なし",
-    "description": "Never backed up"
-  },
-  "backupSuccess": {
-    "message": "バックアップ完了：プロンプト {prompts} 件，フォルダ {folders} 件，会話 {conversations} 件",
-    "description": "Backup success message"
-  },
-  "backupError": {
-    "message": "バックアップ失敗：{error}",
-    "description": "Backup error message"
-  },
-  "backupNotSupported": {
-    "message": "自動バックアップには File System Access API に対応した最新のブラウザが必要です",
-    "description": "Browser not supported message"
-  },
-  "backupSelectFolderFirst": {
-    "message": "先にバックアップフォルダを選択してください",
-    "description": "No folder selected warning"
-  },
-  "backupUserCancelled": {
-    "message": "バックアップをキャンセルしました",
-    "description": "User cancelled folder selection"
-  },
-  "backupConfigSaved": {
-    "message": "バックアップ設定を保存しました",
-    "description": "Config saved message"
-  },
-  "backupPermissionDenied": {
-    "message": "このディレクトリにはアクセスできません。別の場所（ドキュメント、ダウンロード、デスクトップなど）を選択してください。",
-    "description": "Permission denied for restricted directory"
-  },
-  "backupConfigureInOptions": {
-    "message": "バックアップの設定はオプションページで行う必要があります。下のボタンをクリックして開いてください（拡張機能アイコン横の 3 点リーダ → オプション）。",
-    "description": "Backup configure in options page explanation"
-  },
-  "openOptionsPage": {
-    "message": "オプションページを開く",
-    "description": "Open options page button"
-  },
-  "optionsPageSubtitle": {
-    "message": "拡張機能のオプション",
-    "description": "Options page subtitle"
-  },
-  "optionsComingSoon": {
-    "message": "さらに多くのオプションを近日追加予定です...",
-    "description": "Options page placeholder text"
-  },
-  "backupDataAccessNotice": {
-    "message": "データアクセスの制限",
-    "description": "Backup data access limitation title"
-  },
-  "backupDataAccessHint": {
-    "message": "ブラウザのセキュリティ制限により、このオプションページからは Gemini ページ上のプロンプトやフォルダデータに直接アクセスできません。手動バックアップには、Gemini ページ上のプロンプトマネージャーとフォルダエクスポート機能をご利用ください。",
-    "description": "Backup data access limitation explanation"
-  },
   "promptManagerOptions": {
     "message": "プロンプトマネージャー",
     "description": "Prompt Manager options section label"
@@ -1206,10 +1018,6 @@
     "message": "ウェブサイトの URL を入力 (例：chatgpt.com)",
     "description": "Custom websites input placeholder"
   },
-  "customWebsitesHint": {
-    "message": "プロンプトマネージャーを使用したいウェブサイトを追加します。これらのサイトではプロンプトマネージャーのみが有効になります。",
-    "description": "Custom websites hint"
-  },
   "addWebsite": {
     "message": "ウェブサイトを追加",
     "description": "Add website button"
@@ -1221,14 +1029,6 @@
   "invalidUrl": {
     "message": "無効な URL 形式です",
     "description": "Invalid URL error message"
-  },
-  "websiteAdded": {
-    "message": "ウェブサイトを追加しました",
-    "description": "Website added success message"
-  },
-  "websiteRemoved": {
-    "message": "ウェブサイトを削除しました",
-    "description": "Website removed success message"
   },
   "permissionDenied": {
     "message": "権限が拒否されました。このウェブサイトへのアクセスを許可してください。",
@@ -1274,10 +1074,6 @@
     "message": "昨日",
     "description": "Yesterday date label"
   },
-  "daysAgo": {
-    "message": "日前",
-    "description": "Days ago label"
-  },
   "loading": {
     "message": "読み込み中...",
     "description": "Loading message"
@@ -1322,14 +1118,6 @@
     "message": "最後のターンへ",
     "description": "Last timeline node shortcut label"
   },
-  "shortcutKey": {
-    "message": "キー",
-    "description": "Shortcut key label"
-  },
-  "shortcutModifiers": {
-    "message": "修飾キー",
-    "description": "Shortcut modifiers label"
-  },
   "shortcutPressKey": {
     "message": "キーを押してください…",
     "description": "Shown on a keyboard-shortcut button while it is recording the next key press"
@@ -1341,34 +1129,6 @@
   "resetShortcuts": {
     "message": "デフォルトに戻す",
     "description": "Reset shortcuts button"
-  },
-  "shortcutsResetSuccess": {
-    "message": "ショートカットをデフォルトに戻しました",
-    "description": "Shortcuts reset success message"
-  },
-  "shortcutsDescription": {
-    "message": "キーボードショートカットを使ってタイムラインを移動します",
-    "description": "Shortcuts description"
-  },
-  "modifierNone": {
-    "message": "なし",
-    "description": "No modifier key"
-  },
-  "modifierAlt": {
-    "message": "Alt",
-    "description": "Alt modifier key"
-  },
-  "modifierCtrl": {
-    "message": "Ctrl",
-    "description": "Ctrl modifier key"
-  },
-  "modifierShift": {
-    "message": "Shift",
-    "description": "Shift modifier key"
-  },
-  "modifierMeta": {
-    "message": "Cmd/Win",
-    "description": "Meta/Command/Windows modifier key"
   },
   "preventAutoScroll": {
     "message": "自動スクロール防止",
@@ -1438,10 +1198,6 @@
     "message": "サーバーポート",
     "description": "Port number for the sync server"
   },
-  "syncNow": {
-    "message": "今すぐ同期",
-    "description": "Sync now button"
-  },
   "lastSynced": {
     "message": "最終同期：{time}",
     "description": "Last sync timestamp"
@@ -1489,10 +1245,6 @@
   "syncRestoreListSeparator": {
     "message": "、",
     "description": "Separator between restored or failed part names in the partial-restore message"
-  },
-  "syncInProgress": {
-    "message": "同期中...",
-    "description": "Sync in progress message"
   },
   "uploadInProgress": {
     "message": "Uploading...",
@@ -1564,10 +1316,6 @@
   "syncDownloadFailed": {
     "message": "ダウンロードに失敗しました",
     "description": "Error message when download fails"
-  },
-  "syncAuthFailed": {
-    "message": "認証に失敗しました",
-    "description": "Error message when authentication fails"
   },
   "signOut": {
     "message": "サインアウト",
@@ -1937,14 +1685,6 @@
     "message": "IDE オフライン",
     "description": "IDE Offline status"
   },
-  "syncing": {
-    "message": "同期中...",
-    "description": "Syncing status"
-  },
-  "checkServer": {
-    "message": "VS Code で AI Sync サーバーを起動してください",
-    "description": "Check server hint"
-  },
   "capturing": {
     "message": "対話をキャプチャ中...",
     "description": "Capturing status"
@@ -2004,22 +1744,6 @@
   "gemsUnpin": {
     "message": "Gem の固定を解除",
     "description": "Accessible name of the pin button for a pinned gem"
-  },
-  "notebooksHide": {
-    "message": "ノートブックを非表示",
-    "description": "ノートブック一覧セクションを隠すツールチップ"
-  },
-  "notebooksShow": {
-    "message": "ノートブックを表示",
-    "description": "ノートブック一覧セクションを表示するツールチップ"
-  },
-  "foldersHide": {
-    "message": "フォルダを非表示",
-    "description": "Tooltip for hiding Folders section"
-  },
-  "foldersShow": {
-    "message": "フォルダを表示",
-    "description": "Tooltip for showing Folders section"
   },
   "sidebarCollapseNudgeTitle": {
     "message": "折りたたんでも戻せます",
@@ -2205,10 +1929,6 @@
     "message": "メッセージを選択",
     "description": "Selection mode per-message toggle tooltip"
   },
-  "export_select_mode_select_below": {
-    "message": "以下のメッセージを選択",
-    "description": "Selection mode top-left button to select messages below current line"
-  },
   "export_select_mode_empty": {
     "message": "エクスポートするメッセージを 1 つ以上選択してください",
     "description": "Selection mode validation when nothing is selected"
@@ -2216,10 +1936,6 @@
   "export_format_image_description": {
     "message": "モバイル共有に便利な単一の PNG 画像。",
     "description": "Description for Image export format"
-  },
-  "export_image_progress": {
-    "message": "画像を生成中...",
-    "description": "Progress message while generating image export"
   },
   "deepResearchSaveReport": {
     "message": "レポートを保存",
@@ -2381,17 +2097,9 @@
     "message": "ドキュメント",
     "description": "Changelog modal documentation link text"
   },
-  "changelog_recommendation": {
-    "message": "Voyager がお役に立てたら、友達や SNS でシェアしていただけると嬉しいです！作者をタグ付けしてくれると励みになります！",
-    "description": "Changelog modal recommendation message"
-  },
   "changelog_follow_cta": {
     "message": "新機能や修正は、まずこちらでお知らせしています。",
     "description": "Changelog modal follow-me CTA headline"
-  },
-  "changelog_social_xiaohongshu": {
-    "message": "小紅書",
-    "description": "Xiaohongshu platform name for social links"
   },
   "changelog_docs_hint": {
     "message": "詳細はドキュメントへ",
@@ -2441,21 +2149,9 @@
     "message": "Branch",
     "description": "Fork branch label"
   },
-  "forkOriginal": {
-    "message": "Original",
-    "description": "Original fork branch tag"
-  },
   "forkCurrent": {
     "message": "Current",
     "description": "Current fork branch tag"
-  },
-  "forkPreparing": {
-    "message": "Preparing fork...",
-    "description": "Fork preparation status"
-  },
-  "forkPasteHint": {
-    "message": "Press Enter to send and create the fork",
-    "description": "Fork paste hint text"
   },
   "forkManualUploadHint": {
     "message": "{filename} を 2 分以内に Gemini へドラッグして送信すると、分岐が作成されます。",
@@ -2536,26 +2232,6 @@
   "aiOrgCopyHint": {
     "message": "すべての会話とフォルダ構造をプロンプトとしてコピーします。Gemini に貼り付けて、インポート可能なフォルダプランを取得できます。",
     "description": "AI整理コピーボタンの下のヒントテキスト"
-  },
-  "aiOrgCurrentFolders": {
-    "message": "現在のフォルダ構造",
-    "description": "AI整理プロンプトの見出し"
-  },
-  "aiOrgUnfiledConversations": {
-    "message": "未分類の会話",
-    "description": "フォルダに入っていない会話の見出し"
-  },
-  "aiOrgEmpty": {
-    "message": "空",
-    "description": "AI整理プロンプトの空フォルダのラベル"
-  },
-  "aiOrgInstructions": {
-    "message": "指示",
-    "description": "AI指示セクションの見出し"
-  },
-  "aiOrgInstructionsBody": {
-    "message": "上記の会話とフォルダ構造に基づいて、論理的なフォルダ階層に再整理してください。以下の形式の JSON ファイルを出力し、Voyager 拡張機能に直接インポートできるようにしてください（「マージ」インポート戦略を使用）。既存の整理済みフォルダはそのまま維持し、必要に応じて新しいフォルダを作成し、未分類の会話を適切なフォルダに移動してください。各フォルダには一意の ID（短いランダム文字列）が必要で、各会話は元の conversationId と url を保持する必要があります。",
-    "description": "AI がインポート可能なフォルダ構造を生成するための指示本文"
   },
   "showMessageTimestamps": {
     "message": "メッセージのタイムスタンプを表示",

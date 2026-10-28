@@ -18,8 +18,6 @@ vi.mock('@/utils/i18n', () => ({
     const translations: Record<string, string> = {
       gemsHide: 'Hide Gems',
       gemsShow: 'Show Gems',
-      notebooksHide: 'Hide Notebooks',
-      notebooksShow: 'Show Notebooks',
       sidebarCollapseNudgeTitle: 'Collapsed sections are still here',
       sidebarCollapseNudgeBody:
         'A slim bar stays in the sidebar. Click it anytime to expand this section again.',

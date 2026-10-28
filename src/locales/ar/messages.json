@@ -71,10 +71,6 @@
     "message": "تجريبي",
     "description": "Experimental feature label"
   },
-  "resetPosition": {
-    "message": "إعادة تعيين الموضع",
-    "description": "Reset Position button"
-  },
   "resetTimelinePosition": {
     "message": "إعادة تعيين موضع الجدول الزمني",
     "description": "Reset timeline position button in timeline options"
@@ -86,10 +82,6 @@
   "languageSwitchTo": {
     "message": "التبديل إلى {language}",
     "description": "Tooltip on the popup's language button; {language} is the target language's native name (e.g. English, 中文)"
-  },
-  "pm_title": {
-    "message": "Voyager",
-    "description": "Prompt Manager title"
   },
   "pm_add": {
     "message": "إضافة",
@@ -282,42 +274,6 @@
     "message": "يرجى النقر فوق رمز الامتداد في شريط المتصفح لفتح الإعدادات",
     "description": "Settings open failed message"
   },
-  "pm_backup": {
-    "message": "نسخ احتياطي محلي",
-    "description": "Local backup button"
-  },
-  "pm_backup_tooltip": {
-    "message": "نسخ احتياطي للمطالبات والمجلدات في مجلد محدد بختم زمني",
-    "description": "Backup button tooltip"
-  },
-  "pm_backup_cancelled": {
-    "message": "تم إلغاء النسخ الاحتياطي",
-    "description": "Backup cancelled hint"
-  },
-  "pm_backup_error": {
-    "message": "فشل النسخ الاحتياطي",
-    "description": "Backup failed hint"
-  },
-  "pm_backup_hint_options": {
-    "message": "تم دمج الميزة في مدير المطالبات على صفحة Gemini.",
-    "description": "Backup hint in options page"
-  },
-  "pm_backup_step1": {
-    "message": "افتح صفحة Gemini (gemini.google.com)",
-    "description": "Backup step 1"
-  },
-  "pm_backup_step2": {
-    "message": "انقر فوق رمز الامتداد في أسفل اليمين لفتح مدير المطالبات",
-    "description": "Backup step 2"
-  },
-  "pm_backup_step3": {
-    "message": "انقر فوق زر \"نسخ احتياطي محلي\" وحدد مجلد النسخ الاحتياطي",
-    "description": "Backup step 3"
-  },
-  "pm_backup_note": {
-    "message": "تشمل النسخ الاحتياطية جميع المطالبات والمجلدات، ويتم حفظها في مجلد بختم زمني (التنسيق: backup-YYYYMMDD-HHMMSS)",
-    "description": "Backup feature note"
-  },
   "pm_theme_light": {
     "message": "التبديل إلى الوضع الفاتح",
     "description": "Theme toggle tooltip - switch to light"
@@ -346,10 +302,6 @@
     "message": "اسم مكرر. أعد التسمية لاستخدام /",
     "description": "شارة للمطالبات المستبعدة من الإكمال عبر / بسبب تكرار الاسم"
   },
-  "pm_prompt_manager": {
-    "message": "مدير المطالبات",
-    "description": "Button label for returning from the starred library to Prompt Manager"
-  },
   "pm_open_prompt_manager": {
     "message": "فتح مدير المطالبات",
     "description": "Saved Library footer button for returning to Prompt Manager"
@@ -357,10 +309,6 @@
   "pm_starred_library": {
     "message": "مكتبة العناصر المحفوظة",
     "description": "Prompt Manager starred messages library title and entry button"
-  },
-  "pm_starred_search_placeholder": {
-    "message": "البحث في العناصر المحفوظة",
-    "description": "Search placeholder for starred messages in Prompt Manager"
   },
   "pm_starred_no_results": {
     "message": "لا توجد رسائل مميزة تطابق بحثك",
@@ -482,25 +430,13 @@
     "message": "أدخل اسم المجلد:",
     "description": "Create folder name prompt"
   },
-  "folder_rename_prompt": {
-    "message": "أدخل الاسم الجديد:",
-    "description": "Rename folder prompt"
-  },
   "folder_delete_confirm": {
     "message": "هل تريد حذف هذا المجلد وجميع محتوياته؟",
     "description": "Delete folder confirmation"
   },
-  "folder_create_subfolder": {
-    "message": "إنشاء مجلد فرعي",
-    "description": "Create subfolder menu item"
-  },
   "folder_rename": {
     "message": "إعادة تسمية",
     "description": "Rename folder menu item"
-  },
-  "folder_change_color": {
-    "message": "تغيير اللون",
-    "description": "Change folder color menu item"
   },
   "folder_delete": {
     "message": "حذف",
@@ -534,10 +470,6 @@
     "message": "أرجواني",
     "description": "Purple folder color name"
   },
-  "folder_color_pink": {
-    "message": "وردي",
-    "description": "Pink folder color name"
-  },
   "folder_color_custom": {
     "message": "مخصص",
     "description": "Custom folder color name"
@@ -546,18 +478,6 @@
     "message": "لا توجد مجلدات حتى الآن",
     "description": "Empty state placeholder when no folders exist"
   },
-  "folder_pin": {
-    "message": "تثبيت المجلد",
-    "description": "Pin folder menu item"
-  },
-  "folder_unpin": {
-    "message": "إلغاء تثبيت المجلد",
-    "description": "Unpin folder menu item"
-  },
-  "folder_remove_conversation": {
-    "message": "إزالة من المجلد",
-    "description": "Remove conversation button tooltip"
-  },
   "folder_remove_conversation_action": {
     "message": "إزالة",
     "description": "Short confirmation button label for removing a conversation from a folder"
@@ -565,10 +485,6 @@
   "folder_remove_conversation_confirm": {
     "message": "هل تريد إزالة \"{title}\" من هذا المجلد؟",
     "description": "Remove conversation confirmation"
-  },
-  "conversation_more": {
-    "message": "خيارات إضافية",
-    "description": "Conversation more options button tooltip"
   },
   "conversation_move_to_folder": {
     "message": "نقل إلى مجلد",
@@ -1038,110 +954,6 @@
     "message": "تعذّر تحميل بيانات المجلدات. المجلدات متاحة للقراءة فقط مؤقتًا.",
     "description": "Notice when folder storage is unreadable and editing is disabled"
   },
-  "backupOptions": {
-    "message": "نسخ احتياطي تلقائي",
-    "description": "Backup options section label"
-  },
-  "backupEnabled": {
-    "message": "تمكين النسخ الاحتياطي التلقائي",
-    "description": "Enable auto backup toggle"
-  },
-  "backupNow": {
-    "message": "نسخ احتياطي الآن",
-    "description": "Backup now button"
-  },
-  "backupSelectFolder": {
-    "message": "تحديد مجلد النسخ الاحتياطي",
-    "description": "Select backup folder button"
-  },
-  "backupFolderSelected": {
-    "message": "مجلد النسخ الاحتياطي: {folder}",
-    "description": "Shows selected backup folder"
-  },
-  "backupIncludePrompts": {
-    "message": "تضمين المطالبات",
-    "description": "Include prompts in backup toggle"
-  },
-  "backupIncludeFolders": {
-    "message": "تضمين المجلدات",
-    "description": "Include folders in backup toggle"
-  },
-  "backupIntervalLabel": {
-    "message": "فاصل النسخ الاحتياطي",
-    "description": "Backup interval label"
-  },
-  "backupIntervalManual": {
-    "message": "يدوي فقط",
-    "description": "Manual backup mode"
-  },
-  "backupIntervalDaily": {
-    "message": "يومي",
-    "description": "Daily backup interval"
-  },
-  "backupIntervalWeekly": {
-    "message": "أسبوعي (7 أيام)",
-    "description": "Weekly backup interval"
-  },
-  "backupLastBackup": {
-    "message": "آخر نسخ احتياطي: {time}",
-    "description": "Last backup timestamp"
-  },
-  "backupNever": {
-    "message": "أبدا",
-    "description": "Never backed up"
-  },
-  "backupSuccess": {
-    "message": "تم إنشاء النسخ الاحتياطي: {prompts} مطالبة، {folders} مجلد، {conversations} محادثة",
-    "description": "Backup success message"
-  },
-  "backupError": {
-    "message": "فشل النسخ الاحتياطي: {error}",
-    "description": "Backup error message"
-  },
-  "backupNotSupported": {
-    "message": "يتطلب النسخ الاحتياطي التلقائي متصفحًا حديثًا يدعم File System Access API",
-    "description": "Browser not supported message"
-  },
-  "backupSelectFolderFirst": {
-    "message": "يرجى تحديد مجلد نسخ احتياطي أولاً",
-    "description": "No folder selected warning"
-  },
-  "backupUserCancelled": {
-    "message": "تم إلغاء النسخ الاحتياطي",
-    "description": "User cancelled folder selection"
-  },
-  "backupConfigSaved": {
-    "message": "تم حفظ إعدادات النسخ الاحتياطي",
-    "description": "Config saved message"
-  },
-  "backupPermissionDenied": {
-    "message": "لا يمكن الوصول إلى هذا الدليل. يرجى اختيار موقع مختلف (مثل المستندات أو التنزيلات أو مجلد في سطح المكتب)",
-    "description": "Permission denied for restricted directory"
-  },
-  "backupConfigureInOptions": {
-    "message": "يتطلب تكوين النسخ الاحتياطي صفحة الخيارات. انقر فوق الزر أدناه لفتحها (انقر فوق النقاط الثلاث بجوار رمز الامتداد ← خيارات).",
-    "description": "Backup configure in options page explanation"
-  },
-  "openOptionsPage": {
-    "message": "فتح صفحة الخيارات",
-    "description": "Open options page button"
-  },
-  "optionsPageSubtitle": {
-    "message": "خيارات الامتداد",
-    "description": "Options page subtitle"
-  },
-  "optionsComingSoon": {
-    "message": "المزيد من الخيارات قريبًا...",
-    "description": "Options page placeholder text"
-  },
-  "backupDataAccessNotice": {
-    "message": "قيود الوصول إلى البيانات",
-    "description": "Backup data access limitation title"
-  },
-  "backupDataAccessHint": {
-    "message": "نظرًا لقيود أمان المتصفح، لا يمكن لصفحة الخيارات هذه الوصول مباشرة إلى المطالبات وبيانات المجلد من صفحات Gemini. يرجى استخدام مدير المطالبات وميزات تصدير المجلد على صفحة Gemini للنسخ الاحتياطي اليدوي.",
-    "description": "Backup data access limitation explanation"
-  },
   "promptManagerOptions": {
     "message": "مدير المطالبات",
     "description": "Prompt Manager options section label"
@@ -1206,10 +1018,6 @@
     "message": "أدخل عنوان URL للموقع (مثل chatgpt.com)",
     "description": "Custom websites input placeholder"
   },
-  "customWebsitesHint": {
-    "message": "أضف مواقع الويب التي تريد استخدام مدير المطالبات فيها. سيتم تنشيط مدير المطالبات فقط في هذه المواقع.",
-    "description": "Custom websites hint"
-  },
   "addWebsite": {
     "message": "إضافة موقع ويب",
     "description": "Add website button"
@@ -1221,14 +1029,6 @@
   "invalidUrl": {
     "message": "تنسيق عنوان URL غير صالح",
     "description": "Invalid URL error message"
-  },
-  "websiteAdded": {
-    "message": "تمت إضافة موقع الويب",
-    "description": "Website added success message"
-  },
-  "websiteRemoved": {
-    "message": "تمت إزالة موقع الويب",
-    "description": "Website removed success message"
   },
   "permissionDenied": {
     "message": "تم رفض الإذن. يرجى السماح بالوصول إلى موقع الويب هذا.",
@@ -1274,10 +1074,6 @@
     "message": "أمس",
     "description": "Yesterday date label"
   },
-  "daysAgo": {
-    "message": "منذ أيام",
-    "description": "Days ago label"
-  },
   "loading": {
     "message": "جارٍ التحميل...",
     "description": "Loading message"
@@ -1322,14 +1118,6 @@
     "message": "الدور الأخير",
     "description": "Last timeline node shortcut label"
   },
-  "shortcutKey": {
-    "message": "مفتاح",
-    "description": "Shortcut key label"
-  },
-  "shortcutModifiers": {
-    "message": "معدّلات",
-    "description": "Shortcut modifiers label"
-  },
   "shortcutPressKey": {
     "message": "اضغط على مفتاح…",
     "description": "Shown on a keyboard-shortcut button while it is recording the next key press"
@@ -1341,34 +1129,6 @@
   "resetShortcuts": {
     "message": "إعادة التعيين إلى الافتراضيات",
     "description": "Reset shortcuts button"
-  },
-  "shortcutsResetSuccess": {
-    "message": "تمت إعادة تعيين الاختصارات",
-    "description": "Shortcuts reset success message"
-  },
-  "shortcutsDescription": {
-    "message": "التنقل عبر عقد الجدول الزمني باستخدام اختصارات لوحة المفاتيح",
-    "description": "Shortcuts description"
-  },
-  "modifierNone": {
-    "message": "لا شيء",
-    "description": "No modifier key"
-  },
-  "modifierAlt": {
-    "message": "Alt",
-    "description": "Alt modifier key"
-  },
-  "modifierCtrl": {
-    "message": "Ctrl",
-    "description": "Ctrl modifier key"
-  },
-  "modifierShift": {
-    "message": "Shift",
-    "description": "Shift modifier key"
-  },
-  "modifierMeta": {
-    "message": "Cmd/Win",
-    "description": "Meta/Command/Windows modifier key"
   },
   "preventAutoScroll": {
     "message": "منع التمرير التلقائي",
@@ -1438,10 +1198,6 @@
     "message": "منفذ الخادم",
     "description": "Port number for the sync server"
   },
-  "syncNow": {
-    "message": "مزامنة الآن",
-    "description": "Sync now button"
-  },
   "lastSynced": {
     "message": "آخر مزامنة: {time}",
     "description": "Last sync timestamp"
@@ -1489,10 +1245,6 @@
   "syncRestoreListSeparator": {
     "message": "، ",
     "description": "Separator between restored or failed part names in the partial-restore message"
-  },
-  "syncInProgress": {
-    "message": "جارٍ المزامنة...",
-    "description": "Sync in progress message"
   },
   "uploadInProgress": {
     "message": "Uploading...",
@@ -1564,10 +1316,6 @@
   "syncDownloadFailed": {
     "message": "فشل التنزيل",
     "description": "Error message when download fails"
-  },
-  "syncAuthFailed": {
-    "message": "فشل المصادقة",
-    "description": "Error message when authentication fails"
   },
   "signOut": {
     "message": "تسجيل الخروج",
@@ -1937,14 +1685,6 @@
     "message": "IDE غير متصل",
     "description": "IDE Offline status"
   },
-  "syncing": {
-    "message": "جارٍ المزامنة...",
-    "description": "Syncing status"
-  },
-  "checkServer": {
-    "message": "يرجى تشغيل خادم AI Sync في VS Code",
-    "description": "Check server hint"
-  },
   "capturing": {
     "message": "جارٍ التقاط الحوار...",
     "description": "Capturing status"
@@ -2004,22 +1744,6 @@
   "gemsUnpin": {
     "message": "إلغاء تثبيت Gem",
     "description": "Accessible name of the pin button for a pinned gem"
-  },
-  "notebooksHide": {
-    "message": "إخفاء دفاتر الملاحظات",
-    "description": "تلميح لإخفاء قسم قائمة دفاتر الملاحظات"
-  },
-  "notebooksShow": {
-    "message": "إظهار دفاتر الملاحظات",
-    "description": "تلميح لإظهار قسم قائمة دفاتر الملاحظات"
-  },
-  "foldersHide": {
-    "message": "إخفاء المجلدات",
-    "description": "Tooltip for hiding Folders section"
-  },
-  "foldersShow": {
-    "message": "إظهار المجلدات",
-    "description": "Tooltip for showing Folders section"
   },
   "sidebarCollapseNudgeTitle": {
     "message": "الأقسام المطوية لا تزال هنا",
@@ -2205,10 +1929,6 @@
     "message": "Select message",
     "description": "Selection mode per-message toggle tooltip"
   },
-  "export_select_mode_select_below": {
-    "message": "Select messages below",
-    "description": "Selection mode top-left button to select messages below current line"
-  },
   "export_select_mode_empty": {
     "message": "Please select at least one message to export.",
     "description": "Selection mode validation when nothing is selected"
@@ -2216,10 +1936,6 @@
   "export_format_image_description": {
     "message": "صورة PNG واحدة، مناسبة للمشاركة عبر الهاتف.",
     "description": "Description for Image export format"
-  },
-  "export_image_progress": {
-    "message": "Generating image...",
-    "description": "Progress message while generating image export"
   },
   "deepResearchSaveReport": {
     "message": "حفظ التقرير",
@@ -2381,17 +2097,9 @@
     "message": "المستندات",
     "description": "Changelog modal documentation link text"
   },
-  "changelog_recommendation": {
-    "message": "إذا ساعدك Voyager، شاركه مع أصدقائك أو على وسائل التواصل الاجتماعي — لا تنسَ الإشارة إلى المطور!",
-    "description": "Changelog modal recommendation message"
-  },
   "changelog_follow_cta": {
     "message": "تُعلَن الميزات الجديدة والإصلاحات هنا أولاً.",
     "description": "Changelog modal follow-me CTA headline"
-  },
-  "changelog_social_xiaohongshu": {
-    "message": "Xiaohongshu",
-    "description": "Xiaohongshu platform name for social links"
   },
   "changelog_docs_hint": {
     "message": "التفاصيل في المستندات",
@@ -2441,21 +2149,9 @@
     "message": "Branch",
     "description": "Fork branch label"
   },
-  "forkOriginal": {
-    "message": "Original",
-    "description": "Original fork branch tag"
-  },
   "forkCurrent": {
     "message": "Current",
     "description": "Current fork branch tag"
-  },
-  "forkPreparing": {
-    "message": "Preparing fork...",
-    "description": "Fork preparation status"
-  },
-  "forkPasteHint": {
-    "message": "Press Enter to send and create the fork",
-    "description": "Fork paste hint text"
   },
   "forkManualUploadHint": {
     "message": "اسحب {filename} إلى Gemini وأرسله خلال دقيقتين لإنشاء التفرع.",
@@ -2536,26 +2232,6 @@
   "aiOrgCopyHint": {
     "message": "ينسخ جميع المحادثات وهيكل المجلدات كموجه. الصقه في Gemini للحصول على خطة مجلدات قابلة للاستيراد.",
     "description": "نص تلميح أسفل زر نسخ تنظيم AI"
-  },
-  "aiOrgCurrentFolders": {
-    "message": "هيكل المجلدات الحالي",
-    "description": "عنوان في موجه تنظيم AI"
-  },
-  "aiOrgUnfiledConversations": {
-    "message": "محادثات غير مصنفة",
-    "description": "عنوان للمحادثات غير الموجودة في أي مجلد"
-  },
-  "aiOrgEmpty": {
-    "message": "فارغ",
-    "description": "تسمية للمجلدات الفارغة في موجه تنظيم AI"
-  },
-  "aiOrgInstructions": {
-    "message": "التعليمات",
-    "description": "عنوان قسم تعليمات AI"
-  },
-  "aiOrgInstructionsBody": {
-    "message": "بناءً على المحادثات وهيكل المجلدات أعلاه، يرجى إعادة تنظيمها في تسلسل هرمي منطقي للمجلدات. أخرج ملف JSON باستخدام التنسيق أدناه يمكن استيراده مباشرة إلى إضافة Voyager (استخدم استراتيجية الاستيراد \"دمج\"). احتفظ بالمجلدات المنظمة جيداً الحالية، وأنشئ مجلدات جديدة حسب الحاجة، وانقل المحادثات غير المصنفة إلى مجلدات مناسبة. يحتاج كل مجلد إلى معرف فريد (استخدم سلسلة عشوائية قصيرة)، ويجب أن تحتفظ كل محادثة بـ conversationId و url الأصليين.",
-    "description": "نص التعليمات لـ AI لإنشاء هيكل مجلدات قابل للاستيراد"
   },
   "showMessageTimestamps": {
     "message": "إظهار طوابع وقت الرسائل",

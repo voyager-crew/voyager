@@ -71,10 +71,6 @@
     "message": "Experimental",
     "description": "Experimental feature label"
   },
-  "resetPosition": {
-    "message": "Redefinir Posição",
-    "description": "Reset Position button"
-  },
   "resetTimelinePosition": {
     "message": "Redefinir Posição da Linha do Tempo",
     "description": "Reset timeline position button in timeline options"
@@ -86,10 +82,6 @@
   "languageSwitchTo": {
     "message": "Mudar para {language}",
     "description": "Tooltip on the popup's language button; {language} is the target language's native name (e.g. English, 中文)"
-  },
-  "pm_title": {
-    "message": "Voyager",
-    "description": "Prompt Manager title"
   },
   "pm_add": {
     "message": "Adicionar",
@@ -282,42 +274,6 @@
     "message": "Clique no ícone da extensão na barra do navegador para abrir as configurações",
     "description": "Settings open failed message"
   },
-  "pm_backup": {
-    "message": "Backup Local",
-    "description": "Local backup button"
-  },
-  "pm_backup_tooltip": {
-    "message": "Fazer backup de prompts e pastas em uma pasta com carimbo de data/hora",
-    "description": "Backup button tooltip"
-  },
-  "pm_backup_cancelled": {
-    "message": "Backup cancelado",
-    "description": "Backup cancelled hint"
-  },
-  "pm_backup_error": {
-    "message": "Falha no backup",
-    "description": "Backup failed hint"
-  },
-  "pm_backup_hint_options": {
-    "message": "O recurso está integrado ao Gerenciador de Prompts na página do Gemini.",
-    "description": "Backup hint in options page"
-  },
-  "pm_backup_step1": {
-    "message": "Abra a página do Gemini (gemini.google.com)",
-    "description": "Backup step 1"
-  },
-  "pm_backup_step2": {
-    "message": "Clique no ícone da extensão no canto inferior direito para abrir o Gerenciador de Prompts",
-    "description": "Backup step 2"
-  },
-  "pm_backup_step3": {
-    "message": "Clique no botão \"Backup Local\" e selecione uma pasta de backup",
-    "description": "Backup step 3"
-  },
-  "pm_backup_note": {
-    "message": "Os backups incluem todos os prompts e pastas, salvos em uma pasta com carimbo de data/hora (formato: backup-YYYYMMDD-HHMMSS)",
-    "description": "Backup feature note"
-  },
   "pm_theme_light": {
     "message": "Mudar para modo claro",
     "description": "Theme toggle tooltip - switch to light"
@@ -346,10 +302,6 @@
     "message": "Nome duplicado. Renomeie para usar /",
     "description": "Selo para prompts excluídos do preenchimento com / por terem nome duplicado"
   },
-  "pm_prompt_manager": {
-    "message": "Gestor de prompts",
-    "description": "Button label for returning from the starred library to Prompt Manager"
-  },
   "pm_open_prompt_manager": {
     "message": "Abrir o gestor de prompts",
     "description": "Saved Library footer button for returning to Prompt Manager"
@@ -357,10 +309,6 @@
   "pm_starred_library": {
     "message": "Biblioteca salva",
     "description": "Prompt Manager starred messages library title and entry button"
-  },
-  "pm_starred_search_placeholder": {
-    "message": "Pesquisar itens salvos",
-    "description": "Search placeholder for starred messages in Prompt Manager"
   },
   "pm_starred_no_results": {
     "message": "Nenhuma mensagem com estrela corresponde à pesquisa",
@@ -482,25 +430,13 @@
     "message": "Digite o nome da pasta:",
     "description": "Create folder name prompt"
   },
-  "folder_rename_prompt": {
-    "message": "Digite o novo nome:",
-    "description": "Rename folder prompt"
-  },
   "folder_delete_confirm": {
     "message": "Excluir esta pasta e todo o seu conteúdo?",
     "description": "Delete folder confirmation"
   },
-  "folder_create_subfolder": {
-    "message": "Criar subpasta",
-    "description": "Create subfolder menu item"
-  },
   "folder_rename": {
     "message": "Renomear",
     "description": "Rename folder menu item"
-  },
-  "folder_change_color": {
-    "message": "Alterar cor",
-    "description": "Change folder color menu item"
   },
   "folder_delete": {
     "message": "Excluir",
@@ -534,10 +470,6 @@
     "message": "Roxo",
     "description": "Purple folder color name"
   },
-  "folder_color_pink": {
-    "message": "Rosa",
-    "description": "Pink folder color name"
-  },
   "folder_color_custom": {
     "message": "Personalizado",
     "description": "Custom folder color name"
@@ -546,18 +478,6 @@
     "message": "Nenhuma pasta ainda",
     "description": "Empty state placeholder when no folders exist"
   },
-  "folder_pin": {
-    "message": "Fixar pasta",
-    "description": "Pin folder menu item"
-  },
-  "folder_unpin": {
-    "message": "Desafixar pasta",
-    "description": "Unpin folder menu item"
-  },
-  "folder_remove_conversation": {
-    "message": "Remover da pasta",
-    "description": "Remove conversation button tooltip"
-  },
   "folder_remove_conversation_action": {
     "message": "Remover",
     "description": "Short confirmation button label for removing a conversation from a folder"
@@ -565,10 +485,6 @@
   "folder_remove_conversation_confirm": {
     "message": "Remover \"{title}\" desta pasta?",
     "description": "Remove conversation confirmation"
-  },
-  "conversation_more": {
-    "message": "Mais opções",
-    "description": "Conversation more options button tooltip"
   },
   "conversation_move_to_folder": {
     "message": "Mover para pasta",
@@ -1038,110 +954,6 @@
     "message": "Não foi possível carregar os dados das pastas. Por enquanto, elas estão disponíveis apenas para leitura.",
     "description": "Notice when folder storage is unreadable and editing is disabled"
   },
-  "backupOptions": {
-    "message": "Backup Automático",
-    "description": "Backup options section label"
-  },
-  "backupEnabled": {
-    "message": "Habilitar backup automático",
-    "description": "Enable auto backup toggle"
-  },
-  "backupNow": {
-    "message": "Fazer Backup Agora",
-    "description": "Backup now button"
-  },
-  "backupSelectFolder": {
-    "message": "Selecionar Pasta de Backup",
-    "description": "Select backup folder button"
-  },
-  "backupFolderSelected": {
-    "message": "Pasta de backup: {folder}",
-    "description": "Shows selected backup folder"
-  },
-  "backupIncludePrompts": {
-    "message": "Incluir prompts",
-    "description": "Include prompts in backup toggle"
-  },
-  "backupIncludeFolders": {
-    "message": "Incluir pastas",
-    "description": "Include folders in backup toggle"
-  },
-  "backupIntervalLabel": {
-    "message": "Intervalo de backup",
-    "description": "Backup interval label"
-  },
-  "backupIntervalManual": {
-    "message": "Apenas manual",
-    "description": "Manual backup mode"
-  },
-  "backupIntervalDaily": {
-    "message": "Diário",
-    "description": "Daily backup interval"
-  },
-  "backupIntervalWeekly": {
-    "message": "Semanal (7 dias)",
-    "description": "Weekly backup interval"
-  },
-  "backupLastBackup": {
-    "message": "Último backup: {time}",
-    "description": "Last backup timestamp"
-  },
-  "backupNever": {
-    "message": "Nunca",
-    "description": "Never backed up"
-  },
-  "backupSuccess": {
-    "message": "Backup criado: {prompts} prompts, {folders} pastas, {conversations} conversas",
-    "description": "Backup success message"
-  },
-  "backupError": {
-    "message": "Falha no backup: {error}",
-    "description": "Backup error message"
-  },
-  "backupNotSupported": {
-    "message": "O backup automático requer um navegador moderno com suporte à API File System Access",
-    "description": "Browser not supported message"
-  },
-  "backupSelectFolderFirst": {
-    "message": "Selecione uma pasta de backup primeiro",
-    "description": "No folder selected warning"
-  },
-  "backupUserCancelled": {
-    "message": "Backup cancelado",
-    "description": "User cancelled folder selection"
-  },
-  "backupConfigSaved": {
-    "message": "Configurações de backup salvas",
-    "description": "Config saved message"
-  },
-  "backupPermissionDenied": {
-    "message": "Não é possível acessar este diretório. Escolha um local diferente (por exemplo, Documentos, Downloads ou uma pasta na Área de Trabalho)",
-    "description": "Permission denied for restricted directory"
-  },
-  "backupConfigureInOptions": {
-    "message": "A configuração de backup requer a página de Opções. Clique no botão abaixo para abri-la (clique nos três pontos ao lado do ícone da extensão → Opções).",
-    "description": "Backup configure in options page explanation"
-  },
-  "openOptionsPage": {
-    "message": "Abrir Página de Opções",
-    "description": "Open options page button"
-  },
-  "optionsPageSubtitle": {
-    "message": "Opções da Extensão",
-    "description": "Options page subtitle"
-  },
-  "optionsComingSoon": {
-    "message": "Mais opções em breve...",
-    "description": "Options page placeholder text"
-  },
-  "backupDataAccessNotice": {
-    "message": "Limitação de Acesso a Dados",
-    "description": "Backup data access limitation title"
-  },
-  "backupDataAccessHint": {
-    "message": "Devido a restrições de segurança do navegador, esta página de Opções não pode acessar diretamente os prompts e dados de pasta das páginas do Gemini. Use o Gerenciador de Prompts e os recursos de Exportação de Pasta na página do Gemini para backups manuais.",
-    "description": "Backup data access limitation explanation"
-  },
   "promptManagerOptions": {
     "message": "Gerenciador de Prompts",
     "description": "Prompt Manager options section label"
@@ -1206,10 +1018,6 @@
     "message": "Digite a URL do site (ex: chatgpt.com)",
     "description": "Custom websites input placeholder"
   },
-  "customWebsitesHint": {
-    "message": "Adicione sites onde você deseja usar o Gerenciador de Prompts. Apenas o Gerenciador de Prompts será ativado nesses sites.",
-    "description": "Custom websites hint"
-  },
   "addWebsite": {
     "message": "Adicionar site",
     "description": "Add website button"
@@ -1221,14 +1029,6 @@
   "invalidUrl": {
     "message": "Formato de URL inválido",
     "description": "Invalid URL error message"
-  },
-  "websiteAdded": {
-    "message": "Site adicionado",
-    "description": "Website added success message"
-  },
-  "websiteRemoved": {
-    "message": "Site removido",
-    "description": "Website removed success message"
   },
   "permissionDenied": {
     "message": "Permissão negada. Por favor, permita o acesso a este site.",
@@ -1274,10 +1074,6 @@
     "message": "Ontem",
     "description": "Yesterday date label"
   },
-  "daysAgo": {
-    "message": "dias atrás",
-    "description": "Days ago label"
-  },
   "loading": {
     "message": "Carregando...",
     "description": "Loading message"
@@ -1322,14 +1118,6 @@
     "message": "Último turno",
     "description": "Last timeline node shortcut label"
   },
-  "shortcutKey": {
-    "message": "Tecla",
-    "description": "Shortcut key label"
-  },
-  "shortcutModifiers": {
-    "message": "Modificadores",
-    "description": "Shortcut modifiers label"
-  },
   "shortcutPressKey": {
     "message": "Pressione uma tecla…",
     "description": "Shown on a keyboard-shortcut button while it is recording the next key press"
@@ -1341,34 +1129,6 @@
   "resetShortcuts": {
     "message": "Redefinir para padrões",
     "description": "Reset shortcuts button"
-  },
-  "shortcutsResetSuccess": {
-    "message": "Atalhos redefinidos",
-    "description": "Shortcuts reset success message"
-  },
-  "shortcutsDescription": {
-    "message": "Navegar pelos nós da linha do tempo usando atalhos de teclado",
-    "description": "Shortcuts description"
-  },
-  "modifierNone": {
-    "message": "Nenhum",
-    "description": "No modifier key"
-  },
-  "modifierAlt": {
-    "message": "Alt",
-    "description": "Alt modifier key"
-  },
-  "modifierCtrl": {
-    "message": "Ctrl",
-    "description": "Ctrl modifier key"
-  },
-  "modifierShift": {
-    "message": "Shift",
-    "description": "Shift modifier key"
-  },
-  "modifierMeta": {
-    "message": "Cmd/Win",
-    "description": "Meta/Command/Windows modifier key"
   },
   "preventAutoScroll": {
     "message": "Prevenir rolamento automático",
@@ -1438,10 +1198,6 @@
     "message": "Porta do servidor",
     "description": "Port number for the sync server"
   },
-  "syncNow": {
-    "message": "Sincronizar Agora",
-    "description": "Sync now button"
-  },
   "lastSynced": {
     "message": "Última sincr.: {time}",
     "description": "Last sync timestamp"
@@ -1489,10 +1245,6 @@
   "syncRestoreListSeparator": {
     "message": ", ",
     "description": "Separator between restored or failed part names in the partial-restore message"
-  },
-  "syncInProgress": {
-    "message": "Sincronizando...",
-    "description": "Sync in progress message"
   },
   "uploadInProgress": {
     "message": "Uploading...",
@@ -1564,10 +1316,6 @@
   "syncDownloadFailed": {
     "message": "Falha no download",
     "description": "Error message when download fails"
-  },
-  "syncAuthFailed": {
-    "message": "Falha na autenticação",
-    "description": "Error message when authentication fails"
   },
   "signOut": {
     "message": "Sair",
@@ -1937,14 +1685,6 @@
     "message": "IDE Offline",
     "description": "IDE Offline status"
   },
-  "syncing": {
-    "message": "Sincronizando...",
-    "description": "Syncing status"
-  },
-  "checkServer": {
-    "message": "Por favor, inicie o servidor AI Sync no VS Code",
-    "description": "Check server hint"
-  },
   "capturing": {
     "message": "Capturando diálogo...",
     "description": "Capturing status"
@@ -2004,22 +1744,6 @@
   "gemsUnpin": {
     "message": "Desafixar Gem",
     "description": "Accessible name of the pin button for a pinned gem"
-  },
-  "notebooksHide": {
-    "message": "Ocultar Notebooks",
-    "description": "Dica para ocultar a seção da lista de Notebooks"
-  },
-  "notebooksShow": {
-    "message": "Mostrar Notebooks",
-    "description": "Dica para mostrar a seção da lista de Notebooks"
-  },
-  "foldersHide": {
-    "message": "Ocultar pastas",
-    "description": "Tooltip for hiding Folders section"
-  },
-  "foldersShow": {
-    "message": "Mostrar pastas",
-    "description": "Tooltip for showing Folders section"
   },
   "sidebarCollapseNudgeTitle": {
     "message": "As seções recolhidas continuam aqui",
@@ -2205,10 +1929,6 @@
     "message": "Select message",
     "description": "Selection mode per-message toggle tooltip"
   },
-  "export_select_mode_select_below": {
-    "message": "Select messages below",
-    "description": "Selection mode top-left button to select messages below current line"
-  },
   "export_select_mode_empty": {
     "message": "Please select at least one message to export.",
     "description": "Selection mode validation when nothing is selected"
@@ -2216,10 +1936,6 @@
   "export_format_image_description": {
     "message": "Imagem PNG única, ideal para compartilhamento no celular.",
     "description": "Description for Image export format"
-  },
-  "export_image_progress": {
-    "message": "Generating image...",
-    "description": "Progress message while generating image export"
   },
   "deepResearchSaveReport": {
     "message": "Salvar relatório",
@@ -2381,17 +2097,9 @@
     "message": "Docs",
     "description": "Changelog modal documentation link text"
   },
-  "changelog_recommendation": {
-    "message": "Se o Voyager foi útil, compartilhe com amigos ou nas redes sociais — marque o autor!",
-    "description": "Changelog modal recommendation message"
-  },
   "changelog_follow_cta": {
     "message": "Novos recursos e correções são anunciados aqui primeiro.",
     "description": "Changelog modal follow-me CTA headline"
-  },
-  "changelog_social_xiaohongshu": {
-    "message": "Xiaohongshu",
-    "description": "Xiaohongshu platform name for social links"
   },
   "changelog_docs_hint": {
     "message": "Detalhes nos docs",
@@ -2441,21 +2149,9 @@
     "message": "Branch",
     "description": "Fork branch label"
   },
-  "forkOriginal": {
-    "message": "Original",
-    "description": "Original fork branch tag"
-  },
   "forkCurrent": {
     "message": "Current",
     "description": "Current fork branch tag"
-  },
-  "forkPreparing": {
-    "message": "Preparing fork...",
-    "description": "Fork preparation status"
-  },
-  "forkPasteHint": {
-    "message": "Press Enter to send and create the fork",
-    "description": "Fork paste hint text"
   },
   "forkManualUploadHint": {
     "message": "Arraste {filename} para o Gemini e envie em até 2 minutos para criar a ramificação.",
@@ -2536,26 +2232,6 @@
   "aiOrgCopyHint": {
     "message": "Copia todas as conversas e a estrutura de pastas como um prompt. Cole no Gemini para obter um plano de pastas importável.",
     "description": "Texto de dica abaixo do botão de cópia de organização com IA"
-  },
-  "aiOrgCurrentFolders": {
-    "message": "Estrutura de pastas atual",
-    "description": "Cabeçalho no prompt de organização com IA"
-  },
-  "aiOrgUnfiledConversations": {
-    "message": "Conversas não classificadas",
-    "description": "Cabeçalho para conversas que não estão em nenhuma pasta"
-  },
-  "aiOrgEmpty": {
-    "message": "vazia",
-    "description": "Rótulo para pastas vazias no prompt de organização com IA"
-  },
-  "aiOrgInstructions": {
-    "message": "Instruções",
-    "description": "Cabeçalho da seção de instruções para IA"
-  },
-  "aiOrgInstructionsBody": {
-    "message": "Com base nas conversas e na estrutura de pastas acima, reorganize-as em uma hierarquia lógica de pastas. Gere um arquivo JSON no formato exato abaixo que possa ser importado diretamente na extensão Voyager (use a estratégia de importação \"Mesclar\"). Mantenha as pastas bem organizadas existentes, crie novas conforme necessário e mova as conversas não classificadas para pastas apropriadas. Cada pasta precisa de um ID único (use uma string aleatória curta) e cada conversa deve manter seu conversationId e url originais.",
-    "description": "Corpo das instruções para a IA gerar uma estrutura de pastas importável"
   },
   "showMessageTimestamps": {
     "message": "Mostrar carimbos de data/hora das mensagens",

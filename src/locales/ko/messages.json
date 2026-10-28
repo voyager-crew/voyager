@@ -71,10 +71,6 @@
     "message": "실험적",
     "description": "Experimental feature label"
   },
-  "resetPosition": {
-    "message": "위치 초기화",
-    "description": "Reset Position button"
-  },
   "resetTimelinePosition": {
     "message": "타임라인 위치 초기화",
     "description": "Reset timeline position button in timeline options"
@@ -86,10 +82,6 @@
   "languageSwitchTo": {
     "message": "언어 전환: {language}",
     "description": "Tooltip on the popup's language button; {language} is the target language's native name (e.g. English, 中文)"
-  },
-  "pm_title": {
-    "message": "Voyager",
-    "description": "Prompt Manager title"
   },
   "pm_add": {
     "message": "추가",
@@ -282,42 +274,6 @@
     "message": "브라우저 툴바의 확장 프로그램 아이콘을 클릭하여 설정을 열어주세요",
     "description": "Settings open failed message"
   },
-  "pm_backup": {
-    "message": "로컬 백업",
-    "description": "Local backup button"
-  },
-  "pm_backup_tooltip": {
-    "message": "프롬프트와 폴더를 타임스탬프가 포함된 폴더로 백업합니다",
-    "description": "Backup button tooltip"
-  },
-  "pm_backup_cancelled": {
-    "message": "백업 취소됨",
-    "description": "Backup cancelled hint"
-  },
-  "pm_backup_error": {
-    "message": "백업 실패",
-    "description": "Backup failed hint"
-  },
-  "pm_backup_hint_options": {
-    "message": "이 기능은 Gemini 페이지의 프롬프트 관리자에 통합되어 있습니다.",
-    "description": "Backup hint in options page"
-  },
-  "pm_backup_step1": {
-    "message": "Gemini 페이지를 엽니다 (gemini.google.com)",
-    "description": "Backup step 1"
-  },
-  "pm_backup_step2": {
-    "message": "우측 하단의 확장 프로그램 아이콘을 클릭하여 프롬프트 관리자를 엽니다",
-    "description": "Backup step 2"
-  },
-  "pm_backup_step3": {
-    "message": "\"로컬 백업\" 버튼을 클릭하고 백업 폴더를 선택합니다",
-    "description": "Backup step 3"
-  },
-  "pm_backup_note": {
-    "message": "백업에는 모든 프롬프트와 폴더가 포함되며, 타임스탬프 폴더 형식 (backup-YYYYMMDD-HHMMSS) 으로 저장됩니다",
-    "description": "Backup feature note"
-  },
   "pm_theme_light": {
     "message": "라이트 모드로 전환",
     "description": "Theme toggle tooltip - switch to light"
@@ -346,10 +302,6 @@
     "message": "이름 중복. / 사용을 위해 이름 변경",
     "description": "이름 중복으로 / 자동 완성에서 제외된 프롬프트 배지"
   },
-  "pm_prompt_manager": {
-    "message": "프롬프트 관리자",
-    "description": "Button label for returning from the starred library to Prompt Manager"
-  },
   "pm_open_prompt_manager": {
     "message": "프롬프트 관리자 열기",
     "description": "Saved Library footer button for returning to Prompt Manager"
@@ -357,10 +309,6 @@
   "pm_starred_library": {
     "message": "저장 보관함",
     "description": "Prompt Manager starred messages library title and entry button"
-  },
-  "pm_starred_search_placeholder": {
-    "message": "저장 항목 검색",
-    "description": "Search placeholder for starred messages in Prompt Manager"
   },
   "pm_starred_no_results": {
     "message": "검색과 일치하는 별표 메시지가 없습니다",
@@ -482,25 +430,13 @@
     "message": "폴더 이름을 입력하세요:",
     "description": "Create folder name prompt"
   },
-  "folder_rename_prompt": {
-    "message": "새 이름을 입력하세요:",
-    "description": "Rename folder prompt"
-  },
   "folder_delete_confirm": {
     "message": "이 폴더와 모든 내용을 삭제하시겠습니까?",
     "description": "Delete folder confirmation"
   },
-  "folder_create_subfolder": {
-    "message": "하위 폴더 생성",
-    "description": "Create subfolder menu item"
-  },
   "folder_rename": {
     "message": "이름 바꾸기",
     "description": "Rename folder menu item"
-  },
-  "folder_change_color": {
-    "message": "색상 변경",
-    "description": "Change folder color menu item"
   },
   "folder_delete": {
     "message": "삭제",
@@ -534,10 +470,6 @@
     "message": "보라색",
     "description": "Purple folder color name"
   },
-  "folder_color_pink": {
-    "message": "분홍색",
-    "description": "Pink folder color name"
-  },
   "folder_color_custom": {
     "message": "사용자 지정",
     "description": "Custom folder color name"
@@ -546,18 +478,6 @@
     "message": "폴더가 없습니다",
     "description": "Empty state placeholder when no folders exist"
   },
-  "folder_pin": {
-    "message": "폴더 고정",
-    "description": "Pin folder menu item"
-  },
-  "folder_unpin": {
-    "message": "폴더 고정 해제",
-    "description": "Unpin folder menu item"
-  },
-  "folder_remove_conversation": {
-    "message": "폴더에서 제거",
-    "description": "Remove conversation button tooltip"
-  },
   "folder_remove_conversation_action": {
     "message": "제거",
     "description": "Short confirmation button label for removing a conversation from a folder"
@@ -565,10 +485,6 @@
   "folder_remove_conversation_confirm": {
     "message": "이 폴더에서 \"{title}\"을 (를) 제거하시겠습니까?",
     "description": "Remove conversation confirmation"
-  },
-  "conversation_more": {
-    "message": "추가 옵션",
-    "description": "Conversation more options button tooltip"
   },
   "conversation_move_to_folder": {
     "message": "폴더로 이동",
@@ -1038,110 +954,6 @@
     "message": "폴더 데이터를 불러오지 못했습니다. 현재 폴더는 읽기 전용입니다.",
     "description": "Notice when folder storage is unreadable and editing is disabled"
   },
-  "backupOptions": {
-    "message": "자동 백업",
-    "description": "Backup options section label"
-  },
-  "backupEnabled": {
-    "message": "자동 백업 활성화",
-    "description": "Enable auto backup toggle"
-  },
-  "backupNow": {
-    "message": "지금 백업",
-    "description": "Backup now button"
-  },
-  "backupSelectFolder": {
-    "message": "백업 폴더 선택",
-    "description": "Select backup folder button"
-  },
-  "backupFolderSelected": {
-    "message": "백업 폴더: {folder}",
-    "description": "Shows selected backup folder"
-  },
-  "backupIncludePrompts": {
-    "message": "프롬프트 포함",
-    "description": "Include prompts in backup toggle"
-  },
-  "backupIncludeFolders": {
-    "message": "폴더 포함",
-    "description": "Include folders in backup toggle"
-  },
-  "backupIntervalLabel": {
-    "message": "백업 간격",
-    "description": "Backup interval label"
-  },
-  "backupIntervalManual": {
-    "message": "수동 전용",
-    "description": "Manual backup mode"
-  },
-  "backupIntervalDaily": {
-    "message": "매일",
-    "description": "Daily backup interval"
-  },
-  "backupIntervalWeekly": {
-    "message": "매주 (7 일)",
-    "description": "Weekly backup interval"
-  },
-  "backupLastBackup": {
-    "message": "마지막 백업: {time}",
-    "description": "Last backup timestamp"
-  },
-  "backupNever": {
-    "message": "안 함",
-    "description": "Never backed up"
-  },
-  "backupSuccess": {
-    "message": "백업 생성됨: {prompts}개의 프롬프트, {folders}개의 폴더, {conversations}개의 대화",
-    "description": "Backup success message"
-  },
-  "backupError": {
-    "message": "백업 실패: {error}",
-    "description": "Backup error message"
-  },
-  "backupNotSupported": {
-    "message": "자동 백업에는 File System Access API 를 지원하는 최신 브라우저가 필요합니다",
-    "description": "Browser not supported message"
-  },
-  "backupSelectFolderFirst": {
-    "message": "먼저 백업 폴더를 선택하세요",
-    "description": "No folder selected warning"
-  },
-  "backupUserCancelled": {
-    "message": "백업 취소됨",
-    "description": "User cancelled folder selection"
-  },
-  "backupConfigSaved": {
-    "message": "백업 설정 저장됨",
-    "description": "Config saved message"
-  },
-  "backupPermissionDenied": {
-    "message": "이 디렉토리에 액세스할 수 없습니다. 다른 위치를 선택하세요 (예: 문서, 다운로드 또는 바탕 화면의 폴더)",
-    "description": "Permission denied for restricted directory"
-  },
-  "backupConfigureInOptions": {
-    "message": "백업 구성에는 옵션 페이지가 필요합니다. 아래 버튼을 클릭하여 여세요 (확장 프로그램 아이콘 옆의 세 개의 점 클릭 → 옵션).",
-    "description": "Backup configure in options page explanation"
-  },
-  "openOptionsPage": {
-    "message": "옵션 페이지 열기",
-    "description": "Open options page button"
-  },
-  "optionsPageSubtitle": {
-    "message": "확장 프로그램 옵션",
-    "description": "Options page subtitle"
-  },
-  "optionsComingSoon": {
-    "message": "더 많은 옵션이 곧 추가될 예정입니다...",
-    "description": "Options page placeholder text"
-  },
-  "backupDataAccessNotice": {
-    "message": "데이터 액세스 제한",
-    "description": "Backup data access limitation title"
-  },
-  "backupDataAccessHint": {
-    "message": "브라우저 보안 제한으로 인해, 이 옵션 페이지는 Gemini 페이지의 프롬프트 및 폴더 데이터에 직접 액세스할 수 없습니다. 수동 백업은 Gemini 페이지의 프롬프트 관리자 및 폴더 내보내기 기능을 사용하십시오.",
-    "description": "Backup data access limitation explanation"
-  },
   "promptManagerOptions": {
     "message": "프롬프트 관리자",
     "description": "Prompt Manager options section label"
@@ -1206,10 +1018,6 @@
     "message": "웹사이트 URL 입력 (예: chatgpt.com)",
     "description": "Custom websites input placeholder"
   },
-  "customWebsitesHint": {
-    "message": "프롬프트 관리자를 사용할 웹사이트를 추가하세요. 이 사이트들에서는 프롬프트 관리자만 활성화됩니다.",
-    "description": "Custom websites hint"
-  },
   "addWebsite": {
     "message": "웹사이트 추가",
     "description": "Add website button"
@@ -1221,14 +1029,6 @@
   "invalidUrl": {
     "message": "유효하지 않은 URL 형식",
     "description": "Invalid URL error message"
-  },
-  "websiteAdded": {
-    "message": "웹사이트 추가됨",
-    "description": "Website added success message"
-  },
-  "websiteRemoved": {
-    "message": "웹사이트 제거됨",
-    "description": "Website removed success message"
   },
   "permissionDenied": {
     "message": "권한이 거부되었습니다. 이 웹사이트에 대한 액세스를 허용하세요.",
@@ -1274,10 +1074,6 @@
     "message": "어제",
     "description": "Yesterday date label"
   },
-  "daysAgo": {
-    "message": "일 전",
-    "description": "Days ago label"
-  },
   "loading": {
     "message": "로드 중...",
     "description": "Loading message"
@@ -1322,14 +1118,6 @@
     "message": "마지막 턴",
     "description": "Last timeline node shortcut label"
   },
-  "shortcutKey": {
-    "message": "키",
-    "description": "Shortcut key label"
-  },
-  "shortcutModifiers": {
-    "message": "수정 키",
-    "description": "Shortcut modifiers label"
-  },
   "shortcutPressKey": {
     "message": "키를 누르세요…",
     "description": "Shown on a keyboard-shortcut button while it is recording the next key press"
@@ -1341,34 +1129,6 @@
   "resetShortcuts": {
     "message": "기본값으로 초기화",
     "description": "Reset shortcuts button"
-  },
-  "shortcutsResetSuccess": {
-    "message": "단축키가 기본값으로 초기화되었습니다",
-    "description": "Shortcuts reset success message"
-  },
-  "shortcutsDescription": {
-    "message": "키보드 단축키를 사용하여 타임라인 노드를 탐색합니다",
-    "description": "Shortcuts description"
-  },
-  "modifierNone": {
-    "message": "없음",
-    "description": "No modifier key"
-  },
-  "modifierAlt": {
-    "message": "Alt",
-    "description": "Alt modifier key"
-  },
-  "modifierCtrl": {
-    "message": "Ctrl",
-    "description": "Ctrl modifier key"
-  },
-  "modifierShift": {
-    "message": "Shift",
-    "description": "Shift modifier key"
-  },
-  "modifierMeta": {
-    "message": "Cmd/Win",
-    "description": "Meta/Command/Windows modifier key"
   },
   "preventAutoScroll": {
     "message": "자동 스크롤 방지",
@@ -1438,10 +1198,6 @@
     "message": "서버 포트",
     "description": "Port number for the sync server"
   },
-  "syncNow": {
-    "message": "지금 동기화",
-    "description": "Sync now button"
-  },
   "lastSynced": {
     "message": "마지막 동기화: {time}",
     "description": "Last sync timestamp"
@@ -1489,10 +1245,6 @@
   "syncRestoreListSeparator": {
     "message": ", ",
     "description": "Separator between restored or failed part names in the partial-restore message"
-  },
-  "syncInProgress": {
-    "message": "동기화 중...",
-    "description": "Sync in progress message"
   },
   "uploadInProgress": {
     "message": "Uploading...",
@@ -1564,10 +1316,6 @@
   "syncDownloadFailed": {
     "message": "다운로드 실패",
     "description": "Error message when download fails"
-  },
-  "syncAuthFailed": {
-    "message": "인증 실패",
-    "description": "Error message when authentication fails"
   },
   "signOut": {
     "message": "로그아웃",
@@ -1937,14 +1685,6 @@
     "message": "IDE 오프라인",
     "description": "IDE Offline status"
   },
-  "syncing": {
-    "message": "동기화 중...",
-    "description": "Syncing status"
-  },
-  "checkServer": {
-    "message": "VS Code 에서 AI Sync 서버를 시작해 주세요",
-    "description": "Check server hint"
-  },
   "capturing": {
     "message": "대화 캡처 중...",
     "description": "Capturing status"
@@ -2004,22 +1744,6 @@
   "gemsUnpin": {
     "message": "Gem 고정 해제",
     "description": "Accessible name of the pin button for a pinned gem"
-  },
-  "notebooksHide": {
-    "message": "노트북 숨기기",
-    "description": "노트북 목록 섹션을 숨기는 툴팁"
-  },
-  "notebooksShow": {
-    "message": "노트북 표시",
-    "description": "노트북 목록 섹션을 표시하는 툴팁"
-  },
-  "foldersHide": {
-    "message": "폴더 숨기기",
-    "description": "Tooltip for hiding Folders section"
-  },
-  "foldersShow": {
-    "message": "폴더 표시",
-    "description": "Tooltip for showing Folders section"
   },
   "sidebarCollapseNudgeTitle": {
     "message": "접은 섹션은 그대로 남아 있어요",
@@ -2205,10 +1929,6 @@
     "message": "메시지 선택",
     "description": "Selection mode per-message toggle tooltip"
   },
-  "export_select_mode_select_below": {
-    "message": "아래 메시지 선택",
-    "description": "Selection mode top-left button to select messages below current line"
-  },
   "export_select_mode_empty": {
     "message": "내보낼 메시지를 하나 이상 선택하세요",
     "description": "Selection mode validation when nothing is selected"
@@ -2216,10 +1936,6 @@
   "export_format_image_description": {
     "message": "모바일 공유에 적합한 단일 PNG 이미지.",
     "description": "Description for Image export format"
-  },
-  "export_image_progress": {
-    "message": "이미지 생성 중...",
-    "description": "Progress message while generating image export"
   },
   "deepResearchSaveReport": {
     "message": "보고서 저장",
@@ -2381,17 +2097,9 @@
     "message": "문서",
     "description": "Changelog modal documentation link text"
   },
-  "changelog_recommendation": {
-    "message": "Voyager 가 도움이 되셨다면, 친구나 SNS 에서 공유해 주세요. 개발자를 태그해 주시면 큰 힘이 됩니다!",
-    "description": "Changelog modal recommendation message"
-  },
   "changelog_follow_cta": {
     "message": "새 기능과 수정 사항은 이곳에서 가장 먼저 알려드립니다.",
     "description": "Changelog modal follow-me CTA headline"
-  },
-  "changelog_social_xiaohongshu": {
-    "message": "Xiaohongshu",
-    "description": "Xiaohongshu platform name for social links"
   },
   "changelog_docs_hint": {
     "message": "자세한 내용은 문서 참조",
@@ -2441,21 +2149,9 @@
     "message": "Branch",
     "description": "Fork branch label"
   },
-  "forkOriginal": {
-    "message": "Original",
-    "description": "Original fork branch tag"
-  },
   "forkCurrent": {
     "message": "Current",
     "description": "Current fork branch tag"
-  },
-  "forkPreparing": {
-    "message": "Preparing fork...",
-    "description": "Fork preparation status"
-  },
-  "forkPasteHint": {
-    "message": "Press Enter to send and create the fork",
-    "description": "Fork paste hint text"
   },
   "forkManualUploadHint": {
     "message": "{filename} 파일을 2분 안에 Gemini로 끌어다 놓고 보내면 분기가 생성됩니다.",
@@ -2536,26 +2232,6 @@
   "aiOrgCopyHint": {
     "message": "모든 대화와 폴더 구조를 프롬프트로 복사합니다. Gemini에 붙여넣어 가져올 수 있는 폴더 계획을 얻으세요.",
     "description": "AI 정리 복사 버튼 아래 힌트 텍스트"
-  },
-  "aiOrgCurrentFolders": {
-    "message": "현재 폴더 구조",
-    "description": "AI 정리 프롬프트의 제목"
-  },
-  "aiOrgUnfiledConversations": {
-    "message": "분류되지 않은 대화",
-    "description": "폴더에 없는 대화 제목"
-  },
-  "aiOrgEmpty": {
-    "message": "비어 있음",
-    "description": "AI 정리 프롬프트에서 빈 폴더 라벨"
-  },
-  "aiOrgInstructions": {
-    "message": "지시사항",
-    "description": "AI 지시사항 섹션 제목"
-  },
-  "aiOrgInstructionsBody": {
-    "message": "위의 대화와 폴더 구조를 기반으로 논리적인 폴더 계층으로 재정리해주세요. 아래 형식의 JSON 파일을 출력하여 Voyager 확장 프로그램에 직접 가져올 수 있도록 하세요(\"병합\" 가져오기 전략 사용). 기존의 잘 정리된 폴더는 유지하고, 필요에 따라 새 폴더를 만들고, 분류되지 않은 대화를 적절한 폴더로 이동하세요. 각 폴더에는 고유한 ID(짧은 랜덤 문자열)가 필요하며, 각 대화는 원래의 conversationId와 url을 유지해야 합니다.",
-    "description": "AI가 가져올 수 있는 폴더 구조를 생성하기 위한 지시사항 본문"
   },
   "showMessageTimestamps": {
     "message": "메시지 타임스탬프 표시",

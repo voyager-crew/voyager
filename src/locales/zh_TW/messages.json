@@ -71,10 +71,6 @@
     "message": "實驗性",
     "description": "實驗性功能標籤"
   },
-  "resetPosition": {
-    "message": "重設位置",
-    "description": "重設位置按鈕"
-  },
   "resetTimelinePosition": {
     "message": "重設時間軸位置",
     "description": "重設時間軸位置按鈕（在時間軸選項中）"
@@ -86,10 +82,6 @@
   "languageSwitchTo": {
     "message": "切換為 {language}",
     "description": "Tooltip on the popup's language button; {language} is the target language's native name (e.g. English, 中文)"
-  },
-  "pm_title": {
-    "message": "Voyager",
-    "description": "面板標題"
   },
   "pm_add": {
     "message": "新增",
@@ -282,42 +274,6 @@
     "message": "請點擊瀏覽器工具列中的擴充功能圖示開啟設定",
     "description": "設定開啟失敗提示"
   },
-  "pm_backup": {
-    "message": "本機備份",
-    "description": "本機備份按鈕"
-  },
-  "pm_backup_tooltip": {
-    "message": "將提示詞和資料夾備份到帶時間戳記的資料夾",
-    "description": "備份按鈕提示"
-  },
-  "pm_backup_cancelled": {
-    "message": "備份已取消",
-    "description": "備份取消提示"
-  },
-  "pm_backup_error": {
-    "message": "備份失敗",
-    "description": "備份失敗提示"
-  },
-  "pm_backup_hint_options": {
-    "message": "功能已整合在 Gemini 頁面的提示詞管理器中。",
-    "description": "選項頁面的備份說明"
-  },
-  "pm_backup_step1": {
-    "message": "開啟 Gemini 頁面（gemini.google.com）",
-    "description": "備份步驟 1"
-  },
-  "pm_backup_step2": {
-    "message": "點擊右下角的擴充功能圖示開啟提示詞管理器",
-    "description": "備份步驟 2"
-  },
-  "pm_backup_step3": {
-    "message": "點擊 \"本機備份\" 按鈕，選擇備份資料夾",
-    "description": "備份步驟 3"
-  },
-  "pm_backup_note": {
-    "message": "備份將包含所有提示詞和資料夾，並儲存在帶時間戳記的資料夾中（格式：backup-YYYYMMDD-HHMMSS）",
-    "description": "備份功能說明"
-  },
   "pm_theme_light": {
     "message": "切換至淺色模式",
     "description": "Theme toggle tooltip - switch to light"
@@ -346,10 +302,6 @@
     "message": "名稱重複，重新命名後可使用 /",
     "description": "名稱重複而無法使用 / 快速插入時顯示的標記"
   },
-  "pm_prompt_manager": {
-    "message": "提示詞管理器",
-    "description": "Button label for returning from the starred library to Prompt Manager"
-  },
   "pm_open_prompt_manager": {
     "message": "開啟提示詞管理器",
     "description": "從收藏庫返回提示詞管理器的底部按鈕"
@@ -357,10 +309,6 @@
   "pm_starred_library": {
     "message": "收藏庫",
     "description": "Prompt Manager starred messages library title and entry button"
-  },
-  "pm_starred_search_placeholder": {
-    "message": "搜尋收藏內容",
-    "description": "Search placeholder for starred messages in Prompt Manager"
   },
   "pm_starred_no_results": {
     "message": "沒有符合搜尋的星號內容",
@@ -482,17 +430,9 @@
     "message": "輸入資料夾名稱：",
     "description": "建立資料夾名稱提示"
   },
-  "folder_rename_prompt": {
-    "message": "輸入新名稱：",
-    "description": "重新命名資料夾提示"
-  },
   "folder_delete_confirm": {
     "message": "確定刪除此資料夾及其所有內容嗎？",
     "description": "刪除資料夾確認"
-  },
-  "folder_create_subfolder": {
-    "message": "建立子資料夾",
-    "description": "建立子資料夾選單項目"
   },
   "folder_rename": {
     "message": "重新命名",
@@ -506,18 +446,6 @@
     "message": "暫無資料夾",
     "description": "沒有資料夾時顯示的佔位提示"
   },
-  "folder_pin": {
-    "message": "置頂資料夾",
-    "description": "置頂資料夾選單項目"
-  },
-  "folder_unpin": {
-    "message": "取消置頂",
-    "description": "取消置頂資料夾選單項目"
-  },
-  "folder_remove_conversation": {
-    "message": "從資料夾中移除",
-    "description": "移除對話按鈕提示"
-  },
   "folder_remove_conversation_action": {
     "message": "移除",
     "description": "從資料夾移除對話確認按鈕的短標籤"
@@ -525,10 +453,6 @@
   "folder_remove_conversation_confirm": {
     "message": "從此資料夾中移除「{title}」？",
     "description": "移除對話確認"
-  },
-  "conversation_more": {
-    "message": "更多選項",
-    "description": "對話更多選項按鈕提示"
   },
   "conversation_move_to_folder": {
     "message": "移動到資料夾",
@@ -998,110 +922,6 @@
     "message": "無法載入資料夾資料，目前只能檢視，無法編輯。",
     "description": "Notice when folder storage is unreadable and editing is disabled"
   },
-  "backupOptions": {
-    "message": "自動備份",
-    "description": "備份選項區域標籤"
-  },
-  "backupEnabled": {
-    "message": "啟用自動備份",
-    "description": "啟用自動備份開關"
-  },
-  "backupNow": {
-    "message": "立即備份",
-    "description": "立即備份按鈕"
-  },
-  "backupSelectFolder": {
-    "message": "選擇備份資料夾",
-    "description": "選擇備份資料夾按鈕"
-  },
-  "backupFolderSelected": {
-    "message": "備份資料夾：{folder}",
-    "description": "顯示已選擇的備份資料夾"
-  },
-  "backupIncludePrompts": {
-    "message": "包含提示詞",
-    "description": "備份中包含提示詞開關"
-  },
-  "backupIncludeFolders": {
-    "message": "包含資料夾",
-    "description": "備份中包含資料夾開關"
-  },
-  "backupIntervalLabel": {
-    "message": "備份間隔",
-    "description": "備份間隔標籤"
-  },
-  "backupIntervalManual": {
-    "message": "僅手動",
-    "description": "手動備份模式"
-  },
-  "backupIntervalDaily": {
-    "message": "每天",
-    "description": "每天備份間隔"
-  },
-  "backupIntervalWeekly": {
-    "message": "每週（7 天）",
-    "description": "每週備份間隔"
-  },
-  "backupLastBackup": {
-    "message": "上次備份：{time}",
-    "description": "上次備份時間戳記"
-  },
-  "backupNever": {
-    "message": "從未",
-    "description": "從未備份過"
-  },
-  "backupSuccess": {
-    "message": "備份建立成功：{prompts} 個提示詞、{folders} 個資料夾、{conversations} 個對話",
-    "description": "備份成功訊息"
-  },
-  "backupError": {
-    "message": "備份失敗：{error}",
-    "description": "備份錯誤訊息"
-  },
-  "backupNotSupported": {
-    "message": "自動備份需要支援檔案系統存取 API 的現代瀏覽器",
-    "description": "瀏覽器不支援訊息"
-  },
-  "backupSelectFolderFirst": {
-    "message": "請先選擇備份資料夾",
-    "description": "未選擇資料夾警告"
-  },
-  "backupUserCancelled": {
-    "message": "備份已取消",
-    "description": "使用者取消資料夾選擇"
-  },
-  "backupConfigSaved": {
-    "message": "備份設定已儲存",
-    "description": "設定儲存訊息"
-  },
-  "backupPermissionDenied": {
-    "message": "無法存取此目錄。請選擇其他位置（例如：文件、下載，或桌面中的自訂資料夾）",
-    "description": "受限目錄權限被拒絕"
-  },
-  "backupConfigureInOptions": {
-    "message": "備份功能需要在選項頁面中設定。點擊下方按鈕開啟選項頁面（點擊擴充功能圖示旁的三個點 → 選項）。",
-    "description": "備份設定在選項頁面的說明"
-  },
-  "openOptionsPage": {
-    "message": "開啟選項頁面",
-    "description": "開啟選項頁面按鈕"
-  },
-  "optionsPageSubtitle": {
-    "message": "擴充功能選項",
-    "description": "選項頁面副標題"
-  },
-  "optionsComingSoon": {
-    "message": "更多選項即將推出...",
-    "description": "選項頁面佔位提示"
-  },
-  "backupDataAccessNotice": {
-    "message": "資料存取限制",
-    "description": "備份資料存取限制標題"
-  },
-  "backupDataAccessHint": {
-    "message": "由於瀏覽器安全限制，選項頁面無法直接讀取 Gemini 頁面的提示詞和資料夾資料。建議使用 Gemini 頁面上的提示詞管理器和資料夾匯出功能進行手動備份。",
-    "description": "備份資料存取限制說明"
-  },
   "promptManagerOptions": {
     "message": "提示詞管理器",
     "description": "提示詞管理器選項區域標籤"
@@ -1166,10 +986,6 @@
     "message": "輸入網站 URL（例如：chatgpt.com）",
     "description": "自訂網站輸入佔位符"
   },
-  "customWebsitesHint": {
-    "message": "新增您想要使用提示詞管理器的網站。這些網站上只會啟用提示詞管理器功能。",
-    "description": "自訂網站提示"
-  },
   "addWebsite": {
     "message": "新增網站",
     "description": "新增網站按鈕"
@@ -1181,14 +997,6 @@
   "invalidUrl": {
     "message": "URL 格式無效",
     "description": "無效 URL 錯誤訊息"
-  },
-  "websiteAdded": {
-    "message": "網站已新增",
-    "description": "網站新增成功訊息"
-  },
-  "websiteRemoved": {
-    "message": "網站已移除",
-    "description": "網站移除成功訊息"
   },
   "permissionDenied": {
     "message": "權限被拒絕。請允許存取此網站。",
@@ -1234,10 +1042,6 @@
     "message": "昨天",
     "description": "昨天日期標籤"
   },
-  "daysAgo": {
-    "message": "天前",
-    "description": "天前標籤"
-  },
   "loading": {
     "message": "載入中...",
     "description": "載入訊息"
@@ -1282,14 +1086,6 @@
     "message": "最後一輪",
     "description": "最後一個時間軸節點快速鍵標籤"
   },
-  "shortcutKey": {
-    "message": "按鍵",
-    "description": "快速鍵按鍵標籤"
-  },
-  "shortcutModifiers": {
-    "message": "修飾鍵",
-    "description": "快速鍵修飾鍵標籤"
-  },
   "shortcutPressKey": {
     "message": "請按下按鍵…",
     "description": "Shown on a keyboard-shortcut button while it is recording the next key press"
@@ -1301,34 +1097,6 @@
   "resetShortcuts": {
     "message": "恢復預設",
     "description": "重設快速鍵按鈕"
-  },
-  "shortcutsResetSuccess": {
-    "message": "快速鍵已恢復預設設定",
-    "description": "快速鍵重設成功訊息"
-  },
-  "shortcutsDescription": {
-    "message": "使用鍵盤快速鍵導覽時間軸節點",
-    "description": "快速鍵描述"
-  },
-  "modifierNone": {
-    "message": "無",
-    "description": "無修飾鍵"
-  },
-  "modifierAlt": {
-    "message": "Alt",
-    "description": "Alt 修飾鍵"
-  },
-  "modifierCtrl": {
-    "message": "Ctrl",
-    "description": "Ctrl 修飾鍵"
-  },
-  "modifierShift": {
-    "message": "Shift",
-    "description": "Shift 修飾鍵"
-  },
-  "modifierMeta": {
-    "message": "Cmd/Win",
-    "description": "Meta/Command/Windows 修飾鍵"
   },
   "preventAutoScroll": {
     "message": "防自動跳轉",
@@ -1398,10 +1166,6 @@
     "message": "服務埠號",
     "description": "同步服務埠號"
   },
-  "syncNow": {
-    "message": "立即同步",
-    "description": "立即同步按鈕"
-  },
   "lastSynced": {
     "message": "上次同步：{time}",
     "description": "上次同步時間戳記"
@@ -1449,10 +1213,6 @@
   "syncRestoreListSeparator": {
     "message": "、",
     "description": "Separator between restored or failed part names in the partial-restore message"
-  },
-  "syncInProgress": {
-    "message": "同步中...",
-    "description": "同步進行中訊息"
   },
   "uploadInProgress": {
     "message": "上傳中...",
@@ -1524,10 +1284,6 @@
   "syncDownloadFailed": {
     "message": "下載失敗",
     "description": "Error message when download fails"
-  },
-  "syncAuthFailed": {
-    "message": "認證失敗",
-    "description": "Error message when authentication fails"
   },
   "signOut": {
     "message": "登出",
@@ -1897,14 +1653,6 @@
     "message": "IDE 離線",
     "description": "IDE 離線狀態"
   },
-  "syncing": {
-    "message": "同步中...",
-    "description": "同步中狀態"
-  },
-  "checkServer": {
-    "message": "請在 VS Code 中啟動 AI Sync 伺服器",
-    "description": "檢查伺服器提示"
-  },
   "capturing": {
     "message": "正在取得對話...",
     "description": "取得對話狀態"
@@ -1912,10 +1660,6 @@
   "syncedSuccess": {
     "message": "同步成功！",
     "description": "同步成功訊息"
-  },
-  "folder_change_color": {
-    "message": "更改顏色",
-    "description": "Change folder color tooltip"
   },
   "folder_color_default": {
     "message": "預設",
@@ -1944,10 +1688,6 @@
   "folder_color_purple": {
     "message": "紫色",
     "description": "Purple folder color"
-  },
-  "folder_color_pink": {
-    "message": "粉紅色",
-    "description": "粉紅色資料夾顏色名稱"
   },
   "folder_color_custom": {
     "message": "自定義",
@@ -2004,22 +1744,6 @@
   "gemsUnpin": {
     "message": "取消固定 Gem",
     "description": "Accessible name of the pin button for a pinned gem"
-  },
-  "notebooksHide": {
-    "message": "隱藏筆記本",
-    "description": "隱藏筆記本列表區域的提示"
-  },
-  "notebooksShow": {
-    "message": "顯示筆記本",
-    "description": "顯示筆記本列表區域的提示"
-  },
-  "foldersHide": {
-    "message": "隱藏資料夾",
-    "description": "Tooltip for hiding Folders section"
-  },
-  "foldersShow": {
-    "message": "顯示資料夾",
-    "description": "Tooltip for showing Folders section"
   },
   "sidebarCollapseNudgeTitle": {
     "message": "摺疊後還能找回來",
@@ -2205,10 +1929,6 @@
     "message": "選擇訊息",
     "description": "Selection mode per-message toggle tooltip"
   },
-  "export_select_mode_select_below": {
-    "message": "選擇下方訊息",
-    "description": "Selection mode top-left button to select messages below current line"
-  },
   "export_select_mode_empty": {
     "message": "請至少選擇一條訊息進行匯出",
     "description": "Selection mode validation when nothing is selected"
@@ -2216,10 +1936,6 @@
   "export_format_image_description": {
     "message": "單張 PNG 圖片，便於行動端分享。",
     "description": "Description for Image export format"
-  },
-  "export_image_progress": {
-    "message": "正在產生圖片...",
-    "description": "Progress message while generating image export"
   },
   "deepResearchSaveReport": {
     "message": "儲存報告",
@@ -2381,17 +2097,9 @@
     "message": "文檔",
     "description": "Changelog modal documentation link text"
   },
-  "changelog_recommendation": {
-    "message": "如果 Voyager 對你有幫助，歡迎推薦給朋友或在社交媒體上分享，記得 @ 作者哦！",
-    "description": "Changelog modal recommendation message"
-  },
   "changelog_follow_cta": {
     "message": "新功能和修正會先在這些地方發布。",
     "description": "Changelog modal follow-me CTA headline"
-  },
-  "changelog_social_xiaohongshu": {
-    "message": "小紅書",
-    "description": "Xiaohongshu platform name for social links"
   },
   "changelog_docs_hint": {
     "message": "詳細功能見文檔",
@@ -2441,21 +2149,9 @@
     "message": "Branch",
     "description": "Fork branch label"
   },
-  "forkOriginal": {
-    "message": "Original",
-    "description": "Original fork branch tag"
-  },
   "forkCurrent": {
     "message": "Current",
     "description": "Current fork branch tag"
-  },
-  "forkPreparing": {
-    "message": "Preparing fork...",
-    "description": "Fork preparation status"
-  },
-  "forkPasteHint": {
-    "message": "Press Enter to send and create the fork",
-    "description": "Fork paste hint text"
   },
   "forkManualUploadHint": {
     "message": "請在 2 分鐘內將 {filename} 拖入 Gemini 並送出，即可建立分支。",
@@ -2536,26 +2232,6 @@
   "aiOrgCopyHint": {
     "message": "複製所有對話和資料夾結構作為提示詞。貼到 Gemini 中即可獲得可匯入的資料夾方案。",
     "description": "AI 整理複製按鈕下方的提示文字"
-  },
-  "aiOrgCurrentFolders": {
-    "message": "目前資料夾結構",
-    "description": "AI 整理提示中的標題"
-  },
-  "aiOrgUnfiledConversations": {
-    "message": "未歸類的對話",
-    "description": "不在任何資料夾中的對話標題"
-  },
-  "aiOrgEmpty": {
-    "message": "空",
-    "description": "AI 整理提示中空資料夾的標籤"
-  },
-  "aiOrgInstructions": {
-    "message": "指示",
-    "description": "AI 指示部分的標題"
-  },
-  "aiOrgInstructionsBody": {
-    "message": "根據以上對話和資料夾結構，請將它們重新整理為合理的資料夾層級。輸出一個使用以下格式的 JSON 檔案，可以直接匯入到 Voyager 擴充功能中（使用「合併」匯入策略）。保留已有的合理資料夾，根據需要建立新資料夾，將未歸類的對話移入合適的資料夾。每個資料夾需要一個唯一 ID（使用短隨機字串），每個對話必須保留其原始的 conversationId 和 url。",
-    "description": "AI 生成可匯入資料夾結構的指示正文"
   },
   "showMessageTimestamps": {
     "message": "顯示訊息時間",
