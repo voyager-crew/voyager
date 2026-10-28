@@ -1,18 +1,21 @@
-import browser from 'webextension-polyfill';
-
-import { StorageKeys } from '@/core/types/common';
 import { GV_RTL_CLASS, detectRTL } from '@/core/utils/rtl';
-import { getTranslationSync } from '@/utils/i18n';
+import { getTranslationSync, onCachedLanguageChange } from '@/utils/i18n';
 
 import { TimelinePreviewPress } from './TimelinePreviewPress';
+import { bindCompactTrigger } from './timelinePreviewCompactTrigger';
+import {
+  previewHoverBridgeBox,
+  previewPanelLeft,
+  previewPanelMaxHeight,
+  previewPanelTop,
+  previewToggleSpot,
+} from './timelinePreviewGeometry';
+import { isolateListScroll, renderPreviewList } from './timelinePreviewList';
 import type { PreviewMarkerData } from './types';
 
 const SEARCH_DEBOUNCE_MS = 200;
 const RESIZE_DEBOUNCE_MS = 120;
 const COMPACT_CLOSE_DELAY_MS = 160;
-const PREVIEW_PANEL_WIDTH_PX = 320;
-const PREVIEW_PANEL_GAP_PX = 12;
-const PREVIEW_HOVER_BRIDGE_PADDING_PX = 8;
 const PREVIEW_HOVER_BRIDGE_CLASS = 'gv-timeline-preview-hover-bridge';
 const PREVIEW_HOVER_BRIDGE_VISIBLE_CLASS = 'gv-timeline-preview-hover-bridge-visible';
 
@@ -41,21 +44,8 @@ export class TimelinePreviewPanel {
   private onDocumentPointerDown: ((e: PointerEvent) => void) | null = null;
   private onKeyDown: ((e: KeyboardEvent) => void) | null = null;
   private onWindowResize: (() => void) | null = null;
-  private onAnchorMouseEnter: (() => void) | null = null;
-  private onAnchorMouseLeave: (() => void) | null = null;
-  private onPanelMouseEnter: (() => void) | null = null;
-  private onPanelMouseLeave: (() => void) | null = null;
-  private onHoverBridgeMouseEnter: (() => void) | null = null;
-  private onHoverBridgeMouseLeave: (() => void) | null = null;
-  private onAnchorFocusIn: (() => void) | null = null;
-  private onAnchorFocusOut: (() => void) | null = null;
-  private onAnchorKeyDown: ((event: KeyboardEvent) => void) | null = null;
-  private onAnchorPointerDown: (() => void) | null = null;
-  private onAnchorClick: ((event: MouseEvent) => void) | null = null;
-  private anchorWasOpenOnPointerDown: boolean | null = null;
-  private onStorageChanged:
-    | ((changes: Record<string, browser.Storage.StorageChange>, areaName: string) => void)
-    | null = null;
+  private stopCompactTrigger: (() => void) | null = null;
+  private stopFollowingLanguage: (() => void) | null = null;
 
   constructor(
     private readonly anchorElement: HTMLElement,
@@ -205,55 +195,10 @@ export class TimelinePreviewPanel {
       window.removeEventListener('resize', this.onWindowResize);
       this.onWindowResize = null;
     }
-    if (this.onAnchorMouseEnter) {
-      this.anchorElement.removeEventListener('mouseenter', this.onAnchorMouseEnter);
-      this.onAnchorMouseEnter = null;
-    }
-    if (this.onAnchorMouseLeave) {
-      this.anchorElement.removeEventListener('mouseleave', this.onAnchorMouseLeave);
-      this.onAnchorMouseLeave = null;
-    }
-    if (this.onPanelMouseEnter && this.panelEl) {
-      this.panelEl.removeEventListener('mouseenter', this.onPanelMouseEnter);
-      this.onPanelMouseEnter = null;
-    }
-    if (this.onPanelMouseLeave && this.panelEl) {
-      this.panelEl.removeEventListener('mouseleave', this.onPanelMouseLeave);
-      this.onPanelMouseLeave = null;
-    }
-    if (this.onHoverBridgeMouseEnter && this.hoverBridgeEl) {
-      this.hoverBridgeEl.removeEventListener('mouseenter', this.onHoverBridgeMouseEnter);
-      this.onHoverBridgeMouseEnter = null;
-    }
-    if (this.onHoverBridgeMouseLeave && this.hoverBridgeEl) {
-      this.hoverBridgeEl.removeEventListener('mouseleave', this.onHoverBridgeMouseLeave);
-      this.onHoverBridgeMouseLeave = null;
-    }
-    if (this.onAnchorFocusIn) {
-      this.anchorElement.removeEventListener('focusin', this.onAnchorFocusIn);
-      this.onAnchorFocusIn = null;
-    }
-    if (this.onAnchorFocusOut) {
-      this.anchorElement.removeEventListener('focusout', this.onAnchorFocusOut);
-      this.onAnchorFocusOut = null;
-    }
-    if (this.onAnchorKeyDown) {
-      this.anchorElement.removeEventListener('keydown', this.onAnchorKeyDown);
-      this.onAnchorKeyDown = null;
-    }
-    if (this.onAnchorPointerDown) {
-      this.anchorElement.removeEventListener('pointerdown', this.onAnchorPointerDown);
-      this.onAnchorPointerDown = null;
-    }
-    if (this.onAnchorClick) {
-      this.anchorElement.removeEventListener('click', this.onAnchorClick);
-      this.onAnchorClick = null;
-    }
-    this.anchorWasOpenOnPointerDown = null;
-    if (this.onStorageChanged) {
-      browser.storage.onChanged.removeListener(this.onStorageChanged);
-      this.onStorageChanged = null;
-    }
+    this.stopCompactTrigger?.();
+    this.stopCompactTrigger = null;
+    this.stopFollowingLanguage?.();
+    this.stopFollowingLanguage = null;
     this.toggleBtn?.remove();
     this.panelEl?.remove();
     this.hoverBridgeEl?.remove();
@@ -310,7 +255,7 @@ export class TimelinePreviewPanel {
     // List
     this.listEl = document.createElement('div');
     this.listEl.className = 'timeline-preview-list';
-    this.setupScrollIsolation();
+    isolateListScroll(this.listEl);
     this.panelEl.appendChild(this.listEl);
 
     this.mountAnchor.appendChild(this.panelEl);
@@ -366,67 +311,21 @@ export class TimelinePreviewPanel {
     };
     window.addEventListener('resize', this.onWindowResize);
 
-    this.onAnchorMouseEnter = () => {
-      if (!this._isCompactMode) return;
-      this.cancelCompactClose();
-      this.open();
-    };
-    this.onAnchorMouseLeave = () => this.scheduleCompactClose();
-    this.onPanelMouseEnter = () => {
-      if (!this._isCompactMode) return;
-      this.cancelCompactClose();
-    };
-    this.onPanelMouseLeave = () => this.scheduleCompactClose();
-    this.onHoverBridgeMouseEnter = () => {
-      if (!this._isCompactMode) return;
-      this.cancelCompactClose();
-    };
-    this.onHoverBridgeMouseLeave = () => this.scheduleCompactClose();
-    this.onAnchorFocusIn = () => {
-      if (!this._isCompactMode) return;
-      this.cancelCompactClose();
-      this.open();
-    };
-    this.onAnchorFocusOut = () => this.scheduleCompactClose();
-    this.onAnchorKeyDown = (event: KeyboardEvent) => {
-      if (!this._isCompactMode || (event.key !== 'Enter' && event.key !== ' ')) return;
-      event.preventDefault();
-      event.stopPropagation();
-      this.toggle();
-    };
-    this.onAnchorPointerDown = () => {
-      if (!this._isCompactMode) return;
-      // Pointer focus can open the panel before the subsequent click fires.
-      // Preserve the pre-click state so a closed rail still opens on touch.
-      this.anchorWasOpenOnPointerDown = this._isOpen;
-    };
-    this.onAnchorClick = (event: MouseEvent) => {
-      if (!this._isCompactMode) return;
-      event.stopPropagation();
-      const wasOpen = this.anchorWasOpenOnPointerDown ?? this._isOpen;
-      this.anchorWasOpenOnPointerDown = null;
-      if (wasOpen) this.close();
-      else this.open();
-    };
-    this.anchorElement.addEventListener('mouseenter', this.onAnchorMouseEnter);
-    this.anchorElement.addEventListener('mouseleave', this.onAnchorMouseLeave);
-    this.panelEl?.addEventListener('mouseenter', this.onPanelMouseEnter);
-    this.panelEl?.addEventListener('mouseleave', this.onPanelMouseLeave);
-    this.hoverBridgeEl?.addEventListener('mouseenter', this.onHoverBridgeMouseEnter);
-    this.hoverBridgeEl?.addEventListener('mouseleave', this.onHoverBridgeMouseLeave);
-    this.anchorElement.addEventListener('focusin', this.onAnchorFocusIn);
-    this.anchorElement.addEventListener('focusout', this.onAnchorFocusOut);
-    this.anchorElement.addEventListener('keydown', this.onAnchorKeyDown);
-    this.anchorElement.addEventListener('pointerdown', this.onAnchorPointerDown);
-    this.anchorElement.addEventListener('click', this.onAnchorClick);
+    this.stopCompactTrigger = bindCompactTrigger(
+      { anchor: this.anchorElement, panel: this.panelEl, hoverBridge: this.hoverBridgeEl },
+      {
+        isCompact: () => this._isCompactMode,
+        isOpen: () => this._isOpen,
+        open: () => this.open(),
+        close: () => this.close(),
+        toggle: () => this.toggle(),
+        scheduleClose: () => this.scheduleCompactClose(),
+        cancelClose: () => this.cancelCompactClose(),
+      },
+    );
 
-    // Re-render translated text on language change
-    this.onStorageChanged = (changes, areaName) => {
-      if ((areaName === 'sync' || areaName === 'local') && changes[StorageKeys.LANGUAGE]) {
-        this.updateTranslatedText();
-      }
-    };
-    browser.storage.onChanged.addListener(this.onStorageChanged);
+    // Re-render translated text once the new language has loaded, not when storage changes.
+    this.stopFollowingLanguage = onCachedLanguageChange(() => this.updateTranslatedText());
   }
 
   private updateTranslatedText(): void {
@@ -472,106 +371,54 @@ export class TimelinePreviewPanel {
     this.toggleBtn?.setAttribute('dir', dir);
   }
 
-  private setupScrollIsolation(): void {
-    if (!this.listEl) return;
-
-    this.listEl.addEventListener(
-      'wheel',
-      (e: WheelEvent) => {
-        e.stopPropagation();
-        const { scrollTop, scrollHeight, clientHeight } = this.listEl!;
-        const atTop = scrollTop <= 0 && e.deltaY < 0;
-        const atBottom = scrollTop + clientHeight >= scrollHeight - 1 && e.deltaY > 0;
-        if (atTop || atBottom) {
-          e.preventDefault();
-        }
-      },
-      { passive: false },
-    );
-  }
-
   /** Position the toggle button beside the timeline bar, vertically centered.
    *  Keep it on the bar's left side and clamp within viewport bounds. */
   private positionToggle(): void {
     if (!this.toggleBtn) return;
-    const barRect = this.anchorElement.getBoundingClientRect();
-    const btnSize = 24;
-    const gap = 4;
-    const minLeft = 8;
-    const maxLeft = Math.max(minLeft, window.innerWidth - btnSize - 8);
-    const leftPx = Math.max(minLeft, Math.min(Math.round(barRect.left - btnSize - gap), maxLeft));
-    this.toggleBtn.style.left = `${leftPx}px`;
-    this.toggleBtn.style.top = `${Math.round(barRect.top + barRect.height / 2 - btnSize / 2)}px`;
+    const spot = previewToggleSpot(this.anchorElement.getBoundingClientRect(), window.innerWidth);
+    this.toggleBtn.style.left = `${spot.left}px`;
+    this.toggleBtn.style.top = `${spot.top}px`;
   }
 
   private positionPanel(): void {
     if (!this.panelEl) return;
     const barRect = this.anchorElement.getBoundingClientRect();
-    const panelWidth = PREVIEW_PANEL_WIDTH_PX;
-    const gap = PREVIEW_PANEL_GAP_PX;
-    const maxHeight = this._isCompactMode
-      ? Math.min(700, window.innerHeight * 0.82)
-      : Math.min(500, window.innerHeight * 0.7);
-    const barCenterY = barRect.top + barRect.height / 2;
+    const maxHeight = previewPanelMaxHeight(window.innerHeight, this._isCompactMode);
     // RTL moves the default catalog rail left, so its preview must follow that side too.
     const isRTL = this.railPosition === 'left' || this.isRTLContext();
-
-    let left: number;
-    if (isRTL) {
-      // In RTL, bar is on the left — place panel to its right
-      left = barRect.right + gap;
-      if (left + panelWidth > window.innerWidth - 8) {
-        left = window.innerWidth - panelWidth - 8;
-      }
-    } else {
-      // In LTR, bar is on the right — place panel to its left
-      left = barRect.left - panelWidth - gap;
-      if (left < 8) left = 8;
-    }
+    const left = previewPanelLeft(barRect, window.innerWidth, isRTL);
 
     this.panelEl.style.maxHeight = `${Math.round(maxHeight)}px`;
     this.panelEl.style.left = `${Math.round(left)}px`;
 
     // Measure actual rendered height to center properly (works for both few and many items)
     const panelHeight = this.panelEl.offsetHeight || maxHeight;
-    let top = barCenterY - panelHeight / 2;
-    top = Math.max(8, Math.min(top, window.innerHeight - panelHeight - 8));
+    const top = previewPanelTop(barRect, panelHeight, window.innerHeight);
 
     this.panelEl.style.top = `${Math.round(top)}px`;
-    this.positionHoverBridge(barRect, left, top, panelWidth, panelHeight);
+    this.positionHoverBridge(barRect, { left, top, height: panelHeight }, isRTL);
   }
 
   // The visual gap must accept hover and clicks so slow crossings cannot close the panel.
   private positionHoverBridge(
     barRect: DOMRect,
-    panelLeft: number,
-    panelTop: number,
-    panelWidth: number,
-    panelHeight: number,
+    panel: { left: number; top: number; height: number },
+    isRTL: boolean,
   ): void {
     if (!this.hoverBridgeEl) return;
-    const isRTL = this.railPosition === 'left' || this.isRTLContext();
-    const panelRight = panelLeft + panelWidth;
-    const bridgeLeft = isRTL ? barRect.right : panelRight;
-    const bridgeWidth = isRTL
-      ? Math.max(0, panelLeft - barRect.right)
-      : Math.max(0, barRect.left - panelRight);
-    const viewportTop = Math.max(
-      0,
-      Math.min(barRect.top, panelTop) - PREVIEW_HOVER_BRIDGE_PADDING_PX,
+    const box = previewHoverBridgeBox(
+      barRect,
+      panel,
+      { width: window.innerWidth, height: window.innerHeight },
+      isRTL,
     );
-    const viewportBottom = Math.min(
-      window.innerHeight,
-      Math.max(barRect.bottom, panelTop + panelHeight) + PREVIEW_HOVER_BRIDGE_PADDING_PX,
-    );
-
-    this.hoverBridgeEl.style.left = `${Math.round(bridgeLeft)}px`;
-    this.hoverBridgeEl.style.top = `${Math.round(viewportTop)}px`;
-    this.hoverBridgeEl.style.width = `${Math.round(bridgeWidth)}px`;
-    this.hoverBridgeEl.style.height = `${Math.round(Math.max(0, viewportBottom - viewportTop))}px`;
+    this.hoverBridgeEl.style.left = `${Math.round(box.left)}px`;
+    this.hoverBridgeEl.style.top = `${Math.round(box.top)}px`;
+    this.hoverBridgeEl.style.width = `${Math.round(box.width)}px`;
+    this.hoverBridgeEl.style.height = `${Math.round(box.height)}px`;
     this.hoverBridgeEl.classList.toggle(
       PREVIEW_HOVER_BRIDGE_VISIBLE_CLASS,
-      this._isOpen && this._isCompactMode && bridgeWidth > 0,
+      this._isOpen && this._isCompactMode && box.width > 0,
     );
   }
 
@@ -606,86 +453,15 @@ export class TimelinePreviewPanel {
   private renderList(): void {
     if (!this.listEl) return;
     this.press?.cancelPending();
-    this.listEl.textContent = '';
-
-    if (this.filteredMarkers.length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'timeline-preview-empty';
-      empty.textContent = this.searchQuery
-        ? getTranslationSync('timelinePreviewNoResults')
-        : getTranslationSync('timelinePreviewNoMessages');
-      this.listEl.appendChild(empty);
-      return;
-    }
-
-    const fragment = document.createDocumentFragment();
-    for (const marker of this.filteredMarkers) {
-      fragment.appendChild(this.createItem(marker));
-    }
-    this.listEl.appendChild(fragment);
-  }
-
-  private createItem(marker: PreviewMarkerData): HTMLElement {
-    const item = document.createElement('div');
-    item.className = 'timeline-preview-item';
-    item.dataset.turnId = marker.id;
-
-    if (marker.starred) {
-      item.classList.add('starred');
-    }
-    if (marker.id === this.activeTurnId) {
-      item.classList.add('active');
-    }
-
-    const indexLabel = document.createElement('span');
-    indexLabel.className = 'timeline-preview-index';
-    indexLabel.textContent = `${marker.index + 1}`;
-    item.appendChild(indexLabel);
-
-    const text = document.createElement('span');
-    text.className = 'timeline-preview-text';
-    text.setAttribute('dir', 'auto');
-    const displayText = this.truncateText(marker.summary, 80);
-    if (this.searchQuery) {
-      this.appendHighlighted(text, displayText, this.searchQuery);
-    } else {
-      text.textContent = displayText;
-    }
-    item.appendChild(text);
-
-    item.addEventListener('click', (event) => {
-      if (this.press?.consumeClick(marker.id, event)) return;
-      this.onNavigate?.(marker.id, marker.index);
+    renderPreviewList(this.listEl, {
+      markers: this.filteredMarkers,
+      query: this.searchQuery,
+      activeTurnId: this.activeTurnId,
+      onItemClick: (marker, event) => {
+        if (this.press?.consumeClick(marker.id, event)) return;
+        this.onNavigate?.(marker.id, marker.index);
+      },
     });
-
-    return item;
-  }
-
-  /** Split text around case-insensitive query matches and wrap each match in <mark>. */
-  private appendHighlighted(container: HTMLElement, text: string, query: string): void {
-    const lowerText = text.toLowerCase();
-    const lowerQuery = query.toLowerCase();
-    let cursor = 0;
-    let idx = lowerText.indexOf(lowerQuery, cursor);
-    while (idx !== -1) {
-      if (idx > cursor) {
-        container.appendChild(document.createTextNode(text.slice(cursor, idx)));
-      }
-      const mark = document.createElement('mark');
-      mark.className = 'timeline-preview-highlight';
-      mark.textContent = text.slice(idx, idx + query.length);
-      container.appendChild(mark);
-      cursor = idx + query.length;
-      idx = lowerText.indexOf(lowerQuery, cursor);
-    }
-    if (cursor < text.length) {
-      container.appendChild(document.createTextNode(text.slice(cursor)));
-    }
-  }
-
-  private truncateText(text: string, maxLen: number): string {
-    if (text.length <= maxLen) return text;
-    return text.slice(0, maxLen - 1) + '\u2026';
   }
 
   private updateActiveHighlight(): void {

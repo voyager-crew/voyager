@@ -26,6 +26,7 @@ async function mount(options: { hiddenByUser?: boolean; attention?: boolean; url
   setPageUrl(url);
   const site = resolvePromptSiteAdapter(url);
   trigger = await mountPromptTrigger({
+    label: 'Prompt Manager',
     mascotLogo: false,
     hiddenByUser: options.hiddenByUser ?? false,
     attention: options.attention ?? false,

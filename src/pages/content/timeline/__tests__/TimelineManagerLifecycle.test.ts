@@ -8,6 +8,7 @@ import type { SyncSettingsListener } from '@/features/timeline/types';
 import { TimelineManager } from '../manager';
 
 vi.mock('../../../../utils/i18n', () => ({
+  onCachedLanguageChange: () => () => {},
   initI18n: vi.fn().mockResolvedValue(undefined),
   getTranslationSync: (key: string) => key,
 }));

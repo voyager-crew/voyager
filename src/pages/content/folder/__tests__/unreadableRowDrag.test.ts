@@ -6,6 +6,7 @@ import { mountSidebar } from './sidebarRuntimeHarness';
 vi.mock('webextension-polyfill', () => ({ default: chrome }));
 
 vi.mock('@/utils/i18n', () => ({
+  onCachedLanguageChange: () => () => {},
   getTranslationSync: (key: string) => key,
   getTranslationSyncUnsafe: (key: string) => key,
   initI18n: () => Promise.resolve(),

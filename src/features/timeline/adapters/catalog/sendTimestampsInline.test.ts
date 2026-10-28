@@ -25,6 +25,7 @@ import {
 } from './sendTimestampsHarness';
 
 vi.mock('@/utils/i18n', () => ({
+  onCachedLanguageChange: () => () => {},
   initI18n: vi.fn().mockResolvedValue(undefined),
   getTranslationSync: (key: string) => key,
 }));

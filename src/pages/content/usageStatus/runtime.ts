@@ -12,8 +12,8 @@ import browser from 'webextension-polyfill';
 import { LoggerService } from '@/core/services/LoggerService';
 import { StorageKeys } from '@/core/types/common';
 import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContext';
-import { getCurrentLanguage, initI18n } from '@/utils/i18n';
-import { localeFromLanguage } from '@/utils/language';
+import { getCurrentLanguage, initI18n, onCachedLanguageChange } from '@/utils/i18n';
+import { type AppLanguage, localeFromLanguage } from '@/utils/language';
 
 import { watchRouteChanges } from '../utils/routeWatcher';
 import { rememberGeminiUsageRootAtStartup, resolveGeminiUsageRoot } from './usageDom';
@@ -132,6 +132,7 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
   let navigationTimer: number | null = null;
   let stopRouteWatcher: (() => void) | null = null;
   let storageListener: ((changes: StorageChanges, areaName: string) => void) | null = null;
+  let stopFollowingLanguage: (() => void) | null = null;
 
   const pill = createUsagePill(() => refresh.requestReplay(true));
   const refresh = createUsageRefresh(
@@ -272,29 +273,30 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
       : m.resetLabel;
   }
 
+  /** Re-localize reset dates and the pill's labels once a new language has loaded. */
+  function relocalize(language: AppLanguage): void {
+    if (!isCurrent()) return;
+    languageRevision += 1;
+    uiLocale = localeFromLanguage(language);
+    if (snapshot) {
+      // Reformat reset labels under the new locale.
+      snapshot = {
+        ...snapshot,
+        daily: snapshot.daily
+          ? { ...snapshot.daily, resetLabel: reformatReset(snapshot.daily) }
+          : null,
+        weekly: snapshot.weekly
+          ? { ...snapshot.weekly, resetLabel: reformatReset(snapshot.weekly) }
+          : null,
+      };
+    }
+    if (initialized) pill.render(true, snapshot);
+  }
+
   function setupStorageListener(): void {
+    // The pill's labels come from getTranslationSync, which follows only a loaded language.
+    stopFollowingLanguage = onCachedLanguageChange(relocalize);
     storageListener = (changes, areaName) => {
-      if (changes[StorageKeys.LANGUAGE]) {
-        const revision = ++languageRevision;
-        // Voyager language changed — re-localize reset dates + labels.
-        void getCurrentLanguage().then((lang) => {
-          if (!isCurrent() || revision !== languageRevision) return;
-          uiLocale = localeFromLanguage(lang);
-          if (snapshot) {
-            // Reformat reset labels under the new locale.
-            snapshot = {
-              ...snapshot,
-              daily: snapshot.daily
-                ? { ...snapshot.daily, resetLabel: reformatReset(snapshot.daily) }
-                : null,
-              weekly: snapshot.weekly
-                ? { ...snapshot.weekly, resetLabel: reformatReset(snapshot.weekly) }
-                : null,
-            };
-          }
-          if (initialized) pill.render(true, snapshot);
-        });
-      }
       const accountKey = currentUsageAccountKey();
       const usageCacheChange =
         areaName === 'local'
@@ -370,6 +372,8 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
         browser.storage.onChanged.removeListener(storageListener);
         storageListener = null;
       }
+      stopFollowingLanguage?.();
+      stopFollowingLanguage = null;
     },
     { once: true },
   );

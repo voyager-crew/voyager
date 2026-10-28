@@ -30,6 +30,7 @@ vi.mock('webextension-polyfill', () => ({
 }));
 
 vi.mock('@/utils/i18n', () => ({
+  onCachedLanguageChange: () => () => {},
   getTranslationSync: (key: string) => key,
   getTranslationSyncUnsafe: (key: string) => key,
   initI18n: () => Promise.resolve(),

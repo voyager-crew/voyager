@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
-import { getCurrentLanguage } from '@/utils/i18n';
 import type { AppLanguage } from '@/utils/language';
 
 import type { UsageSnapshot } from '../usageSnapshot';
@@ -11,9 +10,16 @@ import { flushUsagePlugin, startUsagePlugin } from './usagePluginHarness';
 const storageListeners = new Set<Parameters<typeof chrome.storage.onChanged.addListener>[0]>();
 
 vi.mock('webextension-polyfill', () => ({ default: chrome }));
-const language = vi.hoisted(() => ({ current: 'en' }));
+const language = vi.hoisted(() => ({
+  current: 'en',
+  subscribers: new Set<(language: string) => void>(),
+}));
 vi.mock('@/utils/i18n', () => ({
   initI18n: vi.fn(async () => undefined),
+  onCachedLanguageChange: (callback: (language: string) => void) => {
+    language.subscribers.add(callback);
+    return () => language.subscribers.delete(callback);
+  },
   getCurrentLanguage: vi.fn(async () => language.current),
   getTranslationSync: (key: string) => key,
 }));
@@ -52,6 +58,13 @@ function observer(type: string, payload?: unknown): void {
       data: { source: 'gv-usage-observer', type, payload },
     }),
   );
+}
+
+/** The shared i18n system has loaded a newly selected language. */
+async function languageLoaded(next: AppLanguage): Promise<void> {
+  language.current = next;
+  for (const subscriber of language.subscribers) subscriber(next);
+  await flushUsagePlugin();
 }
 
 async function storageChange(
@@ -343,10 +356,7 @@ describe('usage feature lifecycle', () => {
   it('reformats cached reset labels when the Voyager language changes', async () => {
     await start();
     expect(pill().querySelector<HTMLElement>('.gv-usage-metric')?.title).toBe('Resets 2:00 PM');
-    language.current = 'zh';
-    await storageChange(StorageKeys.LANGUAGE, 'zh', 'sync');
-    await Promise.resolve();
-    await Promise.resolve();
+    await languageLoaded('zh');
     expect(pill().querySelector<HTMLElement>('.gv-usage-metric')?.title).toBe('Resets 14:00');
     expect(chrome.storage.local.set).not.toHaveBeenCalled();
   });
@@ -387,8 +397,10 @@ describe('usage feature lifecycle', () => {
     navigate('/u/2/usage');
     stop!();
     stop = undefined;
+    await languageLoaded('zh');
     await vi.advanceTimersByTimeAsync(800);
     expect(document.getElementById('gv-usage-pill')).toBeNull();
+    language.current = 'en';
     expect(vi.getTimerCount()).toBe(0);
     expect(chrome.storage.local.set).not.toHaveBeenCalled();
 
@@ -399,21 +411,14 @@ describe('usage feature lifecycle', () => {
       resolveCache = resolve;
     });
     vi.mocked(chrome.storage.local.get).mockImplementationOnce(() => pendingCache);
-    let resolveLanguage!: (value: AppLanguage) => void;
-    const pendingLanguage = new Promise<AppLanguage>((resolve) => {
-      resolveLanguage = resolve;
-    });
-    vi.mocked(getCurrentLanguage).mockImplementationOnce(() => pendingLanguage);
     navigate('/u/2/usage');
     await vi.advanceTimersByTimeAsync(250);
-    await storageChange(StorageKeys.LANGUAGE, 'zh', 'sync');
     stop!();
     stop = undefined;
     expect(vi.getTimerCount()).toBe(0);
     navigate('/u/2/app');
     await start();
     resolveCache({ 'gvUsageCache:u/2': cached(42) });
-    resolveLanguage('zh');
     await vi.advanceTimersByTimeAsync(800);
     expect(pill().querySelector('.gv-usage-pct')?.textContent).toContain('7%');
     expect(pill().querySelector<HTMLElement>('.gv-usage-metric')?.title).toBe('Resets 2:00 PM');

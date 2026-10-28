@@ -15,6 +15,7 @@ vi.mock('webextension-polyfill', () => ({
 }));
 
 vi.mock('@/utils/i18n', () => ({
+  onCachedLanguageChange: () => () => {},
   getTranslationSync: (key: string) => {
     const translations: Record<string, string> = {
       gemsHide: 'Hide Gems',

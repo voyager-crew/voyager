@@ -14,6 +14,7 @@ import { sidebarTree, sidebarTreeRoot } from './sidebarTreeDriver';
 vi.mock('webextension-polyfill', () => ({ default: chrome }));
 
 vi.mock('@/utils/i18n', () => ({
+  onCachedLanguageChange: () => () => {},
   getTranslationSync: (key: string) => key,
   // The selection count is the one message these tests read back as user-visible
   // text, so it resolves to its real English form; everything else stays a key.

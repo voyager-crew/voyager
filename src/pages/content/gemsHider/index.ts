@@ -5,27 +5,27 @@
  * This module keeps the same hide/show affordance across those variants while
  * persisting state independently for each section.
  */
-import browser from 'webextension-polyfill';
-
 import { type StorageKey, StorageKeys } from '@/core/types/common';
 
-import { getTranslationSync } from '../../../utils/i18n';
+import { getTranslationSync, onCachedLanguageChange } from '../../../utils/i18n';
 import {
   type RemoveSidebarCollapseNudge,
   removeSidebarCollapseNudge,
   showSidebarCollapseNudgeOnce,
 } from '../sidebarCollapseNudge';
+import {
+  ARROW_ICON_SELECTOR,
+  HIDDEN_CLASS,
+  PEEK_BAR_CLASS,
+  STYLE_ID,
+  TARGET_CLASS,
+  TOGGLE_BTN_CLASS,
+  injectStyles,
+} from './styles';
+import { hideTooltip, removeTooltip, showTooltip } from './tooltip';
 
-const STYLE_ID = 'gv-sidebar-section-hider-style';
-const HIDDEN_CLASS = 'gv-sidebar-section-hidden';
-const PEEK_BAR_CLASS = 'gv-sidebar-section-peek-bar';
-const TOGGLE_BTN_CLASS = 'gv-sidebar-section-toggle-btn';
-const TARGET_CLASS = 'gv-sidebar-section-hider-target';
-const TOOLTIP_ID = 'gv-sidebar-section-tooltip';
-const TOOLTIP_VISIBLE_CLASS = 'gv-visible';
 const PROCESSED_ATTR = 'data-gv-sidebar-section-hider';
 const SECTION_ID_ATTR = 'data-gv-sidebar-section-id';
-const ARROW_ICON_SELECTOR = '[data-test-id="arrow-icon"]';
 
 type SectionId = 'gems';
 type TranslationKey = Parameters<typeof getTranslationSync>[0];
@@ -79,9 +79,7 @@ let initialized = false;
 let observer: MutationObserver | null = null;
 let observerDebounceTimer: number | null = null;
 const observerPendingNodes = new Set<HTMLElement>();
-let languageChangeListener:
-  | ((changes: Record<string, chrome.storage.StorageChange>, areaName: string) => void)
-  | null = null;
+let stopFollowingLanguage: (() => void) | null = null;
 // Bumped by every stop: storage continuations from an earlier run must not touch the page.
 let hiderRun = 0;
 let pendingInitTimer: number | null = null;
@@ -98,207 +96,6 @@ interface MountedSection {
 const mountedSections = new Set<MountedSection>();
 /** Nudge cards this hider mounted; the host may detach one along with the sidebar. */
 const mountedNudges = new Set<RemoveSidebarCollapseNudge>();
-
-function injectStyles(): void {
-  if (document.getElementById(STYLE_ID)) return;
-
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = `
-    .${TARGET_CLASS} {
-      position: relative;
-      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .${TOGGLE_BTN_CLASS} {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transform: scale(0.8);
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      color: var(--gm3-sys-color-on-surface-variant, #5f6368);
-      vertical-align: middle;
-      margin-right: 4px;
-    }
-
-    .${TOGGLE_BTN_CLASS}:hover {
-      background: var(--gm3-sys-color-surface-container-highest, rgba(0, 0, 0, 0.12));
-      transform: scale(1.1);
-    }
-
-    .${TOGGLE_BTN_CLASS}:active {
-      transform: scale(0.95);
-    }
-
-    .${TOGGLE_BTN_CLASS} svg {
-      width: 16px;
-      height: 16px;
-      transition: transform 0.2s ease;
-    }
-
-    ${ARROW_ICON_SELECTOR}:hover .${TOGGLE_BTN_CLASS},
-    .gv-folder-header:hover .${TOGGLE_BTN_CLASS},
-    .${TOGGLE_BTN_CLASS}:hover {
-      opacity: 1;
-      transform: scale(1);
-    }
-
-    /* Absolute-placement variant: mounted on the expandable-section itself
-     * (e.g. Notebooks) instead of nested inside the header button. Reveals on
-     * hover of the parent section. */
-    .${TOGGLE_BTN_CLASS}--absolute {
-      position: absolute;
-      top: 4px;
-      right: 8px;
-      margin-right: 0;
-      z-index: 2;
-    }
-    expandable-section:hover > .${TOGGLE_BTN_CLASS}--absolute,
-    .${TOGGLE_BTN_CLASS}--absolute:hover,
-    .${TOGGLE_BTN_CLASS}--absolute:focus-visible {
-      opacity: 1;
-      transform: scale(1);
-    }
-
-    .${HIDDEN_CLASS} {
-      max-height: 0 !important;
-      overflow: hidden !important;
-      opacity: 0 !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      pointer-events: none !important;
-    }
-
-    .${PEEK_BAR_CLASS} {
-      height: 6px;
-      margin: 8px 16px;
-      border-radius: 3px;
-      background: linear-gradient(
-        90deg,
-        transparent 0%,
-        var(--gm3-sys-color-outline-variant, rgba(0, 0, 0, 0.08)) 20%,
-        var(--gm3-sys-color-outline-variant, rgba(0, 0, 0, 0.08)) 80%,
-        transparent 100%
-      );
-      cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      display: none;
-    }
-
-    .${PEEK_BAR_CLASS}::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 40px;
-      height: 4px;
-      border-radius: 2px;
-      background: var(--gm3-sys-color-primary, #1a73e8);
-      opacity: 0;
-      transition: all 0.2s ease;
-    }
-
-    .${PEEK_BAR_CLASS}:hover {
-      height: 12px;
-      background: linear-gradient(
-        90deg,
-        transparent 0%,
-        var(--gm3-sys-color-primary-container, rgba(26, 115, 232, 0.12)) 15%,
-        var(--gm3-sys-color-primary-container, rgba(26, 115, 232, 0.12)) 85%,
-        transparent 100%
-      );
-    }
-
-    .${PEEK_BAR_CLASS}:hover::after {
-      opacity: 1;
-      width: 60px;
-    }
-
-    #${TOOLTIP_ID} {
-      position: fixed;
-      left: 0;
-      top: 0;
-      padding: 6px 12px;
-      background: var(--gm3-sys-color-inverse-surface, #303030);
-      color: var(--gm3-sys-color-inverse-on-surface, #f5f5f5);
-      font-family: 'Google Sans', Roboto, sans-serif;
-      font-size: 12px;
-      font-weight: 500;
-      border-radius: 8px;
-      white-space: nowrap;
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      z-index: 10000;
-      transform: translate(-50%, calc(-100% - 8px));
-    }
-
-    #${TOOLTIP_ID}.${TOOLTIP_VISIBLE_CLASS} {
-      opacity: 1;
-    }
-
-    .${PEEK_BAR_CLASS}.gv-visible {
-      display: block;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .${TOGGLE_BTN_CLASS} {
-        background: rgba(255, 255, 255, 0.08);
-        color: #e8eaed;
-      }
-
-      .${TOGGLE_BTN_CLASS}:hover {
-        background: rgba(255, 255, 255, 0.14);
-      }
-
-      .${PEEK_BAR_CLASS} {
-        background: linear-gradient(
-          90deg,
-          transparent 0%,
-          rgba(255, 255, 255, 0.06) 20%,
-          rgba(255, 255, 255, 0.06) 80%,
-          transparent 100%
-        );
-      }
-
-      .${PEEK_BAR_CLASS}:hover {
-        background: linear-gradient(
-          90deg,
-          transparent 0%,
-          rgba(138, 180, 248, 0.15) 15%,
-          rgba(138, 180, 248, 0.15) 85%,
-          transparent 100%
-        );
-      }
-
-      .${PEEK_BAR_CLASS}::after {
-        background: #8ab4f8;
-      }
-    }
-
-    body[data-theme="dark"] .${TOGGLE_BTN_CLASS},
-    body.dark-theme .${TOGGLE_BTN_CLASS} {
-      background: rgba(255, 255, 255, 0.08);
-      color: #e8eaed;
-    }
-
-    body[data-theme="dark"] .${TOGGLE_BTN_CLASS}:hover,
-    body.dark-theme .${TOGGLE_BTN_CLASS}:hover {
-      background: rgba(255, 255, 255, 0.14);
-    }
-  `;
-
-  document.head.appendChild(style);
-}
 
 function getSectionText(section: HidableSectionConfig, kind: 'hide' | 'show'): string {
   const translationKey = kind === 'hide' ? section.hideTranslationKey : section.showTranslationKey;
@@ -354,40 +151,6 @@ function createPeekBar(section: HidableSectionConfig): HTMLDivElement {
   bar.setAttribute('aria-label', label);
 
   return bar;
-}
-
-function getTooltipElement(): HTMLDivElement {
-  let tooltip = document.getElementById(TOOLTIP_ID) as HTMLDivElement | null;
-  if (tooltip) {
-    return tooltip;
-  }
-
-  tooltip = document.createElement('div');
-  tooltip.id = TOOLTIP_ID;
-  tooltip.setAttribute('role', 'tooltip');
-  document.body.appendChild(tooltip);
-
-  return tooltip;
-}
-
-function hideTooltip(): void {
-  document.getElementById(TOOLTIP_ID)?.classList.remove(TOOLTIP_VISIBLE_CLASS);
-}
-
-function showTooltip(bar: HTMLDivElement): void {
-  const label = bar.getAttribute('data-tooltip') || bar.title;
-  if (!label) {
-    hideTooltip();
-    return;
-  }
-
-  const tooltip = getTooltipElement();
-  const rect = bar.getBoundingClientRect();
-
-  tooltip.textContent = label;
-  tooltip.style.left = `${rect.left + rect.width / 2}px`;
-  tooltip.style.top = `${Math.max(rect.top, 16)}px`;
-  tooltip.classList.add(TOOLTIP_VISIBLE_CLASS);
 }
 
 function getSectionConfig(sectionId: string | null): HidableSectionConfig | undefined {
@@ -659,13 +422,8 @@ function initGemsHider(): void {
 
   observer.observe(document.body, { childList: true, subtree: true });
 
-  languageChangeListener = (changes, areaName) => {
-    if ((areaName === 'sync' || areaName === 'local') && changes[StorageKeys.LANGUAGE]) {
-      updateLanguageText();
-    }
-  };
-
-  browser.storage.onChanged.addListener(languageChangeListener);
+  // Relabel once the new language has loaded, not when storage changes.
+  stopFollowingLanguage = onCachedLanguageChange(updateLanguageText);
 }
 
 function cleanup(): void {
@@ -680,10 +438,8 @@ function cleanup(): void {
     observer = null;
   }
 
-  if (languageChangeListener) {
-    browser.storage.onChanged.removeListener(languageChangeListener);
-    languageChangeListener = null;
-  }
+  stopFollowingLanguage?.();
+  stopFollowingLanguage = null;
 
   for (const mounted of mountedSections) {
     mounted.listeners.abort();
@@ -701,7 +457,7 @@ function cleanup(): void {
   document.getElementById(STYLE_ID)?.remove();
   document.querySelectorAll(`.${TOGGLE_BTN_CLASS}`).forEach((element) => element.remove());
   document.querySelectorAll(`.${PEEK_BAR_CLASS}`).forEach((element) => element.remove());
-  document.getElementById(TOOLTIP_ID)?.remove();
+  removeTooltip();
   removeSidebarCollapseNudge();
   document.querySelectorAll(`.${HIDDEN_CLASS}`).forEach((element) => {
     element.classList.remove(HIDDEN_CLASS);

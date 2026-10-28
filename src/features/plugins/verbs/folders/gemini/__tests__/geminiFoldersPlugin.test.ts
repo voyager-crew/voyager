@@ -7,6 +7,9 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import en from '@locales/en/messages.json';
+import ja from '@locales/ja/messages.json';
+
 import {
   accountIsolationService,
   buildScopedStorageKey,
@@ -29,6 +32,7 @@ import type { GeminiFolderSession } from '@/pages/content/folder/session/geminiF
 import { geminiFolderLeases } from '@/pages/content/folder/session/geminiFolderSessions';
 import { admitGeminiFolders } from '@/pages/content/geminiFolderStartup';
 import { type MemoryStorage, createMemoryStorage, settle } from '@/tests/memoryStorage';
+import { setCachedLanguage } from '@/utils/i18n';
 
 import profile from '../../__tests__/fixtures/geminiFolderData.json';
 
@@ -270,6 +274,21 @@ describe('Gemini folders as an official plugin', () => {
     await memory.api.sync.set({ [StorageKeys.FOLDER_ENABLED]: false });
     await vi.waitFor(() => expect(panel()).toBeNull());
     expect(hidden()).toEqual([]);
+  });
+
+  it('relabels the folder section once a newly selected language has loaded', async () => {
+    const title = () => panel()?.querySelector('.gv-folder-header .title')?.textContent?.trim();
+    await openPage();
+    await vi.waitFor(() => expect(panel()).not.toBeNull());
+    expect(title()).toBe(en.folder_title.message);
+
+    try {
+      // What i18n's own storage listener runs for the popup's choice: load the chunk, then apply.
+      await setCachedLanguage('ja');
+      expect(title()).toBe(ja.folder_title.message);
+    } finally {
+      await setCachedLanguage('en');
+    }
   });
 });
 

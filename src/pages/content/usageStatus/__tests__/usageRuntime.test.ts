@@ -13,6 +13,7 @@ const storageListeners = new Set<Parameters<typeof chrome.storage.onChanged.addL
 
 vi.mock('webextension-polyfill', () => ({ default: chrome }));
 vi.mock('@/utils/i18n', () => ({
+  onCachedLanguageChange: () => () => {},
   initI18n: vi.fn(async () => undefined),
   getCurrentLanguage: vi.fn(async () => 'en'),
   getTranslationSync: (key: string) => key,

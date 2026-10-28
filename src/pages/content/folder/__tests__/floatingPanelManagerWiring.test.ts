@@ -20,6 +20,7 @@ vi.mock('@/utils/i18n', () => {
   const translate = (key: string) =>
     key === 'folder_remove_conversation_confirm' ? 'Remove "{title}"?' : key;
   return {
+    onCachedLanguageChange: () => () => {},
     getTranslationSync: translate,
     getTranslationSyncUnsafe: translate,
     initI18n: () => Promise.resolve(),

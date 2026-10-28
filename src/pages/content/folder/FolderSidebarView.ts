@@ -199,7 +199,6 @@ export class FolderSidebarView {
         this.options.onRefresh();
       }
     }
-    if (changes[StorageKeys.LANGUAGE]) this.refreshLanguage();
   }
 
   createPanel(): HTMLElement {

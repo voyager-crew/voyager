@@ -22,6 +22,7 @@ const { mockBrowser } = vi.hoisted(() => ({
 vi.mock('webextension-polyfill', () => ({ default: mockBrowser }));
 
 vi.mock('@/utils/i18n', () => ({
+  onCachedLanguageChange: () => () => {},
   getTranslationSync: (key: string) => key,
   getTranslationSyncUnsafe: (key: string) => key,
   initI18n: () => Promise.resolve(),

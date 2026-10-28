@@ -12,6 +12,7 @@ import { type MemoryStorage, createMemoryStorage } from '@/tests/memoryStorage';
 import { routeCatalogOutlineWrites } from '../../__tests__/catalogOutlineBackground';
 
 vi.mock('@/utils/i18n', () => ({
+  onCachedLanguageChange: () => () => {},
   initI18n: vi.fn().mockResolvedValue(undefined),
   getTranslationSync: (key: string) => key,
 }));

@@ -27,7 +27,10 @@ import { createSelectionStartup } from '../selectionStartup';
 import { type LifecycleHarness, installLifecycleHarness } from './lifecycleHarness';
 
 vi.mock('webextension-polyfill', () => ({ default: chrome }));
-vi.mock('@/utils/i18n', () => ({ getTranslationSync: (key: string) => key }));
+vi.mock('@/utils/i18n', () => ({
+  getTranslationSync: (key: string) => key,
+  onCachedLanguageChange: () => () => {},
+}));
 vi.mock('@/core/services/AccountIsolationService', async (original) => ({
   ...(await original<typeof import('@/core/services/AccountIsolationService')>()),
   detectAccountContextFromDocument: () => ({ routeUserId: '0', email: 'me@example.com' }),

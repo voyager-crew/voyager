@@ -19,7 +19,10 @@ import { createSelectionStartup } from '../selectionStartup';
 import { type LifecycleHarness, installLifecycleHarness } from './lifecycleHarness';
 
 vi.mock('webextension-polyfill', () => ({ default: chrome }));
-vi.mock('@/utils/i18n', () => ({ getTranslationSync: (key: string) => key }));
+vi.mock('@/utils/i18n', () => ({
+  getTranslationSync: (key: string) => key,
+  onCachedLanguageChange: () => () => {},
+}));
 
 const ID = OFFICIAL_PLUGIN_IDS.geminiQuoteReply;
 const RECT = {

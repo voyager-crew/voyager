@@ -9,6 +9,7 @@ import type { UsageSnapshot } from '../usageSnapshot';
 
 vi.mock('webextension-polyfill', () => ({ default: chrome }));
 vi.mock('@/utils/i18n', () => ({
+  onCachedLanguageChange: () => () => {},
   initI18n: vi.fn(async () => undefined),
   getCurrentLanguage: vi.fn(async () => 'en'),
   getTranslationSync: (key: string) => key,

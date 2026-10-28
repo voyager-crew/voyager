@@ -14,6 +14,7 @@ import { TimelineManager } from '../../timeline/manager';
 import { NATIVE_HEALTH_GRACE_MS, nativeHealthReporter } from '../index';
 
 vi.mock('@/utils/i18n', () => ({
+  onCachedLanguageChange: () => () => {},
   initI18n: vi.fn().mockResolvedValue(undefined),
   getTranslationSync: (key: string) => key,
   getTranslationSyncUnsafe: (key: string) => key,

@@ -25,7 +25,7 @@
       "src/features/plugins/verbs/mermaid/mermaid.test.ts": 2,
       "src/features/plugins/verbs/userLatex/onlineUserLatex.test.ts": 2,
       "src/features/plugins/verbs/userLatex/userLatex.test.ts": 2,
-      "src/features/timeline/__tests__/TimelinePreviewPanel.test.ts": 4,
+      "src/features/timeline/__tests__/TimelinePreviewPanel.list.test.ts": 4,
       "src/pages/background/bridge/__tests__/bridgeClient.test.ts": 2,
       "src/pages/background/bridge/__tests__/bridgeDispatcher.leftRestore.test.ts": 2,
       "src/pages/background/bridge/__tests__/bridgeDispatcher.tabs.test.ts": 1,

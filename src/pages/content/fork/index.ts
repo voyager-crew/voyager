@@ -10,6 +10,7 @@ import browser from 'webextension-polyfill';
 
 import { GEMINI_PACKAGED_FORK } from '@/core/gemini/content/packaged';
 import { StorageKeys } from '@/core/types/common';
+import { onCachedLanguageChange } from '@/utils/i18n';
 
 import { historyTimestampStore } from '../timestamp/historyTimestamps';
 import { createForkControls } from './forkControls';
@@ -125,15 +126,15 @@ export function startFork(): () => void {
     subtree: true,
   });
 
-  // Language change listener
+  // Relabel once the new language has loaded, not when storage changes.
+  const stopFollowingLanguage = onCachedLanguageChange(() => {
+    controls.updateLanguage();
+    indicators.updateLanguage();
+  });
   const onStorageChanged = (
     changes: Record<string, browser.Storage.StorageChange>,
     areaName: string,
   ) => {
-    if ((areaName === 'sync' || areaName === 'local') && changes[StorageKeys.LANGUAGE]) {
-      controls.updateLanguage();
-      indicators.updateLanguage();
-    }
     if (areaName === 'local' && changes[StorageKeys.FORK_NODES]) {
       indicators.refresh();
     }
@@ -151,6 +152,7 @@ export function startFork(): () => void {
     stopPendingFork();
     controls.stop();
     browser.storage.onChanged.removeListener(onStorageChanged);
+    stopFollowingLanguage();
 
     indicators.stop();
   };

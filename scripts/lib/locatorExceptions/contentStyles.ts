@@ -98,7 +98,7 @@ export const CONTENT_STYLES_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
       'Native composer ownership bounds the remote dialog exclusion before prefill, while the legacy OFF dialog query stays exact. Detached-clone button/gv-control stripping defines prompt serialization, and clicked anchor URL checks distinguish navigation from send completion; all remain fixed source/event protocols.',
   },
   {
-    file: 'src/pages/content/gemsHider/index.ts',
+    file: 'src/pages/content/gemsHider/styles.ts',
     kind: 'protocol',
     values: {
       'expandable-section': 1,

@@ -1,22 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 /**
  * Tests for inputCollapse feature
  */
-import browser from 'webextension-polyfill';
-
 import { type LifecycleHarness, installLifecycleHarness } from '../../__tests__/lifecycleHarness';
 
-// Mock webextension-polyfill BEFORE importing the module
-vi.mock('webextension-polyfill', () => ({
-  default: {
-    storage: {
-      onChanged: { addListener: vi.fn(), removeListener: vi.fn() },
-    },
-  },
-}));
+const languageSubscribers = vi.hoisted(() => new Set<() => void>());
 
 // Mock i18n
 vi.mock('@/utils/i18n', () => ({
+  onCachedLanguageChange: (callback: () => void) => {
+    languageSubscribers.add(callback);
+    return () => languageSubscribers.delete(callback);
+  },
   getTranslationSync: (key: string) => {
     const translations: Record<string, string> = {
       inputCollapsePlaceholder: 'Message Gemini',
@@ -294,9 +290,7 @@ describe('inputCollapse', () => {
       vi.advanceTimersByTime(300);
       expect(container.classList.contains(COLLAPSED)).toBe(true);
       // The retired session stopped following the language; only the new one listens.
-      const added = vi.mocked(browser.storage.onChanged.addListener).mock.calls;
-      const removed = vi.mocked(browser.storage.onChanged.removeListener).mock.calls;
-      expect(removed.map(([listener]) => listener)).toEqual([added[0][0]]);
+      expect(languageSubscribers.size).toBe(1);
     });
 
     it("leaves other features' processed markers alone on stop", async () => {

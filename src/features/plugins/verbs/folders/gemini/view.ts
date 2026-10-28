@@ -34,6 +34,7 @@ import type {
   GeminiFolderSession,
   GeminiFolderView,
 } from '@/pages/content/folder/session/geminiFolderSession';
+import { onCachedLanguageChange } from '@/utils/i18n';
 
 import { listenForGeminiFolderSettings, readFloatingModeSetting } from './settings';
 
@@ -364,6 +365,8 @@ export class GeminiFoldersView extends GeminiFolderSessionView {
       onAnchor: (value) => this.sidebarRuntime.setAnchor(value),
     });
     this.lifetimeCleanup.push(removeListener);
+    // Relabel once the new language has loaded, not when storage changes.
+    this.lifetimeCleanup.push(onCachedLanguageChange(() => this.treeView.refreshLanguage()));
   }
 
   private handleStoreChange(reason: FolderStoreChange): void {

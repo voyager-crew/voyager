@@ -15,6 +15,7 @@ const { showTimelineStyleCoachmark } = vi.hoisted(() => ({
 }));
 vi.mock('@/features/timeline/timelineStyleCoachmark', () => ({ showTimelineStyleCoachmark }));
 vi.mock('@/utils/i18n', () => ({
+  onCachedLanguageChange: () => () => {},
   initI18n: vi.fn().mockResolvedValue(undefined),
   getTranslationSync: (key: string) => key,
 }));

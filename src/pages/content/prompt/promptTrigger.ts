@@ -51,6 +51,8 @@ export interface PromptTrigger {
 }
 
 export interface PromptTriggerOptions {
+  /** Accessible name; the Prompt Manager relabels `element` when the language changes. */
+  label: string;
   mascotLogo: boolean;
   hiddenByUser: boolean;
   attention: boolean;
@@ -62,6 +64,7 @@ export interface PromptTriggerOptions {
 
 /** Adds the ball to the page and restores its position; resolves once it is placed. */
 export async function mountPromptTrigger({
+  label,
   mascotLogo,
   hiddenByUser: initiallyHidden,
   attention: initialAttention,
@@ -74,7 +77,7 @@ export async function mountPromptTrigger({
   const trigger = document.createElement('button');
   trigger.className = 'gv-pm-trigger';
   trigger.id = PROMPT_TRIGGER_ELEMENT_ID;
-  trigger.setAttribute('aria-label', 'Prompt Manager');
+  trigger.setAttribute('aria-label', label);
   const img = createTriggerLogoImage(trigger, mascotLogo, getRuntimeUrl);
   if (attention) {
     trigger.classList.add(ATTENTION_CLASS);

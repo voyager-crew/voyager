@@ -77,6 +77,7 @@ const { getStarredMessagesForConversation, showTimelineStyleCoachmark } = vi.hoi
 }));
 
 vi.mock('@/utils/i18n', () => ({
+  onCachedLanguageChange: () => () => {},
   initI18n: vi.fn().mockResolvedValue(undefined),
   getTranslationSync: (key: string) => key,
 }));

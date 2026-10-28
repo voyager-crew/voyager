@@ -31,7 +31,7 @@ import {
   createTemplateLibrary,
 } from '@/features/researchPack/services/templates';
 import type { AddItemOutcome, ResearchPack } from '@/features/researchPack/services/types';
-import { getTranslationSync } from '@/utils/i18n';
+import { getTranslationSync, onCachedLanguageChange } from '@/utils/i18n';
 
 import { findChatInput, insertTextIntoChatInput } from '../chatInput';
 import type { StopNativeFeature } from '../featureLifecycle';
@@ -434,11 +434,11 @@ export function startResearchPack(options: StartResearchPackOptions = {}): StopN
       isolationEpoch += 1;
       checkScope();
     }
-    if ((areaName === 'sync' || areaName === 'local') && changes[StorageKeys.LANGUAGE]) {
-      addButtonOptions.label = t('researchPackAdd');
-      updateAddButtonLabels(document, addButtonOptions.label);
-      panel.relabel();
-    }
+  };
+  const relabel = (): void => {
+    addButtonOptions.label = t('researchPackAdd');
+    updateAddButtonLabels(document, addButtonOptions.label);
+    panel.relabel();
   };
 
   document.body.appendChild(panel.root);
@@ -446,6 +446,8 @@ export function startResearchPack(options: StartResearchPackOptions = {}): StopN
   scan();
   observer.observe(document.body, { childList: true, subtree: true });
   chrome.storage.onChanged.addListener(onStorageChanged);
+  // Relabel once the new language has loaded, not when storage changes.
+  const stopFollowingLanguage = onCachedLanguageChange(relabel);
   continueIn.refresh();
 
   return () => {
@@ -467,6 +469,7 @@ export function startResearchPack(options: StartResearchPackOptions = {}): StopN
     } catch {
       // The extension may have been reloaded while the page stayed open.
     }
+    stopFollowingLanguage();
     panel.destroy();
     removeAddButtons(document);
   };

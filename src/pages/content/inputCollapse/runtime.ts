@@ -1,8 +1,4 @@
-import browser from 'webextension-polyfill';
-
-import { StorageKeys } from '@/core/types/common';
-
-import { getTranslationSync } from '../../../utils/i18n';
+import { getTranslationSync, onCachedLanguageChange } from '../../../utils/i18n';
 import {
   COLLAPSED_CLASS,
   PLACEHOLDER_CLASS,
@@ -19,8 +15,6 @@ import {
 } from './dom';
 import { findCollapseElement } from './targets';
 
-type LanguageListener = Parameters<typeof browser.storage.onChanged.addListener>[0];
-
 /**
  * Everything one enabled period owns. A session ends when the feature is
  * switched off live or its runtime stops; whichever happens, every timer,
@@ -31,7 +25,7 @@ interface CollapseSession {
   readonly timers: Set<number>;
   /** Page-level listeners, removed by hand so the lifecycle ledger can see them go. */
   readonly pageListeners: Array<() => void>;
-  readonly languageListener: LanguageListener;
+  stopFollowingLanguage: (() => void) | null;
   observer: MutationObserver | null;
   observerDebounceTimer: number | null;
   blurCollapseTimer: number | null;
@@ -169,12 +163,8 @@ function endSession(session: CollapseSession): void {
   session.observer?.disconnect();
   session.observer = null;
   removeCollapseDom();
-
-  try {
-    browser.storage.onChanged.removeListener(session.languageListener);
-  } catch {
-    // The extension context may already be gone on reload; nothing is left to remove.
-  }
+  session.stopFollowingLanguage?.();
+  session.stopFollowingLanguage = null;
 }
 
 function attachToContainer(session: CollapseSession, container: HTMLElement): void {
@@ -261,22 +251,19 @@ function attachToContainer(session: CollapseSession, container: HTMLElement): vo
 export function startCollapseSession(allowNotEmpty: boolean): () => void {
   if (activeSession) endSession(activeSession);
 
-  const languageListener: LanguageListener = (changes, areaName) => {
-    if ((areaName === 'sync' || areaName === 'local') && changes[StorageKeys.LANGUAGE]) {
-      // Update all placeholder text
-      document.querySelectorAll<HTMLDivElement>(`.${PLACEHOLDER_CLASS}`).forEach((placeholder) => {
-        const span = placeholder.querySelector('span');
-        if (span) {
-          span.textContent = getTranslationSync('inputCollapsePlaceholder') || 'Message Gemini';
-        }
-      });
-    }
+  const relabelPlaceholders = (): void => {
+    document.querySelectorAll<HTMLDivElement>(`.${PLACEHOLDER_CLASS}`).forEach((placeholder) => {
+      const span = placeholder.querySelector('span');
+      if (span) {
+        span.textContent = getTranslationSync('inputCollapsePlaceholder') || 'Message Gemini';
+      }
+    });
   };
   const session: CollapseSession = {
     controller: new AbortController(),
     timers: new Set(),
     pageListeners: [],
-    languageListener,
+    stopFollowingLanguage: null,
     observer: null,
     observerDebounceTimer: null,
     blurCollapseTimer: null,
@@ -386,8 +373,8 @@ export function startCollapseSession(allowNotEmpty: boolean): () => void {
     { capture: true }, // capture phase to ensure we intercept before other handlers
   );
 
-  // Listen for language changes and update placeholder text
-  browser.storage.onChanged.addListener(languageListener);
+  // Update placeholder text once a new language has loaded, not when storage changes.
+  session.stopFollowingLanguage = onCachedLanguageChange(relabelPlaceholders);
 
   // Try once immediately
   const container = getInputContainer();

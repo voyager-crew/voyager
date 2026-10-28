@@ -28,8 +28,7 @@ import { createToaster } from '@/core/ui/toast/toaster';
 import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContext';
 import type { PromptSiteAdapter } from '@/features/prompt/PromptSiteAdapter';
 import { createRuntimePromptLibraryClient } from '@/features/prompt/library/promptLibraryMessages';
-import { initI18n } from '@/utils/i18n';
-import { normalizeLanguage } from '@/utils/language';
+import { initI18n, onCachedLanguageChange } from '@/utils/i18n';
 
 import { onOtherSurfaceOpened } from '../floatingSurfaces';
 import { createPromptEditForm } from './promptEditForm';
@@ -115,6 +114,7 @@ export async function startPromptManager(
     }
 
     const trigger = await mountPromptTrigger({
+      label: i18n.t('promptManagerOptions'),
       mascotLogo: startup.mascotLogo,
       hiddenByUser: startup.hiddenByUser,
       attention: startup.changelogBadgeActive,
@@ -354,6 +354,7 @@ export async function startPromptManager(
     function refreshUITexts(): void {
       // Keep custom icon + label
       addBtn.textContent = i18n.t('pm_add');
+      trigger.element.setAttribute('aria-label', i18n.t('promptManagerOptions'));
       supportLink.applyTexts();
       settings.applyTexts();
       form.applyTexts();
@@ -418,21 +419,16 @@ export async function startPromptManager(
     };
     window.addEventListener('keydown', onWindowKeyDown, { passive: true });
 
-    // Listen to external language changes (popup/options)
-    // Note: The centralized i18n system already handles storage changes,
-    // we just need to update the UI when language changes
+    // The shared i18n system loads a changed language (from this panel, the popup or
+    // another tab) before notifying; relabeling on the storage change would read the old one.
+    const stopFollowingLanguage = onCachedLanguageChange((language) => {
+      langSel.value = language;
+      refreshUITexts();
+    });
     const storageChangeHandler = (
       changes: Record<string, browser.Storage.StorageChange>,
       area: string,
     ) => {
-      // Handle language changes from sync storage
-      const nextRaw = changes[StorageKeys.LANGUAGE]?.newValue;
-      if (area === 'sync' && typeof nextRaw === 'string') {
-        try {
-          langSel.value = normalizeLanguage(nextRaw);
-        } catch {}
-        refreshUITexts();
-      }
       // Handle hide prompt manager setting changes
       if (area === 'sync' && changes?.gvHidePromptManager) {
         const shouldHide = changes.gvHidePromptManager.newValue === true;
@@ -507,6 +503,7 @@ export async function startPromptManager(
           themeToggle.destroy();
 
           chrome.storage?.onChanged?.removeListener(storageChangeHandler);
+          stopFollowingLanguage();
           library.dispose();
 
           // Removes the hover card and its scroll listeners on `list` and `window`.

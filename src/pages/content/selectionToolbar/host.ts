@@ -1,5 +1,3 @@
-import browser from 'webextension-polyfill';
-
 import { hasGeminiBoundaryConflict } from '@/core/gemini/domBoundary';
 import {
   getGeminiSelectorView,
@@ -7,8 +5,8 @@ import {
   type GeminiTurnView,
 } from '@/core/gemini/selectors';
 import { isOriginalGeminiTranscriptElement } from '@/core/gemini/turnOwnership';
-import { StorageKeys } from '@/core/types/common';
 import { getAssistantTurnSelectors, getUserTurnSelectors } from '@/core/utils/selectors';
+import { onCachedLanguageChange } from '@/utils/i18n';
 
 import type { StopNativeFeature } from '../featureLifecycle';
 import { createSelectionToolbarStyle } from './styles';
@@ -376,11 +374,7 @@ function createHost(): SelectionToolbarHost {
     if (event.key === 'Shift' || event.key.startsWith('Arrow')) scheduleEvaluation();
   }
 
-  function onStorageChanged(
-    changes: Record<string, browser.Storage.StorageChange>,
-    areaName: string,
-  ): void {
-    if ((areaName !== 'sync' && areaName !== 'local') || !changes[StorageKeys.LANGUAGE]) return;
+  function relabel(): void {
     mounted.forEach(({ button }, { action }) => {
       const label = button.querySelector('span');
       if (label) label.textContent = action.label();
@@ -392,7 +386,8 @@ function createHost(): SelectionToolbarHost {
   // Mouseup waits for a finished drag; keyup also supports keyboard selections.
   document.addEventListener('mouseup', onMouseUp);
   document.addEventListener('keyup', onKeyUp);
-  browser.storage.onChanged.addListener(onStorageChanged);
+  // Relabel once the new language has loaded, not when storage changes.
+  const stopFollowingLanguage = onCachedLanguageChange(relabel);
 
   return {
     refresh() {
@@ -420,7 +415,7 @@ function createHost(): SelectionToolbarHost {
       debounceTimer = null;
       document.removeEventListener('mouseup', onMouseUp);
       document.removeEventListener('keyup', onKeyUp);
-      browser.storage.onChanged.removeListener(onStorageChanged);
+      stopFollowingLanguage();
       Array.from(mounted.keys()).forEach(unmountAction);
       toolbar?.remove();
       toolbar = null;
