@@ -239,6 +239,11 @@ export function definePluginPairMatrix(siteId: string, options: PairMatrixOption
     };
     const settle = (): Promise<void> => vi.advanceTimersByTimeAsync(SETTLE_MS).then(() => {});
     const freshPage = (): string => {
+      // Loading replaces only children: an attribute a plugin leaked on <html> or <body>
+      // would otherwise become the pristine page of every later check.
+      for (const element of [document.documentElement, document.body]) {
+        for (const name of element.getAttributeNames()) element.removeAttribute(name);
+      }
       loadSitePage(page, adapter);
       return pageSnapshot();
     };
@@ -282,9 +287,6 @@ export function definePluginPairMatrix(siteId: string, options: PairMatrixOption
       // the matrix prints its own summary instead.
       for (const level of ['info', 'warn', 'error'] as const) {
         vi.spyOn(console, level).mockImplementation(() => {});
-      }
-      for (const name of document.documentElement.getAttributeNames()) {
-        document.documentElement.removeAttribute(name);
       }
     });
 
