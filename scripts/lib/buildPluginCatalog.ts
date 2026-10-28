@@ -52,6 +52,10 @@ import {
   HOST_CATALOG_FORMAT,
   validateHostCatalogFile,
 } from '../../src/features/plugins/remote/hostCatalogFile';
+import {
+  type PackagedSiteRecord,
+  packagedSiteRecordToData,
+} from '../../src/features/plugins/remote/packagedSiteRecord';
 import { isStaticallyInjectedHost } from '../../src/features/plugins/sites/hostPolicy';
 import { matchesAnyPattern } from '../../src/features/plugins/sites/matchPattern';
 import {
@@ -82,7 +86,7 @@ export interface HostCatalogFile {
   readonly format: typeof HOST_CATALOG_FORMAT;
   readonly host: string;
   readonly generatedAt: string;
-  readonly site?: SiteAdapterData;
+  readonly site?: SiteAdapterData | PackagedSiteRecord;
   readonly plugins: readonly PluginManifest[];
   readonly revoked?: readonly string[];
 }
@@ -286,8 +290,10 @@ export async function buildHostCatalogs(
     if (!site) {
       throw new Error(`${host}: no site.json under sites/ covers this host`);
     }
-    assertPublishableSemanticKeys(host, site);
-    const revoked = isStaticallyInjectedHost(host)
+    const packaged = isStaticallyInjectedHost(host);
+    // Strict D14 clients skip these hosts; v1.9 rejects their newer keys, and current readers tolerate them.
+    if (!packaged) assertPublishableSemanticKeys(host, site);
+    const revoked = packaged
       ? []
       : [
           ...new Set([
@@ -297,11 +303,12 @@ export async function buildHostCatalogs(
               .map((plugin) => plugin.id),
           ]),
         ].sort(compareStrings);
+    const adapter = { ...site.adapter, catalogRevision: options.catalogRevision };
     files.set(host, {
       format: HOST_CATALOG_FORMAT,
       host,
       generatedAt: options.generatedAt,
-      site: siteAdapterToData({ ...site.adapter, catalogRevision: options.catalogRevision }),
+      site: packaged ? packagedSiteRecordToData(adapter) : siteAdapterToData(adapter),
       plugins,
       ...(revoked.length ? { revoked } : {}),
     });

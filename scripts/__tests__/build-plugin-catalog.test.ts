@@ -1,11 +1,14 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { requireBundledSiteAdapter } from '@/features/plugins/catalog/sites';
 import { validateHostCatalogFile } from '@/features/plugins/remote/hostCatalogFile';
 import { resolveSiteAdapterForUrl } from '@/features/plugins/remote/siteOverride';
 import { SiteRegistry } from '@/features/plugins/sites/registry';
+import * as keyPublishing from '@/features/plugins/sites/semanticKeyPublishing';
+import { SEMANTIC_KEY_SINCE_VERSION } from '@/features/plugins/sites/semanticKeys';
+import { siteAdapterToData } from '@/features/plugins/sites/siteAdapterData';
 
 import { DEFAULT_CATALOG_DIR, writeHostCatalogs } from '../build-plugin-catalog';
 import {
@@ -16,11 +19,16 @@ import {
   build,
   readHostFile,
   NATIVE_HOSTS,
+  makeFixtureCatalog,
   makePackagedFixtureCatalog,
   removeTempDirs,
+  writeJson,
 } from './buildPluginCatalogFixtures';
 
-afterEach(removeTempDirs);
+afterEach(() => {
+  vi.restoreAllMocks();
+  removeTempDirs();
+});
 
 describe('build-plugin-catalog', () => {
   it('publishes one file per concrete host in the bundled catalog', async () => {
@@ -67,6 +75,36 @@ describe('build-plugin-catalog', () => {
     );
   });
 
+  it('publishes parser fields and full bundled selectors, keeping the plugin envelope empty', async () => {
+    const outDir = makeTempDir();
+    await build(outDir);
+
+    for (const host of NATIVE_HOSTS) {
+      const file = readHostFile(outDir, host);
+      const site = file.site as Record<string, unknown>;
+      expect(Object.keys(site).sort()).toEqual([
+        'catalogRevision',
+        'id',
+        'label',
+        'locators',
+        'matches',
+        'selectors',
+        'theme',
+      ]);
+      expect(site.catalogRevision).toBe(SOURCE_REVISION);
+      const bundled = requireBundledSiteAdapter(String(site.id));
+      expect(site.selectors).toEqual(bundled.selectors);
+      expect(Object.keys(site.locators as object).length).toBeGreaterThan(0);
+      expect(file.plugins).toEqual([]);
+      const validation = validateHostCatalogFile(file, host);
+      expect(validation?.issues).toEqual([]);
+      expect(validation?.siteIssues).toEqual([]);
+      expect(validation?.site?.label).toBe(site.label);
+      expect(validation?.site?.theme).toEqual(site.theme);
+      expect(validation?.site?.locators).toEqual(site.locators);
+    }
+  });
+
   it('fails the build on an invalid Gemini plugin, though it is never published', async () => {
     const outDir = makeTempDir();
     const catalogDir = makePackagedFixtureCatalog({
@@ -78,6 +116,32 @@ describe('build-plugin-catalog', () => {
       /voyager\.gemini-compact.*unknown primitive handler "teleport"/s,
     );
     expect(existsSync(join(outDir, 'hosts', 'demo.example.json'))).toBe(false);
+  });
+
+  it('publishes newer packaged semantic keys while protecting strict catalog consumers', async () => {
+    // Model a future Gemini-only key using today's valid authoring vocabulary.
+    const check = keyPublishing.semanticKeysTooNewToPublish;
+    vi.spyOn(keyPublishing, 'semanticKeysTooNewToPublish').mockImplementation((keys) =>
+      check(keys, {
+        oldestConsumer: '2.0.0',
+        tolerantSince: '2.2.1',
+        since: { ...SEMANTIC_KEY_SINCE_VERSION, thinkingBlock: '2.3.0' },
+      }),
+    );
+    const catalogDir = makePackagedFixtureCatalog();
+    const bundled = requireBundledSiteAdapter('gemini');
+    writeJson(join(catalogDir, 'sites/gemini/site.json'), {
+      ...siteAdapterToData(bundled),
+      selectors: { ...bundled.selectors, thinkingBlock: '.future-thinking' },
+    });
+    const outDir = makeTempDir();
+    await build(outDir, catalogDir);
+    const published = readHostFile(outDir, 'gemini.google.com');
+    expect(published).toMatchObject({
+      site: { id: 'gemini', selectors: { thinkingBlock: '.future-thinking' } },
+    });
+    const otherCatalog = makeFixtureCatalog({ selectors: { thinkingBlock: '.future-thinking' } });
+    await expect(build(makeTempDir(), otherCatalog)).rejects.toThrow(/selectors\.thinkingBlock/);
   });
 
   it('replaces an older native host file with the current validated site data', async () => {

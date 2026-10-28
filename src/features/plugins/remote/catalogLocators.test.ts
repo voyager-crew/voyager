@@ -39,10 +39,10 @@ function payload(locators: unknown, revision = 42) {
 }
 
 function entry(raw: ReturnType<typeof payload>): HostCatalogCacheEntry {
-  const validation = validateHostCatalogFile(raw, HOST);
+  const validation = validateHostCatalogFile(raw, raw.host);
   if (!validation?.site) throw new Error('Fixture site rejected');
   return {
-    host: HOST,
+    host: raw.host,
     status: 'ok',
     manifests: validation.manifests,
     revoked: validation.revoked,
@@ -194,36 +194,51 @@ describe('catalog locator sections', () => {
     ).toEqual(['bundled']);
   });
 
-  it('native routing, theme, plugins and identity survive a catalog trying to replace them', async () => {
-    const raw = payload({ 'turn.user': ['.repaired'] });
-    raw.site.matches = ['https://gemini.google.com/*', 'https://business.gemini.google/*'];
-    raw.site.selectors = { userTurn: '.unsafe' };
-    raw.site.theme = { hostSelector: 'body', lightSelector: 'body', darkSelector: 'body' };
-    const cached = entry(raw);
-    const source = new HostCatalogSource({
-      extensionVersion: VERSION,
-      enabled: true,
-      loadEntry: async () => cached,
-    });
-    const remote = await source.siteOverride({ host: HOST });
-    expect(remote?.selectors).toEqual(BUNDLE.selectors);
-    expect(remote?.theme).toEqual(BUNDLE.theme);
-    expect(remote?.folders).toEqual(BUNDLE.folders);
-    expect(remote?.locators?.['turn.user']).toEqual(['.repaired']);
-    expect(await source.listWithAuthority({ host: HOST })).toEqual({
-      manifests: [],
-      authoritative: false,
-    });
-    const registry = new SiteRegistry();
-    registry.register(BUNDLE);
-    expect(
-      resolveSiteAdapterForUrl('https://business.gemini.google/app', registry, remote),
-    ).toMatchObject({
-      ...BUNDLE,
-      catalogRevision: 42,
-      locators: { 'turn.user': ['.repaired'] },
-    });
-  });
+  it.each([
+    { host: HOST, id: 'gemini', locator: 'turn.user' },
+    { host: 'business.gemini.google', id: 'gemini', locator: 'turn.user' },
+    { host: 'aistudio.google.com', id: 'aistudio', locator: 'input.candidates' },
+    { host: 'aistudio.google.cn', id: 'aistudio', locator: 'input.candidates' },
+  ])(
+    'native routing, theme, plugins and identity survive a catalog trying to replace them on $host',
+    async ({ host, id, locator }) => {
+      const bundled = requireBundledSiteAdapter(id);
+      const raw = {
+        ...payload({ [locator]: ['.repaired'] }),
+        host,
+        plugins: [{ ...PLUGIN, matches: [`https://${host}/*`] }],
+        site: {
+          ...siteAdapterToData(bundled),
+          catalogRevision: 42,
+          label: 'Remote label',
+          selectors: { userTurn: '.unsafe' },
+          theme: { hostSelector: 'body', lightSelector: 'body', darkSelector: 'body' },
+          capabilities: [],
+          locators: { [locator]: ['.repaired'] },
+        },
+      };
+      const cached = entry(raw);
+      const source = new HostCatalogSource({
+        extensionVersion: VERSION,
+        enabled: true,
+        loadEntry: async () => cached,
+      });
+      const remote = await source.siteOverride({ host });
+      const expected = {
+        ...bundled,
+        catalogRevision: 42,
+        locators: { [locator]: ['.repaired'] },
+      };
+      expect(remote).toEqual(expected);
+      expect(await source.listWithAuthority({ host })).toEqual({
+        manifests: [],
+        authoritative: false,
+      });
+      const registry = new SiteRegistry();
+      registry.register(bundled);
+      expect(resolveSiteAdapterForUrl(`https://${host}/app`, registry, remote)).toEqual(expected);
+    },
+  );
 
   it('a manual check still fetches repairs with automatic updates off', async () => {
     let enabled = false;

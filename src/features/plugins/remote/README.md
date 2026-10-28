@@ -7,8 +7,9 @@ same data is published per site at `<base>/hosts/<host>.json` (default base
 `https://voyager.nagi.fun/catalog`, so DeepSeek is
 `https://voyager.nagi.fun/catalog/hosts/chat.deepseek.com.json`). A selector fix
 can therefore reach users without a store release, while the engine that reads
-the data still ships in the package. The host file's optional `site` section is
-adapter data validated by the same `validateSiteAdapterData`. It replaces the bundled
+the data still ships in the package. The host file's optional `site` section uses
+the shared site-data guards. Statically injected hosts publish restricted site records
+([packaged host records](#packaged-host-records)); other hosts publish full adapters. It replaces the bundled
 adapter only when its `catalogRevision` is strictly newer; ties and unstamped remote data
 prefer the bundle. `scripts/build-plugin-catalog.ts` and production browser builds use the same
 full-history first-parent Git source revision. Publishing the same commit ties its bundle,
@@ -54,7 +55,8 @@ without an extension release.
   matching `host`, a plugin array, optional `site` and `revoked` sections), which
   `scripts/build-plugin-catalog.ts` generates from `catalog/` with the CSS
   inlined. Every entry passes the same `validateManifest` as the bundled
-  snapshot and the `site` section the same `validateSiteAdapterData`; a bad
+  snapshot. Every host's `site` section uses `readSiteAdapterData`, including its
+  selector and locator validation. A bad
   entry, revocation or `site` is skipped and logged; a bad file is discarded whole.
 - **`remote/config.ts`** — build-time flags injected through Vite `define`:
   `VOYAGER_PLUGIN_CATALOG_URL` repoints the base URL (https only) for a preview
@@ -121,6 +123,28 @@ copy on the site's other hosts. When renaming a plugin id, add the old id to
 `revoked.json` so its bundled copy does not run alongside the renamed plugin.
 The additive field keeps `format: 1`; older clients ignore it and still revoke
 through absence from `plugins`. The reason stays in the source file.
+
+## Packaged host records
+
+Gemini (including Enterprise) and both AI Studio hosts publish a narrow `site`:
+`id`, `label`, `matches`, `theme`, `selectors`, `catalogRevision` when set and
+optional `locators`, with `plugins: []` retaining the format-1 envelope.
+`label` and `theme` stay because the current parser and every released parser
+require them to accept the whole record. The publisher omits only optional
+fields those parsers do not require.
+
+The complete bundled `selectors` map is published intentionally. Voyager v1.9.0
+requests a catalog file for every host and applies a valid matching override wholesale.
+It currently rejects these records because it does not recognize `composerRoot`
+and `sendButton`. Before removing any selector keys, verify that v1.9.0 still
+rejects the resulting record. Releases from 2.0.0 before unknown-key tolerance
+exclude packaged hosts from requests under D14; the current parser tolerates
+unknown selector keys.
+
+The client reads these records through the same `readSiteAdapterData` path as
+every other host. Its packaged path takes the revision, identity, admitted
+semantic selectors and locators, and pins all other fields to the bundle.
+Non-packaged host files carry full adapters and plugin lists.
 
 ## Page-locator profiles in site data
 
