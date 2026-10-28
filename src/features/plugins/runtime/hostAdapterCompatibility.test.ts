@@ -1,9 +1,9 @@
-import { JSDOM } from 'jsdom';
 import { afterEach, expect, it } from 'vitest';
 
 import { getSiteSelectorContract } from '@/core/selectors/contracts';
 import { withPageSemanticSelectors } from '@/core/selectors/semanticSnapshot';
 import { requireBundledSiteAdapter } from '@/features/plugins/catalog/sites';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { SEMANTIC_SELECTOR_KEYS } from '../sites/semanticKeys';
 import { semanticRef, type PluginManifest } from '../types';
@@ -28,9 +28,12 @@ it.each([
 ])(
   '%s native and declarative repairs outside the guarded contract still reach renamed page nodes',
   (siteId, host) => {
-    const page = new JSDOM('<!doctype html><body></body>', { url: `https://${host}/` });
-    cleanup.push(() => page.window.close());
-    const doc = page.window.document;
+    setPageUrl(`https://${host}/`);
+    cleanup.push(() => {
+      document.body.replaceChildren();
+      resetPageUrl();
+    });
+    const doc = document;
     const keys = SEMANTIC_SELECTOR_KEYS.filter(
       (key) => !getSiteSelectorContract(siteId)!.keys.includes(key),
     );
