@@ -4,6 +4,7 @@ import { resolveGeminiCodeHosts } from '@/core/gemini/code/hosts';
 import { createContentExtractor } from '@/features/export/services/DOMContentExtractor';
 import { requireBundledSiteAdapter } from '@/features/plugins/catalog/sites';
 import { buildGeminiAdapter } from '@/pages/content/export/adapter/platform/gemini';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
 import { createCodeBlockCollapse, type CodeBlockCollapse } from '../engine';
@@ -11,7 +12,6 @@ import { createGeminiCodeBlockSite } from '../geminiSite';
 
 let retire: (() => void) | undefined;
 let engine: CodeBlockCollapse | undefined;
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 
 function block(tag = 'code-block', id = 'one'): HTMLElement {
   const host = document.createElement(tag);
@@ -26,10 +26,7 @@ function block(tag = 'code-block', id = 'one'): HTMLElement {
 }
 
 beforeEach(() => {
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { hostname: 'gemini.google.com' },
-  });
+  setPageUrl('https://gemini.google.com/');
 });
 afterEach(() => {
   engine?.stop();
@@ -37,7 +34,7 @@ afterEach(() => {
   retire?.();
   retire = undefined;
   document.body.replaceChildren();
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
   vi.useRealTimers();
 });
 

@@ -167,12 +167,13 @@ describe('prompt manager teardown', () => {
         expect(event.defaultPrevented).toBe(false);
       }
       if (destroyed) {
-        vi.stubGlobal('window', undefined);
-        try {
-          expect(() => vi.advanceTimersByTime(0)).not.toThrow();
-        } finally {
-          vi.unstubAllGlobals();
-        }
+        // Teardown released the guard; its deferred release must not reach the page again.
+        const pageCalls = [
+          vi.spyOn(window, 'clearTimeout'),
+          vi.spyOn(window, 'removeEventListener'),
+        ];
+        vi.advanceTimersByTime(0);
+        for (const call of pageCalls) expect(call).not.toHaveBeenCalled();
       }
     },
   );

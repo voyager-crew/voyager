@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 import { CleanupManager } from '@/core/utils/cleanupManager';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { PageRetiredError, createPageSteps } from '../../pageInitSteps';
 import { createPromptManagerEngine } from '../promptManagerEngine';
@@ -37,7 +38,7 @@ function emitLocalChange(changes: Record<string, unknown>): void {
 }
 
 async function start(url: string): Promise<void> {
-  vi.stubGlobal('location', new URL(url));
+  setPageUrl(url);
   cleanup = new CleanupManager();
   await createPromptManagerEngine(resolvePromptSiteAdapter(url), cleanup).startComposerFeatures();
 }
@@ -62,7 +63,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup?.executeCleanups();
   cleanup = null;
-  vi.unstubAllGlobals();
+  resetPageUrl();
   document.body.innerHTML = '';
 });
 
@@ -135,7 +136,7 @@ describe('sent prompt chips after the content script retired', () => {
       for (const answer of parked.splice(0)) answer();
     };
     const url = 'https://gemini.google.com/app';
-    vi.stubGlobal('location', new URL(url));
+    setPageUrl(url);
     cleanup = new CleanupManager();
     const pageCleanup = cleanup;
     // The content entry's own chain: page lifetime, steps, engine.

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 import { readContentStyle } from '@/tests/contentStyle';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { createVimCommands } from '../vimCommands';
 import type { VimMode } from '../vimCommands';
@@ -23,11 +24,10 @@ function rect(left = 0, top = 0, width = 320, height = 24): DOMRect {
 }
 
 export function setVimTestSite(hostname: string): void {
-  Object.defineProperty(window, 'location', { configurable: true, value: { hostname } });
+  setPageUrl(`https://${hostname}/`);
 }
 
 export function setupVimTestEnvironment(): void {
-  const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
   const rangeRects = Object.getOwnPropertyDescriptor(Range.prototype, 'getClientRects');
   const rangeBox = Object.getOwnPropertyDescriptor(Range.prototype, 'getBoundingClientRect');
   beforeEach(() => {
@@ -41,7 +41,7 @@ export function setupVimTestEnvironment(): void {
     document.body.innerHTML = '';
     document.querySelector('[data-vim-test-styles]')?.remove();
     vi.restoreAllMocks();
-    Object.defineProperty(window, 'location', originalLocation);
+    resetPageUrl();
     for (const [key, descriptor] of [
       ['getClientRects', rangeRects],
       ['getBoundingClientRect', rangeBox],

@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
+
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
 import { findGeneratedPreviewImages } from '../generatedImageTargets';
 import { createImageHealthMonitor } from '../imageHealth';
 
-const locationDescriptor = Object.getOwnPropertyDescriptor(window, 'location')!;
 let retire: (() => void) | undefined;
 
 // Captured Gemini shape: the image-opening button is separate from the native download.
@@ -16,17 +17,14 @@ function card(): HTMLElement {
 }
 
 beforeEach(() => {
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { hostname: 'gemini.google.com' },
-  });
+  setPageUrl('https://gemini.google.com/');
 });
 
 afterEach(() => {
   retire?.();
   retire = undefined;
   document.body.replaceChildren();
-  Object.defineProperty(window, 'location', locationDescriptor);
+  resetPageUrl();
   vi.restoreAllMocks();
 });
 

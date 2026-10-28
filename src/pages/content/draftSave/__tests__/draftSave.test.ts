@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { setPageUrl } from '@/tests/pageUrl';
+
 import { buildInstructionBlock } from '../../folderProject/instructionBlock';
 import {
   SEND_CHECK_INTERVAL_MS,
@@ -94,7 +96,7 @@ describe('draftSave', () => {
     input.textContent = 'Draft from the first conversation';
     input.dispatchEvent(new Event('input', { bubbles: true }));
 
-    window.location.pathname = '/app/second-conversation';
+    setPageUrl('/app/second-conversation');
     input.textContent = '';
     vi.advanceTimersByTime(500);
 
@@ -113,7 +115,7 @@ describe('draftSave', () => {
 
     const cleanup = await startDraftPlugin();
 
-    window.location.pathname = '/app/second-conversation';
+    setPageUrl('/app/second-conversation');
     input.textContent = 'Draft typed immediately after navigation';
     input.dispatchEvent(new Event('input', { bubbles: true }));
     vi.advanceTimersByTime(1000);
@@ -129,7 +131,7 @@ describe('draftSave', () => {
 
   it('does not re-save sent text when the first message creates a conversation route', async () => {
     setupMocks();
-    window.location.pathname = '/app';
+    setPageUrl('/app');
     const { input } = createMainComposer();
 
     const cleanup = await startDraftPlugin();
@@ -144,7 +146,7 @@ describe('draftSave', () => {
     input.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
     );
-    window.location.pathname = '/app/new-conversation-id';
+    setPageUrl('/app/new-conversation-id');
     addSentUserTurn('Updated message that is sent');
     input.textContent = '';
     vi.advanceTimersByTime(400);
@@ -187,7 +189,7 @@ describe('draftSave', () => {
 
     // Let send detection observe non-empty content on the source route.
     vi.advanceTimersByTime(1000);
-    window.location.pathname = '/app/second-conversation';
+    setPageUrl('/app/second-conversation');
     input.textContent = '';
     vi.advanceTimersByTime(1000);
 

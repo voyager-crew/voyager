@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 import { getCurrentLanguage } from '@/utils/i18n';
 import type { AppLanguage } from '@/utils/language';
 
@@ -19,14 +20,12 @@ vi.mock('@/utils/i18n', () => ({
 
 const now = new Date(2026, 6, 18, 10).getTime();
 const resetEpoch = Math.floor(now / 1000) + 4 * 3600;
-let route: { hostname: string; origin: string; pathname: string; href: string };
 let stored: Record<string, unknown>;
 let runs: AbortController[];
 let stopPlugin: (() => void) | undefined;
 
 function setPath(pathname: string): void {
-  route.pathname = pathname;
-  route.href = `${route.origin}${pathname}`;
+  setPageUrl(pathname);
 }
 
 function navigate(pathname: string): void {
@@ -133,13 +132,7 @@ beforeEach(() => {
   vi.mocked(chrome.storage.onChanged.removeListener).mockImplementation((listener) =>
     storageListeners.delete(listener),
   );
-  route = {
-    hostname: 'gemini.google.com',
-    origin: 'https://gemini.google.com',
-    pathname: '/u/2/app',
-    href: 'https://gemini.google.com/u/2/app',
-  };
-  vi.stubGlobal('location', route);
+  setPageUrl('https://gemini.google.com/u/2/app');
   vi.spyOn(window, 'postMessage').mockImplementation(() => {});
   stored = { 'gvUsageCache:u/2': cached(7, 'u/2') };
   vi.mocked(chrome.storage.local.get).mockImplementation(async () => stored);
@@ -157,7 +150,7 @@ afterEach(async () => {
   stopPlugin = undefined;
   await flushUsagePlugin();
   vi.restoreAllMocks();
-  vi.unstubAllGlobals();
+  resetPageUrl();
   vi.useRealTimers();
   document.body.innerHTML = '';
 });

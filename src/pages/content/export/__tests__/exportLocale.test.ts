@@ -1,3 +1,5 @@
+// @vitest-environment node
+// Firefox's content-script global is not the page window; only a node realm lets the two differ.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';

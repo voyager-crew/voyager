@@ -8,6 +8,7 @@ import { StorageKeys } from '@/core/types/common';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 import { hostCatalogStorageKey } from '@/features/plugins/remote/hostCatalogCache';
 import { startPageSelectors } from '@/pages/content/pageSelectorStartup';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { SITE_SELECTOR_CONTRACTS } from '../contracts';
 import { getSiteSelectorView } from '../service';
@@ -15,12 +16,11 @@ import { BUNDLED_LOCATOR_SITES, locatorSiteForHost } from '../sites';
 import { bundledOffData } from './bundledOffData';
 
 const FIXTURES = join(import.meta.dirname, 'fixtures/bundled-off');
-const locationDescriptor = Object.getOwnPropertyDescriptor(window, 'location')!;
 const stops: Array<() => void> = [];
 
 afterEach(() => {
   stops.splice(0).forEach((stop) => stop());
-  Object.defineProperty(window, 'location', locationDescriptor);
+  resetPageUrl();
   vi.unstubAllEnvs();
   vi.clearAllMocks();
 });
@@ -61,10 +61,7 @@ it('OFF preserves bundled profiles and runtime catalog values on every host and 
     JSON.parse(readFileSync(join(FIXTURES, 'hosts.json'), 'utf8')),
   );
   for (const host of hosts) {
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: new URL(`https://${host}/`),
-    });
+    setPageUrl(`https://${host}/`);
     const site = inputSiteId();
     const bundle = BUNDLED_LOCATOR_SITES.find((entry) => entry.id === site);
     // An eligible newer cache must not replace any namespaced bundled value while OFF.

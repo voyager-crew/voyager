@@ -3,12 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getGeminiSelectorView } from '@/core/gemini/selectors';
 import { insertIntoComposer, readComposer } from '@/core/services/composer';
 import { installNativeEditingMock } from '@/tests/nativeEditing';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
 import { findChatInput, insertTextIntoChatInput } from '../index';
 
 let retire: (() => void) | undefined;
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 
 function showInputs(): void {
   for (const input of document.querySelectorAll<HTMLElement>('[contenteditable], textarea')) {
@@ -21,16 +21,13 @@ function field(id: string): HTMLElement {
 }
 
 beforeEach(() => {
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { hostname: 'gemini.google.com' },
-  });
+  setPageUrl('https://gemini.google.com/');
 });
 afterEach(() => {
   retire?.();
   retire = undefined;
   document.body.replaceChildren();
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
   vi.restoreAllMocks();
 });
 
@@ -157,20 +154,11 @@ describe('online Gemini composer inputs', () => {
     document.body.innerHTML = `<div class="text-input-field"><section id="main" contenteditable="true">main</section></div>`;
     showInputs();
     retire = await installGeminiSelectorPatch({ 'composer.candidates': ['#main'] });
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: { hostname: 'business.gemini.google' },
-    });
+    setPageUrl('https://business.gemini.google/');
     expect(readComposer(findChatInput({ online: true })!)).toBe('main');
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: { hostname: 'aistudio.google.com' },
-    });
+    setPageUrl('https://aistudio.google.com/');
     expect(findChatInput({ online: true })).toBeNull();
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: { hostname: 'gemini.google.com' },
-    });
+    setPageUrl('https://gemini.google.com/');
     expect(readComposer(findChatInput({ online: true })!)).toBe('main');
   });
 

@@ -1,20 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
+
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
 import { startSentPromptChips, type SentPromptChipsController } from '../SentPromptChips';
 
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 let retire: (() => void) | undefined;
 let chips: SentPromptChipsController | undefined;
 beforeEach(() => {
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { hostname: 'gemini.google.com' },
-  });
+  setPageUrl('https://gemini.google.com/');
   document.body.innerHTML = '';
 });
 afterEach(() => {
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
   chips?.destroy();
   retire?.();
   chips = undefined;
@@ -101,17 +99,11 @@ describe('online sent prompt chips', () => {
   it('a Gemini placement patch cannot change chip placement on another host', async () => {
     bubbles();
     retire = await installGeminiSelectorPatch({ 'sentChips.anchor': ['user-query'] });
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: { hostname: 'chatgpt.com' },
-    });
+    setPageUrl('https://chatgpt.com/');
     start();
     expect(appearance().map((item) => item.parent)).toEqual(['one', 'two']);
     chips!.destroy();
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: { hostname: 'gemini.google.com' },
-    });
+    setPageUrl('https://gemini.google.com/');
     start();
     expect(document.body.querySelectorAll(':scope > .gv-pm-sent')).toHaveLength(2);
   });

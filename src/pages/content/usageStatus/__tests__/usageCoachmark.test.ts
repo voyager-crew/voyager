@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { setPageUrl } from '@/tests/pageUrl';
+
 const mocks = vi.hoisted(() => ({
   getTranslationSync: vi.fn((key: string) => key),
   initI18n: vi.fn(async () => undefined),
@@ -33,11 +35,7 @@ describe('usage coachmark debug trigger', () => {
     vi.resetModules();
     vi.clearAllMocks();
     document.body.innerHTML = '';
-    Object.defineProperty(window, 'location', {
-      value: { hostname: 'gemini.google.com' },
-      configurable: true,
-      writable: true,
-    });
+    setPageUrl('https://gemini.google.com/');
   });
 
   it('can be forced from the normal page console via a DOM event', async () => {

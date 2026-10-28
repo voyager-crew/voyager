@@ -3,23 +3,16 @@ import { afterEach, beforeEach, vi } from 'vitest';
 import { requireBundledSiteAdapter } from '@/features/plugins/catalog/sites';
 import { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import { draftSavePrimitive } from '@/features/plugins/verbs/draftSave';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 export const SEND_CHECK_INTERVAL_MS = 1000;
 const adapter = requireBundledSiteAdapter('gemini');
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 let scopes: PluginScope[] = [];
 
 /** Exercise the actual primitive with Gemini's route and composer policy. */
 export function startDraftPlugin(): () => Promise<void> {
   const scope = new PluginScope();
   scopes.push(scope);
-  const doc = new Proxy(document, {
-    get(target, key) {
-      if (key === 'location') return window.location;
-      const value: unknown = Reflect.get(target, key, target);
-      return typeof value === 'function' ? value.bind(target) : value;
-    },
-  });
   draftSavePrimitive.activate(
     scope,
     {},
@@ -27,7 +20,7 @@ export function startDraftPlugin(): () => Promise<void> {
       pluginId: 'local.test.draft',
       settings: {},
       adapter,
-      doc,
+      doc: document,
       setTargetCounter: () => {},
     },
   );
@@ -129,27 +122,14 @@ export function setupDraftSaveTests(): void {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     document.body.innerHTML = '';
 
-    // Mock window.location
-    Object.defineProperty(window, 'location', {
-      value: {
-        pathname: '/app/test-conversation-123',
-        hostname: 'gemini.google.com',
-        origin: 'https://gemini.google.com',
-        search: '',
-        get href() {
-          return `https://gemini.google.com${this.pathname}${this.search}`;
-        },
-      },
-      writable: true,
-      configurable: true,
-    });
+    setPageUrl('https://gemini.google.com/app/test-conversation-123');
   });
 
   afterEach(async () => {
     await Promise.all(scopes.splice(0).map((scope) => scope.dispose()));
     vi.restoreAllMocks();
     vi.useRealTimers();
-    Object.defineProperty(window, 'location', originalLocation);
+    resetPageUrl();
     document.body.replaceChildren();
   });
 }

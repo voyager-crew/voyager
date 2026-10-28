@@ -6,6 +6,7 @@ import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
 import { StarredMessagesService } from '@/features/savedLibrary/StarredMessagesService';
 import type { StarredMessage } from '@/features/savedLibrary/starTypes';
 import { turnSummary } from '@/features/timeline/adapters/catalog/turnHash';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import type { ChatGptCrawlTiming } from '../chatgptCrawl';
 import { buildChatGptAdapter } from '../platform/chatgpt';
@@ -52,7 +53,7 @@ export function mountRetained(): void {
 export function setupChatGptStarTests(): void {
   beforeEach(() => {
     document.body.replaceChildren();
-    vi.stubGlobal('location', new URL('https://chatgpt.com/u/1/c/conv'));
+    setPageUrl('https://chatgpt.com/u/1/c/conv');
     libraryRead = vi
       .spyOn(StarredMessagesService, 'getStarredMessagesForConversation')
       .mockResolvedValue([]);
@@ -67,7 +68,7 @@ export function setupChatGptStarTests(): void {
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
-    vi.unstubAllGlobals();
+    resetPageUrl();
     if (originalScrollIntoView) {
       Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
         configurable: true,

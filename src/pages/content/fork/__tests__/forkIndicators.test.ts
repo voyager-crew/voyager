@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from '@/core/services/LoggerService';
 import { confirmDriver } from '@/tests/confirmDriver';
+import { watchFullPageLoads } from '@/tests/pageUrl';
 
 import { ForkNodesService } from '../ForkNodesService';
 import { collectForkChatPairs } from '../chatPairs';
@@ -232,20 +233,7 @@ describe('fork indicators', () => {
     await indicators.inject();
     const user = document.querySelector('#user');
     const warning = vi.spyOn(logger, 'warn').mockImplementation(() => {});
-    const pageLocation = window.location;
-    const hardNavigation = vi.fn();
-    vi.stubGlobal('window', {
-      history: window.history,
-      location: {
-        origin: pageLocation.origin,
-        pathname: pageLocation.pathname,
-        assign: hardNavigation,
-        reload: hardNavigation,
-        set href(value: string) {
-          hardNavigation(value);
-        },
-      },
-    });
+    const hardNavigation = watchFullPageLoads();
     vi.spyOn(window.history, 'pushState').mockImplementation(() => {
       throw new DOMException('Navigation rejected', 'SecurityError');
     });

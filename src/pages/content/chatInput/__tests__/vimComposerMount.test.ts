@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { resetPageUrl } from '@/tests/pageUrl';
+
 import { getVimComposerMount } from '../vimComposerMount';
 import { setVimTestSite } from './vimHarness';
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 
 const COMPOSER = 'textarea.ds-scroll-area';
 
@@ -21,7 +22,7 @@ function div(className: string, top: number, overflow?: string): HTMLElement {
 
 afterEach(() => {
   document.body.innerHTML = '';
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
 });
 
 describe('vim HUD composer mount', () => {

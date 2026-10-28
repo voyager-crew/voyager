@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Toaster } from '@/core/ui/toast/types';
+import { resetPageUrl, setPageUrl, watchFullPageLoads } from '@/tests/pageUrl';
 
 import { LibrarySelection } from '../aistudioLibrarySelection';
 
@@ -15,18 +16,13 @@ vi.mock('../aistudioLibraryBatchDelete', () => ({
 const PAGE_REFRESH_DELAY_MS = 1500;
 
 describe('AI Studio library batch delete refresh', () => {
-  const originalLocation = window.location;
-  let reload: ReturnType<typeof vi.fn>;
+  let fullPageLoad: ReturnType<typeof watchFullPageLoads>;
   let selection: LibrarySelection;
 
   beforeEach(() => {
     vi.useFakeTimers();
-    reload = vi.fn();
-    Object.defineProperty(window, 'location', {
-      value: { pathname: '/library', origin: 'https://aistudio.google.com', href: '', reload },
-      writable: true,
-      configurable: true,
-    });
+    setPageUrl('https://aistudio.google.com/library');
+    fullPageLoad = watchFullPageLoads();
     document.body.innerHTML =
       '<table><tr class="mat-mdc-row"><td><a href="/prompts/p1">Prompt</a></td></tr></table>';
     selection = new LibrarySelection((key) => key, vi.fn(), {} as Toaster);
@@ -34,11 +30,7 @@ describe('AI Studio library batch delete refresh', () => {
 
   afterEach(() => {
     selection.destroy();
-    Object.defineProperty(window, 'location', {
-      value: originalLocation,
-      writable: true,
-      configurable: true,
-    });
+    resetPageUrl();
     vi.useRealTimers();
     document.body.innerHTML = '';
   });
@@ -57,7 +49,7 @@ describe('AI Studio library batch delete refresh', () => {
     await deleteSelectedRow();
     await vi.advanceTimersByTimeAsync(PAGE_REFRESH_DELAY_MS);
 
-    expect(reload).toHaveBeenCalledTimes(1);
+    expect(fullPageLoad).toHaveBeenCalledTimes(1);
   });
 
   it('does not reload the page once the library features are torn down', async () => {
@@ -65,7 +57,7 @@ describe('AI Studio library batch delete refresh', () => {
     selection.destroy();
     await vi.advanceTimersByTimeAsync(PAGE_REFRESH_DELAY_MS);
 
-    expect(reload).not.toHaveBeenCalled();
+    expect(fullPageLoad).not.toHaveBeenCalled();
   });
 
   it('refreshes again after the folder feature is turned off and back on', async () => {
@@ -73,14 +65,14 @@ describe('AI Studio library batch delete refresh', () => {
     await deleteSelectedRow();
     await vi.advanceTimersByTimeAsync(PAGE_REFRESH_DELAY_MS);
 
-    expect(reload).toHaveBeenCalledTimes(1);
+    expect(fullPageLoad).toHaveBeenCalledTimes(1);
   });
 
   it('does not reload a prompt the user opened before the refresh was due', async () => {
     await deleteSelectedRow();
-    window.location.pathname = '/prompts/p2';
+    setPageUrl('/prompts/p2');
     await vi.advanceTimersByTimeAsync(PAGE_REFRESH_DELAY_MS);
 
-    expect(reload).not.toHaveBeenCalled();
+    expect(fullPageLoad).not.toHaveBeenCalled();
   });
 });

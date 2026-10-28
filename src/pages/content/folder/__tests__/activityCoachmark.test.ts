@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import { setPageUrl } from '@/tests/pageUrl';
 
 const mocks = vi.hoisted(() => ({
   getTranslationSync: vi.fn((key: string) => key),
@@ -47,11 +48,7 @@ describe('folder Activity coachmark', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     document.body.innerHTML = '';
-    Object.defineProperty(window, 'location', {
-      value: { hostname: 'gemini.google.com' },
-      configurable: true,
-      writable: true,
-    });
+    setPageUrl('https://gemini.google.com/');
     mocks.syncGet.mockResolvedValue({
       geminiFolderEnabled: true,
       [StorageKeys.FOLDER_FLOATING_MODE_ENABLED]: false,

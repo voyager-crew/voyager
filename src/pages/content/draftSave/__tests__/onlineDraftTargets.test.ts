@@ -2,6 +2,7 @@ import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vite
 
 import { findGeminiDraftInput } from '@/core/gemini/composer/draft';
 import { createSendKeyCoordinator } from '@/core/services/composer/sendKeys/sendKeyCoordinator';
+import { setPageUrl } from '@/tests/pageUrl';
 
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
 import { createOnlineDraftHarness, showDraftInputs, typeDraft } from './onlineDraftHarness';
@@ -223,7 +224,7 @@ describe('Gemini draft targets with online composer fixes', () => {
         },
       );
       harness.start();
-      if (changed === 'route') harness.route.pathname = '/u/1/app/destination';
+      if (changed === 'route') setPageUrl('/u/1/app/destination');
       else
         document.querySelector('[data-email]')!.setAttribute('data-email', 'second@example.test');
       finishLoad?.({ 'gvDraft_/u/0/app/source': harness.records['gvDraft_/u/0/app/source'] });
@@ -236,7 +237,7 @@ describe('Gemini draft targets with online composer fixes', () => {
         expect(harness.records['gvDraft_/u/0/app/source']).toEqual({
           content: 'source account draft',
         });
-      expect(harness.records[`gvDraft_${harness.route.pathname}`]).toMatchObject({
+      expect(harness.records[`gvDraft_${location.pathname}`]).toMatchObject({
         content: 'destination text',
       });
     },

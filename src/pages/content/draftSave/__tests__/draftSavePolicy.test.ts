@@ -1,5 +1,7 @@
 import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
+import { setPageUrl } from '@/tests/pageUrl';
+
 import {
   createContentEditable,
   localStore,
@@ -63,7 +65,7 @@ describe('draftSave', () => {
 
     it('keeps the gvDraft_ prefix and full pathname for Gemini drafts', async () => {
       setupMocks();
-      window.location.pathname = '/u/1/gem/abc123/c9f0';
+      setPageUrl('/u/1/gem/abc123/c9f0');
       const input = createContentEditable();
       const stop = await startDraftPlugin();
 
@@ -129,7 +131,7 @@ describe('draftSave', () => {
     });
 
     it.each([
-      ['URL', () => Object.assign(window.location, { search: '?workspace=1' })],
+      ['URL', () => setPageUrl('?workspace=1')],
       ['DOM', () => document.body.classList.add('enterprise-shell')],
     ])(
       'writes no draft when the page turns out to be Gemini Enterprise by %s hint',
@@ -148,7 +150,7 @@ describe('draftSave', () => {
         input.textContent = 'Typed on Enterprise';
         input.dispatchEvent(new Event('input', { bubbles: true }));
         vi.advanceTimersByTime(1000);
-        window.location.pathname = '/app/second-conversation';
+        setPageUrl(`/app/second-conversation${location.search}`);
         input.textContent = '';
         await vi.advanceTimersByTimeAsync(3000);
 

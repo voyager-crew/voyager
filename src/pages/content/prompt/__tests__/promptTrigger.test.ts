@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { hasUnreadChangelog, showChangelogModalDirect } from '../../changelog/index';
 import { readPromptPref, writePromptPref } from '../promptPrefs';
@@ -18,12 +19,11 @@ vi.mock('../promptPrefs', () => ({
 }));
 
 let trigger: PromptTrigger | undefined;
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 
 async function mount(options: { hiddenByUser?: boolean; attention?: boolean; url?: string } = {}) {
   const onAttentionChange = vi.fn();
   const url = options.url ?? 'https://gemini.google.com/app';
-  Object.defineProperty(window, 'location', { configurable: true, value: new URL(url) });
+  setPageUrl(url);
   const site = resolvePromptSiteAdapter(url);
   trigger = await mountPromptTrigger({
     mascotLogo: false,
@@ -46,7 +46,7 @@ afterEach(() => {
   trigger?.destroy();
   trigger = undefined;
   vi.useRealTimers();
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
 });
 
 describe('prompt trigger visibility', () => {

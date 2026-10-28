@@ -3,18 +3,17 @@ import { afterEach, expect, it } from 'vitest';
 
 import { readChatInput } from '@/core/gemini/composer/inputs';
 import { initializeGeminiSelectors, type GeminiSelectorLifetime } from '@/core/gemini/selectors';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { inputFromTarget as historyInput } from '../../promptHistory/promptInput';
 import { resolvePromptInputOperation } from '../selectorInput';
 import { inputFromTarget as slashInput } from '../slashInputTargets';
 
-const descriptor = Object.getOwnPropertyDescriptor(window, 'location')!;
 let lifetime: GeminiSelectorLifetime | undefined;
-const site = (hostname: string) =>
-  Object.defineProperty(window, 'location', { configurable: true, value: { hostname } });
+const site = (hostname: string) => setPageUrl(`https://${hostname}/`);
 afterEach(() => {
   lifetime?.stop();
-  Object.defineProperty(window, 'location', descriptor);
+  resetPageUrl();
   document.body.replaceChildren();
 });
 

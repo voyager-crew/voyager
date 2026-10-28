@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
+
 const mocks = vi.hoisted(() => ({
   findChatInput: vi.fn<() => HTMLElement | null>(),
   getTranslationSync: vi.fn((key: string) => key),
@@ -61,7 +63,7 @@ describe('slash prompt coachmark', () => {
     vi.resetModules();
     vi.clearAllMocks();
     document.body.innerHTML = '';
-    vi.stubGlobal('location', new URL('https://gemini.google.com/app'));
+    setPageUrl('https://gemini.google.com/app');
     mocks.storageGet.mockImplementation(
       async (defaults?: Record<string, unknown>) => defaults ?? {},
     );
@@ -70,7 +72,7 @@ describe('slash prompt coachmark', () => {
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    resetPageUrl();
   });
 
   it('is eligible only when the setting is enabled and a usable Prompt exists', async () => {
@@ -137,7 +139,7 @@ describe('slash prompt coachmark', () => {
   it.each(['https://aistudio.google.com/prompts/new_chat', 'https://chatgpt.com/c/abc'])(
     'skips on %s without mounting or marking anything',
     async (url) => {
-      vi.stubGlobal('location', new URL(url));
+      setPageUrl(url);
       const { maybeShowSlashPromptCoachmark } = await import('../slashPromptCoachmark');
 
       expect(await maybeShowSlashPromptCoachmark({ force: true })).toBe('skipped');
@@ -146,7 +148,7 @@ describe('slash prompt coachmark', () => {
   );
 
   it('is shown on Gemini Enterprise as well', async () => {
-    vi.stubGlobal('location', new URL('https://business.gemini.google/app'));
+    setPageUrl('https://business.gemini.google/app');
     const { maybeShowSlashPromptCoachmark } = await import('../slashPromptCoachmark');
 
     await maybeShowSlashPromptCoachmark({ force: true });

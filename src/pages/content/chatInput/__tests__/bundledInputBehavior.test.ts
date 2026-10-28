@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
+
 import { resolvePromptSiteAdapter } from '../../prompt/resolvePromptSiteAdapter';
 import { findChatInput } from '../index';
 import { getVimComposerMount } from '../vimComposerMount';
 import { createGeminiVimComposerResolver } from '../vimGeminiComposer';
 import { createVimInputTargets, getSendButtonTarget } from '../vimInputTargets';
 
-const locationDescriptor = Object.getOwnPropertyDescriptor(window, 'location')!;
 const HOSTS = [
   'custom.example',
   'gemini.google.com',
@@ -18,7 +19,7 @@ const HOSTS = [
   'www.kimi.com',
 ];
 function host(hostname: string) {
-  Object.defineProperty(window, 'location', { configurable: true, value: { hostname } });
+  setPageUrl(`https://${hostname}/`);
 }
 function show(element: HTMLElement) {
   element.getBoundingClientRect = () =>
@@ -26,7 +27,7 @@ function show(element: HTMLElement) {
 }
 afterEach(() => {
   document.body.replaceChildren();
-  Object.defineProperty(window, 'location', locationDescriptor);
+  resetPageUrl();
   vi.restoreAllMocks();
 });
 

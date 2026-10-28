@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getBundledGeminiSelectorView } from '@/core/gemini/selectors';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
 import { createGeminiVimComposerResolver } from '../vimGeminiComposer';
 import { createVimInputTargets, getSendButtonTarget, isEditPromptInput } from '../vimInputTargets';
 import { startInputVimMode } from '../vimMode';
 
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 let stop = () => {};
 let stopVim = () => {};
 function layout(id: string): HTMLElement {
@@ -21,10 +21,7 @@ function read(configured: string | null = null, requireVisible = true) {
 }
 
 beforeEach(() => {
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { hostname: 'gemini.google.com' },
-  });
+  setPageUrl('https://gemini.google.com/');
 });
 afterEach(() => {
   stopVim();
@@ -33,7 +30,7 @@ afterEach(() => {
   stop = () => {};
   document.body.replaceChildren();
   vi.restoreAllMocks();
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
 });
 
 describe('Gemini Vim owner profiles', () => {

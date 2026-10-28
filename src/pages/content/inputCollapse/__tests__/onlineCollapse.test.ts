@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
+
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
 import { getInputContainer, isInputEmpty, isInputRelatedElement } from '../dom';
 import { collapseInputNow, expand, setCollapseWhenNotEmpty } from '../runtime';
 
 let retire: (() => void) | undefined;
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 
 function input(id: string, wrapper = 'rich-textarea'): HTMLElement {
   const container = document.createElement('div');
@@ -19,10 +20,7 @@ function input(id: string, wrapper = 'rich-textarea'): HTMLElement {
 
 beforeEach(() => {
   vi.useFakeTimers();
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { hostname: 'gemini.google.com', pathname: '/app/chat' },
-  });
+  setPageUrl('https://gemini.google.com/app/chat');
   setCollapseWhenNotEmpty(false);
 });
 
@@ -30,7 +28,7 @@ afterEach(() => {
   retire?.();
   retire = undefined;
   document.body.replaceChildren();
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
   vi.useRealTimers();
 });
 

@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest';
 
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
+
 import { clearOfPromptTrigger } from '../../prompt/triggerClearance';
 import { createVimInputTargets, getSendButtonTarget } from '../vimInputTargets';
 import { createVimPresentation } from '../vimPresentation';
 
-const locationDescriptor = Object.getOwnPropertyDescriptor(window, 'location')!;
 const HOSTS = [
   'custom.example',
   'gemini.google.com',
@@ -17,11 +18,11 @@ const HOSTS = [
 ];
 
 function host(hostname: string) {
-  Object.defineProperty(window, 'location', { configurable: true, value: { hostname } });
+  setPageUrl(`https://${hostname}/`);
 }
 
 afterEach(() => {
-  Object.defineProperty(window, 'location', locationDescriptor);
+  resetPageUrl();
   document.body.replaceChildren();
   vi.restoreAllMocks();
 });

@@ -165,17 +165,7 @@ describe('validateSiteAdapterData', () => {
       'theme.darkSelector',
     ]);
     expect(isValidSelectorSyntax('.ds-message:has(.x):not([data-a="b"])')).toBe(true);
-    // Without a DOM the structural fallback still catches unbalanced input.
-    const doc = globalThis.document;
-    Object.defineProperty(globalThis, 'document', { configurable: true, value: undefined });
-    try {
-      expect(isValidSelectorSyntax('div[data-x="a]"]')).toBe(true);
-      expect(isValidSelectorSyntax('div[data-x')).toBe(false);
-      expect(isValidSelectorSyntax('a:not(.b')).toBe(false);
-      expect(isValidSelectorSyntax("a[title='x]")).toBe(false);
-    } finally {
-      Object.defineProperty(globalThis, 'document', { configurable: true, value: doc });
-    }
+    // Without a DOM: siteAdapterDataWithoutDom.test.ts.
   });
 
   it('a remote turn key that is not a plain attribute name cannot reach a selector', () => {

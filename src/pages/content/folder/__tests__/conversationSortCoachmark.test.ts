@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { setPageUrl } from '@/tests/pageUrl';
+
 const mocks = vi.hoisted(() => ({
   getTranslationSync: vi.fn((key: string) => key),
   initI18n: vi.fn(async () => undefined),
@@ -44,11 +46,7 @@ describe('conversation sort coachmark', () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     document.body.innerHTML = '';
-    Object.defineProperty(window, 'location', {
-      value: { hostname: 'gemini.google.com' },
-      configurable: true,
-      writable: true,
-    });
+    setPageUrl('https://gemini.google.com/');
   });
 
   afterEach(() => {

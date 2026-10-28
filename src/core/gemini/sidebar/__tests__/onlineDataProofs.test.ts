@@ -6,17 +6,18 @@ import { geminiTitleSelectors, type GeminiTitleKey } from '@/core/gemini/sidebar
 import { installGeminiSelectorPatch } from '@/pages/content/__tests__/geminiOnlineSelectorFixture';
 import { NativeArchivedRows } from '@/pages/content/folder/nativeArchivedRows';
 import { findSidebarToggle } from '@/pages/content/sidebarAutoHide/sidebarDom';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 let retire = () => {};
 afterEach(() => {
   retire();
   document.body.replaceChildren();
-  vi.unstubAllGlobals();
+  resetPageUrl();
   vi.restoreAllMocks();
 });
 
 function url(path = '/app/abcdef1234'): void {
-  vi.stubGlobal('location', new URL(`https://gemini.google.com${path}`));
+  setPageUrl(`https://gemini.google.com${path}`);
 }
 function nativeTitle(): void {
   url();

@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { readContentStyle } from '@/tests/contentStyle';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import {
   type Box,
@@ -23,7 +24,6 @@ vi.mock('@/core/utils/browser', () => ({
 
 const originalWidth = window.innerWidth;
 const originalHeight = window.innerHeight;
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 
 /** The ball where `.gv-pm-trigger` puts it: 46px, 18px in from the bottom-right corner. */
 function cornerBall(): Box {
@@ -52,7 +52,7 @@ function placeComposer(
   markup = '<form><textarea id="prompt-textarea"></textarea></form>',
   hostname = 'chatgpt.com',
 ): HTMLElement {
-  Object.defineProperty(window, 'location', { configurable: true, value: { hostname } });
+  setPageUrl(`https://${hostname}/`);
   const holder = document.createElement('main');
   holder.innerHTML = markup;
   const composer = holder.firstElementChild as HTMLElement;
@@ -108,7 +108,7 @@ afterEach(() => {
   document.body.className = '';
   setWindowSize(originalWidth, originalHeight);
   vi.restoreAllMocks();
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
 });
 
 describe('floating folder surfaces stay off the Prompt Manager ball', () => {

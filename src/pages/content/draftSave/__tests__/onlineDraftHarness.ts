@@ -2,25 +2,15 @@ import type { Mock } from 'vitest';
 
 import { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import { startSiteDraftSave } from '@/features/plugins/verbs/draftSave/session';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { geminiDraftPolicy } from '../geminiDraftPolicy';
 
 /** Real draft session/storage format, with only browser persistence and layout supplied by the test. */
 export function createOnlineDraftHarness() {
-  const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
   const records: Record<string, unknown> = {};
   const scopes: PluginScope[] = [];
-  const route = {
-    pathname: '/u/0/app/source',
-    hostname: 'gemini.google.com',
-    origin: 'https://gemini.google.com',
-    search: '',
-    hash: '',
-    get href() {
-      return `${this.origin}${this.pathname}${this.search}${this.hash}`;
-    },
-  };
-  Object.defineProperty(window, 'location', { configurable: true, value: route });
+  setPageUrl('https://gemini.google.com/u/0/app/source');
   (chrome.storage.local.get as unknown as Mock).mockImplementation(
     (key: string | null, callback?: (value: Record<string, unknown>) => void) => {
       const value = key === null ? { ...records } : { [key]: records[key] };
@@ -45,7 +35,6 @@ export function createOnlineDraftHarness() {
 
   return {
     records,
-    route,
     start() {
       const scope = new PluginScope();
       scopes.push(scope);
@@ -54,7 +43,7 @@ export function createOnlineDraftHarness() {
     },
     async stop() {
       await Promise.all(scopes.map((scope) => scope.dispose()));
-      Object.defineProperty(window, 'location', originalLocation);
+      resetPageUrl();
     },
   };
 }

@@ -5,25 +5,16 @@ import { CleanupPositions } from '@/core/types/cleanupPositions';
 import { StorageKeys } from '@/core/types/common';
 import { CleanupManager } from '@/core/utils/cleanupManager';
 import { flushDraftsBeforeUnload } from '@/pages/content/draftSave/draftUnloadFlush';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { requireBundledSiteAdapter } from '../../catalog/sites';
 import { PluginScope } from '../../runtime/pluginScope';
 import { draftSavePrimitive } from './index';
 
 const adapter = requireBundledSiteAdapter('gemini');
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 let records: Record<string, unknown>;
 let scopes: PluginScope[];
 let coordinator: sendKeys.SendKeyCoordinator;
-let route: {
-  pathname: string;
-  hostname: string;
-  origin: string;
-  search: string;
-  hash: string;
-  readonly href: string;
-};
-let doc: Document;
 let input: HTMLElement;
 let button: HTMLButtonElement;
 let height: number;
@@ -35,7 +26,13 @@ function start(): PluginScope {
   draftSavePrimitive.activate(
     scope,
     {},
-    { pluginId: 'local.test.draft', settings: {}, adapter, doc, setTargetCounter: () => {} },
+    {
+      pluginId: 'local.test.draft',
+      settings: {},
+      adapter,
+      doc: document,
+      setTargetCounter: () => {},
+    },
   );
   return scope;
 }
@@ -49,7 +46,7 @@ function key(modifiers: KeyboardEventInit = {}): void {
   );
 }
 function navigate(path: string, sentText?: string): void {
-  route.pathname = path;
+  setPageUrl(path);
   input.textContent = '';
   if (sentText) {
     const turn = document.createElement('user-query');
@@ -68,24 +65,7 @@ beforeEach(() => {
   records = {};
   scopes = [];
   loads = [];
-  route = {
-    pathname: '/app',
-    hostname: 'gemini.google.com',
-    origin: 'https://gemini.google.com',
-    search: '',
-    hash: '',
-    get href() {
-      return `${this.origin}${this.pathname}${this.search}${this.hash}`;
-    },
-  };
-  Object.defineProperty(window, 'location', { configurable: true, value: route });
-  doc = new Proxy(document, {
-    get(target, key) {
-      if (key === 'location') return route;
-      const value: unknown = Reflect.get(target, key, target);
-      return typeof value === 'function' ? value.bind(target) : value;
-    },
-  });
+  setPageUrl('https://gemini.google.com/app');
   Object.defineProperty(document, 'execCommand', { configurable: true, value: vi.fn(() => false) });
   delete document.body.dataset.workspace;
   document.body.innerHTML =
@@ -134,14 +114,14 @@ afterEach(async () => {
   coordinator.stop();
   vi.restoreAllMocks();
   vi.useRealTimers();
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
   document.body.replaceChildren();
 });
 
 it.each(['/u/0/app/abc', '/u/1/app/abc', '/u/1/gem/my-gem/abc'])(
   'saves Gemini drafts under gvDraft_ and full pathname %s',
   async (path) => {
-    route.pathname = path;
+    setPageUrl(path);
     start();
     await vi.advanceTimersByTimeAsync(0);
     type('unsent draft');
@@ -194,7 +174,7 @@ it('keeps both drafts when a send intent has no evidence before programmatic nav
   await vi.advanceTimersByTimeAsync(0);
   type('source unsent tail');
   button.click();
-  route.pathname = '/app/other';
+  setPageUrl('/app/other');
   input.textContent = '';
   input.dispatchEvent(new Event('input', { bubbles: true }));
   window.dispatchEvent(new PopStateEvent('popstate'));
@@ -205,7 +185,7 @@ it('keeps both drafts when a send intent has no evidence before programmatic nav
 });
 
 it('saves the captured source draft when switching account slots before its debounce', async () => {
-  route.pathname = '/u/0/app/first';
+  setPageUrl('/u/0/app/first');
   start();
   await vi.advanceTimersByTimeAsync(0);
   type('first account tail');
@@ -356,8 +336,8 @@ it('reads existing native drafts and reopens records written in the same format'
 });
 
 it.each(['host', 'url', 'dom'])('writes no draft on Gemini Enterprise by %s hint', async (hint) => {
-  if (hint === 'host') route.hostname = 'business.gemini.google';
-  if (hint === 'url') route.search = '?workspace=true';
+  if (hint === 'host') setPageUrl('https://business.gemini.google/app');
+  if (hint === 'url') setPageUrl('?workspace=true');
   if (hint === 'dom') document.body.dataset.workspace = 'business';
   start();
   type('must not be stored');

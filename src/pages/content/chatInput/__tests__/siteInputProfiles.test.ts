@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { getBundledSiteSelectorView, initializeSiteSelectors } from '@/core/selectors';
 import { findSiteChatInput } from '@/core/services/composer/siteInputReads';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { findHandoffComposer } from '../../researchPack/receiver';
 import { createGeminiVimComposerResolver } from '../vimGeminiComposer';
@@ -29,7 +30,6 @@ function nativeInput(site: keyof typeof HOSTS, field: string): string {
       return `<div><div>${field}</div><button>Send</button></div>`;
   }
 }
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 const stops: Array<() => void> = [];
 const input = (id: string): HTMLElement => document.getElementById(id)!;
 function show() {
@@ -45,10 +45,7 @@ async function patch(
   locators: Record<string, readonly string[]>,
   selectors?: Record<string, string>,
 ) {
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { hostname: HOSTS[site] },
-  });
+  setPageUrl(`https://${HOSTS[site]}/`);
   const lifetime = new AbortController();
   const session = initializeSiteSelectors(site, {
     host: HOSTS[site],
@@ -63,7 +60,7 @@ async function patch(
 afterEach(() => {
   stops.splice(0).forEach((stop) => stop());
   document.body.replaceChildren();
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
   vi.restoreAllMocks();
 });
 

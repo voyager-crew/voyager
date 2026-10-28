@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { readChatInput } from '@/core/gemini/composer/inputs';
 import { getBundledGeminiSelectorView } from '@/core/gemini/selectors';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
 import {
@@ -18,17 +19,13 @@ import {
 import { expandAllPromptTokens } from '../slashPlacements';
 import { setRect } from './slashPromptTestHarness';
 
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 let retire: (() => void) | undefined;
 beforeEach(() => {
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { hostname: 'gemini.google.com' },
-  });
+  setPageUrl('https://gemini.google.com/');
   document.body.innerHTML = '';
 });
 afterEach(() => {
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
   retire?.();
   retire = undefined;
   document.body.innerHTML = '';
@@ -156,15 +153,9 @@ describe('online prompt owners', () => {
     const main = input('main');
     retire = await installGeminiSelectorPatch({ 'slash.candidates': ['#main'] });
     expect(inputFromTarget(main)).toBe(main);
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: { hostname: 'business.gemini.google' },
-    });
+    setPageUrl('https://business.gemini.google/');
     expect(inputFromTarget(main)).toBe(main);
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: { hostname: 'aistudio.google.com' },
-    });
+    setPageUrl('https://aistudio.google.com/');
     expect(inputFromTarget(main)).toBeNull();
   });
 

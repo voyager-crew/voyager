@@ -1,5 +1,7 @@
 import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resetPageUrl, setPageUrl, watchFullPageLoads } from '@/tests/pageUrl';
+
 import { clearNewChatFolder, pendingNewChatFolder } from '../../folderProject/pendingFolder';
 import { FolderNavigation } from '../FolderNavigation';
 
@@ -26,17 +28,9 @@ vi.mock('@/utils/i18n', () => ({
   initI18n: () => Promise.resolve(),
 }));
 
-interface LocationMock {
-  pathname: string;
-  origin: string;
-  href: string;
-  reload: ReturnType<typeof vi.fn>;
-}
-
 describe('createNewChatInFolder', () => {
   let navigation: FolderNavigation;
-  let locationMock: LocationMock;
-  let originalLocation: Location;
+  let fullPageLoad: ReturnType<typeof watchFullPageLoads>;
   let pushStateSpy: MockInstance<typeof window.history.pushState>;
 
   beforeEach(() => {
@@ -51,18 +45,8 @@ describe('createNewChatInFolder', () => {
       onTitleChange: vi.fn(),
       onGemDetected: vi.fn(),
     });
-    originalLocation = window.location;
-    locationMock = {
-      pathname: '/app',
-      origin: 'https://gemini.google.com',
-      href: '',
-      reload: vi.fn(),
-    };
-    Object.defineProperty(window, 'location', {
-      value: locationMock,
-      writable: true,
-      configurable: true,
-    });
+    setPageUrl('https://gemini.google.com/app');
+    fullPageLoad = watchFullPageLoads();
     pushStateSpy = vi.spyOn(window.history, 'pushState');
     mockBrowserStorage.local.set.mockReset();
     mockBrowserStorage.local.set.mockResolvedValue(undefined);
@@ -71,11 +55,7 @@ describe('createNewChatInFolder', () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(window, 'location', {
-      value: originalLocation,
-      writable: true,
-      configurable: true,
-    });
+    resetPageUrl();
     navigation.destroy();
     clearNewChatFolder();
     document.body.replaceChildren();
@@ -95,7 +75,7 @@ describe('createNewChatInFolder', () => {
     link.setAttribute('href', '/app');
     const onClick = vi.fn((event: Event) => {
       event.preventDefault();
-      if (path) locationMock.pathname = path;
+      if (path) setPageUrl(path);
     });
     link.addEventListener('click', onClick);
     wrapper.appendChild(link);
@@ -104,12 +84,11 @@ describe('createNewChatInFolder', () => {
   }
 
   function expectNoFullPageLoad(): void {
-    expect(locationMock.reload).not.toHaveBeenCalled();
-    expect(locationMock.href).toBe('');
+    expect(fullPageLoad).not.toHaveBeenCalled();
   }
 
   it("hands the folder to this tab's picker, never through storage other tabs see", async () => {
-    locationMock.pathname = '/app/abc123def456';
+    setPageUrl('/app/abc123def456');
 
     navigation.createNewChatInFolder('folder-1');
     await settle();
@@ -119,7 +98,7 @@ describe('createNewChatInFolder', () => {
   });
 
   it('stays on the new-chat page without reloading when already on /app', async () => {
-    locationMock.pathname = '/app';
+    setPageUrl('/app');
     const nativeClick = mountNativeNewChat('/app');
 
     navigation.createNewChatInFolder('folder-1');
@@ -134,7 +113,7 @@ describe('createNewChatInFolder', () => {
 
   it("opens the new chat through Gemini's own New chat link from a conversation", async () => {
     vi.useFakeTimers();
-    locationMock.pathname = '/app/abc123def456';
+    setPageUrl('/app/abc123def456');
     const nativeClick = mountNativeNewChat('/app');
 
     navigation.createNewChatInFolder('folder-1');
@@ -149,7 +128,7 @@ describe('createNewChatInFolder', () => {
 
   it("falls back to the History API when Gemini's New chat link does not route", async () => {
     vi.useFakeTimers();
-    locationMock.pathname = '/u/1/app/abc123def456';
+    setPageUrl('/u/1/app/abc123def456');
     const nativeClick = mountNativeNewChat(null);
 
     navigation.createNewChatInFolder('folder-1');
@@ -164,7 +143,7 @@ describe('createNewChatInFolder', () => {
   });
 
   it('navigates to /app via SPA route when the page has no New chat link', async () => {
-    locationMock.pathname = '/app/abc123def456';
+    setPageUrl('/app/abc123def456');
 
     navigation.createNewChatInFolder('folder-1');
     await settle();
@@ -174,7 +153,7 @@ describe('createNewChatInFolder', () => {
   });
 
   it('preserves the multi-account user prefix (/u/N/app)', async () => {
-    locationMock.pathname = '/u/2/c/abc';
+    setPageUrl('/u/2/c/abc');
 
     navigation.createNewChatInFolder('folder-1');
     await settle();
@@ -184,7 +163,7 @@ describe('createNewChatInFolder', () => {
   });
 
   it('never loads the page when the History API path fails, leaving the folder pending', async () => {
-    locationMock.pathname = '/app/abc123def456';
+    setPageUrl('/app/abc123def456');
     pushStateSpy.mockImplementation(() => {
       throw new Error('pushState blocked');
     });

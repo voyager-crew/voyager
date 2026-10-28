@@ -14,6 +14,7 @@ import { readProjectPlacement } from '@/pages/content/folderProject/placement';
 import { startSentPromptChips } from '@/pages/content/prompt/SentPromptChips';
 import { readSentChipTargets } from '@/pages/content/prompt/sentChipTargets';
 import { getSidebarWidthButtons } from '@/pages/content/sidebarWidth/buttonTargets';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 let retire = () => {};
 let cleanup = () => {};
@@ -22,7 +23,7 @@ afterEach(() => {
   retire();
   document.body.replaceChildren();
   vi.restoreAllMocks();
-  vi.unstubAllGlobals();
+  resetPageUrl();
   vi.useRealTimers();
 });
 
@@ -121,7 +122,7 @@ it.each(cases)(
   '$key does not mount Voyager controls inside host actions or copied code',
   async ({ key, markup, target, show }) => {
     vi.useFakeTimers();
-    vi.stubGlobal('location', new URL('https://gemini.google.com/app/abcdef1234'));
+    setPageUrl('https://gemini.google.com/app/abcdef1234');
     document.body.innerHTML = markup;
     const scope = document.getElementById('host') ?? document.body;
     const repaired = document.createElement('div');

@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
+
 import { installGeminiSelectorPatch } from '../__tests__/geminiOnlineSelectorFixture';
 import { ContextCaptureService } from './capture';
 
 const cleanups: Array<() => void> = [];
 beforeEach(() => {
-  vi.stubGlobal('location', new URL('https://gemini.google.com/app/test'));
-  Object.defineProperty(window, 'location', { configurable: true, value: location });
+  setPageUrl('https://gemini.google.com/app/test');
   vi.spyOn(HTMLElement.prototype, 'offsetParent', 'get').mockReturnValue(document.body);
   Object.defineProperty(HTMLElement.prototype, 'innerText', {
     configurable: true,
@@ -24,6 +25,7 @@ afterEach(() => {
   document.body.replaceChildren();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+  resetPageUrl();
   delete (HTMLElement.prototype as { innerText?: string }).innerText;
 });
 

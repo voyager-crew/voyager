@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 import { installGeminiSelectorPatch } from '@/pages/content/__tests__/geminiOnlineSelectorFixture';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { startUsageStatusRuntime } from '../runtime';
 import type { UsageSnapshot } from '../usageSnapshot';
@@ -17,8 +18,6 @@ const now = new Date(2026, 6, 18, 10).getTime();
 let stopSelectors = () => {};
 let lifetime: AbortController;
 let stored: Record<string, unknown>;
-let route: { hostname: string; origin: string; pathname: string; href: string };
-let initialPath: string;
 
 function cached(percent: number, accountKey: string): UsageSnapshot {
   return {
@@ -31,8 +30,6 @@ function cached(percent: number, accountKey: string): UsageSnapshot {
 }
 
 function navigate(pathname: string): void {
-  route.pathname = pathname;
-  route.href = `${route.origin}${pathname}`;
   history.replaceState(null, '', pathname);
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
@@ -47,19 +44,11 @@ function shownPercent(): string | null | undefined {
 }
 
 beforeEach(() => {
-  initialPath = location.pathname;
   vi.useFakeTimers();
   vi.setSystemTime(now);
   vi.clearAllMocks();
   lifetime = new AbortController();
-  route = {
-    hostname: 'gemini.google.com',
-    origin: 'https://gemini.google.com',
-    pathname: '/u/0/usage',
-    href: 'https://gemini.google.com/u/0/usage',
-  };
-  vi.stubGlobal('location', route);
-  history.replaceState(null, '', route.pathname);
+  setPageUrl('https://gemini.google.com/u/0/usage');
   vi.spyOn(window, 'postMessage').mockImplementation(() => {});
   stored = { 'gvUsageCache:u/0': cached(7, 'u/0'), 'gvUsageCache:u/1': cached(80, 'u/1') };
   vi.mocked(chrome.storage.local.get).mockImplementation(async () => ({ ...stored }));
@@ -73,9 +62,8 @@ afterEach(() => {
   stopSelectors();
   document.body.replaceChildren();
   vi.restoreAllMocks();
-  vi.unstubAllGlobals();
   vi.useRealTimers();
-  history.replaceState(null, '', initialPath);
+  resetPageUrl();
 });
 
 describe('online usage cache', () => {

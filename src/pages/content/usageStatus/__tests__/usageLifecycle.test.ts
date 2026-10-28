@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 import { getCurrentLanguage } from '@/utils/i18n';
 import type { AppLanguage } from '@/utils/language';
 
@@ -21,11 +22,9 @@ const now = new Date(2026, 6, 18, 10).getTime();
 const resetEpoch = Math.floor(now / 1000) + 4 * 3600;
 let stop: (() => void) | undefined;
 let stored: Record<string, unknown>;
-let route: { hostname: string; origin: string; pathname: string; href: string };
 
 function navigate(pathname: string): void {
-  route.pathname = pathname;
-  route.href = `${route.origin}${pathname}`;
+  setPageUrl(pathname);
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
@@ -97,13 +96,7 @@ beforeEach(() => {
     storageListeners.delete(listener),
   );
   language.current = 'en';
-  route = {
-    hostname: 'gemini.google.com',
-    origin: 'https://gemini.google.com',
-    pathname: '/u/2/app',
-    href: 'https://gemini.google.com/u/2/app',
-  };
-  vi.stubGlobal('location', route);
+  setPageUrl('https://gemini.google.com/u/2/app');
   vi.spyOn(window, 'postMessage').mockImplementation(() => {});
   stored = { 'gvUsageCache:u/2': cached() };
   vi.mocked(chrome.storage.local.get).mockImplementation(async () => stored);
@@ -117,7 +110,7 @@ afterEach(async () => {
   stop = undefined;
   await flushUsagePlugin();
   vi.restoreAllMocks();
-  vi.unstubAllGlobals();
+  resetPageUrl();
   vi.useRealTimers();
   document.body.innerHTML = '';
 });
@@ -245,7 +238,7 @@ describe('usage feature lifecycle', () => {
   });
 
   it('scrapes a late-mounted usage component, tracks mutations, and keeps the last non-empty data', async () => {
-    route.pathname = '/u/2/usage';
+    setPageUrl('/u/2/usage');
     await start();
     document.body.insertAdjacentHTML(
       'beforeend',
@@ -265,7 +258,7 @@ describe('usage feature lifecycle', () => {
   });
 
   it('calibrates captures only from the current account, route and collection with matching usage', async () => {
-    route.pathname = '/u/2/usage';
+    setPageUrl('/u/2/usage');
     document.body.innerHTML =
       '<usage-metrics-window><div class="gxu-currently">7% used</div></usage-metrics-window>';
     await start();

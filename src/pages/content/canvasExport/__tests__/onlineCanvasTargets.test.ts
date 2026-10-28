@@ -1,12 +1,13 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
+
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
 import { extractAllCanvasDocs, isAnyCanvasOpen } from '../../export/canvasDocExtractor';
 import { resolveCanvasCodeRoots } from '../canvasTargets';
 import { canvasFixture } from './fixtures';
 
 let retire: (() => void) | undefined;
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 
 function codeCanvas(tag = 'code-immersive-panel', id = 'code'): HTMLElement {
   const owner = document.createElement('immersive-panel');
@@ -19,17 +20,14 @@ function codeCanvas(tag = 'code-immersive-panel', id = 'code'): HTMLElement {
 }
 
 beforeEach(() => {
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { hostname: 'gemini.google.com' },
-  });
+  setPageUrl('https://gemini.google.com/');
 });
 
 afterEach(() => {
   retire?.();
   retire = undefined;
   document.body.replaceChildren();
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
   vi.restoreAllMocks();
 });
 
@@ -142,10 +140,7 @@ it('a non-Gemini page keeps bundled Canvas reads despite an installed profile', 
   codeCanvas('canvas-code-v2');
   const expected = extractAllCanvasDocs();
   retire = await installGeminiSelectorPatch({ 'canvas.codePanels': ['canvas-code-v2'] });
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { hostname: 'aistudio.google.com' },
-  });
+  setPageUrl('https://aistudio.google.com/');
   expect(extractAllCanvasDocs()).toEqual(expected);
 });
 

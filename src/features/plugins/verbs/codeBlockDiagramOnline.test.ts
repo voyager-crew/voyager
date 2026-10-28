@@ -3,13 +3,13 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createContentExtractor } from '@/features/export/services/DOMContentExtractor';
 import { installGeminiSelectorPatch } from '@/pages/content/__tests__/geminiOnlineSelectorFixture';
 import { buildGeminiAdapter } from '@/pages/content/export/adapter/platform/gemini';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { requireBundledSiteAdapter } from '../catalog/sites';
 import { PluginScope } from '../runtime/pluginScope';
 import { activateCodeBlockDiagram, type CodeBlockDiagram } from './codeBlockDiagram';
 import { readDiagramExport } from './diagramExportRegistry';
 
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 const scopes: PluginScope[] = [];
 let retire: (() => void) | undefined;
 const render = vi.fn(async (target: HTMLElement, source: string): Promise<void | (() => void)> => {
@@ -62,10 +62,7 @@ function copy(block: Element): HTMLButtonElement {
 }
 
 beforeEach(() => {
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { hostname: 'gemini.google.com' },
-  });
+  setPageUrl('https://gemini.google.com/');
   render.mockClear();
 });
 afterEach(async () => {
@@ -74,7 +71,7 @@ afterEach(async () => {
   retire = undefined;
   document.body.replaceChildren();
   document.head.querySelectorAll('style').forEach((style) => style.remove());
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
   vi.restoreAllMocks();
 });
 

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 import { readContentStyle } from '@/tests/contentStyle';
+import { setPageUrl } from '@/tests/pageUrl';
 import { beforePaints, injectStyleText } from '@/tests/pseudoElementPaint';
 
 const mocks = vi.hoisted(() => ({
@@ -51,11 +52,7 @@ describe('ruler timeline coachmark', () => {
     vi.resetModules();
     vi.clearAllMocks();
     document.body.innerHTML = '';
-    Object.defineProperty(window, 'location', {
-      value: { hostname: 'gemini.google.com' },
-      configurable: true,
-      writable: true,
-    });
+    setPageUrl('https://gemini.google.com/');
   });
 
   afterEach(async () => {

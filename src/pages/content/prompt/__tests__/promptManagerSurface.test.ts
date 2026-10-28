@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 import { SiteRegistry } from '@/features/plugins/sites/registry';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 import { toastDriver } from '@/tests/toastDriver';
 
 import { ensureScheme, stopScheme } from '../../platformTheme/scheme';
@@ -240,7 +241,7 @@ describe('prompt manager starting theme', () => {
   it("starts in DeepSeek's dark theme even when the OS is light", async () => {
     stubOsDark(false);
     const url = 'https://chat.deepseek.com/';
-    vi.stubGlobal('location', new URL(url));
+    setPageUrl(url);
     document.body.classList.add('dark');
     ensureScheme(SiteRegistry.createDefault().resolveByUrl(url)?.theme ?? null);
 
@@ -257,7 +258,7 @@ describe('prompt manager starting theme', () => {
 
   it('follows page theme changes until the switch fixes a theme, and again after auto', async () => {
     const url = 'https://gemini.google.com/app';
-    vi.stubGlobal('location', new URL(url));
+    setPageUrl(url);
     document.body.insertAdjacentHTML('afterbegin', '<div class="theme-host light-theme"></div>');
     const themeHost = document.querySelector('.theme-host')!;
     const setPageTheme = (scheme: 'light' | 'dark') => {
@@ -300,7 +301,7 @@ describe('Saved Library highlight scope', () => {
   }
 
   async function requestedHighlightPlatform(url: string): Promise<unknown> {
-    vi.stubGlobal('location', new URL(url));
+    setPageUrl(url);
     const sendMessage = answerRuntimeMessages();
     const panel = await openManager([prompt('a', 'Alpha')]);
     panel.querySelector<HTMLButtonElement>('.gv-pm-backup-btn')!.click();
@@ -315,7 +316,7 @@ describe('Saved Library highlight scope', () => {
   }
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    resetPageUrl();
   });
 
   it.each([

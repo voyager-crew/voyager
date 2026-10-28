@@ -8,21 +8,18 @@ import { getGeminiSelectorView } from '@/core/gemini/selectors';
 import { readComposer } from '@/core/services/composer';
 import { createContentExtractor } from '@/features/export/services/DOMContentExtractor';
 import { geminiAdapter } from '@/features/plugins/sites/adapters/gemini';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { buildGeminiAdapter } from '../export/adapter/platform/gemini';
 import { readGemsList } from '../gemsSidebar/selectorQueries';
 import { installGeminiSelectorPatch } from './geminiOnlineSelectorFixture';
 
 let stop: (() => void) | undefined;
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 const rootClasses = document.documentElement.className;
 const bodyClasses = document.body.className;
 
 beforeEach(() => {
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { hostname: 'gemini.google.com', origin: 'https://gemini.google.com' },
-  });
+  setPageUrl('https://gemini.google.com/');
 });
 afterEach(() => {
   stop?.();
@@ -30,7 +27,7 @@ afterEach(() => {
   document.body.replaceChildren();
   document.documentElement.className = rootClasses;
   document.body.className = bodyClasses;
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
 });
 
 function mountComposer(decoration = ''): HTMLElement {

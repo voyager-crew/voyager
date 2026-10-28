@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as accounts from '@/core/services/AccountIsolationService';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { startPromptSlashCommand } from '../slashPrompt';
 import { createTextarea, press, typeInto } from './slashPromptTestHarness';
 
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 let destroy: (() => void) | undefined;
 
 async function flush(): Promise<void> {
@@ -17,17 +17,14 @@ afterEach(() => {
   destroy?.();
   destroy = undefined;
   document.body.innerHTML = '';
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
   vi.restoreAllMocks();
   vi.useRealTimers();
 });
 
 describe.each(['gemini.google.com', 'aistudio.google.com'])('slash account work on %s', (host) => {
   function start(template: boolean) {
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: { hostname: host, href: `https://${host}/u/0/app/first` },
-    });
+    setPageUrl(`https://${host}/u/0/app/first`);
     const input = createTextarea('/fable');
     const account = document.createElement('button');
     account.className = 'account-switcher-text';

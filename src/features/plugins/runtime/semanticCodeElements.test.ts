@@ -1,6 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { installGeminiSelectorPatch } from '@/pages/content/__tests__/geminiOnlineSelectorFixture';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { geminiAdapter } from '../sites/adapters/gemini';
 import type { PluginManifest, SiteAdapter } from '../types';
@@ -32,14 +33,14 @@ const manifest: PluginManifest = {
 let stop = () => {};
 let engine: DeclarativeEngine | null = null;
 beforeEach(() => {
-  vi.stubGlobal('location', new URL('https://gemini.google.com/app/test'));
+  setPageUrl('https://gemini.google.com/app/test');
 });
 afterEach(() => {
   engine?.unmountAll();
   engine = null;
   stop();
   document.body.replaceChildren();
-  vi.unstubAllGlobals();
+  resetPageUrl();
 });
 
 function code(tag: string, id: string): string {

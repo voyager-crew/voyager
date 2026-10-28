@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest';
 
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
+
 import { createVimPresentation } from '../vimPresentation';
 
-const locationDescriptor = Object.getOwnPropertyDescriptor(window, 'location')!;
 afterEach(() => {
-  Object.defineProperty(window, 'location', locationDescriptor);
+  resetPageUrl();
   document.body.replaceChildren();
   vi.restoreAllMocks();
 });
@@ -18,7 +19,7 @@ it.each([
   'www.kimi.com',
   'aistudio.google.com',
 ])('%s keeps the baseline rich-textarea fallback when no earlier HUD anchor exists', (hostname) => {
-  Object.defineProperty(window, 'location', { configurable: true, value: { hostname } });
+  setPageUrl(`https://${hostname}/`);
   document.body.innerHTML =
     '<section id="fallback"><rich-textarea></rich-textarea></section><section id="configured"><textarea id="draft"></textarea></section>';
   const field = document.querySelector('textarea')!;
@@ -54,7 +55,7 @@ it.each([
   'www.kimi.com',
   'aistudio.google.com',
 ])('%s keeps an Edit message HUD beside its original action buttons', (hostname) => {
-  Object.defineProperty(window, 'location', { configurable: true, value: { hostname } });
+  setPageUrl(`https://${hostname}/`);
   document.body.innerHTML =
     '<section id="edit"><div><textarea aria-label="Edit message"></textarea></div><button>Save</button><button>Cancel</button></section>';
   const field = document.querySelector('textarea')!;
@@ -81,7 +82,7 @@ it.each([
 it.each(['chatgpt.com', 'claude.ai', 'chat.deepseek.com', 'www.kimi.com', 'aistudio.google.com'])(
   '%s keeps the baseline Tools HUD fallback until its configured composer mounts',
   (hostname) => {
-    Object.defineProperty(window, 'location', { configurable: true, value: { hostname } });
+    setPageUrl(`https://${hostname}/`);
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
       new DOMRect(0, 0, 200, 30),
     );
@@ -116,7 +117,7 @@ it.each(['chatgpt.com', 'claude.ai', 'chat.deepseek.com', 'www.kimi.com', 'aistu
 it.each(['chatgpt.com', 'claude.ai', 'chat.deepseek.com', 'www.kimi.com', 'aistudio.google.com'])(
   '%s keeps the baseline input host until its configured composer takes precedence',
   (hostname) => {
-    Object.defineProperty(window, 'location', { configurable: true, value: { hostname } });
+    setPageUrl(`https://${hostname}/`);
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
       new DOMRect(0, 0, 200, 30),
     );

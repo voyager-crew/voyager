@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
+
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
 import { startRenderedQuoteStyling } from '../renderedQuotes';
 
-const originalLocation = Object.getOwnPropertyDescriptor(window, 'location')!;
 let retire: (() => void) | undefined;
 let stop: (() => void) | undefined;
 
@@ -31,10 +32,7 @@ async function flushMutations(): Promise<void> {
 
 beforeEach(() => {
   vi.useFakeTimers();
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { hostname: 'gemini.google.com' },
-  });
+  setPageUrl('https://gemini.google.com/');
 });
 
 afterEach(() => {
@@ -44,7 +42,7 @@ afterEach(() => {
   document.body.replaceChildren();
   vi.useRealTimers();
   vi.restoreAllMocks();
-  Object.defineProperty(window, 'location', originalLocation);
+  resetPageUrl();
 });
 
 describe('online composer quote repainting', () => {

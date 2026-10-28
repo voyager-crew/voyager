@@ -94,7 +94,8 @@ const localStorageMock = (() => {
   };
 })();
 
-Object.defineProperty(window, 'localStorage', {
+// `globalThis` is jsdom's window, and still exists in a `@vitest-environment node` file.
+Object.defineProperty(globalThis, 'localStorage', {
   value: localStorageMock,
   writable: true,
 });
@@ -128,7 +129,7 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
 
 // Mock DOM API. Configurable so `vi.stubGlobal('matchMedia', …)` works in the VM
 // pools too: there this adds a new property to jsdom's window, fixed by default.
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(globalThis, 'matchMedia', {
   writable: true,
   configurable: true,
   value: vi.fn().mockImplementation((query) => ({

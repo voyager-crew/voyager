@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import { setPageUrl } from '@/tests/pageUrl';
 
 const mocks = vi.hoisted(() => ({
   getTranslationSync: vi.fn((key: string) => key),
@@ -54,11 +55,7 @@ describe('compact timeline coachmark', () => {
     vi.resetModules();
     vi.clearAllMocks();
     document.body.innerHTML = '';
-    Object.defineProperty(window, 'location', {
-      value: { hostname: 'gemini.google.com' },
-      configurable: true,
-      writable: true,
-    });
+    setPageUrl('https://gemini.google.com/');
   });
 
   afterEach(async () => {

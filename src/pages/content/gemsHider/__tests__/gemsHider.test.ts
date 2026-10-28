@@ -1,6 +1,7 @@
 import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import { setPageUrl } from '@/tests/pageUrl';
 
 vi.mock('webextension-polyfill', () => ({
   default: {
@@ -48,13 +49,7 @@ describe('gemsHider', () => {
       configurable: true,
     });
 
-    Object.defineProperty(window, 'location', {
-      value: {
-        hostname: 'gemini.google.com',
-      },
-      writable: true,
-      configurable: true,
-    });
+    setPageUrl('https://gemini.google.com/');
 
     localState = {};
     heldGets = new Set();

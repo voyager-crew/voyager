@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 import { CleanupManager } from '@/core/utils/cleanupManager';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { PageRetiredError, createPageSteps } from '../../pageInitSteps';
 import { type PromptManagerEngine, createPromptManagerEngine } from '../promptManagerEngine';
@@ -65,7 +66,7 @@ function emit(changes: Record<string, unknown>, area: 'sync' | 'local'): void {
 const setting = (key: string, newValue: unknown) => ({ [key]: { newValue } });
 
 function engineFor(url: string): PromptManagerEngine {
-  vi.stubGlobal('location', new URL(url));
+  setPageUrl(url);
   return createPromptManagerEngine(resolvePromptSiteAdapter(url), cleanup);
 }
 
@@ -90,7 +91,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup.executeCleanups();
-  vi.unstubAllGlobals();
+  resetPageUrl();
   vi.restoreAllMocks();
   document.body.innerHTML = '';
 });
@@ -288,7 +289,7 @@ describe('a content script that retired during startup', () => {
   const GEMINI = 'https://gemini.google.com/app';
 
   function retiringPage(url: string) {
-    vi.stubGlobal('location', new URL(url));
+    setPageUrl(url);
     const lifetime = new AbortController();
     const { settle: step } = createPageSteps(lifetime.signal);
     const engine = createPromptManagerEngine(

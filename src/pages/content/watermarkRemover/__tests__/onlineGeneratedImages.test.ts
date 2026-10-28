@@ -1,24 +1,22 @@
 import { afterEach, beforeEach, expect, it } from 'vitest';
 
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
+
 import { installGeminiSelectorPatch } from '../../__tests__/geminiOnlineSelectorFixture';
 import { findNativeDownloadButton } from '../downloadButton';
 import { findGeneratedDownloadIcon } from '../generatedImageTargets';
 
 let retire: (() => void) | undefined;
-const locationDescriptor = Object.getOwnPropertyDescriptor(window, 'location')!;
 
 beforeEach(() => {
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { hostname: 'gemini.google.com' },
-  });
+  setPageUrl('https://gemini.google.com/');
   document.body.replaceChildren();
 });
 afterEach(() => {
   retire?.();
   retire = undefined;
   document.body.replaceChildren();
-  Object.defineProperty(window, 'location', locationDescriptor);
+  resetPageUrl();
 });
 
 it('a remote icon cannot turn a neighbouring share control into a generated download', async () => {

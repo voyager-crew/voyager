@@ -4,6 +4,7 @@ import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
 import type { StarredMessage } from '@/features/savedLibrary/starTypes';
 import { CatalogTimelineAdapter } from '@/features/timeline/adapters/catalog/CatalogTimelineAdapter';
 import { CatalogTurnOwnership } from '@/features/timeline/adapters/catalog/CatalogTurnOwnership';
+import { setPageUrl } from '@/tests/pageUrl';
 
 import { createChatGptExportSite } from '../../sites/chatgpt';
 import { buildChatGptTurnsForSelection } from '../chatgpt';
@@ -133,7 +134,7 @@ describe('ChatGPT export Library inputs', () => {
     'exports an unnamed route %s without reading a Library namespace',
     async (path) => {
       mountRetained();
-      vi.stubGlobal('location', new URL(path, 'https://chatgpt.com'));
+      setPageUrl(new URL(path, 'https://chatgpt.com'));
       expect(
         await buildChatGptTurnsForSelection(new Set(['reply-uuid']), { extractor }),
       ).toMatchObject([{ starred: false }]);
@@ -239,7 +240,7 @@ describe.each(['retained', 'crawled'] as const)(
         const release = pendingLibraryRead();
         const pending = turns.build(selected, {});
         await vi.waitFor(() => expect(libraryRead).toHaveBeenCalled());
-        vi.stubGlobal('location', new URL('https://chatgpt.com/u/3/c/conv'));
+        setPageUrl('https://chatgpt.com/u/3/c/conv');
         release([star('Question')]);
         await expect(pending).rejects.toThrow('chatgpt_export_conversation_changed');
       } finally {
