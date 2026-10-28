@@ -1,6 +1,5 @@
 import { getPageSelectorSiteId, getSiteSelectorView } from '@/core/selectors';
 import { readInputPlacement } from '@/core/services/composer/inputPlacement';
-import type { HighlightPlatform } from '@/core/types/highlight';
 import { SiteRegistry } from '@/features/plugins/sites/registry';
 import type { PromptSiteAdapter, PromptTriggerSpot } from '@/features/prompt/PromptSiteAdapter';
 
@@ -8,8 +7,6 @@ import { insertTextIntoChatInput } from '../chatInput/index';
 import { expandInputCollapseIfNeeded } from '../inputCollapse/index';
 import { getScheme } from '../platformTheme/scheme';
 import { detectPageScheme } from './pageScheme';
-
-type SiteFacts = Omit<PromptSiteAdapter, 'highlightPlatform'>;
 
 /**
  * Beside the Angular Material button nearest the bottom-right corner: Gemini's
@@ -37,58 +34,39 @@ function besideMaterialFab(ballHeight: number): PromptTriggerSpot | null {
   };
 }
 
-/** gemini.google.com and business.gemini.google: the only composers whose send path slash expands. */
-const GEMINI: SiteFacts = {
-  slash: true,
-  insert(text) {
-    // Input collapse folds only Gemini's composer; a folded one has no height to insert into.
-    expandInputCollapseIfNeeded();
-    return insertTextIntoChatInput(text);
-  },
-  scheme: detectPageScheme,
-  defaultTriggerSpot: besideMaterialFab,
-};
-
-/** AI Studio and custom websites. */
-const OTHER: SiteFacts = {
+/** A website without a bundled adapter keeps Prompt Manager's generic page behavior. */
+const CUSTOM_WEBSITE: PromptSiteAdapter = {
   slash: false,
   insert: insertTextIntoChatInput,
   scheme: detectPageScheme,
   defaultTriggerSpot: besideMaterialFab,
+  highlightPlatform: 'gemini',
 };
 
-/**
- * Plugin platforms have no Material button to sit beside, and their theme
- * markers belong to site descriptors, which the generic detection can miss.
- */
-const CATALOG: SiteFacts = {
-  ...OTHER,
-  defaultTriggerSpot: (height) => {
-    const site = getPageSelectorSiteId();
-    return site && getSiteSelectorView(site).remoteKeys.has('input.fab')
-      ? besideMaterialFab(height)
-      : null;
-  },
-  scheme: () => getScheme(),
-};
-
-function siteFacts(url: string): SiteFacts {
-  const adapter = SiteRegistry.createDefault().resolveByUrl(url);
-  switch (adapter?.id) {
-    case 'gemini':
-      return GEMINI;
-    case 'aistudio':
-      return { ...OTHER, scheme: () => getScheme() };
-    default:
-      return adapter ? CATALOG : OTHER;
-  }
+/** Catalog adapters require a published FAB locator before using that placement. */
+function besidePublishedFab(height: number): PromptTriggerSpot | null {
+  const site = getPageSelectorSiteId();
+  return site && getSiteSelectorView(site).remoteKeys.has('input.fab')
+    ? besideMaterialFab(height)
+    : null;
 }
 
-/** Highlights live under Gemini's scope everywhere except an `aistudio.` host. */
-function highlightPlatformOf(url: string): HighlightPlatform {
-  return new URL(url).hostname.startsWith('aistudio.') ? 'aistudio' : 'gemini';
+function insertIntoCollapsedComposer(text: string): boolean {
+  // A folded composer has no height for insertion until input collapse expands it.
+  expandInputCollapseIfNeeded();
+  return insertTextIntoChatInput(text);
 }
 
 export function resolvePromptSiteAdapter(url: string): PromptSiteAdapter {
-  return { ...siteFacts(url), highlightPlatform: highlightPlatformOf(url) };
+  // The default registry contains bundled adapters only, never remote site overrides.
+  const adapter = SiteRegistry.createDefault().resolveByUrl(url);
+  if (!adapter) return { ...CUSTOM_WEBSITE };
+  const prompt = adapter.prompt;
+  return {
+    slash: prompt?.slash ?? false,
+    insert: prompt?.expandCollapsedComposer ? insertIntoCollapsedComposer : insertTextIntoChatInput,
+    scheme: prompt?.scheme === 'page' ? detectPageScheme : getScheme,
+    defaultTriggerSpot: prompt?.triggerSpot === 'fab' ? besideMaterialFab : besidePublishedFab,
+    highlightPlatform: prompt?.highlightScope ?? 'gemini',
+  };
 }

@@ -117,10 +117,29 @@
       "maxItems": 64,
       "items": {
         "type": "string",
-        "pattern": "^[a-z0-9-]{1,64}$"
+        "pattern": "^[a-z0-9_-]{1,64}$"
       },
-      "description": "Static router segments site-check reports may retain. Every other path segment is redacted; queries and hashes are always omitted. Only lower-case letters, digits and hyphens are allowed; never put conversation or account identifiers here.",
+      "description": "Static router segments site-check reports may retain. Every other path segment is redacted; queries and hashes are always omitted. Only lower-case letters, digits, underscores and hyphens are allowed; never put conversation or account identifiers here.",
       "examples": [["chat", "new", "library"]]
+    },
+    "accountSlots": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether bundled site-check rules retain one- or two-digit /u/<n>/ account slots."
+    },
+    "conversationRoutes": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "string",
+        "maxLength": 520,
+        "pattern": "^/(?:[a-z0-9_-]{1,64}|:id)(?:/(?:[a-z0-9_-]{1,64}|:id)){0,7}$"
+      },
+      "description": "Bundled redacted conversation routes checked without an account-slot prefix when conversationIdPattern is absent.",
+      "examples": [["/app/:id", "/gem/:id/:id"]]
+    },
+    "prompt": {
+      "$ref": "site-sections/prompt.schema.json"
     },
     "turnKeyAttributes": {
       "type": "array",

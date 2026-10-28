@@ -87,4 +87,47 @@ describe('site check route redaction', () => {
   it('reports `/` for a URL it cannot parse', () => {
     expect(redactRoute('not a url', site('chatgpt'))).toEqual({ route: '/', conversation: false });
   });
+
+  it('ignores remote route words, account slots and fallback conversation routes', () => {
+    const forged = {
+      ...site('gemini'),
+      routeWords: ['private-id'],
+      accountSlots: false,
+      conversationRoutes: ['/gems/view'],
+    };
+    expect(redactRoute('https://gemini.google.com/u/01/app/private-id', forged)).toEqual({
+      route: '/u/01/app/:id',
+      conversation: true,
+    });
+    expect(redactRoute('https://gemini.google.com/gems/view', forged)).toEqual({
+      route: '/gems/view',
+      conversation: false,
+    });
+    const forgedClaude = {
+      ...site('claude'),
+      routeWords: ['private-id'],
+      accountSlots: true,
+      conversationRoutes: ['/:id/:id/:id'],
+    };
+    expect(redactRoute('https://claude.ai/u/2/private-id', forgedClaude)).toEqual({
+      route: '/:id/:id/:id',
+      conversation: false,
+    });
+  });
+
+  it.each([
+    ['gemini', 'https://gemini.google.com/u/99/app/private-id', '/u/99/app/:id', true],
+    ['gemini', 'https://gemini.google.com/u/100/app/private-id', '/u/:id/app/:id', false],
+    ['aistudio', 'https://aistudio.google.cn/u/2/prompts/private-id', '/u/2/prompts/:id', true],
+    ['kimi', 'https://www.kimi.com/chat/0123456789abcdefghij', '/chat/:id', true],
+    ['gemini', 'https://gemini.google.com/App/%61pp/private-id', '/:id/:id/:id', false],
+    [
+      'gemini',
+      'https://gemini.google.com/app/one/two/three/four/five/six/seven/eight?secret#private',
+      '/app/:id/:id/:id/:id/:id/:id/:id/…',
+      false,
+    ],
+  ])('preserves %s route edge behavior for %s', (id, url, route, conversation) => {
+    expect(redactRoute(url, site(id))).toEqual({ route, conversation });
+  });
 });

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://voyager.nagi.fun/site-sections/prompt.schema.json",
+  "title": "Voyager site adapter: prompt",
+  "type": "object",
+  "maxProperties": 5,
+  "additionalProperties": false,
+  "description": "Bundled Prompt Manager overrides; clients drop unreadable sections and publishing fails on their issues.",
+  "properties": {
+    "slash": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether slash expands Prompt Manager in the composer."
+    },
+    "expandCollapsedComposer": {
+      "type": "boolean",
+      "default": false,
+      "description": "Expand the collapsed Gemini composer before inserting a prompt."
+    },
+    "triggerSpot": {
+      "type": "string",
+      "const": "fab",
+      "description": "Place the trigger beside a visible Material FAB. Omit to require a published input.fab in the page selector view first."
+    },
+    "scheme": {
+      "type": "string",
+      "const": "page",
+      "description": "Read the theme with detectPageScheme(). Omit to read the platform theme through getScheme()."
+    },
+    "highlightScope": {
+      "type": "string",
+      "const": "aistudio",
+      "description": "Use the AI Studio highlight scope. Omit to use Gemini's scope."
+    }
+  }
+}

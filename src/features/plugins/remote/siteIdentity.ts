@@ -56,6 +56,9 @@ export function protectSiteAdapterIdentity(bundled: SiteAdapter, remote: SiteAda
     conversationIdPattern: bundled.conversationIdPattern,
     turnKeyAttributes: bundled.turnKeyAttributes,
     routeWords: bundled.routeWords,
+    accountSlots: bundled.accountSlots,
+    conversationRoutes: bundled.conversationRoutes,
+    prompt: bundled.prompt,
     modelPicker: bundled.modelPicker,
     pageHooks:
       bundled.pageHooks && remote.pageHooks

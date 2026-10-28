@@ -135,7 +135,7 @@ export function localRulesSection(
       ...(audience === 'agent'
         ? [
             '- "theme": { "brand": "#rrggbb" } optionally recolors Voyager’s own UI on Claude, ChatGPT, DeepSeek or Kimi. "requires" is optional: native ops already imply "requires.handlers". "requires.formFactors" defaults to ["desktop", "mobile"]; write ["desktop"] only for a plugin that cannot work on a phone.',
-            '- Optional site.json "routeWords" lists static route segments such as "chat" and "new". Site-check reports keep them and replace every other segment with :id; only the packaged site.json counts.',
+            '- The site-check route fields ("routeWords", "accountSlots", "conversationRoutes") and the Prompt Manager "prompt" section come only from Voyager’s packaged site.json, so a local plugin cannot set them.',
           ]
         : primitives
           ? [

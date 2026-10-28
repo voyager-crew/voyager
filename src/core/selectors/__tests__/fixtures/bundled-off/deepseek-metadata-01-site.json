@@ -12,6 +12,7 @@
       "brandColor": "#4d6bfe",
       "capabilities": ["chat", "composer", "darkMode"],
       "conversationIdPattern": "^/a/chat/s/([^/?#]+)",
+      "routeWords": ["a", "chat", "s"],
       "export": {
         "version": 1,
         "read": "virtual",

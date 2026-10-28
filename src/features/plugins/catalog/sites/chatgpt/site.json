@@ -22,6 +22,7 @@
   "brandColor": "#0ea5e9",
   "capabilities": ["chat", "sidebar", "composer", "darkMode"],
   "conversationIdPattern": "^(?:/u/[^/]+)?(?:/g/[^/]+)?/c/([^/?#]+)",
+  "routeWords": ["c", "g", "project", "gpts", "library", "codex", "images"],
   "turnKeyAttributes": ["data-turn-key", "data-message-id"],
   "modelPicker": {
     "format": 1,

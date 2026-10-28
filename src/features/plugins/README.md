@@ -160,8 +160,7 @@ An official plugin is authored as files under its platform's directory:
    directory yet, write its `site.json` first (`id` equal to the directory name,
    `label`, `matches`, `selectors` keyed by the semantic vocabulary, `theme`,
    `brandColor`, `capabilities`, optional `conversationIdPattern`,
-   `turnKeyAttributes` and `routeWords`, the static path segments site-check
-   reports keep). Nothing registers it: the registry picks it up from the
+   `turnKeyAttributes` and the [bundled route and prompt facts](#bundled-route-and-prompt-manager-facts)). Nothing registers it: the registry picks it up from the
    file. `turnKeyAttributes` names the attributes that keep a user message's
    identity across remounts; send tracking (`sends/trackUserSends.ts`, behind
    folder Activity and catalog timeline timestamps) runs only on a site that
@@ -221,6 +220,17 @@ exact-match allowlist: `data-*`, `aria-*`, `title`, `role`, `lang`, `dir`,
 page element. `setStyle` values and `style` attributes follow the CSS rule
 above, and attribute values may not contain an external URL. All of this is
 checked again after `{{setting}}` substitution (`manifest/sinkGuards.ts`).
+
+## Bundled route and Prompt Manager facts
+
+`site.json` owns `routeWords`, `accountSlots`, `conversationRoutes` and `prompt`.
+They are read from bundled adapters only and pinned to bundled values when
+remote records are applied, including removing fields the bundle omits.
+Clients drop a malformed `prompt` section and record `sectionIssues`, keeping
+other selector and locator fixes usable; publishing fails on those issues.
+Custom websites without an adapter keep their code defaults. See
+[site.schema.json](../../../docs/public/site.schema.json) and its section
+schemas for accepted values, limits and defaults.
 
 ## Topics in their own files
 

@@ -37,6 +37,7 @@ import { type SiteLocatorProfiles, readSiteLocators } from './sections/locatorDa
 import { type ModelPickerSection, readModelPickerSection } from './sections/modelPickerData';
 import { type PageHooksSection, readPageHooksSection } from './sections/pageHooksData';
 import { type ProjectsSection, readProjectsSection } from './sections/projectsData';
+import { type PromptSection, readPromptSection } from './sections/promptData';
 import { isSemanticSelectorKey } from './semanticKeys';
 
 /** JSON-serializable adapter: `capabilities` is an array instead of a Set. */
@@ -51,6 +52,9 @@ export interface SiteAdapterData {
   readonly capabilities: readonly SiteCapability[];
   readonly conversationIdPattern?: string;
   readonly routeWords?: readonly string[];
+  readonly accountSlots?: boolean;
+  readonly conversationRoutes?: readonly string[];
+  readonly prompt?: PromptSection;
   readonly turnKeyAttributes?: readonly string[];
   readonly export?: SiteExportConfig;
   readonly modelPicker?: ModelPickerSection;
@@ -70,8 +74,19 @@ const MAX_PATTERN_LENGTH = 500;
 /** A plain lower-case attribute name: it is interpolated into `[name]`. */
 const ATTRIBUTE_NAME = /^[a-z][a-z0-9-]{0,63}$/;
 const MAX_TURN_KEY_ATTRIBUTES = 8;
-const ROUTE_WORD = /^[a-z0-9-]{1,64}$/;
+const ROUTE_WORD = /^[a-z0-9_-]{1,64}$/;
 const MAX_ROUTE_WORDS = 64;
+const MAX_CONVERSATION_ROUTES = 16;
+const MAX_CONVERSATION_ROUTE_LENGTH = 520;
+const CONVERSATION_ROUTE = /^\/(?:[a-z0-9_-]{1,64}|:id)(?:\/(?:[a-z0-9_-]{1,64}|:id)){0,7}$/;
+
+function isConversationRoute(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    value.length <= MAX_CONVERSATION_ROUTE_LENGTH &&
+    CONVERSATION_ROUTE.test(value)
+  );
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -215,11 +230,11 @@ function readSelectors(
 export interface SiteAdapterDataRead {
   readonly result: Result<SiteAdapter, ManifestIssue[]>;
   /**
-   * Problems that never fail `result`: a selector key this build does not
-   * know (dropped), and a broken optional section (`modelPicker`, `projects`,
-   * `pageHooks`, `bridge`, `folders`), which is left off the adapter. Selector fixes keep
-   * reaching clients while only that key or capability is unavailable (a
-   * missing `bridge` denies the bridge). Publishing fails on any of them.
+   * Non-fatal runtime problems: unknown selectors, malformed bundled-only
+   * `accountSlots`, `conversationRoutes`, and broken optional
+   * `modelPicker`, `projects`, `pageHooks`, `bridge`, `folders`, `prompt`.
+   * Unreadable fields/sections are omitted; other repairs remain usable.
+   * Publishing fails on any issue (a missing `bridge` denies the bridge).
    */
   readonly sectionIssues: readonly ManifestIssue[];
 }
@@ -260,6 +275,8 @@ function parseSiteAdapterData(input: unknown, tolerateSemantic = false): SiteAda
   }
   const issues: ManifestIssue[] = [];
   const unknownKeys: ManifestIssue[] = [];
+  // Future prompt fields must not discard selector repairs; prompt facts stay bundled.
+  const promptRead = readPromptSection(input.prompt);
   const exportConfig = readExportConfig(input.export, issues, isValidSelectorSyntax, (name) =>
     ATTRIBUTE_NAME.test(name),
   );
@@ -313,6 +330,7 @@ function parseSiteAdapterData(input: unknown, tolerateSemantic = false): SiteAda
     ...pageHooksRead.issues,
     ...bridgeRead.issues,
     ...foldersRead.issues,
+    ...promptRead.issues,
     ...locatorsRead.issues,
   ];
 
@@ -355,8 +373,30 @@ function parseSiteAdapterData(input: unknown, tolerateSemantic = false): SiteAda
   ) {
     issues.push({
       path: 'routeWords',
-      message: `must be up to ${MAX_ROUTE_WORDS} static route segments of 1-64 lower-case letters, digits or hyphens`,
+      message: `must be up to ${MAX_ROUTE_WORDS} static route segments of 1-64 lower-case letters, digits, underscores or hyphens`,
     });
+  }
+
+  // Newly added route fields stay bundled and must not discard locator repairs.
+  const routeIssues = tolerateSemantic ? sectionIssues : issues;
+  if (input.accountSlots !== undefined && typeof input.accountSlots !== 'boolean') {
+    routeIssues.push({ path: 'accountSlots', message: 'must be a boolean' });
+  }
+
+  let conversationRoutes: string[] | undefined;
+  if (input.conversationRoutes !== undefined) {
+    if (
+      Array.isArray(input.conversationRoutes) &&
+      input.conversationRoutes.length <= MAX_CONVERSATION_ROUTES &&
+      input.conversationRoutes.every(isConversationRoute)
+    ) {
+      conversationRoutes = input.conversationRoutes.slice();
+    } else {
+      routeIssues.push({
+        path: 'conversationRoutes',
+        message: `must be up to ${MAX_CONVERSATION_ROUTES} redacted paths of 1-8 static or :id segments, up to ${MAX_CONVERSATION_ROUTE_LENGTH} chars each`,
+      });
+    }
   }
 
   if (
@@ -399,6 +439,9 @@ function parseSiteAdapterData(input: unknown, tolerateSemantic = false): SiteAda
         ...(Array.isArray(input.routeWords)
           ? { routeWords: (input.routeWords as string[]).slice() }
           : {}),
+        ...(typeof input.accountSlots === 'boolean' ? { accountSlots: input.accountSlots } : {}),
+        ...(conversationRoutes ? { conversationRoutes } : {}),
+        ...(promptRead.prompt ? { prompt: promptRead.prompt } : {}),
         ...(Array.isArray(input.turnKeyAttributes)
           ? { turnKeyAttributes: (input.turnKeyAttributes as string[]).slice() }
           : {}),
@@ -429,6 +472,9 @@ export function siteAdapterToData(adapter: SiteAdapter): SiteAdapterData {
       ? { conversationIdPattern: adapter.conversationIdPattern }
       : {}),
     ...(adapter.routeWords ? { routeWords: [...adapter.routeWords] } : {}),
+    ...(adapter.accountSlots !== undefined ? { accountSlots: adapter.accountSlots } : {}),
+    ...(adapter.conversationRoutes ? { conversationRoutes: [...adapter.conversationRoutes] } : {}),
+    ...(adapter.prompt ? { prompt: { ...adapter.prompt } } : {}),
     ...(adapter.turnKeyAttributes ? { turnKeyAttributes: [...adapter.turnKeyAttributes] } : {}),
     ...(adapter.export ? { export: { ...adapter.export } } : {}),
     // Without these the refresher's cache write would silently drop the sections.

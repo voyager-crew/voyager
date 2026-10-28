@@ -17,6 +17,13 @@
     "darkSelector": "body.dark-theme"
   },
   "capabilities": ["chat", "sidebar", "composer", "darkMode"],
+  "routeWords": ["prompts", "new_chat", "library", "apps", "live", "gallery"],
+  "accountSlots": true,
+  "conversationRoutes": ["/prompts/:id"],
+  "prompt": {
+    "triggerSpot": "fab",
+    "highlightScope": "aistudio"
+  },
   "folders": {
     "format": 1,
     "sidebar": ".nav-content.v3-left-nav",

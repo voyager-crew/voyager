@@ -18,6 +18,15 @@
     "darkSelector": ".theme-host.dark-theme"
   },
   "capabilities": ["chat", "sidebar", "composer", "darkMode"],
+  "routeWords": ["app", "gem", "gems", "view", "create", "edit", "mystuff", "library"],
+  "accountSlots": true,
+  "conversationRoutes": ["/app/:id", "/gem/:id/:id"],
+  "prompt": {
+    "slash": true,
+    "expandCollapsedComposer": true,
+    "triggerSpot": "fab",
+    "scheme": "page"
+  },
   "folders": {
     "format": 1,
     "sidebar": "[data-test-id=\"overflow-container\"]",

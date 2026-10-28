@@ -24,6 +24,7 @@ import type { FoldersSection } from './sites/sections/foldersData';
 import type { ModelPickerSection } from './sites/sections/modelPickerData';
 import type { PageHooksSection } from './sites/sections/pageHooksData';
 import type { ProjectsSection } from './sites/sections/projectsData';
+import type { PromptSection } from './sites/sections/promptData';
 
 // ---------------------------------------------------------------------------
 // Sites
@@ -92,6 +93,12 @@ export interface SiteAdapter {
   readonly conversationIdPattern?: string;
   /** Static router segments site-check reports may retain; all other segments are redacted. */
   readonly routeWords?: readonly string[];
+  /** Site-check reports may retain `/u/<n>/` account slot indices on this site. */
+  readonly accountSlots?: boolean;
+  /** Redacted conversation routes when conversationIdPattern is absent; bundled only. */
+  readonly conversationRoutes?: readonly string[];
+  /** Packaged overrides of Prompt Manager's catalog adapter defaults. */
+  readonly prompt?: PromptSection;
   /**
    * Attributes that keep one user message's identity across re-renders and
    * remounts, read from the `userTurn` element or its nearest ancestor carrying

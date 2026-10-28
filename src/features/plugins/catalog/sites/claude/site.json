@@ -21,6 +21,7 @@
   "brandColor": "#d97757",
   "capabilities": ["chat", "sidebar", "composer", "darkMode"],
   "conversationIdPattern": "^/chat/([^/?#]+)",
+  "routeWords": ["new", "chat", "chats", "project", "projects", "recents", "artifacts"],
   "export": {
     "version": 1,
     "read": "virtual",

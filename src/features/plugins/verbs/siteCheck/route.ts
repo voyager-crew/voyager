@@ -16,35 +16,6 @@ const MAX_SEGMENTS = 8;
 /** `/u/<n>/` is an account slot index, which bug reports ask for; it names no account. */
 const ACCOUNT_SLOT = /^\d{1,2}$/;
 
-interface SiteRoutes {
-  /** Segments the site's router defines; everything else is redacted. */
-  readonly words: ReadonlySet<string>;
-  /** The site has `/u/<n>/` account slots. */
-  readonly accountSlots?: boolean;
-  /** Redacted routes that open a conversation, for a site without `conversationIdPattern`. */
-  readonly conversations?: readonly string[];
-}
-
-const SITE_ROUTES: Readonly<Record<string, SiteRoutes>> = {
-  gemini: {
-    words: new Set(['app', 'gem', 'gems', 'view', 'create', 'edit', 'mystuff', 'library']),
-    accountSlots: true,
-    conversations: ['/app/:id', '/gem/:id/:id'],
-  },
-  aistudio: {
-    words: new Set(['prompts', 'new_chat', 'library', 'apps', 'live', 'gallery']),
-    accountSlots: true,
-    conversations: ['/prompts/:id'],
-  },
-  chatgpt: {
-    words: new Set(['c', 'g', 'project', 'gpts', 'library', 'codex', 'images']),
-  },
-  claude: {
-    words: new Set(['new', 'chat', 'chats', 'project', 'projects', 'recents', 'artifacts']),
-  },
-  deepseek: { words: new Set(['a', 'chat', 's']) },
-};
-
 export interface RedactedRoute {
   readonly route: string;
   /** The site's pattern matched, or (without one) the route is a known conversation route. */
@@ -62,16 +33,15 @@ export function redactRoute(
   } catch {
     return { route: '/', conversation: false };
   }
-  const routes = site ? SITE_ROUTES[site.id] : undefined;
-  // Words come from this build's site.json only: a remote site record could name an id as a word.
+  // Route facts come from this build only: remote data must never expose an identifier.
   const bundled = site ? BUNDLED_SITE_ADAPTERS.find((entry) => entry.id === site.id) : undefined;
-  const words = new Set([...(routes?.words ?? []), ...(bundled?.routeWords ?? [])]);
+  const words = new Set(bundled?.routeWords ?? []);
   const segments = pathname.split('/').filter((segment) => segment.length > 0);
   const kept = segments.slice(0, MAX_SEGMENTS).map((segment, index) => {
-    if (routes?.accountSlots && index === 1 && segments[0] === 'u' && ACCOUNT_SLOT.test(segment)) {
+    if (bundled?.accountSlots && index === 1 && segments[0] === 'u' && ACCOUNT_SLOT.test(segment)) {
       return segment;
     }
-    if (routes?.accountSlots && index === 0 && segment === 'u') return segment;
+    if (bundled?.accountSlots && index === 0 && segment === 'u') return segment;
     return words.has(segment) ? segment : ROUTE_ID_PLACEHOLDER;
   });
   if (segments.length > MAX_SEGMENTS) kept.push('…');
@@ -79,6 +49,6 @@ export function redactRoute(
   const pattern = site?.conversationIdPattern;
   const conversation = pattern
     ? parseSiteConversation({ siteId: site.id, conversationIdPattern: pattern }, url) !== null
-    : (routes?.conversations ?? []).includes(route.replace(/^\/u\/\d{1,2}(?=\/|$)/, ''));
+    : (bundled?.conversationRoutes ?? []).includes(route.replace(/^\/u\/\d{1,2}(?=\/|$)/, ''));
   return { route, conversation };
 }
