@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 import {
   BASELINE_PATH,
   isProductionFile,
-  isTestFile,
+  isTestCode,
   readBaseline,
   relativeFilename,
   REPOSITORY_ROOT,
@@ -24,7 +24,7 @@ export function measureViolations(files) {
     })
       .split('\0')
       .filter(
-        (file) => (isTestFile(file) || isProductionFile(file)) && /\.[cm]?[jt]sx?$/.test(file),
+        (file) => (isTestCode(file) || isProductionFile(file)) && /\.[cm]?[jt]sx?$/.test(file),
       )
       .filter((file) => {
         try {

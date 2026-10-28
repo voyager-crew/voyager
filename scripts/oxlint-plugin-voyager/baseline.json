@@ -93,6 +93,7 @@
       "src/pages/content/visualEffects/sakura.worker.ts": 1,
       "src/pages/content/watermarkNativeNotice/index.ts": 1,
       "src/pages/content/wavedrom/renderer.ts": 2
-    }
+    },
+    "voyager/no-unforgeable-global-stub": {}
   }
 }

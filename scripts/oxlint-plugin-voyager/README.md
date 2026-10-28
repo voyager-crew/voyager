@@ -10,7 +10,8 @@ without a second lint command or disable comments.
 `isProductionFile`, which checks canonical repository-relative `src/**/*.ts` and
 `src/**/*.tsx` paths, excluding `.test.ts(x)`, `.spec.ts(x)`, `__tests__/`, and
 `src/tests/`. A nested `src/` directory outside the repository root is not
-production source. All four rules report errors in their respective scopes.
+production source. `isTestCode` adds the shared helpers in `src/tests/` to the
+test scope. All five rules report errors in their respective scopes.
 Collectors can also select `nodeTypes` in those options; the double-cast rule
 visits assertion nodes only, avoiding a second traversal of production ASTs.
 The existing test collectors still run at `Program:exit`.
@@ -29,6 +30,15 @@ The existing test collectors still run at `Program:exit`.
   `value as unknown as T`, `value as any as T`, and `<T><unknown>value`, with
   parentheses or mixed assertion syntax. Single assertions, `as const`, and
   `satisfies` remain allowed.
+- `no-unforgeable-global-stub`: move the page with `setPageUrl()` or count full
+  page loads with `watchFullPageLoads()` from `src/tests/pageUrl.ts`. The VM
+  pools run tests in a browser realm, which refuses to redefine `location`,
+  `window`, `document` and `top`. Detects `Object.defineProperty` and
+  `Reflect.defineProperty` of those names on `window`, `globalThis` or `self`,
+  and `vi.stubGlobal` of them, through aliases. It covers test files and
+  `src/tests/`, and skips a file that declares a non-DOM
+  `@vitest-environment` such as `node`. `navigator` stays allowed: it is
+  configurable on jsdom's window.
 
 ## Baseline ratchet
 

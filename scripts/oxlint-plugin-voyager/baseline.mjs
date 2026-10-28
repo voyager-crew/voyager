@@ -7,6 +7,7 @@ export const RULE_IDS = [
   'voyager/no-per-test-timeout',
   'voyager/no-unlinked-skip',
   'voyager/no-double-cast',
+  'voyager/no-unforgeable-global-stub',
 ];
 const pluginDirectory = path.dirname(fileURLToPath(import.meta.url));
 export const REPOSITORY_ROOT = realpathSync(path.resolve(pluginDirectory, '../..'));
@@ -14,6 +15,11 @@ export const BASELINE_PATH = path.join(pluginDirectory, 'baseline.json');
 
 export function isTestFile(filename) {
   return /(?:^|\/)__tests__\//.test(filename) || /\.test\.tsx?$/.test(filename);
+}
+
+/** Test files plus the shared helpers in `src/tests/`, which run in the same realm. */
+export function isTestCode(filename) {
+  return isTestFile(filename) || relativeFilename(filename).startsWith('src/tests/');
 }
 
 export function isProductionFile(filename) {

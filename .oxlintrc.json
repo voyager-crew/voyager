@@ -26,6 +26,8 @@
   ],
   "rules": {
     "voyager/no-double-cast": "error",
+    // Test files and src/tests/; scoped by the rule itself, like no-double-cast.
+    "voyager/no-unforgeable-global-stub": "error",
     "react/rules-of-hooks": "error",
     // Deliberately left below the category. The React team ships this one as a
     // warning because it cannot see through refs or stable dispatch identities,

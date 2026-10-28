@@ -1,7 +1,8 @@
-import { baselinedRule, isProductionFile } from './baseline.mjs';
+import { baselinedRule, isProductionFile, isTestCode } from './baseline.mjs';
 import { collectDoubleCasts } from './double-cast.mjs';
 import { collectSleeps } from './sleeps.mjs';
 import { collectTimeouts, collectUnlinkedSkips } from './test-api.mjs';
+import { collectUnforgeableStubs } from './unforgeable-stub.mjs';
 
 export default {
   meta: { name: 'voyager' },
@@ -26,6 +27,12 @@ export default {
       'Parse the value into the type with a type guard or narrowing instead of forcing it through unknown.',
       collectDoubleCasts,
       { targetsFile: isProductionFile, nodeTypes: ['TSAsExpression', 'TSTypeAssertion'] },
+    ),
+    'no-unforgeable-global-stub': baselinedRule(
+      'voyager/no-unforgeable-global-stub',
+      'Move the test page with setPageUrl() or count reloads with watchFullPageLoads() from @/tests/pageUrl: the VM pools run tests in a browser realm, which cannot redefine location, window, document or top.',
+      collectUnforgeableStubs,
+      { targetsFile: isTestCode },
     ),
   },
 };
