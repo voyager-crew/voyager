@@ -249,7 +249,7 @@ describe('DeepSeek conversation export regression', () => {
   });
 
   it('keeps the incomplete warning visible when an uncertain read opens selection', async () => {
-    const dict = await loadExportDictionaries();
+    const dict = await loadExportDictionaries('en');
     vi.useFakeTimers();
     const { site: adapter, scroller } = deepseekFixture();
     const site = createCatalogExportSite({ ...adapter, export: { version: 1, read: 'mounted' } });

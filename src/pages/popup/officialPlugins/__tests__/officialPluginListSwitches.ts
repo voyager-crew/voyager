@@ -1,6 +1,8 @@
 import { StorageKeys } from '@/core/types/common';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
+
+const en = await loadTranslations('en');
 
 /**
  * Each moved switch, its old sync key, and whether a user who never touched it
@@ -201,11 +203,11 @@ export const RETIRED_SWITCH_IDS = [
 
 /** The old layout cards' sliders and switches, labelled by their card title. */
 export const RETIRED_LAYOUT_LABELS = [
-  TRANSLATIONS.en.chatWidth,
-  TRANSLATIONS.en.chatFontSize,
-  TRANSLATIONS.en.chatLineHeight,
-  TRANSLATIONS.en.chatParagraphSpacing,
-  TRANSLATIONS.en.editInputWidth,
-  TRANSLATIONS.en.sidebarWidth,
-  TRANSLATIONS.en.gemsSidebarCount,
+  en.chatWidth,
+  en.chatFontSize,
+  en.chatLineHeight,
+  en.chatParagraphSpacing,
+  en.editInputWidth,
+  en.sidebarWidth,
+  en.gemsSidebarCount,
 ];

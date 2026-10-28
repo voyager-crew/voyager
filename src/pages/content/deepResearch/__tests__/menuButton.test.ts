@@ -5,14 +5,15 @@ import { ConversationExportService } from '@/features/export/services/Conversati
 import { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import { toastDriver } from '@/tests/toastDriver';
 import { setCachedLanguage } from '@/utils/i18n';
+import * as translations from '@/utils/translations';
 
 import { isDeepResearchReportMenuPanel } from '../menuButton';
 import { activateGeminiDeepResearchExport } from '../pluginHandler';
 
 let scope: PluginScope;
-beforeEach(() => {
+beforeEach(async () => {
   scope = new PluginScope();
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
 });
 afterEach(async () => {
   await scope.dispose();
@@ -237,7 +238,7 @@ describe('Deep Research export menu handler', () => {
   it('updates both labels and tooltips from the cached language while the menu is open', async () => {
     const panel = createDeepResearchReportMenuPanel();
     await injectDownloadButton(panel);
-    setCachedLanguage('zh');
+    await setCachedLanguage('zh');
     const download = panel.querySelector<HTMLElement>('.gv-deep-research-download')!;
     const report = panel.querySelector<HTMLElement>('.gv-deep-research-save-report')!;
     expect(download.textContent).toContain('下载');
@@ -333,6 +334,30 @@ describe('downloading Deep Research thinking content', () => {
     vi.restoreAllMocks();
   });
 
+  it('shows the English empty-download warning when the export language cannot load', async () => {
+    vi.spyOn(chrome.storage.sync, 'get').mockImplementation(
+      (_keys: unknown, callback?: (result: Record<string, unknown>) => void) => {
+        const stored = { [StorageKeys.LANGUAGE]: 'ja' };
+        callback?.(stored);
+        return Promise.resolve(stored);
+      },
+    );
+    const panel = createDeepResearchReportMenuPanel();
+    await injectDownloadButton(panel);
+    vi.spyOn(translations, 'loadTranslations').mockRejectedValue(
+      new Error('locale chunk unavailable'),
+    );
+
+    panel.querySelector<HTMLElement>('.gv-deep-research-download')!.click();
+
+    await vi.waitFor(() =>
+      expect(toastDriver.all()).toMatchObject([
+        { message: 'No thinking content found to download.', tone: 'warning' },
+      ]),
+    );
+    toastDriver.press(toastDriver.all()[0], 'Close');
+  });
+
   it.each([
     { language: 'zh', message: '未找到可下载的 Thinking 内容。', close: '关闭' },
     {
@@ -393,6 +418,57 @@ describe('saving a Deep Research report', () => {
     radio.dispatchEvent(new Event('change'));
     document.querySelector<HTMLButtonElement>('.gv-export-dialog-btn-primary')!.click();
   }
+
+  it('opens the report dialog in the selected export language while the menu stays English', async () => {
+    vi.spyOn(chrome.storage.sync, 'get').mockImplementation(
+      (_keys: unknown, callback?: (result: Record<string, unknown>) => void) => {
+        const stored = { [StorageKeys.LANGUAGE]: 'ja' };
+        callback?.(stored);
+        return Promise.resolve(stored);
+      },
+    );
+    document.body.innerHTML = `
+      <deep-research-immersive-panel>
+        <div class="markdown"><h1>Solar report</h1><p>Findings</p></div>
+      </deep-research-immersive-panel>`;
+    const panel = createDeepResearchReportMenuPanel();
+    await injectDownloadButton(panel);
+    const button = panel.querySelector<HTMLElement>('.gv-deep-research-save-report')!;
+    expect(button.textContent).toContain('Save Report');
+
+    button.click();
+
+    await vi.waitFor(() =>
+      expect(document.querySelector('.gv-export-dialog')?.textContent).toContain('レポートを保存'),
+    );
+    expect(button.textContent).toContain('Save Report');
+  });
+
+  it('opens the report dialog in English when the export language cannot load', async () => {
+    vi.spyOn(chrome.storage.sync, 'get').mockImplementation(
+      (_keys: unknown, callback?: (result: Record<string, unknown>) => void) => {
+        const stored = { [StorageKeys.LANGUAGE]: 'ja' };
+        callback?.(stored);
+        return Promise.resolve(stored);
+      },
+    );
+    document.body.innerHTML = `
+      <deep-research-immersive-panel>
+        <div class="markdown"><h1>Solar report</h1><p>Findings</p></div>
+      </deep-research-immersive-panel>`;
+    const panel = createDeepResearchReportMenuPanel();
+    await injectDownloadButton(panel);
+    vi.spyOn(translations, 'loadTranslations').mockRejectedValue(
+      new Error('locale chunk unavailable'),
+    );
+
+    panel.querySelector<HTMLElement>('.gv-deep-research-save-report')!.click();
+
+    await vi.waitFor(() =>
+      expect(document.querySelector('.gv-export-dialog')?.textContent).toContain('Save Report'),
+    );
+    expect(document.querySelector('.gv-export-dialog-btn-primary')?.textContent).toBe('Export');
+  });
 
   it('shows a pending progress toast until the report export settles', async () => {
     let finish: (

@@ -31,9 +31,9 @@ async function settle() {
   await Promise.resolve();
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
   listeners = new Set();
   vi.mocked(chrome.runtime.onMessage.addListener).mockImplementation((listener) => {
     listeners.add(listener);
@@ -48,7 +48,7 @@ beforeEach(() => {
 
 afterEach(async () => {
   await scope.dispose();
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
 });
 
 describe('Gemini Context Sync plugin handler', () => {
@@ -84,7 +84,7 @@ describe('Gemini Context Sync plugin handler', () => {
       status: 'error',
       message: 'Context Sync is disabled.',
     });
-    setCachedLanguage('zh');
+    await setCachedLanguage('zh');
     respond.mockClear();
     expect(staleListener({ action: 'sync_to_ide' }, {}, respond)).toBeUndefined();
     expect(respond).toHaveBeenCalledWith({

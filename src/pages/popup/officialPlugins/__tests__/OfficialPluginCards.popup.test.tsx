@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StorageKeys } from '@/core/types/common';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import Popup from '../../Popup';
 import { UNDO_TOAST_MS } from '../../hooks/useUndoToast';
@@ -30,7 +30,7 @@ vi.mock('@/core/utils/browser', async (importOriginal) => {
   };
 });
 
-const en = TRANSLATIONS.en;
+const en = await loadTranslations('en');
 
 /** The topic cards, the table of contents above them, and the undo offer after a flip. */
 describe('the official plugin topic cards', () => {

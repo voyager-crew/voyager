@@ -44,8 +44,8 @@ function quoteSelection(): void {
   document.querySelector<HTMLButtonElement>('.gv-quote-reply-button')!.click();
 }
 
-beforeEach(() => {
-  setCachedLanguage('en');
+beforeEach(async () => {
+  await setCachedLanguage('en');
   restores.push(installNativeEditingMock());
   for (const key of ['getBoundingClientRect', 'getClientRects'] as const) {
     const previous = Object.getOwnPropertyDescriptor(Range.prototype, key);

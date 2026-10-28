@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import { CHATGPT_JUMP_ACCOUNT_TIMEOUT_MS } from '../chatGptJumpMessages';
 import { confirmSavedLibraryOpen } from '../confirmSavedLibraryOpen';
 import type { SavedLibraryItem } from '../model';
+
+const en = await loadTranslations('en');
 
 const account = `chatgpt:${'a'.repeat(64)}`;
 const item: SavedLibraryItem = {
@@ -17,7 +19,7 @@ const item: SavedLibraryItem = {
   savedAt: 1,
   account,
 };
-const t = (key: keyof typeof TRANSLATIONS.en) => TRANSLATIONS.en[key];
+const t = (key: keyof typeof en) => en[key];
 function confirm() {
   return confirmSavedLibraryOpen(item, [item], t);
 }

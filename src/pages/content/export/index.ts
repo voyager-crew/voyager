@@ -62,9 +62,9 @@ export function createExportEntrypoint(exportSite: ExportSite) {
       void exportRunner.resumePending(options.signal);
     }
 
-    const dict = await loadExportDictionaries();
-    if (options.signal?.aborted) return noCleanup;
     let lang = await readExportLanguage();
+    if (options.signal?.aborted) return noCleanup;
+    const dict = await loadExportDictionaries(lang);
     if (options.signal?.aborted) return noCleanup;
     const entryPoints = exportSite.entryPoints;
 

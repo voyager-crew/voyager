@@ -28,9 +28,9 @@ async function mount(): Promise<void> {
   await vi.advanceTimersByTimeAsync(30);
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.useFakeTimers();
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
   vi.mocked(getTranslation).mockImplementation(async (key) => key);
   vi.mocked(showExportNotice).mockClear();
   vi.stubGlobal(
@@ -250,8 +250,8 @@ describe('Canvas copy plugin lifecycle', () => {
     expect(buttons()).toHaveLength(1);
   });
 
-  it('an already open menu has the cached language on its first injection', () => {
-    setCachedLanguage('fr');
+  it('an already open menu has the cached language on its first injection', async () => {
+    await setCachedLanguage('fr');
     setup();
     activateGeminiCanvasCopy(scope);
     // Do not flush promises: the first visible label must already be translated.
@@ -267,13 +267,13 @@ describe('Canvas copy plugin lifecycle', () => {
     setup();
     await mount();
     const oldButton = buttons()[0];
-    setCachedLanguage('fr');
+    await setCachedLanguage('fr');
     expect(oldButton.textContent).toContain('Copier en Markdown');
     expect(oldButton.getAttribute('aria-label')).toBe(
       'Copier le contenu du Canvas au format Markdown',
     );
     await scope.dispose();
-    setCachedLanguage('ja');
+    await setCachedLanguage('ja');
     expect(oldButton.textContent).toContain('Copier en Markdown');
     scope = new PluginScope();
     await mount();
@@ -288,7 +288,7 @@ describe('Canvas copy plugin lifecycle', () => {
       vi.stubGlobal('chrome', { ...chrome, storage });
       await mount();
       expect(buttons()).toHaveLength(1);
-      setCachedLanguage('fr');
+      await setCachedLanguage('fr');
       expect(buttons()[0].textContent).toContain('Copier en Markdown');
     },
   );

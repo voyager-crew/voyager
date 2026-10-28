@@ -3,8 +3,8 @@ import { StorageKeys } from '@/core/types/common';
 import { getVoyagerBuildTarget, supportsExtensionNotifications } from '@/core/utils/browser';
 import { hasNotificationsPermission } from '@/core/utils/notificationsPermission';
 import { EXTENSION_VERSION } from '@/core/utils/version';
-import { getCurrentLanguage } from '@/utils/i18n';
 import type { AppLanguage } from '@/utils/language';
+import { getCurrentLanguage } from '@/utils/languagePreference';
 
 import { selectRemoteAnnouncements } from './select';
 import type {

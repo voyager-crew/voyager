@@ -6,10 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StorageKeys } from '@/core/types/common';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import Popup from '../../Popup';
 import { extensionApi, popupRows, resetPopupBrowser } from './popupHarness';
+
+const en = await loadTranslations('en');
 
 // Keep Popup, its hooks and the packaged manifests real; replace only browser APIs.
 vi.mock('webextension-polyfill', async () => ({
@@ -23,7 +25,7 @@ vi.mock('@/core/utils/browser', async (importOriginal) => {
   };
 });
 
-const ON_PHONES_NOTE = TRANSLATIONS.en.pluginUnavailableOnMobile;
+const ON_PHONES_NOTE = en.pluginUnavailableOnMobile;
 
 describe('the official plugin list on Firefox for Android', () => {
   let container: HTMLDivElement;

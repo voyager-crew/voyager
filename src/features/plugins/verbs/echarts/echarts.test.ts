@@ -193,7 +193,7 @@ describe('echarts primitive', () => {
   });
 
   it('diagram toolbar buttons are icons named in the Voyager language', async () => {
-    setCachedLanguage('zh');
+    await setCachedLanguage('zh');
     try {
       const reply = chatgptReply(PIE_OPTION);
       activate();
@@ -211,7 +211,7 @@ describe('echarts primitive', () => {
       expect(fullscreenButton.textContent).toBe('');
       expect(fullscreenButton.getAttribute('aria-label')).toBe('全屏');
     } finally {
-      setCachedLanguage('en');
+      await setCachedLanguage('en');
     }
   });
 

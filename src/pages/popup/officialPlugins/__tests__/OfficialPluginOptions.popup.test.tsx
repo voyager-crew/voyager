@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StorageKeys } from '@/core/types/common';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadAllTranslations, loadTranslations } from '@/utils/translations';
 
 import Popup from '../../Popup';
 import { domId } from '../OfficialPluginRow';
@@ -18,6 +18,9 @@ import {
   popupRows,
   resetPopupBrowser,
 } from './popupHarness';
+
+const en = await loadTranslations('en');
+const zh = await loadTranslations('zh');
 
 // Keep Popup, its hooks and the packaged manifests real; replace only browser APIs.
 vi.mock('webextension-polyfill', async () => ({
@@ -93,9 +96,9 @@ describe('official plugin rows with options', () => {
       expect(row(id)!.querySelector('input[type="radio"]')).toBeNull();
       await act(async () => toggle(id).click());
       expect(options(id)!.getAttribute('aria-label')).toBe(
-        TRANSLATIONS.en.pluginRowOptionsFor.replace('{name}', 'Formula Copy'),
+        en.pluginRowOptionsFor.replace('{name}', 'Formula Copy'),
       );
-      expect(options(id)!.textContent).toContain(TRANSLATIONS.en.formulaCopyScopeNote);
+      expect(options(id)!.textContent).toContain(en.formulaCopyScopeNote);
       expect(row(id)!.querySelectorAll('input[type="radio"]')).toHaveLength(4);
       expect(row(id)!.querySelector('button[aria-expanded]')).toBeNull();
       await act(async () => toggle(id).click());
@@ -107,9 +110,9 @@ describe('official plugin rows with options', () => {
       sync[StorageKeys.FORMULA_COPY_FORMAT] = 'unicodemath';
       await mount();
       const id = OFFICIAL_PLUGIN_IDS.geminiFormulaCopy;
-      expect(radio(id, TRANSLATIONS.en.formulaCopyFormatUnicodeMath).checked).toBe(true);
-      await act(async () => radio(id, TRANSLATIONS.en.formulaCopyFormatNotion).click());
-      expect(radio(id, TRANSLATIONS.en.formulaCopyFormatNotion).checked).toBe(true);
+      expect(radio(id, en.formulaCopyFormatUnicodeMath).checked).toBe(true);
+      await act(async () => radio(id, en.formulaCopyFormatNotion).click());
+      expect(radio(id, en.formulaCopyFormatNotion).checked).toBe(true);
       expect(extensionApi.storage.sync.set).toHaveBeenCalledExactlyOnceWith({
         [StorageKeys.FORMULA_COPY_FORMAT]: 'notion',
       });
@@ -119,9 +122,9 @@ describe('official plugin rows with options', () => {
     it('a format stored elsewhere while the popup is open shows at once', async () => {
       await mount();
       const id = OFFICIAL_PLUGIN_IDS.geminiFormulaCopy;
-      expect(radio(id, TRANSLATIONS.en.formulaCopyFormatLatex).checked).toBe(true);
+      expect(radio(id, en.formulaCopyFormatLatex).checked).toBe(true);
       await act(async () => emitSyncChange({ [StorageKeys.FORMULA_COPY_FORMAT]: 'no-dollar' }));
-      expect(radio(id, TRANSLATIONS.en.formulaCopyFormatNoDollar).checked).toBe(true);
+      expect(radio(id, en.formulaCopyFormatNoDollar).checked).toBe(true);
     });
 
     it('on AI Studio, the formula row edits the same shared switch and format', async () => {
@@ -129,7 +132,7 @@ describe('official plugin rows with options', () => {
       await mount();
       const id = OFFICIAL_PLUGIN_IDS.aistudioFormulaCopy;
       expect(toggle(id).checked).toBe(true);
-      await act(async () => radio(id, TRANSLATIONS.en.formulaCopyFormatNotion).click());
+      await act(async () => radio(id, en.formulaCopyFormatNotion).click());
       await act(async () => toggle(id).click());
       expect(extensionApi.storage.sync.set.mock.calls.map(([payload]) => payload)).toEqual([
         { [StorageKeys.FORMULA_COPY_FORMAT]: 'notion' },
@@ -148,7 +151,7 @@ describe('official plugin rows with options', () => {
         if (stored !== undefined) sync[StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED] = stored;
         await mount();
         const markers = row(OFFICIAL_PLUGIN_IDS.geminiHighlight)!.querySelector<HTMLInputElement>(
-          `input[aria-label="${TRANSLATIONS.en.showHighlightTimelineMarkers}"]`,
+          `input[aria-label="${en.showHighlightTimelineMarkers}"]`,
         )!;
         expect(markers.checked).toBe(expected);
         await act(async () => markers.click());
@@ -159,10 +162,11 @@ describe('official plugin rows with options', () => {
     );
 
     it('a search that lists a row with options shows them', async () => {
-      local[StorageKeys.GV_POPUP_SETTINGS_SEARCH_QUERY] = TRANSLATIONS.en.formulaCopyFormatNotion;
+      local[StorageKeys.GV_POPUP_SETTINGS_SEARCH_QUERY] = en.formulaCopyFormatNotion;
       await mount();
+      await act(async () => loadAllTranslations());
       expect(
-        radio(OFFICIAL_PLUGIN_IDS.geminiFormulaCopy, TRANSLATIONS.en.formulaCopyFormatNotion),
+        radio(OFFICIAL_PLUGIN_IDS.geminiFormulaCopy, en.formulaCopyFormatNotion),
       ).toBeDefined();
     });
   });
@@ -193,17 +197,13 @@ describe('official plugin rows with options', () => {
       sync[StorageKeys.RESPONSE_COMPLETE_NOTIFICATION_ENABLED] = true;
       await mount();
       expect(toggle(id).checked).toBe(true);
-      expect(row(id)!.textContent).toContain(
-        TRANSLATIONS.en.responseCompleteNotificationHintSafari,
-      );
+      expect(row(id)!.textContent).toContain(en.responseCompleteNotificationHintSafari);
     });
 
     it('gives no Safari hint in other browsers', async () => {
       sync[StorageKeys.RESPONSE_COMPLETE_NOTIFICATION_ENABLED] = true;
       await mount();
-      expect(row(id)!.textContent).not.toContain(
-        TRANSLATIONS.en.responseCompleteNotificationHintSafari,
-      );
+      expect(row(id)!.textContent).not.toContain(en.responseCompleteNotificationHintSafari);
     });
   });
 
@@ -286,11 +286,7 @@ describe('official plugin rows with options', () => {
     const radio = (group: string, label: string) =>
       row(id)!.querySelector<HTMLButtonElement>(
         `[role="radiogroup"][aria-label="${group}"] [role="radio"]:nth-child(${
-          [
-            TRANSLATIONS.en.timelineStyleDots,
-            TRANSLATIONS.en.timelineStyleRuler,
-            TRANSLATIONS.en.timelineStyleCompact,
-          ].indexOf(label) + 1
+          [en.timelineStyleDots, en.timelineStyleRuler, en.timelineStyleCompact].indexOf(label) + 1
         })`,
       )!;
     const option = (inputId: string) => row(id)!.querySelector<HTMLInputElement>(`#${inputId}`)!;
@@ -302,7 +298,7 @@ describe('official plugin rows with options', () => {
       expect(container.querySelector('#timeline-enabled')).toBeNull();
       expect(
         [...container.querySelectorAll('h3')].map((heading) => heading.textContent),
-      ).not.toContain(TRANSLATIONS.en.timelineOptions);
+      ).not.toContain(en.timelineOptions);
       expect(toggle(id).checked).toBe(true);
       expect(option('draggable-timeline')).not.toBeNull();
       // Message times are a row of their own, so the panel does not repeat them.
@@ -313,14 +309,14 @@ describe('official plugin rows with options', () => {
       sync[StorageKeys.TIMELINE_STYLE] = 'compact';
       sync.geminiTimelineScrollMode = 'jump';
       await mount();
-      expect(radios(TRANSLATIONS.en.timelineStyle)).toEqual([
-        [TRANSLATIONS.en.timelineStyleDots, 'false', false],
-        [TRANSLATIONS.en.timelineStyleRuler, 'false', false],
-        [TRANSLATIONS.en.timelineStyleCompact, 'true', false],
+      expect(radios(en.timelineStyle)).toEqual([
+        [en.timelineStyleDots, 'false', false],
+        [en.timelineStyleRuler, 'false', false],
+        [en.timelineStyleCompact, 'true', false],
       ]);
-      expect(radios(TRANSLATIONS.en.scrollMode)).toEqual([
-        [TRANSLATIONS.en.flow, 'false', false],
-        [TRANSLATIONS.en.jump, 'true', false],
+      expect(radios(en.scrollMode)).toEqual([
+        [en.flow, 'false', false],
+        [en.jump, 'true', false],
       ]);
       // Off dots there is no container to hide.
       expect(option('hide-container').disabled).toBe(true);
@@ -328,9 +324,7 @@ describe('official plugin rows with options', () => {
 
     it('writes each option under its old key', async () => {
       await mount();
-      await act(async () =>
-        radio(TRANSLATIONS.en.timelineStyle, TRANSLATIONS.en.timelineStyleRuler).click(),
-      );
+      await act(async () => radio(en.timelineStyle, en.timelineStyleRuler).click());
       await act(async () => option('draggable-timeline').click());
       expect(extensionApi.storage.sync.set.mock.calls.map(([payload]) => payload)).toEqual([
         { [StorageKeys.TIMELINE_STYLE]: 'ruler' },
@@ -347,9 +341,7 @@ describe('official plugin rows with options', () => {
         geminiTimelineMarkerLevel: true,
         [StorageKeys.TIMELINE_STYLE]: 'dots',
       });
-      expect(
-        radios(TRANSLATIONS.en.timelineStyle).map(([, checked, disabled]) => [checked, disabled]),
-      ).toEqual([
+      expect(radios(en.timelineStyle).map(([, checked, disabled]) => [checked, disabled])).toEqual([
         ['true', false],
         ['false', true],
         ['false', true],
@@ -358,15 +350,15 @@ describe('official plugin rows with options', () => {
 
     it('resets only the saved position and opens the Saved Library', async () => {
       await mount();
-      await act(async () => button(TRANSLATIONS.en.resetTimelinePosition)!.click());
+      await act(async () => button(en.resetTimelinePosition)!.click());
       expect(extensionApi.storage.sync.set).toHaveBeenCalledExactlyOnceWith({
         geminiTimelinePosition: null,
       });
-      await act(async () => button(TRANSLATIONS.en.viewStarredHistory)!.click());
+      await act(async () => button(en.viewStarredHistory)!.click());
       expect(row(id)).toBeNull();
     });
 
-    it.each(['ruler', '收藏', TRANSLATIONS.zh.timelineOptions])(
+    it.each(['ruler', '收藏', zh.timelineOptions])(
       'a search for "%s" lists the row with its options',
       async (query) => {
         local[StorageKeys.GV_POPUP_SETTINGS_SEARCH_QUERY] = query;
@@ -384,7 +376,7 @@ describe('official plugin rows with options', () => {
       expect(label(OFFICIAL_PLUGIN_IDS.geminiTimeline)).toBe('显示时间线');
       expect(label(OFFICIAL_PLUGIN_IDS.geminiMessageTimestamps)).toBe('消息时间戳');
       expect(options(OFFICIAL_PLUGIN_IDS.geminiTimeline)!.getAttribute('aria-label')).toBe(
-        TRANSLATIONS.zh.pluginRowOptionsFor.replace('{name}', '显示时间线'),
+        zh.pluginRowOptionsFor.replace('{name}', '显示时间线'),
       );
     });
 

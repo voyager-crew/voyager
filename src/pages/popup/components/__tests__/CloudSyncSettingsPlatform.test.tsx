@@ -12,7 +12,7 @@ import {
   isPromptLibraryApplyMessage,
 } from '@/features/prompt/library/promptLibraryMessages';
 import { createPromptLibraryOwner } from '@/features/prompt/library/promptLibraryOwner';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import { CloudSyncSettings } from '../CloudSyncSettings';
 
@@ -38,7 +38,7 @@ vi.mock('webextension-polyfill', () => ({
   },
 }));
 
-const t = TRANSLATIONS.en;
+const t = await loadTranslations('en');
 const state: SyncState = {
   ...DEFAULT_SYNC_STATE,
   mode: 'manual',

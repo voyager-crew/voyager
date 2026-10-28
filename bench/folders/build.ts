@@ -1,7 +1,7 @@
 /**
  * Bundles the bench entries with the repository's own esbuild, resolving the
  * `@/` aliases from tsconfig.json, `?raw` CSS imports as text, eager
- * `import.meta.glob` calls as static imports, and `webextension-polyfill` to
+ * and lazy `import.meta.glob` calls as static imports, and `webextension-polyfill` to
  * the in-memory stub.
  */
 
@@ -33,22 +33,36 @@ const rawImports: Plugin = {
   },
 };
 
-// `import.meta.glob(<pattern>, { eager: true, import?, query? })`, as src/ writes it.
+// `import.meta.glob(<pattern or [patterns, '!excluded']>, { eager?, import?, query? })`, as src/ writes it.
 const GLOB_CALL =
-  /import\.meta\.glob(?:<[^(]*>)?\(\s*(['"])([^'"]+)\1\s*,\s*(\{[^}]*\})\s*,?\s*\)/g;
+  /import\.meta\.glob(?:<[^(]*>)?\(\s*((['"])[^'"]+\2|\[[^\]]*\])\s*,\s*(\{[^}]*\})\s*,?\s*\)/g;
+
+function globPatterns(argument: string): string[] {
+  return [...argument.matchAll(/(['"])([^'"]+)\1/g)].map((match) => match[2]);
+}
 
 function globOption(options: string, name: string): string | undefined {
   return options.match(new RegExp(`\\b${name}\\s*:\\s*(['"])([^'"]*)\\1`))?.[2];
 }
 
-/** Expands one eager glob into imports plus the object literal Vite would produce. */
-function expandGlob(dir: string, pattern: string, options: string, prefix: string) {
-  if (!/\beager\s*:\s*true\b/.test(options)) {
-    throw new Error(`folder bench: only eager import.meta.glob is supported (${pattern})`);
-  }
+/**
+ * Expands one glob into imports plus the object literal Vite would produce. A lazy
+ * glob's loaders resolve the same static imports: the bench measures work, not chunks.
+ */
+function expandGlob(dir: string, patterns: string[], options: string, prefix: string) {
+  const eager = /\beager\s*:\s*true\b/.test(options);
   const imported = globOption(options, 'import');
   const query = globOption(options, 'query') ?? '';
-  const files = globSync(pattern, { cwd: dir }).sort();
+  const excluded = new Set(
+    patterns
+      .filter((pattern) => pattern.startsWith('!'))
+      .flatMap((pattern) => globSync(pattern.slice(1), { cwd: dir })),
+  );
+  const files = patterns
+    .filter((pattern) => !pattern.startsWith('!'))
+    .flatMap((pattern) => globSync(pattern, { cwd: dir }))
+    .filter((file) => !excluded.has(file))
+    .sort();
   const imports = files.map((file, index) => {
     const source = JSON.stringify(path.resolve(dir, file) + query);
     const name = `${prefix}${index}`;
@@ -57,7 +71,9 @@ function expandGlob(dir: string, pattern: string, options: string, prefix: strin
     return `import { ${imported} as ${name} } from ${source};`;
   });
   const keyOf = (file: string) => (file.startsWith('.') ? file : `./${file}`);
-  const entries = files.map((file, index) => `${JSON.stringify(keyOf(file))}: ${prefix}${index}`);
+  const value = (index: number) =>
+    eager ? `${prefix}${index}` : `() => Promise.resolve(${prefix}${index})`;
+  const entries = files.map((file, index) => `${JSON.stringify(keyOf(file))}: ${value(index)}`);
   return { imports, literal: `({ ${entries.join(', ')} })` };
 }
 
@@ -71,8 +87,14 @@ const importMetaGlob: Plugin = {
       if (!contents.includes('import.meta.glob')) return undefined;
       const imports: string[] = [];
       let count = 0;
-      const rewritten = contents.replace(GLOB_CALL, (_call, _quote, pattern, options) => {
-        const expanded = expandGlob(path.dirname(args.path), pattern, options, `__glob${count++}_`);
+      const rewritten = contents.replace(GLOB_CALL, (_call, argument, _quote, options) => {
+        const patterns = globPatterns(argument);
+        const expanded = expandGlob(
+          path.dirname(args.path),
+          patterns,
+          options,
+          `__glob${count++}_`,
+        );
         imports.push(...expanded.imports);
         return expanded.literal;
       });

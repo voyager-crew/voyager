@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StorageKeys } from '@/core/types/common';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations, type Translation } from '@/utils/translations';
 
 import Popup from '../../Popup';
 import { extensionApi, popupRows, resetPopupBrowser } from './popupHarness';
@@ -25,10 +25,11 @@ describe.each(['en', 'ar'] as const)('the plugin card on a plugin site (%s)', (l
   let root: Root;
   let local: Record<string, unknown>;
   let sync: Record<string, unknown>;
-  const text = TRANSLATIONS[language];
+  let text: Translation;
   const rtl = language === 'ar' ? 'rtl' : null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    text = await loadTranslations(language);
     ({ local, sync } = resetPopupBrowser());
     sync[StorageKeys.LANGUAGE] = language;
     container = document.createElement('div');

@@ -1,9 +1,11 @@
 import { afterEach, expect, it, vi } from 'vitest';
 
 import { LIBRARY_OPEN_MESSAGE } from '@/features/savedLibrary/openLibraryPage';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import { createSavedLibraryView } from '../savedLibraryView';
+
+const en = await loadTranslations('en');
 
 vi.mock('webextension-polyfill', () => ({ default: chrome }));
 
@@ -16,7 +18,7 @@ function createEntry() {
   const notice = vi.fn();
   const view = createSavedLibraryView({
     list: document.createElement('div'),
-    t: (key) => TRANSLATIONS.en[key],
+    t: (key) => en[key],
     getQuery: () => '',
     isActive: () => true,
     setNotice: notice,
@@ -40,7 +42,7 @@ it('launches the full Library from the active in-page Library toolbar only', asy
     ok: true,
   })) as typeof chrome.runtime.sendMessage);
   const { view, button, notice } = createEntry();
-  expect(button.textContent).toBe(TRANSLATIONS.en.savedLibraryOpenFull);
+  expect(button.textContent).toBe(en.savedLibraryOpenFull);
   expect(view.toolbar.classList.contains('gv-hidden')).toBe(false);
 
   button.click();
@@ -59,7 +61,5 @@ it('reports a refused full Library launch through the existing in-page notice', 
   })) as typeof chrome.runtime.sendMessage);
   const { button, notice } = createEntry();
   button.click();
-  await vi.waitFor(() =>
-    expect(notice).toHaveBeenCalledWith(TRANSLATIONS.en.savedLibraryOpenFailed, 'err'),
-  );
+  await vi.waitFor(() => expect(notice).toHaveBeenCalledWith(en.savedLibraryOpenFailed, 'err'));
 });

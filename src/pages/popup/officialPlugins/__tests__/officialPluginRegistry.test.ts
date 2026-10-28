@@ -13,7 +13,7 @@ import {
   legacyEnableWrite,
 } from '@/features/plugins/storage/legacySettingBindings';
 import { legacyValueBindingsFor } from '@/features/plugins/storage/legacyValueBindings';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import { OFFICIAL_PLUGIN_TOPIC_IDS } from '../../utils/nativeSiteCapabilities';
 import {
@@ -22,6 +22,8 @@ import {
   POPUP_LEGACY_SNAPSHOT_KEYS,
   SWITCHED_BY_SETTINGS_CARD,
 } from '../officialPluginRegistry';
+
+const en = await loadTranslations('en');
 
 async function packagedManifests() {
   const lists = await Promise.all([
@@ -116,11 +118,11 @@ describe('the official plugin list registry', () => {
 
   it('names every topic and every old search word in English', () => {
     for (const topic of OFFICIAL_PLUGIN_TOPICS) {
-      expect(TRANSLATIONS.en[topic.title], topic.id).toBeTruthy();
-      expect(TRANSLATIONS.en[topic.tocLabel], topic.id).toBeTruthy();
+      expect(en[topic.title], topic.id).toBeTruthy();
+      expect(en[topic.tocLabel], topic.id).toBeTruthy();
     }
     for (const entry of OFFICIAL_PLUGIN_ENTRIES) {
-      for (const key of entry.searchKeys) expect(TRANSLATIONS.en[key], key).toBeTruthy();
+      for (const key of entry.searchKeys) expect(en[key], key).toBeTruthy();
     }
   });
 

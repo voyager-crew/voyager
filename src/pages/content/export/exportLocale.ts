@@ -1,62 +1,22 @@
-// Static locale imports below are bundled; keep this file at the same depth so
-// the relative `locales/` paths stay valid.
 import { StorageKeys } from '@/core/types/common';
 import { type AppLanguage, normalizeLanguage } from '@/utils/language';
-import { extractMessageDictionary } from '@/utils/localeMessages';
-import type { TranslationKey } from '@/utils/translations';
+import { createLanguageLoader } from '@/utils/languageLoad';
+import { type TranslationKey, getLoadedTranslations, loadTranslations } from '@/utils/translations';
 
-export type ExportDictionaries = Record<AppLanguage, Record<string, string>>;
+export type ExportDictionaries = Partial<Record<AppLanguage, Record<string, string>>> & {
+  en: Record<string, string>;
+};
 export type ExportTranslate = (key: TranslationKey) => string;
 
-let loadedDictionaries: ExportDictionaries | null = null;
+const loadedDictionaries: ExportDictionaries = { en: getLoadedTranslations('en') ?? {} };
 
-/** Load every locale's messages. Resolves empty dictionaries if loading fails. */
-export async function loadExportDictionaries(): Promise<ExportDictionaries> {
-  // Each mount awaits this; a repeated dynamic import still waits on the module loader, which can
-  // leave a remounted export entry missing for a moment after a plugin switch.
-  if (loadedDictionaries) return loadedDictionaries;
+/** Load only the selected language; failed chunks retain the English fallback and can retry. */
+export async function loadExportDictionaries(language: AppLanguage): Promise<ExportDictionaries> {
+  if (loadedDictionaries[language]) return loadedDictionaries;
   try {
-    const [enRaw, zhRaw, zhTWRaw, jaRaw, frRaw, esRaw, ptRaw, arRaw, ruRaw, koRaw] =
-      await Promise.all([
-        import(/* @vite-ignore */ '../../../locales/en/messages.json'),
-        import(/* @vite-ignore */ '../../../locales/zh/messages.json'),
-        import(/* @vite-ignore */ '../../../locales/zh_TW/messages.json'),
-        import(/* @vite-ignore */ '../../../locales/ja/messages.json'),
-        import(/* @vite-ignore */ '../../../locales/fr/messages.json'),
-        import(/* @vite-ignore */ '../../../locales/es/messages.json'),
-        import(/* @vite-ignore */ '../../../locales/pt/messages.json'),
-        import(/* @vite-ignore */ '../../../locales/ar/messages.json'),
-        import(/* @vite-ignore */ '../../../locales/ru/messages.json'),
-        import(/* @vite-ignore */ '../../../locales/ko/messages.json'),
-      ]);
-
-    loadedDictionaries = {
-      en: extractMessageDictionary(enRaw),
-      zh: extractMessageDictionary(zhRaw),
-      zh_TW: extractMessageDictionary(zhTWRaw),
-      ja: extractMessageDictionary(jaRaw),
-      fr: extractMessageDictionary(frRaw),
-      es: extractMessageDictionary(esRaw),
-      pt: extractMessageDictionary(ptRaw),
-      ar: extractMessageDictionary(arRaw),
-      ru: extractMessageDictionary(ruRaw),
-      ko: extractMessageDictionary(koRaw),
-    };
-    return loadedDictionaries;
-  } catch {
-    return {
-      en: {},
-      zh: {},
-      zh_TW: {},
-      ja: {},
-      fr: {},
-      es: {},
-      pt: {},
-      ar: {},
-      ru: {},
-      ko: {},
-    };
-  }
+    loadedDictionaries[language] = await loadTranslations(language);
+  } catch {}
+  return loadedDictionaries;
 }
 
 type StorageChangeListener = (
@@ -143,10 +103,18 @@ export function languageFromStorageChanges(
  * Returns the stop.
  */
 export function watchExportLanguage(onChange: (lang: AppLanguage) => void): () => void {
+  const languageLoader = createLanguageLoader();
   const listener: StorageChangeListener = (changes, area) => {
     if (area !== 'sync') return;
     const next = languageFromStorageChanges(changes);
-    if (next) onChange(next);
+    if (!next) return;
+    void languageLoader
+      .load(next, (language) => {
+        const messages = getLoadedTranslations(language);
+        if (messages) loadedDictionaries[language] = messages;
+        onChange(language);
+      })
+      .catch(() => {});
   };
   const ext = extensionGlobal();
   const events = (ext.chrome?.storage ?? ext.browser?.storage)?.onChanged;
@@ -154,6 +122,7 @@ export function watchExportLanguage(onChange: (lang: AppLanguage) => void): () =
     events?.addListener(listener);
   } catch {}
   return () => {
+    languageLoader.stop();
     try {
       events?.removeListener(listener);
     } catch {}

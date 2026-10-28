@@ -3,7 +3,7 @@ import { createHeartIcon } from '@/core/icons/promptManagerIcons';
 import { getWebStoreRatingChannel } from '@/core/utils/browser';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 import type { AppLanguage } from '@/utils/language';
-import { TRANSLATIONS, type TranslationKey } from '@/utils/translations';
+import { type TranslationKey, getLoadedTranslations, loadTranslations } from '@/utils/translations';
 
 import { renderPlatformLogoMarks } from './platformLogoMarks';
 
@@ -12,7 +12,7 @@ import { renderPlatformLogoMarks } from './platformLogoMarks';
  * This avoids race conditions when initI18n() hasn't finished yet.
  */
 function t(key: TranslationKey, lang: AppLanguage): string {
-  return TRANSLATIONS[lang][key] ?? TRANSLATIONS.en[key] ?? key;
+  return getLoadedTranslations(lang)?.[key] ?? getLoadedTranslations('en')?.[key] ?? key;
 }
 
 /**
@@ -73,11 +73,12 @@ const EDGE_STORE_URL =
 /**
  * Render the changelog modal DOM.
  */
-export function createChangelogModal(
+export async function createChangelogModal(
   htmlContent: string,
   lang: AppLanguage,
   readGateSeconds: number = 0,
-): HTMLDivElement {
+): Promise<HTMLDivElement> {
+  await loadTranslations(lang);
   const overlay = document.createElement('div');
   overlay.className = 'gv-changelog-overlay';
 

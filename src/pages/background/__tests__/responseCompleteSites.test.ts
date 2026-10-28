@@ -18,7 +18,7 @@ vi.mock('@/core/utils/notificationsPermission', () => ({
 }));
 const icon = vi.hoisted(() => ({ draw: vi.fn(async (): Promise<string | null> => null) }));
 vi.mock('../notificationSiteIcon', () => ({ siteNotificationIcon: icon.draw }));
-vi.mock('@/utils/i18n', () => ({
+vi.mock('../allTranslations', () => ({
   getTranslation: async () => '{site} 思考完成',
 }));
 

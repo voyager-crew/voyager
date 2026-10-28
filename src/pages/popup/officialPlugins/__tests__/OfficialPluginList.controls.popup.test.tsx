@@ -7,10 +7,12 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StorageKeys } from '@/core/types/common';
 import { getModifierKey } from '@/core/utils/browser';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import Popup from '../../Popup';
 import { extensionApi, popupRows, resetPopupBrowser } from './popupHarness';
+
+const en = await loadTranslations('en');
 
 // Keep Popup, its hooks and the packaged manifests real; replace only browser APIs.
 vi.mock('webextension-polyfill', async () => ({
@@ -153,7 +155,7 @@ describe('the official plugin list in the popup', () => {
       expect(sliders(OFFICIAL_PLUGIN_IDS.geminiChatFontSize)).toHaveLength(0);
       expect(sliders(OFFICIAL_PLUGIN_IDS.geminiSidebarAutoHide)).toHaveLength(0);
       await act(async () => toggle(OFFICIAL_PLUGIN_IDS.geminiChatFontSize).click());
-      const fontSize = slider(OFFICIAL_PLUGIN_IDS.geminiChatFontSize, TRANSLATIONS.en.chatFontSize);
+      const fontSize = slider(OFFICIAL_PLUGIN_IDS.geminiChatFontSize, en.chatFontSize);
       expect(fontSize.value).toBe('120');
       expect(fontSize.getAttribute('aria-valuetext')).toBe('120%');
       await act(async () => toggle(OFFICIAL_PLUGIN_IDS.geminiChatFontSize).click());
@@ -164,7 +166,7 @@ describe('the official plugin list in the popup', () => {
     it('saves a width on keyboard release, not on every step, to its old sync key only', async () => {
       sync[StorageKeys.CHAT_WIDTH_ENABLED] = true;
       await mount();
-      const width = slider(OFFICIAL_PLUGIN_IDS.geminiChatWidth, TRANSLATIONS.en.chatWidth);
+      const width = slider(OFFICIAL_PLUGIN_IDS.geminiChatWidth, en.chatWidth);
       drag(width, 85);
       expect(width.getAttribute('aria-valuetext')).toBe('85%');
       expect(extensionApi.storage.sync.set).not.toHaveBeenCalled();
@@ -180,10 +182,7 @@ describe('the official plugin list in the popup', () => {
     it('saves paragraph spacing apart from line height on pointer release', async () => {
       sync[StorageKeys.CHAT_LINE_HEIGHT_ENABLED] = true;
       await mount();
-      const paragraph = slider(
-        OFFICIAL_PLUGIN_IDS.geminiChatLineHeight,
-        TRANSLATIONS.en.chatParagraphSpacing,
-      );
+      const paragraph = slider(OFFICIAL_PLUGIN_IDS.geminiChatLineHeight, en.chatParagraphSpacing);
       drag(paragraph, 20);
       expect(paragraph.getAttribute('aria-valuetext')).toBe('20px');
       expect(extensionApi.storage.sync.set).not.toHaveBeenCalled();
@@ -191,16 +190,14 @@ describe('the official plugin list in the popup', () => {
       expect(extensionApi.storage.sync.set).toHaveBeenCalledExactlyOnceWith({
         [StorageKeys.CHAT_PARAGRAPH_SPACING]: 20,
       });
-      expect(
-        slider(OFFICIAL_PLUGIN_IDS.geminiChatLineHeight, TRANSLATIONS.en.chatLineHeight).value,
-      ).toBe('160');
+      expect(slider(OFFICIAL_PLUGIN_IDS.geminiChatLineHeight, en.chatLineHeight).value).toBe('160');
     });
 
     it('a width that turned its row on keeps it on when moved back to the default', async () => {
       // No stored switch: a 60% chat width reads on, and 70% would read off again.
       sync[StorageKeys.CHAT_WIDTH] = 60;
       await mount();
-      const width = slider(OFFICIAL_PLUGIN_IDS.geminiChatWidth, TRANSLATIONS.en.chatWidth);
+      const width = slider(OFFICIAL_PLUGIN_IDS.geminiChatWidth, en.chatWidth);
       drag(width, 70);
       await release(width);
       expect(extensionApi.storage.sync.set).toHaveBeenCalledExactlyOnceWith({
@@ -243,7 +240,7 @@ describe('the official plugin list in the popup', () => {
         sync[widthKey] = stored;
         await mount();
         expect(toggle(id).checked).toBe(true);
-        const width = slider(id, TRANSLATIONS.en[label]);
+        const width = slider(id, en[label]);
         drag(width, next);
         await release(width);
         expect(extensionApi.storage.sync.set).toHaveBeenCalledExactlyOnceWith({
@@ -257,7 +254,7 @@ describe('the official plugin list in the popup', () => {
       sync[StorageKeys.SIDEBAR_WIDTH] = 26;
       sync[StorageKeys.SIDEBAR_WIDTH_ENABLED] = true;
       await mount();
-      const width = slider(OFFICIAL_PLUGIN_IDS.geminiSidebarWidth, TRANSLATIONS.en.sidebarWidth);
+      const width = slider(OFFICIAL_PLUGIN_IDS.geminiSidebarWidth, en.sidebarWidth);
       expect(width.getAttribute('aria-valuetext')).toBe('312px');
       expect(width.value).not.toBe('180');
       // A click without a move writes nothing.
@@ -276,7 +273,7 @@ describe('the official plugin list in the popup', () => {
   describe('the input collapse row', () => {
     const withContent = () =>
       row(OFFICIAL_PLUGIN_IDS.geminiInputCollapse)!.querySelector<HTMLInputElement>(
-        `input[aria-label="${TRANSLATIONS.en.allowCollapseWhenNotEmpty}"]`,
+        `input[aria-label="${en.allowCollapseWhenNotEmpty}"]`,
       );
 
     it.each([
@@ -322,16 +319,11 @@ describe('the official plugin list in the popup', () => {
   });
 
   describe('usage hints', () => {
-    const collapseHint = () =>
-      TRANSLATIONS.en.inputCollapseShortcutHint.replace('{modifier}', getModifierKey());
+    const collapseHint = () => en.inputCollapseShortcutHint.replace('{modifier}', getModifierKey());
 
     it.each([
       [OFFICIAL_PLUGIN_IDS.geminiInputCollapse, StorageKeys.INPUT_COLLAPSE_ENABLED, collapseHint],
-      [
-        OFFICIAL_PLUGIN_IDS.geminiVimInput,
-        StorageKeys.INPUT_VIM_MODE,
-        () => TRANSLATIONS.en.inputVimModeHint,
-      ],
+      [OFFICIAL_PLUGIN_IDS.geminiVimInput, StorageKeys.INPUT_VIM_MODE, () => en.inputVimModeHint],
     ] as const)('%s shows how to use it only while on', async (id, key, hint) => {
       await mount();
       expect(row(id)!.textContent).not.toContain(hint());

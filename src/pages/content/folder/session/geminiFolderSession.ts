@@ -156,7 +156,8 @@ export class GeminiFolderSession implements GeminiFolderReads {
   /** Binds the page's account, when known, and loads its folders; then answers the popup. */
   async init(): Promise<void> {
     // Notices shown while the folders load speak the page's language.
-    void initI18n().catch(() => {});
+    await initI18n().catch(() => {});
+    if (this.closed) return;
     await this.store.init();
     if (this.closed) return;
     this.listen();

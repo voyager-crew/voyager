@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import browser from 'webextension-polyfill';
 
 import { StorageKeys } from '@/core/types/common';
-import { TRANSLATIONS, type TranslationKey } from '@/utils/translations';
+import { loadAllTranslations, loadTranslations, type TranslationKey } from '@/utils/translations';
 
 import { PopupSection } from '../../components/PopupSection';
 import {
@@ -15,12 +15,14 @@ import {
 } from '../../utils/nativeSiteCapabilities';
 import { usePopupSections, type PopupSectionsOptions } from '../usePopupSections';
 
+const en = await loadTranslations('en');
+
 vi.mock('webextension-polyfill', () => ({
   default: { storage: { local: { get: vi.fn(), set: vi.fn() } } },
 }));
 
 type Sections = ReturnType<typeof usePopupSections>;
-const translate = (key: TranslationKey) => TRANSLATIONS.en[key];
+const translate = (key: TranslationKey) => en[key];
 
 function Harness({
   capture,
@@ -68,6 +70,7 @@ describe('usePopupSections', () => {
 
   async function search(query: string) {
     await act(async () => sections.updateSettingsSearchQuery(query));
+    await act(async () => loadAllTranslations());
   }
 
   beforeEach(() => {

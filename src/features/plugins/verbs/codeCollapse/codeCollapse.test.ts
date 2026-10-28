@@ -122,7 +122,7 @@ beforeEach(() => {
 
 afterEach(async () => {
   await scope.dispose();
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
   document.body.replaceChildren();
   vi.useRealTimers();
 });
@@ -259,11 +259,11 @@ describe('codeCollapse primitive', () => {
     expect(document.querySelector('.gv-code-block-toggle')).toBeNull();
   });
 
-  it('relabels the toggles and the bar when the Voyager language changes', () => {
+  it('relabels the toggles and the bar when the Voyager language changes', async () => {
     deepseekReply(LONG, LONG);
     activate(deepseek.adapter, deepseek.params);
 
-    setCachedLanguage('zh');
+    await setCachedLanguage('zh');
 
     expect(document.querySelector('.gv-code-block-toggle')!.getAttribute('aria-label')).toBe(
       '展开',
@@ -482,11 +482,11 @@ describe('codeCollapse on Gemini', () => {
     expect(document.querySelector('.gv-code-block-toggle')).toBeNull();
   });
 
-  it('relabels the Gemini toggles when the Voyager language changes', () => {
+  it('relabels the Gemini toggles when the Voyager language changes', async () => {
     geminiReply(geminiBlock({ lines: LONG_CODE_BLOCK_MIN_LINES }));
     activate(gemini, params);
 
-    setCachedLanguage('zh');
+    await setCachedLanguage('zh');
 
     expect(toggleOf(geminiBlocks()[0])!.getAttribute('aria-label')).toBe('收起');
   });

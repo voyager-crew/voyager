@@ -3,10 +3,12 @@ import { type Root, createRoot } from 'react-dom/client';
 
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import { SavedLibraryItemCard } from '../SavedLibraryItemCard';
 import { type SavedLibraryItem, savedLibraryItemKey } from '../model';
+
+const en = await loadTranslations('en');
 
 let container: HTMLElement;
 let root: Root;
@@ -44,7 +46,7 @@ it('opens and deletes a saved item through independent native controls', () => {
         item={item}
         onOpen={open}
         onDelete={remove}
-        t={(key) => TRANSLATIONS.en[key]}
+        t={(key) => en[key]}
         language="en"
         expanded
       />,
@@ -53,10 +55,10 @@ it('opens and deletes a saved item through independent native controls', () => {
   const buttons = container.querySelectorAll('button');
   expect(buttons).toHaveLength(2);
   expect(buttons[0].querySelector('button')).toBeNull();
-  expect(buttons[1].getAttribute('aria-label')).toBe(TRANSLATIONS.en.pm_delete);
+  expect(buttons[1].getAttribute('aria-label')).toBe(en.pm_delete);
   expect(buttons[0].textContent).toContain(item.content);
   expect(buttons[0].textContent).toContain(item.note);
-  expect(buttons[0].textContent).toContain(TRANSLATIONS.en.pm_starred_untitled);
+  expect(buttons[0].textContent).toContain(en.pm_starred_untitled);
   expect(container.textContent).not.toContain('opaque-key');
   expect(container.querySelector('time')?.dateTime).toBe(new Date(100).toISOString());
   expect(
@@ -69,7 +71,8 @@ it('opens and deletes a saved item through independent native controls', () => {
   expect(open).toHaveBeenCalledWith(item);
 });
 
-it('a saved star names its remove action and preserves the stored text', () => {
+it('a saved star names its remove action and preserves the stored text', async () => {
+  const ar = await loadTranslations('ar');
   const starred = { ...item, kind: 'starred' as const, content: 'A saved response' };
   act(() =>
     root.render(
@@ -77,13 +80,13 @@ it('a saved star names its remove action and preserves the stored text', () => {
         item={starred}
         onOpen={() => {}}
         onDelete={() => {}}
-        t={(key) => TRANSLATIONS.ar[key]}
+        t={(key) => ar[key]}
         language="ar"
       />,
     ),
   );
   expect(container.querySelector('button[aria-label]')?.getAttribute('aria-label')).toBe(
-    TRANSLATIONS.ar.removeFromStarred,
+    ar.removeFromStarred,
   );
   expect(container.textContent).toContain(starred.content);
 });

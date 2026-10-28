@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 import { readContentStyle } from '@/tests/contentStyle';
+import * as translations from '@/utils/translations';
 
 import {
   hasUnreadChangelog,
@@ -103,8 +104,8 @@ describe('release note quotes', () => {
 });
 
 describe('changelog quote styles', () => {
-  it('gives the leading quote an explicit cross-browser presentation', () => {
-    const overlay = createChangelogModal(
+  it('gives the leading quote an explicit cross-browser presentation', async () => {
+    const overlay = await createChangelogModal(
       '<blockquote>Opening quote</blockquote><p>Notes</p>',
       'en',
     );
@@ -116,8 +117,11 @@ describe('changelog quote styles', () => {
     expect(css).toMatch(/\.gv-changelog-body > \.gv-changelog-quote\s*\{[^}]*display:\s*block;/s);
   });
 
-  it('leaves a quote after the opening paragraph unclassified', () => {
-    const overlay = createChangelogModal('<p>Notes</p><blockquote>Later quote</blockquote>', 'en');
+  it('leaves a quote after the opening paragraph unclassified', async () => {
+    const overlay = await createChangelogModal(
+      '<p>Notes</p><blockquote>Later quote</blockquote>',
+      'en',
+    );
 
     expect(overlay.querySelector('blockquote')?.classList.contains('gv-changelog-quote')).toBe(
       false,
@@ -188,6 +192,18 @@ describe('resolveChangelogImageUrl', () => {
 });
 
 describe('changelog sanitizer URI policy', () => {
+  it('keeps the release unread when its language cannot be loaded', async () => {
+    vi.mocked(chrome.storage.local.set).mockClear();
+    vi.spyOn(translations, 'loadTranslations').mockRejectedValueOnce(
+      new Error('language chunk unavailable'),
+    );
+
+    await expect(openChangelog()).rejects.toThrow('language chunk unavailable');
+
+    expect(chrome.storage.local.set).not.toHaveBeenCalled();
+    expect(document.querySelector('.gv-changelog-overlay')).toBeNull();
+  });
+
   // The bundled screenshot resolves to a chrome-extension:// or moz-extension://
   // URL. DOMPurify's default URI policy allows neither, so it strips the src and
   // renders a broken image with no error anywhere — the exact failure this pins.

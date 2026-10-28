@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StorageKeys } from '@/core/types/common';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import Popup from '../../Popup';
 import { domId } from '../OfficialPluginRow';
@@ -18,6 +18,8 @@ import {
   popupRows,
   resetPopupBrowser,
 } from './popupHarness';
+
+const en = await loadTranslations('en');
 
 // Keep Popup, its hooks and the packaged manifests real; replace only browser APIs.
 vi.mock('webextension-polyfill', async () => ({
@@ -100,8 +102,8 @@ describe('official plugin rows with a count, choices or a panel', () => {
       await mount();
       expect(toggle(id).checked).toBe(true);
       expect(count()!.value).toBe('0');
-      expect(count()!.getAttribute('aria-valuetext')).toBe(TRANSLATIONS.en.gemsSidebarCountHidden);
-      expect(row(id)!.textContent).toContain(TRANSLATIONS.en.gemsSidebarCountHidden);
+      expect(count()!.getAttribute('aria-valuetext')).toBe(en.gemsSidebarCountHidden);
+      expect(row(id)!.textContent).toContain(en.gemsSidebarCountHidden);
       expect(row(id)!.textContent).not.toMatch(/\bOff\b/);
     });
 
@@ -175,21 +177,21 @@ describe('official plugin rows with a count, choices or a panel', () => {
       sync[StorageKeys.GV_SNOW_EFFECT] = true;
       await mount();
       expect(choices()).toEqual([
-        [TRANSLATIONS.en.visualEffectSnow, 'true'],
-        [TRANSLATIONS.en.visualEffectSakura, 'false'],
-        [TRANSLATIONS.en.visualEffectRain, 'false'],
+        [en.visualEffectSnow, 'true'],
+        [en.visualEffectSakura, 'false'],
+        [en.visualEffectRain, 'false'],
       ]);
     });
 
     it('picking an effect writes the pair the card always wrote', async () => {
       sync[StorageKeys.GV_VISUAL_EFFECT] = 'snow';
       await mount();
-      await act(async () => choice(TRANSLATIONS.en.visualEffectRain).click());
+      await act(async () => choice(en.visualEffectRain).click());
       expect(extensionApi.storage.sync.set).toHaveBeenCalledExactlyOnceWith({
         [StorageKeys.GV_VISUAL_EFFECT]: 'rain',
         [StorageKeys.GV_SNOW_EFFECT]: false,
       });
-      expect(choice(TRANSLATIONS.en.visualEffectRain).getAttribute('aria-pressed')).toBe('true');
+      expect(choice(en.visualEffectRain).getAttribute('aria-pressed')).toBe('true');
       expect(pluginStateWritten()).toBe(false);
     });
 
@@ -202,7 +204,7 @@ describe('official plugin rows with a count, choices or a panel', () => {
         { [StorageKeys.GV_VISUAL_EFFECT]: 'off', [StorageKeys.GV_SNOW_EFFECT]: false },
         { [StorageKeys.GV_VISUAL_EFFECT]: 'snow', [StorageKeys.GV_SNOW_EFFECT]: false },
       ]);
-      expect(choice(TRANSLATIONS.en.visualEffectSnow).getAttribute('aria-pressed')).toBe('true');
+      expect(choice(en.visualEffectSnow).getAttribute('aria-pressed')).toBe('true');
     });
 
     it('is a row on AI Studio too', async () => {
@@ -221,7 +223,7 @@ describe('official plugin rows with a count, choices or a panel', () => {
       await mount();
       expect(toggle(id).checked).toBe(true);
       expect(choicesOffTheRow()).toEqual([]);
-      expect(container.textContent).not.toContain(TRANSLATIONS.en.visualEffectHint);
+      expect(container.textContent).not.toContain(en.visualEffectHint);
     });
   });
 
@@ -233,7 +235,7 @@ describe('official plugin rows with a count, choices or a panel', () => {
       (message as { action?: string } | undefined)?.action === 'sync_to_ide';
     const syncButton = () =>
       [...row(id)!.querySelectorAll('button')].find(
-        (button) => button.textContent === TRANSLATIONS.en.syncToIDE,
+        (button) => button.textContent === en.syncToIDE,
       );
 
     beforeEach(() => {
@@ -307,7 +309,7 @@ describe('official plugin rows with a count, choices or a panel', () => {
       const pending = deferSync();
       await mount();
       await act(async () => syncButton()!.click());
-      await typeSearch(TRANSLATIONS.en.pinTimelinePreview);
+      await typeSearch(en.pinTimelinePreview);
       expect(row(id)).toBeNull();
       await typeSearch('');
       await act(async () => {});
@@ -315,7 +317,7 @@ describe('official plugin rows with a count, choices or a panel', () => {
       await act(async () => syncButton()!.click());
       expect(syncRequests()).toHaveLength(1);
       await act(async () => pending.answer({ status: 'success' }));
-      expect(row(id)!.textContent).toContain(TRANSLATIONS.en.syncedSuccess);
+      expect(row(id)!.textContent).toContain(en.syncedSuccess);
     });
 
     it('a success that lands while a search hides it waits to be seen, then fades', async () => {
@@ -323,16 +325,16 @@ describe('official plugin rows with a count, choices or a panel', () => {
       const pending = deferSync();
       await mount();
       await act(async () => syncButton()!.click());
-      await typeSearch(TRANSLATIONS.en.pinTimelinePreview);
+      await typeSearch(en.pinTimelinePreview);
       expect(row(id)).toBeNull();
       vi.useFakeTimers();
       try {
         await act(async () => pending.answer({ status: 'success' }));
         await act(async () => vi.advanceTimersByTime(10_000));
         await typeSearch('');
-        expect(row(id)!.textContent).toContain(TRANSLATIONS.en.syncedSuccess);
+        expect(row(id)!.textContent).toContain(en.syncedSuccess);
         await act(async () => vi.advanceTimersByTime(3_000));
-        expect(row(id)!.textContent).not.toContain(TRANSLATIONS.en.syncedSuccess);
+        expect(row(id)!.textContent).not.toContain(en.syncedSuccess);
       } finally {
         vi.useRealTimers();
       }
@@ -346,7 +348,7 @@ describe('official plugin rows with a count, choices or a panel', () => {
       expect(extensionApi.tabs.sendMessage).toHaveBeenCalledWith(GEMINI_TAB.id, {
         action: 'sync_to_ide',
       });
-      expect(row(id)!.textContent).toContain(TRANSLATIONS.en.syncedSuccess);
+      expect(row(id)!.textContent).toContain(en.syncedSuccess);
     });
   });
 });

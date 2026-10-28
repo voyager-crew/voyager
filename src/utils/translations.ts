@@ -1,32 +1,9 @@
-import arMessages from '@locales/ar/messages.json';
 import enMessages from '@locales/en/messages.json';
-import esMessages from '@locales/es/messages.json';
-import frMessages from '@locales/fr/messages.json';
-import jaMessages from '@locales/ja/messages.json';
-import koMessages from '@locales/ko/messages.json';
-import ptMessages from '@locales/pt/messages.json';
-import ruMessages from '@locales/ru/messages.json';
-import zhMessages from '@locales/zh/messages.json';
-import zhTWMessages from '@locales/zh_TW/messages.json';
 
-import type { AppLanguage } from './language';
+import { APP_LANGUAGES, type AppLanguage } from './language';
 
 type RawLocaleMessages = typeof enMessages;
 type MessageFile = Record<string, { message: string }>;
-
-// Compile-time guarantee: every supported language must provide at least the same keys as English.
-const rawMessagesByLanguage = {
-  en: enMessages,
-  zh: zhMessages,
-  zh_TW: zhTWMessages,
-  ja: jaMessages,
-  fr: frMessages,
-  es: esMessages,
-  pt: ptMessages,
-  ar: arMessages,
-  ru: ruMessages,
-  ko: koMessages,
-} satisfies Record<AppLanguage, RawLocaleMessages>;
 
 /**
  * A primitive's own strings live in `features/plugins/verbs/<name>/messages/<lang>.json`.
@@ -46,46 +23,69 @@ type PrimitiveMessageKey = {
 export type TranslationKey = keyof RawLocaleMessages | PrimitiveMessageKey;
 export type Translation = Record<TranslationKey, string>;
 
-// Vite-only, like the catalog's site discovery: adding a primitive's strings is adding its files.
-const primitiveMessageFiles = import.meta.glob<MessageFile>(
-  '../features/plugins/verbs/*/messages/*.json',
+const englishFragments = import.meta.glob<MessageFile>(
+  '../features/plugins/verbs/*/messages/en.json',
   { eager: true, import: 'default' },
 );
+const localeFiles = import.meta.glob<MessageFile>(
+  ['../locales/*/messages.json', '!../locales/en/messages.json'],
+  { import: 'default' },
+);
+const primitiveMessageFiles = import.meta.glob<MessageFile>(
+  ['../features/plugins/verbs/*/messages/*.json', '!../features/plugins/verbs/*/messages/en.json'],
+  { import: 'default' },
+);
 
-const PRIMITIVE_MESSAGE_LANGUAGE = /\/messages\/([^/]+)\.json$/;
-
-function extractTranslations(raw: MessageFile): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const key of Object.keys(raw)) {
-    out[key] = raw[key].message;
+function buildTranslations(files: MessageFile[]): Translation {
+  const merged: Record<string, string> = {};
+  for (const file of files) {
+    for (const [key, { message }] of Object.entries(file)) merged[key] = message;
   }
-  return out;
-}
-
-function buildTranslations(language: AppLanguage): Translation {
-  const merged = extractTranslations(rawMessagesByLanguage[language]);
-  for (const [path, messages] of Object.entries(primitiveMessageFiles)) {
-    if (PRIMITIVE_MESSAGE_LANGUAGE.exec(path)?.[1] === language) {
-      Object.assign(merged, extractTranslations(messages));
-    }
-  }
-  // `bun run i18n:check` guarantees each fragment has every locale with exactly its en keys.
+  // `bun run i18n:check` proves the base and fragment keys for every language.
   return merged as Translation;
 }
 
-export const TRANSLATIONS: Record<AppLanguage, Translation> = {
-  en: buildTranslations('en'),
-  zh: buildTranslations('zh'),
-  zh_TW: buildTranslations('zh_TW'),
-  ja: buildTranslations('ja'),
-  fr: buildTranslations('fr'),
-  es: buildTranslations('es'),
-  pt: buildTranslations('pt'),
-  ar: buildTranslations('ar'),
-  ru: buildTranslations('ru'),
-  ko: buildTranslations('ko'),
-};
+const englishTranslations = buildTranslations([enMessages, ...Object.values(englishFragments)]);
+const loadedTranslations = new Map<AppLanguage, Translation>([['en', englishTranslations]]);
+const translationLoads = new Map<AppLanguage, Promise<Translation>>();
+
+/** English is always available; other tables appear only after their load completes. */
+export function getLoadedTranslations(language: 'en'): Translation;
+export function getLoadedTranslations(language: AppLanguage): Translation | undefined;
+export function getLoadedTranslations(language: AppLanguage): Translation | undefined {
+  if (language === 'en') return englishTranslations;
+  return loadedTranslations.get(language);
+}
+
+/** Share in-flight work and retain the merged table for subsequent lookups. */
+export function loadTranslations(language: AppLanguage): Promise<Translation> {
+  const pending = translationLoads.get(language);
+  if (pending) return pending;
+
+  const loaded = loadedTranslations.get(language);
+  const load = loaded
+    ? Promise.resolve(loaded)
+    : Promise.all([
+        localeFiles[`../locales/${language}/messages.json`](),
+        ...Object.entries(primitiveMessageFiles)
+          .filter(([path]) => path.endsWith(`/messages/${language}.json`))
+          .map(([, importMessages]) => importMessages()),
+      ]).then((files) => {
+        const translations = buildTranslations(files);
+        loadedTranslations.set(language, translations);
+        return translations;
+      });
+  translationLoads.set(language, load);
+  // A transient chunk failure should not prevent a later language selection from retrying.
+  void load.catch(() => translationLoads.delete(language));
+  return load;
+}
+
+/** Settings search indexes every language, but ordinary pages never need to. */
+export async function loadAllTranslations(): Promise<void> {
+  await Promise.all(APP_LANGUAGES.map(loadTranslations));
+}
 
 export function isTranslationKey(value: string): value is TranslationKey {
-  return value in TRANSLATIONS.en;
+  return value in englishTranslations;
 }

@@ -9,10 +9,16 @@ afterEach(() => {
 });
 
 describe('changelog modal', () => {
+  it('loads the requested language before rendering its controls', async () => {
+    const overlay = await createChangelogModal('<p>Notes</p>', 'ja');
+
+    expect(overlay.querySelector('.gv-changelog-close')?.getAttribute('aria-label')).toBe('閉じる');
+  });
+
   it.each(['.gv-changelog-close', '.gv-changelog-got-it', 'outside'])(
     'closes a regular release through %s',
-    (control) => {
-      const overlay = createChangelogModal('<p>Notes</p>', 'en');
+    async (control) => {
+      const overlay = await createChangelogModal('<p>Notes</p>', 'en');
       document.body.appendChild(overlay);
 
       const target = control === 'outside' ? overlay : overlay.querySelector<HTMLElement>(control);
@@ -22,8 +28,8 @@ describe('changelog modal', () => {
     },
   );
 
-  it('keeps a regular release open when clicking inside the dialog', () => {
-    const overlay = createChangelogModal('<p>Notes</p>', 'en');
+  it('keeps a regular release open when clicking inside the dialog', async () => {
+    const overlay = await createChangelogModal('<p>Notes</p>', 'en');
     document.body.appendChild(overlay);
 
     overlay.querySelector<HTMLElement>('.gv-changelog-body')?.click();
@@ -31,9 +37,9 @@ describe('changelog modal', () => {
     expect(overlay.isConnected).toBe(true);
   });
 
-  it('requires an explicit close after the force-popup reading gate finishes', () => {
+  it('requires an explicit close after the force-popup reading gate finishes', async () => {
     vi.useFakeTimers();
-    const overlay = createChangelogModal('<p>Notes</p>', 'en', 2);
+    const overlay = await createChangelogModal('<p>Notes</p>', 'en', 2);
     document.body.appendChild(overlay);
     const close = overlay.querySelector<HTMLButtonElement>('.gv-changelog-close')!;
     const gotIt = overlay.querySelector<HTMLButtonElement>('.gv-changelog-got-it')!;
@@ -62,8 +68,8 @@ describe('changelog modal', () => {
 
   it.each(['click', 'Escape'])(
     'closes an image preview through %s and releases its keyboard listener',
-    (action) => {
-      const overlay = createChangelogModal(
+    async (action) => {
+      const overlay = await createChangelogModal(
         '<img src="https://example.com/image.png" alt="Preview">',
         'en',
       );

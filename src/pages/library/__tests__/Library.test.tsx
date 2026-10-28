@@ -7,7 +7,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StorageKeys } from '@/core/types/common';
 import type { HighlightRecordV1 } from '@/core/types/highlight';
 import type { StarredMessage } from '@/features/savedLibrary/starTypes';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import { Library } from '../Library';
 
@@ -424,6 +424,7 @@ describe('Saved Library page', () => {
   });
 
   it('follows live system appearance and sets Arabic direction for the page and shared layers', async () => {
+    const ar = await loadTranslations('ar');
     language = 'ar';
     await mount();
     expect(document.documentElement.dir).toBe('rtl');
@@ -434,7 +435,7 @@ describe('Saved Library page', () => {
     await act(async () => schemeChanged?.());
     expect(document.documentElement.classList.contains('dark')).toBe(true);
     expect(document.documentElement.dataset.gvScheme).toBe('dark');
-    const removeButton = buttons(TRANSLATIONS.ar.removeFromStarred)[0];
+    const removeButton = buttons(ar.removeFromStarred)[0];
     await act(async () => removeButton.click());
     const host = document.querySelector<HTMLElement>('[data-gv-layer="popover"]')!;
     expect(host.dataset.gvScheme).toBe('dark');

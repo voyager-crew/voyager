@@ -9,9 +9,11 @@ import { StorageKeys } from '@/core/types/common';
 import { StarredMessagesService } from '@/features/savedLibrary/StarredMessagesService';
 import { LIBRARY_OPEN_MESSAGE } from '@/features/savedLibrary/openLibraryPage';
 import { makeRecord } from '@/pages/content/highlight/__tests__/fixtures';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import { StarredHistory } from '../StarredHistory';
+
+const en = await loadTranslations('en');
 
 vi.mock('webextension-polyfill', () => ({ default: chrome }));
 
@@ -84,7 +86,7 @@ async function mount() {
 }
 async function viewHighlights() {
   const button = Array.from(container.querySelectorAll('button')).find((candidate) =>
-    candidate.textContent?.includes(TRANSLATIONS.en.savedLibraryHighlights),
+    candidate.textContent?.includes(en.savedLibraryHighlights),
   )!;
   await act(async () => button.click());
 }
@@ -126,8 +128,8 @@ it.each([
   await mount();
   expect(container.textContent).toContain('Saved answer');
   await viewHighlights();
-  expect(container.textContent).toContain(TRANSLATIONS.en.savedLibraryNoHighlights);
-  expect(container.textContent).not.toContain(TRANSLATIONS.en.pm_starred_load_error);
+  expect(container.textContent).toContain(en.savedLibraryNoHighlights);
+  expect(container.textContent).not.toContain(en.pm_starred_load_error);
   expect(chrome.runtime.sendMessage).not.toHaveBeenCalledWith(
     expect.objectContaining({ type: 'gv.highlight.list' }),
   );
@@ -141,7 +143,7 @@ it.each([
   await mount();
   expect(container.textContent).toContain('Saved answer');
   await viewHighlights();
-  expect(container.textContent).toContain(TRANSLATIONS.en.pm_starred_load_error);
+  expect(container.textContent).toContain(en.pm_starred_load_error);
   expect(chrome.runtime.sendMessage).toHaveBeenCalledWith(
     expect.objectContaining({ type: 'gv.highlight.list' }),
   );
@@ -248,14 +250,12 @@ it('keeps a starred row after a failed removal and allows retry', async () => {
   }) as typeof chrome.runtime.sendMessage);
   await mount();
   const button = container.querySelector<HTMLButtonElement>(
-    `button[aria-label="${TRANSLATIONS.en.removeFromStarred}"]`,
+    `button[aria-label="${en.removeFromStarred}"]`,
   )!;
 
   await act(async () => button.click());
   expect(container.textContent).toContain('Saved answer');
-  expect(container.querySelector('[role="alert"]')?.textContent).toBe(
-    TRANSLATIONS.en.starredDeleteFailed,
-  );
+  expect(container.querySelector('[role="alert"]')?.textContent).toBe(en.starredDeleteFailed);
   expect(
     container.querySelector(`button[aria-label="${button.getAttribute('aria-label')}"]`),
   ).not.toBeNull();
@@ -293,12 +293,10 @@ it('keeps a highlight row and reports highlight removal failure when the request
   vi.spyOn(console, 'error').mockImplementation(() => {});
   await mount();
   const button = container.querySelector<HTMLButtonElement>(
-    `button[aria-label="${TRANSLATIONS.en.pm_delete}"]`,
+    `button[aria-label="${en.pm_delete}"]`,
   )!;
   await act(async () => button.click());
-  expect(container.querySelector('[role="alert"]')?.textContent).toBe(
-    TRANSLATIONS.en.highlightDeleteFailed,
-  );
+  expect(container.querySelector('[role="alert"]')?.textContent).toBe(en.highlightDeleteFailed);
   expect(container.textContent).toContain('Highlighted answer');
   expect(
     container.querySelector(`button[aria-label="${button.getAttribute('aria-label')}"]`),
@@ -318,7 +316,7 @@ it('opens the full library from the popup without navigating the source tab', as
   }) as typeof chrome.runtime.sendMessage);
   await mount();
   const button = container.querySelector<HTMLButtonElement>(
-    `button[aria-label="${TRANSLATIONS.en.savedLibraryOpenFull}"]`,
+    `button[aria-label="${en.savedLibraryOpenFull}"]`,
   )!;
   await act(async () => button.click());
   expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: LIBRARY_OPEN_MESSAGE });
@@ -368,9 +366,7 @@ it("a failed read after an account switch does not keep the previous account's h
   }) as typeof chrome.runtime.sendMessage);
   await mount();
   expect(container.textContent).toContain('Account A highlighted answer');
-  expect(
-    container.querySelector(`button[aria-label="${TRANSLATIONS.en.pm_delete}"]`),
-  ).not.toBeNull();
+  expect(container.querySelector(`button[aria-label="${en.pm_delete}"]`)).not.toBeNull();
   pageUrl = 'https://gemini.google.com/u/2/app/current';
   await act(async () => {
     for (const listener of listeners)
@@ -378,10 +374,8 @@ it("a failed read after an account switch does not keep the previous account's h
   });
   expect(container.textContent).toContain('Readable star');
   expect(container.textContent).not.toContain('Account A highlighted answer');
-  expect(container.querySelector(`button[aria-label="${TRANSLATIONS.en.pm_delete}"]`)).toBeNull();
-  expect(container.querySelector('[role="alert"]')?.textContent).toBe(
-    TRANSLATIONS.en.pm_starred_load_error,
-  );
+  expect(container.querySelector(`button[aria-label="${en.pm_delete}"]`)).toBeNull();
+  expect(container.querySelector('[role="alert"]')?.textContent).toBe(en.pm_starred_load_error);
   expect(chrome.runtime.sendMessage).not.toHaveBeenCalledWith(
     expect.objectContaining({ type: 'gv.highlight.deleteStored' }),
   );
@@ -399,13 +393,9 @@ it('reports an accurate library-open failure without hiding readable stars', asy
   await mount();
   await act(async () =>
     container
-      .querySelector<HTMLButtonElement>(
-        `button[aria-label="${TRANSLATIONS.en.savedLibraryOpenFull}"]`,
-      )!
+      .querySelector<HTMLButtonElement>(`button[aria-label="${en.savedLibraryOpenFull}"]`)!
       .click(),
   );
-  expect(container.querySelector('[role="alert"]')?.textContent).toBe(
-    TRANSLATIONS.en.savedLibraryOpenFailed,
-  );
+  expect(container.querySelector('[role="alert"]')?.textContent).toBe(en.savedLibraryOpenFailed);
   expect(container.textContent).toContain('Saved answer');
 });

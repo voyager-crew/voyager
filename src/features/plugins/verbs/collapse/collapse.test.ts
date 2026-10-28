@@ -87,11 +87,11 @@ function cap(host: HTMLElement): string {
   return getComputedStyle(host).maxHeight;
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.useFakeTimers();
   vi.stubGlobal('ResizeObserver', TestResizeObserver);
   TestResizeObserver.instances = [];
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
   document.head.replaceChildren();
   document.body.innerHTML = '<main></main>';
   scope = new PluginScope();
@@ -101,7 +101,7 @@ afterEach(async () => {
   for (const engine of engines.splice(0)) engine.unmountAll();
   await scope.dispose();
   await Promise.resolve();
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
   document.body.replaceChildren();
   document.head.replaceChildren();
   vi.unstubAllGlobals();
@@ -287,10 +287,10 @@ describe('collapse primitive', () => {
     expect(document.querySelectorAll(`.${COLLAPSE_TOGGLE_CLASS}`)).toHaveLength(1);
   });
 
-  it('relabels toggles when the Voyager language changes', () => {
+  it('relabels toggles when the Voyager language changes', async () => {
     const { host } = fixture(chatgpt);
     activate(chatgpt.adapter);
-    setCachedLanguage('zh');
+    await setCachedLanguage('zh');
     expect(toggleOf(host)!.getAttribute('aria-label')).toBe('展开文本');
     toggleOf(host)!.click();
     expect(toggleOf(host)!.getAttribute('aria-label')).toBe('收起文本');

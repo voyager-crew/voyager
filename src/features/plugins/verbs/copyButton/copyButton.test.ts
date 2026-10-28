@@ -85,7 +85,7 @@ afterEach(async () => {
   await scope.dispose();
   vi.unstubAllGlobals();
   vi.useRealTimers();
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
   document.body.innerHTML = '';
 });
 
@@ -227,13 +227,13 @@ describe('copyButton primitive', () => {
     expect(hosts()).toHaveLength(0);
   });
 
-  it('the button label names what it copies and follows the Voyager language', () => {
+  it('the button label names what it copies and follows the Voyager language', async () => {
     document.body.innerHTML = sites[0].page;
     activate(sites[0].adapter, 'thinkingBlock');
     const button = buttonOf(hosts()[0]);
     expect(button.getAttribute('aria-label')).toBe('Copy thinking');
 
-    setCachedLanguage('zh');
+    await setCachedLanguage('zh');
 
     expect(button.getAttribute('aria-label')).toBe('复制思考过程');
     expect(button.title).toBe('复制思考过程');

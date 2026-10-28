@@ -93,18 +93,18 @@ function typeDraft(field: HTMLElement, lines: string[]): void {
   field.dispatchEvent(new InputEvent('input', { bubbles: true }));
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.useFakeTimers({
     toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame', 'Date'],
   });
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
   document.head.replaceChildren();
   document.body.replaceChildren();
 });
 
 afterEach(async () => {
   for (const scope of scopes.splice(0)) await scope.dispose();
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
   vi.useRealTimers();
   document.body.replaceChildren();
 });
@@ -201,7 +201,7 @@ describe.each(sites)('counterBadge composer on $name', (site) => {
     activate(site.adapter, { target: 'composer', metric: 'chars' });
     expect(badgeLabel(onlyBadge())).toBe('1,234 chars');
 
-    setCachedLanguage('zh');
+    await setCachedLanguage('zh');
     expect(badgeLabel(onlyBadge())).toBe('1,234 字符');
   });
 

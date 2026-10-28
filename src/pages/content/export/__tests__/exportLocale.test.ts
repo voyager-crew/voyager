@@ -17,7 +17,7 @@ describe('watchExportLanguage', () => {
     vi.clearAllMocks();
   });
 
-  it('reports a language switched in sync storage and ignores other changes', () => {
+  it('reports a language switched in sync storage and ignores other changes', async () => {
     const onChange = vi.fn();
     watchExportLanguage(onChange);
     const listener = registeredListener();
@@ -26,7 +26,7 @@ describe('watchExportLanguage', () => {
     listener({ other: { newValue: 'fr' } }, 'sync');
     listener({ [StorageKeys.LANGUAGE]: { newValue: 'ja' } }, 'sync');
 
-    expect(onChange.mock.calls).toEqual([['ja']]);
+    await vi.waitFor(() => expect(onChange.mock.calls).toEqual([['ja']]));
   });
 
   it('stops listening once stopped', () => {
@@ -53,14 +53,14 @@ describe('export language on Firefox', () => {
     vi.clearAllMocks();
   });
 
-  it('relabels when the page window does not expose the extension API', () => {
+  it('relabels when the page window does not expose the extension API', async () => {
     stubFirefoxPageWindow();
     const onChange = vi.fn();
 
     watchExportLanguage(onChange);
     registeredListener()({ [StorageKeys.LANGUAGE]: { newValue: 'fr' } }, 'sync');
 
-    expect(onChange).toHaveBeenCalledWith('fr');
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalledWith('fr'));
   });
 
   it('reads the stored language when the page window does not expose the extension API', async () => {

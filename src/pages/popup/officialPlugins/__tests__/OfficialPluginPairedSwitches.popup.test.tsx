@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StorageKeys } from '@/core/types/common';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import Popup from '../../Popup';
 import {
@@ -16,6 +16,8 @@ import {
   popupRows,
   resetPopupBrowser,
 } from './popupHarness';
+
+const en = await loadTranslations('en');
 
 // Keep Popup, its hooks and the packaged manifests real; replace only browser APIs.
 vi.mock('webextension-polyfill', async () => ({
@@ -98,13 +100,9 @@ describe('official plugin rows tied to other settings', () => {
       await mount();
       expect(
         [...container.querySelectorAll('h3')].map((heading) => heading.textContent),
-      ).not.toContain(TRANSLATIONS.en.nanobananaOptions);
-      expect(
-        row(preview)!.querySelector(`[title="${TRANSLATIONS.en.experimentalLabel}"]`),
-      ).not.toBeNull();
-      expect(
-        row(download)!.querySelector(`[title="${TRANSLATIONS.en.experimentalLabel}"]`),
-      ).toBeNull();
+      ).not.toContain(en.nanobananaOptions);
+      expect(row(preview)!.querySelector(`[title="${en.experimentalLabel}"]`)).not.toBeNull();
+      expect(row(download)!.querySelector(`[title="${en.experimentalLabel}"]`)).toBeNull();
     });
   });
 
@@ -112,9 +110,9 @@ describe('official plugin rows tied to other settings', () => {
     ['Gemini', undefined, OFFICIAL_PLUGIN_IDS.geminiBatchDelete],
     ['AI Studio', AI_STUDIO, OFFICIAL_PLUGIN_IDS.aistudioBatchDelete],
   ] as const)('batch delete on %s', (_site, url, id) => {
-    const needsFolders = TRANSLATIONS.en.pluginRowNeedsSetting
-      .replace('{card}', TRANSLATIONS.en.folderOptions)
-      .replace('{setting}', TRANSLATIONS.en.enableFolderFeature);
+    const needsFolders = en.pluginRowNeedsSetting
+      .replace('{card}', en.folderOptions)
+      .replace('{setting}', en.enableFolderFeature);
 
     beforeEach(() => {
       if (url) extensionApi.tabs.query.mockResolvedValue([{ id: 8, url }]);

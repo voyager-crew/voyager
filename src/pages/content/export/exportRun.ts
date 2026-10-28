@@ -497,8 +497,8 @@ export function createExportRunner(deps: ExportRunnerDeps): ExportRunner {
       owner?.addEventListener('abort', endWithOwner, { once: true });
 
       // We need i18n for final export/alert
-      const dict = await loadExportDictionaries();
       const lang = await readExportLanguage();
+      const dict = await loadExportDictionaries(lang);
       throwIfExportCancelled(controller.signal);
 
       await executeExportSequenceWithProgress(

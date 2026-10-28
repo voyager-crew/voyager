@@ -30,9 +30,9 @@ function fill(panel: HTMLElement): void {
     </button>`;
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.useFakeTimers();
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
   document.body.innerHTML = '<deep-research-immersive-panel></deep-research-immersive-panel>';
   harness = installLifecycleHarness();
   scope = new PluginScope();
@@ -47,7 +47,7 @@ afterEach(async () => {
 
 describe('Deep Research menu scope', () => {
   it('injects cached labels immediately and releases language updates and all effects on disable', async () => {
-    setCachedLanguage('fr');
+    await setCachedLanguage('fr');
     menu();
     activateGeminiDeepResearchExport(scope);
     vi.advanceTimersByTime(50);
@@ -55,13 +55,13 @@ describe('Deep Research menu scope', () => {
     const download = entries()[0] as HTMLElement;
     expect(download.textContent).toContain(getTranslationSync('deepResearchDownload'));
     expect(download.title).toBe(getTranslationSync('deepResearchDownloadTooltip'));
-    setCachedLanguage('ja');
+    await setCachedLanguage('ja');
     expect(download.title).toBe(getTranslationSync('deepResearchDownloadTooltip'));
     const lastTitle = download.title;
     const disposing = scope.dispose();
     expect(entries()).toHaveLength(0);
     await disposing;
-    setCachedLanguage('zh');
+    await setCachedLanguage('zh');
     expect(download.title).toBe(lastTitle);
     download.click();
     await flush();

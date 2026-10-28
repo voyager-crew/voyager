@@ -446,7 +446,7 @@ describe('ChatGPT folder Activity', () => {
       history.replaceState(null, '', `/c/${WORK_CHAT}`);
       await activate();
       await send('Ship it');
-      setCachedLanguage('zh');
+      await setCachedLanguage('zh');
       bell().click();
       await nextPass();
 
@@ -456,7 +456,7 @@ describe('ChatGPT folder Activity', () => {
       );
       expect(time).not.toMatch(/AM|PM/);
     } finally {
-      setCachedLanguage('en');
+      await setCachedLanguage('en');
       englishBrowser.mockRestore();
     }
   });

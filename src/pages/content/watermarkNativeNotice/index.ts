@@ -1,10 +1,11 @@
+import { logger } from '@/core/services/LoggerService';
 import { StorageKeys } from '@/core/types/common';
 import { WATERMARK_STORAGE_KEYS, resolveWatermarkSettings } from '@/core/utils/watermarkSettings';
 import { packagedPluginRunsHere } from '@/features/plugins/runtime/packagedFormFactor';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
 import { getCurrentLanguage } from '@/utils/i18n';
 import type { AppLanguage } from '@/utils/language';
-import { TRANSLATIONS, type TranslationKey } from '@/utils/translations';
+import { type TranslationKey, getLoadedTranslations, loadTranslations } from '@/utils/translations';
 
 import { hasCleanImageStreak } from './cleanStreak';
 
@@ -31,7 +32,22 @@ let started = false;
 let runId = 0;
 
 function t(key: TranslationKey, lang: AppLanguage): string {
-  return TRANSLATIONS[lang][key] ?? TRANSLATIONS.en[key] ?? key;
+  return getLoadedTranslations(lang)?.[key] ?? getLoadedTranslations('en')?.[key] ?? key;
+}
+
+async function loadNoticeLanguage(): Promise<AppLanguage> {
+  const language = await getCurrentLanguage();
+  try {
+    await loadTranslations(language);
+    return language;
+  } catch (error) {
+    // This notice still needs to reach eligible users when a locale chunk is unavailable.
+    logger.warn('Could not load native watermark notice language', {
+      language,
+      error: String(error),
+    });
+    return 'en';
+  }
 }
 
 function getLocalStorage(defaults: Record<string, unknown>): Promise<Record<string, unknown>> {
@@ -367,7 +383,7 @@ async function scheduleNotice(
   }
 
   const detectedClean = hasCleanImageStreak(stored[StorageKeys.WATERMARK_CLEAN_IMAGE_STREAK]);
-  const lang = await getCurrentLanguage();
+  const lang = await loadNoticeLanguage();
   if (currentRunId !== runId) return;
 
   noticeTimer = window.setTimeout(async () => {
@@ -422,12 +438,16 @@ export function startWatermarkNativeNotice(
   // Debug helper: switch the DevTools console context to this content script
   // and call __gvWatermarkNotice() to force the dialog open.
   (window as unknown as Record<string, unknown>).__gvWatermarkNotice = async () => {
-    const lang = await getCurrentLanguage();
+    const lang = await loadNoticeLanguage();
     removeExistingNotice();
     mountNotice(lang, true, () => {});
   };
 
-  void scheduleNotice(delayMs, currentRunId, settleOnce, runsHere);
+  void scheduleNotice(delayMs, currentRunId, settleOnce, runsHere).catch((error: unknown) => {
+    if (currentRunId !== runId) return;
+    logger.warn('Could not prepare native watermark notice', { error: String(error) });
+    settleOnce();
+  });
 
   return () => {
     started = false;

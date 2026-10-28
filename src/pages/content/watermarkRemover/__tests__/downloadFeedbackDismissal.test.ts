@@ -10,12 +10,12 @@ async function settle(): Promise<void> {
   await Promise.resolve();
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.useFakeTimers();
   document.head.replaceChildren();
   document.body.replaceChildren();
   document.getElementById('gv-watermark-bridge')?.remove();
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
   vi.mocked(chrome.storage.sync.get).mockImplementation(async () => ({
     gvWatermarkDownloadEnabled: true,
     gvWatermarkPreviewEnabled: false,
@@ -171,7 +171,7 @@ describe('watermark download notice dismissal', () => {
   });
 
   it('uses the localized close button while downloading', async () => {
-    setCachedLanguage('zh');
+    await setCachedLanguage('zh');
     await startDownload();
     const [notice] = toastDriver.all();
     expect(toastDriver.labels(notice)).toContain('关闭');

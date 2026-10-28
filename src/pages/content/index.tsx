@@ -124,6 +124,7 @@ async function initializeFeatures(): Promise<void> {
       return;
     }
 
+    await settle(initI18n());
     await settle(promptManager.startComposerFeatures());
 
     const delay = (ms: number) => settle(yieldToIdle(ms));

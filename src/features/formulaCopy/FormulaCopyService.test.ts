@@ -272,7 +272,7 @@ describe('Formula copy service', () => {
   it('shows the success toast in the user-selected language, not the browser UI locale', async () => {
     // Pick Chinese the way the popup language switcher does (custom i18n layer),
     // independent of browser.i18n / the browser UI locale.
-    setCachedLanguage('zh');
+    await setCachedLanguage('zh');
     resetSingleton();
     context.service = FormulaCopyService.getInstance({ format: 'latex' });
 
@@ -291,6 +291,6 @@ describe('Formula copy service', () => {
       ['公式已复制', 'success'],
     ]);
 
-    setCachedLanguage('en');
+    await setCachedLanguage('en');
   });
 });

@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
 import { confirmDriver } from '@/tests/confirmDriver';
@@ -9,7 +9,7 @@ import { nativeHealthReporter } from '../../nativeHealth';
 import { makeTurns, mountThreadFixture } from '../adapter/__tests__/chatgptThreadFixture';
 import { buildChatGptAdapter } from '../adapter/platform/chatgpt';
 import type { ChatTurn, ConversationCollector, ExportMessage } from '../conversationCollector';
-import { type ExportDictionaries, loadExportDictionaries } from '../exportLocale';
+import type { ExportDictionaries } from '../exportLocale';
 import type { ExportSite, ExportTurnReader, ExportTurnSession } from '../exportSite';
 import { PENDING_EXPORT_SESSION_KEY, createPendingExportState } from '../pendingExportState';
 import { createChatGptExportSite } from '../sites/chatgpt';
@@ -123,9 +123,6 @@ function clickBarAction(action: string): void {
 }
 
 describe('createExportRunner', () => {
-  // A resumed run awaits lazily imported locale files: a cold import takes real time, not fake.
-  beforeAll(() => loadExportDictionaries());
-
   beforeEach(() => {
     vi.useFakeTimers();
     document.body.innerHTML = '';

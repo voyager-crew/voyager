@@ -1,8 +1,10 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
-import '@pages/options/index.css';
 import Popup from '@pages/popup/Popup';
+import '@pages/options/index.css';
+
+import { prepareExtensionPageLanguage } from '@/utils/extensionPageLanguage';
 import '@pages/popup/index.css';
 
 import '@assets/styles/tailwind.css';
@@ -16,15 +18,16 @@ function getSourceTabId(): number | undefined {
   return Number.isInteger(value) && value >= 0 ? value : undefined;
 }
 
-function init() {
+async function init() {
+  const initialLanguage = await prepareExtensionPageLanguage();
   const rootContainer = document.querySelector('#__root');
   if (!rootContainer) throw new Error("Can't find Options root element");
   const root = createRoot(rootContainer);
   root.render(
-    <LanguageProvider>
+    <LanguageProvider initialLanguage={initialLanguage}>
       <Popup sourceTabId={getSourceTabId()} />
     </LanguageProvider>,
   );
 }
 
-init();
+void init();

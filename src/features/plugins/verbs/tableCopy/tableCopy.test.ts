@@ -70,7 +70,7 @@ afterEach(async () => {
   await scope.dispose();
   vi.unstubAllGlobals();
   vi.useRealTimers();
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
   document.body.innerHTML = '';
 });
 
@@ -156,13 +156,13 @@ describe('tableCopy primitive', () => {
     ]);
   });
 
-  it('rendered buttons follow the Voyager language', () => {
+  it('rendered buttons follow the Voyager language', async () => {
     document.body.innerHTML = sites[0].page;
     activate(sites[0].adapter);
     const markdown = button(toolbars()[0], 'markdown');
     expect(markdown.getAttribute('aria-label')).toBe('Copy table as Markdown');
 
-    setCachedLanguage('zh');
+    await setCachedLanguage('zh');
 
     expect(markdown.getAttribute('aria-label')).toBe('将表格复制为 Markdown');
     expect(markdown.title).toBe('将表格复制为 Markdown');

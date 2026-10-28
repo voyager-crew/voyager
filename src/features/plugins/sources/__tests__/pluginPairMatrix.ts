@@ -36,7 +36,6 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { findComposer, readComposer } from '@/core/services/composer';
 import { startSendKeyCoordinator } from '@/core/services/composer/sendKeys/sendKeyCoordinator';
 import type { SendSiteId } from '@/core/services/composer/sendKeys/sendSitePolicies';
-import { loadExportDictionaries } from '@/pages/content/export/exportLocale';
 import { installNativeEditingMock } from '@/tests/nativeEditing';
 
 import { requireBundledSiteAdapter } from '../../catalog/sites';
@@ -278,11 +277,8 @@ export function definePluginPairMatrix(siteId: string, options: PairMatrixOption
       if (SEND_SITES.has(siteId)) startSendKeyCoordinator(siteId as SendSiteId);
       // Browsers have an editing engine; newline and quote insertion go through it.
       restoreEditing = installNativeEditingMock();
-      // User LaTeX loads KaTeX lazily, and the export toolbar mounts only after its locale files
-      // load. A cold first import takes real time that fake timers never grant, so under load the
-      // first render would differ from every later one.
+      // User LaTeX loads KaTeX lazily; fake timers cannot settle its cold first import.
       await import('katex');
-      await loadExportDictionaries();
     });
     afterAll(() => restoreEditing?.());
 

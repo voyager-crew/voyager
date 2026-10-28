@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { basename, resolve } from 'path';
 import type { NormalizedInputOptions, NormalizedOutputOptions, OutputChunk } from 'rollup';
-import type { PluginOption } from 'vite';
+import type { Plugin, PluginOption } from 'vite';
 
 import {
   CONTENT_STYLE_FILE_NAME,
@@ -63,24 +63,55 @@ export function stripDevIcons(isDev: boolean) {
   };
 }
 
-type LocaleMessages = Record<string, { message: string; description?: string }>;
+type LocaleMessages = Record<string, { message: string }>;
 
-function stripDescriptions(raw: LocaleMessages): LocaleMessages {
-  return Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, { message: v.message }]));
+function stripDescriptions(raw: unknown): LocaleMessages {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    throw new Error('Locale messages must be an object');
+  }
+  return Object.fromEntries(
+    Object.entries(raw).map(([key, entry]: [string, unknown]) => {
+      if (
+        typeof entry !== 'object' ||
+        entry === null ||
+        !('message' in entry) ||
+        typeof entry.message !== 'string'
+      ) {
+        throw new Error(`Locale message ${key} must contain a string message`);
+      }
+      return [key, { message: entry.message }];
+    }),
+  );
 }
 
-// plugin to strip `description` fields from locale JSON at build time.
-// Runs before vite:json so we return stripped JSON; vite:json then converts it to ESM normally.
-export function stripI18nDescriptions(isDev: boolean): PluginOption {
-  if (isDev) return null;
+const LOCALE_MESSAGE_PATH =
+  /(?:^|\/)src\/(?:locales\/([^/]+)\/messages\.json|features\/plugins\/verbs\/[^/]+\/messages\/([^/]+)\.json)$/;
 
+function localeMessageLanguage(id: string): string | undefined {
+  // Raw and URL imports must retain Vite's normal asset semantics.
+  if (id.includes('?')) return undefined;
+  const match = LOCALE_MESSAGE_PATH.exec(id.replace(/\\/g, '/'));
+  return match?.[1] ?? match?.[2];
+}
+
+export function localeMessagesChunk(id: string): string | undefined {
+  const language = localeMessageLanguage(id);
+  return language && language !== 'en' ? `locale-${language}` : undefined;
+}
+
+// Run after vite:json and replace its expanded object with one parsed string.
+// Read the source JSON so this stays independent of Vite's generated ESM shape.
+export function localeMessages(): Plugin {
   return {
-    name: 'strip-i18n-descriptions',
-    enforce: 'pre',
-    transform(code, id) {
-      if (!id.includes('/locales/') || !id.endsWith('messages.json')) return null;
-      const raw: LocaleMessages = JSON.parse(code);
-      return { code: JSON.stringify(stripDescriptions(raw)), map: null };
+    name: 'locale-messages',
+    enforce: 'post',
+    transform(_code, id) {
+      if (!localeMessageLanguage(id)) return null;
+      const raw: unknown = JSON.parse(fs.readFileSync(id, 'utf-8'));
+      return {
+        code: `export default JSON.parse(${JSON.stringify(JSON.stringify(stripDescriptions(raw)))});`,
+        map: null,
+      };
     },
   };
 }
@@ -100,7 +131,7 @@ export function crxI18n(options: {
   const entry = resolve(__dirname, options.src);
   const localeFiles = getJsonFiles(entry);
   const files = localeFiles.map((file) => {
-    const raw: LocaleMessages = JSON.parse(fs.readFileSync(resolve(entry, file), 'utf-8'));
+    const raw: unknown = JSON.parse(fs.readFileSync(resolve(entry, file), 'utf-8'));
     const source = options.stripDescriptions
       ? JSON.stringify(stripDescriptions(raw))
       : JSON.stringify(raw);

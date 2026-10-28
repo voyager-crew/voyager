@@ -11,12 +11,12 @@ describe('temporary handoff confirmation credit', () => {
 
   afterEach(async () => {
     await Promise.all(scopes.splice(0).map((scope) => scope.dispose()));
-    setCachedLanguage('en');
+    await setCachedLanguage('en');
     document.body.innerHTML = '';
   });
 
-  it('keeps the project name whole when the language puts it first', () => {
-    setCachedLanguage('ja');
+  it('keeps the project name whole when the language puts it first', async () => {
+    await setCachedLanguage('ja');
     const scope = new PluginScope();
     scopes.push(scope);
 

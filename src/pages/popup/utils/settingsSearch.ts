@@ -1,4 +1,9 @@
-import { TRANSLATIONS, type TranslationKey } from '@/utils/translations';
+import { APP_LANGUAGES } from '@/utils/language';
+import {
+  type TranslationKey,
+  getLoadedTranslations,
+  loadAllTranslations,
+} from '@/utils/translations';
 
 export interface SettingsSearchItem<Id extends string> {
   id: Id;
@@ -82,17 +87,21 @@ export function matchesFuzzySearch(corpus: string, query: string): boolean {
     .every((token) => tokenMatches(token, corpusTokens, compactCorpus));
 }
 
-export function buildSettingsSearchCorpus<Id extends string>(item: SettingsSearchItem<Id>): string {
-  const localized = Object.values(TRANSLATIONS).flatMap((messages) =>
-    item.keys.map((key) => messages[key]),
-  );
+function buildSettingsSearchCorpus<Id extends string>(item: SettingsSearchItem<Id>): string {
+  const localized = APP_LANGUAGES.flatMap((language) => {
+    const messages = getLoadedTranslations(language);
+    return messages ? item.keys.map((key) => messages[key]) : [];
+  });
   return [...localized, ...(item.aliases ?? [])].join(' ');
 }
 
-export function getSettingsSearchMatches<Id extends string>(
+/** Match immediately against the language tables already available in this popup. */
+export function getLoadedSettingsSearchMatches<Id extends string>(
   items: readonly SettingsSearchItem<Id>[],
   query: string,
 ): Set<Id> {
+  if (!query.trim()) return new Set(items.map((item) => item.id));
+
   const matches = new Set<Id>();
   for (const item of items) {
     if (matchesFuzzySearch(buildSettingsSearchCorpus(item), query)) {
@@ -100,4 +109,13 @@ export function getSettingsSearchMatches<Id extends string>(
     }
   }
   return matches;
+}
+
+export async function getSettingsSearchMatches<Id extends string>(
+  items: readonly SettingsSearchItem<Id>[],
+  query: string,
+): Promise<Set<Id>> {
+  // A query can be written in another language, even when the popup has never loaded it.
+  if (query.trim()) await loadAllTranslations();
+  return getLoadedSettingsSearchMatches(items, query);
 }

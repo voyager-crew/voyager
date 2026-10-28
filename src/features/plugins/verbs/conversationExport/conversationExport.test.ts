@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 // @vitest-environment-options { "url": "https://chatgpt.com/?temporary-chat=true" }
-import { type Mock, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { type Mock, afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { CHATGPT_EXPORT_OPEN_MESSAGE } from '@/features/plugins/builtin/chatgptExport/openMessage';
-import { loadExportDictionaries } from '@/pages/content/export/exportLocale';
 
 import { requireBundledSiteAdapter } from '../../catalog/sites';
 import { PluginScope } from '../../runtime/pluginScope';
@@ -46,9 +45,6 @@ function activate(adapter: SiteAdapter = chatgpt): PluginScope {
   );
   return scope;
 }
-
-// The toolbar waits on lazily imported locale files, which a cold import takes real time to load.
-beforeAll(() => loadExportDictionaries());
 
 let scope: PluginScope | null = null;
 

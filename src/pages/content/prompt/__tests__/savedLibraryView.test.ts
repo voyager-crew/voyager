@@ -3,9 +3,11 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { accountIsolationService } from '@/core/services/AccountIsolationService';
 import { StarredMessagesService } from '@/features/savedLibrary/StarredMessagesService';
 import { makeRecord } from '@/pages/content/highlight/__tests__/fixtures';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import { createSavedLibraryView } from '../savedLibraryView';
+
+const en = await loadTranslations('en');
 
 vi.mock('webextension-polyfill', () => ({ default: chrome }));
 
@@ -41,7 +43,7 @@ it('keeps a starred row after a failed removal and allows retry', async () => {
   document.body.append(list, notice);
   const view = createSavedLibraryView({
     list,
-    t: (key) => TRANSLATIONS.en[key],
+    t: (key) => en[key],
     getQuery: () => '',
     isActive: () => true,
     setNotice: (text, kind) => {
@@ -59,7 +61,7 @@ it('keeps a starred row after a failed removal and allows retry', async () => {
 
   button.click();
   await vi.waitFor(() => {
-    expect(notice.textContent).toBe(TRANSLATIONS.en.starredDeleteFailed);
+    expect(notice.textContent).toBe(en.starredDeleteFailed);
     expect(notice.dataset.kind).toBe('err');
   });
   expect(list.textContent).toContain('Saved answer');
@@ -67,7 +69,7 @@ it('keeps a starred row after a failed removal and allows retry', async () => {
 
   button.click();
   await vi.waitFor(() => expect(list.textContent).not.toContain('Saved answer'));
-  expect(notice.textContent).toBe(TRANSLATIONS.en.pm_deleted);
+  expect(notice.textContent).toBe(en.pm_deleted);
   expect(notice.dataset.kind).toBe('ok');
   expect(remove).toHaveBeenCalledWith('gemini:conv:saved', 's-aaaaaaaaaaaaaaaa');
 });
@@ -94,7 +96,7 @@ it('keeps a highlight row and reports highlight removal failure when the request
   document.body.append(list, notice);
   const view = createSavedLibraryView({
     list,
-    t: (key) => TRANSLATIONS.en[key],
+    t: (key) => en[key],
     getQuery: () => '',
     isActive: () => true,
     setNotice: (text, kind) => {
@@ -110,7 +112,7 @@ it('keeps a highlight row and reports highlight removal failure when the request
   await view.load();
   const button = list.querySelector<HTMLButtonElement>('.gv-pm-starred-remove')!;
   button.click();
-  await vi.waitFor(() => expect(notice.textContent).toBe(TRANSLATIONS.en.highlightDeleteFailed));
+  await vi.waitFor(() => expect(notice.textContent).toBe(en.highlightDeleteFailed));
   expect(notice.dataset.kind).toBe('err');
   expect(list.textContent).toContain('Highlighted answer');
   expect(button.isConnected).toBe(true);

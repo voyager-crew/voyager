@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StorageKeys } from '@/core/types/common';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadAllTranslations, loadTranslations } from '@/utils/translations';
 
 import Popup from '../../Popup';
 import {
@@ -21,6 +21,9 @@ import {
   popupRows,
   resetPopupBrowser,
 } from './popupHarness';
+
+const en = await loadTranslations('en');
+const zh = await loadTranslations('zh');
 
 // Keep Popup, its hooks and the packaged manifests real; replace only browser APIs.
 vi.mock('webextension-polyfill', async () => ({
@@ -79,7 +82,7 @@ describe('the official plugin list in the popup', () => {
     );
     expect(cards).toEqual([
       {
-        title: TRANSLATIONS.en.pluginTopicLayout,
+        title: en.pluginTopicLayout,
         rows: [
           OFFICIAL_PLUGIN_IDS.geminiChatWidth,
           OFFICIAL_PLUGIN_IDS.geminiChatFontSize,
@@ -90,7 +93,7 @@ describe('the official plugin list in the popup', () => {
         ],
       },
       {
-        title: TRANSLATIONS.en.pluginTopicSidebar,
+        title: en.pluginTopicSidebar,
         rows: [
           OFFICIAL_PLUGIN_IDS.geminiSidebarWidth,
           OFFICIAL_PLUGIN_IDS.geminiSidebarAutoHide,
@@ -99,7 +102,7 @@ describe('the official plugin list in the popup', () => {
         ],
       },
       {
-        title: TRANSLATIONS.en.pluginTopicTimeline,
+        title: en.pluginTopicTimeline,
         rows: [
           OFFICIAL_PLUGIN_IDS.geminiTimeline,
           OFFICIAL_PLUGIN_IDS.geminiMessageTimestamps,
@@ -108,7 +111,7 @@ describe('the official plugin list in the popup', () => {
         ],
       },
       {
-        title: TRANSLATIONS.en.pluginTopicContent,
+        title: en.pluginTopicContent,
         rows: [
           OFFICIAL_PLUGIN_IDS.geminiCodeCollapse,
           OFFICIAL_PLUGIN_IDS.geminiUserLatex,
@@ -117,7 +120,7 @@ describe('the official plugin list in the popup', () => {
         ],
       },
       {
-        title: TRANSLATIONS.en.pluginTopicCharts,
+        title: en.pluginTopicCharts,
         rows: [
           OFFICIAL_PLUGIN_IDS.geminiMermaid,
           OFFICIAL_PLUGIN_IDS.geminiWaveDrom,
@@ -125,7 +128,7 @@ describe('the official plugin list in the popup', () => {
         ],
       },
       {
-        title: TRANSLATIONS.en.pluginTopicExport,
+        title: en.pluginTopicExport,
         rows: [
           OFFICIAL_PLUGIN_IDS.geminiExport,
           OFFICIAL_PLUGIN_IDS.geminiCanvasCopy,
@@ -135,7 +138,7 @@ describe('the official plugin list in the popup', () => {
         ],
       },
       {
-        title: TRANSLATIONS.en.pluginTopicInput,
+        title: en.pluginTopicInput,
         rows: [
           OFFICIAL_PLUGIN_IDS.geminiCtrlEnterSend,
           OFFICIAL_PLUGIN_IDS.geminiVimInput,
@@ -146,7 +149,7 @@ describe('the official plugin list in the popup', () => {
         ],
       },
       {
-        title: TRANSLATIONS.en.pluginTopicConversations,
+        title: en.pluginTopicConversations,
         rows: [
           OFFICIAL_PLUGIN_IDS.geminiFork,
           OFFICIAL_PLUGIN_IDS.geminiBatchDelete,
@@ -162,12 +165,12 @@ describe('the official plugin list in the popup', () => {
     // The single Plugins card is gone: no card is titled Plugins any more.
     expect(
       [...container.querySelectorAll('h3')].map((heading) => heading.textContent),
-    ).not.toContain(TRANSLATIONS.en.pluginsTitle);
+    ).not.toContain(en.pluginsTitle);
     // The old Context Sync card is gone, and nothing offers a sync while its row is off.
     expect(
       [...container.querySelectorAll('h3')].map((heading) => heading.textContent),
-    ).not.toContain(TRANSLATIONS.en.contextSync);
-    expect(container.textContent).not.toContain(TRANSLATIONS.en.syncToIDE);
+    ).not.toContain(en.contextSync);
+    expect(container.textContent).not.toContain(en.syncToIDE);
     expect(new Set(listedIds()).size).toBe(listedIds().length);
     for (const id of RETIRED_SWITCH_IDS) expect(container.querySelector(`#${id}`)).toBeNull();
     for (const label of RETIRED_LAYOUT_LABELS) {
@@ -233,47 +236,48 @@ describe('the official plugin list in the popup', () => {
     ['光晕', OFFICIAL_PLUGIN_IDS.geminiHideInputHalo],
     ['代码块', OFFICIAL_PLUGIN_IDS.geminiCodeCollapse],
     ['用量', OFFICIAL_PLUGIN_IDS.geminiUsageStatus],
-    [TRANSLATIONS.en.enableQuoteReply, OFFICIAL_PLUGIN_IDS.geminiQuoteReply],
-    [TRANSLATIONS.zh.enableForkFeature, OFFICIAL_PLUGIN_IDS.geminiFork],
-    [TRANSLATIONS.en.allowCollapseWhenNotEmpty, OFFICIAL_PLUGIN_IDS.geminiInputCollapse],
+    [en.enableQuoteReply, OFFICIAL_PLUGIN_IDS.geminiQuoteReply],
+    [zh.enableForkFeature, OFFICIAL_PLUGIN_IDS.geminiFork],
+    [en.allowCollapseWhenNotEmpty, OFFICIAL_PLUGIN_IDS.geminiInputCollapse],
     ['回车', OFFICIAL_PLUGIN_IDS.geminiCtrlEnterSend],
-    [TRANSLATIONS.en.inputVimMode, OFFICIAL_PLUGIN_IDS.geminiVimInput],
-    [TRANSLATIONS.zh.draftAutoSave, OFFICIAL_PLUGIN_IDS.geminiDraftSave],
+    [en.inputVimMode, OFFICIAL_PLUGIN_IDS.geminiVimInput],
+    [zh.draftAutoSave, OFFICIAL_PLUGIN_IDS.geminiDraftSave],
     ['字号', OFFICIAL_PLUGIN_IDS.geminiChatFontSize],
     ['行高', OFFICIAL_PLUGIN_IDS.geminiChatLineHeight],
-    [TRANSLATIONS.en.chatParagraphSpacing, OFFICIAL_PLUGIN_IDS.geminiChatLineHeight],
+    [en.chatParagraphSpacing, OFFICIAL_PLUGIN_IDS.geminiChatLineHeight],
     ['message width', OFFICIAL_PLUGIN_IDS.geminiChatWidth],
     ['编辑框', OFFICIAL_PLUGIN_IDS.geminiEditInputWidth],
     ['nav rail', OFFICIAL_PLUGIN_IDS.geminiSidebarWidth],
-    [TRANSLATIONS.en.sidebarAutoHide, OFFICIAL_PLUGIN_IDS.geminiSidebarAutoHide],
-    [TRANSLATIONS.zh.sidebarFullHide, OFFICIAL_PLUGIN_IDS.geminiSidebarFullHide],
+    [en.sidebarAutoHide, OFFICIAL_PLUGIN_IDS.geminiSidebarAutoHide],
+    [zh.sidebarFullHide, OFFICIAL_PLUGIN_IDS.geminiSidebarFullHide],
     ['公式', OFFICIAL_PLUGIN_IDS.geminiFormulaCopy],
-    [TRANSLATIONS.en.formulaCopyFormatUnicodeMath, OFFICIAL_PLUGIN_IDS.geminiFormulaCopy],
-    [TRANSLATIONS.en.showHighlightTimelineMarkers, OFFICIAL_PLUGIN_IDS.geminiHighlight],
-    [TRANSLATIONS.zh.enableHighlights, OFFICIAL_PLUGIN_IDS.geminiHighlight],
+    [en.formulaCopyFormatUnicodeMath, OFFICIAL_PLUGIN_IDS.geminiFormulaCopy],
+    [en.showHighlightTimelineMarkers, OFFICIAL_PLUGIN_IDS.geminiHighlight],
+    [zh.enableHighlights, OFFICIAL_PLUGIN_IDS.geminiHighlight],
     ['推送', OFFICIAL_PLUGIN_IDS.geminiResponseNotification],
-    [TRANSLATIONS.en.syncServerPort, OFFICIAL_PLUGIN_IDS.geminiContextSync],
+    [en.syncServerPort, OFFICIAL_PLUGIN_IDS.geminiContextSync],
     ['vscode', OFFICIAL_PLUGIN_IDS.geminiContextSync],
     ['宝石', OFFICIAL_PLUGIN_IDS.geminiGemsSidebar],
     ['notebook', OFFICIAL_PLUGIN_IDS.geminiGemsSidebar],
     ['canvas', OFFICIAL_PLUGIN_IDS.geminiCanvasCopy],
     ['导出', OFFICIAL_PLUGIN_IDS.geminiExport],
-    [TRANSLATIONS.en.visualEffectSakura, OFFICIAL_PLUGIN_IDS.visualEffects],
+    [en.visualEffectSakura, OFFICIAL_PLUGIN_IDS.visualEffects],
     ['樱花', OFFICIAL_PLUGIN_IDS.visualEffects],
     ['thinking', OFFICIAL_PLUGIN_IDS.geminiDeepResearchExport],
     ['markdown', OFFICIAL_PLUGIN_IDS.geminiMarkdownFix],
     ['ruler', OFFICIAL_PLUGIN_IDS.geminiTimeline],
     ['收藏', OFFICIAL_PLUGIN_IDS.geminiTimeline],
-    [TRANSLATIONS.en.draggableTimeline, OFFICIAL_PLUGIN_IDS.geminiTimeline],
-    [TRANSLATIONS.zh.showMessageTimestamps, OFFICIAL_PLUGIN_IDS.geminiMessageTimestamps],
+    [en.draggableTimeline, OFFICIAL_PLUGIN_IDS.geminiTimeline],
+    [zh.showMessageTimestamps, OFFICIAL_PLUGIN_IDS.geminiMessageTimestamps],
     ['去水印', OFFICIAL_PLUGIN_IDS.geminiWatermarkDownload],
-    [TRANSLATIONS.en.nanobananaBadgeRecommended, OFFICIAL_PLUGIN_IDS.geminiWatermarkDownload],
-    [TRANSLATIONS.zh.nanobananaPreviewLabel, OFFICIAL_PLUGIN_IDS.geminiWatermarkPreview],
+    [en.nanobananaBadgeRecommended, OFFICIAL_PLUGIN_IDS.geminiWatermarkDownload],
+    [zh.nanobananaPreviewLabel, OFFICIAL_PLUGIN_IDS.geminiWatermarkPreview],
     ['批量删除', OFFICIAL_PLUGIN_IDS.geminiBatchDelete],
     ['bulk', OFFICIAL_PLUGIN_IDS.geminiBatchDelete],
   ])('an old search for "%s" still finds its row', async (query, id) => {
     local[StorageKeys.GV_POPUP_SETTINGS_SEARCH_QUERY] = query;
     await mount();
+    await act(async () => loadAllTranslations());
     expect(row(id)).not.toBeNull();
     // The search still filters: not every row answers.
     expect(listedIds().length).toBeLessThan(MOVED_SWITCHES.length);
@@ -281,7 +285,7 @@ describe('the official plugin list in the popup', () => {
 
   it.each([
     [
-      TRANSLATIONS.en.generalOptions,
+      en.generalOptions,
       [
         OFFICIAL_PLUGIN_IDS.geminiHideInputHalo,
         OFFICIAL_PLUGIN_IDS.geminiCodeCollapse,
@@ -297,16 +301,16 @@ describe('the official plugin list in the popup', () => {
         OFFICIAL_PLUGIN_IDS.geminiResponseNotification,
       ],
     ],
-    [TRANSLATIONS.en.formulaCopyFormat, [OFFICIAL_PLUGIN_IDS.geminiFormulaCopy]],
-    [TRANSLATIONS.en.contextSync, [OFFICIAL_PLUGIN_IDS.geminiContextSync]],
-    [TRANSLATIONS.zh.contextSync, [OFFICIAL_PLUGIN_IDS.geminiContextSync]],
-    [TRANSLATIONS.en.gemsSidebarCount, [OFFICIAL_PLUGIN_IDS.geminiGemsSidebar]],
-    [TRANSLATIONS.en.visualEffect, [OFFICIAL_PLUGIN_IDS.visualEffects]],
-    [TRANSLATIONS.zh.formulaCopyFormat, [OFFICIAL_PLUGIN_IDS.geminiFormulaCopy]],
-    [TRANSLATIONS.en.folderOptions, [OFFICIAL_PLUGIN_IDS.geminiFork]],
-    [TRANSLATIONS.en.promptManagerOptions, [OFFICIAL_PLUGIN_IDS.geminiPromptHistory]],
+    [en.formulaCopyFormat, [OFFICIAL_PLUGIN_IDS.geminiFormulaCopy]],
+    [en.contextSync, [OFFICIAL_PLUGIN_IDS.geminiContextSync]],
+    [zh.contextSync, [OFFICIAL_PLUGIN_IDS.geminiContextSync]],
+    [en.gemsSidebarCount, [OFFICIAL_PLUGIN_IDS.geminiGemsSidebar]],
+    [en.visualEffect, [OFFICIAL_PLUGIN_IDS.visualEffects]],
+    [zh.formulaCopyFormat, [OFFICIAL_PLUGIN_IDS.geminiFormulaCopy]],
+    [en.folderOptions, [OFFICIAL_PLUGIN_IDS.geminiFork]],
+    [en.promptManagerOptions, [OFFICIAL_PLUGIN_IDS.geminiPromptHistory]],
     [
-      TRANSLATIONS.en.timelineOptions,
+      en.timelineOptions,
       [
         OFFICIAL_PLUGIN_IDS.geminiPreventAutoScroll,
         OFFICIAL_PLUGIN_IDS.geminiTimeline,
@@ -314,7 +318,7 @@ describe('the official plugin list in the popup', () => {
       ],
     ],
     [
-      TRANSLATIONS.zh.timelineOptions,
+      zh.timelineOptions,
       [
         OFFICIAL_PLUGIN_IDS.geminiPreventAutoScroll,
         OFFICIAL_PLUGIN_IDS.geminiTimeline,
@@ -322,7 +326,7 @@ describe('the official plugin list in the popup', () => {
       ],
     ],
     [
-      TRANSLATIONS.en.inputCollapseOptions,
+      en.inputCollapseOptions,
       [
         OFFICIAL_PLUGIN_IDS.geminiInputCollapse,
         OFFICIAL_PLUGIN_IDS.geminiCtrlEnterSend,
@@ -331,24 +335,24 @@ describe('the official plugin list in the popup', () => {
       ],
     ],
     [
-      TRANSLATIONS.zh.inputCollapseOptions,
+      zh.inputCollapseOptions,
       [OFFICIAL_PLUGIN_IDS.geminiInputCollapse, OFFICIAL_PLUGIN_IDS.geminiVimInput],
     ],
     [
-      TRANSLATIONS.en.nanobananaOptions,
+      en.nanobananaOptions,
       [OFFICIAL_PLUGIN_IDS.geminiWatermarkDownload, OFFICIAL_PLUGIN_IDS.geminiWatermarkPreview],
     ],
     [
-      TRANSLATIONS.zh.nanobananaOptions,
+      zh.nanobananaOptions,
       [OFFICIAL_PLUGIN_IDS.geminiWatermarkDownload, OFFICIAL_PLUGIN_IDS.geminiWatermarkPreview],
     ],
-    [TRANSLATIONS.en.chatWidth, [OFFICIAL_PLUGIN_IDS.geminiChatWidth]],
-    [TRANSLATIONS.zh.chatFontSize, [OFFICIAL_PLUGIN_IDS.geminiChatFontSize]],
-    [TRANSLATIONS.en.chatLineHeight, [OFFICIAL_PLUGIN_IDS.geminiChatLineHeight]],
-    [TRANSLATIONS.en.editInputWidth, [OFFICIAL_PLUGIN_IDS.geminiEditInputWidth]],
-    [TRANSLATIONS.zh.sidebarWidth, [OFFICIAL_PLUGIN_IDS.geminiSidebarWidth]],
+    [en.chatWidth, [OFFICIAL_PLUGIN_IDS.geminiChatWidth]],
+    [zh.chatFontSize, [OFFICIAL_PLUGIN_IDS.geminiChatFontSize]],
+    [en.chatLineHeight, [OFFICIAL_PLUGIN_IDS.geminiChatLineHeight]],
+    [en.editInputWidth, [OFFICIAL_PLUGIN_IDS.geminiEditInputWidth]],
+    [zh.sidebarWidth, [OFFICIAL_PLUGIN_IDS.geminiSidebarWidth]],
     [
-      TRANSLATIONS.en.sidebarAutoHide,
+      en.sidebarAutoHide,
       [OFFICIAL_PLUGIN_IDS.geminiSidebarAutoHide, OFFICIAL_PLUGIN_IDS.geminiSidebarFullHide],
     ],
   ])(

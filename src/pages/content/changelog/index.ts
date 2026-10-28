@@ -2,6 +2,7 @@ import { StorageKeys } from '@/core/types/common';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 import { getCurrentLanguage } from '@/utils/i18n';
 import type { AppLanguage } from '@/utils/language';
+import { loadTranslations } from '@/utils/translations';
 
 import { createChangelogModal } from './modal';
 import { noteBody, notePath, pickNoteLocale } from './noteSections';
@@ -197,6 +198,7 @@ async function showChangelogModal(
   const [{ marked }, { default: DOMPurify }] = await Promise.all([
     import('marked'),
     import('dompurify'),
+    loadTranslations(lang),
   ]);
   const rawHtml = await marked.parse(localizedContent);
   const sanitizedHtml = DOMPurify.sanitize(rawHtml, {
@@ -243,7 +245,7 @@ async function showChangelogModal(
   // 6. Inject modal
   const readGateSeconds =
     applyReadGate && FORCE_POPUP_VERSIONS.has(version) ? FORCE_POPUP_READ_GATE_SECONDS : 0;
-  const overlay = createChangelogModal(sanitizedHtml, lang, readGateSeconds);
+  const overlay = await createChangelogModal(sanitizedHtml, lang, readGateSeconds);
   document.body.appendChild(overlay);
   return overlay;
 }

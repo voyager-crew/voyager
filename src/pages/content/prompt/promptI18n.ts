@@ -4,6 +4,8 @@
  */
 import browser from 'webextension-polyfill';
 
+import { logger } from '@/core/services/LoggerService';
+import { StorageKeys } from '@/core/types/common';
 import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContext';
 import { getCurrentLanguage, getTranslationSync, setCachedLanguage } from '@/utils/i18n';
 import {
@@ -25,28 +27,37 @@ export function createPromptI18n(): PromptI18n {
   return {
     t: (key: TranslationKey): string => getTranslationSync(key),
     set: async (lang: AppLanguage) => {
+      if (!browser.runtime?.id) return;
       try {
-        // Check if extension context is still valid
-        if (!browser.runtime?.id) {
-          // Extension context invalidated, skip
-          return;
+        // A superseded or failed selection must never become a saved preference.
+        if (!(await setCachedLanguage(lang))) return;
+      } catch (error) {
+        if (!isExtensionContextInvalidatedError(error)) {
+          logger.warn('Failed to load prompt manager language', {
+            language: lang,
+            error: String(error),
+          });
         }
-        setCachedLanguage(lang);
-        await browser.storage.sync.set({ language: lang });
         return;
-      } catch (e) {
+      }
+
+      try {
+        await browser.storage.sync.set({ [StorageKeys.LANGUAGE]: lang });
+      } catch (syncError) {
         try {
-          await browser.storage.local.set({ language: lang });
-          return;
+          await browser.storage.local.set({ [StorageKeys.LANGUAGE]: lang });
         } catch (localError) {
-          // Silently ignore extension context errors
           if (
-            isExtensionContextInvalidatedError(e) ||
+            isExtensionContextInvalidatedError(syncError) ||
             isExtensionContextInvalidatedError(localError)
           ) {
             return;
           }
-          console.warn('[PromptManager] Failed to set language:', e, localError);
+          logger.warn('Failed to save prompt manager language', {
+            language: lang,
+            syncError: String(syncError),
+            localError: String(localError),
+          });
         }
       }
     },

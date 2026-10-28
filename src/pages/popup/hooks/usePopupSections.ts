@@ -22,10 +22,8 @@ import {
   type PopupSettingsSearchItem,
   type PopupSettingsSearchTargetId,
 } from '../utils/popupSettingsSearchIndex';
-import {
-  getSettingsSearchMatches,
-  normalizePersistedSettingsSearchQuery,
-} from '../utils/settingsSearch';
+import { normalizePersistedSettingsSearchQuery } from '../utils/settingsSearch';
+import { useSettingsSearchMatches } from './useSettingsSearchMatches';
 
 export type PopupSectionId = NativePopupSectionId;
 
@@ -150,16 +148,15 @@ export function usePopupSections({
     () => [...POPUP_SETTINGS_SEARCH_ITEMS, ...officialPluginSearchItems],
     [officialPluginSearchItems],
   );
-  const settingsSearchMatches = useMemo(
+  const availableSearchItems = useMemo(
     () =>
-      getSettingsSearchMatches(
-        searchItems.filter((item) =>
-          isNativePopupSettingAvailable(nativePopupPlatform, item.sectionId, item.settingId),
-        ),
-        settingsSearchQuery,
+      searchItems.filter((item) =>
+        isNativePopupSettingAvailable(nativePopupPlatform, item.sectionId, item.settingId),
       ),
-    [nativePopupPlatform, searchItems, settingsSearchQuery],
+    [nativePopupPlatform, searchItems],
   );
+  const { matches: settingsSearchMatches, loading: settingsSearchLoading } =
+    useSettingsSearchMatches(availableSearchItems, settingsSearchQuery);
   const settingsSearchSections = useMemo(() => {
     if (!hasSettingsSearch) return new Set<PopupSectionId>(visibleSections);
     const sections = new Set<PopupSectionId>();
@@ -239,7 +236,7 @@ export function usePopupSections({
     settingsSearchQuery,
     updateSettingsSearchQuery,
     hasSettingsSearch,
-    hasVisibleSearchResults: displayedSections.length > 0,
+    hasVisibleSearchResults: settingsSearchLoading || displayedSections.length > 0,
     /** The sections on screen, in display order. */
     displayedSections,
     shouldShowSetting,

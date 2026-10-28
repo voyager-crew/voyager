@@ -49,9 +49,9 @@ async function repairComposer(): Promise<void> {
   retire = lifetime.stop;
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.useFakeTimers();
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
   scope = new PluginScope();
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
     x: 0,
@@ -227,10 +227,10 @@ it.each(['composer', 'assistantTurn'] as const)(
     const baseline = badges().map(badgeLabel);
     expect(baseline).toHaveLength(1);
     moveToDialog(owner);
-    setCachedLanguage('zh');
+    await setCachedLanguage('zh');
     expect(badges()).toHaveLength(0);
     (target === 'composer' ? document.body : document.querySelector('main')!).append(owner);
-    setCachedLanguage('en');
+    await setCachedLanguage('en');
     expect(badges().map(badgeLabel)).toEqual(baseline);
   },
 );

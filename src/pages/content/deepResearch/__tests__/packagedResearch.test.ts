@@ -10,11 +10,11 @@ import { extractDeepResearchReportTitle, findDeepResearchReportRoot } from '../r
 
 const cleanups: Array<() => void> = [];
 const scopes: PluginScope[] = [];
-beforeEach(() => {
+beforeEach(async () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-10-26T12:00:00Z'));
   document.title = 'Research conversation';
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
 });
 afterEach(async () => {
   cleanups

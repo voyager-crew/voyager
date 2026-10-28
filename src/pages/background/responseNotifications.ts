@@ -17,9 +17,9 @@ import {
 import { matchesAnyPattern } from '@/features/plugins/sites/matchPattern';
 import { isPluginEnabled } from '@/features/plugins/storage/pluginDefaults';
 import { loadPluginState } from '@/features/plugins/storage/pluginState';
-import { getTranslation } from '@/utils/i18n';
 import type { TranslationKey } from '@/utils/translations';
 
+import { getTranslation } from './allTranslations';
 import { type NotificationSite, siteNotificationIcon } from './notificationSiteIcon';
 
 const RESPONSE_COMPLETE_NOTIFICATION_DEDUP_MS = 3000;

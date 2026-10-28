@@ -1,131 +1,32 @@
-import React, { act } from 'react';
-import { type Root, createRoot } from 'react-dom/client';
+import { act } from 'react';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StorageKeys } from '@/core/types/common';
 import {
   PLUGIN_CATALOG_REFRESH_MESSAGE,
   PLUGIN_STATUS_MESSAGE,
 } from '@/features/plugins/runtime/messages';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
-import { TRANSLATIONS } from '@/utils/translations';
 
-import Popup from '../Popup';
-
-const extensionApi = vi.hoisted(() => ({
-  storage: {
-    sync: { get: vi.fn(), set: vi.fn(), remove: vi.fn(), getBytesInUse: vi.fn() },
-    local: { get: vi.fn(), set: vi.fn(), remove: vi.fn(), getBytesInUse: vi.fn() },
-    onChanged: { addListener: vi.fn(), removeListener: vi.fn() },
-  },
-  tabs: { get: vi.fn(), query: vi.fn(), sendMessage: vi.fn(), create: vi.fn() },
-  runtime: {
-    id: 'test-extension-id',
-    getManifest: vi.fn(),
-    getURL: vi.fn((path: string) => `chrome-extension://test-extension-id/${path}`),
-    sendMessage: vi.fn(),
-    onMessage: { addListener: vi.fn(), removeListener: vi.fn() },
-  },
-  permissions: { contains: vi.fn(), request: vi.fn() },
-  notifications: { create: vi.fn() },
-  i18n: { getUILanguage: vi.fn(() => 'en'), getMessage: vi.fn((key: string) => key) },
-}));
-
-// Keep Popup and its settings components/hooks real; replace only browser APIs.
-vi.mock('webextension-polyfill', () => ({ default: extensionApi }));
-
-const MERMAID_SWITCH = `[data-official-plugin="${OFFICIAL_PLUGIN_IDS.geminiMermaid}"] input`;
-const pluginRow = (id: string) => `[data-official-plugin="${id}"]`;
-
-function readStorage(keys: unknown, stored: Record<string, unknown>): Record<string, unknown> {
-  if (typeof keys === 'string') return { [keys]: stored[keys] };
-  if (Array.isArray(keys)) return Object.fromEntries(keys.map((key) => [key, stored[key]]));
-  if (keys && typeof keys === 'object') {
-    return Object.fromEntries(
-      Object.entries(keys).map(([key, fallback]) => [
-        key,
-        Object.hasOwn(stored, key) ? stored[key] : fallback,
-      ]),
-    );
-  }
-  return { ...stored };
-}
+import {
+  container,
+  en,
+  extensionApi,
+  local,
+  MERMAID_SWITCH,
+  mount,
+  openRailOptions,
+  pluginRow,
+  sync,
+  unmount,
+} from './popupHarness';
 
 describe('Popup settings integration', () => {
-  let container: HTMLDivElement;
-  let root: Root;
-  let local: Record<string, unknown>;
-  let sync: Record<string, unknown>;
-
-  beforeEach(() => {
-    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-    vi.clearAllMocks();
-    vi.stubGlobal('chrome', extensionApi);
-    local = {
-      [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'badge',
-      [StorageKeys.CHANGELOG_DISMISSED_VERSION]: '1.8.2',
-    };
-    sync = { [StorageKeys.MERMAID_ENABLED]: false };
-    for (const [area, stored] of [
-      ['local', local],
-      ['sync', sync],
-    ] as const) {
-      extensionApi.storage[area].get.mockImplementation((keys: unknown, callback?: unknown) => {
-        const result = readStorage(keys, stored);
-        if (typeof callback === 'function') callback(result);
-        return Promise.resolve(result);
-      });
-      extensionApi.storage[area].set.mockImplementation(
-        (updates: Record<string, unknown>, callback?: unknown) => {
-          Object.assign(stored, updates);
-          if (typeof callback === 'function') callback();
-          return Promise.resolve();
-        },
-      );
-      extensionApi.storage[area].getBytesInUse.mockResolvedValue(0);
-    }
-    extensionApi.runtime.getManifest.mockReturnValue({
-      version: '1.8.3',
-      update_url: 'https://clients2.google.com/service/update2/crx',
-    });
-    extensionApi.runtime.sendMessage.mockResolvedValue(undefined);
-    extensionApi.tabs.query.mockResolvedValue([{ id: 7, url: 'https://gemini.google.com/app' }]);
-    extensionApi.tabs.sendMessage.mockResolvedValue(undefined);
-    extensionApi.permissions.contains.mockResolvedValue(false);
-    extensionApi.permissions.request.mockResolvedValue(true);
-    container = document.createElement('div');
-    document.body.appendChild(container);
-    root = createRoot(container);
-  });
-
-  afterEach(async () => {
-    await act(async () => root.unmount());
-    container.remove();
-    vi.unstubAllGlobals();
-  });
-
-  const mount = async () => {
-    await act(async () => {
-      root.render(
-        <LanguageProvider>
-          <Popup />
-        </LanguageProvider>,
-      );
-    });
-  };
-  // A plugin site's rail options open under its plugin row, as Gemini's timeline row's do.
-  const openRailOptions = async (name: string) => {
-    const label = TRANSLATIONS.en.pluginRowOptionsFor.replace('{name}', name);
-    const button = container.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;
-    await act(async () => button.click());
-  };
-
   it('hydrates the badge inside General Options and toggles only local preferences', async () => {
     await mount();
     const generalHeading = Array.from(container.querySelectorAll('h3')).find(
-      (heading) => heading.textContent === TRANSLATIONS.en.generalOptions,
+      (heading) => heading.textContent === en.generalOptions,
     );
     expect(generalHeading).toBeDefined();
     const generalCard = generalHeading!.parentElement!;
@@ -134,7 +35,7 @@ describe('Popup settings integration', () => {
     expect(container.querySelectorAll('#changelog-notify-badge')).toHaveLength(1);
     expect(badge!.checked).toBe(true);
     expect(badge!.disabled).toBe(false);
-    expect(generalCard.textContent).toContain(TRANSLATIONS.en.changelog_badge_mode_hint);
+    expect(generalCard.textContent).toContain(en.changelog_badge_mode_hint);
 
     extensionApi.storage.local.set.mockClear();
     extensionApi.storage.sync.set.mockClear();
@@ -288,7 +189,7 @@ describe('Popup settings integration', () => {
     await mount();
     // The page targets a local plugin, so the entry opens with its toggle and the import card.
     expect(container.textContent).toContain('My Gemini tweak');
-    expect(container.textContent).toContain(TRANSLATIONS.en.localPluginsTitle);
+    expect(container.textContent).toContain(en.localPluginsTitle);
     expect(container.querySelector('#folder-enabled')).not.toBeNull();
     const messageTypes = extensionApi.runtime.sendMessage.mock.calls.map(
       ([message]) => (message as { type?: string } | undefined)?.type ?? '',
@@ -344,10 +245,10 @@ describe('Popup settings integration', () => {
 
     const formulaRow = container.querySelector(pluginRow(OFFICIAL_PLUGIN_IDS.geminiFormulaCopy))!;
     expect(formulaRow.textContent).toContain(
-      TRANSLATIONS.en.officialFeaturePausedByLocal.replace('{name}', 'My formula copy'),
+      en.officialFeaturePausedByLocal.replace('{name}', 'My formula copy'),
     );
     const vimRow = container.querySelector(pluginRow(OFFICIAL_PLUGIN_IDS.geminiVimInput))!;
-    expect(vimRow.textContent).toContain(TRANSLATIONS.en.pluginBlockedReleasing);
+    expect(vimRow.textContent).toContain(en.pluginBlockedReleasing);
     expect(vimRow.querySelector<HTMLInputElement>('input')!.disabled).toBe(false);
     // The official plugins are rows of the Plugins card, not listed as plugins.
     expect(container.querySelector('input[aria-label="My formula copy"]')).not.toBeNull();
@@ -362,13 +263,12 @@ describe('Popup settings integration', () => {
 
   it('keeps the native local plugins entry off plugin sites, which have their own plugin page', async () => {
     await mount();
-    expect(container.textContent).toContain(TRANSLATIONS.en.localPluginsNativeHint);
-    await act(async () => root.unmount());
-    root = createRoot(container);
+    expect(container.textContent).toContain(en.localPluginsNativeHint);
+    await unmount();
     extensionApi.tabs.query.mockResolvedValue([{ id: 9, url: 'https://claude.ai/new' }]);
     await mount();
-    expect(container.textContent).not.toContain(TRANSLATIONS.en.localPluginsNativeHint);
-    expect(container.textContent).toContain(TRANSLATIONS.en.localPluginsTitle);
+    expect(container.textContent).not.toContain(en.localPluginsNativeHint);
+    expect(container.textContent).toContain(en.localPluginsTitle);
   });
 
   it('reaches starred history from a timeline plugin site, even after a remembered native search', async () => {
@@ -378,10 +278,9 @@ describe('Popup settings integration', () => {
       [...container.querySelectorAll('button')].find(
         (candidate) => candidate.textContent === label,
       );
-    const starredHistoryEntry = () => button(TRANSLATIONS.en.viewStarredHistory);
+    const starredHistoryEntry = () => button(en.viewStarredHistory);
     const remount = async (url: string) => {
-      await act(async () => root.unmount());
-      root = createRoot(container);
+      await unmount();
       extensionApi.tabs.query.mockResolvedValue([{ id: 10, url }]);
       await mount();
     };
@@ -397,7 +296,7 @@ describe('Popup settings integration', () => {
     // The ChatGPT timeline plugin declares no container setting, so its options leave it out.
     expect(shown(container.querySelector('#hide-container'))).toBe(false);
     await act(async () => starredHistoryEntry()!.click());
-    expect(container.textContent).not.toContain(TRANSLATIONS.en.pluginsTitle);
+    expect(container.textContent).not.toContain(en.pluginsTitle);
 
     local[StorageKeys.GV_POPUP_SETTINGS_SEARCH_QUERY] = 'Mermaid';
     await remount('https://chatgpt.com/c/abc');
@@ -408,267 +307,6 @@ describe('Popup settings integration', () => {
     expect(starredHistoryEntry()).toBeUndefined();
   });
 
-  describe('the rail options on a ChatGPT tab', () => {
-    const PLUGIN_ID = 'voyager.chatgpt-timeline';
-    const shownButton = (label: string) =>
-      [...container.querySelectorAll('button')].find(
-        (candidate) => candidate.textContent === label && !candidate.closest('[hidden]'),
-      );
-    const chatGptTimelineSettings = () =>
-      (
-        local[StorageKeys.PLUGINS_STATE] as Record<string, { settings?: Record<string, unknown> }>
-      )?.[PLUGIN_ID]?.settings;
-
-    const mountWithOptions = async () => {
-      await mount();
-      await openRailOptions('ChatGPT · Timeline');
-    };
-
-    beforeEach(() => {
-      extensionApi.tabs.query.mockResolvedValue([{ id: 10, url: 'https://chatgpt.com/c/abc' }]);
-      local[StorageKeys.PLUGINS_STATE] = { [PLUGIN_ID]: { enabled: true, installedAt: 1 } };
-    });
-
-    it('changing the timeline style changes the ChatGPT rail, not Gemini’s', async () => {
-      sync[StorageKeys.GV_TIMELINE_ENABLED] = false;
-      await mountWithOptions();
-
-      expect(
-        container
-          .querySelector('[role="group"][aria-label="ChatGPT · Timeline"]')
-          ?.querySelector('select'),
-      ).toBeFalsy();
-      // The plugin row is the rail's only switch.
-      expect(container.querySelector('#timeline-enabled')).toBeNull();
-
-      await act(async () => shownButton(TRANSLATIONS.en.timelineStyleCompact)!.click());
-
-      expect(chatGptTimelineSettings()).toEqual(
-        expect.objectContaining({ timelineStyle: 'compact' }),
-      );
-      expect(sync).not.toHaveProperty(StorageKeys.TIMELINE_STYLE);
-      expect(sync[StorageKeys.GV_TIMELINE_ENABLED]).toBe(false);
-    });
-
-    it('choosing compact in the popup also compacts a page still running the older timeline manifest', async () => {
-      await mountWithOptions();
-
-      await act(async () => shownButton(TRANSLATIONS.en.timelineStyleCompact)!.click());
-
-      // The older manifest's rail reads `compactView`, not `timelineStyle`, until the page reloads.
-      expect(chatGptTimelineSettings()).toEqual(expect.objectContaining({ compactView: true }));
-    });
-
-    it('turning on node levels puts the ChatGPT rail back on dots', async () => {
-      local[StorageKeys.PLUGINS_STATE] = {
-        [PLUGIN_ID]: { enabled: true, installedAt: 1, settings: { timelineStyle: 'compact' } },
-      };
-      await mountWithOptions();
-      const levels = container.querySelector<HTMLInputElement>('#marker-level-enabled')!;
-      expect(
-        container.querySelector(`input[aria-label="${TRANSLATIONS.en.enableMarkerLevel}"]`),
-      ).toBeNull();
-      expect(levels.closest('[hidden]')).toBeNull();
-      expect(levels.checked).toBe(false);
-
-      await act(async () => levels.click());
-
-      expect(levels.checked).toBe(true);
-      expect(chatGptTimelineSettings()).toEqual(
-        expect.objectContaining({ timelineStyle: 'dots', markerLevel: true }),
-      );
-      expect(sync).not.toHaveProperty('geminiTimelineMarkerLevel');
-    });
-
-    it('a ChatGPT send can show its time: the rail options offer the message-times switch on ChatGPT', async () => {
-      await mountWithOptions();
-      const times = container.querySelector<HTMLInputElement>('#show-message-timestamps')!;
-      expect(times.closest('[hidden]')).toBeNull();
-      expect(times.checked).toBe(false);
-
-      await act(async () => times.click());
-
-      expect(times.checked).toBe(true);
-      // The rail records and shows send times only while this shared setting is on.
-      expect(sync[StorageKeys.GV_SHOW_MESSAGE_TIMESTAMPS]).toBe(true);
-    });
-
-    it('a timeline site that cannot record sends does not offer the message-times switch', async () => {
-      extensionApi.tabs.query.mockResolvedValue([{ id: 10, url: 'https://claude.ai/chat/abc' }]);
-      local[StorageKeys.PLUGINS_STATE] = {
-        'voyager.claude-timeline': { enabled: true, installedAt: 1 },
-      };
-      await mount();
-      await openRailOptions('Claude · Timeline');
-
-      const times = container.querySelector<HTMLInputElement>('#show-message-timestamps');
-      expect(!times || !!times.closest('[hidden]')).toBe(true);
-    });
-
-    it('a local rail keeps its own style control and gets no second one', async () => {
-      const IMPORTED_ID = 'local.me.chatgpt-rail';
-      local[StorageKeys.PLUGIN_LOCAL_MANIFESTS] = {
-        [IMPORTED_ID]: {
-          importedAt: 1,
-          updatedAt: 1,
-          manifest: {
-            id: IMPORTED_ID,
-            name: 'My ChatGPT rail',
-            version: '1.0.0',
-            description: 'A timeline for ChatGPT',
-            author: 'Me',
-            category: 'productivity',
-            license: 'MIT',
-            engine: '>=1.6.0',
-            tier: 'declarative',
-            matches: ['https://chatgpt.com/*'],
-            contributes: {
-              settings: {
-                timelineStyle: {
-                  type: 'select',
-                  label: 'Timeline style',
-                  default: 'dots',
-                  options: [
-                    { value: 'dots', label: 'Nodes' },
-                    { value: 'compact', label: 'Compact' },
-                  ],
-                },
-              },
-              domOps: [{ op: 'native', target: 'body', handler: 'turnNavigator', params: {} }],
-            },
-          },
-        },
-      };
-      local[StorageKeys.PLUGINS_STATE] = {
-        [PLUGIN_ID]: { enabled: false, installedAt: 1 },
-        [IMPORTED_ID]: { enabled: true, installedAt: 1 },
-      };
-      await mount();
-      await openRailOptions('My ChatGPT rail');
-
-      const select = container
-        .querySelector('[role="group"][aria-label="My ChatGPT rail"]')
-        ?.querySelector<HTMLSelectElement>('select');
-      expect(select).toBeTruthy();
-      expect(shownButton(TRANSLATIONS.en.timelineStyleCompact)).toBeUndefined();
-      // Its options still hold what the rail does not declare.
-      expect(shownButton(TRANSLATIONS.en.resetTimelinePosition)).toBeTruthy();
-      await act(async () => {
-        select!.value = 'compact';
-        select!.dispatchEvent(new Event('change', { bubbles: true }));
-      });
-
-      const state = local[StorageKeys.PLUGINS_STATE] as Record<
-        string,
-        { settings?: Record<string, unknown> }
-      >;
-      expect(state[IMPORTED_ID]?.settings).toEqual(
-        expect.objectContaining({ timelineStyle: 'compact' }),
-      );
-      expect(state[PLUGIN_ID]?.settings).toBeUndefined();
-    });
-
-    it('resetting the position moves the ChatGPT rail home and leaves Gemini’s where it is', async () => {
-      const placed = { version: 2, topPercent: 30, leftPercent: 80 };
-      sync['gvTimeline:chatgpt:Position'] = placed;
-      sync[StorageKeys.TIMELINE_POSITION] = placed;
-      await mountWithOptions();
-
-      await act(async () => shownButton(TRANSLATIONS.en.resetTimelinePosition)!.click());
-
-      expect(sync['gvTimeline:chatgpt:Position']).toBeNull();
-      expect(sync[StorageKeys.TIMELINE_POSITION]).toEqual(placed);
-    });
-  });
-
-  it.each([
-    ['https://claude.ai/chat/abc', 'voyager.claude-timeline', 'Claude · Timeline', true],
-    [
-      'https://chat.deepseek.com/a/chat/s/abc',
-      'voyager.deepseek-timeline',
-      'DeepSeek · Timeline',
-      false,
-    ],
-  ] as const)(
-    'offers one timeline settings entry on %s and keeps its stored values',
-    async (url, id, name, levels) => {
-      extensionApi.tabs.query.mockResolvedValue([{ id: 10, url }]);
-      local[StorageKeys.PLUGINS_STATE] = {
-        [id]: { enabled: true, installedAt: 1, settings: { timelineStyle: 'ruler' } },
-      };
-      await mount();
-      await openRailOptions(name);
-      const group = container.querySelector(`[role="group"][aria-label="${name}"]`);
-      expect(group?.querySelector('select')).toBeFalsy();
-      expect(group?.querySelector('input[type="checkbox"]')).toBeFalsy();
-      const levelSwitch = container.querySelector('#marker-level-enabled');
-      expect(!!levelSwitch && !levelSwitch.closest('[hidden]')).toBe(levels);
-      const compact = [...container.querySelectorAll('button')].find(
-        (button) =>
-          button.textContent === TRANSLATIONS.en.timelineStyleCompact &&
-          !button.closest('[hidden]'),
-      );
-      expect(compact).toBeTruthy();
-      await act(async () => compact!.click());
-      const state = local[StorageKeys.PLUGINS_STATE] as Record<
-        string,
-        { settings?: Record<string, unknown> }
-      >;
-      expect(state[id]?.settings).toEqual(
-        expect.objectContaining({ timelineStyle: 'compact', compactView: true }),
-      );
-      expect(sync).not.toHaveProperty(StorageKeys.TIMELINE_STYLE);
-    },
-  );
-
-  it('a timeline plugin site lets the user switch off the shortcuts its rail responds to', async () => {
-    extensionApi.tabs.query.mockResolvedValue([{ id: 10, url: 'https://chatgpt.com/c/abc' }]);
-    await mount();
-    const toggle = container.querySelector<HTMLInputElement>('#shortcuts-enabled');
-    expect(toggle && !toggle.closest('[hidden]')).toBeTruthy();
-
-    await act(async () => toggle!.click());
-
-    expect(sync[StorageKeys.TIMELINE_SHORTCUTS]).toEqual(
-      expect.objectContaining({ enabled: false }),
-    );
-  });
-
-  it('shows ChatGPT Cloud Sync while keeping Gemini folders and isolation off the tab', async () => {
-    extensionApi.tabs.query.mockResolvedValue([{ id: 10, url: 'https://chatgpt.com/c/abc' }]);
-    local[StorageKeys.FOLDER_DATA] = { folders: [], folderContents: {} };
-    sync[StorageKeys.GV_ACCOUNT_ISOLATION_ENABLED_GEMINI] = true;
-    await mount();
-    expect(container.querySelector('#prompt-manager-site-enabled')).not.toBeNull();
-    expect(container.textContent).toContain(TRANSLATIONS.en.cloudSync);
-    // Flex order, then DOM order, decides what the user sees first.
-    const promptCard = container
-      .querySelector('#prompt-manager-site-enabled')!
-      .closest('[style*="order"]')!;
-    const blocks = Array.from(promptCard.parentElement!.children) as HTMLElement[];
-    const shownBefore = (a: HTMLElement, b: HTMLElement) =>
-      Number(a.style.order || 0) < Number(b.style.order || 0) ||
-      (a.style.order === b.style.order && blocks.indexOf(a) < blocks.indexOf(b));
-    const syncBlock = blocks.find(
-      (block) => block !== promptCard && block.textContent?.includes(TRANSLATIONS.en.cloudSync),
-    )!;
-    const pluginList = blocks.find((block) => block.style.order === '-1')!;
-    expect(shownBefore(syncBlock, promptCard as HTMLElement)).toBe(true);
-    expect(shownBefore(syncBlock, pluginList)).toBe(true);
-    expect(container.querySelector('#account-isolation-enabled')).toBeNull();
-    expect(container.querySelector('#folder-enabled')).toBeNull();
-    const requestedLocalKeys = extensionApi.storage.local.get.mock.calls.flatMap(([keys]) =>
-      typeof keys === 'string' ? [keys] : Array.isArray(keys) ? keys : Object.keys(keys ?? {}),
-    );
-    expect(requestedLocalKeys).not.toContain(StorageKeys.FOLDER_DATA);
-    const messageTypes = extensionApi.runtime.sendMessage.mock.calls.map(
-      ([message]) => (message as { type?: string } | undefined)?.type,
-    );
-    expect(messageTypes).not.toContain('gv.sync.upload');
-    expect(messageTypes).not.toContain('gv.sync.download');
-    expect(extensionApi.storage.sync.set).not.toHaveBeenCalled();
-  });
-
   it('retains dependent input settings when search hides and then restores their row', async () => {
     await mount();
     const collapseRow = () =>
@@ -677,7 +315,7 @@ describe('Popup settings integration', () => {
       collapseRow()?.querySelector<HTMLInputElement>('input[aria-describedby]') ?? null;
     const whenNotEmpty = () =>
       collapseRow()?.querySelector<HTMLInputElement>(
-        `input[aria-label="${TRANSLATIONS.en.allowCollapseWhenNotEmpty}"]`,
+        `input[aria-label="${en.allowCollapseWhenNotEmpty}"]`,
       ) ?? null;
     await act(async () => collapseSwitch()!.click());
     await act(async () => whenNotEmpty()!.click());
@@ -685,14 +323,14 @@ describe('Popup settings integration', () => {
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(
         search,
-        TRANSLATIONS.en.enableMermaidRendering,
+        en.enableMermaidRendering,
       );
       search.dispatchEvent(new Event('input', { bubbles: true }));
     });
     expect(collapseRow()).toBeNull();
     expect(container.querySelector(MERMAID_SWITCH)).not.toBeNull();
     const clear = Array.from(container.querySelectorAll('button')).find(
-      (button) => button.getAttribute('aria-label') === TRANSLATIONS.en.popupSettingsSearchClear,
+      (button) => button.getAttribute('aria-label') === en.popupSettingsSearchClear,
     )!;
     await act(async () => clear.click());
     expect(collapseSwitch()!.checked).toBe(true);
@@ -704,42 +342,5 @@ describe('Popup settings integration', () => {
         Object.hasOwn(keys, StorageKeys.PERSISTENT_EXPORT_TOOLBAR_ENABLED),
     );
     expect(bulkReads).toHaveLength(1);
-  });
-
-  it('keeps ChatGPT Cloud Sync visible when a remembered native search has no clear control', async () => {
-    local[StorageKeys.GV_POPUP_SETTINGS_SEARCH_QUERY] = 'Mermaid';
-    await mount();
-    expect(container.querySelector<HTMLInputElement>('input[type="search"]')!.value).toBe(
-      'Mermaid',
-    );
-    expect(container.querySelector(MERMAID_SWITCH)).not.toBeNull();
-    expect(container.textContent).not.toContain(TRANSLATIONS.en.cloudSync);
-
-    await act(async () => root.unmount());
-    root = createRoot(container);
-    extensionApi.tabs.query.mockResolvedValue([{ id: 10, url: 'https://chatgpt.com/c/abc' }]);
-    await mount();
-    expect(container.querySelector('input[type="search"]')).toBeNull();
-    expect(
-      container.querySelector(`button[aria-label="${TRANSLATIONS.en.popupSettingsSearchClear}"]`),
-    ).toBeNull();
-    expect(container.querySelector('#prompt-manager-site-enabled')).not.toBeNull();
-    expect(container.textContent).toContain(TRANSLATIONS.en.cloudSync);
-    expect(container.querySelector(MERMAID_SWITCH)).toBeNull();
-
-    await act(async () => root.unmount());
-    root = createRoot(container);
-    extensionApi.tabs.query.mockResolvedValue([{ id: 7, url: 'https://gemini.google.com/app' }]);
-    await mount();
-    expect(container.querySelector<HTMLInputElement>('input[type="search"]')!.value).toBe(
-      'Mermaid',
-    );
-    expect(container.textContent).not.toContain(TRANSLATIONS.en.cloudSync);
-    const clear = container.querySelector<HTMLButtonElement>(
-      `button[aria-label="${TRANSLATIONS.en.popupSettingsSearchClear}"]`,
-    )!;
-    await act(async () => clear.click());
-    expect(container.textContent).toContain(TRANSLATIONS.en.cloudSync);
-    expect(local[StorageKeys.GV_POPUP_SETTINGS_SEARCH_QUERY]).toBe('');
   });
 });

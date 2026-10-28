@@ -28,15 +28,15 @@ import {
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/deep-research-packaged.json';
 import type { Dispose, PluginScope } from '@/features/plugins/runtime/pluginScope';
 import { getTranslationSync } from '@/utils/i18n';
-import type { AppLanguage } from '@/utils/language';
-import { TRANSLATIONS } from '@/utils/translations';
+import {
+  type Translation,
+  type TranslationKey,
+  getLoadedTranslations,
+  loadTranslations,
+} from '@/utils/translations';
 
 import { resolveExportAdapter } from '../export/adapter/platformAdapters';
-import {
-  type ExportDictionaries,
-  createExportTranslator,
-  readExportLanguage,
-} from '../export/exportLocale';
+import { readExportLanguage } from '../export/exportLocale';
 import {
   createMenuItemFromNativeTemplate,
   updateMenuItemTemplateLabel,
@@ -65,10 +65,24 @@ export function updateDeepResearchMenuLabel(button: HTMLElement): void {
   );
 }
 
+async function loadExportTranslations(): Promise<Translation> {
+  const language = await readExportLanguage();
+  try {
+    return await loadTranslations(language);
+  } catch (error) {
+    // A failed optional locale must not discard an accepted export action.
+    logger.warn('Could not load Deep Research export language', {
+      language,
+      error: String(error),
+    });
+    return getLoadedTranslations('en');
+  }
+}
+
 /**
  * Handle download button click
  */
-async function handleDownload(dict: ExportDictionaries): Promise<void> {
+async function handleDownload(): Promise<void> {
   try {
     logger.debug('Extracting Deep Research thinking content');
 
@@ -76,7 +90,8 @@ async function handleDownload(dict: ExportDictionaries): Promise<void> {
     if (!content) {
       console.warn('[Gemini Voyager] No thinking content found');
       // An empty download still needs a visible outcome, in the language selected at click time.
-      const t = createExportTranslator(dict, await readExportLanguage());
+      const messages = await loadExportTranslations();
+      const t = (key: TranslationKey): string => messages[key] ?? key;
       showExportAlert(t('deepResearchNoThinkingContent'), t, 'warning');
       return;
     }
@@ -190,7 +205,7 @@ function buildReportFilename(format: ExportFormat, title: string): string {
   return `${base}.png`;
 }
 
-function handleSaveReport(dict: ExportDictionaries, lang: AppLanguage): void {
+function handleSaveReport(messages: Translation): void {
   void (async () => {
     const reportRoot = findDeepResearchReportRoot();
     if (!reportRoot) {
@@ -215,7 +230,7 @@ function handleSaveReport(dict: ExportDictionaries, lang: AppLanguage): void {
     };
 
     const initialImageWidth = await getSavedImageExportWidth();
-    const t = createExportTranslator(dict, lang);
+    const t = (key: TranslationKey): string => messages[key] ?? key;
     const dialog = new ExportDialog();
     dialog.show({
       onExport: async (format, fontSize, imageWidth) => {
@@ -311,14 +326,14 @@ export function injectDownloadButton(
   if (!menuPanel.querySelector(`.${DOWNLOAD_BUTTON_CLASS}`)) {
     entries.push(
       createMenuButton(scope, menuContent, DOWNLOAD_BUTTON_CLASS, 'download', async () => {
-        await handleDownload(TRANSLATIONS);
+        await handleDownload();
       }),
     );
   }
   if (!menuPanel.querySelector(`.${SAVE_REPORT_BUTTON_CLASS}`)) {
     entries.push(
       createMenuButton(scope, menuContent, SAVE_REPORT_BUTTON_CLASS, 'description', async () => {
-        handleSaveReport(TRANSLATIONS, await readExportLanguage());
+        handleSaveReport(await loadExportTranslations());
       }),
     );
   }

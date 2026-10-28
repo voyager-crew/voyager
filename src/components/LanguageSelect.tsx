@@ -2,6 +2,8 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 
 import { Check, ChevronDown, Globe } from 'lucide-react';
 
+import { logger } from '@/core/services/LoggerService';
+
 import { useLanguage } from '../contexts/LanguageContext';
 import { APP_LANGUAGES, APP_LANGUAGE_LABELS, type AppLanguage } from '../utils/language';
 
@@ -39,7 +41,12 @@ export const LanguageSelect: React.FC<{ className?: string }> = ({ className }) 
   };
 
   const choose = (code: AppLanguage) => {
-    setLanguage(code);
+    void setLanguage(code).catch((error: unknown) => {
+      logger.warn('Failed to select interface language', {
+        language: code,
+        error: String(error),
+      });
+    });
     setOpen(false);
     triggerRef.current?.focus();
   };

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StorageKeys } from '@/core/types/common';
 import { isSafari } from '@/core/utils/browser';
 import { packagedPluginRunsHere } from '@/features/plugins/runtime/packagedFormFactor';
+import * as translations from '@/utils/translations';
 
 import {
   CLEAN_IMAGE_STREAK_CAP,
@@ -162,6 +163,7 @@ describe('startWatermarkNativeNotice', () => {
   afterEach(() => {
     cleanup?.();
     cleanup = null;
+    vi.restoreAllMocks();
     vi.useRealTimers();
     document.body.innerHTML = '';
   });
@@ -170,6 +172,46 @@ describe('startWatermarkNativeNotice', () => {
     await vi.advanceTimersByTimeAsync(0);
     await vi.advanceTimersByTimeAsync(0);
   }
+
+  it('still displays the notice in English when the selected language cannot load', async () => {
+    vi.spyOn(translations, 'loadTranslations').mockRejectedValueOnce(
+      new Error('locale chunk unavailable'),
+    );
+    mockLocalStorage({});
+    mockSyncStorage(legacyEnabled);
+    cleanup = startWatermarkNativeNotice(0);
+
+    await flush();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(document.querySelector('.gv-wm-notice__title')?.textContent).toBe(
+      translations.getLoadedTranslations('en')?.watermarkNotice_title,
+    );
+    expect(document.querySelector('.gv-wm-notice__btn--primary')).not.toBeNull();
+  });
+
+  it('does not revive a stopped notice when its language finishes loading', async () => {
+    const messages = await translations.loadTranslations('zh');
+    let finishLoading!: (loaded: typeof messages) => void;
+    vi.spyOn(translations, 'loadTranslations').mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishLoading = resolve;
+      }),
+    );
+    const onSettled = vi.fn();
+    mockLocalStorage({});
+    mockSyncStorage(legacyEnabled);
+    cleanup = startWatermarkNativeNotice({ delayMs: 0, onSettled });
+    await flush();
+
+    cleanup();
+    cleanup = null;
+    finishLoading(messages);
+    await flush();
+
+    expect(document.querySelector('.gv-wm-notice')).toBeNull();
+    expect(onSettled).not.toHaveBeenCalled();
+  });
 
   it('shows the dialog with steps once the delay elapses', async () => {
     mockLocalStorage({});

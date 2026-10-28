@@ -6,9 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StorageKeys } from '@/core/types/common';
 import { PLUGIN_CATALOG_REFRESH_MESSAGE } from '@/features/plugins/runtime/messages';
-import { TRANSLATIONS } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import Popup from '../Popup';
+
+const en = await loadTranslations('en');
 
 const extensionApi = vi.hoisted(() => ({
   storage: {
@@ -87,12 +89,12 @@ describe('native popup catalog updates', () => {
 
       expect(container.querySelector('#changelog-notify-badge')).not.toBeNull();
       const controls = container.querySelectorAll<HTMLInputElement>(
-        `input[aria-label="${TRANSLATIONS.en.pluginsOnlineUpdates}"]`,
+        `input[aria-label="${en.pluginsOnlineUpdates}"]`,
       );
       expect(controls).toHaveLength(online ? 1 : 0);
       if (!online) return;
       const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find(
-        (candidate) => candidate.textContent === TRANSLATIONS.en.pluginsRefresh,
+        (candidate) => candidate.textContent === en.pluginsRefresh,
       );
       expect(button).toBeDefined();
       await act(async () => button!.click());

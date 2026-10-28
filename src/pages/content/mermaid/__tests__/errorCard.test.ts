@@ -5,12 +5,12 @@ import { setCachedLanguage } from '@/utils/i18n';
 import { createMermaidErrorCard } from '../codeBlock';
 
 describe('Mermaid syntax error card', () => {
-  afterEach(() => {
-    setCachedLanguage('en');
+  afterEach(async () => {
+    await setCachedLanguage('en');
   });
 
-  it('speaks the Voyager language and keeps the Code button label bold in the hint', () => {
-    setCachedLanguage('zh');
+  it('speaks the Voyager language and keeps the Code button label bold in the hint', async () => {
+    await setCachedLanguage('zh');
 
     const card = createMermaidErrorCard('Parse error on line 2');
 

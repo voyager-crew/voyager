@@ -4,6 +4,11 @@ import { StorageKeys } from '@/core/types/common';
 
 import { REMOTE_ANNOUNCEMENTS_ALARM_NAME, RemoteAnnouncementBackgroundService } from './background';
 
+// Announcement preferences must stay usable without the content page's dynamic locale loader.
+vi.mock('@/utils/translations', () => {
+  throw new Error('A service worker cannot load the content-page translations');
+});
+
 const NOW = Date.parse('2026-06-16T12:00:00Z');
 
 const FEED = {

@@ -114,10 +114,10 @@ function quoteButton(): HTMLButtonElement {
   return control;
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   document.getSelection()?.removeAllRanges();
   document.body.replaceChildren();
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
   restoreEditing = installNativeEditingMock();
   rangeRectDescriptor = Object.getOwnPropertyDescriptor(Range.prototype, 'getBoundingClientRect');
   rangeRectsDescriptor = Object.getOwnPropertyDescriptor(Range.prototype, 'getClientRects');
@@ -143,7 +143,7 @@ afterEach(async () => {
     else Reflect.deleteProperty(Range.prototype, key);
   }
   vi.restoreAllMocks();
-  setCachedLanguage('en');
+  await setCachedLanguage('en');
   document.getSelection()?.removeAllRanges();
   document.body.replaceChildren();
 });

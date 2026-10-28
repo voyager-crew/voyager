@@ -8,9 +8,10 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import {
   contentStyleAsset,
   crxI18n,
+  localeMessages,
+  localeMessagesChunk,
   selfContainedContentScripts,
   stripDevIcons,
-  stripI18nDescriptions,
 } from './custom-vite-plugins';
 import devManifest from './manifest.dev.json';
 import manifest from './manifest.json';
@@ -85,12 +86,19 @@ export default defineConfig({
     // React Refresh from wrapping it.
     react({ exclude: /src\/pages\/content\/folder\/floatingTree\/.*\.tsx$/ }),
     stripDevIcons(isDev),
-    stripI18nDescriptions(isDev),
+    localeMessages(),
     crxI18n({ localize, src: './src/locales', stripDescriptions: !isDev }),
     contentStyleAsset(__dirname),
     // Must install its window listener synchronously at document_start.
     selfContainedContentScripts(['src/pages/content/shadowKeyGuardEntry.ts']),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: localeMessagesChunk,
+      },
+    },
+  },
   publicDir: resolve(__dirname, 'public'),
   esbuild: {
     pure: isDev ? [] : ['console.log', 'console.debug'],

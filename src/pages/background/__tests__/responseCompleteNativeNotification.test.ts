@@ -25,7 +25,7 @@ vi.mock('@/core/utils/browser', () => ({
   getVoyagerBuildTarget: () => 'safari',
   supportsExtensionNotifications: () => false,
 }));
-vi.mock('@/utils/i18n', () => ({
+vi.mock('../allTranslations', () => ({
   getTranslation: async () => 'Gemini response complete',
 }));
 

@@ -2,6 +2,8 @@ import React from 'react';
 
 import { Globe } from 'lucide-react';
 
+import { logger } from '@/core/services/LoggerService';
+
 import { useLanguage } from '../contexts/LanguageContext';
 import { APP_LANGUAGE_LABELS, getNextLanguage } from '../utils/language';
 import { Button } from './ui/button';
@@ -15,7 +17,12 @@ export const LanguageSwitcher: React.FC = () => {
   );
 
   const toggleLanguage = () => {
-    setLanguage(nextLanguage);
+    void setLanguage(nextLanguage).catch((error: unknown) => {
+      logger.warn('Failed to switch interface language', {
+        language: nextLanguage,
+        error: String(error),
+      });
+    });
   };
 
   return (
