@@ -7,13 +7,16 @@
  */
 import type { FolderData } from '@/core/types/folder';
 import type { FolderExportPlatform } from '@/core/types/sync';
+import {
+  mergeAIStudioImport,
+  readAIStudioImportFile,
+} from '@/features/folder/model/aistudioImport';
 import { FolderImportExportService } from '@/features/folder/services/FolderImportExportService';
 import { importChatGptFolders } from '@/features/folder/sites/chatgptTransfer';
 import { CLAUDE_TRANSFER } from '@/features/folder/sites/claudeIdentity';
 import { DEEPSEEK_TRANSFER } from '@/features/folder/sites/deepseekIdentity';
 import type { SiteTransfer } from '@/features/folder/sites/siteTransfer';
 import type { ImportResult } from '@/features/folder/types/import-export';
-import { mergeAIStudioImport, readAIStudioImportFile } from '@/pages/content/folder/aistudioImport';
 
 import { type FolderOpBody, type OpOutcome, parseFolderOpBody, rejected } from './folderOps';
 import type { FolderSite } from './folderOwnerPolicy';

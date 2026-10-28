@@ -3,11 +3,11 @@ import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AISTUDIO_ROOT_BUCKET_ID } from '@/features/folder/constants';
+import { mergeAIStudioImport } from '@/features/folder/model/aistudioImport';
 import enMessages from '@/locales/en/messages.json';
 import { confirmDriver } from '@/tests/confirmDriver';
 import { toastDriver } from '@/tests/toastDriver';
 
-import { mergeAIStudioImport } from '../aistudioImport';
 import type { TreeActions } from '../floatingTree/shared';
 import type { ConversationReference, FolderData } from '../types';
 import { AIStudioFolderManager } from './aistudioFolderManager';

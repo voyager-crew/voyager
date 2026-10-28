@@ -7,9 +7,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EXTENSION_VERSION } from '@/core/utils/version';
+import { readAIStudioImportFile } from '@/features/folder/model/aistudioImport';
 import { FOLDER_PLATFORMS } from '@/features/folder/platforms';
 import { FolderImportExportService } from '@/features/folder/services/FolderImportExportService';
-import { readAIStudioImportFile } from '@/pages/content/folder/aistudioImport';
 import type { FolderData } from '@/pages/content/folder/types';
 
 import { exportChatGptFolders } from '../chatgptTransfer';

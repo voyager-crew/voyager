@@ -13,6 +13,10 @@ import { describe, expect, it, vi } from 'vitest';
 import type { FolderData } from '@/core/types/folder';
 import { AISTUDIO_ROOT_BUCKET_ID } from '@/features/folder/constants';
 import {
+  mergeAIStudioImport,
+  readAIStudioImportFile,
+} from '@/features/folder/model/aistudioImport';
+import {
   GLOBAL_KEY,
   flush,
   installAIStudioFolderPage,
@@ -21,7 +25,6 @@ import {
   mount,
 } from '@/pages/content/folder/__tests__/aistudioFolderHarness';
 import { treeRoot } from '@/pages/content/folder/__tests__/aistudioTreeDriver';
-import { mergeAIStudioImport, readAIStudioImportFile } from '@/pages/content/folder/aistudioImport';
 import { treeDriver } from '@/pages/content/folder/floatingTree/__tests__/treeDriver';
 
 import builtin from './fixtures/aistudioBuiltinData.json';
