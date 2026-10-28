@@ -4,7 +4,6 @@ import { type Root, createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LanguageProvider } from '@/contexts/LanguageContext';
-import { PLATFORM_LOGOS } from '@/core/icons/platformLogos';
 import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
 import { type SyncState, DEFAULT_SYNC_STATE } from '@/core/types/sync';
@@ -405,31 +404,32 @@ describe('CloudSyncSettings platform routing', () => {
   });
 
   it.each([
-    { url: 'https://gemini.google.com/app', platform: 'gemini', label: 'Gemini' },
-    {
-      url: 'https://aistudio.google.com/prompts/new_chat',
-      platform: 'aistudio',
-      label: 'AI Studio',
-    },
-    { url: 'https://chatgpt.com/', platform: 'chatgpt', label: 'ChatGPT' },
-    { url: 'https://claude.ai/new', platform: 'claude', label: 'Claude' },
-    { url: 'https://chat.deepseek.com/', platform: 'deepseek', label: 'DeepSeek' },
+    { url: 'https://gemini.google.com/app', label: 'Gemini' },
+    { url: 'https://aistudio.google.com/prompts/new_chat', label: 'AI Studio' },
+    { url: 'https://chatgpt.com/', label: 'ChatGPT' },
+    { url: 'https://claude.ai/new', label: 'Claude' },
+    { url: 'https://chat.deepseek.com/', label: 'DeepSeek' },
+  ] as const)('names $label in the platform summary', async ({ url, label }) => {
+    installChrome(url);
+    await mount();
+    const summary = container.querySelector('[data-testid="sync-platform-summary"]');
+
+    // Read as one phrase: the plain name, with no decorative emoji before it.
+    expect(summary?.textContent).toContain(`${t.currentPlatform}: ${label}`);
+  });
+
+  it.each([
+    { url: 'https://gemini.google.com/app', image: 'gemini_sparkle' },
+    { url: 'https://aistudio.google.com/prompts/new_chat', image: '/productlogos/ai_studio/' },
   ] as const)(
-    'names $label in the platform summary beside its bundled mark',
-    async ({ url, platform, label }) => {
+    'draws the colour product image behind the summary on $url',
+    async ({ url, image }) => {
       installChrome(url);
       await mount();
-      const summary = container.querySelector('[data-testid="sync-platform-summary"]');
-      const mark = summary?.querySelector('[data-testid="sync-platform-mark"] svg');
-      const drawn = Array.from(mark?.querySelectorAll('path') ?? [], (path) =>
-        path.getAttribute('d'),
-      );
+      const logo = container.querySelector('[data-testid="sync-platform-mark"] img');
 
-      // Read as one phrase: the plain name, with no decorative emoji before it.
-      expect(summary?.textContent).toContain(`${t.currentPlatform}: ${label}`);
-      expect(mark?.getAttribute('viewBox')).toBe(PLATFORM_LOGOS[platform].viewBox);
-      expect(drawn).toEqual(PLATFORM_LOGOS[platform].paths);
-      expect(summary?.querySelector('img')).toBeNull();
+      expect(logo?.getAttribute('src')).toContain(image);
+      expect(logo?.getAttribute('alt')).toBe('');
     },
   );
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { PLATFORM_LOGOS, type PlatformLogo } from '@/core/icons/platformLogos';
+import type { SyncPlatform } from '@/core/types/sync';
 import { FOLDER_PLATFORMS } from '@/features/folder/platforms';
 import { BUNDLED_SITE_ADAPTERS } from '@/features/plugins/catalog/sites';
 
@@ -10,6 +11,7 @@ import { Label } from '../../../components/ui/label';
 import { SegmentedControl } from '../../../components/ui/segmented-control';
 import { Switch } from '../../../components/ui/switch';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { IconChatGPT, IconClaude, IconDeepSeek } from './WebsiteLogos';
 import { useCloudSyncSettings } from './useCloudSyncSettings';
 
 /**
@@ -19,6 +21,15 @@ import { useCloudSyncSettings } from './useCloudSyncSettings';
 interface CloudSyncSettingsProps {
   sourceTabId?: number;
 }
+
+const PRESET_LOGOS: Partial<Record<SyncPlatform, string | React.ComponentType>> = {
+  gemini: 'https://www.gstatic.com/lamda/images/gemini_sparkle_4g_512_lt_f94943af3be039176192d.png',
+  aistudio:
+    'https://www.gstatic.com/images/branding/productlogos/ai_studio/v1/web-512dp/logo_ai_studio_color_1x_web_512dp.png',
+  chatgpt: IconChatGPT,
+  claude: IconClaude,
+  deepseek: IconDeepSeek,
+};
 
 function CloudSyncPlatformLogo({ platform }: { platform: string }) {
   const logos: Readonly<Record<string, PlatformLogo>> = PLATFORM_LOGOS;
@@ -72,6 +83,8 @@ export function CloudSyncSettings({ sourceTabId }: CloudSyncSettingsProps = {}) 
 
   if (!hasFolderPlatform) return null;
   const label = BUNDLED_SITE_ADAPTERS.find((site) => site.id === platform)?.label || platform;
+  // Derived folder sites have no preset; catalog metadata must not crash the popup.
+  const Logo = Object.hasOwn(PRESET_LOGOS, platform) ? PRESET_LOGOS[platform] : undefined;
   return (
     <Card className="p-4">
       <CardTitle className="mb-4">{t('cloudSync')}</CardTitle>
@@ -328,9 +341,18 @@ export function CloudSyncSettings({ sourceTabId }: CloudSyncSettingsProps = {}) 
                 data-testid="sync-platform-mark"
                 className="pointer-events-none absolute inset-y-0 end-0 flex w-20 items-center justify-center overflow-hidden"
               >
-                <div className="size-16 opacity-[0.13] dark:opacity-[0.2]">
-                  <CloudSyncPlatformLogo platform={platform} />
-                </div>
+                {typeof Logo !== 'string' ? (
+                  <div className="size-16 opacity-[0.13] dark:opacity-[0.2]">
+                    {Logo ? <Logo /> : <CloudSyncPlatformLogo platform={platform} />}
+                  </div>
+                ) : (
+                  <img
+                    src={Logo}
+                    alt=""
+                    draggable={false}
+                    className="size-16 object-contain opacity-[0.13] saturate-75 select-none dark:opacity-[0.2] dark:saturate-100"
+                  />
+                )}
               </div>
             </div>
 
