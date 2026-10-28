@@ -126,9 +126,11 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
   };
 }
 
-// Mock DOM API
+// Mock DOM API. Configurable so `vi.stubGlobal('matchMedia', …)` works in the VM
+// pools too: there this adds a new property to jsdom's window, fixed by default.
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
+  configurable: true,
   value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,

@@ -12,7 +12,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/tests/setup.ts'],
+    setupFiles: ['./src/tests/vmRealm.ts', './src/tests/setup.ts'],
     // Agent and local worktrees are full checkouts inside the repo; their
     // copies of the suite belong to their own runs.
     exclude: [...configDefaults.exclude, '.claude/worktrees/**', '.worktrees/**'],
