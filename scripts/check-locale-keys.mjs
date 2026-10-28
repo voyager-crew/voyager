@@ -8,13 +8,25 @@ const localeDirectory = 'src/locales';
 const primitiveDirectory = 'src/features/plugins/verbs';
 const locales = readdirSync(localeDirectory).sort();
 const keysByLocale = new Map();
+const messagesByLocale = new Map();
 
-const readKeys = (path) => Object.keys(JSON.parse(readFileSync(path, 'utf8')));
+const readMessages = (path) => JSON.parse(readFileSync(path, 'utf8'));
+// `{name}` placeholders are filled by name, so a translation must keep exactly the English set.
+const placeholdersOf = (entry) =>
+  [...new Set([...(entry?.message ?? '').matchAll(/\{(\w+)\}/g)].map((match) => match[1]))]
+    .sort()
+    .join(',');
+const placeholderMismatches = (enMessages, messages) =>
+  Object.keys(enMessages).filter(
+    (key) => key in messages && placeholdersOf(enMessages[key]) !== placeholdersOf(messages[key]),
+  );
 
 for (const locale of locales) {
   const messagesPath = join(localeDirectory, locale, 'messages.json');
   if (!existsSync(messagesPath)) continue;
-  keysByLocale.set(locale, new Set(readKeys(messagesPath)));
+  const messages = readMessages(messagesPath);
+  messagesByLocale.set(locale, messages);
+  keysByLocale.set(locale, new Set(Object.keys(messages)));
 }
 
 const referenceKeys = keysByLocale.get('en');
@@ -29,12 +41,19 @@ for (const [locale, keys] of keysByLocale) {
 
   const missing = [...referenceKeys].filter((key) => !keys.has(key));
   const extra = [...keys].filter((key) => !referenceKeys.has(key));
-  if (missing.length === 0 && extra.length === 0) continue;
+  const mismatched = placeholderMismatches(
+    messagesByLocale.get('en'),
+    messagesByLocale.get(locale),
+  );
+  if (missing.length === 0 && extra.length === 0 && mismatched.length === 0) continue;
 
   failed = true;
-  console.error(`${locale}: missing=${missing.length} extra=${extra.length}`);
+  console.error(
+    `${locale}: missing=${missing.length} extra=${extra.length} placeholders=${mismatched.length}`,
+  );
   for (const key of missing.slice(0, 5)) console.error(`  - ${key}`);
   for (const key of extra.slice(0, 5)) console.error(`  + ${key}`);
+  for (const key of mismatched.slice(0, 5)) console.error(`  ~ ${key}`);
 }
 
 const fragmentDirectories = readdirSync(primitiveDirectory, { withFileTypes: true })
@@ -60,7 +79,8 @@ for (const directory of fragmentDirectories) {
   if (!files.has('en.json')) continue;
 
   const enPath = join(directory, 'en.json');
-  const enKeys = new Set(readKeys(enPath));
+  const enMessages = readMessages(enPath);
+  const enKeys = new Set(Object.keys(enMessages));
   fragmentKeyCount += enKeys.size;
   for (const key of enKeys) {
     if (referenceKeys.has(key)) {
@@ -75,9 +95,13 @@ for (const directory of fragmentDirectories) {
   for (const locale of keysByLocale.keys()) {
     if (locale === 'en' || !files.has(`${locale}.json`)) continue;
     const path = join(directory, `${locale}.json`);
-    const keys = new Set(readKeys(path));
+    const messages = readMessages(path);
+    const keys = new Set(Object.keys(messages));
     for (const key of enKeys) if (!keys.has(key)) fail(`${locale}.json is missing key ${key}`);
     for (const key of keys) if (!enKeys.has(key)) fail(`${locale}.json has extra key ${key}`);
+    for (const key of placeholderMismatches(enMessages, messages)) {
+      fail(`${locale}.json key ${key} has different {placeholders} from en.json`);
+    }
   }
 }
 
