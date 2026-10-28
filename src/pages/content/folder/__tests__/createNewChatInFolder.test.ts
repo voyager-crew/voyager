@@ -98,7 +98,8 @@ describe('createNewChatInFolder', () => {
   });
 
   it('stays on the new-chat page without reloading when already on /app', async () => {
-    setPageUrl('/app');
+    // The query keeps a load of /app observable: jsdom ignores one to the current URL.
+    setPageUrl('/app?hl=en');
     const nativeClick = mountNativeNewChat('/app');
 
     navigation.createNewChatInFolder('folder-1');
