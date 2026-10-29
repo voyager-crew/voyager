@@ -21,6 +21,7 @@ export interface HighlightDrivePort {
   downloadHighlightsOnly(
     accountScope: SyncAccountScope,
     interactive?: boolean,
+    purpose?: 'download' | 'upload',
   ): Promise<HighlightExportPayloadV1 | null>;
   uploadHighlightsOnly(
     payload: HighlightExportPayloadV1,
@@ -133,7 +134,7 @@ export class HighlightDriveSyncCoordinator {
     interactive: boolean = true,
   ): Promise<HighlightPushPlan> {
     try {
-      const remote = await this.drive.downloadHighlightsOnly(accountScope, interactive);
+      const remote = await this.drive.downloadHighlightsOnly(accountScope, interactive, 'upload');
       const remoteState = await this.drive.getState();
       if (!remote && remoteState.error) {
         return { ok: false, result: { ok: false, count: 0, error: remoteState.error } };

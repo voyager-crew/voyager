@@ -9,6 +9,7 @@ import type {
   SyncState,
   TimelineHierarchyDataSync,
 } from '@/core/types/sync';
+import type { UploadGuardOptions, UploadOutcome } from '@/core/types/syncUploadGuard';
 import { FOLDER_PLATFORMS } from '@/features/folder/platforms';
 import type { PluginStateMap } from '@/features/plugins/storage/pluginState';
 import { catalogStarSites } from '@/features/savedLibrary/starSitePolicy';
@@ -46,7 +47,9 @@ export class GoogleDriveFolderTransfers {
     settings: Record<string, unknown> | null = null,
     plugins: PluginStateMap | null = null,
     starStore?: StarStore,
-  ): Promise<boolean> {
+    options: UploadGuardOptions = {},
+    onGuardAllowed?: () => Promise<void>,
+  ): Promise<UploadOutcome> {
     const capturedScope = accountScope ? { ...accountScope } : null;
     const capturedHierarchyScope = timelineHierarchyAccountScope
       ? { ...timelineHierarchyAccountScope }
@@ -54,14 +57,14 @@ export class GoogleDriveFolderTransfers {
     try {
       this.updateState({ isSyncing: true, error: null });
 
-      const token = await this.session.run(() => this.auth.getToken(interactive));
+      const token = await this.session.run(() => this.auth.getToken(interactive, false));
       if (!token) {
         if (!interactive) {
           logger.info(
             '[GoogleDriveSyncService] Upload skipped: Not authenticated (non-interactive)',
           );
           this.updateState({ isSyncing: false, isAuthenticated: false });
-          return false;
+          return { kind: 'failed' };
         }
         throw new Error('Not authenticated');
       }
@@ -76,7 +79,7 @@ export class GoogleDriveFolderTransfers {
       const { syncsConversationExtras } = FOLDER_PLATFORMS[platform];
       if (syncsConversationExtras && starred && !starStore)
         throw new Error('Star uploads require the queued store');
-      const plan = payloads.planUpload({
+      const snapshot = {
         folders,
         prompts,
         starred,
@@ -87,7 +90,16 @@ export class GoogleDriveFolderTransfers {
         timelineHierarchyAccountScope: capturedHierarchyScope,
         settings,
         plugins,
-      });
+      };
+      const plan = payloads.planUpload(snapshot);
+      const guard = await payloads.guardUpload(token, snapshot, options);
+      if (guard.kind === 'refused') {
+        this.updateState({ isSyncing: false });
+        return guard;
+      }
+      await onGuardAllowed?.();
+      this.session.assertActive();
+      await this.session.run(() => this.auth.getToken(interactive));
       let commitStars: (() => Promise<void>) | undefined;
       if (syncsConversationExtras && starStore) {
         const remote = await port.read();
@@ -114,13 +126,13 @@ export class GoogleDriveFolderTransfers {
       logger.info(
         `[GoogleDriveSyncService] Upload successful - ${fileCount + (syncsConversationExtras && starStore ? 2 : 0)} file(s) for ${platform}`,
       );
-      return true;
+      return { kind: 'uploaded' };
     } catch (error) {
       if (error instanceof SyncSessionEndedError) throw error;
       const errorMessage = error instanceof Error ? error.message : 'Upload failed';
       console.error('[GoogleDriveSyncService] Upload failed:', error);
       this.updateState({ isSyncing: false, error: errorMessage });
-      return false;
+      return { kind: 'failed' };
     }
   }
 

@@ -49,15 +49,20 @@ export function handlePageRuntimeMessage(
         routeUserId?: string | null;
         email?: string | null;
         platform?: AccountPlatform;
+        persist?: unknown;
       };
       const resolvedPlatform =
         payload?.platform ??
         detectAccountPlatformFromUrl(payload?.pageUrl ?? sender.tab?.url ?? null);
-      const scope = await accountIsolationService.resolveAccountScope({
+      const hints = {
         pageUrl: payload?.pageUrl ?? sender.tab?.url ?? null,
         routeUserId: payload?.routeUserId ?? null,
         email: payload?.email ?? null,
-      });
+      };
+      const scope =
+        payload?.persist === false
+          ? await accountIsolationService.resolveAccountScope(hints, false)
+          : await accountIsolationService.resolveAccountScope(hints);
       return {
         ok: true,
         scope,

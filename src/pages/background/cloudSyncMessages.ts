@@ -49,6 +49,7 @@ async function resolveAccountScopeForMessage(
   sender: chrome.runtime.MessageSender,
   platform: SyncPlatform,
   explicitScope?: SyncAccountScope,
+  persist: boolean = true,
 ): Promise<SyncAccountScope | null> {
   if (!supportsAccountIsolation(platform)) return null;
   const enabled = await accountIsolationService.isIsolationEnabled({
@@ -58,9 +59,10 @@ async function resolveAccountScopeForMessage(
   if (!enabled) return null;
   if (explicitScope) return explicitScope;
 
-  const resolved = await accountIsolationService.resolveAccountScope({
-    pageUrl: sender.tab?.url ?? null,
-  });
+  const hints = { pageUrl: sender.tab?.url ?? null };
+  const resolved = persist
+    ? await accountIsolationService.resolveAccountScope(hints)
+    : await accountIsolationService.resolveAccountScope(hints, false);
   return toSyncAccountScope(resolved);
 }
 
@@ -73,6 +75,7 @@ type SyncPayload = {
   includeHighlights?: boolean;
   mode?: SyncMode;
   provider?: SyncProvider;
+  force?: boolean;
 };
 export function createCloudSyncMessageHandler(readers: {
   getAllStarredMessages(): Promise<StarredMessagesData>;
@@ -123,6 +126,7 @@ export function createCloudSyncMessageHandler(readers: {
           sender,
           platform,
           isSyncAccountScope(rawScope) ? rawScope : undefined,
+          false,
         );
         const { folders, prompts } = await loadAuthoritativeSyncPayload(platform, accountScope);
         const timelineHierarchyAccountScope =
@@ -135,9 +139,11 @@ export function createCloudSyncMessageHandler(readers: {
             : (timelineHierarchyAccountScope ?? (isSyncAccountScope(rawScope) ? rawScope : null));
         const shouldSyncHighlights = syncHighlights && highlightAccountScope !== null;
         // Also get the conversation extras (stars, forks, timeline hierarchy) from local storage
-        const starredDataRaw = syncsConversationExtras
-          ? await readers.getAllStarredMessages()
-          : null;
+        // The queued store reads/reconciles stars after the upload guard passes.
+        const starredDataRaw =
+          syncsConversationExtras && !readers.starStore
+            ? await readers.getAllStarredMessages()
+            : null;
         const forksDataRaw = syncsConversationExtras ? await readers.getAllForkNodes() : null;
         const timelineHierarchyData = syncsConversationExtras
           ? await loadTimelineHierarchyForSync(timelineHierarchyAccountScope)
@@ -166,7 +172,7 @@ export function createCloudSyncMessageHandler(readers: {
             state: await drive.getState(),
           };
         }
-        const success = await drive.upload(
+        const upload = await drive.upload(
           folders,
           prompts,
           starredData,
@@ -178,8 +184,23 @@ export function createCloudSyncMessageHandler(readers: {
           timelineHierarchyAccountScope,
           settingsPayload?.data ?? null,
           pluginState,
-          ...(readers.starStore ? ([readers.starStore] as const) : []),
+          readers.starStore,
+          { force: payload?.force === true },
+          accountScope && !isSyncAccountScope(rawScope)
+            ? async () => {
+                await resolveAccountScopeForMessage(sender, platform);
+              }
+            : undefined,
         );
+        if (upload.kind === 'refused') {
+          return {
+            ok: false,
+            error: upload.error,
+            refusedFiles: upload.refusedFiles,
+            state: await drive.getState(),
+          };
+        }
+        const success = upload.kind === 'uploaded';
         if (success && highlightPlan?.ok && highlightAccountScope) {
           const highlightResult = await highlightPlan.commit();
           if (!highlightResult.ok) {
@@ -317,25 +338,50 @@ export function createCloudSyncMessageHandler(readers: {
       }
       case 'gv.sync.pushPromptsMerge': {
         if (!isTrustedSharedDataSyncSender(sender)) return { ok: false, error: 'untrusted_sender' };
+        const platform: SyncPlatform = 'gemini';
         const { interactive, accountScope: rawScope } = (payload ?? {}) as {
           interactive?: boolean;
           accountScope?: unknown;
         };
         const accountScope = await resolveAccountScopeForMessage(
           sender,
-          'gemini',
+          platform,
           isSyncAccountScope(rawScope) ? rawScope : undefined,
+          false,
         );
-        // Merge cloud into local first so both sides converge to the union.
-        const cloudRead = await drive.downloadPromptsOnly(accountScope, interactive !== false);
-        if (cloudRead.kind === 'failed' || cloudRead.kind === 'unrecognized') {
+        // Guard the merged list in the prompt-owner turn, before it writes locally.
+        const cloudRead = await drive.downloadPromptsOnly(
+          accountScope,
+          interactive !== false,
+          'upload',
+        );
+        if (cloudRead.kind === 'failed') {
           return { ok: false, state: await drive.getState() };
         }
-        const cloudPayload = cloudRead.kind === 'found' ? cloudRead.value : null;
-        const localPrompts = await mergeCloudPromptsForUpload(promptLibraryOwner, cloudPayload);
-        if (!localPrompts) {
+        const cloudPayload =
+          cloudRead.kind === 'found'
+            ? cloudRead.value
+            : cloudRead.kind === 'missing'
+              ? null
+              : undefined;
+        const merged = await mergeCloudPromptsForUpload(promptLibraryOwner, cloudPayload, {
+          force: payload?.force === true,
+        });
+        if (merged.kind === 'refused') {
+          return {
+            ok: false,
+            error: merged.error,
+            refusedFiles: merged.refusedFiles,
+            state: await drive.getState(),
+          };
+        }
+        if (merged.kind === 'failed') {
           return { ok: false, state: await drive.getState() };
         }
+        if (accountScope && !isSyncAccountScope(rawScope)) {
+          await resolveAccountScopeForMessage(sender, platform);
+        }
+        const localPrompts = merged.items;
         const uploaded = await drive.uploadPromptsOnly(
           localPrompts,
           accountScope,

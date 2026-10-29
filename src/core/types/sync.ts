@@ -13,6 +13,7 @@ import type { StarredMessagesData } from '@/features/savedLibrary/starTypes';
 
 import type { FolderData } from './folder';
 import type { HighlightExportPayloadV1 } from './highlight';
+import type { UploadGuardRefusedFile } from './syncUploadGuard';
 
 /**
  * Sync mode configuration
@@ -249,6 +250,7 @@ export type SyncMessageType =
   | 'gv.sync.authenticate'
   | 'gv.sync.signOut'
   | 'gv.sync.upload'
+  | 'gv.sync.pushPromptsMerge'
   | 'gv.sync.download'
   | 'gv.sync.getState'
   | 'gv.sync.setMode'
@@ -267,6 +269,8 @@ export interface SyncMessage {
     platform?: SyncPlatform;
     accountScope?: SyncAccountScope;
     timelineHierarchyAccountScope?: SyncAccountScope;
+    /** Explicitly accepted guard refusals for this upload request only. */
+    force?: boolean;
   };
 }
 
@@ -278,4 +282,5 @@ export interface SyncResponse {
   error?: string;
   state?: SyncState;
   data?: SyncData;
+  refusedFiles?: UploadGuardRefusedFile[];
 }

@@ -85,9 +85,21 @@ async function device(overrides: Record<string, unknown> = {}) {
     },
   });
   const drive = new FakeSyncDrive();
-  for (const name of [foldersFile, promptsFile, hierarchyFile, pluginsFile, forksFile]) {
-    drive.put(name, { retained: 'cloud content' });
-  }
+  const envelope = (format: string, data: unknown) => ({ format, exportedAt: '', data });
+  drive.put(foldersFile, envelope('gemini-voyager.folders.v1', folderData));
+  drive.put(promptsFile, { format: 'gemini-voyager.prompts.v1', exportedAt: '', items: [prompt] });
+  drive.put(hierarchyFile, envelope('gemini-voyager.timeline-hierarchy.v1', hierarchy));
+  drive.put(
+    pluginsFile,
+    envelope('gemini-voyager.plugins.v1', { plugin: { enabled: true, installedAt: 1 } }),
+  );
+  drive.put(
+    forksFile,
+    envelope('gemini-voyager.forks.v1', {
+      nodes: { saved: [fork] },
+      groups: { group: ['saved:turn'] },
+    }),
+  );
   vi.stubGlobal('fetch', drive.fetch);
   vi.resetModules();
   const { createCloudSyncMessageHandler } = await import('../cloudSyncMessages');

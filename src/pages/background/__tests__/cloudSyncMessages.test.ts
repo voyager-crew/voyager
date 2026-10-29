@@ -115,7 +115,7 @@ beforeEach(() => {
   mocks.isolation.resolveAccountScope.mockResolvedValue(scope);
   mocks.highlights.requested.mockResolvedValue(false);
   mocks.drive.runExclusive.mockImplementation((run) => run(mocks.drive));
-  mocks.drive.upload.mockResolvedValue(true);
+  mocks.drive.upload.mockResolvedValue({ kind: 'uploaded' });
   mocks.drive.download.mockResolvedValue({ folders: folder('Cloud') });
   mocks.drive.uploadPromptsOnly.mockResolvedValue(true);
   mocks.drive.getState.mockResolvedValue(state);
@@ -177,6 +177,9 @@ describe('cloud sync messages', () => {
         null,
         { gvTheme: 'dark' },
         { 'voyager.test': { enabled: true, installedAt: 1 } },
+        undefined,
+        { force: false },
+        undefined,
       );
       if (platform === 'aistudio') {
         expect(snapshots.getAllStarredMessages).not.toHaveBeenCalled();
@@ -258,6 +261,9 @@ describe('cloud sync messages', () => {
       scope,
       { gvTheme: 'dark' },
       { 'voyager.test': { enabled: true, installedAt: 1 } },
+      undefined,
+      { force: false },
+      undefined,
     );
     expect(mocks.isolation.resolveAccountScope).not.toHaveBeenCalled();
   });

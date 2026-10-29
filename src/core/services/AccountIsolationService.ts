@@ -379,14 +379,17 @@ export class AccountIsolationService {
     }
   }
 
-  async resolveAccountScope(hints: AccountScopeHints = {}): Promise<AccountScope> {
+  async resolveAccountScope(
+    hints: AccountScopeHints = {},
+    persist: boolean = true,
+  ): Promise<AccountScope> {
     // Firefox bug 1873028 prevents Web Locks callbacks from returning a content-script
     // Promise. Resolve in the extension background page instead, where the existing
     // lock remains available and shared across tabs without exposing account data.
     if (shouldResolveScopeInBackground()) {
       const response: unknown = await chrome.runtime.sendMessage({
         type: ACCOUNT_SCOPE_RESOLVE_MESSAGE,
-        payload: hints,
+        payload: persist ? hints : { ...hints, persist: false },
       });
       if (!isAccountScopeResolveResponse(response)) {
         throw new Error('Failed to resolve Firefox account scope in the extension background');
@@ -468,7 +471,8 @@ export class AccountIsolationService {
           mutated = true;
         }
 
-        if (mutated) {
+        // Upload preflight resolves the same identity without creating local state on refusal.
+        if (mutated && persist) {
           await this.writeProfileMap(map);
         }
 

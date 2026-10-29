@@ -75,7 +75,9 @@ describe('prompts-only Drive merges', () => {
       template.save([{ name: 'Review', text: 'Compare the sources.' }]),
     ]);
 
-    expect(uploaded?.map((item) => item.id).sort()).toEqual(['cloud', 'local']);
+    expect(uploaded.kind).toBe('ready');
+    if (uploaded.kind !== 'ready') throw new Error('Prompt merge was not ready');
+    expect(uploaded.items.map((item) => item.id).sort()).toEqual(['cloud', 'local']);
     expect(
       stored()
         .map((item) => item.id)
@@ -92,17 +94,20 @@ describe('prompts-only Drive merges', () => {
 
     const uploaded = await mergeCloudPromptsForUpload(owner, cloud(prompt('cloud', 'Drive')));
 
-    expect(uploaded?.map((item) => item.id).sort()).toEqual(['cloud', 'local', 'template']);
-    expect(uploaded).toEqual(stored());
+    expect(uploaded.kind).toBe('ready');
+    if (uploaded.kind !== 'ready') throw new Error('Prompt merge was not ready');
+    expect(uploaded.items.map((item) => item.id).sort()).toEqual(['cloud', 'local', 'template']);
+    expect(uploaded.items).toEqual(stored());
   });
 
   it('changes nothing for an empty cloud file, and uploads the library as stored', async () => {
     const { owner, stored } = setup([prompt('local', 'Local')]);
 
     await expect(mergeCloudPrompts(owner, null)).resolves.toEqual({ ok: true, empty: true });
-    await expect(mergeCloudPromptsForUpload(owner, { items: [] })).resolves.toEqual([
-      prompt('local', 'Local'),
-    ]);
+    await expect(mergeCloudPromptsForUpload(owner, { items: [] })).resolves.toEqual({
+      kind: 'ready',
+      items: [prompt('local', 'Local')],
+    });
     expect(stored()).toEqual([prompt('local', 'Local')]);
   });
 
@@ -112,7 +117,9 @@ describe('prompts-only Drive merges', () => {
     await expect(mergeCloudPrompts(owner, cloud(prompt('c', 'C')))).resolves.toMatchObject({
       ok: false,
     });
-    await expect(mergeCloudPromptsForUpload(owner, cloud(prompt('c', 'C')))).resolves.toBeNull();
+    await expect(mergeCloudPromptsForUpload(owner, cloud(prompt('c', 'C')))).resolves.toEqual({
+      kind: 'failed',
+    });
     expect(stored()).toEqual({ not: 'a list' });
   });
 });

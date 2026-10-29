@@ -39,7 +39,14 @@ const prompt = (id: string, createdAt: number): PromptItem => ({
   createdAt,
 });
 const cloud = (...items: PromptItem[]) => PromptImportExportService.exportToPayload(items);
-const ids = (items: PromptItem[] | null) => items?.map((item) => item.id);
+const ids = (items: PromptItem[]) => items.map((item) => item.id);
+
+async function pushedFile(owner: ReturnType<typeof createPromptLibraryOwner>, drive: unknown) {
+  const uploaded = await mergeCloudPromptsForUpload(owner, drive);
+  expect(uploaded.kind).toBe('ready');
+  if (uploaded.kind !== 'ready') throw new Error('Prompt merge was not ready');
+  return cloud(...uploaded.items);
+}
 
 describe('prompt order through the prompts-only Drive merges', () => {
   it('keeps the local order on a pull and places a cloud-only prompt by its cloud neighbour', async () => {
@@ -61,8 +68,10 @@ describe('prompt order through the prompts-only Drive merges', () => {
       cloud(prompt('x', 9), prompt('a', 3), prompt('b', 2), prompt('c', 1)),
     );
 
-    expect(ids(uploaded)).toEqual(['x', 'b', 'a', 'c']);
-    expect(uploaded).toEqual(local.stored());
+    expect(uploaded.kind).toBe('ready');
+    if (uploaded.kind !== 'ready') throw new Error('Prompt merge was not ready');
+    expect(ids(uploaded.items)).toEqual(['x', 'b', 'a', 'c']);
+    expect(uploaded.items).toEqual(local.stored());
   });
 
   it('round-trips between two devices: the pusher sets Drive, a puller keeps its own order', async () => {
@@ -74,7 +83,7 @@ describe('prompt order through the prompts-only Drive merges', () => {
     // The laptop adds a prompt at the top and drags `c` first, then pushes.
     await laptop.add(prompt('new', 10));
     await laptop.reorder(['c', 'new', 'a', 'b']);
-    drive = cloud(...((await mergeCloudPromptsForUpload(laptop.owner, drive)) ?? []));
+    drive = await pushedFile(laptop.owner, drive);
 
     // The desktop had its own manual order; a pull keeps it and takes the new prompt.
     await desktop.reorder(['b', 'a', 'c']);
@@ -82,7 +91,7 @@ describe('prompt order through the prompts-only Drive merges', () => {
     expect(ids(desktop.stored())).toEqual(['b', 'a', 'c', 'new']);
 
     // The desktop pushes; Drive now holds the desktop's order, the laptop keeps its own.
-    drive = cloud(...((await mergeCloudPromptsForUpload(desktop.owner, drive)) ?? []));
+    drive = await pushedFile(desktop.owner, drive);
     await mergeCloudPrompts(laptop.owner, drive);
     expect(ids(laptop.stored())).toEqual(['c', 'new', 'a', 'b']);
     expect(ids(desktop.stored())).toEqual(['b', 'a', 'c', 'new']);

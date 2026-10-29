@@ -11,7 +11,10 @@ export function createDriveTestClient(service: GoogleDriveSyncService) {
     signOut: service.signOut.bind(service),
     runExclusive: service.runExclusive.bind(service),
     upload: (...args: Parameters<GoogleDriveSyncTransfer['upload']>) =>
-      service.runExclusive((port) => port.upload(...args)).catch(() => false),
+      service
+        .runExclusive((port) => port.upload(...args))
+        .then((result) => result.kind === 'uploaded')
+        .catch(() => false),
     download: (...args: Parameters<GoogleDriveSyncTransfer['download']>) =>
       service.runExclusive((port) => port.download(...args)).catch(() => null),
     uploadPromptsOnly: (...args: Parameters<GoogleDriveSyncTransfer['uploadPromptsOnly']>) =>

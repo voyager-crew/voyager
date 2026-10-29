@@ -27,6 +27,7 @@ export function isSafariRuntime(): boolean {
 export class GoogleDriveAuth {
   private accessToken: string | null = null;
   private tokenExpiry = 0;
+  private pendingTokenPersistence: { gvAccessToken: string; gvTokenExpiry: number } | null = null;
 
   constructor(private readonly getProvider: () => SyncProvider) {}
 
@@ -53,6 +54,7 @@ export class GoogleDriveAuth {
       if (cachedAccessToken && cachedTokenExpiry && cachedTokenExpiry > Date.now()) {
         this.accessToken = cachedAccessToken;
         this.tokenExpiry = cachedTokenExpiry;
+        this.pendingTokenPersistence = null;
         logger.info('[GoogleDriveSyncService] Loaded cached token');
       }
     } catch (error) {
@@ -60,13 +62,22 @@ export class GoogleDriveAuth {
     }
   }
 
-  private async saveToken(token: string, expiresIn: number): Promise<void> {
+  private async saveToken(token: string, expiresIn: number, persist: boolean): Promise<void> {
     this.accessToken = token;
     this.tokenExpiry = Date.now() + expiresIn * 1000 - 60000;
     if (isSafariRuntime()) return;
 
+    // A refused preflight leaves storage intact; an allowed transfer persists this same expiry.
+    this.pendingTokenPersistence = { gvAccessToken: token, gvTokenExpiry: this.tokenExpiry };
+    if (persist) await this.persistPendingToken();
+  }
+
+  private async persistPendingToken(): Promise<void> {
+    const pending = this.pendingTokenPersistence;
+    if (!pending) return;
     try {
-      await chrome.storage.local.set({ gvAccessToken: token, gvTokenExpiry: this.tokenExpiry });
+      await chrome.storage.local.set(pending);
+      if (this.pendingTokenPersistence === pending) this.pendingTokenPersistence = null;
     } catch (error) {
       console.error('[GoogleDriveSyncService] Failed to save token:', error);
     }
@@ -75,6 +86,7 @@ export class GoogleDriveAuth {
   async clear(): Promise<void> {
     this.accessToken = null;
     this.tokenExpiry = 0;
+    this.pendingTokenPersistence = null;
     try {
       await chrome.storage.local.remove(['gvAccessToken', 'gvTokenExpiry']);
     } catch (error) {
@@ -108,6 +120,7 @@ export class GoogleDriveAuth {
 
   private async requestIdentityAuthToken(
     interactive: boolean,
+    persist: boolean,
   ): Promise<{ token: string | null; userDenied: boolean }> {
     const identity = chrome.identity;
     if (!identity?.getAuthToken) {
@@ -131,7 +144,7 @@ export class GoogleDriveAuth {
       }
 
       // getAuthToken does not provide expiry; keep a short TTL and persist for worker restarts.
-      await this.saveToken(token, IDENTITY_TOKEN_TTL_SECONDS);
+      await this.saveToken(token, IDENTITY_TOKEN_TTL_SECONDS, persist);
       return { token, userDenied: false };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -145,12 +158,13 @@ export class GoogleDriveAuth {
 
   private async getTokenFromIdentity(
     interactive: boolean,
+    persist: boolean,
   ): Promise<{ token: string | null; userDenied: boolean }> {
     if (!chrome.identity?.getAuthToken) {
       return { token: null, userDenied: false };
     }
 
-    const nonInteractiveResult = await this.requestIdentityAuthToken(false);
+    const nonInteractiveResult = await this.requestIdentityAuthToken(false, persist);
     if (nonInteractiveResult.token) {
       return nonInteractiveResult;
     }
@@ -159,7 +173,7 @@ export class GoogleDriveAuth {
       return { token: null, userDenied: false };
     }
 
-    return this.requestIdentityAuthToken(true);
+    return this.requestIdentityAuthToken(true, persist);
   }
 
   private async removeCachedAuthToken(token: string): Promise<void> {
@@ -173,7 +187,7 @@ export class GoogleDriveAuth {
     });
   }
 
-  private async getTokenFromLegacyWebAuthFlow(): Promise<string | null> {
+  private async getTokenFromLegacyWebAuthFlow(persist: boolean): Promise<string | null> {
     const manifest = chrome.runtime.getManifest();
     const clientId = manifest.oauth2?.client_id;
     const scopes = manifest.oauth2?.scopes?.join(' ');
@@ -202,7 +216,7 @@ export class GoogleDriveAuth {
           }),
       });
       if (!granted) return null;
-      await this.saveToken(granted.accessToken, granted.expiresIn);
+      await this.saveToken(granted.accessToken, granted.expiresIn, persist);
       return granted.accessToken;
     } catch (error) {
       console.error('[GoogleDriveSyncService] Auth flow failed:', error);
@@ -210,7 +224,7 @@ export class GoogleDriveAuth {
     }
   }
 
-  async getToken(interactive: boolean): Promise<string | null> {
+  async getToken(interactive: boolean, persist: boolean = true): Promise<string | null> {
     if (this.getProvider() === 'icloud') {
       await checkSafariICloudAccount();
       return 'icloud';
@@ -228,12 +242,14 @@ export class GoogleDriveAuth {
     }
 
     if (this.accessToken && this.tokenExpiry > Date.now()) {
+      if (persist) await this.persistPendingToken();
       return this.accessToken;
     }
 
     if (this.accessToken && this.tokenExpiry <= Date.now()) {
       this.accessToken = null;
       this.tokenExpiry = 0;
+      this.pendingTokenPersistence = null;
     }
 
     await this.loadCachedToken();
@@ -246,7 +262,7 @@ export class GoogleDriveAuth {
     // Skip it entirely on Brave and go directly to launchWebAuthFlow.
     const supportsIdentityApi = !!chrome.identity?.getAuthToken && !isBrave();
     if (supportsIdentityApi) {
-      const identityResult = await this.getTokenFromIdentity(interactive);
+      const identityResult = await this.getTokenFromIdentity(interactive, persist);
       if (identityResult.token) {
         return identityResult.token;
       }
@@ -259,13 +275,13 @@ export class GoogleDriveAuth {
       // Some browsers (Arc) or Chrome versions may show an OAuth error page
       // during getAuthToken, which looks like "user denied" when dismissed,
       // but launchWebAuthFlow with a registered redirect URI can still succeed.
-      return this.getTokenFromLegacyWebAuthFlow();
+      return this.getTokenFromLegacyWebAuthFlow(persist);
     }
 
     if (!interactive) {
       return null;
     }
 
-    return this.getTokenFromLegacyWebAuthFlow();
+    return this.getTokenFromLegacyWebAuthFlow(persist);
   }
 }

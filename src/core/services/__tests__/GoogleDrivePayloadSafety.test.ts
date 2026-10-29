@@ -83,6 +83,16 @@ const AI_FOLDERS = 'gemini-voyager-aistudio-folders.json';
 const SETTINGS = 'gemini-voyager-settings.json';
 const PLUGINS = 'gemini-voyager-plugins.json';
 
+function putAiStudioFiles(drive: FakeSyncDrive) {
+  drive.put(AI_FOLDERS, envelope('gemini-voyager.folders.v1', folders));
+  drive.put(PROMPTS, promptPayload);
+  drive.put(SETTINGS, { kept: SETTINGS });
+  drive.put(
+    PLUGINS,
+    envelope('gemini-voyager.plugins.v1', { plugin: { enabled: true, installedAt: 1 } }),
+  );
+}
+
 function device(drive: FakeSyncDrive) {
   const local = createSyncStorage({
     gvSyncMode: 'disabled',
@@ -164,9 +174,7 @@ describe('whole upload file discovery', () => {
     'a later file search failure preserves earlier %s targets before any content writes or creates',
     async (condition) => {
       const drive = new FakeSyncDrive();
-      for (const name of [AI_FOLDERS, PROMPTS, SETTINGS, PLUGINS]) {
-        drive.put(name, { kept: name });
-      }
+      putAiStudioFiles(drive);
       if (condition === 'missing') {
         drive.files.delete(AI_FOLDERS);
         drive.files.delete(PROMPTS);
@@ -174,6 +182,7 @@ describe('whole upload file discovery', () => {
       const d = device(drive);
       const beforeDrive = new Map(drive.files);
       const beforeLocal = structuredClone(d.values);
+      let pluginFinds = 0;
       vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = new URL(String(input));
         const query = url.searchParams.get('q') ?? '';
@@ -181,8 +190,11 @@ describe('whole upload file discovery', () => {
           url.pathname === '/drive/v3/files' &&
           !query.startsWith('(') &&
           query.includes(`name='${PLUGINS}'`)
-        )
-          return Response.json({}, { status: 503 });
+        ) {
+          pluginFinds += 1;
+          // The guard reads successfully; resolving the final upload target fails.
+          if (pluginFinds > 1) return Response.json({}, { status: 503 });
+        }
         return drive.fetch(input, init);
       });
       const result = await d.service.runExclusive((port) =>
@@ -200,7 +212,7 @@ describe('whole upload file discovery', () => {
           { plugin: { enabled: true, installedAt: 1 } },
         ),
       );
-      expect(result).toBe(false);
+      expect(result).toEqual({ kind: 'failed' });
       expect(drive.files).toEqual(beforeDrive);
       expect(d.values).toEqual(beforeLocal);
     },
@@ -208,7 +220,7 @@ describe('whole upload file discovery', () => {
 
   it('a successful plan writes every AI Studio content file after discovery', async () => {
     const drive = new FakeSyncDrive();
-    for (const name of [AI_FOLDERS, PROMPTS, SETTINGS, PLUGINS]) drive.put(name, { kept: name });
+    putAiStudioFiles(drive);
     const d = device(drive);
     const result = await d.service.runExclusive((port) =>
       port.upload(
@@ -225,7 +237,7 @@ describe('whole upload file discovery', () => {
         { plugin: { enabled: true, installedAt: 1 } },
       ),
     );
-    expect(result).toBe(true);
+    expect(result).toEqual({ kind: 'uploaded' });
     expect(drive.payload(AI_FOLDERS)).toMatchObject({ data: folders });
     expect(drive.payload(PROMPTS)).toMatchObject({ items: prompts });
     expect(drive.payload(SETTINGS)).toMatchObject({ data: { gvTheme: 'dark' } });
@@ -283,7 +295,7 @@ describe('whole upload file discovery', () => {
         d.store,
       ),
     );
-    expect(result).toBe(false);
+    expect(result).toEqual({ kind: 'failed' });
     expect(drive.files).toEqual(beforeDrive);
     expect((await d.store.getAll()).messages[saved.conversationId]).toEqual([saved]);
   });

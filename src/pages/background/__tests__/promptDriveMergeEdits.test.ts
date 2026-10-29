@@ -38,10 +38,12 @@ function device(initial: PromptItem[]) {
       }),
     pull: (drive: unknown) => mergeCloudPrompts(owner, drive),
     /** Merges Drive into the library, then returns the Drive file the push uploads. */
-    push: async (drive: unknown) =>
-      PromptImportExportService.exportToPayload(
-        (await mergeCloudPromptsForUpload(owner, drive)) ?? [],
-      ),
+    push: async (drive: unknown) => {
+      const merged = await mergeCloudPromptsForUpload(owner, drive);
+      expect(merged.kind).toBe('ready');
+      if (merged.kind !== 'ready') throw new Error('Prompt merge was not ready');
+      return PromptImportExportService.exportToPayload(merged.items);
+    },
   };
 }
 

@@ -68,11 +68,14 @@ export class GoogleDriveSharedTransfers {
   async downloadPromptsOnly(
     accountScope: SyncAccountScope | null = null,
     interactive: boolean = true,
+    purpose: 'download' | 'upload' = 'download',
   ): Promise<DriveReadResult<PromptExportPayload>> {
     try {
       this.updateState({ isSyncing: true, error: null });
 
-      const token = await this.session.run(() => this.auth.getToken(interactive));
+      const token = await this.session.run(() =>
+        this.auth.getToken(interactive, purpose !== 'upload'),
+      );
       if (!token) {
         if (!interactive) {
           this.updateState({ isSyncing: false, isAuthenticated: false });
@@ -85,7 +88,10 @@ export class GoogleDriveSharedTransfers {
 
       if (prompts.kind === 'failed') throw prompts.error;
       if (prompts.kind === 'unrecognized') {
-        this.updateState({ isSyncing: false, error: 'Download failed' });
+        this.updateState({
+          isSyncing: false,
+          error: purpose === 'upload' ? null : 'Download failed',
+        });
         return prompts;
       }
       this.updateState({ isSyncing: false, error: null });
@@ -147,11 +153,14 @@ export class GoogleDriveSharedTransfers {
   async downloadHighlightsOnly(
     accountScope: SyncAccountScope,
     interactive: boolean = true,
+    purpose: 'download' | 'upload' = 'download',
   ): Promise<HighlightExportPayload | null> {
     try {
       this.updateState({ isSyncing: true, error: null });
 
-      const token = await this.session.run(() => this.auth.getToken(interactive));
+      const token = await this.session.run(() =>
+        this.auth.getToken(interactive, purpose !== 'upload'),
+      );
       if (!token) {
         if (!interactive) {
           this.updateState({ isSyncing: false, isAuthenticated: false });

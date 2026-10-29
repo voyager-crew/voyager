@@ -16,6 +16,7 @@ import type {
   TimelineHierarchyDataSync,
   TimelineHierarchyExportPayload,
 } from '@/core/types/sync';
+import type { GuardedUploadKind, UploadGuardOptions } from '@/core/types/syncUploadGuard';
 import {
   type DriveReadResult,
   readDriveValue,
@@ -34,6 +35,7 @@ import {
 
 import type { GoogleDriveFiles } from './GoogleDriveFiles';
 import { GoogleDriveUploadFiles } from './GoogleDriveUploadFiles';
+import { guardDriveUpload } from './GoogleDriveUploadGuard';
 import { logger } from './LoggerService';
 import { decodePromptDrivePayload } from './drivePromptPayload';
 
@@ -114,6 +116,31 @@ export class GoogleDriveSyncPayloads {
     >,
     private readonly uploads = new GoogleDriveUploadFiles(files),
   ) {}
+
+  async guardUpload(
+    token: string,
+    snapshot: GoogleDriveUploadSnapshot,
+    options: UploadGuardOptions,
+  ) {
+    await this.files.prepareDownload(token);
+    const definition = FOLDER_PLATFORMS[snapshot.platform];
+    const names: Record<GuardedUploadKind, string> = {
+      folders: definition.driveFoldersFileName,
+      prompts: PROMPTS_FILE_NAME,
+      plugins: PLUGINS_FILE_NAME,
+      forks: FORKS_FILE_NAME,
+      timelineHierarchy: TIMELINE_HIERARCHY_FILE_NAME,
+    };
+    return guardDriveUpload(snapshot, options, (kind) => {
+      const scope =
+        kind === 'plugins' || (kind === 'folders' && definition.accountIsolationStorageKey === null)
+          ? null
+          : kind === 'timelineHierarchy'
+            ? (snapshot.timelineHierarchyAccountScope ?? snapshot.accountScope)
+            : snapshot.accountScope;
+      return this.readScopedFile<unknown>(token, names[kind], scope);
+    });
+  }
 
   /** Materialize every file before ensure/upload can mutate Drive. */
   planUpload(snapshot: GoogleDriveUploadSnapshot): DriveUploadFile[] {
