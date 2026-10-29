@@ -4150,7 +4150,7 @@
     "description": "Shown when the bridge rules are outdated and a refresh is pending"
   },
   "bridgePolicyNeedsUpdates": {
-    "message": "ブリッジのルールが古く、オンライン更新がオフになっています。ブリッジを使い続けるにはオンにしてください。",
+    "message": "ブリッジのルールが古く、オンライン更新がオフになっています。ブリッジを使い続けるには、オンにするか、一度更新を確認してください。",
     "description": "Shown when the bridge rules are outdated and online updates are off"
   },
   "bridgeTurnOnUpdates": {

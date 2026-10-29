@@ -4150,7 +4150,7 @@
     "description": "Shown when the bridge rules are outdated and a refresh is pending"
   },
   "bridgePolicyNeedsUpdates": {
-    "message": "브리지 규칙이 오래되었고 온라인 업데이트가 꺼져 있습니다. 브리지를 계속 쓰려면 켜세요.",
+    "message": "브리지 규칙이 오래되었고 온라인 업데이트가 꺼져 있습니다. 브리지를 계속 쓰려면 켜거나 업데이트를 한 번 확인하세요.",
     "description": "Shown when the bridge rules are outdated and online updates are off"
   },
   "bridgeTurnOnUpdates": {

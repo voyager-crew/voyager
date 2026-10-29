@@ -4150,7 +4150,7 @@
     "description": "Shown when the bridge rules are outdated and a refresh is pending"
   },
   "bridgePolicyNeedsUpdates": {
-    "message": "Правила моста устарели, а онлайн-обновления отключены. Включите их, чтобы продолжить пользоваться мостом.",
+    "message": "Правила моста устарели, а онлайн-обновления отключены. Включите их или один раз проверьте обновления, чтобы продолжить пользоваться мостом.",
     "description": "Shown when the bridge rules are outdated and online updates are off"
   },
   "bridgeTurnOnUpdates": {

@@ -4150,7 +4150,7 @@
     "description": "Shown when the bridge rules are outdated and a refresh is pending"
   },
   "bridgePolicyNeedsUpdates": {
-    "message": "Bridge rules are out of date and online updates are off. Turn them on to keep using the bridge.",
+    "message": "Bridge rules are out of date and online updates are off. Turn them on, or check for updates once, to keep using the bridge.",
     "description": "Shown when the bridge rules are outdated and online updates are off"
   },
   "bridgeTurnOnUpdates": {

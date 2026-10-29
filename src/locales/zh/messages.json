@@ -4150,7 +4150,7 @@
     "description": "Shown when the bridge rules are outdated and a refresh is pending"
   },
   "bridgePolicyNeedsUpdates": {
-    "message": "桥接规则已过期，而在线更新已关闭。打开在线更新才能继续使用桥接。",
+    "message": "桥接规则已过期，而在线更新已关闭。打开在线更新，或手动检查一次，即可继续使用桥接。",
     "description": "Shown when the bridge rules are outdated and online updates are off"
   },
   "bridgeTurnOnUpdates": {

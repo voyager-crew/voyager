@@ -4150,7 +4150,7 @@
     "description": "Shown when the bridge rules are outdated and a refresh is pending"
   },
   "bridgePolicyNeedsUpdates": {
-    "message": "Las reglas del puente están desactualizadas y las actualizaciones en línea están desactivadas. Actívalas para seguir usando el puente.",
+    "message": "Las reglas del puente están desactualizadas y las actualizaciones en línea están desactivadas. Actívalas o busca actualizaciones una vez para seguir usando el puente.",
     "description": "Shown when the bridge rules are outdated and online updates are off"
   },
   "bridgeTurnOnUpdates": {

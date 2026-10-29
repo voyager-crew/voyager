@@ -4150,7 +4150,7 @@
     "description": "Shown when the bridge rules are outdated and a refresh is pending"
   },
   "bridgePolicyNeedsUpdates": {
-    "message": "قواعد الجسر قديمة والتحديثات عبر الإنترنت متوقفة. فعّلها لمواصلة استخدام الجسر.",
+    "message": "قواعد الجسر قديمة والتحديثات عبر الإنترنت متوقفة. فعّلها، أو تحقّق من التحديثات مرة واحدة، لمواصلة استخدام الجسر.",
     "description": "Shown when the bridge rules are outdated and online updates are off"
   },
   "bridgeTurnOnUpdates": {
