@@ -31,30 +31,51 @@ export async function flushMicrotasks(): Promise<void> {
 
 export function createCloudSyncChromeMock(
   sendSyncMessage: (message: RuntimeRequest) => unknown,
+  initial: { local?: Record<string, unknown>; sync?: Record<string, unknown> } = {},
 ): typeof chrome {
   const stored: Record<string, unknown> = {
     [StorageKeys.FOLDER_DATA]: { folders: [], folderContents: {} },
     [StorageKeys.PROMPT_ITEMS]: [],
     [StorageKeys.TIMELINE_STARRED_MESSAGES]: { messages: {} },
     [StorageKeys.TIMELINE_HIERARCHY]: { conversations: {} },
+    ...structuredClone(initial.local ?? {}),
   };
-  const local = {
+  const area = (values: Record<string, unknown>) => ({
     get: vi.fn(async (keys: unknown) => {
       const names =
-        typeof keys === 'string' ? [keys] : Array.isArray(keys) ? keys : Object.keys(keys ?? {});
+        keys === null || keys === undefined
+          ? Object.keys(values)
+          : typeof keys === 'string'
+            ? [keys]
+            : Array.isArray(keys)
+              ? keys
+              : Object.keys(keys);
       const defaults =
         keys && typeof keys === 'object' && !Array.isArray(keys)
           ? (keys as Record<string, unknown>)
           : {};
       return Object.fromEntries(
-        names.map((name) => [name, structuredClone(stored[name] ?? defaults[name])]),
+        names.flatMap((name) =>
+          Object.prototype.hasOwnProperty.call(values, name)
+            ? [[name, structuredClone(values[name])]]
+            : Object.prototype.hasOwnProperty.call(defaults, name)
+              ? [[name, structuredClone(defaults[name])]]
+              : [],
+        ),
       );
     }),
     set: vi.fn(async (items: Record<string, unknown>) => {
-      Object.assign(stored, structuredClone(items));
+      Object.assign(values, structuredClone(items));
     }),
-    remove: vi.fn().mockResolvedValue(undefined),
-  };
+    remove: vi.fn(async (keys: string | string[]) => {
+      for (const key of typeof keys === 'string' ? [keys] : keys) delete values[key];
+    }),
+    clear: vi.fn(async () => {
+      for (const key of Object.keys(values)) delete values[key];
+    }),
+  });
+  const local = area(stored);
+  const sync = area(structuredClone(initial.sync ?? {}));
   const owner = createStarStore({
     get: (keys) => local.get(keys),
     set: (items) => local.set(items),
@@ -101,12 +122,7 @@ export function createCloudSyncChromeMock(
     },
     storage: {
       local,
-      sync: {
-        get: vi.fn().mockResolvedValue({}),
-        set: vi.fn().mockResolvedValue(undefined),
-        remove: vi.fn().mockResolvedValue(undefined),
-        clear: vi.fn().mockResolvedValue(undefined),
-      },
+      sync,
       onChanged: { addListener: vi.fn(), removeListener: vi.fn() },
     },
   } as unknown as typeof chrome;

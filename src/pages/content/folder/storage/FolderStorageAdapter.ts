@@ -15,12 +15,16 @@
  * - Dependency Inversion: FolderManager depends on interface, not implementation
  * - Testability: Easy to mock storage in unit tests
  */
+import { isUndoneCloudSyncValue } from '@/core/services/CloudSyncUndoMarkers';
 import { isSafari } from '@/core/utils/browser';
 import { safariStorage } from '@/core/utils/safariStorage';
 import { LegacyFolderWriteRefusedError } from '@/features/folder/owner/legacyFolderFence';
 
 import type { FolderData } from '../types';
 import { createFolderWriter, type FolderWriter } from './folderWriter';
+
+/** Persist exact intended canonical items before any folder or derived-copy write. */
+export type FolderWriteReceipt = (items: Record<string, unknown>) => Promise<void>;
 
 /**
  * Parses a JSON string bucket. Unparseable text is returned as found, so the
@@ -32,6 +36,20 @@ function parseStoredFolderData(stored: string): FolderData {
   } catch {
     return stored as unknown as FolderData;
   }
+}
+
+/** A removed canonical bucket must not be recreated from its undone page mirror. */
+async function discardUndonePageCopy(
+  key: string,
+  stored: string,
+  write: FolderWriter,
+): Promise<boolean> {
+  if (!(await isUndoneCloudSyncValue({ area: 'local', key, value: stored }))) return false;
+  await write(key, () => {
+    // Hashing crossed an async boundary: a different page copy still belongs to its writer.
+    if (localStorage.getItem(key) === stored) localStorage.removeItem(key);
+  });
+  return true;
 }
 
 /**
@@ -69,6 +87,7 @@ export interface IFolderStorageAdapter {
     key: string,
     data: FolderData,
     companions?: Record<string, unknown>,
+    beforeWrite?: FolderWriteReceipt,
   ): Promise<boolean | void>;
 
   /**
@@ -105,6 +124,7 @@ export class LocalStorageFolderAdapter implements IFolderStorageAdapter {
       if (localData) {
         const result = await chrome.storage.local.get(key);
         if (!result[key]) {
+          if (await discardUndonePageCopy(key, localData, this.write)) return;
           // Migrate localStorage data to chrome.storage.local
           const data = JSON.parse(localData) as FolderData;
           await this.write(key, () => chrome.storage.local.set({ [key]: data }));
@@ -137,10 +157,19 @@ export class LocalStorageFolderAdapter implements IFolderStorageAdapter {
     if (!stored) {
       return null;
     }
+    if (await discardUndonePageCopy(key, stored, this.write)) return null;
     return parseStoredFolderData(stored);
   }
 
-  async saveData(key: string, data: FolderData): Promise<boolean> {
+  async saveData(
+    key: string,
+    data: FolderData,
+    _companions?: Record<string, unknown>,
+    beforeWrite?: FolderWriteReceipt,
+  ): Promise<boolean> {
+    const items = { [key]: data };
+    // A receipt failure must leave even the recoverable page mirror untouched and skip retry.
+    if (beforeWrite) await beforeWrite(items);
     try {
       const dataString = JSON.stringify(data);
       await this.write(key, () => localStorage.setItem(key, dataString));
@@ -153,7 +182,7 @@ export class LocalStorageFolderAdapter implements IFolderStorageAdapter {
 
       // Also write chrome.storage.local for popup/sync access. Loads read it first,
       // so a save it missed would be rolled back on the next load: report it failed.
-      await this.write(key, () => chrome.storage.local.set({ [key]: data }));
+      await this.write(key, () => chrome.storage.local.set(items));
 
       return true;
     } catch (error) {
@@ -220,7 +249,14 @@ export class SafariFolderAdapter implements IFolderStorageAdapter {
     return typeof stored === 'string' ? parseStoredFolderData(stored) : (stored as FolderData);
   }
 
-  async saveData(key: string, data: FolderData): Promise<boolean> {
+  async saveData(
+    key: string,
+    data: FolderData,
+    _companions?: Record<string, unknown>,
+    beforeWrite?: FolderWriteReceipt,
+  ): Promise<boolean> {
+    // Keep receipt errors outside the save/fallback result: they admit no physical write or retry.
+    if (beforeWrite) await beforeWrite({ [key]: data });
     try {
       await safariStorage.setItem(key, data, (operation) => this.write(key, operation));
 
@@ -259,6 +295,12 @@ export class SafariFolderAdapter implements IFolderStorageAdapter {
    */
   async migrateFromLocalStorage(key: string): Promise<boolean> {
     try {
+      // Check at the owning adapter before Safari's generic migration can copy a legacy mirror.
+      // Existing canonical data stays authoritative even when page storage is unreadable.
+      if (!(await safariStorage.getItem(key))) {
+        const pageCopy = localStorage.getItem(key);
+        if (pageCopy && (await discardUndonePageCopy(key, pageCopy, this.write))) return true;
+      }
       const migrated = await safariStorage.migrateFromLocalStorage(key, (operation) =>
         this.write(key, operation),
       );

@@ -56,6 +56,7 @@ export class FolderRepository extends FolderRepositoryLoads {
     this.clearAccountScopeRetry();
     this.clearReadRetry();
     this.dataSession?.deactivate();
+    if (this.dataSession) this.releaseUndoSession(this.dataSession);
     this.accountScopeRequest += 1;
   }
 
@@ -84,12 +85,16 @@ export class FolderRepository extends FolderRepositoryLoads {
       [...sessions].map(async (session) => {
         // Parked work has no drain once teardown stops authority retries.
         if (!session.saveInProgress || !this.fence.canWrite) session.cancelPendingSave();
+        await this.undoSessionCompletion(session);
         await (session.pendingSaveCompletion?.promise ?? session.activeSave);
         await session.backup.finishPendingWrites();
       }),
     )
       .then(() => undefined)
-      .finally(() => this.fence.destroy());
+      .finally(() => {
+        this.stopUndoOwners();
+        this.fence.destroy();
+      });
   }
 
   /** Record the isolation switch without rebinding; the caller refreshes the scope. */
@@ -143,6 +148,7 @@ export class FolderRepository extends FolderRepositoryLoads {
     // Flush the old account's pending debounce before releasing its data owner.
     this.flushPendingSaveData();
     previous?.deactivate();
+    if (previous) this.releaseUndoSession(previous);
     this.releasingSession = previous;
     if (
       previous &&
@@ -209,6 +215,7 @@ export class FolderRepository extends FolderRepositoryLoads {
       // A disabled rebind may have loaded before another context wrote this cached session.
       if (session.reconcilePending || session.debouncePending) session.ready = false;
       session.activate();
+      this.registerUndoSession(session);
       this.accountScopeRetryAttempt = 0;
       if (session.ready) {
         this.hooks.onChange('title');

@@ -9,6 +9,7 @@ import { AUTHORITY_FENCE_KEY } from '@/features/folder/owner/authorityFence';
 import { LegacyFolderFence } from '@/features/folder/owner/legacyFolderFence';
 
 import { FolderDataSession } from './FolderDataSession';
+import { FolderRecoveryWriteGuard } from './FolderRecoveryWriteGuard';
 import { type FolderRepositoryHooks, createDebugLog } from './folderRepositoryHooks';
 import type { PlatformFolderConfig } from './platformFolderConfig';
 import type { IFolderStorageAdapter } from './storage/FolderStorageAdapter';
@@ -26,6 +27,7 @@ import type { FolderData } from './types';
 export abstract class FolderRepositoryState {
   protected readonly fence: LegacyFolderFence;
   protected readonly storage: IFolderStorageAdapter;
+  protected readonly recoveryWrites: FolderRecoveryWriteGuard;
   readonly writeFolder: FolderWriter;
   protected readonly initializations = new Map<string, Promise<void>>();
   protected dataSession: FolderDataSession | null;
@@ -75,7 +77,10 @@ export abstract class FolderRepositoryState {
   ) {
     this.fence = new LegacyFolderFence(config.storageKey, () => this.fenceChanged());
     this.storage = storage;
-    this.writeFolder = (_key, operation) => this.fence.write(operation);
+    this.recoveryWrites = new FolderRecoveryWriteGuard((_key, operation) =>
+      this.fence.write(operation),
+    );
+    this.writeFolder = this.recoveryWrites.write;
     storage.setWriteGate?.(this.writeFolder);
     this.dataSession = new FolderDataSession(
       config.storageKey,
@@ -129,6 +134,8 @@ export abstract class FolderRepositoryState {
 
   /** Flag external writes for their captured bucket (`FolderRepositorySaves`). */
   protected abstract markExternalChanges(changes: Record<string, Storage.StorageChange>): void;
+  /** Release undo admission once an inactive session has drained its accepted work. */
+  protected abstract releaseUndoSession(session: FolderDataSession): void;
   abstract setAccountIsolationEnabled(enabled: boolean): Promise<void>;
   /** The write authority changed (`FolderRepository`). */
   protected abstract fenceChanged(): void;

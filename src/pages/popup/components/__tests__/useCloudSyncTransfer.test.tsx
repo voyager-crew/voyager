@@ -121,11 +121,18 @@ describe('popup cloud sync transfer operations', () => {
       emailHash: null,
     });
     tabMessage.mockResolvedValue({ ok: true, data: emptyFolders, accountScope: pageScope });
-    await download.restore({ folders: { data: folders } }, 'overwrite', false);
-    expect(localSet).toHaveBeenCalledWith({
-      [buildScopedStorageKey(StorageKeys.FOLDER_DATA, 'page')]: folders,
-      [getTimelineHierarchyStorageKey('page')]: { conversations: {} },
-    });
+    await download.restore(
+      {
+        folders: { data: folders },
+        timelineHierarchy: { data: { conversations: {} } },
+        prompts: { items: [] },
+      },
+      'overwrite',
+      false,
+    );
+    expect(h.stored[buildScopedStorageKey(StorageKeys.FOLDER_DATA, 'page')]).toEqual(folders);
+    expect(h.stored[getTimelineHierarchyStorageKey('page')]).toEqual({ conversations: {} });
+    expect(h.stored[buildScopedStorageKey(StorageKeys.FOLDER_DATA, 'tab')]).toBeUndefined();
     expect(h.stored[StorageKeys.PROMPT_ITEMS]).toEqual([]);
     expect(tabMessage).toHaveBeenLastCalledWith(7, { type: 'gv.folders.reload' });
   });
@@ -218,10 +225,10 @@ describe('popup cloud sync transfer operations', () => {
       const localPrompts = failure === 'is invalid' ? [{ id: 'broken' }] : [];
       h.stored[StorageKeys.PROMPT_ITEMS] = localPrompts;
       if (failure === 'fails') {
+        const readLocal = localGet.getMockImplementation()!;
         localGet.mockImplementation(async (keys) => {
           if (keys === StorageKeys.PROMPT_ITEMS) throw new Error('read failed');
-          const names = Array.isArray(keys) ? keys : [keys];
-          return Object.fromEntries(names.map((name) => [String(name), h.stored[String(name)]]));
+          return readLocal(keys);
         });
       }
       await h.render(platform, false);
@@ -273,7 +280,11 @@ describe('popup cloud sync transfer operations', () => {
     );
     expect(h.stored[StorageKeys.PROMPT_ITEMS]).toEqual([localPrompt, cloudPrompt]);
     expect(Object.keys(h.stored).sort()).toEqual(
-      [StorageKeys.FOLDER_DATA_AISTUDIO, StorageKeys.PROMPT_ITEMS].sort(),
+      [
+        StorageKeys.FOLDER_DATA_AISTUDIO,
+        StorageKeys.PROMPT_ITEMS,
+        StorageKeys.CLOUD_SYNC_PRE_APPLY_SNAPSHOT,
+      ].sort(),
     );
     expect(download.payload).toEqual({
       platform: 'aistudio',

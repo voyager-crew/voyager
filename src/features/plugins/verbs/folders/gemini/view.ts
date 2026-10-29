@@ -52,8 +52,8 @@ export class GeminiFoldersView extends GeminiFolderSessionView {
       activation: this.session.activation,
       data: this.session.data,
     }),
-    applyData: async (data) =>
-      isSaved(await this.commands.runBulk({ kind: 'commitPreparedData', data })),
+    applyData: async (data, beforeWrite) =>
+      isSaved(await this.commands.runBulk({ kind: 'commitPreparedData', data, beforeWrite })),
     refresh: () => this.refresh(),
     // One transfer notice at a time: a result replaces its "in progress" notice.
     notify: (message, type) => this.feedback.showNotification(message, type, 'transfer'),

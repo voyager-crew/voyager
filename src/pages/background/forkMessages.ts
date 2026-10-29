@@ -1,3 +1,4 @@
+import { recordCloudSyncWrites } from '@/core/services/CloudSyncSnapshotService';
 import { StorageKeys } from '@/core/types/common';
 import type { ForkNode, ForkNodesData } from '@/pages/content/fork/forkTypes';
 
@@ -134,7 +135,19 @@ class ForkNodesManager {
           if (isForkNode(node) && insertForkNode(data, node)) changed = true;
         }
       }
-      if (changed) await this.saveToStorage(data);
+      if (changed) {
+        if ('cloudSyncSnapshotId' in envelope && typeof envelope.cloudSyncSnapshotId === 'string') {
+          await recordCloudSyncWrites(envelope.cloudSyncSnapshotId, [
+            {
+              area: 'local',
+              key: StorageKeys.FORK_NODES,
+              kind: 'forks',
+              value: data,
+            },
+          ]);
+        }
+        await this.saveToStorage(data);
+      }
       return { status: 'merged' };
     });
   }

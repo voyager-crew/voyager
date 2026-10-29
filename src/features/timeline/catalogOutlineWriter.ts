@@ -3,12 +3,15 @@
  * site's serial queue (`pages/background/catalogOutlineMessages.ts`), so every step reads the bucket
  * afresh and no page edit or cloud restore can overwrite another. Gemini outlines never come here.
  */
+import { recordCloudSyncWrites } from '@/core/services/CloudSyncSnapshotService';
+
 import {
   type OutlineDeletions,
   mergeCatalogBucket,
   outlineDeletionsAfterWrite,
   readCatalogBucket,
 } from './catalogHierarchySync';
+import { readCatalogOutlineRestore } from './catalogOutlineMessages';
 import { type OutlineEdit, applyOutlineEdit } from './outlineEdits';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -94,11 +97,19 @@ function mergedBucket(
  */
 export async function restoreCatalogOutlineBucket(key: string, cloud: unknown): Promise<boolean> {
   try {
+    const restore = readCatalogOutlineRestore(cloud);
+    if (!restore) return false;
     const stored = await readStored(key);
     // Never replace a stored value this restore cannot read as a bucket.
     if (stored != null && !(isRecord(stored) && isRecord(stored.conversations))) return false;
-    const next = mergedBucket(stored ?? undefined, cloud);
-    if (next) await chrome.storage.local.set({ [key]: next });
+    const next = mergedBucket(stored ?? undefined, restore.bucket);
+    if (next) {
+      if (restore.snapshotId !== undefined)
+        await recordCloudSyncWrites(restore.snapshotId, [
+          { area: 'local', key, kind: 'outlines', value: next },
+        ]);
+      await chrome.storage.local.set({ [key]: next });
+    }
     return true;
   } catch (error) {
     console.warn('[Timeline] Failed to restore timeline outlines:', error);

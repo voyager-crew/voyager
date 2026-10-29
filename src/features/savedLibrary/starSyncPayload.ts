@@ -17,6 +17,8 @@ export interface StarsExportPayloadV2 {
   tombstones: StarTombstone[];
 }
 export interface StarSyncSources {
+  /** Local download receipt context; never part of a Drive payload. */
+  snapshotId?: string;
   v1?: unknown;
   v1AccountHash?: string;
   v2?: unknown;
@@ -120,6 +122,11 @@ export function decodeStarSyncSourcesWithAuthority(
   sources: StarSyncSources,
   scope: SyncAccountScope | null,
 ): { state: StarState; authorized: StarState } {
+  if (
+    sources.snapshotId !== undefined &&
+    (typeof sources.snapshotId !== 'string' || sources.snapshotId.length === 0)
+  )
+    throw new Error('Invalid cloud snapshot id');
   const v2 =
     sources.v2 == null
       ? { data: normalizeStarredMessages(undefined), tombstones: [] }

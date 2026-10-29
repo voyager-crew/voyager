@@ -11,6 +11,7 @@ import { FolderRepository, type FolderStoreChange } from './FolderRepository';
 import { createConversationMembershipLookup } from './conversationMembership';
 import { GEMINI_FOLDER_CONFIG } from './platformFolderConfig';
 import {
+  type FolderWriteReceipt,
   type IFolderStorageAdapter,
   createFolderStorageAdapter,
 } from './storage/FolderStorageAdapter';
@@ -108,8 +109,8 @@ export abstract class FolderStoreState {
   }
 
   /** Persist a draft without exposing it to edits, exports or recovery before success. */
-  replaceData(data: FolderData): Promise<boolean> {
-    return this.repository.replaceData(data);
+  replaceData(data: FolderData, beforeWrite?: FolderWriteReceipt): Promise<boolean> {
+    return this.repository.replaceData(data, undefined, beforeWrite);
   }
 
   scheduleSaveData(): void {

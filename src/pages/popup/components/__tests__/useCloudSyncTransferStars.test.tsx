@@ -12,7 +12,7 @@ import { folders, pageScope, setupTransferHarness, tabScope } from './cloudSyncT
 
 describe('popup cloud restore of stars and forks', () => {
   const h = setupTransferHarness();
-  const { tabMessage, localSet } = h;
+  const { tabMessage } = h;
 
   it.each(['merge', 'overwrite'] as const)(
     'keeps other sites and Gemini accounts when %s restores stars',
@@ -236,26 +236,44 @@ describe('popup cloud restore of stars and forks', () => {
     expect(tabMessage).not.toHaveBeenCalledWith(7, { type: 'gv.folders.reload' });
   });
 
-  it('overwrite refuses a v2-only backup missing folders before restoring anything', async () => {
+  it('overwrite merges a v2-only backup while leaving missing folders and prompts untouched', async () => {
+    const folderKey = buildScopedStorageKey(StorageKeys.FOLDER_DATA, pageScope.accountKey);
+    const localPrompt = { id: 'local', text: 'Local prompt', tags: [], createdAt: 1 };
+    h.stored[folderKey] = folders;
+    h.stored[StorageKeys.PROMPT_ITEMS] = [localPrompt];
+    const cloud = {
+      conversationId: 'gemini:conv:cloud',
+      turnId: 'turn',
+      content: 'Cloud star',
+      conversationUrl: 'https://gemini.google.com/u/1/app/cloud',
+      starredAt: 5,
+    };
     await h.render('gemini', false);
     const download = await h.transfer.prepareDownload();
-    await expect(
-      download.restore(
-        {
-          stars: {
-            format: 'gemini-voyager.stars.v2',
-            version: '1.0',
-            exportedAt: new Date().toISOString(),
-            items: [],
-            tombstones: [],
-            accountScope: { accountHash: hashString(pageScope.accountKey) },
-          },
+    const result = await download.restore(
+      {
+        stars: {
+          format: 'gemini-voyager.stars.v2',
+          version: '1.0',
+          exportedAt: new Date().toISOString(),
+          items: [cloud],
+          tombstones: [],
+          accountScope: { accountHash: hashString(pageScope.accountKey) },
         },
-        'overwrite',
-        false,
-      ),
-    ).rejects.toMatchObject({ reason: 'syncOverwriteMissingFolders' });
-    expect(localSet).not.toHaveBeenCalled();
+      },
+      'overwrite',
+      false,
+    );
+    expect(result.restored).toEqual(['starred']);
+    expect(result.skipped).toEqual(
+      expect.arrayContaining([
+        { kind: 'folders', reason: 'missing' },
+        { kind: 'prompts', reason: 'missing' },
+      ]),
+    );
+    expect(h.stored[folderKey]).toEqual(folders);
+    expect(h.stored[StorageKeys.PROMPT_ITEMS]).toEqual([localPrompt]);
+    expect((await h.starStore.getAll()).messages).toEqual({ [cloud.conversationId]: [cloud] });
   });
 
   it.each([undefined, null, 42])(

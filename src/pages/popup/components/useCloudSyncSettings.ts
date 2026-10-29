@@ -270,6 +270,7 @@ export function useCloudSyncSettings(sourceTabId?: number) {
                 empty?: boolean;
               };
               data?: CloudDownloadData | null;
+              snapshotId?: string;
             }
           | undefined;
 
@@ -283,7 +284,7 @@ export function useCloudSyncSettings(sourceTabId?: number) {
 
         if (!response.data) {
           // Catalog outlines and stars have files of their own; restore them without folders too.
-          const restored = await download.restoreCatalogTimeline();
+          const restored = await download.restoreCatalogTimeline(response.snapshotId);
           if (restored || response.highlights?.synced) {
             setStatusMessage({ text: t('syncSuccess'), kind: 'ok' });
             return;
@@ -292,23 +293,32 @@ export function useCloudSyncSettings(sourceTabId?: number) {
           return;
         }
 
-        const { foldersMissing, nameConflicts } = await download.restore(
+        const { foldersMissing, nameConflicts, skipped } = await download.restore(
           response.data,
           mode,
           response.highlights?.synced === true,
+          response.snapshotId,
         );
         setStatusMessage({
           text:
+            mode === 'overwrite' && skipped.length > 0
+              ? t('syncOverwriteMissingFolders')
+              : nameConflicts > 0
+                ? t('promptNameConflictsDetected').replace('{count}', String(nameConflicts))
+                : t(
+                    foldersMissing
+                      ? 'syncSuccessFoldersMissing'
+                      : response.highlights?.skipped
+                        ? 'syncSuccessHighlightsSkipped'
+                        : 'syncSuccess',
+                  ),
+          kind:
+            skipped.length > 0 ||
+            foldersMissing ||
+            response.highlights?.skipped ||
             nameConflicts > 0
-              ? t('promptNameConflictsDetected').replace('{count}', String(nameConflicts))
-              : t(
-                  foldersMissing
-                    ? 'syncSuccessFoldersMissing'
-                    : response.highlights?.skipped
-                      ? 'syncSuccessHighlightsSkipped'
-                      : 'syncSuccess',
-                ),
-          kind: foldersMissing || response.highlights?.skipped || nameConflicts > 0 ? 'warn' : 'ok',
+              ? 'warn'
+              : 'ok',
         });
       } catch (error) {
         console.error('[CloudSyncSettings] Download failed:', error);

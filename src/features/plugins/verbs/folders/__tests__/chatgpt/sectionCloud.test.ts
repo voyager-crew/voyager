@@ -76,7 +76,15 @@ async function choose(label: string): Promise<void> {
   menuItems()
     .find((item) => item.textContent === label)!
     .click();
-  await settle(30);
+  await vi.waitFor(() => {
+    expect(
+      toastDriver
+        .messages()
+        .some(
+          (message) => message !== t('downloadInProgress') && message !== t('uploadInProgress'),
+        ),
+    ).toBe(true);
+  });
 }
 
 beforeAll(async () => {

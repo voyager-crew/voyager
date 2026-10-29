@@ -25,6 +25,11 @@ type NonSettingsStorageKey = Exclude<StorageKey, BackupableSettingsKey>;
  * make a new key fail fast until its sync/backup behavior is an explicit choice.
  */
 export const NON_SETTINGS_BACKUP_POLICIES = {
+  [StorageKeys.CLOUD_SYNC_PRE_APPLY_SNAPSHOT]: {
+    storage: 'local',
+    disposition: 'device-local',
+    reason: 'The latest pre-apply undo snapshot belongs to this installation, outside backups.',
+  },
   [StorageKeys.GV_ACCOUNT_ISOLATION_ENABLED]: {
     storage: 'sync',
     disposition: 'device-local',

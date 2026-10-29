@@ -168,6 +168,7 @@ export function isRestorablePluginState(value: unknown): value is Record<string,
 export async function restorePluginState(
   value: unknown,
   mode: PluginStateRestoreMode = 'merge',
+  beforeWrite?: (state: PluginStateMap) => Promise<void>,
 ): Promise<PluginStateMap> {
   const local = localArea();
   if (!local) return {};
@@ -183,6 +184,7 @@ export async function restorePluginState(
         : await readPluginStateStrict(local);
     const restored = mode === 'overwrite' ? cloudState : { ...current, ...cloudState };
     const next = clampLocalPluginsEnabled(restored, current);
+    if (beforeWrite) await beforeWrite(next);
     await local.set({ [KEY]: next });
     return next;
   });

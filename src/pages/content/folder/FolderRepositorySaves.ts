@@ -4,7 +4,9 @@ import { cloneFolderData, validateFolderData } from '@/features/folder/model/fol
 import { LegacyFolderWriteRefusedError } from '@/features/folder/owner/legacyFolderFence';
 
 import type { FolderDataSession } from './FolderDataSession';
+import { FolderRecoverySupersededError } from './FolderRecoveryWriteGuard';
 import { FolderRepositoryState } from './FolderRepositoryState';
+import type { FolderWriteReceipt } from './storage/FolderStorageAdapter';
 import { type StorageEcho, serializeStoredValue } from './storage/StorageEchoTracker';
 import type { FolderData } from './types';
 
@@ -42,11 +44,11 @@ export abstract class FolderRepositorySaves extends FolderRepositoryState {
     for (const session of sessions) {
       const change = changes[session.storageKey];
       if (!change) continue;
+      // Recovery's own echo must not keep reconciliation alive and refresh a newer backup.
+      if (this.storageEchoes.consume(session.storageKey, change.newValue)) continue;
       session.storageChangedDuringRead = true;
-      if (!this.storageEchoes.consume(session.storageKey, change.newValue)) {
-        session.reconcilePending = true;
-        session.reconcileAttempted = false;
-      }
+      session.reconcilePending = true;
+      session.reconcileAttempted = false;
     }
     this.tryReconcile();
   }
@@ -77,7 +79,11 @@ export abstract class FolderRepositorySaves extends FolderRepositoryState {
   }
 
   /** Publish a draft only after its atomic folder/companion write succeeds. */
-  async replaceData(data: FolderData, companions?: Record<string, unknown>): Promise<boolean> {
+  async replaceData(
+    data: FolderData,
+    companions?: Record<string, unknown>,
+    beforeWrite?: FolderWriteReceipt,
+  ): Promise<boolean> {
     const session = this.dataSession;
     const activation = this.accountScopeRequest;
     if (!session || !this.canEdit) return false;
@@ -95,7 +101,14 @@ export abstract class FolderRepositorySaves extends FolderRepositoryState {
       if (this.destroyed || this.dataSession !== session || this.accountScopeRequest !== activation)
         return false;
 
-      session.activeSave = this.persistDataSession(session, snapshot, companions, false);
+      session.activeSave = this.persistDataSession(
+        session,
+        snapshot,
+        companions,
+        false,
+        undefined,
+        beforeWrite,
+      );
       saved = await session.activeSave;
       // An issued write still belongs to this session if the user has since left it.
       if (saved) session.data = snapshot;
@@ -109,6 +122,7 @@ export abstract class FolderRepositorySaves extends FolderRepositoryState {
       } else if (!session.saveInProgress && !session.debouncePending) {
         this.dataSessions.delete(session.storageKey);
       }
+      this.releaseUndoSession(session);
     }
   }
 
@@ -116,7 +130,12 @@ export abstract class FolderRepositorySaves extends FolderRepositoryState {
     return this.saveMemory(true);
   }
 
-  protected async saveMemory(carriesEdit: boolean, recoveryVersion?: number): Promise<boolean> {
+  protected async saveMemory(
+    carriesEdit: boolean,
+    recoveryVersion?: number,
+    canRecover?: () => boolean,
+    refreshPrimaryBackup = true,
+  ): Promise<boolean> {
     const session = this.dataSession;
     if (
       !session ||
@@ -146,7 +165,15 @@ export abstract class FolderRepositorySaves extends FolderRepositoryState {
         return session.pendingSaveCompletion.promise;
       }
 
-      session.activeSave = this.persistDataSession(session, snapshot, undefined, carriesEdit);
+      session.activeSave = this.persistDataSession(
+        session,
+        snapshot,
+        undefined,
+        carriesEdit,
+        canRecover,
+        undefined,
+        refreshPrimaryBackup,
+      );
       return session.activeSave;
     } catch (error) {
       console.error(`${this.tag} Save data error:`, error);
@@ -159,10 +186,16 @@ export abstract class FolderRepositorySaves extends FolderRepositoryState {
     key: string,
     snapshot: FolderData,
     companions: Record<string, unknown> | undefined,
+    canRecover?: () => boolean,
+    beforeWrite?: FolderWriteReceipt,
   ): Promise<boolean | void> {
-    return companions
-      ? this.storage.saveData(key, snapshot, companions)
-      : this.storage.saveData(key, snapshot);
+    return this.recoveryWrites.save(key, canRecover, () =>
+      beforeWrite
+        ? this.storage.saveData(key, snapshot, companions, beforeWrite)
+        : companions
+          ? this.storage.saveData(key, snapshot, companions)
+          : this.storage.saveData(key, snapshot),
+    );
   }
 
   protected async persistDataSession(
@@ -171,12 +204,16 @@ export abstract class FolderRepositorySaves extends FolderRepositoryState {
     companions?: Record<string, unknown>,
     /** False for a draft or recovered backup: its failure leaves no local edit unsaved. */
     carriesEdit = true,
+    canRecover?: () => boolean,
+    beforeWrite?: FolderWriteReceipt,
+    refreshPrimaryBackup = true,
   ): Promise<boolean> {
     this.dataSessions.set(session.storageKey, session);
     session.saveInProgress = true;
     const gen = ++session.writeGen;
     let success = false;
     let refused = false;
+    let superseded = false;
     const serialized = serializeStoredValue(snapshot);
     let echo: StorageEcho | null = null;
 
@@ -204,20 +241,34 @@ export abstract class FolderRepositorySaves extends FolderRepositoryState {
 
       // Suppress this exact own-write echo, avoiding a redundant reload.
       echo = this.storageEchoes.arm(session.storageKey, serialized);
-      success = (await this.writeSnapshot(session.storageKey, snapshot, companions)) !== false;
+      success =
+        (await this.writeSnapshot(
+          session.storageKey,
+          snapshot,
+          companions,
+          canRecover,
+          beforeWrite,
+        )) !== false;
       if (!success) this.storageEchoes.disarm(echo);
 
       if (!success && this.config.retryFailedSave) {
         console.warn(`${this.tag} Save failed, retrying once...`);
         echo = this.storageEchoes.arm(session.storageKey, serialized);
-        success = (await this.writeSnapshot(session.storageKey, snapshot, companions)) !== false;
+        success =
+          (await this.writeSnapshot(
+            session.storageKey,
+            snapshot,
+            companions,
+            canRecover,
+            beforeWrite,
+          )) !== false;
         if (!success) this.storageEchoes.disarm(echo);
       }
 
       if (success) {
         session.baseline = cloneFolderData(snapshot);
-        // Create primary backup AFTER successful save, without holding the save chain.
-        void session.backup.createPrimaryBackup(snapshot);
+        // A recovery copy must not replace a primary another context changed during recovery.
+        if (refreshPrimaryBackup) void session.backup.createPrimaryBackup(snapshot);
         this.debug('Data saved successfully');
         // Every persistence path refreshes the floating panel through this hook.
         if (this.dataSession === session && !this.destroyed) {
@@ -228,19 +279,26 @@ export abstract class FolderRepositorySaves extends FolderRepositoryState {
       }
     } catch (error) {
       refused = error instanceof LegacyFolderWriteRefusedError;
-      if (!refused) console.error(`${this.tag} Save data error:`, error);
+      superseded = error instanceof FolderRecoverySupersededError;
+      if (!refused && !superseded) console.error(`${this.tag} Save data error:`, error);
       this.storageEchoes.disarm(echo);
       success = false;
     } finally {
       if (success) session.settleFailedEdit(gen);
-      else if (carriesEdit && !refused) session.failedEditGen = gen;
-      // A temporary authority failure parks accepted edits; owner mismatch cancels them.
-      if (refused && carriesEdit && !this.fence.reloadRequired && !this.destroyed) {
+      else if (carriesEdit && !refused && !superseded) session.failedEditGen = gen;
+      // Recovery retains failed edits in memory, then rereads canonical when authority returns.
+      if (refused && carriesEdit && !canRecover && !this.fence.reloadRequired && !this.destroyed) {
         session.pendingSave ??= snapshot;
       }
       // A newer queued snapshot can still persist this edit; report only a final failure.
       // A refused write already has a fence notice; do not cover it with a save-failed notice.
-      if (!success && this.fence.canWrite && this.dataSession === session && !session.pendingSave) {
+      if (
+        !success &&
+        !superseded &&
+        this.fence.canWrite &&
+        this.dataSession === session &&
+        !session.pendingSave
+      ) {
         this.hooks.onSaveFailed?.();
       }
       session.saveInProgress = false;
@@ -260,6 +318,7 @@ export abstract class FolderRepositorySaves extends FolderRepositoryState {
       ) {
         this.dataSessions.delete(session.storageKey);
       }
+      this.releaseUndoSession(session);
     }
     if (this.dataSession === session && !session.replacingData) {
       this.hooks.onPersistSettled?.();

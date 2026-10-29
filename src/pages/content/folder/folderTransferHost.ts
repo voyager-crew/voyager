@@ -1,4 +1,5 @@
 import type { FolderDataSession } from './FolderDataSession';
+import type { FolderWriteReceipt } from './storage/FolderStorageAdapter';
 import type { FolderData } from './types';
 
 export type TransferContext = {
@@ -11,7 +12,7 @@ export type TransferContext = {
 /** What folder transfers need from the manager: account context, persistence and feedback. */
 export interface FolderTransferHost {
   getContext(): TransferContext;
-  applyData(data: FolderData): Promise<boolean>;
+  applyData(data: FolderData, beforeWrite?: FolderWriteReceipt): Promise<boolean>;
   refresh(): void;
   notify(message: string, type?: 'success' | 'error' | 'info'): void;
 }

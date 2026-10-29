@@ -6,6 +6,7 @@
 import type { ConversationReference, FolderData } from '@/core/types/folder';
 import type { PromptItem } from '@/core/types/sync';
 import type { FolderOpBody, OpOutcome } from '@/features/folder/owner/folderOps';
+import type { FolderWriteReceipt } from '@/pages/content/folder/storage/FolderStorageAdapter';
 import type { TranslationKey } from '@/utils/translations';
 
 export type BulkOpKind = 'importFile' | 'restoreBackup' | 'cloudMerge';
@@ -41,7 +42,12 @@ type SiteOpBody =
 export type BulkOpBody =
   | Extract<FolderOpBody, { kind: BulkOpKind }>
   /** The transfer controller already validated, merged and backed up this draft. */
-  | { kind: 'commitPreparedData'; data: FolderData; prompts?: PromptItem[] };
+  | {
+      kind: 'commitPreparedData';
+      data: FolderData;
+      prompts?: PromptItem[];
+      beforeWrite?: FolderWriteReceipt;
+    };
 export type OrdinaryOpBody = Exclude<FolderOpBody, { kind: BulkOpKind }>;
 export type FolderEditBody = OrdinaryOpBody | SiteOpBody;
 export type OpOf<K extends FolderEditBody['kind']> = Extract<FolderEditBody, { kind: K }>;

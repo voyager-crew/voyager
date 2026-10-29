@@ -4,6 +4,7 @@ import { COMPOSER_STORAGE_KEYS } from './composerKeys';
 import { CONVERSATION_STORAGE_KEYS } from './conversationKeys';
 import { FOLDER_STORAGE_KEYS } from './folderKeys';
 import { PLUGIN_STORAGE_KEYS } from './pluginKeys';
+import { SYNC_STORAGE_KEYS } from './syncKeys';
 
 /**
  * Storage keys - centralized for type safety
@@ -19,6 +20,7 @@ export const StorageKeys = {
   ...COMPOSER_STORAGE_KEYS,
   ...APP_STORAGE_KEYS,
   ...PLUGIN_STORAGE_KEYS,
+  ...SYNC_STORAGE_KEYS,
 } as const;
 
 export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];

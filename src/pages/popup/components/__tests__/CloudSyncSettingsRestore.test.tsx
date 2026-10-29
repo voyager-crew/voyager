@@ -9,6 +9,7 @@ import { DEFAULT_SYNC_STATE } from '@/core/types/sync';
 
 import { CloudSyncSettings } from '../CloudSyncSettings';
 import { createCloudSyncChromeMock as createChromeMock } from './cloudSyncChromeMock';
+import { waitForCloudSyncAction } from './waitForCloudSyncAction';
 
 vi.mock('@/contexts/LanguageContext', () => ({
   useLanguage: () => ({
@@ -70,7 +71,7 @@ async function clickRestore(container: HTMLElement, label: string): Promise<void
   await act(async () => {
     button?.click();
   });
-  await flushMicrotasks();
+  await waitForCloudSyncAction(button);
 }
 
 describe('CloudSyncSettings restore failures', () => {
@@ -125,18 +126,20 @@ describe('CloudSyncSettings restore failures', () => {
       return Promise.resolve({ ok: true });
     });
 
-    const chromeMock = createChromeMock(sendMessageMock);
+    const chromeMock = createChromeMock(sendMessageMock, {
+      local: { [StorageKeys.PLUGINS_STATE]: { local: { enabled: true, installedAt: 1 } } },
+      sync: { [StorageKeys.MERMAID_ENABLED]: true },
+    });
+    const getLocal = vi.mocked(chromeMock.storage.local.get).getMockImplementation()! as (
+      keys: unknown,
+    ) => Promise<Record<string, unknown>>;
+    const before = await getLocal(null);
     (chromeMock.storage.local.get as unknown as ReturnType<typeof vi.fn>).mockImplementation(
       async (keys: unknown) => {
-        if (keys && typeof keys === 'object' && StorageKeys.PLUGINS_STATE in keys) {
+        if (Array.isArray(keys) && keys.includes(StorageKeys.PLUGINS_STATE)) {
           throw new Error('local read failed');
         }
-        return {
-          gvFolderData: { folders: [], folderContents: {} },
-          gvPromptItems: [],
-          geminiTimelineStarredMessages: { messages: {} },
-          [StorageKeys.TIMELINE_HIERARCHY]: { conversations: {} },
-        };
+        return getLocal(keys);
       },
     );
     (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
@@ -153,11 +156,12 @@ describe('CloudSyncSettings restore failures', () => {
     await act(async () => {
       downloadButton?.click();
     });
-    await flushMicrotasks();
+    await waitForCloudSyncAction(downloadButton);
 
-    // Nothing is written: no partial restore of plugins, settings or folders.
-    expect(chromeMock.storage.local.set).not.toHaveBeenCalled();
-    expect(chromeMock.storage.sync.set).not.toHaveBeenCalled();
+    expect(await getLocal(null)).toEqual(before);
+    expect(await chromeMock.storage.sync.get(null)).toEqual({
+      [StorageKeys.MERMAID_ENABLED]: true,
+    });
     expect(container.textContent).toContain('syncError');
   });
 
@@ -195,9 +199,13 @@ describe('CloudSyncSettings restore failures', () => {
     });
 
     const chromeMock = createChromeMock(sendMessageMock);
+    const setLocal = vi.mocked(chromeMock.storage.local.set).getMockImplementation()! as (
+      items: Record<string, unknown>,
+    ) => Promise<void>;
     (chromeMock.storage.local.set as unknown as ReturnType<typeof vi.fn>).mockImplementation(
       async (items: Record<string, unknown>) => {
         if ('gvFolderData' in items) throw new Error('folders write failed');
+        await setLocal(items);
       },
     );
     (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
@@ -214,12 +222,14 @@ describe('CloudSyncSettings restore failures', () => {
     await act(async () => {
       downloadButton?.click();
     });
-    await flushMicrotasks();
+    await waitForCloudSyncAction(downloadButton);
 
-    expect(chromeMock.storage.local.set).toHaveBeenCalledWith(
-      expect.objectContaining({ [StorageKeys.PLUGINS_STATE]: expect.anything() }),
-    );
-    expect(chromeMock.storage.sync.set).toHaveBeenCalled();
+    expect(
+      (await chromeMock.storage.local.get(StorageKeys.PLUGINS_STATE))[StorageKeys.PLUGINS_STATE],
+    ).toEqual({ cloud: { enabled: false, installedAt: 4 } });
+    expect(await chromeMock.storage.sync.get(null)).toEqual({
+      [StorageKeys.MERMAID_ENABLED]: false,
+    });
     expect(container.textContent).toContain(
       'Restored: storageQuotaHighlights、pluginsTitle、storageQuotaSync. ' +
         'Not restored: folder_title、promptDataMigration、savedLibraryStars (folders write failed)',
@@ -237,9 +247,13 @@ describe('CloudSyncSettings restore failures', () => {
       true,
     );
     const chromeMock = createChromeMock(sendMessageMock);
+    const setLocal = vi.mocked(chromeMock.storage.local.set).getMockImplementation()! as (
+      items: Record<string, unknown>,
+    ) => Promise<void>;
     (chromeMock.storage.local.set as unknown as ReturnType<typeof vi.fn>).mockImplementation(
       async (items: Record<string, unknown>) => {
         if ('gvFolderData' in items) throw new Error('folders write failed');
+        await setLocal(items);
       },
     );
     (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
@@ -251,14 +265,14 @@ describe('CloudSyncSettings restore failures', () => {
     await flushMicrotasks();
     await clickRestore(container, 'syncMerge');
 
-    expect(chromeMock.storage.sync.set).not.toHaveBeenCalled();
+    expect(await chromeMock.storage.sync.get(null)).toEqual({});
     expect(container.textContent).toContain(
       'Restored: storageQuotaHighlights. ' +
         'Not restored: folder_title、promptDataMigration、savedLibraryStars (folders write failed)',
     );
   });
 
-  it('names restored highlights when an overwrite stops for missing folder data', async () => {
+  it('applies settings and prompts beside restored highlights while skipping missing folders', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const sendMessageMock = downloadResponder(
       {
@@ -273,7 +287,14 @@ describe('CloudSyncSettings restore failures', () => {
       },
       true,
     );
-    const chromeMock = createChromeMock(sendMessageMock);
+    const previousPrompt = { id: 'local', text: 'Local prompt', tags: [], createdAt: 1 };
+    const chromeMock = createChromeMock(sendMessageMock, {
+      local: {
+        [StorageKeys.FOLDER_DATA]: 'legacy folder value',
+        [StorageKeys.PROMPT_ITEMS]: [previousPrompt],
+      },
+      sync: { [StorageKeys.MERMAID_ENABLED]: true },
+    });
     (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
 
     await act(async () => {
@@ -283,13 +304,17 @@ describe('CloudSyncSettings restore failures', () => {
     await flushMicrotasks();
     await clickRestore(container, 'syncOverwrite');
 
-    expect(chromeMock.storage.local.set).not.toHaveBeenCalled();
-    expect(chromeMock.storage.sync.set).not.toHaveBeenCalled();
-    expect(container.textContent).toContain(
-      'Restored: storageQuotaHighlights. ' +
-        'Not restored: storageQuotaSync、folder_title、promptDataMigration、savedLibraryStars ' +
-        '(syncOverwriteMissingFolders)',
-    );
+    expect(
+      (await chromeMock.storage.local.get(StorageKeys.FOLDER_DATA))[StorageKeys.FOLDER_DATA],
+    ).toBe('legacy folder value');
+    expect(
+      (await chromeMock.storage.local.get(StorageKeys.PROMPT_ITEMS))[StorageKeys.PROMPT_ITEMS],
+    ).toEqual([]);
+    expect(await chromeMock.storage.sync.get(null)).toEqual({
+      [StorageKeys.MERMAID_ENABLED]: false,
+    });
+    expect(container.textContent).toContain('syncOverwriteMissingFolders');
+    expect(container.textContent).not.toContain('Not restored:');
   });
 
   it('reports folders and prompts as restored when the star owner write fails', async () => {
@@ -302,10 +327,12 @@ describe('CloudSyncSettings restore failures', () => {
       false,
     );
     const mocked = createChromeMock(sendMessage);
-    const stored: Record<string, unknown> = {};
+    const setLocal = vi.mocked(mocked.storage.local.set).getMockImplementation()! as (
+      items: Record<string, unknown>,
+    ) => Promise<void>;
     vi.mocked(mocked.storage.local.set).mockImplementation(async (items) => {
       if (StorageKeys.TIMELINE_STARRED_MESSAGES in items) throw new Error('stars write failed');
-      Object.assign(stored, items);
+      await setLocal(items);
     });
     (globalThis as { chrome: MockedChrome }).chrome = mocked;
     await act(async () => {
@@ -314,6 +341,7 @@ describe('CloudSyncSettings restore failures', () => {
     });
     await flushMicrotasks();
     await clickRestore(container, 'syncMerge');
+    const stored = await mocked.storage.local.get(null);
     expect(stored[StorageKeys.FOLDER_DATA]).toEqual({ folders: [], folderContents: {} });
     expect(stored[StorageKeys.PROMPT_ITEMS]).toEqual([]);
     expect(container.textContent).toContain(
@@ -322,21 +350,36 @@ describe('CloudSyncSettings restore failures', () => {
   });
 
   it('names forks as not restored when the fork owner write fails after stars merged', async () => {
+    const cloudFork = {
+      conversationId: 'gemini:conv:cloud',
+      turnId: 'turn',
+      forkGroupId: 'fork-group',
+      forkIndex: 0,
+      createdAt: 1,
+      conversationUrl: 'https://gemini.google.com/app/cloud',
+    };
     const sendMessage = downloadResponder(
       {
         folders: { data: { folders: [], folderContents: {} } },
         prompts: { items: [] },
         starred: { format: 'gemini-voyager.starred.v1', data: { messages: {} } },
-        forks: { format: 'gemini-voyager.forks.v1', data: { nodes: {}, groups: {} } },
+        forks: {
+          format: 'gemini-voyager.forks.v1',
+          data: {
+            nodes: { [cloudFork.conversationId]: [cloudFork] },
+            groups: { [cloudFork.forkGroupId]: ['gemini:conv:cloud:turn'] },
+          },
+        },
       },
       false,
     );
     const mocked = createChromeMock(sendMessage);
-    vi.mocked(mocked.storage.local.get).mockImplementation(async (keys) => {
-      if (Array.isArray(keys) && keys.includes(StorageKeys.FORK_NODES)) {
-        throw new Error('forks read failed');
-      }
-      return {};
+    const setLocal = vi.mocked(mocked.storage.local.set).getMockImplementation()! as (
+      items: Record<string, unknown>,
+    ) => Promise<void>;
+    vi.mocked(mocked.storage.local.set).mockImplementation(async (items) => {
+      if (StorageKeys.FORK_NODES in items) throw new Error('forks write failed');
+      await setLocal(items);
     });
     (globalThis as { chrome: MockedChrome }).chrome = mocked;
     await act(async () => {
@@ -345,13 +388,18 @@ describe('CloudSyncSettings restore failures', () => {
     });
     await flushMicrotasks();
     await clickRestore(container, 'syncMerge');
+    const stored = await mocked.storage.local.get(null);
+    expect(stored[StorageKeys.FOLDER_DATA]).toEqual({ folders: [], folderContents: {} });
+    expect(stored[StorageKeys.PROMPT_ITEMS]).toEqual([]);
+    expect(stored[StorageKeys.SAVED_LIBRARY_STARS]).toEqual({ messages: {} });
+    expect(stored[StorageKeys.FORK_NODES]).toBeUndefined();
     expect(container.textContent).toContain(
       'Restored: folder_title、promptDataMigration、savedLibraryStars. ' +
-        'Not restored: syncRestoreForks (forks read failed)',
+        'Not restored: syncRestoreForks (forks write failed)',
     );
   });
 
-  it('keeps the plain missing-folders message when nothing was restored', async () => {
+  it('keeps the missing-folders warning after a partial overwrite applies present data', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     const sendMessageMock = downloadResponder(
       {
@@ -370,7 +418,9 @@ describe('CloudSyncSettings restore failures', () => {
     await flushMicrotasks();
     await clickRestore(container, 'syncOverwrite');
 
-    expect(chromeMock.storage.local.set).not.toHaveBeenCalled();
+    expect(
+      (await chromeMock.storage.local.get(StorageKeys.PROMPT_ITEMS))[StorageKeys.PROMPT_ITEMS],
+    ).toEqual([]);
     expect(container.textContent).toContain('syncOverwriteMissingFolders');
     expect(container.textContent).not.toContain('Restored:');
     expect(container.textContent).not.toContain('syncError');

@@ -4,6 +4,7 @@ import { type Root, createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import { readCloudSyncSnapshot } from '@/core/services/CloudSyncSnapshotService';
 import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
 import { type SyncState, DEFAULT_SYNC_STATE } from '@/core/types/sync';
@@ -15,6 +16,7 @@ import { createPromptLibraryOwner } from '@/features/prompt/library/promptLibrar
 import { loadTranslations } from '@/utils/translations';
 
 import { CloudSyncSettings } from '../CloudSyncSettings';
+import { waitForCloudSyncAction } from './waitForCloudSyncAction';
 
 vi.mock('webextension-polyfill', () => ({
   default: {
@@ -99,21 +101,31 @@ function installChrome(tabUrl: string, download = downloadedData()) {
   };
   const sync: Record<string, unknown> = { [StorageKeys.LANGUAGE]: 'en' };
   const get = (values: Record<string, unknown>) =>
-    vi.fn(async (keys: string | string[] | Record<string, unknown>) => {
+    vi.fn(async (keys: string | string[] | Record<string, unknown> | null) => {
       const names =
-        typeof keys === 'string' ? [keys] : Array.isArray(keys) ? keys : Object.keys(keys);
+        keys === null
+          ? Object.keys(values)
+          : typeof keys === 'string'
+            ? [keys]
+            : Array.isArray(keys)
+              ? keys
+              : Object.keys(keys);
+      const defaults = keys && typeof keys === 'object' && !Array.isArray(keys) ? keys : {};
       return Object.fromEntries(
-        names.map((key) => [
-          key,
-          values[key] ?? (typeof keys === 'object' && !Array.isArray(keys) ? keys[key] : undefined),
-        ]),
+        names.flatMap((key) =>
+          Object.prototype.hasOwnProperty.call(values, key)
+            ? [[key, structuredClone(values[key])]]
+            : Object.prototype.hasOwnProperty.call(defaults, key)
+              ? [[key, structuredClone(defaults[key])]]
+              : [],
+        ),
       );
     });
   const localSet = vi.fn(async (values: Record<string, unknown>) => {
-    Object.assign(local, values);
+    Object.assign(local, structuredClone(values));
   });
   const syncSet = vi.fn(async (values: Record<string, unknown>) => {
-    Object.assign(sync, values);
+    Object.assign(sync, structuredClone(values));
   });
   const localGet = get(local);
   const prompts = createPromptLibraryOwner({ area: { get: localGet, set: localSet } });
@@ -184,6 +196,7 @@ describe('CloudSyncSettings platform routing', () => {
     );
     expect(button).toBeDefined();
     await act(async () => button!.click());
+    await waitForCloudSyncAction(button);
   };
 
   it('shows ChatGPT Cloud Sync with its own never-uploaded and never-synced timestamps', async () => {
@@ -219,7 +232,7 @@ describe('CloudSyncSettings platform routing', () => {
   it.each(['merge', 'overwrite'] as const)(
     '%s restores only the ChatGPT bucket and notifies its tab',
     async (mode) => {
-      const { local, sync, sendMessage, tabSendMessage, localSet, syncSet } = installChrome(
+      const { local, sync, sendMessage, tabSendMessage } = installChrome(
         `https://chatgpt.com/c/${localId}`,
       );
       const beforeLocal = structuredClone(local);
@@ -242,14 +255,16 @@ describe('CloudSyncSettings platform routing', () => {
         mode === 'merge' ? [localId, cloudId] : [cloudId],
       );
       expect(restored.folderContents[cloudId]).toEqual(cloudFolders.folderContents[cloudId]);
+      const userData = structuredClone(local);
+      delete userData[StorageKeys.CLOUD_SYNC_PRE_APPLY_SNAPSHOT];
       expect({
-        ...local,
+        ...userData,
         [StorageKeys.FOLDER_DATA_CHATGPT]: beforeLocal[StorageKeys.FOLDER_DATA_CHATGPT],
       }).toEqual(beforeLocal);
       expect(sync).toEqual(beforeSync);
-      expect(localSet).toHaveBeenCalledOnce();
-      expect(Object.keys(localSet.mock.calls[0][0])).toEqual([StorageKeys.FOLDER_DATA_CHATGPT]);
-      expect(syncSet).not.toHaveBeenCalled();
+      expect((await readCloudSyncSnapshot())?.entries).toEqual([
+        { area: 'local', key: StorageKeys.FOLDER_DATA_CHATGPT, existed: true, value: localFolders },
+      ]);
       expect(tabSendMessage).toHaveBeenCalledWith(3, { type: 'gv.folders.reload' });
       expect(container.textContent).toContain(t.syncSuccess);
     },
@@ -326,7 +341,7 @@ describe('CloudSyncSettings platform routing', () => {
       bucket: [...cloudFolders.folderContents[cloudId], { title: 'Broken' }],
     },
   ])(
-    'Overwrite refuses a cloud file containing $symptom without losing local folders',
+    'Overwrite skips a cloud file containing $symptom without losing local folders',
     async ({ bucket }) => {
       const malformed = { ...cloudFolders, folderContents: { [cloudId]: bucket } };
       const { local, localSet, syncSet } = installChrome(
@@ -340,7 +355,7 @@ describe('CloudSyncSettings platform routing', () => {
       expect(local).toEqual(before);
       expect(localSet).not.toHaveBeenCalled();
       expect(syncSet).not.toHaveBeenCalled();
-      expect(container.textContent).toContain(t.folder_import_invalid_format);
+      expect(container.textContent).toContain(t.syncOverwriteMissingFolders);
       expect(container.textContent).not.toContain(t.syncSuccess);
     },
   );
@@ -349,7 +364,7 @@ describe('CloudSyncSettings platform routing', () => {
     { symptom: 'an empty array', contents: [] },
     { symptom: 'an array of buckets', contents: [[]] },
   ])(
-    'Overwrite refuses $symptom as folderContents without deleting local conversations',
+    'Overwrite skips $symptom as folderContents without deleting local conversations',
     async ({ contents }) => {
       const malformed = { ...cloudFolders, folderContents: contents };
       const { local, localSet, syncSet } = installChrome(
@@ -363,7 +378,7 @@ describe('CloudSyncSettings platform routing', () => {
       expect(local).toEqual(before);
       expect(localSet).not.toHaveBeenCalled();
       expect(syncSet).not.toHaveBeenCalled();
-      expect(container.textContent).toContain(t.folder_import_invalid_format);
+      expect(container.textContent).toContain(t.syncOverwriteMissingFolders);
       expect(container.textContent).not.toContain(t.syncSuccess);
     },
   );

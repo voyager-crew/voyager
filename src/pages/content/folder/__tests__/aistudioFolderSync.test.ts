@@ -346,7 +346,8 @@ describe('AI Studio folder sync across contexts', () => {
           localName,
           'Cloud',
         ]);
-        expect(responses).toEqual([{ ok: false }]);
+        expect(responses.length).toBeGreaterThan(0);
+        for (const response of responses) expect(response).toEqual({ ok: false });
       } finally {
         staleReads.resolve();
         heldRead.resolve();

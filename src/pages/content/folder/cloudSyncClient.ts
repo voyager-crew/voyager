@@ -10,16 +10,25 @@
  */
 import browser from 'webextension-polyfill';
 
+import { buildScopedStorageKey } from '@/core/services/AccountIsolationService';
+import { planCatalogRestore } from '@/core/services/CloudSyncRestoreKeys';
+import {
+  recordCloudSyncWrites,
+  type StorageWriteKey,
+} from '@/core/services/CloudSyncSnapshotService';
 import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
 import type { PromptItem, SyncAccountScope } from '@/core/types/sync';
 import { FOLDER_PLATFORMS, type FolderPlatform } from '@/features/folder/platforms';
+import { applyFolderCloudDownload } from '@/features/folder/services/cloudDownloadApply';
 import {
   pullCatalogTimeline,
   pushCatalogTimeline,
   restorePulledCatalogTimeline,
 } from '@/features/timeline/catalogTimelineCloud';
 import { mergeFolderData, mergePrompts } from '@/utils/merge';
+
+import type { FolderWriteReceipt } from './storage/FolderStorageAdapter';
 
 /** A downloaded cloud copy: the site's folder file, the shared prompts, and site-specific parts. */
 export type CloudDownload = {
@@ -33,6 +42,7 @@ type SyncResponse =
       error?: string;
       highlights?: { synced?: boolean };
       data?: CloudDownload | null;
+      snapshotId?: string;
     }
   | undefined;
 
@@ -49,6 +59,8 @@ export interface CloudSyncRun {
   current(): boolean;
   /** What an upload sends, captured when the run started. */
   readonly folders: FolderData;
+  /** The owner's captured bucket, including an account suffix where applicable. */
+  readonly folderStorageKey?: string;
   /** The folders as they are now; a download merges into these. */
   data(): FolderData;
   /** The scopes to send; resolved after the run's first notice. */
@@ -57,13 +69,17 @@ export interface CloudSyncRun {
    * Persists the merged folders, with the merged prompts on a site that shares
    * them. A failure is reported here, by the site or its store.
    */
-  save(folders: FolderData, prompts: PromptItem[] | undefined): Promise<boolean>;
-  /** Restores the rest of the download once folders saved; false when it stopped (and said why). */
-  afterSave?(
+  save(
+    folders: FolderData,
+    prompts: PromptItem[] | undefined,
+    beforeWrite?: FolderWriteReceipt,
+  ): Promise<boolean>;
+  /** Prepare an owner and its full write footprint before any download writes. */
+  prepareRestore?(
     download: CloudDownload,
     prompts: PromptItem[] | undefined,
     scopes: CloudSyncScopes,
-  ): Promise<boolean>;
+  ): Promise<{ keys: readonly StorageWriteKey[]; run(snapshotId: string): Promise<boolean> }>;
 }
 
 export interface CloudSyncSite {
@@ -81,12 +97,6 @@ const sendRuntimeMessage = (message: { type: string; payload?: unknown }) =>
 
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : 'Unknown error';
-}
-
-/** Merges this sender's cloud catalog outlines and stars; true when anything was restored. */
-async function restoreCatalogTimeline(): Promise<boolean> {
-  const pulled = await pullCatalogTimeline(sendRuntimeMessage);
-  return pulled ? restorePulledCatalogTimeline(sendRuntimeMessage, pulled) : false;
 }
 
 function notifySyncError(site: CloudSyncSite, message: string): void {
@@ -192,12 +202,42 @@ export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
       site.notify(site.t(cloud.key), cloud.tone);
       return;
     }
+    // Plan every owner before the first write, including catalog-only downloads.
+    const pulled = await pullCatalogTimeline(sendRuntimeMessage);
+    if (!run.current()) return;
+    const catalogPlan = await planCatalogRestore(pulled);
+    const catalogKeys = catalogPlan.keys;
+    if (!run.current()) return;
+    const snapshotId =
+      response.snapshotId ??
+      (typeof download?.snapshotId === 'string' ? download.snapshotId : undefined);
+    const context = {
+      source: 'folder-panel-download' as const,
+      platform: site.platform,
+      accountScope: scopes.accountScope ?? null,
+    };
+    const restoreCatalog = catalogPlan.pulled
+      ? async (snapshotId: string) => {
+          const restored = catalogPlan.pulled
+            ? await restorePulledCatalogTimeline(sendRuntimeMessage, catalogPlan.pulled, snapshotId)
+            : false;
+          if (catalogPlan.refused) throw new Error('Could not restore timeline outlines');
+          return restored || catalogPlan.hadOutlines;
+        }
+      : undefined;
     if (!download || !cloud?.ok) {
       // Outlines and stars have files of their own, so a site without a folder copy has them too.
-      const restored = await restoreCatalogTimeline();
-      if (!run.current()) return;
+      const result = await applyFolderCloudDownload({
+        context,
+        snapshotId,
+        keys: catalogKeys,
+        current: run.current,
+        restoreCatalog,
+      });
+      if (!run.current() || result.status === 'cancelled') return;
       // Highlights may sync on their own when there is no folder copy yet.
-      if (restored || response.highlights?.synced) site.notify(site.t('syncSuccess'), 'success');
+      if (result.catalogRestored || response.highlights?.synced)
+        site.notify(site.t('syncSuccess'), 'success');
       else site.notify(site.t('syncNoData') || 'No data in cloud', 'info');
       return;
     }
@@ -205,13 +245,45 @@ export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
       ? mergePrompts(await readLocalPrompts(), download.prompts?.items || [])
       : undefined;
     if (!run.current()) return;
-    // Merge against the folders as they are now, not as they were when the sync started.
-    const saved = await run.save(mergeFolderData(run.data(), cloud.data), prompts);
-    if (!run.current() || !saved) return;
-    if (run.afterSave && !(await run.afterSave(download, prompts, scopes))) return;
+    const definition = FOLDER_PLATFORMS[site.platform];
+    const folderStorageKey =
+      run.folderStorageKey ??
+      (scopes.accountScope
+        ? buildScopedStorageKey(definition.folderStorageKey, scopes.accountScope.accountKey)
+        : definition.folderStorageKey);
+    const extraOwner = await run.prepareRestore?.(download, prompts, scopes);
+    const folderKeys: StorageWriteKey[] = [
+      { area: 'local', key: folderStorageKey },
+      // AI Studio saves shared prompts as companions; Gemini's prepared owner declares them.
+      ...(syncsSharedData &&
+      !extraOwner?.keys.some((key) => key.area === 'local' && key.key === StorageKeys.PROMPT_ITEMS)
+        ? [{ area: 'local' as const, key: StorageKeys.PROMPT_ITEMS }]
+        : []),
+    ];
+    const keys = [...folderKeys, ...(extraOwner?.keys ?? []), ...catalogKeys];
     if (!run.current()) return;
-    await restoreCatalogTimeline();
-    if (!run.current()) return;
+    const result = await applyFolderCloudDownload({
+      context,
+      snapshotId,
+      keys,
+      current: run.current,
+      // The save owner retains its pending-edit and account fences.
+      saveFolders: (snapshotId) =>
+        run.save(mergeFolderData(run.data(), cloud.data), prompts, (items) =>
+          recordCloudSyncWrites(
+            snapshotId,
+            Object.entries(items).map(([key, value]) => ({
+              area: 'local',
+              key,
+              value,
+              kind: key === StorageKeys.PROMPT_ITEMS ? 'prompts' : 'folders',
+            })),
+          ),
+        ),
+      restoreExtras: extraOwner?.run,
+      restoreCatalog,
+    });
+    if (!run.current() || result.status === 'cancelled') return;
     site.notify(site.t('downloadMergeSuccess'), 'success');
   } catch (error) {
     if (!run.current()) return;

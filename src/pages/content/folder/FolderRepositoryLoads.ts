@@ -1,8 +1,9 @@
+import { isUndoneCloudSyncValue } from '@/core/services/CloudSyncUndoMarkers';
 import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContext';
 import { cloneFolderData, validateFolderData } from '@/features/folder/model/folderData';
 
 import type { FolderDataSession } from './FolderDataSession';
-import { FolderRepositorySaves } from './FolderRepositorySaves';
+import { FolderRepositoryUndo } from './FolderRepositoryUndo';
 import { mergeDebouncedEdits } from './debouncedEditMerge';
 import type { FolderData } from './types';
 
@@ -10,10 +11,31 @@ import type { FolderData } from './types';
 const READ_RETRY_DELAYS = [1000, 2000, 4000, 8000, 16000, 30000] as const;
 
 /** `FolderRepository`'s reads: load, scoped migration, recovery and read retries. */
-export abstract class FolderRepositoryLoads extends FolderRepositorySaves {
+export abstract class FolderRepositoryLoads extends FolderRepositoryUndo {
   async loadData(): Promise<void> {
     const session = this.dataSession;
     if (!session?.isActive || !this.fence.canWrite || this.destroyed) return;
+    const pending = session.pendingSave;
+    if (pending) {
+      try {
+        if (
+          (await isUndoneCloudSyncValue({
+            area: 'local',
+            key: session.storageKey,
+            value: pending,
+          })) &&
+          session.pendingSave === pending
+        ) {
+          session.cancelPendingSave();
+        }
+      } catch (error) {
+        if (this.dataSession === session && session.isActive && !this.destroyed)
+          this.markReadUnavailable(session, error);
+        return;
+      }
+    }
+    if (this.dataSession !== session || !session.isActive || !this.fence.canWrite || this.destroyed)
+      return;
     if (session.pendingSave) {
       this.drainPendingSave(session);
       return;
@@ -42,6 +64,8 @@ export abstract class FolderRepositoryLoads extends FolderRepositorySaves {
       try {
         loadedData = await this.storage.loadData(session.storageKey);
         if (!(await this.fence.check()) || !isCurrent()) return;
+        await this.discardUndoneMemory(session, version);
+        if (!isCurrent()) return;
         // A resumed snapshot stays unavailable until a read unaffected by bucket events lands.
         if (!session.ready && session.storageChangedDuringRead) {
           // Reuse read backoff so continuous external writes cannot cause an immediate reload loop.
@@ -55,13 +79,7 @@ export abstract class FolderRepositoryLoads extends FolderRepositorySaves {
       } catch (error) {
         // Unreadable storage may hold newer data: leave it untouched, show memory read-only and retry.
         if (!isCurrent()) return;
-        console.error(`${this.tag} Failed to read folder data; storage left untouched:`, error);
-        const firstReadFailure = !session.readFailed;
-        session.readFailed = true;
-        this.hooks.onChange('availability');
-        // Report the first failure only, not each retry.
-        if (firstReadFailure) this.hooks.onRecovery('unreadable');
-        if (!isExtensionContextInvalidatedError(error)) this.scheduleReadRetry(session);
+        this.markReadUnavailable(session, error);
         return;
       }
       session.readFailed = false;
@@ -118,6 +136,8 @@ export abstract class FolderRepositoryLoads extends FolderRepositorySaves {
           `${this.tag} No folder data found, initializing empty state (likely first-time user)`,
         );
         this.data = { folders: [], folderContents: {} };
+        // No canonical members remain to receive debounced expansion or activity edits.
+        session.takeDebounce();
         session.markReady();
         applied = true;
         // No notification needed - this is expected for new users
@@ -171,6 +191,20 @@ export abstract class FolderRepositoryLoads extends FolderRepositorySaves {
       const migratedData = this.config.normalize(
         this.config.migrateLegacyData(legacyData, session.accountScope),
       );
+      // Compare the candidate to its destination, not the legacy bucket that still owns its copy.
+      if (
+        (await isUndoneCloudSyncValue({
+          area: 'local',
+          key: session.storageKey,
+          value: migratedData,
+        })) ||
+        this.dataSession !== session ||
+        session.loadVersion !== version ||
+        !session.isActive ||
+        !this.fence.canWrite ||
+        this.destroyed
+      )
+        return null;
       session.data = migratedData;
       session.markReady();
       // Migrated legacy data is no local edit: a failed write must not outrank a newer backup.
@@ -203,6 +237,23 @@ export abstract class FolderRepositoryLoads extends FolderRepositorySaves {
   ): Promise<boolean> {
     if (this.dataSession !== session) return false;
     const version = session.loadVersion;
+    const canRecover = () => {
+      if (
+        this.dataSession !== session ||
+        session.loadVersion !== version ||
+        !session.isActive ||
+        !this.fence.canWrite ||
+        this.destroyed
+      )
+        return false;
+      // Recovery must never write an older backup over a canonical change during an await.
+      if (session.storageChangedDuringRead) {
+        this.scheduleReadRetry(session);
+        return false;
+      }
+      return true;
+    };
+    if (!canRecover()) return false;
     console.warn(`${this.tag} Attempting data recovery after load failure`);
 
     // Failed local edits outrank backups when storage is corrupt.
@@ -210,19 +261,21 @@ export abstract class FolderRepositoryLoads extends FolderRepositorySaves {
       this.data = this.config.normalize(this.data);
       session.markReady();
       this.hooks.onRecovery('kept');
-      return this.saveMemory(true, version);
+      return this.saveMemory(true, version, canRecover);
     }
 
     // Step 1: Read both stores, including durable copies that cannot fit in localStorage.
     await session.backup.ensureHydrated();
-    if (this.dataSession !== session || session.loadVersion !== version || this.destroyed)
-      return false;
-    // Hydration may outlast another tab's write; read again before restoring an older backup.
-    if (session.storageChangedDuringRead) {
-      this.scheduleReadRetry(session);
+    if (!canRecover()) return false;
+    let recovered: FolderData | null;
+    try {
+      recovered = await session.backup.recoverFromBackupForKey(session.storageKey, canRecover);
+    } catch (error) {
+      if (canRecover()) this.markReadUnavailable(session, error);
       return false;
     }
-    const recovered = session.backup.recoverFromBackup();
+    if (!canRecover()) return false;
+    if (!(await this.fence.check()) || !canRecover()) return false;
     if (recovered && validateFolderData(recovered)) {
       this.data = this.config.normalize(recovered);
       session.markReady();
@@ -230,7 +283,8 @@ export abstract class FolderRepositoryLoads extends FolderRepositorySaves {
       this.hooks.onRecovery('recovered');
       // Save recovered data to persistent storage. It is the backup, not a local edit:
       // its failure must not outrank a newer backup another tab may write meanwhile.
-      return this.saveMemory(false, version);
+      // The durable bridge cannot compare-write; keep primary copies other contexts may refresh.
+      return this.saveMemory(false, version, canRecover, false);
     }
 
     // Step 2: If current this.data already has valid structure, keep it
@@ -251,6 +305,39 @@ export abstract class FolderRepositoryLoads extends FolderRepositorySaves {
     // Show user notification about data loss
     this.hooks.onRecovery('lost');
     return false;
+  }
+
+  private markReadUnavailable(session: FolderDataSession, error: unknown): void {
+    console.error(`${this.tag} Failed to read folder data; storage left untouched:`, error);
+    const firstReadFailure = !session.readFailed;
+    session.readFailed = true;
+    this.hooks.onChange('availability');
+    if (firstReadFailure) this.hooks.onRecovery('unreadable');
+    if (!isExtensionContextInvalidatedError(error)) this.scheduleReadRetry(session);
+  }
+
+  /** Drop only the exact undone in-memory copy; differing unsaved edits remain recoverable. */
+  private async discardUndoneMemory(session: FolderDataSession, version: number): Promise<void> {
+    const candidate = JSON.stringify(session.data);
+    const undone = await isUndoneCloudSyncValue({
+      area: 'local',
+      key: session.storageKey,
+      value: candidate,
+    });
+    if (
+      !undone ||
+      this.dataSession !== session ||
+      session.loadVersion !== version ||
+      !session.isActive ||
+      !this.fence.canWrite ||
+      this.destroyed ||
+      JSON.stringify(session.data) !== candidate
+    )
+      return;
+    session.data = { folders: [], folderContents: {} };
+    session.baseline = null;
+    session.failedEditGen = null;
+    session.cancelPendingSave();
   }
 
   /** Read `session`'s bucket again through the owner's reload, so a recovered read repaints. */

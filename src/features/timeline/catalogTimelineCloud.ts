@@ -82,12 +82,17 @@ export async function pullCatalogTimeline(
 export async function restorePulledCatalogTimeline(
   send: SendMessage,
   pulled: PulledCatalogTimeline,
+  snapshotId?: string,
 ): Promise<boolean> {
-  const { restored, failed } = await restoreCatalogTimelineBuckets(send, pulled.outlines);
+  const { restored, failed } = await restoreCatalogTimelineBuckets(
+    send,
+    pulled.outlines,
+    snapshotId,
+  );
   let merged = false;
   for (const payload of Object.values(pulled.stars)) {
     // A catalog star file has no account scope; its stars carry their own account annotation.
-    const { status } = await StarredMessagesService.mergeSync({ v2: payload }, null);
+    const { status } = await StarredMessagesService.mergeSync({ v2: payload }, null, snapshotId);
     if (status === 'merged') merged = true;
   }
   if (failed > 0) throw new Error('Could not restore timeline outlines');

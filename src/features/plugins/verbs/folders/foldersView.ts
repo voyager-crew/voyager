@@ -74,7 +74,8 @@ export class SiteFoldersView {
           current: () => !this.scope.isDisposed,
           folders: this.store.data,
           data: () => this.store.data,
-          save: async (folders) => this.store.ready && this.store.replaceData(folders),
+          save: async (folders, _prompts, beforeWrite) =>
+            this.store.ready && this.store.replaceData(folders, beforeWrite),
         };
       },
     };

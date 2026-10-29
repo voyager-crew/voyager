@@ -20,6 +20,7 @@ import {
   syncSiteFolders,
   uploadSiteFolders,
 } from '@/pages/content/folder/cloudSyncClient';
+import type { FolderWriteReceipt } from '@/pages/content/folder/storage/FolderStorageAdapter';
 import type { FolderData } from '@/pages/content/folder/types';
 
 export type AIStudioTransferHost = {
@@ -30,7 +31,11 @@ export type AIStudioTransferHost = {
   canEdit: () => boolean;
   data: () => FolderData;
   /** Persists a draft (with prompts in the same write) and publishes it only on success. */
-  replaceData: (data: FolderData, prompts?: PromptItem[]) => Promise<boolean>;
+  replaceData: (
+    data: FolderData,
+    prompts?: PromptItem[],
+    beforeWrite?: FolderWriteReceipt,
+  ) => Promise<boolean>;
   notify: (message: string, tone: ToastTone, channel?: string) => void;
 };
 
@@ -80,7 +85,8 @@ export class AIStudioTransfer {
         folders: cloneFolderData(session.data),
         data: () => this.host.data(),
         scopes: async () => ({ accountScope }),
-        save: (folders, prompts) => this.host.replaceData(folders, prompts),
+        save: (folders, prompts, beforeWrite) =>
+          this.host.replaceData(folders, prompts, beforeWrite),
       };
     },
   };

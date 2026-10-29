@@ -1,41 +1,36 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import {
   accountIsolationService,
   buildScopedStorageKey,
   extractRouteUserIdFromUrl,
 } from '@/core/services/AccountIsolationService';
+import {
+  applyPopupCatalogDownload,
+  applyPopupCloudDownload,
+  type CloudDownloadData,
+} from '@/core/services/CloudSyncDownloadService';
 import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
-import type {
-  PluginStateExportPayload,
-  PromptItem,
-  SettingsExportPayload,
-  SyncAccountScope,
-  SyncPlatform,
-} from '@/core/types/sync';
+import type { PromptItem, SyncAccountScope, SyncPlatform } from '@/core/types/sync';
 import {
   FOLDER_PLATFORMS,
   getFolderPlatformForHost,
   supportsAccountIsolation,
 } from '@/features/folder/platforms';
-import { createRuntimePromptLibraryClient } from '@/features/prompt/library/promptLibraryMessages';
+import { startMachine } from '@/features/plugins/runtime/stateMachine';
 import { isPromptItemArray } from '@/features/prompt/library/promptLibraryOwner';
-import { StarredMessagesService } from '@/features/savedLibrary/StarredMessagesService';
-import {
-  pullCatalogTimeline,
-  restorePulledCatalogTimeline,
-} from '@/features/timeline/catalogTimelineCloud';
+import { pullCatalogTimeline } from '@/features/timeline/catalogTimelineCloud';
 import type { TimelineHierarchyData } from '@/features/timeline/hierarchyTypes';
-import { ForkNodesService } from '@/pages/content/fork/ForkNodesService';
 import {
   getTimelineHierarchyStorageKey,
   getTimelineHierarchyStorageKeysToRead,
   resolveTimelineHierarchyDataForStorageScope,
 } from '@/pages/content/timeline/hierarchyStorage';
 
-import { mergeFolderData, mergeTimelineHierarchy } from '../../../utils/merge';
-import { applyCloudRestore, CloudRestoreError, type CloudRestoreMode } from './cloudRestore';
+import type { CloudRestoreMode } from './cloudRestore';
+
+export type { CloudDownloadData } from '@/core/services/CloudSyncDownloadService';
 
 function isFolderData(value: unknown): value is FolderData {
   if (typeof value !== 'object' || value === null) return false;
@@ -68,19 +63,8 @@ function isTimelineHierarchyData(value: unknown): value is TimelineHierarchyData
 
 type TargetTab = () => Promise<chrome.tabs.Tab | undefined>;
 
-export interface CloudDownloadData {
-  folders?: { data?: FolderData };
-  prompts?: { items?: PromptItem[] };
-  settings?: SettingsExportPayload;
-  plugins?: PluginStateExportPayload;
-  starred?: unknown;
-  starredAccountHash?: string;
-  stars?: unknown;
-  forks?: unknown;
-  timelineHierarchy?: { data?: TimelineHierarchyData };
-}
-
 interface CloudSyncContext {
+  targetTabId: number | undefined;
   payload: {
     platform: SyncPlatform;
     accountScope: SyncAccountScope | null;
@@ -186,15 +170,18 @@ async function resolveCloudSyncContext(
   includeHighlights: boolean,
   getTargetTab: TargetTab,
 ): Promise<CloudSyncContext> {
-  const accountScope = await resolvePageScope(platform, true, getTargetTab);
+  const targetTab = await getTargetTab();
+  const capturedTarget = async () => targetTab;
+  const accountScope = await resolvePageScope(platform, true, capturedTarget);
   const extras = FOLDER_PLATFORMS[platform].syncsConversationExtras;
   const timelineHierarchyAccountScope = extras
-    ? await resolvePageScope(platform, false, getTargetTab)
+    ? await resolvePageScope(platform, false, capturedTarget)
     : null;
   const highlightAccountScope =
-    extras && includeHighlights ? await resolvePageScope(platform, false, getTargetTab) : null;
+    extras && includeHighlights ? await resolvePageScope(platform, false, capturedTarget) : null;
   const baseFolderStorageKey = FOLDER_PLATFORMS[platform].folderStorageKey;
   return {
+    targetTabId: targetTab?.id,
     payload: {
       platform,
       accountScope,
@@ -282,108 +269,74 @@ async function readLocalSyncData(
   return { folders, prompts, timelineHierarchy, accountScope, folderStorageKey, accountChanged };
 }
 
-/** Merge/overwrite, apply the ordered restore, then notify the page only after success. */
+async function isCurrentCloudRestore(
+  context: CloudSyncContext,
+  getTargetTab: TargetTab,
+  signal: AbortSignal,
+): Promise<boolean> {
+  if (signal.aborted) return false;
+  const tab = await getTargetTab();
+  if (supportsAccountIsolation(context.payload.platform)) {
+    if (context.targetTabId !== undefined && tab?.id !== context.targetTabId) return false;
+    if (
+      tab?.url &&
+      getFolderPlatformForHost(new URL(tab.url).hostname) !== context.payload.platform
+    )
+      return false;
+  }
+  const response = await requestTabData<{ ok?: boolean; accountScope?: SyncAccountScope }>(
+    getTargetTab,
+    'gv.sync.requestData',
+    2000,
+    context.payload.platform,
+  ).catch(() => undefined);
+  return (
+    !signal.aborted &&
+    !(
+      supportsAccountIsolation(context.payload.platform) &&
+      response?.ok &&
+      response.accountScope?.accountKey !== context.payload.accountScope?.accountKey
+    )
+  );
+}
+
+/** Plan every owner before writing; account and popup lifetime are checked between phases. */
 async function restoreCloudDownload(
   context: CloudSyncContext,
   getTargetTab: TargetTab,
   data: CloudDownloadData,
   mode: CloudRestoreMode,
   highlightsRestored: boolean,
-): Promise<{ foldersMissing: boolean; nameConflicts: number }> {
-  const definition = FOLDER_PLATFORMS[context.payload.platform];
-  // Pulled before the local read, so the folder merge is not computed from an older read, and
-  // before any write, so a failed pull is reported with the other unrestored parts.
-  let restoreOutlines: (() => Promise<boolean>) | undefined;
+  signal: AbortSignal,
+) {
   const send = (message: { type: string; payload?: unknown }) =>
     chrome.runtime.sendMessage(message);
-  try {
-    const pulled = await pullCatalogTimeline(send);
-    if (pulled) restoreOutlines = () => restorePulledCatalogTimeline(send, pulled);
-  } catch (error) {
-    restoreOutlines = () => Promise.reject(error);
-  }
+  const catalog = await pullCatalogTimeline(send).then(
+    (value) => ({ status: 'pulled' as const, value }),
+    (error) => ({ status: 'failed' as const, error }),
+  );
   const local = await readLocalSyncData(context, getTargetTab, 'restore');
-  let rawFolders = data.folders?.data;
-  if (definition.folderExport && data.folders) {
-    const validated = definition.folderExport.read(data.folders, mode);
-    if (!validated.ok) {
-      throw new CloudRestoreError(
-        [],
-        ['folders'],
-        new Error(`Invalid ${definition.folderExport.platform} folder backup`),
-        validated.reason === 'wrong-site'
-          ? 'folder_import_wrong_site'
-          : 'folder_import_invalid_format',
-      );
-    }
-    rawFolders = validated.payload.data;
-  }
-  const hasCloudFolderData = isFolderData(rawFolders);
-  const cloudFolders = isFolderData(rawFolders) ? rawFolders : { folders: [], folderContents: {} };
-  const cloudPrompts = definition.syncsSharedData ? data.prompts?.items || [] : [];
-  const cloudHierarchy = data.timelineHierarchy?.data || { conversations: {} };
-  const shouldOverwrite = mode === 'overwrite';
-  const nextFolders = shouldOverwrite ? cloudFolders : mergeFolderData(local.folders, cloudFolders);
-  const nextHierarchy = shouldOverwrite
-    ? cloudHierarchy
-    : mergeTimelineHierarchy(local.timelineHierarchy, cloudHierarchy);
-  const storageUpdate: Record<string, unknown> = { [local.folderStorageKey]: nextFolders };
-  if (definition.syncsConversationExtras) {
-    storageUpdate[context.timelineHierarchyStorageKey] = nextHierarchy;
-  }
-  let nameConflicts = 0;
-  await applyCloudRestore({
+  const current = () => isCurrentCloudRestore(context, getTargetTab, signal);
+  const result = await applyPopupCloudDownload({
+    context,
+    local,
+    data,
     mode,
     highlightsRestored,
-    plugins:
-      definition.syncsSharedData && data.plugins?.format === 'gemini-voyager.plugins.v1'
-        ? data.plugins.data
-        : undefined,
-    settings: definition.syncsSharedData ? data.settings?.data : undefined,
-    storageUpdate,
-    // AI Studio uploads the shared prompts too. The owner merges them with the library as
-    // stored at that moment, so a prompt another tab saves meanwhile is kept.
-    restorePrompts: definition.syncsSharedData
-      ? async () => {
-          const result = await createRuntimePromptLibraryClient().apply({
-            kind: 'restore',
-            mode,
-            items: cloudPrompts,
-          });
-          nameConflicts = result.nameConflicts;
-          return true;
-        }
-      : undefined,
-    foldersMissing: !hasCloudFolderData,
-    refusal: local.accountChanged
-      ? new Error('The tab switched to another account during the download')
-      : undefined,
-    // Both restore modes merge stars so this tab cannot erase other sites or accounts.
-    mergeStarred:
-      definition.syncsConversationExtras &&
-      [data.starred, data.stars].some((value) => value !== null && typeof value === 'object')
-        ? async () =>
-            (
-              await StarredMessagesService.mergeSync(
-                { v1: data.starred, v2: data.stars, v1AccountHash: data.starredAccountHash },
-                context.payload.accountScope,
-              )
-            ).status === 'merged'
-        : undefined,
-    // Forks only add, like stars, so a restore never drops forks made on this device.
-    mergeForks:
-      definition.syncsConversationExtras && data.forks && typeof data.forks === 'object'
-        ? async () => (await ForkNodesService.mergeCloud(data.forks)) === 'merged'
-        : undefined,
-    restoreOutlines,
+    catalog,
+    send,
+    current,
+    signal,
   });
-  try {
-    const tab = await getTargetTab();
-    if (tab?.id) await chrome.tabs.sendMessage(tab.id, { type: 'gv.folders.reload' });
-  } catch (error) {
-    console.warn('[CloudSyncSettings] Could not notify content script:', error);
+  if (!signal.aborted) {
+    try {
+      const tab = await getTargetTab();
+      if (tab?.id) await chrome.tabs.sendMessage(tab.id, { type: 'gv.folders.reload' });
+    } catch (error) {
+      console.warn('[CloudSyncSettings] Could not notify content script:', error);
+    }
   }
-  return { foldersMissing: !hasCloudFolderData, nameConflicts };
+  return result;
 }
 
 /** Capture each operation's scope; the download's restore keeps that captured context. */
@@ -392,6 +345,32 @@ export function useCloudSyncTransfer(
   includeHighlights: boolean,
   getTargetTab: TargetTab,
 ) {
+  const lifetime = useMemo(
+    () => ({
+      controller: new AbortController(),
+      platform,
+      includeHighlights,
+      getTargetTab,
+    }),
+    [platform, includeHighlights, getTargetTab],
+  );
+  useEffect(() => {
+    const machine = startMachine<{ status: 'mounted' }, { type: 'unused' }>(
+      {
+        id: `popup-cloud-transfer:${lifetime.platform}`,
+        transition: (state) => state,
+        effects: {
+          mounted: (stay) => {
+            stay.scope.effect(() => () => lifetime.controller.abort());
+          },
+        },
+      },
+      { status: 'mounted' },
+    );
+    return () => {
+      void machine.stop();
+    };
+  }, [lifetime]);
   const prepareUpload = useCallback(async () => {
     const context = await resolveCloudSyncContext(platform, includeHighlights, getTargetTab);
     const local = await readLocalSyncData(context, getTargetTab, 'upload');
@@ -408,17 +387,40 @@ export function useCloudSyncTransfer(
     const context = await resolveCloudSyncContext(platform, includeHighlights, getTargetTab);
     return {
       payload: context.payload,
-      restore: (data: CloudDownloadData, mode: CloudRestoreMode, highlightsRestored: boolean) =>
-        restoreCloudDownload(context, getTargetTab, data, mode, highlightsRestored),
+      restore: (
+        data: CloudDownloadData,
+        mode: CloudRestoreMode,
+        highlightsRestored: boolean,
+        snapshotId?: string,
+      ) =>
+        restoreCloudDownload(
+          context,
+          getTargetTab,
+          snapshotId ? { ...data, snapshotId } : data,
+          mode,
+          highlightsRestored,
+          lifetime.controller.signal,
+        ),
       /** Restores only the catalog outlines and stars, for a cloud without this site's files. */
-      restoreCatalogTimeline: async () => {
+      restoreCatalogTimeline: async (snapshotId?: string) => {
         const send = (message: { type: string; payload?: unknown }) =>
           chrome.runtime.sendMessage(message);
         const pulled = await pullCatalogTimeline(send);
-        return pulled ? restorePulledCatalogTimeline(send, pulled) : false;
+        return applyPopupCatalogDownload({
+          send,
+          catalog: pulled,
+          snapshotId,
+          current: () => isCurrentCloudRestore(context, getTargetTab, lifetime.controller.signal),
+          signal: lifetime.controller.signal,
+          snapshot: {
+            source: 'popup-restore',
+            platform,
+            accountScope: context.payload.accountScope,
+          },
+        });
       },
     };
-  }, [platform, includeHighlights, getTargetTab]);
+  }, [platform, includeHighlights, getTargetTab, lifetime]);
 
   return { prepareUpload, prepareDownload };
 }

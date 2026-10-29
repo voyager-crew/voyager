@@ -142,8 +142,18 @@ export function parsePromptLibraryOp(value: unknown): PromptLibraryOp | null {
     case 'restore': {
       // An overwrite from a backup without prompts stores an empty library.
       const items = parseItems(value.items, true);
+      if (
+        value.snapshotId !== undefined &&
+        (typeof value.snapshotId !== 'string' || !value.snapshotId)
+      )
+        return null;
       return items && (value.mode === 'merge' || value.mode === 'overwrite')
-        ? { kind: 'restore', mode: value.mode, items }
+        ? {
+            kind: 'restore',
+            mode: value.mode,
+            items,
+            ...(value.snapshotId ? { snapshotId: value.snapshotId } : {}),
+          }
         : null;
     }
     case 'update': {

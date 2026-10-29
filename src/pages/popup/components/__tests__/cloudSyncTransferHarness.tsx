@@ -1,4 +1,4 @@
-import React, { act, useEffect } from 'react';
+import React, { act, useCallback, useEffect } from 'react';
 import { type Root, createRoot } from 'react-dom/client';
 
 import { afterEach, beforeEach, vi } from 'vitest';
@@ -6,6 +6,7 @@ import { afterEach, beforeEach, vi } from 'vitest';
 import { accountIsolationService } from '@/core/services/AccountIsolationService';
 import type { FolderData } from '@/core/types/folder';
 import type { SyncAccountScope, SyncPlatform } from '@/core/types/sync';
+import { FOLDER_PLATFORMS } from '@/features/folder/platforms';
 import {
   handlePromptLibraryApplyMessage,
   isPromptLibraryApplyMessage,
@@ -32,9 +33,6 @@ export const folders: FolderData = {
   folderContents: {},
 };
 
-const getTargetTab = async () =>
-  ({ id: 7, url: 'https://gemini.google.com/u/1/app' }) as chrome.tabs.Tab;
-
 export type Transfer = ReturnType<typeof useCloudSyncTransfer>;
 
 function Harness({
@@ -46,6 +44,17 @@ function Harness({
   includeHighlights: boolean;
   capture: (transfer: Transfer) => void;
 }) {
+  const getTargetTab = useCallback(
+    async () =>
+      ({
+        id: 7,
+        url:
+          platform === 'gemini'
+            ? 'https://gemini.google.com/u/1/app'
+            : `https://${FOLDER_PLATFORMS[platform].hosts[0]}/`,
+      }) as chrome.tabs.Tab,
+    [platform],
+  );
   const transfer = useCloudSyncTransfer(platform, includeHighlights, getTargetTab);
   useEffect(() => {
     capture(transfer);
@@ -56,6 +65,7 @@ function Harness({
 export interface TransferHarness {
   transfer: Transfer;
   stored: Record<string, unknown>;
+  synced: Record<string, unknown>;
   starStore: StarStore;
   promptOwner: PromptLibraryOwner;
   forkOwner: ReturnType<typeof createForkMessagesOwner>;
@@ -65,6 +75,7 @@ export interface TransferHarness {
   readonly localGet: ReturnType<typeof vi.fn<(keys: unknown) => Promise<Record<string, unknown>>>>;
   readonly localSet: ReturnType<typeof vi.fn<(items: Record<string, unknown>) => Promise<void>>>;
   render: (platform?: SyncPlatform, includeHighlights?: boolean) => Promise<void>;
+  unmount: () => Promise<void>;
 }
 
 /**
@@ -78,6 +89,9 @@ export function setupTransferHarness(): TransferHarness {
     tabMessage: vi.fn<(tabId: number, message: { type: string }) => Promise<unknown>>(),
     localGet: vi.fn<(keys: unknown) => Promise<Record<string, unknown>>>(),
     localSet: vi.fn<(items: Record<string, unknown>) => Promise<void>>(),
+    unmount: async () => {
+      await act(async () => root.unmount());
+    },
     render: async (platform: SyncPlatform = 'gemini', includeHighlights = true) => {
       await act(async () =>
         root.render(
@@ -102,9 +116,27 @@ export function setupTransferHarness(): TransferHarness {
       message.type === 'gv.account.getContext' ? { ok: true, context: pageContext } : { ok: false },
     );
     h.stored = {};
+    h.synced = {};
     h.localGet.mockImplementation(async (keys) => {
-      const names = Array.isArray(keys) ? keys : [keys];
-      return Object.fromEntries(names.map((name) => [String(name), h.stored[String(name)]]));
+      const names =
+        typeof keys === 'string'
+          ? [keys]
+          : Array.isArray(keys)
+            ? keys
+            : Object.keys(keys ?? h.stored);
+      const defaults =
+        keys && typeof keys === 'object' && !Array.isArray(keys)
+          ? (keys as Record<string, unknown>)
+          : {};
+      return Object.fromEntries(
+        names.flatMap((name) =>
+          Object.prototype.hasOwnProperty.call(h.stored, name)
+            ? [[name, structuredClone(h.stored[name])]]
+            : Object.prototype.hasOwnProperty.call(defaults, name)
+              ? [[name, structuredClone(defaults[name])]]
+              : [],
+        ),
+      );
     });
     h.localSet.mockImplementation(async (items) => {
       Object.assign(h.stored, structuredClone(items));
@@ -139,8 +171,42 @@ export function setupTransferHarness(): TransferHarness {
       },
       tabs: { sendMessage: h.tabMessage },
       storage: {
-        local: { get: h.localGet, set: h.localSet },
-        sync: { get: vi.fn().mockResolvedValue({}) },
+        local: {
+          get: h.localGet,
+          set: h.localSet,
+          remove: vi.fn(async (keys: string | string[]) => {
+            for (const key of typeof keys === 'string' ? [keys] : keys) delete h.stored[key];
+          }),
+        },
+        sync: {
+          get: vi.fn(async (keys: unknown) => {
+            const names =
+              typeof keys === 'string'
+                ? [keys]
+                : Array.isArray(keys)
+                  ? keys
+                  : Object.keys(keys ?? h.synced);
+            const defaults =
+              keys && typeof keys === 'object' && !Array.isArray(keys)
+                ? (keys as Record<string, unknown>)
+                : {};
+            return Object.fromEntries(
+              names.flatMap((name) =>
+                Object.prototype.hasOwnProperty.call(h.synced, name)
+                  ? [[name, structuredClone(h.synced[name])]]
+                  : Object.prototype.hasOwnProperty.call(defaults, name)
+                    ? [[name, structuredClone(defaults[name])]]
+                    : [],
+              ),
+            );
+          }),
+          set: vi.fn(async (items: Record<string, unknown>) => {
+            Object.assign(h.synced, structuredClone(items));
+          }),
+          remove: vi.fn(async (keys: string | string[]) => {
+            for (const key of typeof keys === 'string' ? [keys] : keys) delete h.synced[key];
+          }),
+        },
       },
     });
     container = document.createElement('div');

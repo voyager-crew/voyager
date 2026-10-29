@@ -25,6 +25,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
+const RESTORE_RECEIPT_FORMAT = 'gv.catalog-outline-restore.v1';
+
+/** Internal runtime envelope; its metadata never enters a stored or exported bucket. */
+export function readCatalogOutlineRestore(value: unknown): {
+  bucket: unknown;
+  snapshotId?: string;
+} | null {
+  if (!isRecord(value) || value.format !== RESTORE_RECEIPT_FORMAT) return { bucket: value };
+  if (typeof value.snapshotId !== 'string' || !value.snapshotId || !isRecord(value.bucket))
+    return null;
+  return { bucket: value.bucket, snapshotId: value.snapshotId };
+}
+
 /**
  * Any id the timeline's id builder makes for `site`: `<site>:conv:<route id>` where the site has a
  * route pattern, `<site>:<path hash>` where it has none. The site prefix keeps one site's page from
@@ -49,6 +62,7 @@ export function parseCatalogOutlineWriteRequest(
     const { buckets } = payload;
     if (!isRecord(buckets)) return null;
     if (!Object.keys(buckets).every((key) => catalogHierarchySiteOf(key))) return null;
+    if (!Object.values(buckets).every((bucket) => readCatalogOutlineRestore(bucket))) return null;
     return { kind: 'restore', buckets };
   }
   if (payload.kind !== 'edit') return null;
@@ -90,10 +104,16 @@ type SendMessage = (message: { type: string; payload?: unknown }) => Promise<unk
 export async function restoreCatalogTimelineBuckets(
   send: SendMessage,
   buckets: unknown,
+  snapshotId?: string,
 ): Promise<{ restored: number; failed: number }> {
   if (!isRecord(buckets)) return { restored: 0, failed: 0 };
   const catalog = Object.fromEntries(
-    Object.entries(buckets).filter(([key]) => catalogHierarchySiteOf(key)),
+    Object.entries(buckets)
+      .filter(([key]) => catalogHierarchySiteOf(key))
+      .map(([key, bucket]) => [
+        key,
+        snapshotId === undefined ? bucket : { format: RESTORE_RECEIPT_FORMAT, snapshotId, bucket },
+      ]),
   );
   const count = Object.keys(catalog).length;
   if (count === 0) return { restored: 0, failed: 0 };

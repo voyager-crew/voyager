@@ -1,3 +1,4 @@
+import { recordCloudSyncWrites } from '@/core/services/CloudSyncSnapshotService';
 import { StorageKeys } from '@/core/types/common';
 import type { SyncAccountScope } from '@/core/types/sync';
 
@@ -48,12 +49,25 @@ export function createStarStore(area: StorageArea): StarStore {
     StorageKeys.TIMELINE_STARRED_MESSAGES,
     StorageKeys.SAVED_LIBRARY_STAR_TOMBSTONES,
   ];
-  const write = ({ data, tombstones }: StarState): Promise<void> =>
-    area.set({
+  const write = async ({ data, tombstones }: StarState, snapshotId?: string): Promise<void> => {
+    const items = {
       [StorageKeys.SAVED_LIBRARY_STARS]: data,
       [StorageKeys.TIMELINE_STARRED_MESSAGES]: legacyStarProjection(data),
       [StorageKeys.SAVED_LIBRARY_STAR_TOMBSTONES]: tombstones,
-    });
+    };
+    // The scoped return value omits other accounts that this physical write preserves.
+    if (snapshotId !== undefined)
+      await recordCloudSyncWrites(
+        snapshotId,
+        Object.entries(items).map(([key, value]) => ({
+          area: 'local',
+          key,
+          kind: 'starred',
+          value,
+        })),
+      );
+    await area.set(items);
+  };
   const read = async (sources: StarredMessagesData[] = [], deletions: StarTombstone[] = []) => {
     const values = await area.get(keys);
     const rawTombstones = normalizeStarTombstones(
@@ -104,7 +118,8 @@ export function createStarStore(area: StorageArea): StarStore {
       );
       const state = await read([incoming.data], incoming.tombstones);
       const imported = retargetKnownStarState(state, authorized, capturedScope);
-      if (sources.v1 != null || sources.v2 != null || state.dirty) await write(imported);
+      if (sources.v1 != null || sources.v2 != null || state.dirty)
+        await write(imported, sources.snapshotId);
       return filterStarStateByScope(imported, capturedScope);
     });
   };

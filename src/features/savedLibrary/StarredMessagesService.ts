@@ -101,12 +101,17 @@ export class StarredMessagesService {
   static async mergeSync(
     sources: StarSyncSources,
     accountScope: SyncAccountScope | null,
+    snapshotId?: string,
   ): Promise<{ status: 'absent' | 'merged'; count: number }> {
     const response = await this.sendMessage<{
       ok: boolean;
       status: 'absent' | 'merged';
       count: number;
-    }>('gv.starred.mergeSync', { ...sources, accountScope });
+    }>('gv.starred.mergeSync', {
+      ...sources,
+      accountScope,
+      ...(snapshotId === undefined ? {} : { snapshotId }),
+    });
     return { status: response.status, count: response.count };
   }
 

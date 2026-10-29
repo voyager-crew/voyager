@@ -1,5 +1,5 @@
 import type { FolderData } from '../types';
-import type { IFolderStorageAdapter } from './FolderStorageAdapter';
+import type { FolderWriteReceipt, IFolderStorageAdapter } from './FolderStorageAdapter';
 import { createFolderWriter, type FolderWriter } from './folderWriter';
 
 /**
@@ -30,8 +30,15 @@ export class AIStudioFolderStorageAdapter implements IFolderStorageAdapter {
    * `companions` share the folder write's `set` call, so they land together or not
    * at all. Authorization is refreshed immediately before that physical call.
    */
-  saveData(key: string, data: FolderData, companions?: Record<string, unknown>): Promise<void> {
-    return this.write(key, () => chrome.storage.local.set({ [key]: data, ...companions }));
+  async saveData(
+    key: string,
+    data: FolderData,
+    companions?: Record<string, unknown>,
+    beforeWrite?: FolderWriteReceipt,
+  ): Promise<void> {
+    const items = { [key]: data, ...companions };
+    if (beforeWrite) await beforeWrite(items);
+    await this.write(key, () => chrome.storage.local.set(items));
   }
 
   async removeData(key: string): Promise<void> {

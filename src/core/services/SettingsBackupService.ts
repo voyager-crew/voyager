@@ -81,6 +81,7 @@ export async function restoreBackupableSyncSettings(
   settings: unknown,
   storageArea?: StorageAreaLike,
   mode: SettingsRestoreMode = 'overwrite',
+  beforeWrite?: (values: Readonly<BackupableSyncSettings>) => Promise<void>,
 ): Promise<BackupableSyncSettings> {
   // Validate before normalizing retired switches, which could otherwise turn invalid input into false.
   const filtered = filterBackupableSyncSettings(filterRestorableSyncSettings(settings));
@@ -124,6 +125,7 @@ export async function restoreBackupableSyncSettings(
         filtered[StorageKeys.FOLDER_HIDE_ARCHIVED_NUDGE_SHOWN_AISTUDIO] === true;
     }
   }
+  if (beforeWrite) await beforeWrite(filtered);
   await area.set(filtered);
   return filtered;
 }

@@ -10,6 +10,7 @@ import {
   type TimelineHierarchyData,
   normalizeTimelineHierarchyData,
 } from './hierarchyTypes';
+import { guardLegacyTimelineOutline } from './legacyOutlineUndo';
 import { type OutlineEdit, applyOutlineEdit } from './outlineEdits';
 import { type OutlineChange, type SettledOutline, outlineSaveQueue } from './outlineSaveQueue';
 import { safeLocalStorageGet, safeLocalStorageSet } from './timelineLocalStorage';
@@ -65,12 +66,14 @@ async function writeChange(
   bucket: HierarchyBucket,
   conversationId: string,
   apply: OutlineChange,
+  beforeWrite?: () => Promise<boolean>,
 ): Promise<SettledOutline | null> {
   try {
     const conversations = { ...(await readConversations(bucket)) };
     const next = apply(conversations[conversationId] ?? null);
     if (next) conversations[conversationId] = next;
     else delete conversations[conversationId];
+    if (beforeWrite && !(await beforeWrite())) return null;
     await chrome.storage.local.set({ [bucket.key]: { conversations } });
     const order = outlineSaveQueue.claimSnapshotOrder();
     return { stored: (await readConversations(bucket))[conversationId] ?? null, order };
@@ -306,6 +309,23 @@ export class TimelineHierarchy {
       safeLocalStorageSet(legacyCollapsedKey, JSON.stringify(Array.from(this.collapsedMarkers)));
   }
 
+  private guardLegacy(bucket: HierarchyBucket, legacy: OutlineEntry): Promise<OutlineEntry> {
+    return guardLegacyTimelineOutline({
+      storageKeys: keysToRead(bucket),
+      conversationId: this.conversationId,
+      legacy,
+      levelsKey: this.policy.hierarchy.legacyLevelsKey,
+      collapsedKey: this.policy.hierarchy.legacyCollapsedKey,
+      current: () => {
+        if (this.accountChangedSinceObserved()) {
+          this.rebind();
+          return false;
+        }
+        return this.isCurrent && this.bucket?.key === bucket.key;
+      },
+    });
+  }
+
   // ===== Persistence =====
 
   /** Captures destination and change now; the write completes even if this timeline is torn down. */
@@ -329,7 +349,12 @@ export class TimelineHierarchy {
     if (!bucket || !key) return Promise.resolve();
     const conversationId = this.conversationId;
     return outlineSaveQueue.enqueue(key, null, () =>
-      writeChange(bucket, conversationId, (entry) => entry ?? legacy),
+      writeChange(
+        bucket,
+        conversationId,
+        (entry) => entry ?? legacy,
+        async () => (await this.guardLegacy(bucket, legacy)) !== null,
+      ),
     );
   }
   private async load(
@@ -351,7 +376,12 @@ export class TimelineHierarchy {
       return false;
     }
     const stored = readBucket(bucket, values).conversations[this.conversationId] ?? null;
-    const legacy = stored ? null : this.readLegacyEntry();
+    const legacy = stored ? null : await this.guardLegacy(bucket, this.readLegacyEntry());
+    if (!this.isCurrent || this.bucket?.key !== bucket.key) return false;
+    if (this.accountChangedSinceObserved()) {
+      this.rebind();
+      return false;
+    }
     const accepted = accept(() => this.takeSnapshot(order, stored, legacy, 'read'));
     if (accepted && legacy) await this.migrateLegacy(legacy);
     return accepted;

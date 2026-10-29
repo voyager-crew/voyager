@@ -5,7 +5,7 @@ import { FolderRepository } from './FolderRepository';
 import { getFolderRecoveryNotice } from './folderRecoveryNotice';
 import type { PlatformFolderConfig } from './platformFolderConfig';
 import { AIStudioFolderStorageAdapter } from './storage/AIStudioFolderStorageAdapter';
-import type { IFolderStorageAdapter } from './storage/FolderStorageAdapter';
+import type { FolderWriteReceipt, IFolderStorageAdapter } from './storage/FolderStorageAdapter';
 import { createSyncMessageListener } from './syncMessageListener';
 import type { ConversationReference, FolderData } from './types';
 
@@ -108,8 +108,8 @@ export class SiteFolderStore {
   }
 
   /** Persists a whole new snapshot (an import); edits are closed until it settles. */
-  replaceData(data: FolderData): Promise<boolean> {
-    return this.repository.replaceData(data);
+  replaceData(data: FolderData, beforeWrite?: FolderWriteReceipt): Promise<boolean> {
+    return this.repository.replaceData(data, undefined, beforeWrite);
   }
 
   /** Every filed reference, bucket by bucket. */

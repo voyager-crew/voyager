@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StorageKeys } from '@/core/types/common';
 import { DEFAULT_SYNC_STATE } from '@/core/types/sync';
 import { routeCatalogOutlineWrites } from '@/features/timeline/__tests__/catalogOutlineBackground';
+import { type MemoryStorage, createMemoryStorage } from '@/tests/memoryStorage';
 
 import { useCloudSyncSettings } from '../useCloudSyncSettings';
 
@@ -30,6 +31,7 @@ describe('cloud sync popup state owner', () => {
   let root: Root;
   let container: HTMLDivElement;
   let settings: Settings;
+  let memory: MemoryStorage;
   const state = { ...DEFAULT_SYNC_STATE, mode: 'manual' as const };
   const sendMessage = vi.fn<(message: { type: string }) => Promise<unknown>>();
   const localSet = vi.fn<(items: Record<string, unknown>) => Promise<void>>();
@@ -39,7 +41,8 @@ describe('cloud sync popup state owner', () => {
     sendMessage.mockImplementation(async (message) =>
       message.type === 'gv.sync.getState' ? { ok: true, state } : { ok: true },
     );
-    localSet.mockResolvedValue(undefined);
+    memory = createMemoryStorage();
+    localSet.mockImplementation((items) => memory.api.local.set(items));
     vi.stubGlobal('chrome', {
       runtime: {
         id: 'test',
@@ -51,8 +54,14 @@ describe('cloud sync popup state owner', () => {
         query: vi.fn().mockResolvedValue([{ url: 'https://gemini.google.com/app' }]),
       },
       storage: {
-        local: { get: vi.fn().mockResolvedValue({}), set: localSet },
-        sync: { get: vi.fn().mockResolvedValue({}) },
+        local: {
+          ...memory.api.local,
+          get: memory.api.local.get,
+          remove: memory.api.local.remove,
+          set: localSet,
+        },
+        sync: memory.api.sync,
+        onChanged: memory.api.onChanged,
       },
     });
     container = document.createElement('div');
@@ -140,7 +149,7 @@ describe('cloud sync popup state owner', () => {
     );
     await act(async () => settings.handleDownloadFromDrive());
 
-    expect(localSet).toHaveBeenCalledWith({ [key]: { conversations: { one: outline } } });
+    expect(memory.values.local.get(key)).toEqual({ conversations: { one: outline } });
     expect(settings.statusMessage).toEqual({ text: 'syncSuccess', kind: 'ok' });
   });
 

@@ -8,6 +8,7 @@ import { COMPOSER_STORAGE_KEYS } from '../composerKeys';
 import { CONVERSATION_STORAGE_KEYS } from '../conversationKeys';
 import { FOLDER_STORAGE_KEYS } from '../folderKeys';
 import { PLUGIN_STORAGE_KEYS } from '../pluginKeys';
+import { SYNC_STORAGE_KEYS } from '../syncKeys';
 import storageKeysBeforeSplit from './storageKeysBeforeSplit.json';
 
 const GROUPS = [
@@ -17,13 +18,13 @@ const GROUPS = [
   COMPOSER_STORAGE_KEYS,
   APP_STORAGE_KEYS,
   PLUGIN_STORAGE_KEYS,
+  SYNC_STORAGE_KEYS,
 ];
 
 describe('StorageKeys', () => {
   it('keeps every group key after the merge, so no spread overwrote another', () => {
     const groupKeyCount = GROUPS.reduce((count, group) => count + Object.keys(group).length, 0);
 
-    expect(Object.keys(StorageKeys)).toHaveLength(194);
     expect(groupKeyCount).toBe(Object.keys(StorageKeys).length);
   });
 
@@ -36,7 +37,7 @@ describe('StorageKeys', () => {
   it('persists every key under the same string as before the domain split', () => {
     // The fixture was generated once from the single-object common.ts; a moved key whose
     // value changed would silently orphan the data users already stored under it.
-    expect({ ...StorageKeys }).toEqual(storageKeysBeforeSplit);
+    expect({ ...StorageKeys }).toMatchObject(storageKeysBeforeSplit);
   });
 
   it('types StorageKey as a union of literals rather than string', () => {

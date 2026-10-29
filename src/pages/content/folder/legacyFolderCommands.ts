@@ -206,7 +206,9 @@ export function createLegacyFolderCommands(store: FolderStore): FolderCommands {
     // Parsing, backup and feedback stay with the transfer controller; only its prepared write moves.
     runBulk: async (body) => {
       if (body.kind !== 'commitPreparedData') return failed('not_loaded');
-      return (await store.replaceData(body.data)) ? { kind: 'saved' } : failed('storage_error');
+      return (await store.replaceData(body.data, body.beforeWrite))
+        ? { kind: 'saved' }
+        : failed('storage_error');
     },
     flush: () => {
       store.flushPendingSaveData();

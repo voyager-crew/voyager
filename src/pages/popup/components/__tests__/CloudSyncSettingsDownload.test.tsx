@@ -13,6 +13,7 @@ import {
   createCloudSyncChromeMock as createChromeMock,
   flushMicrotasks,
 } from './cloudSyncChromeMock';
+import { waitForCloudSyncAction } from './waitForCloudSyncAction';
 
 vi.mock('@/contexts/LanguageContext', () => ({
   useLanguage: () => ({
@@ -85,7 +86,7 @@ describe('CloudSyncSettings download', () => {
     await act(async () => {
       downloadButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
-    await flushMicrotasks();
+    await waitForCloudSyncAction(downloadButton);
 
     expect(sendMessageMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -127,12 +128,12 @@ describe('CloudSyncSettings download', () => {
     await act(async () => {
       downloadButton?.click();
     });
-    await flushMicrotasks();
+    await waitForCloudSyncAction(downloadButton);
 
     expect(container.textContent).toContain('syncSuccessFoldersMissing');
   });
 
-  it('blocks overwrite when Drive has no folders payload', async () => {
+  it('skips missing folders while applying present prompts in an overwrite', async () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     const sendMessageMock = vi.fn().mockImplementation((message: { type?: string }) => {
       if (message.type === 'gv.sync.getState') {
@@ -151,40 +152,28 @@ describe('CloudSyncSettings download', () => {
       return Promise.resolve({ ok: true });
     });
 
-    const chromeMock = createChromeMock(sendMessageMock);
-    (chromeMock.tabs.sendMessage as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: true,
-      data: {
-        folders: [
-          {
-            id: 'folder-1',
-            name: 'Existing',
-            parentId: null,
-            isExpanded: true,
-            createdAt: 1,
-            updatedAt: 1,
-          },
-        ],
-        folderContents: {},
+    const existingFolders = {
+      folders: [
+        {
+          id: 'folder-1',
+          name: 'Existing',
+          parentId: null,
+          isExpanded: true,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      ],
+      folderContents: {},
+    };
+    const chromeMock = createChromeMock(sendMessageMock, {
+      local: {
+        [StorageKeys.FOLDER_DATA]: existingFolders,
+        [StorageKeys.PROMPT_ITEMS]: [{ id: 'old', text: 'Old prompt', tags: [], createdAt: 1 }],
       },
     });
-    (chromeMock.storage.local.get as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-      gvFolderData: {
-        folders: [
-          {
-            id: 'folder-1',
-            name: 'Existing',
-            parentId: null,
-            isExpanded: true,
-            createdAt: 1,
-            updatedAt: 1,
-          },
-        ],
-        folderContents: {},
-      },
-      gvPromptItems: [],
-      geminiTimelineStarredMessages: { messages: {} },
-      [StorageKeys.TIMELINE_HIERARCHY]: { conversations: {} },
+    (chromeMock.tabs.sendMessage as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      data: existingFolders,
     });
     (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
 
@@ -202,15 +191,13 @@ describe('CloudSyncSettings download', () => {
     await act(async () => {
       overwriteButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
-    await flushMicrotasks();
+    await waitForCloudSyncAction(overwriteButton);
 
     expect(confirmSpy).toHaveBeenCalledOnce();
     expect(container.textContent).toContain('syncOverwriteMissingFolders');
-    expect(chromeMock.storage.local.set).not.toHaveBeenCalled();
-    expect(chromeMock.tabs.sendMessage).not.toHaveBeenCalledWith(
-      1,
-      expect.objectContaining({ type: 'gv.folders.reload' }),
-    );
+    const stored = await chromeMock.storage.local.get(null);
+    expect(stored[StorageKeys.FOLDER_DATA]).toEqual(existingFolders);
+    expect(stored[StorageKeys.PROMPT_ITEMS]).toEqual([]);
   });
 
   it('persists merged timeline hierarchy data on download', async () => {
@@ -261,23 +248,22 @@ describe('CloudSyncSettings download', () => {
     await act(async () => {
       downloadButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
-    await flushMicrotasks();
+    await waitForCloudSyncAction(downloadButton);
 
-    const localSetMock = chromeMock.storage.local.set as unknown as ReturnType<typeof vi.fn>;
-    expect(localSetMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        [StorageKeys.TIMELINE_HIERARCHY]: {
-          conversations: {
-            'gemini:conv:test': {
-              conversationUrl: 'https://gemini.google.com/app/test',
-              levels: { 'turn-1': 2 },
-              collapsed: ['turn-2'],
-              updatedAt: 1234,
-            },
-          },
+    expect(
+      (await chromeMock.storage.local.get(StorageKeys.TIMELINE_HIERARCHY))[
+        StorageKeys.TIMELINE_HIERARCHY
+      ],
+    ).toEqual({
+      conversations: {
+        'gemini:conv:test': {
+          conversationUrl: 'https://gemini.google.com/app/test',
+          levels: { 'turn-1': 2 },
+          collapsed: ['turn-2'],
+          updatedAt: 1234,
         },
-      }),
-    );
+      },
+    });
   });
 
   it('restores synced settings into chrome.storage.sync on download', async () => {
@@ -326,10 +312,9 @@ describe('CloudSyncSettings download', () => {
     await act(async () => {
       downloadButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
-    await flushMicrotasks();
+    await waitForCloudSyncAction(downloadButton);
 
-    const syncSetMock = chromeMock.storage.sync.set as unknown as ReturnType<typeof vi.fn>;
-    expect(syncSetMock).toHaveBeenCalledWith({
+    expect(await chromeMock.storage.sync.get(null)).toEqual({
       [StorageKeys.CHAT_WIDTH]: 88,
       [StorageKeys.CONTEXT_SYNC_PORT]: 4040,
     });
@@ -363,15 +348,12 @@ describe('CloudSyncSettings download', () => {
       return Promise.resolve({ ok: true });
     });
 
-    const chromeMock = createChromeMock(sendMessageMock);
-    (chromeMock.storage.local.get as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-      gvFolderData: { folders: [], folderContents: {} },
-      gvPromptItems: [],
-      geminiTimelineStarredMessages: { messages: {} },
-      [StorageKeys.TIMELINE_HIERARCHY]: { conversations: {} },
-      [StorageKeys.PLUGINS_STATE]: {
-        local: { enabled: true, installedAt: 1 },
-        shared: { enabled: false, installedAt: 2, settings: { width: 60 } },
+    const chromeMock = createChromeMock(sendMessageMock, {
+      local: {
+        [StorageKeys.PLUGINS_STATE]: {
+          local: { enabled: true, installedAt: 1 },
+          shared: { enabled: false, installedAt: 2, settings: { width: 60 } },
+        },
       },
     });
     (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
@@ -388,14 +370,14 @@ describe('CloudSyncSettings download', () => {
     await act(async () => {
       downloadButton?.click();
     });
-    await flushMicrotasks();
+    await waitForCloudSyncAction(downloadButton);
 
-    expect(chromeMock.storage.local.set).toHaveBeenCalledWith({
-      [StorageKeys.PLUGINS_STATE]: {
-        local: { enabled: true, installedAt: 1 },
-        shared: { enabled: true, installedAt: 3, settings: { width: 80 } },
-        cloud: { enabled: false, installedAt: 4 },
-      },
+    expect(
+      (await chromeMock.storage.local.get(StorageKeys.PLUGINS_STATE))[StorageKeys.PLUGINS_STATE],
+    ).toEqual({
+      local: { enabled: true, installedAt: 1 },
+      shared: { enabled: true, installedAt: 3, settings: { width: 80 } },
+      cloud: { enabled: false, installedAt: 4 },
     });
   });
 
@@ -481,26 +463,21 @@ describe('CloudSyncSettings download', () => {
     await act(async () => {
       downloadButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
-    await flushMicrotasks();
+    await waitForCloudSyncAction(downloadButton);
 
-    const localSetMock = chromeMock.storage.local.set as unknown as ReturnType<typeof vi.fn>;
     const scopedHierarchyKey = getTimelineHierarchyStorageKey(
       `email:${hashString('user@example.com')}`,
     );
 
-    expect(localSetMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        [scopedHierarchyKey]: {
-          conversations: {
-            'gemini:conv:test': {
-              conversationUrl: 'https://gemini.google.com/u/1/app/test',
-              levels: { 'turn-1': 2 },
-              collapsed: ['turn-2'],
-              updatedAt: 1234,
-            },
-          },
+    expect((await chromeMock.storage.local.get(scopedHierarchyKey))[scopedHierarchyKey]).toEqual({
+      conversations: {
+        'gemini:conv:test': {
+          conversationUrl: 'https://gemini.google.com/u/1/app/test',
+          levels: { 'turn-1': 2 },
+          collapsed: ['turn-2'],
+          updatedAt: 1234,
         },
-      }),
-    );
+      },
+    });
   });
 });

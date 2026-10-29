@@ -104,7 +104,7 @@ export class AIStudioFoldersView implements AIStudioFolderView {
       activation: () => session.activation,
       canEdit: () => session.canEdit,
       data: () => session.data,
-      replaceData: (data, prompts) => session.replaceData(data, prompts),
+      replaceData: (data, prompts, beforeWrite) => session.replaceData(data, prompts, beforeWrite),
       notify: this.notifyTone,
     });
     this.library = new LibraryPage({

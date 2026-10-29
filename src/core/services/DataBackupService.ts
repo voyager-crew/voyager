@@ -6,7 +6,7 @@
  * like network disconnections, page refreshes, and browser crashes.
  *
  * Backup Strategy:
- * 1. Primary Backup - Updated on every successful save
+ * 1. Primary Backup - Updated on ordinary successful saves; recovery keeps source backups
  * 2. Emergency Backup - Snapshot before each save operation
  * 3. BeforeUnload Backup - Created when user leaves the page
  *
@@ -22,6 +22,13 @@ import { isSafari } from '@/core/utils/browser';
 import { requestBudgetCopy } from '@/features/storage/budgetCopyMessage';
 
 import { dataBackupKey } from './dataBackupKeys';
+import {
+  parseBackupRecoveryData,
+  readBackupRecoveryCopies,
+  readLiveBackupRecoveryCopies,
+  recoverBackupForKey,
+  removeUndoneBackupCopy,
+} from './dataBackupRecovery';
 
 /** Recovery waits this long for backup writes in flight, then reads what landed. */
 const PENDING_WRITE_WAIT_MS = 2000;
@@ -66,7 +73,7 @@ export class DataBackupService<T = unknown> {
   /** Writes run one at a time; a newer value replaces a queued one for the same slot. */
   private readonly queuedWrites = new Map<string, QueuedExtensionWrite>();
   private draining: Promise<void> | null = null;
-  /** Backup work recovery waits for: queued writes, unload copies and stale-copy removals. */
+  /** Backup work recovery waits for: queued writes and unload copies. */
   private readonly inFlight = new Set<Promise<unknown>>();
   private readonly localWrites = new Set<Promise<void>>();
   /** Bumped per write, so a superseded write neither lands late nor updates the cache. */
@@ -374,52 +381,46 @@ export class DataBackupService<T = unknown> {
     window.addEventListener('beforeunload', this.beforeUnloadHandler);
   }
 
-  /**
-   * Attempt to recover data from backups
-   * Priority: primary > emergency > beforeUnload
-   */
+  /** Keep slot priority, choosing the newest valid page/durable copy in each slot. */
   recoverFromBackup(): T | null {
-    console.warn(`[BackupService:${this.namespace}] Attempting data recovery...`);
-
-    // Try primary backup first
-    const primary = this.loadBackup(this.primaryKey, 'primary');
-    if (primary) return primary;
-
-    // Try emergency backup
-    const emergency = this.loadBackup(this.emergencyKey, 'emergency');
-    if (emergency) return emergency;
-
-    // Try beforeUnload backup
-    const beforeUnload = this.loadBackup(this.beforeUnloadKey, 'beforeUnload');
-    if (beforeUnload) return beforeUnload;
-
-    console.error(`[BackupService:${this.namespace}] All backup recovery attempts failed`);
+    for (const key of [this.primaryKey, this.emergencyKey, this.beforeUnloadKey]) {
+      const candidates = readBackupRecoveryCopies(key, this.durableBackups)
+        .flatMap((copy) => {
+          const parsed = this.parseRecoveryCopy(copy.serialized);
+          return parsed ? [parsed] : [];
+        })
+        .sort((a, b) => b.timestamp - a.timestamp);
+      if (candidates.length > 0 && candidates[0].data) return candidates[0].data;
+    }
     return null;
   }
 
-  /**
-   * Load a specific backup
-   */
-  private loadBackup(key: string, type: string): T | null {
-    const candidates: BackupData<T>[] = [];
-    let localValue: string | null = null;
-    try {
-      localValue = localStorage.getItem(key);
-    } catch {
-      // Recovery can still use extension storage when page storage is unavailable.
-    }
-    for (const value of [localValue, this.durableBackups.get(key)]) {
-      if (!value) continue;
-      try {
-        const backup: BackupData<T> = JSON.parse(value);
-        if (this.isBackupValid(backup) && this.validateData(backup.data)) candidates.push(backup);
-      } catch (error) {
-        console.warn(`[BackupService:${this.namespace}] Invalid ${type} backup:`, error);
-      }
-    }
-    // Keep slot priority, but prefer the newest valid copy within each slot.
-    candidates.sort((a, b) => Date.parse(b.metadata.timestamp) - Date.parse(a.metadata.timestamp));
-    return candidates[0]?.data ?? null;
+  /** Folder recovery skips only copies whose data matches that bucket's undo markers. */
+  recoverFromBackupForKey(
+    storageKey: string,
+    canRecover: () => boolean = () => true,
+  ): Promise<T | null> {
+    return recoverBackupForKey({
+      storageKey,
+      slots: [this.primaryKey, this.emergencyKey, this.beforeUnloadKey],
+      readCopies: () =>
+        readLiveBackupRecoveryCopies([this.primaryKey, this.emergencyKey, this.beforeUnloadKey]),
+      parse: (serialized) => this.parseRecoveryCopy(serialized),
+      removeRejected: (copy) =>
+        removeUndoneBackupCopy(copy, {
+          version: (key) => this.slotVersions.get(key) ?? 0,
+          isCurrent: (key, version) => this.isCurrent(key, version) && canRecover(),
+          write: (operation) => this.writeWhenAllowed(operation, undefined),
+        }),
+      canRecover: () => this.canWrite() && canRecover(),
+    });
+  }
+
+  private parseRecoveryCopy(serialized: string) {
+    return parseBackupRecoveryData(serialized, {
+      maxAge: this.maxBackupAge,
+      validateData: this.validateData,
+    });
   }
 
   /**
@@ -438,32 +439,6 @@ export class DataBackupService<T = unknown> {
         itemCount,
       },
     };
-  }
-
-  /**
-   * Check if backup is within valid time range
-   */
-  private isBackupValid(backup: BackupData<T>): boolean {
-    try {
-      const backupTime = new Date(backup.metadata.timestamp).getTime();
-      const age = Date.now() - backupTime;
-
-      if (!Number.isFinite(age) || age < 0) {
-        console.warn(`[BackupService:${this.namespace}] Backup has future timestamp`);
-        return false;
-      }
-
-      if (age > this.maxBackupAge) {
-        console.warn(
-          `[BackupService:${this.namespace}] Backup is too old: ${Math.floor(age / (24 * 60 * 60 * 1000))} days`,
-        );
-        return false;
-      }
-
-      return true;
-    } catch {
-      return false;
-    }
   }
 
   /**

@@ -1,3 +1,4 @@
+import { recordCloudSyncWrites } from '@/core/services/CloudSyncSnapshotService';
 /**
  * The single writer of the prompt library (`gvPromptItems`).
  *
@@ -50,7 +51,7 @@ export type PromptLibraryOp =
    * A Drive restore: merge keeps every stored prompt and lets a newer same-id
    * cloud copy win (`mergePromptsWithStats`); overwrite stores the backup's list.
    */
-  | { kind: 'restore'; mode: 'merge' | 'overwrite'; items: PromptItem[] }
+  | { kind: 'restore'; mode: 'merge' | 'overwrite'; items: PromptItem[]; snapshotId?: string }
   /**
    * The one-time copy of a page's legacy localStorage library: stored as given,
    * and only while the key holds nothing at all.
@@ -269,11 +270,30 @@ export function createPromptLibraryOwner(options: {
     }, [PROMPT_LIBRARY_KEY]);
 
   /** A restore overwrite replaces whatever was read, a corrupt value included; a failed read refuses it. */
-  const overwrite = (items: PromptItem[]): Promise<PromptLibraryResult> =>
+  const restore = (
+    op: Extract<PromptLibraryOp, { kind: 'restore' }>,
+  ): Promise<PromptLibraryResult> =>
     serialize(async () => {
-      await readRaw();
+      const stored = await readRaw();
+      if (op.mode === 'merge' && stored !== undefined && !Array.isArray(stored))
+        throw new Error('The prompt library is not a list');
+      const { items, result } = restorePrompts(
+        Array.isArray(stored) ? stored : [],
+        op.mode,
+        op.items,
+      );
+      // Persist undo protection first; receipt failure must leave the library untouched.
+      if (op.snapshotId)
+        await recordCloudSyncWrites(op.snapshotId, [
+          {
+            area: 'local',
+            key: PROMPT_LIBRARY_KEY,
+            kind: 'prompts',
+            value: items,
+          },
+        ]);
       await options.area.set({ [PROMPT_LIBRARY_KEY]: items });
-      return summarize(items, items.length, 0);
+      return result;
     }, [PROMPT_LIBRARY_KEY]);
 
   const transact = <T>(
@@ -289,8 +309,8 @@ export function createPromptLibraryOwner(options: {
     apply: (op) =>
       op.kind === 'seed'
         ? seed(op.items)
-        : op.kind === 'restore' && op.mode === 'overwrite'
-          ? overwrite(op.items)
+        : op.kind === 'restore'
+          ? restore(op)
           : transact((stored) => applyPromptLibraryOp(stored, op)),
     read: () => serialize(readStored, [PROMPT_LIBRARY_KEY]),
     transact,

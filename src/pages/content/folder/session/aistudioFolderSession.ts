@@ -40,6 +40,7 @@ import { migrateAIStudioLegacySync } from '../aistudioImport';
 import { getFolderRecoveryNotice } from '../folderRecoveryNotice';
 import { AISTUDIO_FOLDER_CONFIG } from '../platformFolderConfig';
 import { AIStudioFolderStorageAdapter } from '../storage/AIStudioFolderStorageAdapter';
+import type { FolderWriteReceipt } from '../storage/FolderStorageAdapter';
 import { createSyncMessageListener } from '../syncMessageListener';
 import type { FolderData } from '../types';
 import { createAIStudioCommands } from './aistudioCommands';
@@ -256,8 +257,14 @@ export class AIStudioFolderSession {
    * Keeps imported or synced drafts out of live data until storage accepts
    * them. Prompts share the folder write, so a merge lands whole or not at all.
    */
-  async replaceData(data: FolderData, prompts?: PromptItem[]): Promise<boolean> {
-    return isSaved(await this.commands.runBulk({ kind: 'commitPreparedData', data, prompts }));
+  async replaceData(
+    data: FolderData,
+    prompts?: PromptItem[],
+    beforeWrite?: FolderWriteReceipt,
+  ): Promise<boolean> {
+    return isSaved(
+      await this.commands.runBulk({ kind: 'commitPreparedData', data, prompts, beforeWrite }),
+    );
   }
 
   /** Stops everything; resolves once the repository's accepted writes drained. */

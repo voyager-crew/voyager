@@ -7,6 +7,12 @@ import {
   accountIsolationService,
   detectAccountContextFromDocument,
 } from '@/core/services/AccountIsolationService';
+import { isCloudRecord } from '@/core/services/CloudSyncApplyPlan';
+import { STAR_RESTORE_KEYS, planForkRestore } from '@/core/services/CloudSyncRestoreKeys';
+import {
+  recordCloudSyncWrites,
+  type StorageWriteKey,
+} from '@/core/services/CloudSyncSnapshotService';
 import { StorageKeys } from '@/core/types/common';
 import type { PromptItem, SyncAccountScope } from '@/core/types/sync';
 import { toSyncAccountScope } from '@/core/utils/syncAccountScope';
@@ -92,19 +98,31 @@ async function restoreBeyondFolders(
   download: GeminiDownload,
   prompts: PromptItem[],
   scopes: CloudSyncScopes,
+  snapshotId: string,
 ): Promise<boolean> {
   const current = () => isCurrentTransfer(host, context);
   const hierarchyScope = scopes.timelineHierarchyAccountScope;
   const localHierarchy = await readLocalTimelineHierarchy(hierarchyScope);
   if (!current()) return false;
   // Save non-star data before asking the serialized owner to merge stars.
-  await chrome.storage.local.set({
+  const values = {
     [StorageKeys.PROMPT_ITEMS]: prompts,
     [getTimelineHierarchyStorageKey(hierarchyScope?.accountKey)]: mergeTimelineHierarchy(
       localHierarchy,
       download.timelineHierarchy?.data || { conversations: {} },
     ),
-  });
+  };
+  await recordCloudSyncWrites(
+    snapshotId,
+    Object.entries(values).map(([key, value]) => ({
+      area: 'local',
+      key,
+      value,
+      kind: key === StorageKeys.PROMPT_ITEMS ? 'prompts' : 'hierarchy',
+    })),
+  );
+  if (!current()) return false;
+  await chrome.storage.local.set(values);
   if (!current()) return false;
 
   const { starred, starredAccountHash, stars, forks } = download;
@@ -119,13 +137,17 @@ async function restoreBeyondFolders(
           await StarredMessagesService.mergeSync(
             { v1: starred, v2: stars, v1AccountHash: starredAccountHash },
             scopes.accountScope ?? null,
+            snapshotId,
           )
         ).status,
     },
     {
       payload: forks,
       label: t('syncRestoreForks'),
-      run: () => ForkNodesService.mergeCloud(forks),
+      run: () =>
+        ForkNodesService.mergeCloud(
+          isCloudRecord(forks) ? { ...forks, cloudSyncSnapshotId: snapshotId } : forks,
+        ),
     },
   ].filter((merge) => merge.payload !== null && typeof merge.payload === 'object');
   for (const [index, merge] of merges.entries()) {
@@ -165,18 +187,39 @@ function geminiCloudSite(host: FolderTransferHost): CloudSyncSite {
       return {
         current,
         folders: cloneFolderData(session.data),
+        folderStorageKey: session.storageKey,
         data: () => host.getContext().data,
         scopes: async () => ({
           accountScope,
           timelineHierarchyAccountScope: await resolveTimelineHierarchySyncScope(),
         }),
-        save: async (folders) => {
-          const saved = await host.applyData(folders);
+        save: async (folders, _prompts, beforeWrite) => {
+          const saved = await host.applyData(folders, beforeWrite);
           if (!saved && current()) host.notify(t('folder_save_error'), 'error');
           return saved;
         },
-        afterSave: (download, prompts, scopes) =>
-          restoreBeyondFolders(host, context, download, prompts ?? [], scopes),
+        prepareRestore: async (download: GeminiDownload, prompts, scopes) => {
+          const forks = await planForkRestore(download.forks);
+          const keys: StorageWriteKey[] = [
+            { area: 'local', key: StorageKeys.PROMPT_ITEMS },
+            {
+              area: 'local',
+              key: getTimelineHierarchyStorageKey(scopes.timelineHierarchyAccountScope?.accountKey),
+            },
+            ...([download.starred, download.stars].some(
+              (value) => value !== null && typeof value === 'object',
+            )
+              ? STAR_RESTORE_KEYS
+              : []),
+            ...forks.keys,
+          ];
+          const planned = forks.skip ? { ...download, forks: undefined } : download;
+          return {
+            keys,
+            run: (snapshotId: string) =>
+              restoreBeyondFolders(host, context, planned, prompts ?? [], scopes, snapshotId),
+          };
+        },
       };
     },
   };

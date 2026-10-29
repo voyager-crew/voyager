@@ -123,6 +123,7 @@ export function createAIStudioCommands(
         const saved = await repository.replaceData(
           body.data,
           body.prompts ? { gvPromptItems: body.prompts } : undefined,
+          body.beforeWrite,
         );
         return saved ? { kind: 'saved' } : failed('storage_error');
       } finally {

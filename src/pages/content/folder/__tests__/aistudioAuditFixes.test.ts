@@ -4,7 +4,9 @@ import browser from 'webextension-polyfill';
 import { StorageKeys } from '@/core/types/common';
 import type { PromptItem } from '@/core/types/sync';
 import { AIStudioTransfer } from '@/features/plugins/verbs/folders/aistudio/cloud';
+import { createMemoryStorage } from '@/tests/memoryStorage';
 
+import { FolderDataSession } from '../FolderDataSession';
 import { FolderRepository } from '../FolderRepository';
 import { applyHideArchivedRows } from '../aistudioLibraryTable';
 import { AISTUDIO_FOLDER_CONFIG } from '../platformFolderConfig';
@@ -238,28 +240,45 @@ describe('Drive prompt merge', () => {
     };
 
     const data: FolderData = { folders: [], folderContents: {} };
-    const session = { data, accountScope: null };
-    vi.mocked(chrome.storage.local.get).mockResolvedValue({ gvPromptItems: [local] } as never);
+    const key = StorageKeys.FOLDER_DATA_AISTUDIO;
+    const storage = createMemoryStorage();
+    storage.values.local.set(key, structuredClone(data));
+    storage.values.local.set(StorageKeys.PROMPT_ITEMS, [local]);
+    const originalStorage = chrome.storage;
+    chrome.storage = storage.api;
+    const session = new FolderDataSession(key, 'aistudio-folders', null, () => true);
+    session.data = data;
+    session.ready = true;
+    const adapter = new AIStudioFolderStorageAdapter();
+    adapter.setWriteGate(async (_key, operation) => operation());
     vi.mocked(browser.runtime.sendMessage).mockResolvedValue({
       ok: true,
       data: { folders: { data }, prompts: { items: [cloud] } },
     });
-    const replaceData = vi.fn().mockResolvedValue(true);
     const transfer = new AIStudioTransfer({
       t: (key) => key,
-      session: () => session as never,
+      session: () => session,
       activation: () => 1,
       canEdit: () => true,
       data: () => data,
-      replaceData,
+      replaceData: async (folders, prompts) => {
+        await adapter.saveData(key, folders, { [StorageKeys.PROMPT_ITEMS]: prompts });
+        session.data = folders;
+        return true;
+      },
       notify: vi.fn(),
     });
 
-    await transfer.sync();
+    try {
+      await transfer.sync();
 
-    expect(replaceData).toHaveBeenCalledWith(expect.anything(), [
-      { ...cloud, name: 'Keep this name' },
-    ]);
+      expect(storage.values.local.get(StorageKeys.PROMPT_ITEMS)).toEqual([
+        { ...cloud, name: 'Keep this name' },
+      ]);
+      expect(storage.values.local.get(key)).toEqual(data);
+    } finally {
+      chrome.storage = originalStorage;
+    }
   });
 });
 

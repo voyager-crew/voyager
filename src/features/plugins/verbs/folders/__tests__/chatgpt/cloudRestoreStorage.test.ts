@@ -58,7 +58,7 @@ async function restore(snapshot: FolderData, mode: 'merge' | 'overwrite' = 'over
     plugins: undefined,
     settings: undefined,
     storageUpdate: { [StorageKeys.FOLDER_DATA_CHATGPT]: snapshot },
-    foldersMissing: false,
+    snapshot: { source: 'popup-restore', platform: 'chatgpt', accountScope: null },
   });
 }
 

@@ -20,7 +20,7 @@ export class FolderDataSession {
   pendingSave: FolderData | null = null;
   /** Another context wrote this bucket; reload once this session is active and idle. */
   reconcilePending = false;
-  /** A bucket event superseded the latest read, even if echo suppression skips a reload. */
+  /** An external bucket event superseded the latest read; own-write echoes do not. */
   storageChangedDuringRead = false;
   /** Numbers each write attempt in start order; writes of one session run one at a time. */
   writeGen = 0;
