@@ -1011,7 +1011,7 @@
     "description": "Custom websites for prompt manager"
   },
   "customWebsitesPlaceholder": {
-    "message": "عنوان الموقع، مثل example.com",
+    "message": "مثل example.com",
     "description": "Custom websites input placeholder"
   },
   "addWebsite": {
