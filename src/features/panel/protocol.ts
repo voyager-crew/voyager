@@ -4,8 +4,32 @@ export { PANEL_TAB_REQUEST_TYPES, parsePanelTabRequest } from './tabRequests';
 export type { PanelTabRequest } from './tabRequests';
 
 export const PANEL_PAGE_PATH = 'src/pages/panel/index.html';
-export const PANEL_TOKEN_QUERY_PARAM = 'token';
 export const PANEL_TOKEN_TTL_MS = 30_000;
+
+/** Sent only to the shell's own frame window; never serialize the secret into host DOM. */
+export const PANEL_BOOTSTRAP_KIND = 'gv.panel.bootstrap';
+export interface PanelBootstrapMessage {
+  kind: typeof PANEL_BOOTSTRAP_KIND;
+  token: PanelToken;
+}
+
+export function parsePanelBootstrapMessage(value: unknown): PanelBootstrapMessage | null {
+  return isPanelRecord(value) && value.kind === PANEL_BOOTSTRAP_KIND && isPanelToken(value.token)
+    ? { kind: value.kind, token: value.token }
+    : null;
+}
+
+/** The redeemed panel acknowledges without exposing a secret or session to the host window. */
+export const PANEL_BOOTSTRAP_ACK_KIND = 'gv.panel.bootstrap.accepted';
+export interface PanelBootstrapAckMessage {
+  kind: typeof PANEL_BOOTSTRAP_ACK_KIND;
+}
+
+export function parsePanelBootstrapAckMessage(value: unknown): PanelBootstrapAckMessage | null {
+  return isPanelRecord(value) && value.kind === PANEL_BOOTSTRAP_ACK_KIND
+    ? { kind: value.kind }
+    : null;
+}
 
 export const PANEL_MESSAGE = {
   tokenIssue: 'gv.panel.token.issue',

@@ -1,3 +1,4 @@
+import { type PanelFrameBootstrap, bindPanelFrame } from './bootstrap';
 import { SOFT, animate, settled } from './motion';
 /**
  * The panel window on the host page: the extension page in an iframe, at the
@@ -46,7 +47,7 @@ export function panelSize(): { width: number; height: number } {
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(Math.max(value, min), Math.max(min, max));
 
-export function createPanelFrame(url: string): PanelFrame {
+export function createPanelFrame(url: string, bootstrap: PanelFrameBootstrap): PanelFrame {
   const element = document.createElement('div');
   element.className = 'gv-ps-panel';
   element.setAttribute('role', 'dialog');
@@ -58,6 +59,7 @@ export function createPanelFrame(url: string): PanelFrame {
   iframe.src = url;
   element.appendChild(iframe);
   document.body.appendChild(element);
+  const stopBootstrap = bindPanelFrame(element, iframe, url, bootstrap);
 
   let current: PanelPoint = { x: 0, y: 0 };
   let dragBase: PanelPoint | null = null;
@@ -185,6 +187,7 @@ export function createPanelFrame(url: string): PanelFrame {
       return settled([animation]);
     },
     destroy() {
+      stopBootstrap();
       clearGlide();
       running?.cancel();
       running = null;

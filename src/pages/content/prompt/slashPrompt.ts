@@ -13,6 +13,7 @@ import { promptStorageService } from '@/core/services/StorageService';
 import { isImeKeyEvent } from '@/core/services/composer/sendKeys/sendKeyIntent';
 import { StorageKeys } from '@/core/types/common';
 import { type PromptItem } from '@/core/types/sync';
+import { isUserEvent } from '@/core/utils/userEvent';
 import type { PromptScheme } from '@/features/prompt/PromptSiteAdapter';
 import { isPromptTemplate } from '@/features/prompt/model/promptTemplate';
 import { getTranslationSync } from '@/utils/i18n';
@@ -173,9 +174,11 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
     });
   }
 
-  function confirm(index: number): boolean {
+  function confirm(index: number, event: Event): boolean {
     const action = actions[index - results.length];
     if (activeQuery && action) {
+      // A synthetic Enter/Tab must not turn an untrusted slash query into a panel session.
+      if (!isUserEvent(event)) return false;
       const query = activeQuery;
       close();
       runSlashAction(action, query);
@@ -253,13 +256,15 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
         if (event.button !== 0) return;
         event.preventDefault();
         event.stopPropagation();
-        confirm(index);
+        confirm(index, event);
       });
       list.appendChild(row);
     });
     actions.forEach((action, i) => {
       const index = results.length + i;
-      const row = renderSlashAction(action, index === selectedIndex, () => confirm(index));
+      const row = renderSlashAction(action, index === selectedIndex, (event) =>
+        confirm(index, event),
+      );
       preview.bindRow(row, () => {
         root.dataset.gvInteraction = 'pointer';
         selectedIndex = index;
@@ -376,7 +381,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
         ) {
           return;
         }
-        confirm(selectedIndex);
+        confirm(selectedIndex, event);
         return;
       }
       if (event.key === 'Escape') {

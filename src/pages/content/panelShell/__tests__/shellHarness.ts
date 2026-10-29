@@ -14,7 +14,7 @@ import { startPanelShell } from '../index';
 
 export const EXTENSION_ORIGIN = 'chrome-extension://test-extension-id';
 export const TOKEN = 'a'.repeat(64);
-export const PANEL_URL = `${EXTENSION_ORIGIN}/${PANEL_PAGE_PATH}?token=${TOKEN}`;
+export const PANEL_URL = `${EXTENSION_ORIGIN}/${PANEL_PAGE_PATH}`;
 
 type Message = { type?: string; payload?: unknown };
 

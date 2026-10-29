@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
+import { forge } from '../../panelShell/__tests__/forgedEvents';
 import { voyagerPanelOpener } from '../../panelShell/opener';
 import { type PromptTrigger, mountPromptTrigger } from '../promptTrigger';
 import { resolvePromptSiteAdapter } from '../resolvePromptSiteAdapter';
@@ -21,6 +22,7 @@ import {
 } from './slashPromptTestHarness';
 
 vi.mock('webextension-polyfill', () => ({ default: globalThis.chrome }));
+vi.mock('@/core/utils/userEvent', () => import('../../panelShell/__tests__/forgedEvents'));
 vi.mock('../../changelog/index', () => ({
   hasUnreadChangelog: vi.fn(async () => false),
   showChangelogModalDirect: vi.fn(async () => true),
@@ -144,6 +146,45 @@ describe('slash menu entries', () => {
     expect(openPanel).not.toHaveBeenCalled();
     expect(input.textContent).toBe('');
   });
+
+  it.each(['Manage prompts…', 'Voyager panel…'])(
+    'does not execute %s or edit the composer for a synthetic mouse confirmation',
+    (label) => {
+      const input = createContentEditable('/');
+      start();
+      typeInto(input);
+      const row = Array.from(document.querySelectorAll('.gv-pm-slash-action')).find(
+        (candidate) => candidate.textContent === label,
+      )!;
+
+      row.dispatchEvent(
+        forge(new MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 })),
+      );
+
+      expect(openPromptManager).not.toHaveBeenCalled();
+      expect(openPanel).not.toHaveBeenCalled();
+      expect(input.textContent).toBe('/');
+      choose(label);
+      expect(label === 'Voyager panel…' ? openPanel : openPromptManager).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each(['Enter', 'Tab'])(
+    'does not open a panel from synthetic input followed by synthetic %s',
+    (key) => {
+      const input = createTextarea('/voyager');
+      start();
+      // A host can synthesize input and selection; neither authorizes the action.
+      typeInto(input);
+      input.dispatchEvent(forge(new KeyboardEvent('keydown', { key, bubbles: true })));
+
+      expect(openPanel).not.toHaveBeenCalled();
+      expect(input.value).toBe('/voyager');
+      press(input, key);
+      expect(openPanel).toHaveBeenCalledOnce();
+      expect(input.value).toBe('');
+    },
+  );
 
   it('offers only what can open: no "Manage prompts…" while the ball is hidden, no panel entry without the shell', () => {
     trigger!.setHiddenByUser(true);

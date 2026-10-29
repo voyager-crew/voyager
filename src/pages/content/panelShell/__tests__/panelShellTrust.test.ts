@@ -12,6 +12,7 @@ import { PANEL_MESSAGE, PANEL_SHELL_MESSAGE } from '@/features/panel/protocol';
 import { forge } from './forgedEvents';
 import {
   EXTENSION_ORIGIN,
+  TOKEN,
   type ShellPage,
   ball,
   bootstrapI18n,
@@ -35,6 +36,7 @@ beforeAll(bootstrapI18n);
 
 afterEach(async () => {
   await page.restore();
+  vi.restoreAllMocks();
 });
 
 function forgedClick(target: Element): void {
@@ -160,5 +162,199 @@ describe('forged input', () => {
     postFromPanel({ kind: PANEL_SHELL_MESSAGE.close });
     await flush();
     expect(panel()).toBeNull();
+  });
+});
+
+describe('panel bootstrap isolation', () => {
+  it('delivers the bootstrap after an initial blank document load drops the first handoff', async () => {
+    page = installShellPage(CLAUDE);
+    await page.start();
+    pressAltV(document.body);
+    await flush();
+    const iframe = document.querySelector<HTMLIFrameElement>('.gv-ps-frame')!;
+    let loadedOrigin = new URL(CLAUDE).origin;
+    const delivered: unknown[] = [];
+    const post = vi
+      .spyOn(iframe.contentWindow!, 'postMessage')
+      .mockImplementation((message: unknown, targetOrigin) => {
+        // The initial about:blank document inherits the host origin; the browser drops this send.
+        if (targetOrigin === loadedOrigin) delivered.push(message);
+      });
+
+    iframe.dispatchEvent(new Event('load'));
+    expect(post).toHaveBeenCalledWith(
+      { kind: 'gv.panel.bootstrap', token: TOKEN },
+      EXTENSION_ORIGIN,
+    );
+    expect(delivered).toEqual([]);
+
+    loadedOrigin = EXTENSION_ORIGIN;
+    iframe.dispatchEvent(new Event('load'));
+    expect(delivered).toEqual([{ kind: 'gv.panel.bootstrap', token: TOKEN }]);
+
+    postFromPanel({ kind: 'gv.panel.bootstrap.accepted' });
+    iframe.dispatchEvent(new Event('load'));
+    expect(delivered).toEqual([{ kind: 'gv.panel.bootstrap', token: TOKEN }]);
+  });
+
+  it('keeps the redeemable secret out of the DOM and sends it only to the created frame after load', async () => {
+    page = installShellPage(CLAUDE);
+    await page.start();
+    pressAltV(document.body);
+    await flush();
+    const iframe = document.querySelector<HTMLIFrameElement>('.gv-ps-frame')!;
+    const original = vi.spyOn(iframe.contentWindow!, 'postMessage').mockImplementation(() => {});
+    const transplanted = iframe.cloneNode() as HTMLIFrameElement;
+    document.body.appendChild(transplanted);
+    const stolen = vi
+      .spyOn(transplanted.contentWindow!, 'postMessage')
+      .mockImplementation(() => {});
+
+    expect(document.body.innerHTML).not.toContain(TOKEN);
+    expect(new URL(iframe.src).search).toBe('');
+    expect(original).not.toHaveBeenCalled();
+    iframe.dispatchEvent(forge(new Event('load')));
+    transplanted.dispatchEvent(new Event('load'));
+    expect(original).not.toHaveBeenCalled();
+    expect(stolen).not.toHaveBeenCalled();
+
+    iframe.dispatchEvent(new Event('load'));
+    expect(original).toHaveBeenCalledExactlyOnceWith(
+      { kind: 'gv.panel.bootstrap', token: TOKEN },
+      EXTENSION_ORIGIN,
+    );
+    postFromPanel({ kind: 'gv.panel.bootstrap.accepted' });
+    iframe.dispatchEvent(new Event('load'));
+    expect(original).toHaveBeenCalledOnce();
+    expect(stolen).not.toHaveBeenCalled();
+  });
+
+  it.each(['synthetic', 'other frame', 'host origin', 'malformed'])(
+    'ignores a %s acknowledgment and continues delivery',
+    async (attack) => {
+      page = installShellPage(CLAUDE);
+      await page.start();
+      pressAltV(document.body);
+      await flush();
+      const iframe = document.querySelector<HTMLIFrameElement>('.gv-ps-frame')!;
+      const post = vi.spyOn(iframe.contentWindow!, 'postMessage').mockImplementation(() => {});
+      iframe.dispatchEvent(new Event('load'));
+
+      const other = document.createElement('iframe');
+      document.body.appendChild(other);
+      const acknowledgment = new MessageEvent('message', {
+        data: { kind: attack === 'malformed' ? null : 'gv.panel.bootstrap.accepted' },
+        source: attack === 'other frame' ? other.contentWindow : iframe.contentWindow,
+        origin: attack === 'host origin' ? new URL(CLAUDE).origin : EXTENSION_ORIGIN,
+      });
+      window.dispatchEvent(attack === 'synthetic' ? forge(acknowledgment) : acknowledgment);
+      iframe.dispatchEvent(new Event('load'));
+      expect(post).toHaveBeenCalledTimes(2);
+
+      postFromPanel({ kind: 'gv.panel.bootstrap.accepted' });
+      iframe.dispatchEvent(new Event('load'));
+      expect(post).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it('sends no further bootstrap after the shell stops before acknowledgment', async () => {
+    page = installShellPage(CLAUDE);
+    const stop = await page.start();
+    pressAltV(document.body);
+    await flush();
+    const iframe = document.querySelector<HTMLIFrameElement>('.gv-ps-frame')!;
+    const post = vi.spyOn(iframe.contentWindow!, 'postMessage').mockImplementation(() => {});
+    iframe.dispatchEvent(new Event('load'));
+    expect(post).toHaveBeenCalledOnce();
+
+    stop();
+    await flush();
+    iframe.dispatchEvent(new Event('load'));
+    expect(post).toHaveBeenCalledOnce();
+    expect(panel()).toBeNull();
+  });
+
+  it.each([
+    'remove',
+    'replace',
+    'src change',
+    'srcdoc change',
+    'src change and reset',
+    'remove and reinsert',
+    'root detach and reinsert',
+  ])('revokes the redeemed session when the exact iframe is changed: %s', async (attack) => {
+    page = installShellPage(CLAUDE);
+    await page.start();
+    pressAltV(document.body);
+    await flush();
+    const wrapper = panel()!;
+    const iframe = wrapper.querySelector('iframe')!;
+    const originalUrl = iframe.src;
+    iframe.dispatchEvent(new Event('load'));
+    postFromPanel({ kind: 'gv.panel.bootstrap.accepted' });
+    if (attack === 'remove') iframe.remove();
+    if (attack === 'replace') iframe.replaceWith(iframe.cloneNode());
+    if (attack.startsWith('src change')) iframe.src = 'https://evil.example/';
+    if (attack === 'srcdoc change') iframe.srcdoc = '<p>replaced</p>';
+    if (attack === 'src change and reset') iframe.src = originalUrl;
+    if (attack === 'remove and reinsert') {
+      iframe.remove();
+      wrapper.appendChild(iframe);
+    }
+    if (attack === 'root detach and reinsert') {
+      const root = document.documentElement;
+      root.remove();
+      document.appendChild(root);
+    }
+    await flush();
+
+    expect(page.sentOfType(PANEL_MESSAGE.close)).toHaveLength(1);
+    expect(panel()).toBeNull();
+  });
+
+  it('does not send the secret if the host changes and resets src immediately before load', async () => {
+    page = installShellPage(CLAUDE);
+    await page.start();
+    pressAltV(document.body);
+    await flush();
+    const iframe = document.querySelector<HTMLIFrameElement>('.gv-ps-frame')!;
+    const post = vi.spyOn(iframe.contentWindow!, 'postMessage').mockImplementation(() => {});
+    const originalUrl = iframe.src;
+    iframe.src = 'https://evil.example/';
+    iframe.src = originalUrl;
+    iframe.dispatchEvent(new Event('load'));
+
+    expect(post).not.toHaveBeenCalled();
+    await flush();
+    expect(page.sentOfType(PANEL_MESSAGE.close)).toHaveLength(1);
+    expect(panel()).toBeNull();
+  });
+
+  it('revokes a removed iframe while its close animation is still running', async () => {
+    page = installShellPage(CLAUDE);
+    await page.start();
+    pressAltV(document.body);
+    await flush();
+    let finish = (): void => {};
+    const finished = new Promise<void>((resolve) => (finish = resolve));
+    const previous = Object.getOwnPropertyDescriptor(Element.prototype, 'animate');
+    Object.defineProperty(Element.prototype, 'animate', {
+      configurable: true,
+      value: () => ({ finished, cancel: () => {} }),
+    });
+    try {
+      postFromPanel({ kind: PANEL_SHELL_MESSAGE.close });
+      await flush();
+      expect(panel()).not.toBeNull();
+      expect(page.sentOfType(PANEL_MESSAGE.close)).toHaveLength(0);
+      panel()!.querySelector('iframe')!.remove();
+      await flush();
+      expect(page.sentOfType(PANEL_MESSAGE.close)).toHaveLength(1);
+      expect(panel()).toBeNull();
+    } finally {
+      finish();
+      if (previous) Object.defineProperty(Element.prototype, 'animate', previous);
+      else Reflect.deleteProperty(Element.prototype, 'animate');
+    }
   });
 });

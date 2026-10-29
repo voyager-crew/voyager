@@ -28,7 +28,8 @@ describe('panel handshake through the registered background listener', () => {
 
   it('redeems once for the issuing tab and registers only that panel frame', async () => {
     const { token, panelUrl, sender, session } = await api.redeem();
-    expect(new URL(panelUrl).searchParams.get('token')).toBe(token);
+    expect(new URL(panelUrl).search).toBe('');
+    expect(panelUrl).not.toContain(token);
     expect(session.context).toEqual(CONTEXT);
     expect(session.hostOrigin).toBe('https://gemini.google.com');
     expect(session.sessionId).not.toBe(token);
@@ -47,34 +48,49 @@ describe('panel handshake through the registered background listener', () => {
     expect(await isRegisteredPanelFrame(sender)).toBe(true);
   });
 
-  it.each([
-    'wrong tab',
-    'top frame',
-    'foreign extension',
-    'foreign URL',
-    'wrong page',
-    'wrong URL token',
-  ])('refuses a %s redemption without consuming the legitimate token', async (reason) => {
+  it.each(['wrong tab', 'top frame', 'foreign extension', 'foreign URL', 'wrong page'])(
+    'refuses a %s redemption without consuming the legitimate token',
+    async (reason) => {
+      const { token, panelUrl } = await api.issue();
+      const sender = api.frameSender(panelUrl);
+      if (reason === 'wrong tab') sender.tab = api.frameSender(panelUrl, 8).tab;
+      if (reason === 'top frame') sender.frameId = 0;
+      if (reason === 'foreign extension') sender.id = 'another-extension';
+      if (reason === 'foreign URL')
+        sender.url = panelUrl.replace('test-extension-id', 'another-extension');
+      if (reason === 'wrong page') sender.url = chrome.runtime.getURL('src/pages/popup/index.html');
+      expect(
+        await api.send({ type: PANEL_MESSAGE.tokenRedeem, payload: { token } }, sender),
+      ).toMatchObject({ ok: false });
+      expect(await isRegisteredPanelFrame(sender)).toBe(false);
+      const valid = api.frameSender(panelUrl);
+      expect(
+        parsePanelTokenRedeemReply(
+          await api.send({ type: PANEL_MESSAGE.tokenRedeem, payload: { token } }, valid),
+        )?.ok,
+      ).toBe(true);
+      expect(await isRegisteredPanelFrame(valid)).toBe(true);
+    },
+  );
+
+  it('does not grant a host-created frame authority from the URL visible in the DOM', async () => {
     const { token, panelUrl } = await api.issue();
-    const sender = api.frameSender(panelUrl);
-    if (reason === 'wrong tab') sender.tab = api.frameSender(panelUrl, 8).tab;
-    if (reason === 'top frame') sender.frameId = 0;
-    if (reason === 'foreign extension') sender.id = 'another-extension';
-    if (reason === 'foreign URL')
-      sender.url = panelUrl.replace('test-extension-id', 'another-extension');
-    if (reason === 'wrong page') sender.url = chrome.runtime.getURL('src/pages/popup/index.html');
-    if (reason === 'wrong URL token') sender.url = panelUrl.replace(token, '0'.repeat(64));
+    const attacker = api.frameSender(panelUrl, 7, 12);
+    const observedToken = new URL(panelUrl).searchParams.get('token');
     expect(
-      await api.send({ type: PANEL_MESSAGE.tokenRedeem, payload: { token } }, sender),
+      await api.send(
+        { type: PANEL_MESSAGE.tokenRedeem, payload: { token: observedToken } },
+        attacker,
+      ),
     ).toMatchObject({ ok: false });
-    expect(await isRegisteredPanelFrame(sender)).toBe(false);
-    const valid = api.frameSender(panelUrl);
+    expect(await isRegisteredPanelFrame(attacker)).toBe(false);
+
+    const legitimate = api.frameSender(panelUrl);
     expect(
-      parsePanelTokenRedeemReply(
-        await api.send({ type: PANEL_MESSAGE.tokenRedeem, payload: { token } }, valid),
-      )?.ok,
-    ).toBe(true);
-    expect(await isRegisteredPanelFrame(valid)).toBe(true);
+      await api.send({ type: PANEL_MESSAGE.tokenRedeem, payload: { token } }, legitimate),
+    ).toMatchObject({ ok: true });
+    expect(await isRegisteredPanelFrame(legitimate)).toBe(true);
+    expect(await isRegisteredPanelFrame(attacker)).toBe(false);
   });
 
   it('refuses expired tokens and malformed requests without registering a frame', async () => {

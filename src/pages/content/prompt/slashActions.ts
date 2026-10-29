@@ -5,6 +5,7 @@
  * prompts, or show alone when the typed name matches their own label, so a
  * `/path` typed in prose still closes the menu as before.
  */
+import { isUserEvent } from '@/core/utils/userEvent';
 import { getTranslationSync } from '@/utils/i18n';
 
 import { voyagerPanelOpener } from '../panelShell/opener';
@@ -61,7 +62,7 @@ export function runSlashAction(action: SlashAction, query: PromptQuery): void {
 export function renderSlashAction(
   action: SlashAction,
   selected: boolean,
-  choose: () => void,
+  choose: (event: MouseEvent) => void,
 ): HTMLButtonElement {
   const row = document.createElement('button');
   row.type = 'button';
@@ -73,10 +74,11 @@ export function renderSlashAction(
   name.textContent = action.label;
   row.appendChild(name);
   row.addEventListener('mousedown', (event) => {
-    if (event.button !== 0) return;
+    // These entries open privileged surfaces; a host's synthetic input cannot authorize them.
+    if (event.button !== 0 || !isUserEvent(event)) return;
     event.preventDefault();
     event.stopPropagation();
-    choose();
+    choose(event);
   });
   return row;
 }

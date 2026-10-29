@@ -1,6 +1,6 @@
 /**
  * The panel window's lifecycle on the host page: ask the background for a
- * one-time token, mount the panel page at the URL it returns, take the panel
+ * one-time token, mount its plain panel URL and privately bootstrap that frame, take the panel
  * page's window messages (only from that frame, only from the extension's
  * origin), close on Esc and outside presses, keep the background's context
  * current, and give focus back where it was.
@@ -11,6 +11,7 @@ import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContex
 import { isUserEvent } from '@/core/utils/userEvent';
 import {
   PANEL_MESSAGE,
+  PANEL_PAGE_PATH,
   PANEL_SHELL_MESSAGE,
   type PanelContext,
   type PanelShellMessage,
@@ -144,9 +145,9 @@ export function createPanelController(deps: PanelControllerDeps): PanelControlle
         if (stay.signal.aborted) return;
         position = saved;
         const reply = parsePanelTokenIssueReply(raw);
-        const url = reply?.ok ? reply.panelUrl : null;
-        if (url && origin && url.startsWith(`${origin}/`)) {
-          stay.send({ type: 'issued', url: stay.state().keyboard ? `${url}#keyboard` : url });
+        if (reply?.ok && origin && reply.panelUrl === `${origin}/${PANEL_PAGE_PATH}`) {
+          const url = stay.state().keyboard ? `${reply.panelUrl}#keyboard` : reply.panelUrl;
+          stay.send({ type: 'issued', url, token: reply.token });
           return;
         }
       } catch (error) {
@@ -199,8 +200,19 @@ export function createPanelController(deps: PanelControllerDeps): PanelControlle
 
   function shown(stay: PanelStay<'shown'>): void {
     const { scope } = stay;
+    if (!origin) {
+      stay.send({ type: 'gone' });
+      return;
+    }
     // Opening again while the close plays keeps the frame, and its session.
-    const current = frame ?? createPanelFrame(stay.state().url);
+    const { url, token } = stay.state();
+    const current =
+      frame ??
+      createPanelFrame(url, {
+        token,
+        origin,
+        onInvalidated: () => machine.send({ type: 'gone' }),
+      });
     frame = current;
     const seed = context ?? readPanelContext();
     current.setScheme(seed.scheme);
@@ -254,11 +266,6 @@ export function createPanelController(deps: PanelControllerDeps): PanelControlle
         );
       }),
     );
-    const gone = (): void => {
-      if (!current.element.isConnected) stay.send({ type: 'gone' });
-    };
-    scope.observe(document.documentElement, { childList: true }, gone);
-    if (document.body) scope.observe(document.body, { childList: true }, gone);
     scope.effect(() => () => {
       relay.end('now');
       current.endInteraction();

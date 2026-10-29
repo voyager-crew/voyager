@@ -6,6 +6,7 @@
  * animation) → closed. A toggle while the token is pending cancels it; opening
  * again while the close plays keeps the same frame and session.
  */
+import type { PanelToken } from '@/features/panel/protocol';
 
 /** What the panel grows out of: a satellite, the ball itself, or nothing (the shortcut). */
 export type PanelAnchor = 'satellite' | 'ball' | null;
@@ -14,15 +15,25 @@ export type PanelState =
   | { readonly status: 'closed' }
   /** `keyboard`: the panel shortcut asked, so the panel page draws focus rings. */
   | { readonly status: 'requesting'; readonly anchor: PanelAnchor; readonly keyboard: boolean }
-  | { readonly status: 'shown'; readonly anchor: PanelAnchor; readonly url: string }
-  | { readonly status: 'closing'; readonly anchor: PanelAnchor; readonly url: string };
+  | {
+      readonly status: 'shown';
+      readonly anchor: PanelAnchor;
+      readonly url: string;
+      readonly token: PanelToken;
+    }
+  | {
+      readonly status: 'closing';
+      readonly anchor: PanelAnchor;
+      readonly url: string;
+      readonly token: PanelToken;
+    };
 
 export type PanelEvent =
   | { readonly type: 'open'; readonly anchor: PanelAnchor; readonly keyboard: boolean }
   | { readonly type: 'toggle'; readonly anchor: PanelAnchor; readonly keyboard: boolean }
   | { readonly type: 'close' }
-  /** The background issued a token; `url` is the panel page carrying it. */
-  | { readonly type: 'issued'; readonly url: string }
+  /** The secret stays in the content-script world; `url` has no redeemable authority. */
+  | { readonly type: 'issued'; readonly url: string; readonly token: PanelToken }
   | { readonly type: 'refused' }
   /** The close animation ended. */
   | { readonly type: 'closed' }
@@ -42,7 +53,7 @@ export function transitionPanel(state: PanelState, event: PanelEvent): PanelStat
         return { status: 'requesting', anchor: event.anchor, keyboard: event.keyboard };
       }
       if (state.status === 'closing') {
-        return { status: 'shown', anchor: event.anchor, url: state.url };
+        return { status: 'shown', anchor: event.anchor, url: state.url, token: state.token };
       }
       return state;
     case 'toggle':
@@ -55,12 +66,12 @@ export function transitionPanel(state: PanelState, event: PanelEvent): PanelStat
     case 'close':
       if (state.status === 'requesting') return PANEL_CLOSED;
       if (state.status === 'shown') {
-        return { status: 'closing', anchor: state.anchor, url: state.url };
+        return { status: 'closing', anchor: state.anchor, url: state.url, token: state.token };
       }
       return state;
     case 'issued':
       return state.status === 'requesting'
-        ? { status: 'shown', anchor: state.anchor, url: event.url }
+        ? { status: 'shown', anchor: state.anchor, url: event.url, token: event.token }
         : state;
     case 'refused':
       return state.status === 'requesting' ? PANEL_CLOSED : state;

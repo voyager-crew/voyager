@@ -1,6 +1,5 @@
 import {
   PANEL_PAGE_PATH,
-  PANEL_TOKEN_QUERY_PARAM,
   type PanelContext,
   type PanelSession,
   type PanelToken,
@@ -110,7 +109,7 @@ export async function readPanelState(area: chrome.storage.StorageArea): Promise<
     : { tokens: [], frames: [] };
 }
 
-export function isPanelPageUrl(value: unknown, token?: PanelToken): boolean {
+export function isPanelPageUrl(value: unknown): boolean {
   if (typeof value !== 'string') return false;
   try {
     const url = new URL(value);
@@ -120,8 +119,7 @@ export function isPanelPageUrl(value: unknown, token?: PanelToken): boolean {
       url.host === expected.host &&
       url.pathname === expected.pathname &&
       !url.username &&
-      !url.password &&
-      (token === undefined || url.searchParams.get(PANEL_TOKEN_QUERY_PARAM) === token)
+      !url.password
     );
   } catch {
     return false;

@@ -5,7 +5,6 @@ import {
   PANEL_POPUP_OPEN_CARD_KEY,
   PANEL_PORT_NAME,
   PANEL_SITE_ACCESS_CARD,
-  PANEL_TOKEN_QUERY_PARAM,
   PANEL_TOKEN_TTL_MS,
   type PanelActionReply,
   type PanelRefusal,
@@ -149,9 +148,8 @@ export function createPanelBackground() {
           issuedAt: Date.now(),
           hostDocumentId: sender.documentId ?? null,
         });
-        const url = new URL(chrome.runtime.getURL(PANEL_PAGE_PATH));
-        url.searchParams.set(PANEL_TOKEN_QUERY_PARAM, token);
-        return { ok: true, token, panelUrl: url.href };
+        // The shell delivers the secret directly to its frame after load; the host can read src.
+        return { ok: true, token, panelUrl: chrome.runtime.getURL(PANEL_PAGE_PATH) };
       }
       case PANEL_MESSAGE.tokenRedeem: {
         const { token } = message.payload;
@@ -163,7 +161,7 @@ export function createPanelBackground() {
           tabId !== record.tabId ||
           !isPanelTabId(sender.frameId) ||
           sender.frameId === 0 ||
-          !isPanelPageUrl(sender.url, token)
+          !isPanelPageUrl(sender.url)
         )
           return refuse('token_refused');
         const hostOrigin = panelHostOrigin(record.context.pageUrl);
