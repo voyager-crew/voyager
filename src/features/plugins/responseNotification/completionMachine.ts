@@ -93,7 +93,10 @@ export function completionEffects(
 ): StateEffects<CompletionState, CompletionEvent> {
   return {
     notifying: (stay) => {
-      void port.notify(stay.state().reply).then((ok) => stay.send({ type: 'answered', ok }));
+      void port.notify(stay.state().reply).then(
+        (ok) => stay.send({ type: 'answered', ok }),
+        () => stay.send({ type: 'answered', ok: false }),
+      );
     },
     deferred: (stay) => {
       const flush = (): void => {

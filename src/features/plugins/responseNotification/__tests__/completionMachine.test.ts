@@ -79,6 +79,24 @@ function fakePort(answer: Promise<boolean>, canFlush: () => boolean = () => true
 }
 
 describe('completion effects', () => {
+  it('treats a rejected notification as unavailable and leaves the next run usable', async () => {
+    const failed = fakePort(Promise.reject(new Error('Permission unavailable')));
+    const old = startCompletion(completionEffects(failed));
+    old.send({ type: 'completed', reply, background: true });
+    await Promise.resolve();
+    expect(old.state.status).toBe('deferred');
+    await old.stop();
+
+    const next = fakePort(Promise.resolve(false));
+    const delivery = startCompletion(completionEffects(next));
+    delivery.send({ type: 'completed', reply, background: true });
+    await Promise.resolve();
+    window.dispatchEvent(new Event('focus'));
+    expect(failed.showToast).not.toHaveBeenCalled();
+    expect(next.showToast).toHaveBeenCalledWith(reply);
+    await delivery.stop();
+  });
+
   it('shows the fallback toast for its reply once, when the user comes back', async () => {
     const port = fakePort(Promise.resolve(false));
     const delivery = startCompletion(completionEffects(port));

@@ -9,7 +9,7 @@ import { createChatGptResponseNotificationRun } from './run';
 
 const toast = vi.hoisted(() => ({ showIfNeeded: vi.fn(), stop: vi.fn() }));
 
-vi.mock('@/pages/content/responseNotification/foregroundCompletionToast', () => ({
+vi.mock('@/features/plugins/responseNotification/foregroundCompletionToast', () => ({
   createForegroundCompletionToast: () => toast,
 }));
 

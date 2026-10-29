@@ -1,16 +1,6 @@
+import { shouldNotifyForBackgroundCompletion } from '@/features/plugins/responseNotification/completionDelivery';
+import { createResponseNotificationCore } from '@/features/plugins/responseNotification/core';
 import type { SiteAdapter } from '@/features/plugins/types';
-import {
-  createResponseFingerprinter,
-  sendCompletionNotification,
-  shouldNotifyForBackgroundCompletion,
-} from '@/pages/content/responseNotification/completionDelivery';
-import {
-  type CompletionPort,
-  completionEffects,
-  startCompletion,
-} from '@/pages/content/responseNotification/completionMachine';
-import { ResponseCompletionDetector } from '@/pages/content/responseNotification/detector';
-import { createForegroundCompletionToast } from '@/pages/content/responseNotification/foregroundCompletionToast';
 import { watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 
 import {
@@ -22,7 +12,6 @@ import {
   readConversationId,
 } from './page';
 
-const EVALUATE_DEBOUNCE_MS = 250;
 const STARTUP_DELAY_MS = 1000;
 
 export interface ChatGptResponseNotificationRunOptions {
@@ -46,8 +35,6 @@ export function createChatGptResponseNotificationRun({
 
   const page = createChatGptPage(adapter);
   let alive = true;
-  let evaluateTimer: number | null = null;
-  let evaluateDueAt = 0;
   let conversationId = readConversationId();
   // Bumped when the page leaves the conversation: a generation seen there must not finish here.
   let epoch = 0;
@@ -59,43 +46,23 @@ export function createChatGptResponseNotificationRun({
   let replyAtStart: string | null = null;
   // A labelled stop control was seen this generation, so its going away marks the end.
   let sawLabelledStop = false;
-  let latestCompletedReply: HTMLElement | null = null;
 
-  const detector = new ResponseCompletionDetector();
-  const responseFingerprint = createResponseFingerprinter();
-  const foregroundToast = createForegroundCompletionToast({
-    getScrollTarget: () => latestCompletedReply ?? page.getLatestReply(),
-  });
-
-  const deliveryEffects = completionEffects({
-    notify: (reply) =>
-      sendCompletionNotification({
-        conversationTitle: getChatGptConversationTitle(),
-        userPrompt: page.getPromptForReply(reply),
-      }),
-    showToast: (reply) => {
-      latestCompletedReply = reply;
-      foregroundToast.showIfNeeded(reply);
-    },
-    canFlush: () => {
+  const completion = createResponseNotificationCore({
+    evaluate: () => evaluate(),
+    getLatestReply: page.getLatestReply,
+    readDetails: (reply) => ({
+      conversationTitle: getChatGptConversationTitle(),
+      userPrompt: page.getPromptForReply(reply),
+    }),
+    beforeFlush: () => {
       syncConversation();
-      return !shouldNotifyForBackgroundCompletion();
+      return true;
     },
-  } satisfies CompletionPort);
-  // One delivery per generation: the next one stops it, with its stop or deferred toast.
-  let delivery = startCompletion(deliveryEffects);
+  });
 
   /** A generation starts; a delivery still streaming is as good as a fresh one. */
   const beginGeneration = (): void => {
-    if (delivery.state.status === 'streaming') return;
-    void delivery.stop();
-    delivery = startCompletion(deliveryEffects);
-  };
-
-  const clearEvaluateTimer = (): void => {
-    if (evaluateTimer === null) return;
-    clearTimeout(evaluateTimer);
-    evaluateTimer = null;
+    if (completion.delivery.state.status !== 'streaming') completion.restartGeneration();
   };
 
   const leaveConversation = (): void => {
@@ -104,10 +71,7 @@ export function createChatGptResponseNotificationRun({
     promptSent = false;
     replyAtStart = null;
     sawLabelledStop = false;
-    latestCompletedReply = null;
-    detector.reset();
-    foregroundToast.stop();
-    beginGeneration();
+    completion.reset();
   };
 
   const syncConversation = (): void => {
@@ -124,7 +88,6 @@ export function createChatGptResponseNotificationRun({
     page.hasLabelledStopControl() || (promptSent && page.isAwaitingReply());
 
   const evaluate = (): void => {
-    evaluateTimer = null;
     if (!alive) return;
     syncConversation();
 
@@ -143,36 +106,29 @@ export function createChatGptResponseNotificationRun({
     // A hidden tab may still hold it back, as Gemini's does; there a labelled stop control that
     // has gone is the end as well. Without one, a reply cut off mid-stream must not count.
     const hidden = document.visibilityState === 'hidden';
-    const decision = detector.update({
+    const decision = completion.observe({
       conversationKey: location.pathname,
       sessionEpoch: epoch,
       hasCompletedResponse:
         !!reply && isNewReply && (hasReplyActions(reply) || (hidden && sawLabelledStop)),
       isGenerating: generating,
-      responseFingerprint: reply ? responseFingerprint(reply) : null,
-      now: Date.now(),
+      reply,
     });
-    const pendingDelay = detector.getPendingEvaluationDelay(Date.now());
-    // The page may go quiet before the stability window ends, so recheck without a mutation.
-    if (pendingDelay !== null) scheduleEvaluate(pendingDelay);
     if (decision.type !== 'notify' || !reply) return;
-    delivery.send({ type: 'completed', reply, background: shouldNotifyForBackgroundCompletion() });
+    completion.delivery.send({
+      type: 'completed',
+      reply,
+      background: shouldNotifyForBackgroundCompletion(),
+    });
   };
-
-  function scheduleEvaluate(delay = EVALUATE_DEBOUNCE_MS): void {
-    if (!alive) return;
-    const dueAt = Date.now() + delay;
-    // Streaming mutations must not keep pushing an already scheduled check into the future.
-    if (evaluateTimer !== null && evaluateDueAt <= dueAt) return;
-    clearEvaluateTimer();
-    evaluateDueAt = dueAt;
-    evaluateTimer = window.setTimeout(evaluate, delay);
-  }
 
   const noteSend = (): void => {
     promptSent = true;
     // Whatever reply a stopped generation left is not this send's; an empty Enter adds none.
-    if (delivery.state.status === 'ended' && delivery.state.reason === 'stopped') {
+    if (
+      completion.delivery.state.status === 'ended' &&
+      completion.delivery.state.reason === 'stopped'
+    ) {
       const reply = page.getLatestReply();
       replyAtStart = reply ? getReplyIdentity(reply) : null;
     }
@@ -192,7 +148,7 @@ export function createChatGptResponseNotificationRun({
       return;
     }
     if (page.isStopControlTarget(event.target))
-      delivery.send({ type: 'abandoned', reason: 'stopped' });
+      completion.delivery.send({ type: 'abandoned', reason: 'stopped' });
   };
 
   // A short reply can show and drop the stop control between two checks (a hidden tab's timers
@@ -206,19 +162,18 @@ export function createChatGptResponseNotificationRun({
     replyAtStart = reply ? getReplyIdentity(reply) : null;
     sawLabelledStop = page.hasLabelledStopControl();
     wasGenerating = true;
-    detector.update({
+    completion.observe({
       conversationKey: location.pathname,
       sessionEpoch: epoch,
       hasCompletedResponse: false,
       isGenerating: true,
-      responseFingerprint: null,
-      now: Date.now(),
+      reply: null,
     });
   };
 
   const observer = new MutationObserver(() => {
     noteGenerationStart();
-    scheduleEvaluate();
+    completion.scheduleEvaluation();
   });
   observer.observe(document.body ?? document.documentElement, {
     childList: true,
@@ -229,11 +184,11 @@ export function createChatGptResponseNotificationRun({
   });
   const stopRouteWatch = watchRouteChanges(() => {
     syncConversation();
-    scheduleEvaluate();
+    completion.scheduleEvaluation();
   });
   document.addEventListener('click', handleClick, true);
   document.addEventListener('keydown', handleSendGesture, true);
-  scheduleEvaluate(STARTUP_DELAY_MS);
+  completion.scheduleEvaluation(STARTUP_DELAY_MS);
 
   const stop = (): void => {
     if (!alive) return;
@@ -243,10 +198,7 @@ export function createChatGptResponseNotificationRun({
     stopRouteWatch();
     document.removeEventListener('click', handleClick, true);
     document.removeEventListener('keydown', handleSendGesture, true);
-    clearEvaluateTimer();
-    detector.reset();
-    foregroundToast.stop();
-    void delivery.stop();
+    completion.stop();
   };
   signal?.addEventListener('abort', stop, { once: true });
   return stop;

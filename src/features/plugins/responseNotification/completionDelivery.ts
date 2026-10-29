@@ -21,7 +21,7 @@ export async function sendCompletionNotification(details: {
 }): Promise<boolean> {
   const { userPrompt } = details;
   try {
-    const response = (await chrome.runtime?.sendMessage?.({
+    const response: unknown = await chrome.runtime?.sendMessage?.({
       type: 'gv.responseComplete.notify',
       payload: {
         conversationUrl: location.href,
@@ -31,9 +31,11 @@ export async function sendCompletionNotification(details: {
             ? `${userPrompt.slice(0, MAX_NOTIFICATION_PROMPT_LENGTH - 1)}…`
             : userPrompt,
       },
-    })) as { ok?: boolean } | undefined;
+    });
 
-    return response?.ok === true;
+    return (
+      typeof response === 'object' && response !== null && 'ok' in response && response.ok === true
+    );
   } catch (error) {
     if (isExtensionContextInvalidatedError(error)) {
       return false;

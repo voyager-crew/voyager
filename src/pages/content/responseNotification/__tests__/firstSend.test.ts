@@ -6,7 +6,7 @@ import { StorageKeys } from '@/core/types/common';
 
 const toast = vi.hoisted(() => ({ showIfNeeded: vi.fn(), stop: vi.fn() }));
 
-vi.mock('../foregroundCompletionToast', () => ({
+vi.mock('@/features/plugins/responseNotification/foregroundCompletionToast', () => ({
   createForegroundCompletionToast: () => toast,
 }));
 
