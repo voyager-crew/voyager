@@ -1,10 +1,9 @@
 import { StorageKeys } from '@/core/types/common';
 import type { SettingsExportPayload } from '@/core/types/sync';
 import { EXTENSION_VERSION } from '@/core/utils/version';
-import { WATERMARK_STORAGE_KEYS } from '@/core/utils/watermarkSettings';
-import { LEGACY_ENABLE_BINDINGS } from '@/features/plugins/storage/legacySettingBindings';
 
 import { BACKUPABLE_SYNC_SETTINGS_DEFAULTS } from './settingsBackupDefaults';
+import { filterRestorableSyncSettings } from './settingsBackupValidation';
 
 export { BACKUPABLE_SYNC_SETTINGS_DEFAULTS } from './settingsBackupDefaults';
 export {
@@ -62,28 +61,9 @@ export async function loadBackupableSyncSettings(
   storageArea?: StorageAreaLike,
 ): Promise<BackupableSyncSettings> {
   const area = getStorageArea(storageArea);
-  const snapshot = await area.get<Record<string, unknown>>(BACKUPABLE_SYNC_SETTINGS_KEYS);
-  const settings: BackupableSyncSettings = { ...BACKUPABLE_SYNC_SETTINGS_DEFAULTS, ...snapshot };
-  for (const bound of Object.values(LEGACY_ENABLE_BINDINGS)) {
-    if (
-      !bound.derive ||
-      !Object.prototype.hasOwnProperty.call(BACKUPABLE_SYNC_SETTINGS_DEFAULTS, bound.key) ||
-      Object.prototype.hasOwnProperty.call(snapshot, bound.key)
-    )
-      continue;
-    // Watermark nulls already preserve the resolver's state and mean "no saved choice" on restore.
-    if (WATERMARK_STORAGE_KEYS.some((key) => key === bound.key)) continue;
-    const effective = bound.derive(snapshot, () => false);
-    const defaults: Readonly<Record<string, unknown>> = BACKUPABLE_SYNC_SETTINGS_DEFAULTS;
-    const withDefault = bound.derive(
-      { ...snapshot, [bound.key]: defaults[bound.key] },
-      () => false,
-    );
-    // Write the derived value only where the static default would change what the page uses now;
-    // a gate such as batch delete's folders dependency must stay a default, or it would stick off.
-    if (effective !== withDefault) settings[bound.key] = bound.write(effective);
-  }
-  return filterBackupableSyncSettings(settings);
+  const snapshot: unknown = await area.get(BACKUPABLE_SYNC_SETTINGS_KEYS);
+  // Missing switches must stay missing so their resolvers still derive from the stored inputs.
+  return filterBackupableSyncSettings(snapshot);
 }
 
 export async function exportBackupableSyncSettings(
@@ -102,13 +82,8 @@ export async function restoreBackupableSyncSettings(
   storageArea?: StorageAreaLike,
   mode: SettingsRestoreMode = 'overwrite',
 ): Promise<BackupableSyncSettings> {
-  const filtered = filterBackupableSyncSettings(settings);
-  // A backup without a watermark choice exports null. Restoring it must not
-  // erase a saved choice, such as the one kept for installs that relied on the
-  // old enabled default.
-  for (const key of WATERMARK_STORAGE_KEYS) {
-    if (typeof filtered[key] !== 'boolean') delete filtered[key];
-  }
+  // Validate before normalizing retired switches, which could otherwise turn invalid input into false.
+  const filtered = filterBackupableSyncSettings(filterRestorableSyncSettings(settings));
   if (Object.keys(filtered).length === 0) {
     return filtered;
   }

@@ -191,12 +191,12 @@ Special cases:
   settings file. The list follows them live, so a restore while the popup is open updates the rows.
 - `gvPluginsState` has its own Drive file; for a bound id it is ignored and never written, so the
   two files restore in any order without contradiction.
-- The settings export fills missing keys with `BACKUPABLE_SYNC_SETTINGS_DEFAULTS`. For a missing key
-  whose binding has a `derive`, `loadBackupableSyncSettings` exports the derived value wherever the
-  static default would change what the page uses now (a custom width with the switch missing stays
-  on after restore); a gate such as batch delete's folders dependency stays a default. The
-  registry contract test checks, for every listed id, that a restored backup keeps a never-touched
-  switch the way it was.
+- The settings export carries only the keys present in storage, so a never-touched switch stays
+  missing; a restoring device that has not set it either derives it from the restored inputs (a
+  custom width with the switch missing still reads on there). Files from v2.2.1 and earlier carry
+  every `BACKUPABLE_SYNC_SETTINGS_DEFAULTS` value, and restoring one writes them; the registry
+  contract test checks, for every listed id, that such a default keeps a never-touched switch the
+  way it was.
 - The list adds no storage keys. A feature with no old key gets a default-on sync key plus a
   binding, so every Gemini / AI Studio official plugin is settled by sync and `gvPluginsState`
   serves only local plugins and plugin sites. Downgrade is safe: no data moves, and an older

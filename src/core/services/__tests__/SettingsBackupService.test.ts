@@ -210,11 +210,11 @@ describe('SettingsBackupService', () => {
     });
   });
 
-  it('exports only backupable sync settings with defaults applied', async () => {
+  it('exports stored settings, including a stored default value, without filling missing keys', async () => {
     const storageArea = {
       get: vi.fn().mockResolvedValue({
-        ...BACKUPABLE_SYNC_SETTINGS_DEFAULTS,
         [StorageKeys.CHAT_WIDTH]: 88,
+        [StorageKeys.CHAT_FONT_SIZE]: 100,
         unknownKey: 'ignore-me',
       }),
       set: vi.fn(),
@@ -227,13 +227,10 @@ describe('SettingsBackupService', () => {
       format: 'gemini-voyager.settings.v1',
       exportedAt: expect.any(String),
       version: expect.any(String),
-      data: expect.objectContaining({
+      data: {
         [StorageKeys.CHAT_WIDTH]: 88,
         [StorageKeys.CHAT_FONT_SIZE]: 100,
-        [StorageKeys.CHAT_LINE_HEIGHT]: 160,
-        [StorageKeys.CHAT_PARAGRAPH_SPACING]: 12,
-        [StorageKeys.GV_GEMS_PINNED]: [],
-      }),
+      },
     });
     expect(payload.data).not.toHaveProperty('unknownKey');
   });
@@ -256,13 +253,11 @@ describe('SettingsBackupService', () => {
     'keeps a saved watermark choice when %s-restoring a backup without one',
     async (mode) => {
       const unsetDevice = {
-        get: vi
-          .fn()
-          .mockImplementation(async (defaults: Record<string, unknown>) => ({ ...defaults })),
+        get: vi.fn().mockResolvedValue({}),
         set: vi.fn(),
       };
       const payload = await exportBackupableSyncSettings(unsetDevice);
-      expect(payload.data[StorageKeys.WATERMARK_DOWNLOAD_ENABLED]).toBeNull();
+      expect(payload.data).not.toHaveProperty(StorageKeys.WATERMARK_DOWNLOAD_ENABLED);
 
       const state: Record<string, unknown> = {
         [StorageKeys.WATERMARK_DOWNLOAD_ENABLED]: true,
@@ -280,7 +275,7 @@ describe('SettingsBackupService', () => {
       await restoreBackupableSyncSettings(payload.data, savedDevice, mode);
 
       expect(resolveWatermarkSettings(state)).toEqual({ download: true, preview: true });
-      expect(state[StorageKeys.CHAT_WIDTH]).toBe(70);
+      expect(state).not.toHaveProperty(StorageKeys.CHAT_WIDTH);
     },
   );
 
@@ -347,7 +342,7 @@ describe('SettingsBackupService', () => {
         }),
       };
       const fresh = await exportBackupableSyncSettings(area);
-      expect(fresh.data[StorageKeys.GV_TIMELINE_ENABLED]).toBe(true);
+      expect(fresh.data).not.toHaveProperty(StorageKeys.GV_TIMELINE_ENABLED);
       await restoreBackupableSyncSettings(
         {
           [StorageKeys.GV_TIMELINE_ENABLED]: false,
@@ -396,7 +391,8 @@ describe('SettingsBackupService', () => {
             expect(state[key]).toBe(false);
           }
           const { data } = await exportBackupableSyncSettings(area);
-          expect(data[key]).toBe(currentValue ?? true);
+          if (currentValue === undefined) expect(data).not.toHaveProperty(key);
+          else expect(data[key]).toBe(false);
         }
       }
     },
@@ -446,8 +442,8 @@ describe('SettingsBackupService', () => {
     expect(stored).not.toHaveProperty(StorageKeys.USER_LATEX_ENABLED);
     const { data } = await exportBackupableSyncSettings(storageArea as never);
     expect(data[StorageKeys.MERMAID_ENABLED]).toBe(false);
-    expect(data[StorageKeys.CODE_BLOCK_COLLAPSE_ENABLED]).toBe(true);
-    expect(data[StorageKeys.USER_LATEX_ENABLED]).toBe(true);
+    expect(data).not.toHaveProperty(StorageKeys.CODE_BLOCK_COLLAPSE_ENABLED);
+    expect(data).not.toHaveProperty(StorageKeys.USER_LATEX_ENABLED);
 
     // A backup that turned them off brings that choice back.
     await restoreBackupableSyncSettings(

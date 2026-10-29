@@ -25,6 +25,21 @@ type NonSettingsStorageKey = Exclude<StorageKey, BackupableSettingsKey>;
  * make a new key fail fast until its sync/backup behavior is an explicit choice.
  */
 export const NON_SETTINGS_BACKUP_POLICIES = {
+  [StorageKeys.GV_ACCOUNT_ISOLATION_ENABLED]: {
+    storage: 'sync',
+    disposition: 'device-local',
+    reason: 'Account isolation choices stay out of settings backups; browser sync is unchanged.',
+  },
+  [StorageKeys.GV_ACCOUNT_ISOLATION_ENABLED_GEMINI]: {
+    storage: 'sync',
+    disposition: 'device-local',
+    reason: 'Gemini account isolation stays out of settings backups; browser sync is unchanged.',
+  },
+  [StorageKeys.GV_ACCOUNT_ISOLATION_ENABLED_AISTUDIO]: {
+    storage: 'sync',
+    disposition: 'device-local',
+    reason: 'AI Studio account isolation stays out of settings backups; browser sync is unchanged.',
+  },
   [StorageKeys.RESPONSE_NOTIFICATION_ENABLE_PENDING]: {
     storage: 'local',
     disposition: 'transient',
