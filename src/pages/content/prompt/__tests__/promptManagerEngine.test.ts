@@ -196,8 +196,9 @@ describe('slash completion', () => {
 });
 
 describe('panel coverage', () => {
-  const URL_ = 'https://chatgpt.com/';
-  const HOST = 'chatgpt.com';
+  // Catalog coverage is exercised through PluginHost; custom pages keep this native path.
+  const URL_ = 'https://example.org/';
+  const HOST = 'example.org';
   const covered = (websites: string[]) => setting(StorageKeys.PROMPT_CUSTOM_WEBSITES, websites);
 
   it('mounts while the custom-website list covers the host and follows it live', async () => {

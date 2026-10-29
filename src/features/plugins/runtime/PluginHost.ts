@@ -34,12 +34,7 @@ import { LocalEntitlementProvider } from '../entitlement/LocalEntitlementProvide
 import { subscribeLocalPlugins } from '../local/localPluginStore';
 import { subscribeHostCatalog } from '../remote/hostCatalogCache';
 import { catalogHostFromUrl } from '../remote/hostCatalogPolicy';
-import {
-  isSameSiteAdapter,
-  resolveSiteAdapterForUrl,
-  resolveSiteOverride,
-} from '../remote/siteOverride';
-import { packagedSiteForUrl } from '../sites/hostPolicy';
+import { resolveSiteAdapterForUrl, resolveSiteOverride } from '../remote/siteOverride';
 import { SiteRegistry } from '../sites/registry';
 import { createDefaultPluginSources, listPluginManifests } from '../sources/defaultSources';
 import { type PluginStateMap, loadPluginState, subscribePluginState } from '../storage/pluginState';
@@ -59,8 +54,6 @@ import {
 import type { DeclarativeEngine } from './declarativeEngine';
 import { createHostEngine } from './hostEngine';
 import {
-  DEFAULT_LEGACY_SETTINGS,
-  DEFAULT_VISUAL_EFFECT_SETTINGS,
   type LegacySettingsSource,
   type LegacySnapshotFeed,
   openLegacySnapshotFeed,
@@ -77,6 +70,8 @@ import {
 } from './pluginHostOptions';
 import type { PluginStatus } from './pluginStatus';
 import { collectPluginStatuses } from './pluginStatuses';
+import { legacySettingsForPage } from './promptCoverageSettings';
+import { reloadWithPromptManager } from './promptManagerReload';
 import type { PluginBlock, WishVerdict } from './reconcileArbitration';
 import { ReleaseLedger } from './releaseLedger';
 import { arbitrate, nextHolders } from './resourceArbiter';
@@ -157,9 +152,7 @@ export class PluginHost {
     this.surfaceSwitch =
       options.surfaceSwitch === undefined ? surfaceSwitchForUrl(this.url) : options.surfaceSwitch;
     this.admission = options.admission ?? CLOSED_ADMISSION;
-    this.legacySettings =
-      options.legacySettings ??
-      (packagedSiteForUrl(this.url) ? DEFAULT_LEGACY_SETTINGS : DEFAULT_VISUAL_EFFECT_SETTINGS);
+    this.legacySettings = legacySettingsForPage(this.url, options.legacySettings);
   }
 
   get activeAdapter(): SiteAdapter | null {
@@ -327,10 +320,9 @@ export class PluginHost {
   }
 
   /**
-   * Reload manifests from the (refreshed) catalog and re-mount so new CSS
-   * applies. A changed site adapter (remote override arrived or was
-   * withdrawn) rebuilds the engine so semantic selectors resolve against it.
-   * Which plugins keep, freeze or restart: `catalogReloadPlan.ts` (plan D7).
+   * Reload catalog data. Adapter changes rebuild other plugins; an independent
+   * Prompt Manager keeps its runtime while its dependencies stay unchanged.
+   * Manifest update timing stays in `catalogReloadPlan.ts` (plan D7).
    */
   private async reloadCatalog(gen: number): Promise<void> {
     const engine = this.engine;
@@ -345,20 +337,19 @@ export class PluginHost {
       next: manifests,
       isActive: (id: string) => engine.isActive(id),
     };
-    const adapterChanged = !isSameSiteAdapter(adapter, this.adapter);
     freezeUpdatedPrimitives(this.frozen, listing, (manifest) => this.targetsThisPage(manifest));
     this.manifests = manifests;
-    if (adapterChanged) {
-      engine.unmountAll();
-      this.pushedSettings.clear();
-      this.adapter = adapter;
-      this.engine = this.createEngine(adapter);
-    } else {
-      for (const id of staleMountedIds(listing, this.frozen)) {
-        void engine.unmount(id);
-        this.pushedSettings.delete(id);
-      }
-    }
+    this.engine = reloadWithPromptManager({
+      engine,
+      previous: this.adapter,
+      next: adapter,
+      manifests: runningManifests(manifests, this.frozen),
+      stale: staleMountedIds(listing, this.frozen),
+      pushed: this.pushedSettings,
+      targetsPage: (manifest) => this.targetsThisPage(manifest),
+      create: () => this.createEngine(adapter),
+    });
+    this.adapter = adapter;
     await this.reconcile(gen);
   }
 

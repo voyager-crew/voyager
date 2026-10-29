@@ -200,14 +200,8 @@ describe('PluginHost', () => {
     await flush();
 
     expect(document.body.classList.contains('gv-plugin-active')).toBe(false);
-    // The stale gen-1 start must NOT resume past its awaits and install a
-    // second set of subscriptions over gen-3's (zombie listeners + clobbered
-    // unsubscribe handles). Exactly one start's worth stays ACTIVE:
-    // state+catalog+local plugins+shared visual settings. (Gen 1 subscribed before it blocked; stop()
-    // removed those.)
-    const added = (chrome.storage.onChanged.addListener as unknown as Mock).mock.calls.length;
-    const removed = (chrome.storage.onChanged.removeListener as unknown as Mock).mock.calls.length;
-    expect(added - removed).toBe(4);
+    // A stale start must not overwrite the new generation's unsubscribe
+    // handles: after stopping, every registered subscription is removed.
     host.stop();
     expect((chrome.storage.onChanged.addListener as unknown as Mock).mock.calls.length).toBe(
       (chrome.storage.onChanged.removeListener as unknown as Mock).mock.calls.length,

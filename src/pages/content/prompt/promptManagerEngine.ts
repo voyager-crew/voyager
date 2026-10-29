@@ -13,6 +13,7 @@ import { StorageKeys } from '@/core/types/common';
 import type { CleanupManager } from '@/core/utils/cleanupManager';
 import { customWebsitesIncludeHost } from '@/core/utils/customWebsites';
 import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContext';
+import { promptCoverageBindingForUrl } from '@/features/plugins/storage/promptCoverageBinding';
 import type { PromptSiteAdapter } from '@/features/prompt/PromptSiteAdapter';
 import type { PromptIdentity } from '@/features/prompt/model/promptTextMatch';
 
@@ -119,7 +120,7 @@ export function createPromptManagerEngine(
   const panel: NativeFeature = {
     id: 'promptManager',
     position: CleanupPositions.DestroyPromptManagerInstance,
-    start: async () => (await startPromptManager(adapter)).destroy,
+    start: async () => (await startPromptManager(adapter, lifetime)).destroy,
   };
   const toggles: NativeFeatureToggleController[] = [];
   let chips: SentPromptChipsController | null = null;
@@ -188,6 +189,8 @@ export function createPromptManagerEngine(
     },
 
     async followCoverage(host) {
+      // Catalog pages have one panel owner: their coverage-bound PluginHost plugin.
+      if (promptCoverageBindingForUrl(location.href)) return;
       const coverage = createNativeFeatureToggle(
         cleanup,
         {

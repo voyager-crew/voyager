@@ -131,6 +131,24 @@
     }
   ],
   [
+    "plugins/prompt-manager/plugin.json",
+    {
+      "id": "voyager.kimi-prompt-manager",
+      "engine": ">=next",
+      "tier": "declarative",
+      "matches": ["https://www.kimi.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "promptManager",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
     "plugins/quote-reply/plugin.json",
     {
       "id": "voyager.kimi-quote-reply",

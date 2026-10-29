@@ -84,6 +84,7 @@ function createEl<K extends keyof HTMLElementTagNameMap>(
 
 export async function startPromptManager(
   site: PromptSiteAdapter,
+  lifetime?: AbortSignal,
 ): Promise<{ destroy: () => void }> {
   try {
     const startup = await readPromptStartupSettings();
@@ -109,7 +110,7 @@ export async function startPromptManager(
     const i18n = createPromptI18n();
 
     // Prevent duplicate injection
-    if (document.getElementById(ID.trigger)) {
+    if (lifetime?.aborted || document.getElementById(ID.trigger)) {
       return { destroy: () => {} };
     }
 
@@ -121,6 +122,10 @@ export async function startPromptManager(
       onAttentionChange: (active) => versionBadge.setAttention(active),
       defaultSpot: (ballHeight) => site.defaultTriggerSpot(ballHeight),
     });
+    if (lifetime?.aborted) {
+      trigger.destroy();
+      return { destroy: () => {} };
+    }
 
     // Panel root
     const panel = createEl('div', 'gv-pm-panel gv-hidden');

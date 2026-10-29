@@ -1,5 +1,8 @@
 import { getPageSelectorSiteId, getSiteSelectorView } from '@/core/selectors';
-import { readInputPlacement } from '@/core/services/composer/inputPlacement';
+import {
+  PROMPT_FAB_LOCATOR_KEY,
+  readInputPlacement,
+} from '@/core/services/composer/inputPlacement';
 import { SiteRegistry } from '@/features/plugins/sites/registry';
 import type { PromptSiteAdapter, PromptTriggerSpot } from '@/features/prompt/PromptSiteAdapter';
 
@@ -14,7 +17,7 @@ import { detectPageScheme } from './pageScheme';
  */
 function besideMaterialFab(ballHeight: number): PromptTriggerSpot | null {
   const fab = readInputPlacement(
-    'input.fab',
+    PROMPT_FAB_LOCATOR_KEY,
     (selector) => Array.from(document.querySelectorAll(selector)),
     document,
     false,
@@ -46,7 +49,7 @@ const CUSTOM_WEBSITE: PromptSiteAdapter = {
 /** Catalog adapters require a published FAB locator before using that placement. */
 function besidePublishedFab(height: number): PromptTriggerSpot | null {
   const site = getPageSelectorSiteId();
-  return site && getSiteSelectorView(site).remoteKeys.has('input.fab')
+  return site && getSiteSelectorView(site).remoteKeys.has(PROMPT_FAB_LOCATOR_KEY)
     ? besideMaterialFab(height)
     : null;
 }

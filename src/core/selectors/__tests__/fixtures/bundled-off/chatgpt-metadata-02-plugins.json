@@ -160,6 +160,24 @@
     }
   ],
   [
+    "plugins/prompt-manager/plugin.json",
+    {
+      "id": "voyager.chatgpt-prompt-manager",
+      "engine": ">=next",
+      "tier": "declarative",
+      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "promptManager",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
     "plugins/quote-reply/plugin.json",
     {
       "id": "voyager.chatgpt-quote-reply",

@@ -6,8 +6,9 @@
  * `gvPluginsState` is ignored, enabled flag and settings alike, so restoring a
  * plugins backup and a settings backup in either order cannot disagree about
  * whether or how the feature runs. Its settings come only from its value
- * bindings (`legacyValueBindings.ts`), `{}` without any. Every other id keeps
- * `isPluginEnabled`. The bindings themselves are in `legacyEnableBindingTable.ts`.
+ * bindings (`legacyValueBindings.ts`), `{}` without any. Catalog Prompt Manager
+ * reads the existing coverage list (`promptCoverageBinding.ts`). Every unbound
+ * id keeps `isPluginEnabled`; scalar bindings live in `legacyEnableBindingTable.ts`.
  *
  * Not part of the
  * CLI bundle (it imports `StorageKeys`): `hostPolicy` must not import it.
@@ -30,6 +31,7 @@ import {
 } from './legacyEnableBindingTable';
 import { legacyValueKeys } from './legacyValueBindings';
 import { isPluginEnabled } from './pluginDefaults';
+import { promptCoverageBindingFor } from './promptCoverageBinding';
 
 export {
   LEGACY_ENABLE_BINDINGS,
@@ -50,6 +52,11 @@ export function legacyBindingFor(id: string): LegacyEnableBinding | null {
     : null;
 }
 
+/** Bound switches ignore plugin-state entries and wait for their sync snapshot. */
+export function hasEnableBinding(id: string): boolean {
+  return legacyBindingFor(id) !== null || promptCoverageBindingFor(id) !== null;
+}
+
 /** The storage keys behind every enable and value binding, each once. */
 export function legacyBindingKeys(): readonly string[] {
   return [
@@ -58,6 +65,7 @@ export function legacyBindingKeys(): readonly string[] {
       ...legacyValueKeys(),
       ...WATERMARK_STORAGE_KEYS,
       StorageKeys.FOLDER_ENABLED,
+      StorageKeys.PROMPT_CUSTOM_WEBSITES,
     ]),
   ];
 }
@@ -72,7 +80,12 @@ export function resolveEffectiveEnabled(
   legacy: LegacySettingSnapshot,
   id: string,
   wasChangedLive: WasChangedLive = neverChangedLive,
+  url?: string,
 ): boolean {
+  if (promptCoverageBindingFor(id)) {
+    const coverage = promptCoverageBindingFor(id, url);
+    return coverage?.read(snapshotValue(legacy, StorageKeys.PROMPT_CUSTOM_WEBSITES)) ?? false;
+  }
   const bound = legacyBindingFor(id);
   if (bound) {
     return bound.derive
@@ -92,7 +105,7 @@ export function resolveEffectiveSettings(
   manifest: PluginManifest,
   state: StateEntries,
 ): PluginSettings {
-  if (legacyBindingFor(manifest.id)) return {};
+  if (hasEnableBinding(manifest.id)) return {};
   const entry = Object.prototype.hasOwnProperty.call(state, manifest.id)
     ? state[manifest.id]
     : undefined;

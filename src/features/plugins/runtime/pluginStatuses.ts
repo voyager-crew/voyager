@@ -86,7 +86,7 @@ export function collectPluginStatuses(input: StatusInput): readonly PluginStatus
     if (
       admissionId &&
       admissionState === 'pending' &&
-      wishVerdict({ ...input.wish, admissionId }, manifest.id) === 'reserve'
+      wishVerdict({ ...input.wish, admissionId, url }, manifest.id) === 'reserve'
     ) {
       statuses.push(blockedStatus(manifest, { reason: 'pending', by: admissionId }, detail));
       continue;

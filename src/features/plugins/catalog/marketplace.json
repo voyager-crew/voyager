@@ -232,6 +232,26 @@
       "name": "kimi-export",
       "source": "sites/kimi/plugins/export/plugin.json",
       "official": true
+    },
+    {
+      "name": "chatgpt-prompt-manager",
+      "source": "sites/chatgpt/plugins/prompt-manager/plugin.json",
+      "official": true
+    },
+    {
+      "name": "claude-prompt-manager",
+      "source": "sites/claude/plugins/prompt-manager/plugin.json",
+      "official": true
+    },
+    {
+      "name": "deepseek-prompt-manager",
+      "source": "sites/deepseek/plugins/prompt-manager/plugin.json",
+      "official": true
+    },
+    {
+      "name": "kimi-prompt-manager",
+      "source": "sites/kimi/plugins/prompt-manager/plugin.json",
+      "official": true
     }
   ]
 }

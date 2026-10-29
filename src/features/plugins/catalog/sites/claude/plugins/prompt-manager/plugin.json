@@ -1,0 +1,61 @@
+{
+  "$schema": "https://voyager.nagi.fun/plugin.schema.json",
+  "id": "voyager.claude-prompt-manager",
+  "name": "Prompt Manager",
+  "version": "1.0.0",
+  "description": "Save, copy and insert prompts from the floating panel.",
+  "i18n": {
+    "ar": {
+      "name": "مدير المطالبات",
+      "description": "احفظ المطالبات وانسخها وأدرجها من اللوحة العائمة."
+    },
+    "es": {
+      "name": "Gestor de Prompts",
+      "description": "Guarda, copia e inserta prompts desde el panel flotante."
+    },
+    "fr": {
+      "name": "Prompts",
+      "description": "Enregistrez, copiez et insérez des prompts depuis le panneau flottant."
+    },
+    "ja": {
+      "name": "プロンプトマネージャー",
+      "description": "フローティングパネルからプロンプトを保存、コピー、挿入できます。"
+    },
+    "ko": {
+      "name": "프롬프트 관리자",
+      "description": "플로팅 패널에서 프롬프트를 저장하고 복사하고 삽입하세요."
+    },
+    "pt": {
+      "name": "Gerenciador de Prompts",
+      "description": "Salve, copie e insira prompts pelo painel flutuante."
+    },
+    "ru": {
+      "name": "Менеджер промптов",
+      "description": "Сохраняйте, копируйте и вставляйте промпты из плавающей панели."
+    },
+    "zh": {
+      "name": "提示词管理器",
+      "description": "在悬浮面板中保存、复制和插入提示词。"
+    },
+    "zh_TW": {
+      "name": "提示詞管理器",
+      "description": "在浮動面板中儲存、複製和插入提示詞。"
+    }
+  },
+  "author": "voyager-official",
+  "category": "input",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/voyager-crew/voyager/tree/main/src/features/plugins/catalog/sites/claude/plugins/prompt-manager",
+  "engine": ">=next",
+  "tier": "declarative",
+  "matches": ["https://claude.ai/*", "https://*.frame.claudeusercontent.com/*"],
+  "contributes": {
+    "domOps": [
+      {
+        "op": "native",
+        "handler": "promptManager",
+        "params": {}
+      }
+    ]
+  }
+}

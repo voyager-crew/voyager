@@ -8,6 +8,7 @@ import { CleanupManager } from '@/core/utils/cleanupManager';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 import chatgptSite from '@/features/plugins/catalog/sites/chatgpt/site.json';
 import { hostCatalogStorageKey } from '@/features/plugins/remote/hostCatalogCache';
+import { PluginHost } from '@/features/plugins/runtime/PluginHost';
 import { HANDOFF_MESSAGES } from '@/features/researchPack/services/handoff';
 import { installNativeEditingMock } from '@/tests/nativeEditing';
 
@@ -165,7 +166,14 @@ it.each(['panel', 'coverage', 'live coverage'])(
       undefined,
       () => page.startup.ready,
     );
-    const mounting = path === 'panel' ? engine.startPanel() : engine.followCoverage(location.host);
+    const host = new PluginHost({
+      url: location.href,
+      initialAdapter: page.startup.initialAdapter,
+      legacySettings: page.startup.legacySettings,
+      formFactor: async () => 'desktop',
+    });
+    stops.push(() => host.stop());
+    const mounting = path === 'panel' ? engine.startPanel() : host.start();
     if (path === 'live coverage') {
       for (const [listener] of vi.mocked(chrome.storage.onChanged.addListener).mock.calls) {
         listener({ [StorageKeys.PROMPT_CUSTOM_WEBSITES]: { newValue: ['chatgpt.com'] } }, 'sync');
@@ -174,7 +182,7 @@ it.each(['panel', 'coverage', 'live coverage'])(
     await vi.advanceTimersByTimeAsync(20);
     page.release();
     await mounting;
-    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(200);
     const trigger = document.getElementById('gv-pm-trigger');
     expect(trigger?.style.right).toBe(`${window.innerWidth - 200 + 10}px`);
     expect(trigger?.style.bottom).toBe(`${window.innerHeight - (300 + 20 + 20)}px`);

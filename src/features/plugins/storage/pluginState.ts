@@ -20,6 +20,7 @@ import { isLocalPluginId } from '../local/localPluginId';
 import type { PluginSettingValue, PluginSettings } from '../types';
 import { isPluginEnabled } from './pluginDefaults';
 import { withPluginStorageLock } from './pluginStorageLock';
+import { promptCoverageBindingFor, setPromptCoverageEnabled } from './promptCoverageBinding';
 
 export interface PluginStateEntry {
   readonly enabled: boolean;
@@ -214,7 +215,13 @@ async function updatePluginState(
   }
 }
 
-export async function setPluginEnabled(id: string, enabled: boolean): Promise<void> {
+export async function setPluginEnabled(id: string, enabled: boolean, url?: string): Promise<void> {
+  if (promptCoverageBindingFor(id)) {
+    const coverage = promptCoverageBindingFor(id, url);
+    if (!coverage) throw new Error('Prompt Manager does not cover the requested URL');
+    await setPromptCoverageEnabled(coverage, enabled);
+    return;
+  }
   await updatePluginState('setPluginEnabled', { id }, (current) =>
     withPluginEnabled(current, id, enabled, Date.now()),
   );

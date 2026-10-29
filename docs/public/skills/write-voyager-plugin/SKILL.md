@@ -7,7 +7,7 @@ description: "Voyager plugin authoring: write and check a local plugin (a JSON m
 
 Voyager is a browser extension for AI chat sites. A local plugin is a declarative JSON manifest (plugin.json) plus CSS that restyles or rearranges a chat page through reversible page changes. It runs no code of its own: Voyager checks it strictly on import, applies it, and removes every change when the plugin is turned off.
 
-This skill is generated from Voyager’s plugin engine 1.10.0. The latest copy is at https://voyager.nagi.fun/skills/write-voyager-plugin/SKILL.md.
+This skill is generated from Voyager’s plugin engine 1.11.0. The latest copy is at https://voyager.nagi.fun/skills/write-voyager-plugin/SKILL.md.
 
 ## Files to read
 
@@ -36,7 +36,7 @@ This skill is split into files. The links below are relative to this SKILL.md; w
 - Required non-empty string fields: id, name, version, description, author, category, license, engine. Also "tier": "declarative", "matches" (see the site files, sites/<site>.md) and "contributes".
 - "id": a short lowercase reverse-dotted slug such as "me.short-name" (a-z, 0-9, ".", "_", "-"). Voyager stores it as "local.<id>"; you do not add that prefix.
 - "version": "1.0.0"; raise it when you change the plugin. "author": "me". "license": "MIT".
-- "engine": ">=1.0.0", or ">=" the sinceEngine of every primitive the plugin uses. This build's plugin engine is 1.10.0.
+- "engine": ">=1.0.0", or ">=" the sinceEngine of every primitive the plugin uses. This build's plugin engine is 1.11.0.
 - "category": one of render-fix, theme, layout, readability, productivity, integration, other.
 - Write "name" and "description" in the language of the user. "i18n" translations are optional for a local plugin.
 - Optional: "$schema": "https://voyager.nagi.fun/plugin.schema.json" lets an editor check the file as you type. The import gate is stricter than the schema; `check` is the authority.

@@ -34,6 +34,7 @@ A primitive is behavior Voyager ships as code; a plugin can only call it by name
 - formulaCopy (sinceEngine 1.3.0): Click an inline or block formula to copy its LaTeX; hover shows it is clickable. Reads KaTeX / MathJax markup on the page.
 - mermaid (sinceEngine 1.7.0): Renders Mermaid code blocks in replies as diagrams with a Diagram / Code toggle, using the renderer Gemini uses. The code block stays in the page for copy and export; turning the plugin off removes the diagrams. Reads: assistantTurn, codeBlock.
   Takes the same params as echarts.
+- promptManager (sinceEngine 1.11.0): Mount the existing Prompt Manager panel and floating trigger for this page.
 - quoteReply (sinceEngine 1.8.0): Quote selected text wholly inside one assistant reply into the composer, preserving LaTeX and existing drafts. Excludes user turns and adapter thinking blocks; never sends. Reads: assistantTurn, composer.
 - sendShortcut (sinceEngine 1.8.0): Enter inserts a newline in the composer; Ctrl/Cmd+Enter clicks its enabled send button when no attachment is uploading. Shift+Enter and IME composition keep the host behavior. Reads: composer, composerRoot, sendButton. It claims one composer send mode for the entire page: while one plugin holds it, another reports a conflict and stays paused; turn the holder off to hand the mode over.
   - mode (string, since 1.9.0): Which Enter chord sends (default ctrlEnterSends). Gemini accepts only ctrlEnterSends; AI Studio accepts only enterSends.

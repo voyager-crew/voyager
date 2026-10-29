@@ -24,6 +24,7 @@ const HANDLER_RESOURCES: Readonly<Record<string, readonly ResourceId[]>> = {
   folders: ['folders-surface'],
   siteCheck: ['site-check-launcher'],
   conversationExport: ['conversation-export-surface'],
+  promptManager: ['prompt-manager-surface'],
 };
 
 /** One resource claimed by one `native` op, kept per op so repeats stay visible. */

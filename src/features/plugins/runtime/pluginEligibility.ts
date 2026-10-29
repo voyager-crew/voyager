@@ -60,6 +60,7 @@ export async function evaluatePlugin(
   const wish = wishVerdict(
     {
       ...wishInput,
+      url: context.url,
       admission: context.admission,
       admissionId: sharedTimelineAdmissionId(context.url, manifest),
     },

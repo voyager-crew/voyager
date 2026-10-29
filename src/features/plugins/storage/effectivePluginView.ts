@@ -11,7 +11,7 @@
 import type { PluginManifest, PluginSettings } from '../types';
 import {
   type LegacySettingSnapshot,
-  legacyBindingFor,
+  hasEnableBinding,
   resolveEffectiveEnabled,
   resolveEffectiveSettings,
 } from './legacySettingBindings';
@@ -30,10 +30,11 @@ export function effectivePluginView(
   manifest: PluginManifest,
   state: PluginStateMap,
   legacy: LegacySettingSnapshot,
+  url?: string,
 ): EffectivePluginView {
-  const bound = legacyBindingFor(manifest.id) !== null;
+  const bound = hasEnableBinding(manifest.id);
   return {
-    enabled: resolveEffectiveEnabled(state, legacy, manifest.id),
+    enabled: resolveEffectiveEnabled(state, legacy, manifest.id, undefined, url),
     settings: bound
       ? deriveLegacyValueSettings(manifest.id, legacy)
       : resolveEffectiveSettings(manifest, state),

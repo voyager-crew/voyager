@@ -5,7 +5,6 @@ import { StorageKeys } from '@/core/types/common';
 import { FEATURE_OWNERS, OFFICIAL_PLUGIN_IDS, SHARED_FEATURE_OWNERS } from '../sites/featureOwners';
 import {
   legacyBindingFor,
-  legacyBindingKeys,
   legacyEnableWrite,
   resolveEffectiveEnabled,
   resolveEffectiveSettings,
@@ -117,69 +116,27 @@ describe('legacy enable bindings', () => {
     expect(legacyBindingFor('__proto__')).toBeNull();
   });
 
-  it('list each storage key once, switches and slider values, with both formula ids sharing one switch', () => {
-    expect([...legacyBindingKeys()].sort()).toEqual(
-      [
-        StorageKeys.WATERMARK_DOWNLOAD_ENABLED,
-        StorageKeys.WATERMARK_PREVIEW_ENABLED,
-        StorageKeys.WATERMARK_REMOVER_ENABLED,
-        StorageKeys.GV_VISUAL_EFFECT,
-        StorageKeys.GV_SNOW_EFFECT,
-        StorageKeys.FORMULA_COPY_ENABLED,
-        StorageKeys.INPUT_VIM_MODE,
-        StorageKeys.INPUT_HALO_HIDDEN,
-        StorageKeys.CHAT_FONT_SIZE_ENABLED,
-        StorageKeys.CHAT_LINE_HEIGHT_ENABLED,
-        StorageKeys.CHAT_WIDTH_ENABLED,
-        StorageKeys.EDIT_INPUT_WIDTH_ENABLED,
-        StorageKeys.SIDEBAR_WIDTH_ENABLED,
-        StorageKeys.SIDEBAR_WIDTH,
-        StorageKeys.AISTUDIO_SIDEBAR_WIDTH,
-        StorageKeys.AISTUDIO_SIDEBAR_WIDTH_ENABLED,
-        StorageKeys.FOLDER_ENABLED,
-        StorageKeys.BATCH_DELETE_ENABLED,
-        StorageKeys.GV_SIDEBAR_AUTO_HIDE,
-        StorageKeys.GV_SIDEBAR_FULL_HIDE,
-        StorageKeys.MARKDOWN_FIX_ENABLED,
-        StorageKeys.CANVAS_COPY_ENABLED,
-        StorageKeys.DEEP_RESEARCH_EXPORT_ENABLED,
-        StorageKeys.GEMINI_EXPORT_ENABLED,
-        StorageKeys.GV_GEMS_SIDEBAR_ENABLED,
-        StorageKeys.GV_GEMS_SIDEBAR_COUNT,
-        StorageKeys.CONTEXT_SYNC_ENABLED,
-        StorageKeys.USER_LATEX_ENABLED,
-        StorageKeys.CODE_BLOCK_COLLAPSE_ENABLED,
-        StorageKeys.WAVEDROM_ENABLED,
-        StorageKeys.ECHARTS_ENABLED,
-        StorageKeys.MERMAID_ENABLED,
-        StorageKeys.PROMPT_HISTORY_ENABLED,
-        StorageKeys.INPUT_COLLAPSE_ENABLED,
-        StorageKeys.INPUT_COLLAPSE_WHEN_NOT_EMPTY,
-        StorageKeys.RESEARCH_PACK_ENABLED,
-        StorageKeys.DEFAULT_MODEL_AUTO_APPLY,
-        StorageKeys.FORK_ENABLED,
-        StorageKeys.USAGE_STATUS_ENABLED,
-        StorageKeys.QUOTE_REPLY_ENABLED,
-        StorageKeys.HIGHLIGHT_ENABLED,
-        StorageKeys.PREVENT_AUTO_SCROLL_ENABLED,
-        StorageKeys.RESPONSE_COMPLETE_NOTIFICATION_ENABLED,
-        StorageKeys.GV_TIMELINE_ENABLED,
-        StorageKeys.GV_SHOW_MESSAGE_TIMESTAMPS,
-        StorageKeys.CTRL_ENTER_SEND,
-        StorageKeys.AISTUDIO_ENTER_SEND,
-        StorageKeys.DRAFT_AUTO_SAVE,
-        StorageKeys.SAFARI_ENTER_FIX,
-        StorageKeys.SITE_CHECK_ENABLED,
-        StorageKeys.CHAT_FONT_SIZE,
-        StorageKeys.CHAT_LINE_HEIGHT,
-        StorageKeys.CHAT_PARAGRAPH_SPACING,
-        StorageKeys.CHAT_WIDTH,
-        StorageKeys.EDIT_INPUT_WIDTH,
-        StorageKeys.FOLDER_HIDE_ARCHIVED_CONVERSATIONS_AISTUDIO,
-        StorageKeys.FOLDER_HIDE_ARCHIVED_CONVERSATIONS,
-      ].sort(),
-    );
-    expect(legacyBindingFor(FORMULA_G)?.key).toBe(legacyBindingFor(FORMULA_A)?.key);
+  it('keeps Gemini and AI Studio formula-copy switches on the same stored choice', () => {
+    for (const id of [FORMULA_G, FORMULA_A]) {
+      expect(
+        resolveEffectiveEnabled(
+          { [id]: { enabled: true } },
+          {
+            [StorageKeys.FORMULA_COPY_ENABLED]: false,
+          },
+          id,
+        ),
+      ).toBe(false);
+      expect(
+        resolveEffectiveEnabled(
+          { [id]: { enabled: false } },
+          {
+            [StorageKeys.FORMULA_COPY_ENABLED]: true,
+          },
+          id,
+        ),
+      ).toBe(true);
+    }
   });
 
   // Production readings: research pack opts in; default model and Quote stay on unless false.

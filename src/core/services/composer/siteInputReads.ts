@@ -77,6 +77,8 @@ export function acceptsSiteInputs(
   return actual.length === 1 && native.length === 1 && actual[0] === native[0];
 }
 
+export const CHAT_INPUT_LOCATOR_KEY = 'input.candidates';
+
 export function findSiteChatInput(
   siteId: string,
   options: FindComposerOptions = {},
@@ -84,7 +86,7 @@ export function findSiteChatInput(
   const doc = options.doc ?? document;
   const bundle = getBundledSiteSelectorView(siteId);
   const view = getSiteSelectorView(siteId);
-  const key = 'input.candidates';
+  const key = CHAT_INPUT_LOCATOR_KEY;
   const read = (candidate: SiteSelectorView) => readChatInput(candidate.profiles[key], options);
   if (!view.remoteKeys.has(key)) return read(bundle);
   const expected = inputCandidates(doc, bundle.profiles[key]);

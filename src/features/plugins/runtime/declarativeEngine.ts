@@ -50,6 +50,7 @@ import {
   activatePrimitives,
   updatePrimitiveSettings,
 } from './primitiveLifecycle';
+import { isStandalonePromptManager } from './promptManagerReload';
 import { resolveSemanticElements } from './semanticElements';
 import { applyOpToElement, isTargetedOp } from './targetedOps';
 
@@ -327,6 +328,26 @@ export class DeclarativeEngine {
     for (const id of [...this.active.keys()]) void this.unmount(id);
     this.doc.getElementById(PLUGIN_BASE_STYLE_ID)?.remove();
     this.health.dispose();
+  }
+
+  /** Transfer this panel's live scope without aborting it or releasing its page resource. */
+  handoffPromptManager(id: string, next: DeclarativeEngine): boolean {
+    const entry = this.active.get(id);
+    if (
+      !entry ||
+      entry.nativeHandler ||
+      entry.primitiveRestart ||
+      !isStandalonePromptManager(entry.manifest) ||
+      next.active.has(id)
+    )
+      return false;
+    this.active.delete(id);
+    this.health.forget(id);
+    this.syncObserver();
+    next.active.set(id, entry);
+    next.trackHealth(entry);
+    next.syncObserver();
+    return true;
   }
 
   /** Re-apply all active plugins' dom ops immediately (exposed for tests + the

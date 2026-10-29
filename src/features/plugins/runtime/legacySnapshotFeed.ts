@@ -29,7 +29,7 @@ import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContex
 import {
   type LegacySettingSnapshot,
   type WasChangedLive,
-  legacyBindingFor,
+  hasEnableBinding,
   loadLegacySettingSnapshot,
   resolveEffectiveEnabled,
   subscribeLegacySettings,
@@ -51,7 +51,7 @@ export const DEFAULT_LEGACY_SETTINGS: LegacySettingsSource = {
 
 const VISUAL_EFFECT_KEYS = [StorageKeys.GV_VISUAL_EFFECT, StorageKeys.GV_SNOW_EFFECT];
 
-/** Only the shared effect follows legacy settings on plugin and custom sites. */
+/** Shared effects keep their existing narrow feed on custom pages. */
 export const DEFAULT_VISUAL_EFFECT_SETTINGS: LegacySettingsSource = {
   load: () => loadLegacySettingSnapshot(VISUAL_EFFECT_KEYS),
   subscribe: (callback) => subscribeLegacySettings(callback, VISUAL_EFFECT_KEYS),
@@ -156,10 +156,11 @@ export function isPluginWanted(
   admission: OfficialAdmission,
   id: string,
   wasChangedLive?: WasChangedLive,
+  url?: string,
 ): boolean {
   if (admission.stateOf(id) !== 'admitted') return false;
-  if (legacyBindingFor(id) && legacy === null) return false;
-  return resolveEffectiveEnabled(state, legacy ?? {}, id, wasChangedLive);
+  if (hasEnableBinding(id) && legacy === null) return false;
+  return resolveEffectiveEnabled(state, legacy ?? {}, id, wasChangedLive, url);
 }
 
 /**
@@ -171,6 +172,6 @@ export function legacyBoundSettings(
   id: string,
   legacy: LegacySettingSnapshot,
 ): PluginSettings | null {
-  if (!legacyBindingFor(id)) return null;
+  if (!hasEnableBinding(id)) return null;
   return deriveLegacyValueSettings(id, legacy);
 }

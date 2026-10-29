@@ -7,7 +7,7 @@ import { ownedFeatureByPluginId } from '../sites/featureOwners';
 import {
   type LegacySettingSnapshot,
   type WasChangedLive,
-  legacyBindingFor,
+  hasEnableBinding,
 } from '../storage/legacySettingBindings';
 import type { PluginStateMap } from '../storage/pluginState';
 import type { PluginManifest } from '../types';
@@ -32,6 +32,7 @@ const ADMITTED: OfficialAdmission = {
 };
 
 export interface WishInput {
+  readonly url?: string;
   readonly state: PluginStateMap;
   /** The legacy switches official plugins follow; null until read (or for good, after a failed read). */
   readonly legacy: LegacySettingSnapshot | null;
@@ -62,17 +63,21 @@ export function wishVerdict(input: WishInput, id: string): WishVerdict {
   const admissionId = input.admissionId ?? id;
   const admissionState = admission.stateOf(admissionId);
   if (admissionState === 'denied') return 'skip';
-  if (legacy === null && legacyBindingFor(id)) {
+  if (legacy === null && hasEnableBinding(id)) {
     // A failed read never turns into "missing key, default on": the plugin
     // stays off, and nobody waits for a snapshot that will not come.
     return ownedByPlugin && input.legacyPhase === 'loading' ? 'await' : 'skip';
   }
   if (admissionState === 'admitted') {
     // Admission grants access to core data; the consumer still follows its own plugin switch.
-    return isPluginWanted(state, legacy, ADMITTED, id, input.wasChangedLive) ? 'run' : 'skip';
+    return isPluginWanted(state, legacy, ADMITTED, id, input.wasChangedLive, input.url)
+      ? 'run'
+      : 'skip';
   }
   if (!ownedByPlugin && admissionId === id) return 'skip';
-  return isPluginWanted(state, legacy, ADMITTED, id, input.wasChangedLive) ? 'reserve' : 'skip';
+  return isPluginWanted(state, legacy, ADMITTED, id, input.wasChangedLive, input.url)
+    ? 'reserve'
+    : 'skip';
 }
 
 export interface PluginBlock {

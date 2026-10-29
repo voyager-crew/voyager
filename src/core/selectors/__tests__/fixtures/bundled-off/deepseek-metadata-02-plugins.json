@@ -200,6 +200,24 @@
     }
   ],
   [
+    "plugins/prompt-manager/plugin.json",
+    {
+      "id": "voyager.deepseek-prompt-manager",
+      "engine": ">=next",
+      "tier": "declarative",
+      "matches": ["https://chat.deepseek.com/*"],
+      "contributes": {
+        "domOps": [
+          {
+            "op": "native",
+            "handler": "promptManager",
+            "params": {}
+          }
+        ]
+      }
+    }
+  ],
+  [
     "plugins/quote-reply/plugin.json",
     {
       "id": "voyager.deepseek-quote-reply",
