@@ -1,1 +1,86 @@
-{}
+{
+  "panelTabFeatures": {
+    "message": "機能",
+    "description": "Panel tab that lists the features of the site being viewed"
+  },
+  "panelTabSites": {
+    "message": "サイト",
+    "description": "Panel tab that lists the sites Voyager can reach"
+  },
+  "panelTabsLabel": {
+    "message": "パネルの区分",
+    "description": "Accessible name of the panel tab list"
+  },
+  "panelSearch": {
+    "message": "機能を検索",
+    "description": "Search field and button that filter the feature rows"
+  },
+  "panelFullSettings": {
+    "message": "すべての設定",
+    "description": "Button that opens the full Voyager settings (toolbar popup)"
+  },
+  "panelEntryGroup": {
+    "message": "呼び出し",
+    "description": "Group label above the floating button row: ways to open Voyager on the page"
+  },
+  "panelFloatingButton": {
+    "message": "フローティングボタン",
+    "description": "Row for Prompt Manager's floating button on the page"
+  },
+  "panelShortcutHint": {
+    "message": "ボタンを隠しても、このショートカットでパネルを開けます",
+    "description": "Tooltip on the shortcut key cap beside the floating button switch"
+  },
+  "panelThisPage": {
+    "message": "このページ",
+    "description": "Mark beside the page's own site in the site menu"
+  },
+  "panelNotThisPage": {
+    "message": "{site} · 開いているページではないため、変更はプレビューされません",
+    "description": "Tooltip of the site switcher while another site is viewed; {site} is the site name"
+  },
+  "panelNoMatches": {
+    "message": "一致する機能はありません",
+    "description": "Shown when a feature search finds nothing"
+  },
+  "panelSupportedSites": {
+    "message": "対応サイト",
+    "description": "Group label above the supported sites card"
+  },
+  "panelOtherWebsitesGroup": {
+    "message": "{websites} · プロンプトのみ",
+    "description": "Label above added websites, where only Prompt Manager runs; {websites} is the popup's \"Other websites\" title"
+  },
+  "panelFeaturesOn_one": {
+    "message": "{count} 件オン",
+    "description": "Under a supported site: how many features are on there"
+  },
+  "panelFeaturesOn_few": {
+    "message": "{count} 件オン",
+    "description": "Under a supported site: how many features are on there"
+  },
+  "panelFeaturesOn_many": {
+    "message": "{count} 件オン",
+    "description": "Under a supported site: how many features are on there"
+  },
+  "panelFeaturesOn_other": {
+    "message": "{count} 件オン",
+    "description": "Under a supported site: how many features are on there"
+  },
+  "panelNotEnabled": {
+    "message": "未許可",
+    "description": "Under a supported site Voyager cannot reach yet"
+  },
+  "panelWaitingForBrowser": {
+    "message": "ブラウザの許可を待っています",
+    "description": "Under a supported site while the browser's permission prompt is open"
+  },
+  "panelAllowAccess": {
+    "message": "{site} へのアクセスを許可",
+    "description": "Accessible name of a site's access switch; {site} is the site name"
+  },
+  "panelRemoveWebsite": {
+    "message": "{site} を削除",
+    "description": "Accessible name of the remove button of an added website; {site} is its host"
+  }
+}

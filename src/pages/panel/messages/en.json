@@ -1,1 +1,86 @@
-{}
+{
+  "panelTabFeatures": {
+    "message": "Features",
+    "description": "Panel tab that lists the features of the site being viewed"
+  },
+  "panelTabSites": {
+    "message": "Sites",
+    "description": "Panel tab that lists the sites Voyager can reach"
+  },
+  "panelTabsLabel": {
+    "message": "Panel sections",
+    "description": "Accessible name of the panel tab list"
+  },
+  "panelSearch": {
+    "message": "Search features",
+    "description": "Search field and button that filter the feature rows"
+  },
+  "panelFullSettings": {
+    "message": "Full settings",
+    "description": "Button that opens the full Voyager settings (toolbar popup)"
+  },
+  "panelEntryGroup": {
+    "message": "Entry",
+    "description": "Group label above the floating button row: ways to open Voyager on the page"
+  },
+  "panelFloatingButton": {
+    "message": "Floating button",
+    "description": "Row for Prompt Manager's floating button on the page"
+  },
+  "panelShortcutHint": {
+    "message": "Opens the panel when the button is hidden",
+    "description": "Tooltip on the shortcut key cap beside the floating button switch"
+  },
+  "panelThisPage": {
+    "message": "This page",
+    "description": "Mark beside the page's own site in the site menu"
+  },
+  "panelNotThisPage": {
+    "message": "{site} · Not this page, so changes aren't previewed",
+    "description": "Tooltip of the site switcher while another site is viewed; {site} is the site name"
+  },
+  "panelNoMatches": {
+    "message": "No matching features",
+    "description": "Shown when a feature search finds nothing"
+  },
+  "panelSupportedSites": {
+    "message": "Supported sites",
+    "description": "Group label above the supported sites card"
+  },
+  "panelOtherWebsitesGroup": {
+    "message": "{websites} · Prompts only",
+    "description": "Label above added websites, where only Prompt Manager runs; {websites} is the popup's \"Other websites\" title"
+  },
+  "panelFeaturesOn_one": {
+    "message": "{count} on",
+    "description": "Under a supported site: how many features are on there"
+  },
+  "panelFeaturesOn_few": {
+    "message": "{count} on",
+    "description": "Under a supported site: how many features are on there"
+  },
+  "panelFeaturesOn_many": {
+    "message": "{count} on",
+    "description": "Under a supported site: how many features are on there"
+  },
+  "panelFeaturesOn_other": {
+    "message": "{count} on",
+    "description": "Under a supported site: how many features are on there"
+  },
+  "panelNotEnabled": {
+    "message": "Not enabled",
+    "description": "Under a supported site Voyager cannot reach yet"
+  },
+  "panelWaitingForBrowser": {
+    "message": "Waiting for your browser",
+    "description": "Under a supported site while the browser's permission prompt is open"
+  },
+  "panelAllowAccess": {
+    "message": "Allow access to {site}",
+    "description": "Accessible name of a site's access switch; {site} is the site name"
+  },
+  "panelRemoveWebsite": {
+    "message": "Remove {site}",
+    "description": "Accessible name of the remove button of an added website; {site} is its host"
+  }
+}

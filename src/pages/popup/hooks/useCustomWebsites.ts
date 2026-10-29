@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import browser from 'webextension-polyfill';
 
@@ -11,6 +11,7 @@ import {
 } from '@/core/utils/customWebsites';
 import { pluginsToOriginPatterns } from '@/features/plugins/runtime/siteRegistration';
 import { matchesAnyPattern, patternWithinAny } from '@/features/plugins/sites/matchPattern';
+import { withPluginStorageLock } from '@/features/plugins/storage/pluginStorageLock';
 import {
   type PromptCoverageBinding,
   setPromptCoverageEnabled,
@@ -33,6 +34,12 @@ export interface CustomWebsitesOptions {
   pluginManifests: readonly Pick<PluginManifest, 'matches'>[];
   refreshActiveTabContext: () => Promise<void>;
   writeSyncStorage: (payload: Record<string, unknown>) => Promise<void>;
+  /**
+   * Where the browser will not ask from this page (the request throws or
+   * reports no gesture, as inside the Voyager panel's frame): hands the request
+   * to a page that can ask and says whether that page opened. The popup has none.
+   */
+  askElsewhere?: () => Promise<boolean>;
 }
 
 /** Why coverage did not change: the browser refused or could not grant access, or storage failed. */
@@ -45,6 +52,17 @@ export const COVERAGE_REFUSAL_MESSAGES: Readonly<Record<CoverageRefusal, Transla
   denied: 'permissionDenied',
   unsaved: 'watermarkNotice_error',
 };
+
+/** A refusal, or the request handed to a page that can ask (`askElsewhere`), which reports for itself. */
+type AccessAnswer = CoverageRefusal | 'elsewhere' | null;
+
+const COVERAGE_KEY = StorageKeys.PROMPT_CUSTOM_WEBSITES;
+
+/** Whether the stored value already reads as `list`, so there is nothing to write. */
+function storedAs(raw: unknown, list: readonly string[]): boolean {
+  if (!Array.isArray(raw)) return list.length === 0;
+  return raw.length === list.length && raw.every((entry, index) => entry === list[index]);
+}
 
 /** What removing an added website took away, so its undo gives back exactly that. */
 export interface RemovedWebsite {
@@ -87,17 +105,21 @@ async function heldPatterns(origins: readonly string[]): Promise<string[]> {
 
 /**
  * Prompt Manager website coverage (`gvPromptCustomWebsites`) and its shared
- * optional host permissions. Every coverage read and write in the popup goes
- * through here; a supported site's switch writes through its coverage binding.
+ * optional host permissions. Every coverage read and write in the popup and
+ * the panel goes through here; a supported site's switch writes through its
+ * coverage binding. Either page may stay open while another changes the list,
+ * so each write applies only its own change to the list as stored now, and
+ * the shown list follows storage.
  */
 export function useCustomWebsites({
   t,
   pluginManifests,
   refreshActiveTabContext,
   writeSyncStorage,
+  askElsewhere,
 }: CustomWebsitesOptions) {
   const [customWebsites, setCustomWebsites] = useState<string[]>([]);
-  // The list as last set, for an action that runs after a later render (an undo offer).
+  // The list as last shown, for an action that runs after a later render (an undo offer).
   const current = useRef<string[]>([]);
   const [newWebsiteInput, setNewWebsiteInput] = useState('');
   const [websiteError, setWebsiteError] = useState('');
@@ -107,10 +129,33 @@ export function useCustomWebsites({
     setCustomWebsites(list);
   }, []);
 
-  const commit = useCallback(
-    async (list: string[]): Promise<void> => {
-      show(list);
-      await writeSyncStorage({ [StorageKeys.PROMPT_CUSTOM_WEBSITES]: list });
+  // Another popup, the panel, a tab or the background may change the list meanwhile.
+  useEffect(() => {
+    const onChanged = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+      if (area === 'sync' && Object.hasOwn(changes, COVERAGE_KEY)) {
+        show(sanitizeCustomWebsites(changes[COVERAGE_KEY].newValue));
+      }
+    };
+    chrome.storage?.onChanged?.addListener(onChanged);
+    return () => chrome.storage?.onChanged?.removeListener(onChanged);
+  }, [show]);
+
+  /**
+   * One change to the list as stored now, read under the plugin-storage lock
+   * as the coverage binding writes, so a website saved elsewhere since this
+   * page read the list stays. A failed read throws and writes nothing.
+   */
+  const update = useCallback(
+    async (change: (stored: string[]) => string[]): Promise<void> => {
+      const next = await withPluginStorageLock(async () => {
+        const stored: unknown = await chrome.storage.sync.get(COVERAGE_KEY);
+        if (!stored || typeof stored !== 'object') throw new Error('Coverage read failed');
+        const raw = (stored as Record<string, unknown>)[COVERAGE_KEY];
+        const list = change(sanitizeCustomWebsites(raw));
+        if (!storedAs(raw, list)) await writeSyncStorage({ [COVERAGE_KEY]: list });
+        return list;
+      });
+      show(next);
     },
     [show, writeSyncStorage],
   );
@@ -118,20 +163,22 @@ export function useCustomWebsites({
   /** Takes entries out, leaving access alone, and says where each one stood. */
   const removeEntries = useCallback(
     async (entries: readonly string[]): Promise<PlacedEntry[]> => {
-      const { next, removed } = withoutEntries(current.current, entries);
-      if (removed.length) await commit(next);
+      let removed: PlacedEntry[] = [];
+      await update((stored) => {
+        const result = withoutEntries(stored, entries);
+        removed = result.removed;
+        return result.next;
+      });
       return removed;
     },
-    [commit],
+    [update],
   );
 
   /** Puts removed entries back where they stood. */
   const restoreEntries = useCallback(
-    async (entries: readonly PlacedEntry[]): Promise<void> => {
-      const next = withEntriesRestored(current.current, entries);
-      if (next.length !== current.current.length) await commit(next);
-    },
-    [commit],
+    (entries: readonly PlacedEntry[]): Promise<void> =>
+      update((stored) => withEntriesRestored(stored, entries)),
+    [update],
   );
 
   const hydrateFromStorage = useCallback(
@@ -140,11 +187,9 @@ export function useCustomWebsites({
       const rawWebsites: unknown[] = Array.isArray(storedWebsites) ? storedWebsites : [];
       const loaded = sanitizeCustomWebsites(rawWebsites);
       show(loaded);
-      if (
-        rawWebsites.length !== loaded.length ||
-        rawWebsites.some((website, index) => website !== loaded[index])
-      ) {
-        void writeSyncStorage({ [StorageKeys.PROMPT_CUSTOM_WEBSITES]: loaded });
+      if (!storedAs(rawWebsites, loaded)) {
+        // Sanitizes the list as stored by then, in case another page changed it since.
+        void update((stored) => stored).catch(() => undefined);
       }
 
       // A denied prompt may close the popup before its optimistic write is rolled back.
@@ -170,13 +215,13 @@ export function useCustomWebsites({
         const answers = await Promise.all(loaded.map(hasAnyPermission));
         const unreachable = loaded.filter((_, index) => !answers[index]);
         if (unreachable.length) await removeEntries(unreachable);
-      })();
+      })().catch(() => undefined);
     },
-    [removeEntries, show, writeSyncStorage],
+    [removeEntries, show, update],
   );
 
   const requestAccess = useCallback(
-    async (domain: string): Promise<CoverageRefusal | null> => {
+    async (domain: string): Promise<AccessAnswer> => {
       const origins = originPatternsForDomain(domain);
       if (!origins) return 'invalid';
       if (!browser.permissions?.request || !browser.permissions?.contains) return 'failed';
@@ -195,11 +240,12 @@ export function useCustomWebsites({
         await refreshActiveTabContext();
         return null;
       } catch (error) {
+        if (askElsewhere && (await askElsewhere())) return 'elsewhere';
         console.error('[Gemini Voyager] Failed to request permissions for custom website:', error);
         return 'failed';
       }
     },
-    [refreshActiveTabContext],
+    [askElsewhere, refreshActiveTabContext],
   );
 
   /**
@@ -213,32 +259,47 @@ export function useCustomWebsites({
       save: () => Promise<unknown>,
       takeBack: () => Promise<unknown>,
       onSaved?: () => void,
-    ): Promise<CoverageRefusal | null> => {
-      if (isFirefox()) {
-        const refusal = await requestAccess(domain);
-        if (refusal) return refusal;
-        await save();
+    ): Promise<AccessAnswer> => {
+      const saved = async (): Promise<boolean> => {
+        try {
+          await save();
+        } catch {
+          return false;
+        }
         onSaved?.();
-        return null;
+        return true;
+      };
+      if (isFirefox()) {
+        const answer = await requestAccess(domain);
+        if (answer) return answer;
+        return (await saved()) ? null : 'unsaved';
       }
-      await save();
-      onSaved?.();
-      const refusal = await requestAccess(domain);
-      if (refusal) await takeBack();
-      return refusal;
+      if (!(await saved())) return 'unsaved';
+      const answer = await requestAccess(domain);
+      // Left in place if this fails: the next popup's hydration drops an entry without access.
+      if (answer) await takeBack().catch(() => undefined);
+      return answer;
     },
     [requestAccess],
   );
 
   const addEntry = useCallback(
-    (domain: string, onSaved?: () => void) =>
-      addWithAccess(
+    (domain: string, onSaved?: () => void) => {
+      // Only an entry this add put in is taken back; one saved elsewhere meanwhile stays.
+      let added = false;
+      return addWithAccess(
         domain,
-        () => commit([...current.current, domain]),
-        () => removeEntries([domain]),
+        () =>
+          update((stored) => {
+            if (stored.includes(domain)) return stored;
+            added = true;
+            return [...stored, domain];
+          }),
+        () => (added ? removeEntries([domain]) : Promise.resolve()),
         onSaved,
-      ),
-    [addWithAccess, commit, removeEntries],
+      );
+    },
+    [addWithAccess, removeEntries, update],
   );
 
   /** Removes the grants only this entry used; `failed` when the browser kept them. */
@@ -288,19 +349,28 @@ export function useCustomWebsites({
 
   const handleAddWebsite = useCallback(async (): Promise<void> => {
     setWebsiteError('');
-    if (!newWebsiteInput.trim()) return;
-    const normalized = normalizeCustomWebsite(newWebsiteInput);
+    const typed = newWebsiteInput;
+    if (!typed.trim()) return;
+    const normalized = normalizeCustomWebsite(typed);
     if (!normalized || current.current.includes(normalized)) {
       setWebsiteError(t('invalidUrl'));
       return;
     }
-    const refusal = await addEntry(normalized, () => setNewWebsiteInput(''));
-    if (refusal) setWebsiteError(t(COVERAGE_REFUSAL_MESSAGES[refusal]));
+    const answer = await addEntry(normalized, () => setNewWebsiteInput(''));
+    // The page that asks instead starts empty, so the typed text stays here for another try.
+    if (answer === 'elsewhere') setNewWebsiteInput(typed);
+    else if (answer) setWebsiteError(t(COVERAGE_REFUSAL_MESSAGES[answer]));
   }, [newWebsiteInput, t, addEntry]);
 
   const handleRemoveWebsite = useCallback(
     async (website: string): Promise<RemovedWebsite> => {
-      const removed = await removeEntries([website]);
+      let removed: PlacedEntry[];
+      try {
+        removed = await removeEntries([website]);
+      } catch {
+        // The list could not be read, so nothing changed: the website and its access stay.
+        return { entries: [], origins: [], failed: true };
+      }
       const revoked = await revokeCustomWebsitePermission(website, current.current);
       if (!revoked.failed) return { entries: removed, origins: revoked.origins, failed: false };
       // The browser kept the access, so the website stays listed, as before.
@@ -316,8 +386,8 @@ export function useCustomWebsites({
         await handleRemoveWebsite(domain);
         return;
       }
-      const refusal = await addEntry(domain);
-      if (refusal) setWebsiteError(t(COVERAGE_REFUSAL_MESSAGES[refusal]));
+      const answer = await addEntry(domain);
+      if (answer && answer !== 'elsewhere') setWebsiteError(t(COVERAGE_REFUSAL_MESSAGES[answer]));
     },
     [addEntry, handleRemoveWebsite, t],
   );
@@ -358,12 +428,13 @@ export function useCustomWebsites({
           await refreshActiveTabContext();
           return { refusal: null, removed: [] };
         }
-        const refusal = await addWithAccess(
+        const answer = await addWithAccess(
           entry,
           () => writeBinding(binding, true),
           () => writeBinding(binding, false),
         );
-        return { refusal, removed: [] };
+        // Handed to a page that can ask, which reports for itself.
+        return { refusal: answer === 'elsewhere' ? null : answer, removed: [] };
       } catch {
         return { refusal: 'unsaved', removed: [] };
       }
@@ -377,32 +448,42 @@ export function useCustomWebsites({
    * stay out. The entries are saved before the browser answers: its prompt may
    * close the popup, and the background, hearing of the grant, must find them
    * rather than add a broader entry of its own (`example.org` for `example.org:3000`).
+   * Where this page cannot ask, the request goes to a page that can
+   * (`askElsewhere`), which reports for itself: the entries stay out and the
+   * answer is true, as there is nothing to report here.
    */
   const restoreAccess = useCallback(
     async (origins: readonly string[], entries: readonly PlacedEntry[]): Promise<boolean> => {
-      if (origins.length === 0) {
-        await restoreEntries(entries);
-        return true;
-      }
-      if (!browser.permissions?.request) return false;
-      const ask = async (): Promise<boolean> => {
-        try {
-          return (await browser.permissions.request({ origins: [...origins] })) === true;
-        } catch {
-          return false;
+      try {
+        if (origins.length === 0) {
+          await restoreEntries(entries);
+          return true;
         }
-      };
-      // Firefox keeps the gesture only for a request made before any other await.
-      const answer = isFirefox() ? ask() : null;
-      await restoreEntries(entries);
-      if (!(await (answer ?? ask()))) {
-        await removeEntries(entries.map(({ entry }) => entry));
+        if (!browser.permissions?.request) return false;
+        const ask = async (): Promise<AccessAnswer> => {
+          try {
+            const granted = await browser.permissions.request({ origins: [...origins] });
+            return granted === true ? null : 'denied';
+          } catch {
+            return askElsewhere && (await askElsewhere()) ? 'elsewhere' : 'failed';
+          }
+        };
+        // Firefox keeps the gesture only for a request made before any other await.
+        const pending = isFirefox() ? ask() : null;
+        await restoreEntries(entries);
+        const answer = await (pending ?? ask());
+        if (answer) {
+          await removeEntries(entries.map(({ entry }) => entry));
+          return answer === 'elsewhere';
+        }
+      } catch {
+        // The list could not be read: nothing was given back.
         return false;
       }
       await refreshActiveTabContext();
       return true;
     },
-    [refreshActiveTabContext, removeEntries, restoreEntries],
+    [askElsewhere, refreshActiveTabContext, removeEntries, restoreEntries],
   );
 
   return {

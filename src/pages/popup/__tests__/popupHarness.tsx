@@ -16,6 +16,7 @@ const extensionApi = vi.hoisted(() => ({
   storage: {
     sync: { get: vi.fn(), set: vi.fn(), remove: vi.fn(), getBytesInUse: vi.fn() },
     local: { get: vi.fn(), set: vi.fn(), remove: vi.fn(), getBytesInUse: vi.fn() },
+    session: { get: vi.fn(), set: vi.fn(), remove: vi.fn() },
     onChanged: { addListener: vi.fn(), removeListener: vi.fn() },
   },
   tabs: { get: vi.fn(), query: vi.fn(), sendMessage: vi.fn(), create: vi.fn() },
@@ -64,6 +65,8 @@ export let container: HTMLDivElement;
 let root: Root;
 export let local: Record<string, unknown>;
 export let sync: Record<string, unknown>;
+/** Session storage, where the background leaves the panel's one-shot requests. */
+export let session: Record<string, unknown>;
 
 beforeEach(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -74,6 +77,13 @@ beforeEach(() => {
     [StorageKeys.CHANGELOG_DISMISSED_VERSION]: '1.8.2',
   };
   sync = { [StorageKeys.MERMAID_ENABLED]: false };
+  session = {};
+  extensionApi.storage.session.get.mockImplementation(async (keys: unknown) =>
+    readStorage(keys, session),
+  );
+  extensionApi.storage.session.remove.mockImplementation(async (keys: string | string[]) => {
+    for (const key of Array.isArray(keys) ? keys : [keys]) delete session[key];
+  });
   for (const [area, stored] of [
     ['local', local],
     ['sync', sync],

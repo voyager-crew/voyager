@@ -11,6 +11,8 @@ import {
 } from '@/core/gemini/nativeHealth';
 import { StorageKeys } from '@/core/types/common';
 
+import type { CurrentTab } from './currentTab';
+
 /**
  * A miss the page saw just before the popup opened becomes an entry only after the grace period,
  * so ask once more after a full grace period has passed.
@@ -36,25 +38,28 @@ function readDismissed(value: unknown): Record<string, true> {
  * Health entries of the active Gemini tab, read from its content script. The page owns the state,
  * so there is nothing stored to go stale; only dismissals persist, per extension version.
  */
-export function useNativeHealth(activeTabId: number | null, activeUrl: string) {
+export function useNativeHealth({
+  activeUrl,
+  requestTab,
+}: Pick<CurrentTab, 'activeUrl' | 'requestTab'>) {
   const [entries, setEntries] = useState<NativeHealthEntry[]>([]);
   const [dismissed, setDismissed] = useState<Record<string, true> | null>(null);
   const onGemini = isGeminiTab(activeUrl);
 
   const refresh = useCallback(async () => {
-    if (activeTabId === null || !onGemini) {
+    if (requestTab === null || !onGemini) {
       setEntries([]);
       return;
     }
     try {
-      const response = (await browser.tabs.sendMessage(activeTabId, {
-        type: NATIVE_HEALTH_STATUS_MESSAGE,
-      })) as { ok?: boolean; entries?: unknown } | undefined;
+      const response = (await requestTab({ type: NATIVE_HEALTH_STATUS_MESSAGE })) as
+        | { ok?: boolean; entries?: unknown }
+        | undefined;
       if (response?.ok) setEntries(parseNativeHealthEntries(response.entries));
     } catch {
       // No content script in this tab yet (still loading, or the extension was just reloaded).
     }
-  }, [activeTabId, onGemini]);
+  }, [requestTab, onGemini]);
 
   useEffect(() => {
     void refresh();

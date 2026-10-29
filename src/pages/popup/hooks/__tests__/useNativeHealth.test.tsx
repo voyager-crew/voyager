@@ -1,4 +1,4 @@
-import React, { act, useEffect } from 'react';
+import React, { act, useEffect, useMemo } from 'react';
 import { type Root, createRoot } from 'react-dom/client';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,7 +37,14 @@ describe('useNativeHealth', () => {
   let latest: Health;
 
   function Probe({ tabId, url }: { tabId: number | null; url: string }) {
-    const health = useNativeHealth(tabId, url);
+    const requestTab = useMemo(
+      () =>
+        tabId === null
+          ? null
+          : (request: unknown) => polyfill.tabs.sendMessage(tabId, request) as Promise<unknown>,
+      [tabId],
+    );
+    const health = useNativeHealth({ activeUrl: url, requestTab });
     useEffect(() => {
       latest = health;
     });

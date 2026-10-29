@@ -1,0 +1,595 @@
+/* The panel page, from the spec #1077 prototype: tokens, frame, top bar, menus and toast. */
+:root {
+  --spring: linear(
+    0,
+    0.066,
+    0.226,
+    0.429,
+    0.635,
+    0.819,
+    0.964,
+    1.066,
+    1.126,
+    1.151,
+    1.149,
+    1.129,
+    1.1,
+    1.068,
+    1.038,
+    1.013,
+    0.995,
+    0.984,
+    0.978,
+    0.977,
+    0.979,
+    0.983,
+    0.988,
+    0.992,
+    0.997,
+    1,
+    1.002,
+    1.003,
+    1.004,
+    1.003,
+    1.003
+  );
+  --soft: linear(
+    0,
+    0.045,
+    0.153,
+    0.294,
+    0.443,
+    0.586,
+    0.712,
+    0.818,
+    0.901,
+    0.963,
+    1.006,
+    1.033,
+    1.047,
+    1.053,
+    1.052,
+    1.047,
+    1.04,
+    1.032,
+    1.024,
+    1.017,
+    1.011,
+    1.007,
+    1.003,
+    1,
+    0.999,
+    0.998,
+    0.997,
+    0.997,
+    0.997,
+    0.998,
+    0.998
+  );
+  --out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --brand: oklch(0.601 0.1 140);
+  --panel: oklch(0.975 0.002 250);
+  --card: #fff;
+  --line: oklch(0.925 0.003 250);
+  --hair: oklch(0.945 0.003 250);
+  --ink: oklch(0.21 0.005 270);
+  --ink-2: oklch(0.47 0.008 260);
+  --ink-3: oklch(0.62 0.006 260);
+  --hover: oklch(0.955 0.003 250);
+  --chip: oklch(0.955 0.003 250);
+  --chip-hover: oklch(0.93 0.004 250);
+  --sw-off: oklch(0.88 0.004 250);
+  --sw-on: oklch(0.21 0.005 270);
+  --knob: #fff;
+  --knob-on: #fff;
+  --seg: oklch(0.935 0.003 250);
+  --seg-on: #fff;
+  --tile: oklch(0.965 0.003 250);
+  --tip: oklch(0.22 0.005 285);
+  --tip-ink: #fff;
+  --ok: oklch(0.66 0.15 150);
+  --danger: oklch(0.56 0.19 27);
+  --wait: oklch(0.76 0.14 75);
+  --idle: oklch(0.8 0.004 250);
+  --menu-shadow: 0 12px 32px rgb(15 20 30 / 0.14), 0 0 0 1px rgb(15 20 30 / 0.06);
+  --letter-ink: 0.45 0.09;
+  --letter-bg: 0.95 0.03;
+}
+
+html[data-gv-scheme='light'] {
+  color-scheme: light;
+}
+
+html[data-gv-scheme='dark'] {
+  --panel: oklch(0.205 0.004 270);
+  --card: oklch(0.245 0.004 270);
+  --line: oklch(0.31 0.005 270);
+  --hair: oklch(0.29 0.004 270);
+  --ink: oklch(0.95 0.003 250);
+  --ink-2: oklch(0.74 0.006 260);
+  --ink-3: oklch(0.6 0.006 260);
+  --hover: oklch(0.28 0.004 270);
+  --chip: oklch(0.29 0.004 270);
+  --chip-hover: oklch(0.33 0.005 270);
+  --sw-off: oklch(0.36 0.005 270);
+  --sw-on: oklch(0.93 0.003 250);
+  --knob: oklch(0.98 0 0);
+  --knob-on: oklch(0.2 0.004 270);
+  --seg: oklch(0.27 0.004 270);
+  --seg-on: oklch(0.36 0.005 270);
+  --tile: oklch(0.29 0.004 270);
+  --tip: oklch(0.93 0.003 250);
+  --tip-ink: oklch(0.2 0.004 270);
+  --danger: oklch(0.7 0.16 27);
+  --menu-shadow: 0 12px 32px rgb(0 0 0 / 0.45), 0 0 0 1px rgb(255 255 255 / 0.07);
+  --letter-ink: 0.82 0.08;
+  --letter-bg: 0.32 0.04;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#__root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Nothing paints until the session is confirmed: the panel itself carries the background. */
+body {
+  background: transparent;
+  color: var(--ink);
+  font:
+    14px/1.4 -apple-system,
+    BlinkMacSystemFont,
+    'SF Pro Text',
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Noto Sans SC',
+    system-ui,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--ink) 55%, transparent);
+  outline-offset: 2px;
+}
+
+/* The active tab's focus after a pointer open, until a key is pressed (useOpeningFocus). */
+[data-quiet-focus]:focus-visible {
+  outline: none;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--panel);
+}
+
+.logo {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+}
+
+.logo svg {
+  display: block;
+}
+
+/* ---------- top bar ---------- */
+.ph {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding-inline: 16px 12px;
+  flex: none;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.ph.dragging {
+  cursor: grabbing;
+}
+
+.ph input {
+  cursor: text;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: left bottom;
+  background: var(--brand);
+  flex: none;
+}
+
+.brand b {
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.brand .sep {
+  width: 1px;
+  height: 14px;
+  background: var(--line);
+  flex: none;
+}
+
+.siteBtn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 28px;
+  padding-inline: 4px 5px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-3);
+  flex: none;
+  transition: background-color 0.15s ease;
+}
+
+.siteBtn:hover,
+.siteBtn[aria-expanded='true'] {
+  background: var(--hover);
+}
+
+.siteBtn .siteLogo {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+}
+
+.siteBtn.swap .siteLogo > * {
+  animation: pop 0.45s var(--spring);
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+
+.siteBtn.away {
+  background: var(--chip);
+}
+
+.siteBtn .away-mark {
+  display: grid;
+  color: var(--ink-3);
+}
+
+.mini {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: oklch(var(--letter-ink) var(--h));
+  background: oklch(var(--letter-bg) var(--h));
+}
+
+.seg {
+  position: relative;
+  display: flex;
+  padding: 3px;
+  border-radius: 11px;
+  background: var(--seg);
+}
+
+.seg button {
+  position: relative;
+  z-index: 1;
+  height: 30px;
+  padding: 0 18px;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.seg button[aria-selected='true'] {
+  color: var(--ink);
+}
+
+.seg .ind {
+  position: absolute;
+  top: 3px;
+  left: 0;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--seg-on);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.08),
+    0 0 0 0.5px rgb(0 0 0 / 0.04);
+  transition:
+    transform 0.46s var(--soft),
+    width 0.46s var(--soft);
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ib {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
+  flex: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.ib:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  border-radius: 9px;
+  transition:
+    background-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.search input {
+  width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  appearance: none;
+  background: transparent;
+  font-size: 13px;
+  transition:
+    width 0.42s var(--soft),
+    padding 0.42s var(--soft);
+}
+
+.search.open {
+  background: var(--chip);
+}
+
+.search.open input {
+  width: 156px;
+  padding-inline-end: 10px;
+}
+
+.search.open .ib:hover {
+  background: transparent;
+}
+
+.search input::placeholder {
+  color: var(--ink-3);
+}
+
+/* The browser's own clear button is blue in Chrome and Safari; the prototype's field has none. */
+.search input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.tools.dim .search {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.views {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.view {
+  position: absolute;
+  inset: 0;
+  padding: 4px 16px 16px;
+  overflow: auto;
+  scrollbar-width: thin;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent);
+}
+
+.empty {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--ink-3);
+}
+
+/* ---------- menu & toast ---------- */
+.menu {
+  position: fixed;
+  z-index: 40;
+  min-width: 150px;
+  max-width: calc(100vw - 16px);
+  padding: 4px;
+  border-radius: 11px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--menu-shadow);
+  opacity: 0;
+  transform: scale(0.94) translateY(-4px);
+  pointer-events: none;
+  transition:
+    opacity 0.12s ease,
+    transform 0.14s ease;
+}
+
+.menu.open {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition:
+    opacity 0.16s ease,
+    transform 0.38s var(--spring);
+}
+
+.menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 32px;
+  padding-inline: 8px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  font-size: 13.5px;
+  text-align: start;
+  white-space: nowrap;
+}
+
+.menu button:hover,
+.menu button:focus-visible {
+  background: var(--hover);
+  outline: 0;
+}
+
+.menu button:disabled {
+  color: var(--ink-3);
+}
+
+.menu .ck {
+  width: 16px;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  flex: none;
+}
+
+.menu .lg {
+  width: 18px;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.menu .ml {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu .here {
+  margin-inline-start: auto;
+  padding-inline-start: 12px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.toast {
+  position: fixed;
+  z-index: 50;
+  left: 50%;
+  bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 32px);
+  height: 40px;
+  padding-inline: 14px 6px;
+  border-radius: 12px;
+  background: var(--tip);
+  color: var(--tip-ink);
+  font-size: 13px;
+  white-space: nowrap;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.2);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 12px) scale(0.96);
+  pointer-events: none;
+  transition:
+    opacity 0.16s ease,
+    transform 0.2s ease,
+    visibility 0s linear 0.2s;
+}
+
+.toast.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+  transition:
+    opacity 0.2s ease,
+    transform 0.5s var(--spring);
+}
+
+/* A toast that mounts open starts from the closed style, so it springs in too. */
+@starting-style {
+  .toast.open {
+    opacity: 0;
+    transform: translate(-50%, 12px) scale(0.96);
+  }
+}
+
+.toast .msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toast:not(:has(button)) {
+  padding-inline-end: 14px;
+}
+
+.toast button {
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--tip-ink) 12%, transparent);
+  color: inherit;
+  font-weight: 500;
+  flex: none;
+}

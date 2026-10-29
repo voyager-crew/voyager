@@ -49,6 +49,7 @@ import { useGeneralPopupSettings } from './hooks/useGeneralPopupSettings';
 import { useNativeHealth } from './hooks/useNativeHealth';
 import { usePopupBrandTheme } from './hooks/usePopupBrandTheme';
 import { usePopupLayoutSettings } from './hooks/usePopupLayoutSettings';
+import { usePopupOpenCard } from './hooks/usePopupOpenCard';
 import { usePopupPlugins } from './hooks/usePopupPlugins';
 import { usePopupReleaseInfo } from './hooks/usePopupReleaseInfo';
 import { usePopupScrollRestoration } from './hooks/usePopupScrollRestoration';
@@ -86,7 +87,7 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
     () => withVisualEffectsManifest(plugins.siteScopedManifests, plugins.pluginManifests),
     [plugins.siteScopedManifests, plugins.pluginManifests],
   );
-  const nativeHealth = useNativeHealth(tab.activeTabId, tab.activeUrl);
+  const nativeHealth = useNativeHealth(tab);
   const isAIStudio = tab.activeAccountPlatform === 'aistudio';
   const isSafariBrowser = getVoyagerBuildTarget() === 'safari' || isSafari();
   const officialPlugins = useOfficialPluginList({
@@ -152,7 +153,7 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
   const promptTransfer = usePromptDataTransfer(t);
   const folderStructureCopy = useFolderStructureCopy(language, sourceTabId);
   // Above every early return and section: a sync in flight outlives its card.
-  const contextSync = useContextSyncRequest(sourceTabId);
+  const contextSync = useContextSyncRequest(tab);
   // The effect runs only where Voyager's content script does: on a plugin site, once Prompt
   // Manager or a matching plugin has been enabled there. Until then its row is left out.
   const sitePluginRuns = useSitePluginRuns({
@@ -179,6 +180,7 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
     t,
     writeSyncStorage: writePopupSyncStorage,
   });
+  usePopupOpenCard(tab.activeTabContextLoaded, sections.updateSettingsSearchQuery);
   usePopupSettingsHydration({
     folder: folder.hydrateFromStorage,
     general: general.hydrateFromStorage,

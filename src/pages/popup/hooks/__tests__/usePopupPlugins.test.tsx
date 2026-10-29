@@ -71,9 +71,14 @@ function record(id: string, host = 'claude.ai'): SourcedPluginManifest {
   };
 }
 
+const tabRequester =
+  (tabId: number): PopupPluginsContext['requestTab'] =>
+  (request) =>
+    browser.tabs.sendMessage(tabId, request);
+
 const context: PopupPluginsContext = {
   activeUrl: 'https://claude.ai/chat/example',
-  activeTabId: 7,
+  requestTab: tabRequester(7),
   activeTabContextLoaded: true,
 };
 
@@ -232,7 +237,11 @@ describe('usePopupPlugins', () => {
     await render();
     expect([...catalogs.keys()]).toEqual(['claude.ai']);
 
-    await render({ ...context, activeUrl: 'https://chatgpt.com/c/example', activeTabId: 8 });
+    await render({
+      ...context,
+      activeUrl: 'https://chatgpt.com/c/example',
+      requestTab: tabRequester(8),
+    });
     expect([...catalogs.keys()]).toEqual(['chatgpt.com']);
     expect(plugins.pluginCatalogHost).toBe('chatgpt.com');
     expect(plugins.siteScopedManifests).toEqual([current.manifest]);

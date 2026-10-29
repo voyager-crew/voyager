@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import browser from 'webextension-polyfill';
 
@@ -93,13 +93,15 @@ export function usePopupSections({
 }: PopupSectionsOptions) {
   const [sectionOrder, setSectionOrder] = useState<PopupSectionId[]>([...DEFAULT_SECTION_ORDER]);
   const [settingsSearchQuery, setSettingsSearchQuery] = useState('');
+  // A query set before the saved one is read (typed, or cleared to show a card) wins.
+  const queryChanged = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     void browser.storage.local
       .get({ [StorageKeys.GV_POPUP_SETTINGS_SEARCH_QUERY]: '' })
       .then((result) => {
-        if (!cancelled) {
+        if (!cancelled && !queryChanged.current) {
           setSettingsSearchQuery(
             normalizePersistedSettingsSearchQuery(
               result[StorageKeys.GV_POPUP_SETTINGS_SEARCH_QUERY],
@@ -114,6 +116,7 @@ export function usePopupSections({
   }, []);
 
   const updateSettingsSearchQuery = useCallback((query: string) => {
+    queryChanged.current = true;
     setSettingsSearchQuery(query);
     void browser.storage.local
       .set({ [StorageKeys.GV_POPUP_SETTINGS_SEARCH_QUERY]: query })

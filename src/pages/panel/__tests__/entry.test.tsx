@@ -2,6 +2,13 @@ import { act } from 'react';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+// The panel's browser APIs (storage, port, permissions); redemption stays on `chrome.runtime` below.
+import './panelHarness';
+
+vi.mock('webextension-polyfill', async () => ({
+  default: (await import('./panelBrowserApi')).extensionApi,
+}));
+
 const sendMessage = vi.fn<(message: unknown) => Promise<unknown>>();
 const token = 'b'.repeat(64);
 const session = {
@@ -82,6 +89,11 @@ describe('panel page token gate', () => {
       payload: { token },
     });
     await act(async () => confirm({ ok: true, session }));
+    // The page first loads Voyager's language, so its first frame already speaks it.
+    await vi.waitFor(async () => {
+      await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+      expect(document.querySelector('[data-panel-session]')).not.toBeNull();
+    });
     expect(document.querySelector('[data-panel-session]')?.getAttribute('data-panel-session')).toBe(
       'a'.repeat(64),
     );

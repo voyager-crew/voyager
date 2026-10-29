@@ -2,6 +2,8 @@ import { useCallback, useRef, useState } from 'react';
 
 import type { TranslationKey } from '@/utils/translations';
 
+import type { CurrentTab } from '../hooks/currentTab';
+
 export type ContextSyncStatus =
   | { readonly kind: 'info' | 'ok'; readonly key: TranslationKey }
   | { readonly kind: 'err'; readonly message: string };
@@ -15,16 +17,12 @@ export interface ContextSyncRequest {
   readonly dismiss: (shown: ContextSyncStatus) => void;
 }
 
-async function targetTab(sourceTabId: number | undefined): Promise<chrome.tabs.Tab | undefined> {
-  if (typeof sourceTabId === 'number') {
-    try {
-      return await chrome.tabs.get(sourceTabId);
-    } catch {
-      // The source tab is gone; fall back to the active one.
-    }
-  }
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  return tab;
+/** The page's answer: `success`, or why it could not send its context. */
+function syncFailure(response: unknown): string | null {
+  if (typeof response !== 'object' || response === null) return 'Unknown error';
+  const { status, message } = response as { status?: unknown; message?: unknown };
+  if (status === 'success') return null;
+  return typeof message === 'string' && message ? message : 'Unknown error';
 }
 
 /**
@@ -33,7 +31,9 @@ async function targetTab(sourceTabId: number | undefined): Promise<chrome.tabs.T
  * button cannot start a second request meanwhile. A result
  * stays until the panel has shown it (the panel times its dismissal).
  */
-export function useContextSyncRequest(sourceTabId: number | undefined): ContextSyncRequest {
+export function useContextSyncRequest({
+  requestTab,
+}: Pick<CurrentTab, 'requestTab'>): ContextSyncRequest {
   const [syncing, setSyncing] = useState(false);
   const [status, setStatus] = useState<ContextSyncStatus | null>(null);
   const inFlight = useRef(false);
@@ -45,10 +45,9 @@ export function useContextSyncRequest(sourceTabId: number | undefined): ContextS
     setStatus({ kind: 'info', key: 'capturing' });
     void (async () => {
       try {
-        const tab = await targetTab(sourceTabId);
-        if (!tab?.id) throw new Error('No active tab found');
-        const response = await chrome.tabs.sendMessage(tab.id, { action: 'sync_to_ide' });
-        if (response?.status !== 'success') throw new Error(response?.message || 'Unknown error');
+        if (!requestTab) throw new Error('No active tab found');
+        const failure = syncFailure(await requestTab({ action: 'sync_to_ide' }));
+        if (failure) throw new Error(failure);
         setStatus({ kind: 'ok', key: 'syncedSuccess' });
       } catch (error) {
         setStatus({ kind: 'err', message: (error as Error).message });
@@ -57,7 +56,7 @@ export function useContextSyncRequest(sourceTabId: number | undefined): ContextS
         setSyncing(false);
       }
     })();
-  }, [sourceTabId]);
+  }, [requestTab]);
 
   const dismiss = useCallback(
     (shown: ContextSyncStatus) => setStatus((current) => (current === shown ? null : current)),

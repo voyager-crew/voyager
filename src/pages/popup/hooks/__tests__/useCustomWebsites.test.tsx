@@ -23,6 +23,7 @@ vi.mock('@/core/utils/browser', () => ({
 
 type Websites = ReturnType<typeof useCustomWebsites>;
 const translate = (key: TranslationKey): string => key;
+const COVERAGE = StorageKeys.PROMPT_CUSTOM_WEBSITES;
 
 function Harness({
   options,
@@ -44,6 +45,8 @@ describe('useCustomWebsites', () => {
   let settings: Websites;
   let events: string[];
   let options: CustomWebsitesOptions;
+  /** Sync storage as the hook reads it fresh before each write. */
+  let stored: Record<string, unknown>;
   const write = vi.fn<(payload: Record<string, unknown>) => Promise<void>>();
   const refresh = vi.fn<() => Promise<void>>();
   const render = (overrides: Partial<CustomWebsitesOptions> = {}) => {
@@ -69,8 +72,13 @@ describe('useCustomWebsites', () => {
       events.push('remove');
       return true;
     });
-    write.mockImplementation(async () => {
+    stored = {};
+    vi.mocked(chrome.storage.sync.get).mockImplementation(() =>
+      Promise.resolve({ [COVERAGE]: stored[COVERAGE] }),
+    );
+    write.mockImplementation(async (payload) => {
       events.push('write');
+      Object.assign(stored, payload);
     });
     refresh.mockImplementation(async () => {
       events.push('refresh');
@@ -94,6 +102,12 @@ describe('useCustomWebsites', () => {
     vi.restoreAllMocks();
   });
 
+  /** The list as the popup read it at startup, and as storage holds it. */
+  const hydrate = (list: unknown[]) => {
+    stored[COVERAGE] = list;
+    return act(async () => settings.hydrateFromStorage({ [COVERAGE]: list }));
+  };
+
   const start = (action: 'add' | 'quick') =>
     action === 'add'
       ? settings.handleAddWebsite()
@@ -104,17 +118,13 @@ describe('useCustomWebsites', () => {
       if (origins[0].includes('error.example')) throw new Error('Unavailable');
       return origins[0] === 'http://*.example.com/*';
     });
-    await act(async () =>
-      settings.hydrateFromStorage({
-        [StorageKeys.PROMPT_CUSTOM_WEBSITES]: [
-          ' HTTPS://WWW.Example.com/path ',
-          'example.com',
-          '<all_urls>',
-          'missing.example',
-          'error.example',
-        ],
-      }),
-    );
+    await hydrate([
+      ' HTTPS://WWW.Example.com/path ',
+      'example.com',
+      '<all_urls>',
+      'missing.example',
+      'error.example',
+    ]);
 
     expect(settings.customWebsites).toEqual(['example.com', 'error.example']);
     expect(
@@ -128,13 +138,13 @@ describe('useCustomWebsites', () => {
   });
 
   it('keeps hydration stable when translations, current tab or the catalog change', () => {
-    const hydrate = settings.hydrateFromStorage;
+    const first = settings.hydrateFromStorage;
     render({
       t: (key) => `translated:${key}`,
       refreshActiveTabContext: vi.fn(async () => {}),
       pluginManifests: [{ matches: ['https://claude.ai/*'] }],
     });
-    expect(settings.hydrateFromStorage).toBe(hydrate);
+    expect(settings.hydrateFromStorage).toBe(first);
     expect(mocks.contains).not.toHaveBeenCalled();
   });
 
@@ -174,21 +184,14 @@ describe('useCustomWebsites', () => {
     'persists non-Firefox %s before requesting and rolls back a denial',
     async (action) => {
       mocks.contains.mockResolvedValueOnce(true);
-      await act(async () =>
-        settings.hydrateFromStorage({ [StorageKeys.PROMPT_CUSTOM_WEBSITES]: ['keep.example'] }),
-      );
+      await hydrate(['keep.example']);
       events = [];
       mocks.request.mockImplementation(async () => {
         events.push('request');
         return false;
       });
       act(() => settings.onWebsiteInputChange('example.com'));
-      let pending!: Promise<void>;
-      act(() => {
-        pending = start(action);
-      });
-      expect(events).toEqual(['write']);
-      await act(async () => pending);
+      await act(async () => start(action));
       expect(events).toEqual(['write', 'contains', 'request', 'write']);
       expect(
         write.mock.calls.map(([payload]) => payload[StorageKeys.PROMPT_CUSTOM_WEBSITES]),
@@ -217,9 +220,7 @@ describe('useCustomWebsites', () => {
     }
     expect(settings.websiteError).toBe('invalidUrl');
     mocks.contains.mockResolvedValue(true);
-    await act(async () =>
-      settings.hydrateFromStorage({ [StorageKeys.PROMPT_CUSTOM_WEBSITES]: ['example.com'] }),
-    );
+    await hydrate(['example.com']);
     act(() => settings.onWebsiteInputChange('https://www.example.com/path'));
     expect(settings.websiteError).toBe('');
     await act(async () => settings.handleAddWebsite());
@@ -245,11 +246,7 @@ describe('useCustomWebsites', () => {
     '%s preserves permissions required anywhere in the full plugin catalog',
     async (action) => {
       mocks.contains.mockResolvedValue(true);
-      await act(async () =>
-        settings.hydrateFromStorage({
-          [StorageKeys.PROMPT_CUSTOM_WEBSITES]: ['example.com', 'claude.ai'],
-        }),
-      );
+      await hydrate(['example.com', 'claude.ai']);
       render({
         pluginManifests: [
           { matches: ['https://chatgpt.com/*'] },
@@ -276,9 +273,7 @@ describe('useCustomWebsites', () => {
     '%s keeps the parent-domain grant a subdomain-only plugin depends on',
     async (action) => {
       mocks.contains.mockResolvedValue(true);
-      await act(async () =>
-        settings.hydrateFromStorage({ [StorageKeys.PROMPT_CUSTOM_WEBSITES]: ['deepseek.com'] }),
-      );
+      await hydrate(['deepseek.com']);
       render({ pluginManifests: [{ matches: ['https://chat.deepseek.com/*'] }] });
       await act(async () => removeSite(action, 'deepseek.com'));
       expect(settings.customWebsites).toEqual([]);
@@ -290,9 +285,7 @@ describe('useCustomWebsites', () => {
     '%s still revokes when only a lookalike host has a plugin',
     async (action) => {
       mocks.contains.mockResolvedValue(true);
-      await act(async () =>
-        settings.hydrateFromStorage({ [StorageKeys.PROMPT_CUSTOM_WEBSITES]: ['deepseek.com'] }),
-      );
+      await hydrate(['deepseek.com']);
       render({
         pluginManifests: [
           { matches: ['https://evildeepseek.com/*'] },
@@ -308,11 +301,7 @@ describe('useCustomWebsites', () => {
 
   it('removing a parent site keeps the grant a remaining subdomain site still uses', async () => {
     mocks.contains.mockResolvedValue(true);
-    await act(async () =>
-      settings.hydrateFromStorage({
-        [StorageKeys.PROMPT_CUSTOM_WEBSITES]: ['example.com', 'app.example.com'],
-      }),
-    );
+    await hydrate(['example.com', 'app.example.com']);
     await act(async () => settings.handleRemoveWebsite('example.com'));
     expect(settings.customWebsites).toEqual(['app.example.com']);
     expect(mocks.remove).not.toHaveBeenCalled();
@@ -320,9 +309,7 @@ describe('useCustomWebsites', () => {
 
   it('removes an ordinary host grant only after persisting the reduced website list', async () => {
     mocks.contains.mockResolvedValue(true);
-    await act(async () =>
-      settings.hydrateFromStorage({ [StorageKeys.PROMPT_CUSTOM_WEBSITES]: ['example.com'] }),
-    );
+    await hydrate(['example.com']);
     events = [];
     await act(async () => settings.handleRemoveWebsite('example.com'));
     expect(events).toEqual(['write', 'remove']);

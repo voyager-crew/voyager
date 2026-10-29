@@ -41,6 +41,7 @@ import type { PluginManifest, SiteAdapter } from '@/features/plugins/types';
 import { POPUP_LEGACY_SNAPSHOT_KEYS } from '../officialPlugins/officialPluginRegistry';
 import { withFormFactorStatuses } from '../utils/formFactorStatuses';
 import { isSelfClearingBlock } from '../utils/releasingStatus';
+import type { CurrentTab } from './currentTab';
 import { usePopupFormFactor } from './usePopupFormFactor';
 
 // A plugin waiting for a runtime to shut down, or for the official plugin's
@@ -50,17 +51,13 @@ import { usePopupFormFactor } from './usePopupFormFactor';
 const RELEASE_POLL_INTERVAL_MS = 1000;
 const RELEASE_POLL_LIMIT = 10;
 
-export interface PopupPluginsContext {
-  activeUrl: string;
-  activeTabId: number | null;
-  activeTabContextLoaded: boolean;
-}
+export type PopupPluginsContext = CurrentTab;
 
 /** Plugin catalog, installed state and active-tab status for one popup lifetime. */
 export function usePopupPlugins({
   activeUrl,
-  activeTabId,
   activeTabContextLoaded,
+  requestTab,
 }: PopupPluginsContext) {
   const [pluginManifests, setPluginManifests] = useState<readonly PluginManifest[]>([]);
   const [pluginSourceIds, setPluginSourceIds] = useState<Readonly<Record<string, string>>>({});
@@ -170,11 +167,11 @@ export function usePopupPlugins({
   // more shortly after opening. A tab without a content script simply answers
   // nothing and the card falls back to local inference.
   const refreshPluginStatuses = useCallback(async (): Promise<readonly PluginStatus[] | null> => {
-    if (activeTabId === null) return null;
+    if (requestTab === null) return null;
     try {
-      const response = (await browser.tabs.sendMessage(activeTabId, {
-        type: PLUGIN_STATUS_MESSAGE,
-      })) as { ok?: boolean; statuses?: readonly PluginStatus[] } | undefined;
+      const response = (await requestTab({ type: PLUGIN_STATUS_MESSAGE })) as
+        | { ok?: boolean; statuses?: readonly PluginStatus[] }
+        | undefined;
       if (response?.ok && Array.isArray(response.statuses)) {
         setPluginStatuses(response.statuses);
         return response.statuses;
@@ -183,7 +180,7 @@ export function usePopupPlugins({
       // No content script in this tab (not a plugin site, or not injected yet).
     }
     return null;
-  }, [activeTabId]);
+  }, [requestTab]);
 
   useEffect(() => {
     let active = true;

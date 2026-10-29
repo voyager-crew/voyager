@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import browser from 'webextension-polyfill';
 
@@ -7,8 +7,22 @@ import {
   detectAccountPlatformFromUrl,
 } from '@/core/services/AccountIsolationService';
 
+import type { CurrentTab, TabRequester } from './currentTab';
+
+/** The popup's way to ask a tab's content script: straight through `tabs`. */
+export function popupTabRequester(tabId: number): TabRequester {
+  return (request) => browser.tabs.sendMessage(tabId, request);
+}
+
+export interface ActivePopupTab extends CurrentTab {
+  readonly activeTabId: number | null;
+  /** `null`: the tab is a web page without a folder bucket (ChatGPT, Claude, DeepSeek, …). */
+  readonly activeAccountPlatform: AccountPlatform | null;
+  readonly refreshActiveTabContext: () => Promise<void>;
+}
+
 /** The inspected tab can be supplied by an embedded popup or resolved from the active window. */
-export function useActivePopupTab(sourceTabId?: number) {
+export function useActivePopupTab(sourceTabId?: number): ActivePopupTab {
   const [activeUrl, setActiveUrl] = useState('');
   const [activeTabId, setActiveTabId] = useState<number | null>(null);
   // `null`: the tab is a web page without a folder bucket (ChatGPT, Claude, DeepSeek, …).
@@ -50,9 +64,15 @@ export function useActivePopupTab(sourceTabId?: number) {
     };
   }, [refreshActiveTabContext]);
 
+  const requestTab = useMemo(
+    () => (activeTabId === null ? null : popupTabRequester(activeTabId)),
+    [activeTabId],
+  );
+
   return {
     activeUrl,
     activeTabId,
+    requestTab,
     activeAccountPlatform,
     // A newly supplied options source is unresolved even while the previous tab is still cached.
     activeTabContextLoaded: activeTabContextLoaded && resolvedSourceTabId === sourceTabId,
