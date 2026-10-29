@@ -143,6 +143,15 @@ describe('evaluateBridgePolicy', () => {
     expect(evaluate({ entry: stale }).verdict).toMatchObject({ code: 'policy-stale' });
   });
 
+  it('keeps a Chrome dev build on its cached policy past 24 hours', () => {
+    const old = entry(site(501, ['composer.send']), { fetchedAt: NOW - 25 * HOUR });
+    expect(evaluate({ entry: old, neverExpires: true }).verdict).toMatchObject({
+      state: 'allowed',
+      source: 'remote',
+      allow: ['composer.send'],
+    });
+  });
+
   it.each([
     ['a 404', entry(null, { status: 'missing' })],
     ['a missing bridge section', entry(site(501))],

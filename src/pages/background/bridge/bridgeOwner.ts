@@ -131,6 +131,7 @@ export function createBridgeOwner(env: BridgeOwnerEnv): BridgeOwner {
     refreshCatalog: env.refreshCatalog,
     loadOnlineUpdatesEnabled: env.loadOnlineUpdatesEnabled,
     now,
+    neverExpires: import.meta.env.VOYAGER_DEV_BRIDGE_POLICY_NO_EXPIRY,
   });
 
   let server: BridgeStatusData['server'] = 'unknown';

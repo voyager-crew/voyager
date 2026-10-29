@@ -60,6 +60,9 @@ export default defineConfig({
     // Likewise for the page-to-storage settings bridge
     // (src/pages/content/devSettingsBridge.ts).
     'import.meta.env.VOYAGER_DEV_SETTINGS_BRIDGE': 'false',
+    // Likewise for the ChatGPT bridge's 24-hour policy expiry
+    // (src/pages/background/bridge/bridgePolicy.ts), which stays on here.
+    'import.meta.env.VOYAGER_DEV_BRIDGE_POLICY_NO_EXPIRY': 'false',
     // Remote plugin catalog channel (src/features/plugins/remote/config.ts).
     // Override the origin for a preview deployment, or set
     // VOYAGER_PLUGIN_CATALOG_REMOTE=off to ship a snapshot-only build.

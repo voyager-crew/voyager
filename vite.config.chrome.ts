@@ -124,6 +124,8 @@ export default mergeConfig(
     define: {
       'import.meta.env.VOYAGER_DEV_AUTO_RELOAD': JSON.stringify(isChromeDevBuild),
       'import.meta.env.VOYAGER_DEV_SETTINGS_BRIDGE': JSON.stringify(isChromeDevBuild),
+      // With the catalog channel off below, a dev build could never renew its bridge policy.
+      'import.meta.env.VOYAGER_DEV_BRIDGE_POLICY_NO_EXPIRY': JSON.stringify(isChromeDevBuild),
       // A dev build shares the store version, so the published catalog would be
       // authoritative and hide bundled plugins main has not deployed yet.
       'import.meta.env.VOYAGER_PLUGIN_CATALOG_REMOTE': JSON.stringify(

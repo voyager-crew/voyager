@@ -72,6 +72,8 @@ export interface PolicyEvaluationInput {
   readonly packaged: SiteAdapter | null;
   readonly highWater: PolicyHighWater | null;
   readonly now: number;
+  /** A Chrome dev build never fetches the catalog, so its cached policy cannot be refreshed. */
+  readonly neverExpires?: boolean;
 }
 
 export interface PolicyEvaluation {
@@ -140,7 +142,7 @@ export function evaluateBridgePolicy(input: PolicyEvaluationInput): PolicyEvalua
   const allow = raised ? published : published.filter((op) => highWater.allow.includes(op));
 
   let verdict: PolicyVerdict;
-  if (now - fetchedAt > POLICY_MAX_AGE_MS || fetchedAt > now + 60_000) {
+  if (!input.neverExpires && (now - fetchedAt > POLICY_MAX_AGE_MS || fetchedAt > now + 60_000)) {
     verdict = deny('policy-stale', 'policy older than 24 hours', revision, fetchedAt);
   } else if (!site.bridge) {
     verdict = deny('policy-denied', 'catalog has no valid bridge policy', revision, fetchedAt);
@@ -176,6 +178,7 @@ export interface BridgePolicyDeps {
   readonly refreshCatalog: () => Promise<unknown>;
   readonly loadOnlineUpdatesEnabled: () => Promise<boolean>;
   readonly now?: () => number;
+  readonly neverExpires?: boolean;
 }
 
 export interface BridgePolicy {
@@ -209,6 +212,7 @@ export function createBridgePolicy(deps: BridgePolicyDeps): BridgePolicy {
       // A revoke whose write failed still counts: the stored mark alone may be behind.
       highWater: higher(parseHighWater(rawHighWater), acceptedHighWater),
       now: now(),
+      neverExpires: deps.neverExpires,
     });
     const next = evaluation.nextHighWater;
     if (next) {
