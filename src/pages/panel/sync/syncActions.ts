@@ -3,7 +3,7 @@ import type { CloudSyncPayload } from '@/core/services/CloudSyncTransferContext'
 import type { CloudSyncUndoResult } from '@/core/services/cloudSyncSnapshotTypes';
 import { StorageKeys } from '@/core/types/common';
 
-import { type RunStep, revertibleFiles } from './syncPlan';
+import type { RunStep } from './syncPlan';
 import { type StatusRow, type SyncSend, parseConnection, parseStatusRows } from './syncProtocol';
 import type { RunRecord, StepResult } from './syncRunMachine';
 import { type SheetPage, resolveRowContext, sharedRowPlatform } from './syncScopes';
@@ -15,6 +15,7 @@ import {
   restoreRowFiles,
   uploadRow,
 } from './syncTransfer';
+import { undoRowUpload } from './syncUploadUndo';
 
 /** What the sheet's actions read at the moment they run: the page, its rows, the transport. */
 export interface SheetEnvironment {
@@ -129,25 +130,6 @@ export async function disconnectDrive(send: SyncSend): Promise<void> {
   await send({ type: 'gv.sync.signOut' }).catch(() => undefined);
 }
 
-/** md5 of the named cloud files right now, read the way the row's upload named them. */
-async function cloudChecksums(
-  send: SyncSend,
-  row: string,
-  scopes: CloudSyncPayload,
-  files: readonly string[],
-): Promise<Record<string, string>> {
-  const reply = await send({
-    type: 'gv.sync.getStatus',
-    payload: statusPayload([row], scopes, scopes.platform),
-  }).catch(() => null);
-  const status = parseStatusRows(reply)?.find((candidate) => candidate.row === row);
-  return Object.fromEntries(
-    (status?.files ?? [])
-      .filter((file) => files.includes(file.name) && file.md5 !== null)
-      .map((file) => [file.name, file.md5 ?? '']),
-  );
-}
-
 /** 恢复上一版: every included row's cloud files go back to their latest history copy. */
 export async function restorePrevious(
   env: SheetEnvironment,
@@ -175,21 +157,21 @@ export async function restorePrevious(
   return { restored, failed };
 }
 
-/** One step of a run; `before` is each row's status when the run started. */
-export function createStepRunner(
-  env: SheetEnvironment,
-  before: () => ReadonlyMap<string, StatusRow>,
-) {
-  const uploaded = async (row: string, outcome: UploadOutcome): Promise<StepResult> => {
+/** One step of a run; uploads keep only the backend's receipts for their actual writes. */
+export function createStepRunner(env: SheetEnvironment) {
+  const uploaded = (row: string, outcome: UploadOutcome): StepResult => {
     if (outcome.kind === 'refused') return outcome;
     if (outcome.kind === 'failed') {
-      const { kind: _failed, ...failure } = outcome;
-      return { kind: 'failed', failure: { op: 'upload', ...failure } };
+      const { kind: _failed, payload, receipt, ...failure } = outcome;
+      return {
+        kind: 'failed',
+        failure: { op: 'upload', ...failure },
+        // Partial writes without a complete receipt must also block a snapshot-only Undo.
+        ...(receipt || failure.partial ? { upload: { row, payload, receipt } } : {}),
+      };
     }
-    const { payload } = outcome;
-    const files = revertibleFiles(before().get(row));
-    const md5 = files.length ? await cloudChecksums(env.send, row, payload, files) : {};
-    return { kind: 'done', upload: { row, payload, files, md5 }, unrecorded: outcome.unrecorded };
+    const { payload, receipt, unrecorded } = outcome;
+    return { kind: 'done', upload: { row, payload, receipt }, unrecorded };
   };
   return async (
     step: RunStep,
@@ -233,7 +215,12 @@ export function createStepRunner(
 
 /** The toast's 撤销 undoes the whole run: offered while one snapshot holds every download. */
 export function canUndo(record: RunRecord): boolean {
-  return record.snapshots.length <= 1 && (record.snapshots.length > 0 || record.uploads.length > 0);
+  return (
+    record.snapshots.length <= 1 &&
+    record.uploads.every((upload) => upload.receipt?.complete === true) &&
+    (record.snapshots.length > 0 ||
+      record.uploads.some((upload) => (upload.receipt?.files.length ?? 0) > 0))
+  );
 }
 
 /** What undoing a run did. `stopped`: its download snapshot was not undone, so nothing was. */
@@ -254,9 +241,10 @@ export type RunUndoResult =
 /**
  * Undoes a run: its own download snapshot by id (a later download's is never
  * touched, and a superseded or failed one stops everything), then each
- * uploaded file whose cloud copy is still the one this run wrote goes back to
- * its previous version. A file changed since is kept, as a later local edit is;
- * that check also makes a retry skip the files already put back.
+ * uploaded file still holding this run's write goes back to its receipted
+ * history or is trashed if this run created it. The backend rechecks the written
+ * version immediately before mutation and keeps changes it finds, including an
+ * already undone file on a retry.
  */
 export async function undoRun(env: SheetEnvironment, record: RunRecord): Promise<RunUndoResult> {
   const [snapshotId] = record.snapshots;
@@ -275,13 +263,14 @@ export async function undoRun(env: SheetEnvironment, record: RunRecord): Promise
   let failedFiles = false;
   let restoredFiles = 0;
   for (const upload of record.uploads) {
-    const now = await cloudChecksums(env.send, upload.row, upload.payload, upload.files);
-    const unchanged = upload.files.filter(
-      (name) => upload.md5[name] !== undefined && now[name] === upload.md5[name],
-    );
-    if (unchanged.length < upload.files.length) keptFiles = true;
-    const result = await restoreRowFiles(env.send, upload.payload, unchanged);
+    if (!upload.receipt?.complete) {
+      failedFiles = true;
+      continue;
+    }
+    // A later cloud update is kept by the backend; a status re-read is never a write receipt.
+    const result = await undoRowUpload(env.send, upload.payload, upload.receipt);
     restoredFiles += result.restored;
+    if (result.kept) keptFiles = true;
     if (result.failed) failedFiles = true;
   }
   return {

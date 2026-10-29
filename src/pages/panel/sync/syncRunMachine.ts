@@ -2,18 +2,18 @@ import type { SyncScopeRow } from '@/core/services/CloudSyncScope';
 import type { CloudSyncPayload } from '@/core/services/CloudSyncTransferContext';
 import type { DownloadFailure } from '@/core/services/cloudSyncNotices';
 import type { UploadGuardRefusedFile } from '@/core/types/syncUploadGuard';
+import type { CloudUploadReceipt } from '@/core/types/syncUploadReceipt';
 import { type Machine, startMachine } from '@/features/plugins/runtime/stateMachine';
 
 import { type RunStep, resumeAfterGuard } from './syncPlan';
 import type { UploadRefusal } from './syncTransfer';
 
-/** An upload the toast's 撤销 can put back: the row's account and the files it replaced. */
+/** An upload and the backend's receipts for the files this write changed. */
 export interface UploadedRow {
   readonly row: string;
   readonly payload: CloudSyncPayload;
-  readonly files: readonly string[];
-  /** Each file's cloud checksum right after this run wrote it. */
-  readonly md5: Readonly<Record<string, string>>;
+  /** Absent with an older backend; the whole run then cannot offer Undo. */
+  readonly receipt: CloudUploadReceipt | null;
 }
 
 export interface RunRecord {
@@ -54,7 +54,13 @@ export type StepResult =
       /** Either answer runs only while the refused accounts still hold. */
       readonly refusal: UploadRefusal;
     }
-  | { readonly kind: 'failed'; readonly failure: RunFailure; readonly snapshotId?: string };
+  | {
+      readonly kind: 'failed';
+      readonly failure: RunFailure;
+      readonly snapshotId?: string;
+      /** Cloud writes made before a later upload phase failed. */
+      readonly upload?: UploadedRow;
+    };
 
 export type RunState =
   | { readonly status: 'idle' }
@@ -131,12 +137,14 @@ export function transition(state: RunState, event: RunEvent): RunState {
         };
       return {
         status: 'finished',
-        record: event.result.snapshotId
-          ? {
-              ...state.record,
-              snapshots: withSnapshot(state.record.snapshots, event.result.snapshotId),
-            }
-          : state.record,
+        record: {
+          ...state.record,
+          snapshots: withSnapshot(state.record.snapshots, event.result.snapshotId),
+          uploads:
+            event.result.kind === 'failed' && event.result.upload
+              ? [...state.record.uploads, event.result.upload]
+              : state.record.uploads,
+        },
         error: event.result.kind === 'failed' ? event.result.failure : UNKNOWN_FAILURE,
       };
     case 'complete':

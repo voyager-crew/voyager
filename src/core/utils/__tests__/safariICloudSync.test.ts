@@ -1,13 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  SafariICloudSyncError,
   checkSafariICloudAccount,
   deleteSafariICloudBackup,
   getSafariICloudRetryDelay,
-  isSafariICloudConflictError,
   readSafariICloudFile,
-  writeSafariICloudFile,
 } from '../safariICloudSync';
 
 const sendNativeMessage = vi.hoisted(() => vi.fn());
@@ -37,17 +34,6 @@ describe('Safari iCloud sync bridge', () => {
     });
   });
 
-  it('serializes a sync file for the native bridge', async () => {
-    sendNativeMessage.mockResolvedValue({ success: true, data: { saved: true } });
-
-    await writeSafariICloudFile('prompts.json', { items: [1] });
-    expect(sendNativeMessage).toHaveBeenCalledWith('com.yourCompany.Gemini-Voyager', {
-      action: 'iCloudWriteFile',
-      fileName: 'prompts.json',
-      json: '{"items":[1]}',
-    });
-  });
-
   it('parses a downloaded sync file', async () => {
     sendNativeMessage.mockResolvedValue({
       success: true,
@@ -72,22 +58,45 @@ describe('Safari iCloud sync bridge', () => {
     });
   });
 
+  it('reports partial deletion progress and every native record error', async () => {
+    sendNativeMessage.mockResolvedValue({
+      success: true,
+      data: {
+        deleted: 804,
+        errors: [
+          { recordName: 'history-failed', error: 'Network unavailable', code: 'cloudkit_4' },
+          {
+            recordName: 'file-failed',
+            error: 'Try again',
+            code: 'icloud_temporarily_unavailable',
+            retryAfterMs: 2500,
+          },
+        ],
+      },
+    });
+    await expect(deleteSafariICloudBackup()).rejects.toMatchObject({
+      deleted: 804,
+      errors: [
+        {
+          recordName: 'history-failed',
+          error: 'Network unavailable',
+          code: 'cloudkit_4',
+          retryAfterMs: null,
+        },
+        {
+          recordName: 'file-failed',
+          error: 'Try again',
+          code: 'icloud_temporarily_unavailable',
+          retryAfterMs: 2500,
+        },
+      ],
+    });
+  });
+
   it('surfaces native CloudKit errors', async () => {
     sendNativeMessage.mockResolvedValue({ success: false, error: 'iCloud is unavailable' });
 
     await expect(checkSafariICloudAccount()).rejects.toThrow('iCloud is unavailable');
-  });
-
-  it('preserves native conflict metadata so uploads do not overwrite newer cloud data', async () => {
-    sendNativeMessage.mockResolvedValue({
-      success: false,
-      code: 'icloud_conflict',
-      error: 'prompts.json changed on another device',
-    });
-
-    const error = await writeSafariICloudFile('prompts.json', {}).catch((caught) => caught);
-    expect(error).toBeInstanceOf(SafariICloudSyncError);
-    expect(isSafariICloudConflictError(error)).toBe(true);
   });
 
   it('preserves the native CloudKit retry delay', async () => {

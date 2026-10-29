@@ -11,6 +11,7 @@ type NativeICloudResponse = {
     found?: unknown;
     json?: unknown;
     deleted?: unknown;
+    errors?: unknown;
   };
   code?: unknown;
   error?: unknown;
@@ -20,13 +21,55 @@ type NativeICloudResponse = {
 export class SafariICloudSyncError extends Error {
   readonly code: string | null;
   readonly retryAfterMs: number | null;
+  readonly deleted: number | null;
+  readonly errors: readonly SafariICloudDeleteIssue[];
 
-  constructor(message: string, code: string | null, retryAfterMs: number | null) {
+  constructor(
+    message: string,
+    code: string | null,
+    retryAfterMs: number | null,
+    progress?: { deleted: number; errors: SafariICloudDeleteIssue[] },
+  ) {
     super(message);
     this.name = 'SafariICloudSyncError';
     this.code = code;
     this.retryAfterMs = retryAfterMs;
+    this.deleted = progress?.deleted ?? null;
+    this.errors = progress?.errors ?? [];
   }
+}
+
+export interface SafariICloudDeleteIssue {
+  recordName: string | null;
+  error: string;
+  code: string | null;
+  retryAfterMs: number | null;
+}
+
+function parseDeleteIssues(value: unknown): SafariICloudDeleteIssue[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) throw new Error('iCloud backup deletion failed');
+  return value.map((issue: unknown) => {
+    if (
+      typeof issue !== 'object' ||
+      issue === null ||
+      !('error' in issue) ||
+      typeof issue.error !== 'string'
+    )
+      throw new Error('iCloud backup deletion failed');
+    return {
+      recordName:
+        'recordName' in issue && typeof issue.recordName === 'string' ? issue.recordName : null,
+      error: issue.error,
+      code: 'code' in issue && typeof issue.code === 'string' ? issue.code : null,
+      retryAfterMs:
+        'retryAfterMs' in issue &&
+        typeof issue.retryAfterMs === 'number' &&
+        Number.isFinite(issue.retryAfterMs)
+          ? Math.max(0, issue.retryAfterMs)
+          : null,
+    };
+  });
 }
 
 async function sendICloudMessage(message: Record<string, unknown>): Promise<NativeICloudResponse> {
@@ -61,17 +104,6 @@ export async function checkSafariICloudAccount(): Promise<void> {
   }
 }
 
-export async function writeSafariICloudFile(fileName: string, value: unknown): Promise<void> {
-  const response = await sendICloudMessage({
-    action: 'iCloudWriteFile',
-    fileName,
-    json: JSON.stringify(value),
-  });
-  if (response.success !== true) {
-    throw responseError(response, 'iCloud upload failed');
-  }
-}
-
 export async function readSafariICloudFile<T>(fileName: string): Promise<T | null> {
   const response = await sendICloudMessage({ action: 'iCloudReadFile', fileName });
   if (response.success !== true) {
@@ -86,8 +118,19 @@ export async function readSafariICloudFile<T>(fileName: string): Promise<T | nul
 
 export async function deleteSafariICloudBackup(): Promise<number> {
   const response = await sendICloudMessage({ action: 'iCloudDeleteBackup' });
-  if (response.success !== true || typeof response.data?.deleted !== 'number') {
+  if (
+    response.success !== true ||
+    typeof response.data?.deleted !== 'number' ||
+    !Number.isSafeInteger(response.data.deleted) ||
+    response.data.deleted < 0
+  ) {
     throw responseError(response, 'iCloud backup deletion failed');
   }
+  const errors = parseDeleteIssues(response.data.errors);
+  if (errors.length)
+    throw new SafariICloudSyncError(errors[0].error, errors[0].code, errors[0].retryAfterMs, {
+      deleted: response.data.deleted,
+      errors,
+    });
   return response.data.deleted;
 }

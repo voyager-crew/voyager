@@ -78,10 +78,12 @@ export class GoogleDriveUploadHistory {
     token: string,
     source: string,
     plan: PreparedDriveHistory,
+    includeEmpty = false,
   ): Promise<DriveHistoryFile | null> {
-    if (!plan.current || !this.files.supportsHistory()) return null;
+    if (plan.current === null || (!includeEmpty && !plan.current) || !this.files.supportsHistory())
+      return null;
     const latest = newestHistoryFirst(plan.entries)[0];
-    if (latest && plan.archived.get(latest.id) === plan.current) return null;
+    if (latest && plan.archived.get(latest.id) === plan.current) return latest;
     const entry = await this.files.createHistory(
       token,
       nextHistoryName(source, plan.entries),

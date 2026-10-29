@@ -1,6 +1,6 @@
 import { FOLDER_PLATFORM_IDS, isFolderPlatform } from '@/features/folder/platforms';
 
-import type { RowStatus, StatusFile, StatusRow } from './syncProtocol';
+import type { RowStatus, StatusRow } from './syncProtocol';
 import type { UploadRefusal } from './syncTransfer';
 
 /** A row the sheet lists: 通用, or a site with its own files. */
@@ -84,17 +84,6 @@ export function resumeAfterGuard(
           { row: refused.row, op: 'upload' },
         ];
   return [...steps.slice(0, index), ...replacement, ...steps.slice(index + 1)];
-}
-
-/**
- * Files whose cloud copy an upload of this row replaced and that have a copy
- * from before it: changed rows only (an unchanged file's copy may predate
- * this sync), and never a file the cloud did not have.
- */
-export function revertibleFiles(row: StatusRow | undefined): string[] {
-  return (row?.files ?? [])
-    .filter((file: StatusFile) => file.md5 !== null && file.status !== 'synced')
-    .map((file) => file.name);
 }
 
 /** The newest per-file baseline, for "Synced 12 min ago". */

@@ -8,6 +8,7 @@ import type { CloudDownloadData } from '@/core/services/CloudSyncDownloadService
 import type { SyncScopeRow } from '@/core/services/CloudSyncScope';
 import type { SyncState } from '@/core/types/sync';
 import type { GuardedUploadKind, UploadGuardRefusedFile } from '@/core/types/syncUploadGuard';
+import { type CloudUploadReceipt, parseCloudUploadReceipt } from '@/core/types/syncUploadReceipt';
 import { readCatalogBucket } from '@/features/timeline/catalogHierarchySync';
 import type { PulledCatalogTimeline } from '@/features/timeline/catalogTimelineCloud';
 
@@ -62,7 +63,12 @@ function parseRefusedFiles(value: unknown): UploadGuardRefusedFile[] {
 }
 
 export type CloudUploadReply =
-  | { readonly kind: 'uploaded'; readonly state?: SyncState; readonly highlightsSkipped: boolean }
+  | {
+      readonly kind: 'uploaded';
+      readonly state?: SyncState;
+      readonly highlightsSkipped: boolean;
+      readonly uploadReceipt: CloudUploadReceipt | null;
+    }
   | {
       readonly kind: 'refused';
       readonly state?: SyncState;
@@ -77,6 +83,7 @@ export type CloudUploadReply =
       readonly excludedRows?: readonly SyncScopeRow[];
       /** The main files landed before a later part failed. */
       readonly partial?: boolean;
+      readonly uploadReceipt: CloudUploadReceipt | null;
     };
 
 export function parseUploadReply(value: unknown): CloudUploadReply {
@@ -87,6 +94,7 @@ export function parseUploadReply(value: unknown): CloudUploadReply {
       kind: 'uploaded',
       state,
       highlightsSkipped: record(reply.highlights)?.skipped === true,
+      uploadReceipt: parseCloudUploadReceipt(reply.uploadReceipt),
     };
   const refusedFiles = parseRefusedFiles(reply?.refusedFiles);
   if (reply?.error === 'upload_guard_refused' && refusedFiles.length) {
@@ -103,6 +111,7 @@ export function parseUploadReply(value: unknown): CloudUploadReply {
     kind: 'failed',
     state,
     error: typeof reply?.error === 'string' ? reply.error : null,
+    uploadReceipt: parseCloudUploadReceipt(reply?.uploadReceipt),
     ...(excludedRows ? { excludedRows } : {}),
     ...(reply?.partial === true ? { partial: true } : {}),
   };

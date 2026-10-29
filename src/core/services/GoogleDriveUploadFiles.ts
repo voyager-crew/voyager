@@ -1,12 +1,17 @@
 import type { DriveHistoryRestoreFile } from '@/core/types/driveHistory';
+import type { CloudUploadReceipt, CloudUploadWrittenFile } from '@/core/types/syncUploadReceipt';
+import { restoreICloudPreviousVersion } from '@/core/utils/safariICloudHistory';
 
 import type { DriveFilesPort } from './GoogleDriveFiles';
 import { isDriveSyncFileName } from './GoogleDriveHistoryPayload';
 import { GoogleDriveUploadHistory, type PreparedDriveHistory } from './GoogleDriveUploadHistory';
+import { undoDriveUploadFile } from './GoogleDriveUploadUndo';
+import { DriveWriteUnchanged, preserveLatestDriveVersion } from './GoogleDriveWriteVersion';
 
 type Files = Pick<
   DriveFilesPort,
   | 'find'
+  | 'metadata'
   | 'ensure'
   | 'upload'
   | 'downloadText'
@@ -19,7 +24,7 @@ type Files = Pick<
 
 type UploadTarget =
   | { kind: 'found'; id: string | null; history: PreparedDriveHistory }
-  | { kind: 'ready'; id: string; history: PreparedDriveHistory };
+  | { kind: 'ready'; id: string; created: boolean; history: PreparedDriveHistory };
 
 /** Every target and old body is resolved before creation or content replacement begins. */
 export class GoogleDriveUploadFiles {
@@ -27,6 +32,12 @@ export class GoogleDriveUploadFiles {
   private readonly targets = new Map<string, UploadTarget>();
   private readonly history: GoogleDriveUploadHistory;
   private beforeFirstWrite: (() => Promise<void>) | null = null;
+  private readonly receipts = new Map<string, CloudUploadWrittenFile>();
+  private readonly unreceipted = new Set<string>();
+
+  getReceipt(): CloudUploadReceipt {
+    return { files: [...this.receipts.values()], complete: this.unreceipted.size === 0 };
+  }
 
   constructor(private readonly files: Files) {
     this.history = new GoogleDriveUploadHistory(files);
@@ -58,8 +69,15 @@ export class GoogleDriveUploadFiles {
     // Read-only targets stay missing; account persistence precedes creation or relocation.
     const target = this.targets.get(name);
     if (target?.kind === 'found') {
+      // Creation can succeed even if its response is lost. Do not offer a partial run Undo.
+      this.unreceipted.add(name);
       const id = await this.files.ensure(token, name, target.id);
-      this.targets.set(name, { kind: 'ready', id, history: target.history });
+      this.targets.set(name, {
+        kind: 'ready',
+        id,
+        created: target.id === null,
+        history: target.history,
+      });
     }
   }
 
@@ -67,11 +85,58 @@ export class GoogleDriveUploadFiles {
     this.register(name);
     await this.commitReady(token, name);
     const target = this.targets.get(name);
-    if (!target?.id) throw new Error('Upload failed');
+    if (target?.kind !== 'ready') throw new Error('Upload failed');
     const text = JSON.stringify(payload);
     if (text === undefined) throw new Error('Upload failed');
-    if (target.history.current !== text) await this.history.preserve(token, name, target.history);
-    await this.files.upload(token, target.id, payload);
+    let replacement: CloudUploadWrittenFile['replaced'] | null = target.created
+      ? { kind: 'created' }
+      : null;
+    const previous = this.receipts.get(name);
+    let checks = 0;
+    let skippedWrite = false;
+    this.unreceipted.add(name);
+    const metadata = await this.files.upload(token, target.id, payload, async () => {
+      checks++;
+      if (this.files.supportsHistory()) {
+        const current = await preserveLatestDriveVersion({
+          files: this.files,
+          history: this.history,
+          plan: target.history,
+          token,
+          name,
+          id: target.id,
+          next: text,
+          created: target.created,
+        });
+        if (previous && current.metadata?.md5Checksum === previous.md5Checksum)
+          replacement = previous.replaced;
+        else if (current.historyId) replacement = { kind: 'history', historyId: current.historyId };
+        if (current.metadata && target.history.current === text) {
+          skippedWrite = true;
+          throw new DriveWriteUnchanged(current.metadata);
+        }
+      }
+    });
+    if (skippedWrite) {
+      // A retry can see our own ambiguous earlier PATCH. Its later GET is not a write receipt.
+      if (checks === 1) this.unreceipted.delete(name);
+    } else if (metadata?.uploadReceipt) {
+      this.receipts.set(
+        name,
+        previous && metadata.previousText === target.history.current
+          ? { ...metadata.uploadReceipt, replaced: previous.replaced }
+          : metadata.uploadReceipt,
+      );
+      this.unreceipted.delete(name);
+    } else if (metadata && replacement) {
+      this.receipts.set(name, {
+        name,
+        fileId: target.id,
+        md5Checksum: metadata.md5Checksum,
+        replaced: replacement,
+      });
+      this.unreceipted.delete(name);
+    }
     // A verification retry snapshots the body it actually replaces, never an already saved copy.
     target.history.current = text;
     await this.history.retain(token, target.history);
@@ -81,9 +146,34 @@ export class GoogleDriveUploadFiles {
   async restoreHistory(
     token: string,
     names: readonly string[],
+    receipt?: CloudUploadReceipt,
   ): Promise<DriveHistoryRestoreFile[]> {
+    if (receipt) {
+      const outcomes: DriveHistoryRestoreFile[] = [];
+      for (const name of names) {
+        const file = receipt.files.find((file) => file.name === name);
+        outcomes.push(
+          file && isDriveSyncFileName(name)
+            ? await undoDriveUploadFile(this.files, token, file, async () => {
+                await this.beforeFirstWrite?.();
+              })
+            : { name, status: 'no_history' },
+        );
+      }
+      return outcomes;
+    }
     if (!this.files.supportsHistory()) {
-      return names.map((name) => ({ name, status: 'unsupported_provider' }));
+      const outcomes: DriveHistoryRestoreFile[] = [];
+      for (const name of new Set(names)) {
+        outcomes.push(
+          isDriveSyncFileName(name)
+            ? await restoreICloudPreviousVersion(name, async () => {
+                await this.beforeFirstWrite?.();
+              })
+            : { name, status: 'unrecognized_history' },
+        );
+      }
+      return outcomes;
     }
     const outcomes: DriveHistoryRestoreFile[] = [];
     const planned: Array<{ name: string; text: string; historyId: string }> = [];
@@ -119,10 +209,18 @@ export class GoogleDriveUploadFiles {
       try {
         await this.commitReady(token, name);
         const target = this.targets.get(name);
-        if (!target?.id) throw new Error('Upload failed');
-        if (target.history.current !== text)
-          await this.history.preserve(token, name, target.history);
-        await this.files.uploadText(token, target.id, text);
+        if (target?.kind !== 'ready') throw new Error('Upload failed');
+        await this.files.uploadText(token, target.id, text, async () => {
+          await preserveLatestDriveVersion({
+            files: this.files,
+            history: this.history,
+            plan: target.history,
+            token,
+            name,
+            id: target.id,
+            next: text,
+          });
+        });
         target.history.current = text;
         await this.history.retain(token, target.history);
         outcomes.push({ name, status: 'restored', historyId });

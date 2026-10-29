@@ -3,6 +3,8 @@ import { type Root, createRoot } from 'react-dom/client';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { SafariICloudSyncError } from '@/core/utils/safariICloudSync';
+
 import { CloudSyncSettings } from '../CloudSyncSettings';
 import {
   baseState,
@@ -17,7 +19,12 @@ vi.mock('@/contexts/LanguageContext', () => ({
   useLanguage: () => ({
     language: 'en',
     setLanguage: vi.fn(),
-    t: (key: string) => key,
+    t: (key: string) =>
+      key === 'syncDeleteICloudSuccess'
+        ? 'Deleted {count} records'
+        : key === 'syncDeleteICloudFailed'
+          ? 'Delete failed: {error}'
+          : key,
   }),
 }));
 
@@ -26,7 +33,8 @@ vi.mock('@/core/utils/browser', () => ({
   isSafari: () => false,
 }));
 
-vi.mock('@/core/utils/safariICloudSync', () => ({
+vi.mock('@/core/utils/safariICloudSync', async (original) => ({
+  ...(await original<typeof import('@/core/utils/safariICloudSync')>()),
   deleteSafariICloudBackup,
 }));
 
@@ -140,6 +148,38 @@ describe('CloudSyncSettings on Safari', () => {
     });
 
     expect(deleteSafariICloudBackup).toHaveBeenCalledOnce();
-    expect(container.textContent).toContain('syncDeleteICloudSuccess');
+    expect(container.textContent).toContain('Deleted 3 records');
+  });
+
+  it('shows confirmed deletion progress alongside an error so partial deletion is reviewable', async () => {
+    browserTarget.value = 'safari';
+    deleteSafariICloudBackup.mockRejectedValue(
+      Object.assign(new SafariICloudSyncError('Network unavailable', 'cloudkit_4', null), {
+        deleted: 804,
+        errors: [],
+      }),
+    );
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const sendMessageMock = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve({ ok: true, state: { ...baseState, provider: 'icloud' } }),
+      );
+    (globalThis as { chrome: MockedChrome }).chrome = createChromeMock(sendMessageMock);
+    const remove = vi.mocked(chrome.storage.local.remove);
+    await act(async () => {
+      root = createRoot(container);
+      root.render(<CloudSyncSettings />);
+    });
+    await flushMicrotasks();
+    const button = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent === 'syncDeleteICloudBackup',
+    );
+    await act(async () => {
+      button?.click();
+    });
+    expect(container.textContent).toContain('Deleted 804 records');
+    expect(container.textContent).toContain('Delete failed: Network unavailable');
+    expect(remove).not.toHaveBeenCalled();
   });
 });

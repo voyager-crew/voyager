@@ -236,7 +236,7 @@ describe('ChatGPT Drive folder isolation', () => {
       },
     });
     expect(boundaries.uploadedNames).toEqual([CHATGPT_FILE]);
-    expect(boundaries.downloadedNames).toEqual([CHATGPT_FILE]);
+    expect(new Set(boundaries.downloadedNames)).toEqual(new Set([CHATGPT_FILE]));
     expect(boundaries.localReadKeys).toContain(StorageKeys.FOLDER_DATA_CHATGPT);
     expect(boundaries.localReadKeys).not.toContain(StorageKeys.FOLDER_DATA);
     expect(boundaries.localReadKeys).not.toContain(StorageKeys.FOLDER_DATA_AISTUDIO);
@@ -306,7 +306,7 @@ describe('ChatGPT Drive folder isolation', () => {
     });
 
     expect(boundaries.uploadedNames).toEqual([CHATGPT_FILE]);
-    expect(boundaries.downloadedNames).toEqual([CHATGPT_FILE]);
+    expect(new Set(boundaries.downloadedNames)).toEqual(new Set([CHATGPT_FILE]));
     expect(new Set(boundaries.searchedNames)).toEqual(new Set([CHATGPT_FILE]));
     expect(Object.fromEntries(boundaries.mediaByName)).toEqual({
       ...sharedFiles,

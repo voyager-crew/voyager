@@ -55,9 +55,9 @@ export function createGoogleDriveTurnPort(options: TurnOptions): GoogleDriveSync
         bookkeeping.names.set(id, name);
         return id;
       }),
-    upload: (token, id, data) =>
+    upload: (token, id, data, beforeWrite) =>
       session.run(async () => {
-        const metadata = await options.files.upload(token, id, data);
+        const metadata = await options.files.upload(token, id, data, beforeWrite);
         const name = bookkeeping.names.get(id);
         if (name)
           bookkeeping.writes.set(name, { id, content: data, ...(metadata ? { metadata } : {}) });
@@ -76,11 +76,13 @@ export function createGoogleDriveTurnPort(options: TurnOptions): GoogleDriveSync
       return options.files.supportsHistory();
     },
     downloadText: (token, id) => session.run(() => options.files.downloadText(token, id)),
-    uploadText: (token, id, text) => session.run(() => options.files.uploadText(token, id, text)),
+    uploadText: (token, id, text, beforeWrite) =>
+      session.run(() => options.files.uploadText(token, id, text, beforeWrite)),
     createHistory: (token, name, source, text) =>
       session.run(() => options.files.createHistory(token, name, source, text)),
     listHistory: (token, name) => session.run(() => options.files.listHistory(token, name)),
-    trash: (token, id) => session.run(() => options.files.trash(token, id)),
+    trash: (token, id, beforeWrite) =>
+      session.run(() => options.files.trash(token, id, beforeWrite)),
   };
   const uploads = new GoogleDriveUploadFiles(files);
   const payloads = new GoogleDriveSyncPayloads(files, uploads, identity, (metadata, target) => {
@@ -115,6 +117,10 @@ export function createGoogleDriveTurnPort(options: TurnOptions): GoogleDriveSync
   );
   return {
     kind: 'sync-turn',
+    getUploadReceipt: () => {
+      session.assertActive();
+      return uploads.getReceipt();
+    },
     beginDownloadBookkeeping: () => {
       session.assertActive();
       bookkeeping.beginDownload();
@@ -129,8 +135,13 @@ export function createGoogleDriveTurnPort(options: TurnOptions): GoogleDriveSync
         await payloads.captureScopes(scope);
         return scope ? identity.get(scope).emailKey : null;
       }),
-    restorePreviousVersion: (targets, interactive) =>
-      restoreDrivePreviousVersion({ auth, session, identity, uploads }, targets, interactive),
+    restorePreviousVersion: (targets, interactive, receipt) =>
+      restoreDrivePreviousVersion(
+        { auth, session, identity, uploads },
+        targets,
+        interactive,
+        receipt,
+      ),
     upload: (...args) =>
       session.run(async () => {
         if (

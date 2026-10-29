@@ -118,13 +118,21 @@ export function parseConnection(value: unknown): Connection | null {
 }
 
 /** Per-file results of restoring the previous cloud version. */
-export function parseRestoredFiles(value: unknown): { name: string; restored: boolean }[] {
+export function parseRestoredFiles(
+  value: unknown,
+): { name: string; restored: boolean; kept: boolean }[] {
   const files = record(value)?.files;
   if (!Array.isArray(files)) return [];
   return files.flatMap((raw: unknown) => {
     const file = record(raw);
     return file && typeof file.name === 'string'
-      ? [{ name: file.name, restored: file.status === 'restored' }]
+      ? [
+          {
+            name: file.name,
+            restored: file.status === 'restored' || file.status === 'removed',
+            kept: file.status === 'kept',
+          },
+        ]
       : [];
   });
 }

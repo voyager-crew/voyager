@@ -52,6 +52,12 @@
 		D10000000000000000000016 /* GoogleDriveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000005 /* GoogleDriveService.swift */; };
 		D10000000000000000000017 /* GoogleDriveService+BackupFolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000006 /* GoogleDriveService+BackupFolder.swift */; };
 		D10000000000000000000018 /* GoogleDriveService+History.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000007 /* GoogleDriveService+History.swift */; };
+		D20000000000000000000011 /* ICloudUploadMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000001 /* ICloudUploadMessages.swift */; };
+		D20000000000000000000012 /* ICloudUploadTransactions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000002 /* ICloudUploadTransactions.swift */; };
+		D20000000000000000000013 /* ICloudUploadStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000003 /* ICloudUploadStore.swift */; };
+		D20000000000000000000014 /* ICloudRecordMaintenance.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000004 /* ICloudRecordMaintenance.swift */; };
+		D20000000000000000000015 /* ICloudBackupDeletion.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000005 /* ICloudBackupDeletion.swift */; };
+		D20000000000000000000016 /* ICloudHistoryOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000006 /* ICloudHistoryOperations.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -124,6 +130,12 @@
 		D10000000000000000000005 /* GoogleDriveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleDriveService.swift; sourceTree = "<group>"; };
 		D10000000000000000000006 /* GoogleDriveService+BackupFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GoogleDriveService+BackupFolder.swift"; sourceTree = "<group>"; };
 		D10000000000000000000007 /* GoogleDriveService+History.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GoogleDriveService+History.swift"; sourceTree = "<group>"; };
+		D20000000000000000000001 /* ICloudUploadMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudUploadMessages.swift; sourceTree = "<group>"; };
+		D20000000000000000000002 /* ICloudUploadTransactions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudUploadTransactions.swift; sourceTree = "<group>"; };
+		D20000000000000000000003 /* ICloudUploadStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudUploadStore.swift; sourceTree = "<group>"; };
+		D20000000000000000000004 /* ICloudRecordMaintenance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudRecordMaintenance.swift; sourceTree = "<group>"; };
+		D20000000000000000000005 /* ICloudBackupDeletion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudBackupDeletion.swift; sourceTree = "<group>"; };
+		D20000000000000000000006 /* ICloudHistoryOperations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudHistoryOperations.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -235,6 +247,12 @@
 			children = (
 				D10000000000000000000001 /* NativeSupport.swift */,
 				D10000000000000000000004 /* NativeMessaging.swift */,
+				D20000000000000000000001 /* ICloudUploadMessages.swift */,
+				D20000000000000000000002 /* ICloudUploadTransactions.swift */,
+				D20000000000000000000003 /* ICloudUploadStore.swift */,
+				D20000000000000000000004 /* ICloudRecordMaintenance.swift */,
+				D20000000000000000000005 /* ICloudBackupDeletion.swift */,
+				D20000000000000000000006 /* ICloudHistoryOperations.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -401,6 +419,12 @@
 				C1D2E3F40516273849A5B6C7 /* ICloudSyncService.swift in Sources */,
 				D10000000000000000000012 /* NativeSupport.swift in Sources */,
 				D10000000000000000000015 /* NativeMessaging.swift in Sources */,
+				D20000000000000000000011 /* ICloudUploadMessages.swift in Sources */,
+				D20000000000000000000012 /* ICloudUploadTransactions.swift in Sources */,
+				D20000000000000000000013 /* ICloudUploadStore.swift in Sources */,
+				D20000000000000000000014 /* ICloudRecordMaintenance.swift in Sources */,
+				D20000000000000000000015 /* ICloudBackupDeletion.swift in Sources */,
+				D20000000000000000000016 /* ICloudHistoryOperations.swift in Sources */,
 				D10000000000000000000013 /* NativeNotificationService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -15,9 +15,14 @@ enum VoyagerNativeRequest: Codable, Equatable {
   case googleDriveListHistory(sourceFileName: String)
   case googleDriveTrashFile(fileID: String)
   case iCloudAccountStatus
-  case iCloudWriteFile(VoyagerICloudWriteRequest)
   case iCloudReadFile(fileName: String)
   case iCloudDeleteBackup
+  case iCloudReadUploadVersion(fileName: String)
+  case iCloudWriteUpload(VoyagerICloudUploadRequest)
+  case iCloudUndoUpload(VoyagerICloudUploadReceipt)
+  case iCloudReadHistory(fileName: String, includingHistoryId: String?)
+  case iCloudRestoreHistory(VoyagerICloudRestoreHistoryRequest)
+  case iCloudPruneHistory(VoyagerICloudPruneHistoryRequest)
   case copyImageToPasteboard(VoyagerClipboardImageRequest)
 
   var actionName: String {
@@ -36,9 +41,14 @@ enum VoyagerNativeRequest: Codable, Equatable {
     case .googleDriveListHistory: return Action.googleDriveListHistory.rawValue
     case .googleDriveTrashFile: return Action.googleDriveTrashFile.rawValue
     case .iCloudAccountStatus: return Action.iCloudAccountStatus.rawValue
-    case .iCloudWriteFile: return Action.iCloudWriteFile.rawValue
     case .iCloudReadFile: return Action.iCloudReadFile.rawValue
     case .iCloudDeleteBackup: return Action.iCloudDeleteBackup.rawValue
+    case .iCloudReadUploadVersion: return Action.iCloudReadUploadVersion.rawValue
+    case .iCloudWriteUpload: return Action.iCloudWriteUpload.rawValue
+    case .iCloudUndoUpload: return Action.iCloudUndoUpload.rawValue
+    case .iCloudReadHistory: return Action.iCloudReadHistory.rawValue
+    case .iCloudRestoreHistory: return Action.iCloudRestoreHistory.rawValue
+    case .iCloudPruneHistory: return Action.iCloudPruneHistory.rawValue
     case .copyImageToPasteboard: return Action.copyImageToPasteboard.rawValue
     }
   }
@@ -58,9 +68,14 @@ enum VoyagerNativeRequest: Codable, Equatable {
     case googleDriveListHistory
     case googleDriveTrashFile
     case iCloudAccountStatus
-    case iCloudWriteFile
     case iCloudReadFile
     case iCloudDeleteBackup
+    case iCloudReadUploadVersion
+    case iCloudWriteUpload
+    case iCloudUndoUpload
+    case iCloudReadHistory
+    case iCloudRestoreHistory
+    case iCloudPruneHistory
     case copyImageToPasteboard
   }
 
@@ -74,6 +89,12 @@ enum VoyagerNativeRequest: Codable, Equatable {
     case id
     case interactive
     case json
+    case expectedVersion
+    case receipt
+    case includingHistoryId
+    case historyId
+    case historyIds
+    case protectedHistoryId
     case pngBase64
     case sourceFileName
     case title
@@ -144,19 +165,44 @@ enum VoyagerNativeRequest: Codable, Equatable {
       self = .googleDriveTrashFile(fileID: try container.decode(String.self, forKey: .fileID))
     case .iCloudAccountStatus:
       self = .iCloudAccountStatus
-    case .iCloudWriteFile:
-      self = .iCloudWriteFile(
-        VoyagerICloudWriteRequest(
-          fileName: try container.decode(String.self, forKey: .fileName),
-          json: try container.decode(String.self, forKey: .json)
-        )
-      )
     case .iCloudReadFile:
       self = .iCloudReadFile(
         fileName: try container.decode(String.self, forKey: .fileName)
       )
     case .iCloudDeleteBackup:
       self = .iCloudDeleteBackup
+    case .iCloudReadUploadVersion:
+      self = .iCloudReadUploadVersion(
+        fileName: try container.decode(String.self, forKey: .fileName))
+    case .iCloudWriteUpload:
+      self = .iCloudWriteUpload(
+        VoyagerICloudUploadRequest(
+          fileName: try container.decode(String.self, forKey: .fileName),
+          json: try container.decode(String.self, forKey: .json),
+          expectedVersion: try container.decode(String?.self, forKey: .expectedVersion)
+        )
+      )
+    case .iCloudUndoUpload:
+      self = .iCloudUndoUpload(
+        try container.decode(VoyagerICloudUploadReceipt.self, forKey: .receipt).validated()
+      )
+    case .iCloudReadHistory:
+      self = .iCloudReadHistory(
+        fileName: try container.decode(String.self, forKey: .fileName),
+        includingHistoryId: try container.decodeIfPresent(String.self, forKey: .includingHistoryId))
+    case .iCloudRestoreHistory:
+      self = .iCloudRestoreHistory(
+        VoyagerICloudRestoreHistoryRequest(
+          fileName: try container.decode(String.self, forKey: .fileName),
+          historyId: try container.decode(String.self, forKey: .historyId),
+          expectedVersion: try container.decode(String?.self, forKey: .expectedVersion)))
+    case .iCloudPruneHistory:
+      self = .iCloudPruneHistory(
+        VoyagerICloudPruneHistoryRequest(
+          fileName: try container.decode(String.self, forKey: .fileName),
+          historyIds: try container.decode([String].self, forKey: .historyIds),
+          protectedHistoryId: try container.decodeIfPresent(
+            String.self, forKey: .protectedHistoryId)))
     case .copyImageToPasteboard:
       self = .copyImageToPasteboard(
         VoyagerClipboardImageRequest(
@@ -215,15 +261,36 @@ enum VoyagerNativeRequest: Codable, Equatable {
       try container.encode(fileID, forKey: .fileID)
     case .iCloudAccountStatus:
       try container.encode(Action.iCloudAccountStatus, forKey: .action)
-    case .iCloudWriteFile(let request):
-      try container.encode(Action.iCloudWriteFile, forKey: .action)
-      try container.encode(request.fileName, forKey: .fileName)
-      try container.encode(request.json, forKey: .json)
     case .iCloudReadFile(let fileName):
       try container.encode(Action.iCloudReadFile, forKey: .action)
       try container.encode(fileName, forKey: .fileName)
     case .iCloudDeleteBackup:
       try container.encode(Action.iCloudDeleteBackup, forKey: .action)
+    case .iCloudReadUploadVersion(let fileName):
+      try container.encode(Action.iCloudReadUploadVersion, forKey: .action)
+      try container.encode(fileName, forKey: .fileName)
+    case .iCloudWriteUpload(let request):
+      try container.encode(Action.iCloudWriteUpload, forKey: .action)
+      try container.encode(request.fileName, forKey: .fileName)
+      try container.encode(request.json, forKey: .json)
+      try container.encode(request.expectedVersion, forKey: .expectedVersion)
+    case .iCloudUndoUpload(let receipt):
+      try container.encode(Action.iCloudUndoUpload, forKey: .action)
+      try container.encode(receipt, forKey: .receipt)
+    case .iCloudReadHistory(let fileName, let includingHistoryId):
+      try container.encode(Action.iCloudReadHistory, forKey: .action)
+      try container.encode(fileName, forKey: .fileName)
+      try container.encodeIfPresent(includingHistoryId, forKey: .includingHistoryId)
+    case .iCloudRestoreHistory(let request):
+      try container.encode(Action.iCloudRestoreHistory, forKey: .action)
+      try container.encode(request.fileName, forKey: .fileName)
+      try container.encode(request.historyId, forKey: .historyId)
+      try container.encode(request.expectedVersion, forKey: .expectedVersion)
+    case .iCloudPruneHistory(let request):
+      try container.encode(Action.iCloudPruneHistory, forKey: .action)
+      try container.encode(request.fileName, forKey: .fileName)
+      try container.encode(request.historyIds, forKey: .historyIds)
+      try container.encodeIfPresent(request.protectedHistoryId, forKey: .protectedHistoryId)
     case .copyImageToPasteboard(let request):
       try container.encode(Action.copyImageToPasteboard, forKey: .action)
       try container.encode(request.pngBase64, forKey: .pngBase64)
@@ -236,11 +303,6 @@ struct VoyagerNotificationRequest: Codable, Equatable {
   let title: String
   let body: String
   let url: String?
-}
-
-struct VoyagerICloudWriteRequest: Codable, Equatable {
-  let fileName: String
-  let json: String
 }
 
 struct VoyagerClipboardImageRequest: Codable, Equatable {
@@ -431,10 +493,6 @@ struct VoyagerClipboardWriteResponse: Codable {
   let copied: Bool
 }
 
-struct VoyagerICloudWriteResponse: Codable {
-  let saved: Bool
-}
-
 struct VoyagerICloudReadResponse: Codable {
   let json: String?
   let found: Bool
@@ -442,6 +500,7 @@ struct VoyagerICloudReadResponse: Codable {
 
 struct VoyagerICloudDeleteResponse: Codable {
   let deleted: Int
+  let errors: [VoyagerICloudDeleteIssue]
 }
 
 struct VoyagerEmptyResponse: Codable {}

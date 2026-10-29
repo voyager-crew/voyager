@@ -75,7 +75,18 @@ export function createCloudSyncMessageHandler(readers: CloudSyncReaders) {
               platform: 'gemini',
               accountHash: getHighlightAccountHash({ ...scope, platform: 'gemini' }),
             }),
-        );
+        ).catch(async (error: unknown) => {
+          const uploadReceipt = drive.getUploadReceipt();
+          if (!uploadReceipt.complete || uploadReceipt.files.length)
+            return {
+              ok: false,
+              error: cloudSyncFailureCode(error) ?? 'sync_failed',
+              partial: true,
+              uploadReceipt,
+              state: await drive.getState(),
+            };
+          throw error;
+        });
       case 'gv.sync.download':
         return handleCloudSyncDownload(
           message.payload,

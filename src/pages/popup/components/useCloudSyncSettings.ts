@@ -5,7 +5,7 @@ import type { SyncMode, SyncPlatform, SyncProvider, SyncState } from '@/core/typ
 import { DEFAULT_SYNC_STATE } from '@/core/types/sync';
 import { getVoyagerBuildTarget, isSafari } from '@/core/utils/browser';
 import { googleDriveUnavailableOn } from '@/core/utils/googleDriveSignIn';
-import { deleteSafariICloudBackup } from '@/core/utils/safariICloudSync';
+import { SafariICloudSyncError, deleteSafariICloudBackup } from '@/core/utils/safariICloudSync';
 import { FOLDER_PLATFORMS, getFolderPlatformForHost } from '@/features/folder/platforms';
 import type { TranslationKey } from '@/utils/translations';
 
@@ -178,8 +178,12 @@ export function useCloudSyncSettings(sourceTabId?: number) {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      const progress =
+        error instanceof SafariICloudSyncError && error.deleted !== null && error.deleted > 0
+          ? `${t('syncDeleteICloudSuccess').replace('{count}', String(error.deleted))}\n`
+          : '';
       setStatusMessage({
-        text: t('syncDeleteICloudFailed').replace('{error}', message),
+        text: progress + t('syncDeleteICloudFailed').replace('{error}', message),
         kind: 'err',
       });
     } finally {

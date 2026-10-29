@@ -11,6 +11,7 @@ import { GoogleDriveBackupFolder } from '../GoogleDriveBackupFolder';
 import { GoogleDriveFiles } from '../GoogleDriveFiles';
 import { GoogleDriveSyncService } from '../GoogleDriveSyncService';
 import { createDriveTestClient } from './fixtures/driveTestClient';
+import { createFakeICloudUploadTransport } from './fixtures/fakeICloudUploadTransport';
 
 const native = vi.hoisted(() => vi.fn());
 vi.mock('webextension-polyfill', () => ({ default: { runtime: { sendNativeMessage: native } } }));
@@ -37,7 +38,16 @@ function fixture() {
   vi.stubGlobal('chrome', { storage: { local: area } });
   const remote = new Map<string, unknown>();
   const writes: string[] = [];
+  const cloudUploads = createFakeICloudUploadTransport({
+    readText: (name) => (remote.has(name) ? JSON.stringify(remote.get(name)) : null),
+    writeText: (name, text) => {
+      writes.push(name);
+      remote.set(name, JSON.parse(text));
+    },
+  });
   native.mockImplementation(async (_app: string, message: Record<string, unknown>) => {
+    const cloudResponse = await cloudUploads(message);
+    if (cloudResponse) return cloudResponse;
     if (message.action === 'iCloudAccountStatus')
       return { success: true, data: { available: true } };
     if (message.action === 'iCloudReadFile') {
@@ -46,11 +56,6 @@ function fixture() {
         success: true,
         data: { found: remote.has(fileName), json: JSON.stringify(remote.get(fileName)) },
       };
-    }
-    if (message.action === 'iCloudWriteFile') {
-      writes.push(String(message.fileName));
-      remote.set(String(message.fileName), JSON.parse(String(message.json)));
-      return { success: true, data: { saved: true } };
     }
     throw new Error(`Unexpected native request: ${message.action}`);
   });

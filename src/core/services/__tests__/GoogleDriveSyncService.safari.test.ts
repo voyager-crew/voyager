@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createDriveTestClient } from './fixtures/driveTestClient';
+import { createFakeICloudUploadTransport } from './fixtures/fakeICloudUploadTransport';
 
 const downloadSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
 const downloadSafariGoogleDriveText = vi.hoisted(() => vi.fn());
@@ -17,7 +18,6 @@ const checkSafariICloudAccount = vi.hoisted(() => vi.fn());
 const getSafariICloudRetryDelay = vi.hoisted(() => vi.fn((): number | null => null));
 const isSafariICloudConflictError = vi.hoisted(() => vi.fn(() => false));
 const readSafariICloudFile = vi.hoisted(() => vi.fn());
-const writeSafariICloudFile = vi.hoisted(() => vi.fn());
 const safariRuntime = vi.hoisted(() => ({ buildTarget: 'safari', userAgentMatches: false }));
 
 vi.mock('@/core/utils/browser', () => ({
@@ -44,12 +44,12 @@ vi.mock('webextension-polyfill', () => ({
   default: { runtime: { sendNativeMessage } },
 }));
 
-vi.mock('@/core/utils/safariICloudSync', () => ({
+vi.mock('@/core/utils/safariICloudSync', async (original) => ({
+  ...(await original<typeof import('@/core/utils/safariICloudSync')>()),
   checkSafariICloudAccount,
   getSafariICloudRetryDelay,
   isSafariICloudConflictError,
   readSafariICloudFile,
-  writeSafariICloudFile,
 }));
 
 function createChromeMock(stored: Record<string, unknown> = {}) {
@@ -70,15 +70,29 @@ async function loadServiceClass() {
   return module.GoogleDriveSyncService;
 }
 
+const cloudFiles = new Map<string, unknown>();
+
 beforeEach(() => {
-  sendNativeMessage.mockReset().mockResolvedValue({
-    success: true,
-    data: {
-      saved: true,
-      id: 'native-file-id',
-      md5Checksum: 'native-upload',
-      modifiedTime: '2026-10-29T00:00:00Z',
+  cloudFiles.clear();
+  const cloudUploads = createFakeICloudUploadTransport({
+    readText: (name) => (cloudFiles.has(name) ? JSON.stringify(cloudFiles.get(name)) : null),
+    writeText: (name, text) => {
+      cloudFiles.set(name, JSON.parse(text));
     },
+  });
+  sendNativeMessage.mockReset().mockImplementation(async (_app, message) => {
+    const cloudResponse = await cloudUploads(message);
+    return (
+      cloudResponse ?? {
+        success: true,
+        data: {
+          saved: true,
+          id: 'native-file-id',
+          md5Checksum: 'native-upload',
+          modifiedTime: '2026-10-29T00:00:00Z',
+        },
+      }
+    );
   });
   findSafariGoogleDriveFile.mockResolvedValue(null);
   downloadSafariGoogleDriveText.mockResolvedValue(null);
@@ -190,9 +204,13 @@ describe('GoogleDriveSyncService Safari authentication', () => {
       fileID: 'native-file-id',
       json: expect.any(String),
     });
-    expect(JSON.parse(sendNativeMessage.mock.calls[0][1].json).items).toEqual([
-      { id: '1', text: 'Hi', tags: [], createdAt: 1 },
-    ]);
+    const nativeUpload = sendNativeMessage.mock.calls.find(
+      ([, message]) => message.action === 'googleDriveUploadFile',
+    )?.[1];
+    if (typeof nativeUpload?.json !== 'string') throw new Error('No native Drive media write');
+    expect(JSON.parse(nativeUpload.json)).toMatchObject({
+      items: [{ id: '1', text: 'Hi', tags: [], createdAt: 1 }],
+    });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -216,7 +234,10 @@ describe('GoogleDriveSyncService Safari authentication', () => {
     await expect(
       service.uploadPromptsOnly([{ id: '1', text: 'Hi', tags: [], createdAt: 1 }]),
     ).resolves.toBe(false);
-    expect(sendNativeMessage).toHaveBeenCalledOnce();
+    expect(sendNativeMessage).not.toHaveBeenCalledWith(
+      'com.yourCompany.Gemini-Voyager',
+      expect.objectContaining({ action: 'googleDriveUploadFile' }),
+    );
     await expect(service.getState()).resolves.toMatchObject({
       isAuthenticated: false,
       error: expect.stringContaining('authorized again'),
@@ -231,26 +252,41 @@ describe('GoogleDriveSyncService Safari authentication', () => {
       requiresAppLaunch: false,
     });
     ensureSafariGoogleDriveFile.mockResolvedValue('native-file-id');
-    sendNativeMessage.mockResolvedValueOnce({
-      success: false,
-      code: 'drive_rate_limited',
-      retryAfterMs: 2500,
-      error: 'Google Drive is rate limiting requests.',
+    const transport = sendNativeMessage.getMockImplementation();
+    if (!transport) throw new Error('No native transport');
+    let limited = true;
+    sendNativeMessage.mockImplementation(async (app, message) => {
+      if (message.action === 'googleDriveUploadFile' && limited) {
+        limited = false;
+        return {
+          success: false,
+          code: 'drive_rate_limited',
+          retryAfterMs: 2500,
+          error: 'Google Drive is rate limiting requests.',
+        };
+      }
+      return transport(app, message);
     });
 
     const GoogleDriveSyncService = await loadServiceClass();
     const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
 
-    const upload = service.uploadPromptsOnly([{ id: '1', text: 'Hi', tags: [], createdAt: 1 }]);
+    let settled = false;
+    const upload = service
+      .uploadPromptsOnly([{ id: '1', text: 'Hi', tags: [], createdAt: 1 }])
+      .then((result) => {
+        settled = true;
+        return result;
+      });
     await vi.advanceTimersByTimeAsync(0);
-    expect(sendNativeMessage).toHaveBeenCalledOnce();
+    expect(limited).toBe(false);
+    expect(settled).toBe(false);
     await vi.advanceTimersByTimeAsync(2_499);
-    expect(sendNativeMessage).toHaveBeenCalledOnce();
+    expect(settled).toBe(false);
     await vi.advanceTimersByTimeAsync(1);
 
     await expect(upload).resolves.toBe(true);
-    expect(sendNativeMessage).toHaveBeenCalledTimes(2);
   });
 
   it('downloads Safari Drive data through the native process', async () => {
@@ -332,7 +368,6 @@ describe('GoogleDriveSyncService Safari iCloud provider', () => {
     const chromeMock = createChromeMock();
     (globalThis as { chrome: typeof chrome }).chrome = chromeMock;
     checkSafariICloudAccount.mockResolvedValue(undefined);
-    writeSafariICloudFile.mockResolvedValue(undefined);
 
     const GoogleDriveSyncService = await loadServiceClass();
     const service = createDriveTestClient(new GoogleDriveSyncService());
@@ -343,20 +378,28 @@ describe('GoogleDriveSyncService Safari iCloud provider', () => {
       service.uploadPromptsOnly([{ id: '1', text: 'Hi', tags: [], createdAt: 1 }]),
     ).resolves.toBe(true);
     expect(checkSafariICloudAccount).toHaveBeenCalled();
-    expect(writeSafariICloudFile).toHaveBeenCalledWith(
-      'gemini-voyager-prompts.json',
-      expect.objectContaining({ format: 'gemini-voyager.prompts.v1' }),
-    );
+    expect(cloudFiles.get('gemini-voyager-prompts.json')).toMatchObject({
+      format: 'gemini-voyager.prompts.v1',
+      items: [{ id: '1', text: 'Hi', tags: [], createdAt: 1 }],
+    });
     expect(chromeMock.storage.local.set).toHaveBeenCalledWith(
       expect.objectContaining({ gvSyncProvider: 'icloud' }),
     );
   });
 
-  it('does not retry an iCloud conflict and reports the merge-first recovery', async () => {
+  it('reports the merge-first recovery when bounded iCloud replans keep conflicting', async () => {
     (globalThis as { chrome: typeof chrome }).chrome = createChromeMock();
     checkSafariICloudAccount.mockResolvedValue(undefined);
-    writeSafariICloudFile.mockRejectedValue(
-      new Error('prompts changed on another device. Download and merge before uploading again.'),
+    const transport = sendNativeMessage.getMockImplementation();
+    if (!transport) throw new Error('No native transport');
+    sendNativeMessage.mockImplementation(async (app, message) =>
+      message.action === 'iCloudWriteUpload'
+        ? {
+            success: false,
+            code: 'icloud_conflict',
+            error: 'prompts changed on another device. Download and merge before uploading again.',
+          }
+        : transport(app, message),
     );
     isSafariICloudConflictError.mockReturnValue(true);
 
@@ -368,7 +411,7 @@ describe('GoogleDriveSyncService Safari iCloud provider', () => {
     await expect(
       service.uploadPromptsOnly([{ id: '1', text: 'Hi', tags: [], createdAt: 1 }]),
     ).resolves.toBe(false);
-    expect(writeSafariICloudFile).toHaveBeenCalledOnce();
+    expect(cloudFiles.size).toBe(0);
     await expect(service.getState()).resolves.toMatchObject({
       error: expect.stringContaining('Download and merge'),
     });
@@ -378,9 +421,16 @@ describe('GoogleDriveSyncService Safari iCloud provider', () => {
     vi.useFakeTimers();
     (globalThis as { chrome: typeof chrome }).chrome = createChromeMock();
     checkSafariICloudAccount.mockResolvedValue(undefined);
-    writeSafariICloudFile
-      .mockRejectedValueOnce(new Error('Try again'))
-      .mockResolvedValue(undefined);
+    const transport = sendNativeMessage.getMockImplementation();
+    if (!transport) throw new Error('No native transport');
+    let limited = true;
+    sendNativeMessage.mockImplementation(async (app, message) => {
+      if (message.action === 'iCloudWriteUpload' && limited) {
+        limited = false;
+        return { success: false, code: 'icloud_temporary_failure', error: 'Try again' };
+      }
+      return transport(app, message);
+    });
     getSafariICloudRetryDelay.mockReturnValue(2_500);
 
     const GoogleDriveSyncService = await loadServiceClass();
@@ -390,13 +440,16 @@ describe('GoogleDriveSyncService Safari iCloud provider', () => {
 
     const upload = service.uploadPromptsOnly([{ id: '1', text: 'Hi', tags: [], createdAt: 1 }]);
     await vi.advanceTimersByTimeAsync(0);
-    expect(writeSafariICloudFile).toHaveBeenCalledOnce();
+    expect(limited).toBe(false);
+    expect(cloudFiles.size).toBe(0);
     await vi.advanceTimersByTimeAsync(2_499);
-    expect(writeSafariICloudFile).toHaveBeenCalledOnce();
+    expect(cloudFiles.size).toBe(0);
     await vi.advanceTimersByTimeAsync(1);
 
     await expect(upload).resolves.toBe(true);
-    expect(writeSafariICloudFile).toHaveBeenCalledTimes(2);
+    expect(cloudFiles.get('gemini-voyager-prompts.json')).toMatchObject({
+      items: [{ id: '1', text: 'Hi', tags: [], createdAt: 1 }],
+    });
   });
 
   it('reports missing CloudKit files without a read failure', async () => {

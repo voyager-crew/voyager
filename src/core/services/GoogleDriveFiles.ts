@@ -1,5 +1,6 @@
 import type { DriveHistoryFile } from '@/core/types/driveHistory';
 import type { SyncProvider } from '@/core/types/sync';
+import type { CloudUploadWrittenFile } from '@/core/types/syncUploadReceipt';
 import { UnrecognizedDriveFileError, parseDriveJson } from '@/core/utils/driveReadResult';
 import {
   downloadSafariGoogleDriveFile,
@@ -13,8 +14,8 @@ import {
 import {
   getSafariICloudRetryDelay,
   isSafariICloudConflictError,
+  SafariICloudSyncError,
   readSafariICloudFile,
-  writeSafariICloudFile,
 } from '@/core/utils/safariICloudSync';
 
 import {
@@ -25,7 +26,13 @@ import {
 import { isSafariRuntime } from './GoogleDriveAuth';
 import type { GoogleDriveBackupFolder } from './GoogleDriveBackupFolder';
 import { GoogleDriveHistoryFiles } from './GoogleDriveHistoryFiles';
+import { uploadICloudWithReceipt } from './GoogleDriveICloudUpload';
 import { readSafariDriveMetadata, uploadSafariDriveWithMetadata } from './GoogleDriveMetadata';
+import {
+  DriveVersionChangedError,
+  DriveWriteUnchanged,
+  type DriveWriteCheck,
+} from './GoogleDriveWriteVersion';
 import { logger } from './LoggerService';
 
 export const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
@@ -86,8 +93,11 @@ export class GoogleDriveFiles {
     return this.historyOperation(() => this.history.list(token, sourceName));
   }
 
-  async trash(token: string, id: string): Promise<void> {
-    return this.historyOperation(() => this.history.trash(token, id));
+  async trash(token: string, id: string, beforeWrite?: DriveWriteCheck): Promise<void> {
+    return this.historyOperation(async () => {
+      await beforeWrite?.();
+      await this.history.trash(token, id);
+    });
   }
 
   private async historyOperation<T>(operation: () => Promise<T>): Promise<T> {
@@ -304,13 +314,32 @@ export class GoogleDriveFiles {
     return result.id;
   }
 
-  async upload(token: string, fileId: string, data: unknown): Promise<DriveFileMetadata | void> {
+  async upload(
+    token: string,
+    fileId: string,
+    data: unknown,
+    beforeWrite?: DriveWriteCheck,
+  ): Promise<
+    | (DriveFileMetadata & { uploadReceipt?: CloudUploadWrittenFile; previousText?: string | null })
+    | void
+  > {
     let delay = INITIAL_RETRY_DELAY_MS;
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
+        await beforeWrite?.();
         if (this.options.getProvider() === 'icloud') {
-          await writeSafariICloudFile(fileId, data);
-          return;
+          const { receipt: uploadReceipt, previousText } = await uploadICloudWithReceipt(
+            fileId,
+            data,
+          );
+          // iCloud has no status/baseline integration; only the native receipt is authoritative.
+          // An uncertain earlier attempt may already have changed the file; don't advertise full Undo.
+          return {
+            id: fileId,
+            md5Checksum: uploadReceipt.md5Checksum,
+            modifiedTime: new Date(0).toISOString(),
+            ...(attempt === 1 ? { uploadReceipt, previousText } : {}),
+          };
         }
 
         if (isSafariRuntime()) {
@@ -332,7 +361,11 @@ export class GoogleDriveFiles {
         return parseDriveFileMetadata(metadata);
       } catch (error) {
         // A malformed success receipt is not permission to repeat a media write that succeeded.
+        if (error instanceof DriveWriteUnchanged) return error.metadata;
         if (error instanceof DriveMetadataError) throw error;
+        if (error instanceof SafariICloudSyncError && error.code === 'icloud_invalid_payload')
+          throw error;
+        if (error instanceof DriveVersionChangedError) throw error;
         if (isSafariICloudConflictError(error)) throw error;
         if (this.markAuthLostIfNeeded(error)) throw error;
         if (attempt === MAX_RETRIES) throw error;
@@ -395,8 +428,14 @@ export class GoogleDriveFiles {
     });
   }
 
-  async uploadText(token: string, fileId: string, text: string): Promise<void> {
+  async uploadText(
+    token: string,
+    fileId: string,
+    text: string,
+    beforeWrite?: DriveWriteCheck,
+  ): Promise<void> {
     await this.retryMedia(async () => {
+      await beforeWrite?.();
       if (this.options.getProvider() === 'icloud') throw new Error('Upload failed');
       if (isSafariRuntime()) return uploadSafariGoogleDriveText(fileId, text);
       const response = await fetch(`${DRIVE_UPLOAD_BASE}/files/${fileId}?uploadType=media`, {
@@ -414,6 +453,7 @@ export class GoogleDriveFiles {
       try {
         return await operation();
       } catch (error) {
+        if (error instanceof DriveVersionChangedError) throw error;
         if (isSafariICloudConflictError(error)) throw error;
         if (this.markAuthLostIfNeeded(error)) throw error;
         if (attempt === MAX_RETRIES) throw error;

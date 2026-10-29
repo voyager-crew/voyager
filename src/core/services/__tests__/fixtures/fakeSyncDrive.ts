@@ -59,6 +59,8 @@ export class FakeSyncDrive {
       parents: [this.folder.id],
       createdTime: new Date((this.serverNow?.() ?? Date.now()) + this.sequence++).toISOString(),
     };
+    // Metadata reads do not themselves create a new cloud version or modification time.
+    this.metadata.set(id, metadata);
     return {
       ...metadata,
       md5Checksum: createHash('md5')

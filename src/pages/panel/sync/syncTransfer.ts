@@ -10,7 +10,9 @@ import type { CloudSyncContext, CloudSyncPayload } from '@/core/services/CloudSy
 import type { DownloadFailure } from '@/core/services/cloudSyncNotices';
 import type { CloudUploadReply } from '@/core/services/cloudSyncTransferReplies';
 import type { UploadGuardRefusedFile } from '@/core/types/syncUploadGuard';
+import type { CloudUploadReceipt } from '@/core/types/syncUploadReceipt';
 
+import { historyTargets } from './syncHistoryTargets';
 import { type SyncSend, parseRestoredFiles } from './syncProtocol';
 import { type SheetPage, rowPage } from './syncScopes';
 
@@ -25,6 +27,7 @@ export type UploadOutcome =
   | {
       readonly kind: 'uploaded';
       readonly payload: CloudSyncPayload;
+      readonly receipt: CloudUploadReceipt | null;
       /** The files landed but their sync status was not recorded (`sync_metadata_unavailable`). */
       readonly unrecorded: boolean;
     }
@@ -36,6 +39,8 @@ export type UploadOutcome =
   | {
       readonly kind: 'failed';
       readonly error: string;
+      readonly payload: CloudSyncPayload;
+      readonly receipt: CloudUploadReceipt | null;
       readonly excludedRows?: readonly SyncScopeRow[];
       readonly partial?: boolean;
     };
@@ -54,7 +59,8 @@ export type DownloadOutcome =
     };
 
 function uploadOutcome(reply: CloudUploadReply, payload: CloudSyncPayload): UploadOutcome {
-  if (reply.kind === 'uploaded') return { kind: 'uploaded', payload, unrecorded: false };
+  if (reply.kind === 'uploaded')
+    return { kind: 'uploaded', payload, receipt: reply.uploadReceipt, unrecorded: false };
   if (reply.kind === 'refused')
     return {
       kind: 'refused',
@@ -63,10 +69,12 @@ function uploadOutcome(reply: CloudUploadReply, payload: CloudSyncPayload): Uplo
     };
   // The content landed but its record did not: a success with a warning, never a retry.
   if (reply.error === 'sync_metadata_unavailable')
-    return { kind: 'uploaded', payload, unrecorded: true };
+    return { kind: 'uploaded', payload, receipt: reply.uploadReceipt, unrecorded: true };
   return {
     kind: 'failed',
     error: reply.error ?? 'sync_failed',
+    payload,
+    receipt: reply.uploadReceipt,
     ...(reply.excludedRows ? { excludedRows: reply.excludedRows } : {}),
     ...(reply.partial ? { partial: true } : {}),
   };
@@ -99,7 +107,8 @@ export async function answerRefusal(
     prepare: () => prepareCloudUpload(context, rowPage(page, context.payload.platform)),
   });
   if (next.kind === 'merge') return next;
-  if (next.kind === 'accountChanged') return { kind: 'failed', error: 'account_changed' };
+  if (next.kind === 'accountChanged')
+    return { kind: 'failed', error: 'account_changed', payload: context.payload, receipt: null };
   return uploadOutcome(next, answer.refusal.payload);
 }
 
@@ -158,6 +167,7 @@ export async function restoreRowFiles(
     type: 'gv.sync.restorePreviousVersion',
     payload: {
       files,
+      targets: historyTargets(payload, files),
       platform: payload.platform,
       accountScope: payload.accountScope,
       interactive: true,

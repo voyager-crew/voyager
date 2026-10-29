@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 
+import { createFakeICloudUploadTransport } from '@/core/services/__tests__/fixtures/fakeICloudUploadTransport';
 import { FakeSyncDrive } from '@/core/services/__tests__/fixtures/fakeSyncDrive';
 import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
@@ -235,7 +236,22 @@ export async function createGuardDevice(
   });
   const drive = new FakeSyncDrive();
   vi.stubGlobal('fetch', drive.fetch);
+  const cloudUploads = createFakeICloudUploadTransport({
+    readText: async (name) => {
+      await drive.beforeRead?.(name);
+      if (drive.failReads.has(name)) throw new Error('iCloud download failed');
+      return drive.files.get(name) ?? null;
+    },
+    writeText: async (name, text) => {
+      await drive.beforeWrite?.(name, text);
+      if (drive.failWrites.has(name)) throw new Error('iCloud upload failed');
+      drive.files.set(name, text);
+      drive.writes.push(name);
+    },
+  });
   native.mockImplementation(async (_app: string, message: Record<string, unknown>) => {
+    const cloudResponse = await cloudUploads(message);
+    if (cloudResponse) return cloudResponse;
     const name = String(message.fileName ?? message.fileID ?? '');
     switch (message.action) {
       case 'googleDriveGetSession':
@@ -347,11 +363,6 @@ export async function createGuardDevice(
           success: true,
           data: { found: drive.files.has(name), json: drive.files.get(name) },
         };
-      case 'iCloudWriteFile':
-        await drive.beforeWrite?.(name, String(message.json));
-        drive.files.set(name, String(message.json));
-        drive.writes.push(name);
-        return { success: true, data: { saved: true } };
       default:
         throw new Error(`Unexpected guard native action ${String(message.action)}`);
     }

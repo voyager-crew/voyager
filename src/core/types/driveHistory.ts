@@ -15,6 +15,7 @@ export interface DriveHistoryFile {
 
 export type DriveHistoryRestoreFile =
   | { name: string; status: 'restored'; historyId: string }
+  | { name: string; status: 'removed' | 'kept' }
   | {
       name: string;
       status:

@@ -354,6 +354,8 @@ describe('scope-row status through real background handlers', () => {
     });
     const before = structuredClone(d.values[StorageKeys.CLOUD_SYNC_BOOKKEEPING]);
     d.values[StorageKeys.PROMPT_ITEMS] = [syncTestPrompt('new')];
+    // An unchanged settings file now needs no PATCH; fail a real changed-file write.
+    d.syncValues[StorageKeys.CHAT_WIDTH] = 81;
     d.drive.failWrites.add('gemini-voyager-settings.json');
     const pending = d.request('gv.sync.upload', { selection: 'shared' });
     await vi.runAllTimersAsync();

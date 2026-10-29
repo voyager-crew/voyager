@@ -1,8 +1,10 @@
+import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import { GoogleDriveAuth } from '../GoogleDriveAuth';
 import { GoogleDriveSyncService } from '../GoogleDriveSyncService';
 import type { GoogleDriveSyncTransfer } from '../GoogleDriveSyncTransfer';
+import { createFakeICloudUploadTransport } from './fixtures/fakeICloudUploadTransport';
 
 const native = vi.hoisted(() => vi.fn());
 vi.mock('webextension-polyfill', () => ({ default: { runtime: { sendNativeMessage: native } } }));
@@ -55,7 +57,16 @@ it.each(['provider switch', 'sign-out'] as const)(
     let nativeReadFailure = true;
     const histories = new Map<string, { source: string; createdTime: string }>();
     const trashed = new Set<string>();
+    const cloudUploads = createFakeICloudUploadTransport({
+      readText: (name) => (cloud.has(name) ? JSON.stringify(cloud.get(name)) : null),
+      writeText: (name, text) => {
+        cloud.set(name, JSON.parse(text));
+        contentWrites.push('icloud');
+      },
+    });
     native.mockImplementation(async (_app: string, message: Record<string, unknown>) => {
+      const cloudResponse = await cloudUploads(message);
+      if (cloudResponse) return cloudResponse;
       switch (message.action) {
         case 'googleDriveGetSession':
           tokenRequests.push('googleDrive');
@@ -69,6 +80,22 @@ it.each(['provider switch', 'sign-out'] as const)(
           return { success: true, data: { fileID: message.fileName } };
         case 'googleDriveEnsureFile':
           return { success: true, data: { fileID: message.fileName } };
+        case 'googleDriveGetFileMetadata': {
+          const id = String(message.fileID);
+          return {
+            success: true,
+            data: drive.has(id)
+              ? {
+                  found: true,
+                  id,
+                  md5Checksum: createHash('md5')
+                    .update(JSON.stringify(drive.get(id)))
+                    .digest('hex'),
+                  modifiedTime: '2026-10-29T00:00:00Z',
+                }
+              : { found: false },
+          };
+        }
         case 'googleDriveCreateFile': {
           const fileID = String(message.fileName);
           const properties = message.appProperties as Record<string, string>;
@@ -117,14 +144,10 @@ it.each(['provider switch', 'sign-out'] as const)(
             data: {
               saved: true,
               id: message.fileID,
-              md5Checksum: 'uploaded',
+              md5Checksum: createHash('md5').update(String(message.json)).digest('hex'),
               modifiedTime: '2026-10-29T00:00:00Z',
             },
           };
-        case 'iCloudWriteFile':
-          cloud.set(String(message.fileName), JSON.parse(String(message.json)));
-          contentWrites.push('icloud');
-          return { success: true, data: { saved: true } };
         default:
           throw new Error(`Unexpected native action: ${message.action}`);
       }

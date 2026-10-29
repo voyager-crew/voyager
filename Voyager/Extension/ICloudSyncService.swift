@@ -15,6 +15,39 @@ final class ICloudSyncService {
     container.privateCloudDatabase
   }
 
+  func readUploadVersion(
+    fileName: String,
+    completion: @escaping (Result<VoyagerICloudUploadVersionResponse, Error>) -> Void
+  ) {
+    ICloudUploadStore(database: database).fetch(fileName: fileName) { result in
+      completion(
+        result.map { current in
+          VoyagerICloudUploadVersionResponse(
+            json: current?.json, version: current?.version, found: current != nil
+          )
+        })
+    }
+  }
+
+  func writeUpload(
+    request: VoyagerICloudUploadRequest,
+    completion: @escaping (Result<VoyagerICloudUploadReceipt, Error>) -> Void
+  ) {
+    VoyagerICloudUploadTransactions(store: ICloudUploadStore(database: database)).write(
+      fileName: request.fileName, json: request.json, expectedVersion: request.expectedVersion,
+      completion: completion
+    )
+  }
+
+  func undoUpload(
+    receipt: VoyagerICloudUploadReceipt,
+    completion: @escaping (VoyagerICloudUndoResponse) -> Void
+  ) {
+    VoyagerICloudUploadTransactions(store: ICloudUploadStore(database: database)).undo(
+      receipt, completion: completion
+    )
+  }
+
   func accountStatus(completion: @escaping (Result<Void, Error>) -> Void) {
     container.accountStatus { status, error in
       if let error {
@@ -27,50 +60,26 @@ final class ICloudSyncService {
     }
   }
 
-  func write(fileName: String, json: String, completion: @escaping (Result<Void, Error>) -> Void) {
-    let temporaryURL = FileManager.default.temporaryDirectory
-      .appendingPathComponent("\(Self.temporaryFilePrefix)\(UUID().uuidString).json")
+  func readHistory(
+    fileName: String, includingHistoryId: String?,
+    completion: @escaping (Result<VoyagerICloudHistoryResponse, Error>) -> Void
+  ) {
+    ICloudHistoryOperations(database: database).read(
+      fileName: fileName, includingHistoryId: includingHistoryId, completion: completion)
+  }
 
-    do {
-      try Data(json.utf8).write(to: temporaryURL, options: .atomic)
-    } catch {
-      completion(.failure(error))
-      return
-    }
+  func restoreHistory(
+    _ request: VoyagerICloudRestoreHistoryRequest,
+    completion: @escaping (VoyagerICloudUndoResponse) -> Void
+  ) {
+    ICloudHistoryOperations(database: database).restore(request, completion: completion)
+  }
 
-    let recordID = recordID(for: fileName)
-    let fetchOperation = CKFetchRecordsOperation(recordIDs: [recordID])
-    fetchOperation.desiredKeys = []
-    fetchOperation.fetchRecordsCompletionBlock = { records, error in
-      if VoyagerICloudFailureMapper.primaryCloudKitError(from: error)?.code == .unknownItem {
-        self.save(
-          record: CKRecord(recordType: "VoyagerSyncFile", recordID: recordID),
-          fileName: fileName,
-          temporaryURL: temporaryURL,
-          completion: completion
-        )
-        return
-      }
-      if let error {
-        try? FileManager.default.removeItem(at: temporaryURL)
-        completion(.failure(VoyagerICloudFailureMapper.map(error: error, fileName: fileName)))
-        return
-      }
-      let record = records?[recordID]
-      guard let record else {
-        try? FileManager.default.removeItem(at: temporaryURL)
-        completion(.failure(VoyagerICloudFailure.invalidPayload))
-        return
-      }
-
-      self.save(
-        record: record,
-        fileName: fileName,
-        temporaryURL: temporaryURL,
-        completion: completion
-      )
-    }
-    database.add(fetchOperation)
+  func pruneHistory(
+    _ request: VoyagerICloudPruneHistoryRequest,
+    completion: @escaping (Result<VoyagerICloudDeleteResponse, Error>) -> Void
+  ) {
+    ICloudHistoryOperations(database: database).prune(request, completion: completion)
   }
 
   func read(fileName: String, completion: @escaping (Result<String?, Error>) -> Void) {
@@ -102,90 +111,8 @@ final class ICloudSyncService {
     }
   }
 
-  func deleteBackup(completion: @escaping (Result<Int, Error>) -> Void) {
-    collectRecordIDs(cursor: nil, collected: [], completion: completion)
-  }
-
-  private func collectRecordIDs(
-    cursor: CKQueryOperation.Cursor?,
-    collected: [CKRecord.ID],
-    completion: @escaping (Result<Int, Error>) -> Void
-  ) {
-    let operation: CKQueryOperation
-    if let cursor {
-      operation = CKQueryOperation(cursor: cursor)
-    } else {
-      operation = CKQueryOperation(
-        query: CKQuery(recordType: "VoyagerSyncFile", predicate: NSPredicate(value: true))
-      )
-    }
-
-    var recordIDs = collected
-    operation.desiredKeys = []
-    operation.recordFetchedBlock = { record in
-      recordIDs.append(record.recordID)
-    }
-    operation.queryCompletionBlock = { nextCursor, error in
-      if let error {
-        completion(.failure(VoyagerICloudFailureMapper.map(error: error)))
-        return
-      }
-      if let nextCursor {
-        self.collectRecordIDs(
-          cursor: nextCursor,
-          collected: recordIDs,
-          completion: completion
-        )
-        return
-      }
-      self.delete(recordIDs: recordIDs, completion: completion)
-    }
-    database.add(operation)
-  }
-
-  private func delete(
-    recordIDs: [CKRecord.ID],
-    completion: @escaping (Result<Int, Error>) -> Void
-  ) {
-    guard !recordIDs.isEmpty else {
-      completion(.success(0))
-      return
-    }
-
-    let operation = CKModifyRecordsOperation(recordIDsToDelete: recordIDs)
-    operation.isAtomic = true
-    operation.modifyRecordsCompletionBlock = { _, deletedRecordIDs, error in
-      if let error {
-        completion(.failure(VoyagerICloudFailureMapper.map(error: error)))
-      } else {
-        completion(.success(deletedRecordIDs?.count ?? recordIDs.count))
-      }
-    }
-    database.add(operation)
-  }
-
-  private func save(
-    record: CKRecord,
-    fileName: String,
-    temporaryURL: URL,
-    completion: @escaping (Result<Void, Error>) -> Void
-  ) {
-    record["name"] = fileName as CKRecordValue
-    record["payload"] = CKAsset(fileURL: temporaryURL)
-    record["updatedAt"] = Date() as CKRecordValue
-
-    let operation = CKModifyRecordsOperation(recordsToSave: [record])
-    operation.isAtomic = true
-    operation.savePolicy = .ifServerRecordUnchanged
-    operation.modifyRecordsCompletionBlock = { _, _, error in
-      try? FileManager.default.removeItem(at: temporaryURL)
-      if let error {
-        completion(.failure(VoyagerICloudFailureMapper.map(error: error, fileName: fileName)))
-      } else {
-        completion(.success(()))
-      }
-    }
-    database.add(operation)
+  func deleteBackup(completion: @escaping (Result<VoyagerICloudDeleteResponse, Error>) -> Void) {
+    ICloudBackupDeletion(database: database).deleteBackup(completion: completion)
   }
 
   private func recordID(for fileName: String) -> CKRecord.ID {

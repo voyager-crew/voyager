@@ -224,14 +224,27 @@ export async function handleCloudSyncUpload(
         ok: false,
         error: cloudSyncFailureCode(result.error) ?? 'highlight_upload_failed',
         partial: true,
+        uploadReceipt: drive.getUploadReceipt(),
         state: await drive.getState(),
       };
     await notifyHighlights(highlightScope);
   }
   // No baseline is written until every selected file and owner has succeeded.
-  if (success) await drive.commitBookkeeping(localRequests);
+  if (success) {
+    try {
+      await drive.commitBookkeeping(localRequests);
+    } catch {
+      return {
+        ok: false,
+        error: 'sync_metadata_unavailable',
+        uploadReceipt: drive.getUploadReceipt(),
+        state: await drive.getState(),
+      };
+    }
+  }
   return {
     ok: success,
+    uploadReceipt: drive.getUploadReceipt(),
     ...(upload.kind === 'failed' && upload.code ? { error: upload.code } : {}),
     selection: { site: selection.site, shared: selection.shared },
     catalog: { sites: Object.keys(catalog.outlines), starSites: catalog.starSites },

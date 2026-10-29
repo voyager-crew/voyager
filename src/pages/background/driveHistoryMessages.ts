@@ -18,6 +18,7 @@ import {
 import type { GoogleDriveSyncTransfer } from '@/core/services/GoogleDriveSyncTransfer';
 import type { DriveHistoryRestoreTarget } from '@/core/types/driveHistory';
 import type { SyncAccountScope } from '@/core/types/sync';
+import { parseCloudUploadReceipt } from '@/core/types/syncUploadReceipt';
 import { toSyncAccountScope } from '@/core/utils/syncAccountScope';
 import { FOLDER_PLATFORMS, FOLDER_PLATFORM_IDS } from '@/features/folder/platforms';
 import { catalogStarsFileName } from '@/features/savedLibrary/starSitePolicy';
@@ -66,6 +67,7 @@ export async function handleDriveHistoryMessage(
     )
   )
     return { ok: false, error: 'invalid_sync_files' };
+  const names = raw.files;
   const platform = parseSyncPlatform('platform' in raw ? raw.platform : undefined);
   if (!platform || !isTrustedSyncMessageSender(sender, platform))
     return { ok: false, error: 'untrusted_sender' };
@@ -94,6 +96,34 @@ export async function handleDriveHistoryMessage(
   )
     return { ok: false, error: 'untrusted_sender' };
   const explicitScope = parseSyncScope('accountScope' in raw ? raw.accountScope : null);
+  const explicitTargets = new Map<string, SyncAccountScope | null>();
+  if ('targets' in raw) {
+    if (!Array.isArray(raw.targets) || raw.targets.length !== raw.files.length)
+      return { ok: false, error: 'invalid_sync_files' };
+    for (const target of raw.targets) {
+      if (
+        !target ||
+        typeof target !== 'object' ||
+        !('name' in target) ||
+        typeof target.name !== 'string' ||
+        !raw.files.includes(target.name) ||
+        explicitTargets.has(target.name) ||
+        !('accountScope' in target) ||
+        (target.accountScope !== null && !parseSyncScope(target.accountScope))
+      )
+        return { ok: false, error: 'invalid_sync_files' };
+      explicitTargets.set(target.name, parseSyncScope(target.accountScope));
+    }
+  }
+  const uploadReceipt = 'uploadReceipt' in raw ? parseCloudUploadReceipt(raw.uploadReceipt) : null;
+  if (
+    'uploadReceipt' in raw &&
+    (!uploadReceipt ||
+      !uploadReceipt.complete ||
+      uploadReceipt.files.length !== raw.files.length ||
+      uploadReceipt.files.some((file) => !names.includes(file.name)))
+  )
+    return { ok: false, error: 'invalid_sync_files' };
   for (const name of raw.files) {
     const base = driveHistoryBaseName(name);
     const shared = [PROMPTS_FILE_NAME, SETTINGS_FILE_NAME, PLUGINS_FILE_NAME].includes(base);
@@ -115,18 +145,21 @@ export async function handleDriveHistoryMessage(
         // Hierarchy has its own page account even when folders use the shared bucket.
         (base === TIMELINE_HIERARCHY_FILE_NAME && explicitScope !== null) ||
         (await accountIsolationService.isIsolationEnabled({ platform: owner, pageUrl })));
-    const accountScope = scoped
-      ? (explicitScope ??
-        toSyncAccountScope(await accountIsolationService.resolveAccountScope({ pageUrl }, false)))
-      : null;
+    const accountScope = explicitTargets.has(name)
+      ? (explicitTargets.get(name) ?? null)
+      : scoped
+        ? (explicitScope ??
+          toSyncAccountScope(await accountIsolationService.resolveAccountScope({ pageUrl }, false)))
+        : null;
     targets.push({ name, accountScope });
   }
   const files = await drive.restorePreviousVersion(
     targets,
     !('interactive' in raw) || raw.interactive !== false,
+    uploadReceipt ?? undefined,
   );
   return {
-    ok: files.every((file) => file.status === 'restored'),
+    ok: files.every((file) => ['restored', 'removed', 'kept'].includes(file.status)),
     files,
     state: await drive.getState(),
   };

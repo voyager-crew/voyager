@@ -57,7 +57,7 @@ describe('upload history media preservation', () => {
     expect(d.drive.payload(source)).toEqual(promptPayload('new'));
   });
 
-  it('preserves unrecognized old media verbatim while a zero-byte current file needs no history', async () => {
+  it('preserves unrecognized and existing zero-byte media for an exact upload Undo', async () => {
     const d = fixture();
     d.drive.put(source, {});
     d.drive.files.set(source, '{a future or malformed payload\n');
@@ -71,7 +71,8 @@ describe('upload history media preservation', () => {
       format: 'gemini-voyager.plugins.v1',
       data: {},
     });
-    expect(d.drive.histories(emptySource)).toEqual([]);
+    expect(d.drive.histories(emptySource)).toHaveLength(1);
+    expect(d.drive.files.get(d.drive.histories(emptySource)[0].id)).toBe('');
     expect(d.drive.payload(emptySource)).toEqual({
       format: 'gemini-voyager.plugins.v1',
       data: {},

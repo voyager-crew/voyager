@@ -4,6 +4,7 @@ import { createStarStore } from '@/features/savedLibrary/starStore';
 
 import { GoogleDriveSyncService } from '../GoogleDriveSyncService';
 import { createDriveTestClient } from './fixtures/driveTestClient';
+import { createFakeICloudUploadTransport } from './fixtures/fakeICloudUploadTransport';
 
 const native = vi.hoisted(() => vi.fn());
 vi.mock('webextension-polyfill', () => ({ default: { runtime: { sendNativeMessage: native } } }));
@@ -40,7 +41,16 @@ it('an upload started during a provider switch writes nothing to the new provide
   vi.stubGlobal('chrome', { storage: { local: area } });
   const remote = new Map<string, unknown>();
   const writes: string[] = [];
+  const cloudUploads = createFakeICloudUploadTransport({
+    readText: (name) => (remote.has(name) ? JSON.stringify(remote.get(name)) : null),
+    writeText: (name, text) => {
+      writes.push(name);
+      remote.set(name, JSON.parse(text));
+    },
+  });
   native.mockImplementation(async (_app: string, message: Record<string, unknown>) => {
+    const cloudResponse = await cloudUploads(message);
+    if (cloudResponse) return cloudResponse;
     if (message.action === 'googleDriveGetSession') {
       tokenRequests.push(String(message.action));
       return { success: true, data: { signedIn: true } };
@@ -51,11 +61,6 @@ it('an upload started during a provider switch writes nothing to the new provide
         success: true,
         data: { found: remote.has(fileName), json: JSON.stringify(remote.get(fileName)) },
       };
-    }
-    if (message.action === 'iCloudWriteFile') {
-      writes.push(fileName);
-      remote.set(fileName, JSON.parse(String(message.json)));
-      return { success: true, data: { saved: true } };
     }
     throw new Error(`Unexpected action ${message.action}`);
   });

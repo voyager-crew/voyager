@@ -1,6 +1,7 @@
 import type { DriveHistoryRestoreFile, DriveHistoryRestoreTarget } from '@/core/types/driveHistory';
 import type { SyncState } from '@/core/types/sync';
 import type { SyncAccountScope } from '@/core/types/sync';
+import type { CloudUploadReceipt } from '@/core/types/syncUploadReceipt';
 
 import type { GoogleDriveBookkeepingTurn } from './GoogleDriveBookkeepingTurn';
 import type { GoogleDriveCatalogTransfers } from './GoogleDriveCatalogTransfers';
@@ -10,6 +11,7 @@ import type { GoogleDriveSharedTransfers } from './GoogleDriveSharedTransfers';
 /** A service is queued; only an explicitly marked turn port may be used inside its callback. */
 export interface GoogleDriveSyncTransfer {
   readonly kind: 'sync-turn';
+  getUploadReceipt(): CloudUploadReceipt;
   beginDownloadBookkeeping(): void;
   getFileStatus: GoogleDriveBookkeepingTurn['status'];
   getDownloadBookkeeping: GoogleDriveBookkeepingTurn['reads'];
@@ -21,6 +23,7 @@ export interface GoogleDriveSyncTransfer {
   restorePreviousVersion(
     targets: readonly DriveHistoryRestoreTarget[],
     interactive?: boolean,
+    receipt?: CloudUploadReceipt,
   ): Promise<DriveHistoryRestoreFile[]>;
   upload: GoogleDriveFolderTransfers['upload'];
   download: GoogleDriveFolderTransfers['download'];

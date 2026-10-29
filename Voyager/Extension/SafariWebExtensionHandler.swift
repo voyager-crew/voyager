@@ -55,12 +55,38 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
       trashGoogleDriveFile(fileID: fileID, context: context)
     case .iCloudAccountStatus:
       handleICloudAccountStatus(context: context)
-    case .iCloudWriteFile(let request):
-      writeICloudFile(request: request, context: context)
     case .iCloudReadFile(let fileName):
       readICloudFile(fileName: fileName, context: context)
     case .iCloudDeleteBackup:
       deleteICloudBackup(context: context)
+    case .iCloudReadUploadVersion(let fileName):
+      readICloudUploadVersion(fileName: fileName, context: context)
+    case .iCloudWriteUpload(let request):
+      writeICloudUpload(request: request, context: context)
+    case .iCloudUndoUpload(let receipt):
+      ICloudSyncService.shared.undoUpload(receipt: receipt) { response in
+        self.respondWithSuccess(context: context, data: response)
+      }
+    case .iCloudReadHistory(let fileName, let includingHistoryId):
+      ICloudSyncService.shared.readHistory(
+        fileName: fileName, includingHistoryId: includingHistoryId
+      ) { result in
+        switch result {
+        case .success(let response): self.respondWithSuccess(context: context, data: response)
+        case .failure(let error): self.respondWithICloudError(context: context, error: error)
+        }
+      }
+    case .iCloudRestoreHistory(let request):
+      ICloudSyncService.shared.restoreHistory(request) { response in
+        self.respondWithSuccess(context: context, data: response)
+      }
+    case .iCloudPruneHistory(let request):
+      ICloudSyncService.shared.pruneHistory(request) { result in
+        switch result {
+        case .success(let response): self.respondWithSuccess(context: context, data: response)
+        case .failure(let error): self.respondWithICloudError(context: context, error: error)
+        }
+      }
     case .copyImageToPasteboard(let request):
       copyImageToPasteboard(request: request, context: context)
     }
@@ -100,19 +126,20 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     }
   }
 
-  private func writeICloudFile(
-    request: VoyagerICloudWriteRequest,
-    context: NSExtensionContext
-  ) {
-    ICloudSyncService.shared.write(fileName: request.fileName, json: request.json) { result in
+  private func readICloudUploadVersion(fileName: String, context: NSExtensionContext) {
+    ICloudSyncService.shared.readUploadVersion(fileName: fileName) { result in
       switch result {
-      case .success:
-        self.respondWithSuccess(
-          context: context,
-          data: VoyagerICloudWriteResponse(saved: true)
-        )
-      case .failure(let error):
-        self.respondWithICloudError(context: context, error: error)
+      case .success(let response): self.respondWithSuccess(context: context, data: response)
+      case .failure(let error): self.respondWithICloudError(context: context, error: error)
+      }
+    }
+  }
+
+  private func writeICloudUpload(request: VoyagerICloudUploadRequest, context: NSExtensionContext) {
+    ICloudSyncService.shared.writeUpload(request: request) { result in
+      switch result {
+      case .success(let response): self.respondWithSuccess(context: context, data: response)
+      case .failure(let error): self.respondWithICloudError(context: context, error: error)
       }
     }
   }
@@ -134,10 +161,10 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
   private func deleteICloudBackup(context: NSExtensionContext) {
     ICloudSyncService.shared.deleteBackup { result in
       switch result {
-      case .success(let deleted):
+      case .success(let response):
         self.respondWithSuccess(
           context: context,
-          data: VoyagerICloudDeleteResponse(deleted: deleted)
+          data: response
         )
       case .failure(let error):
         self.respondWithICloudError(context: context, error: error)

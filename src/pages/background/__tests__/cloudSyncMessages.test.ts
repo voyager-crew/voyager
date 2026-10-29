@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
     uploadPromptsOnly: vi.fn(),
     getState: vi.fn(),
     commitBookkeeping: vi.fn(),
+    getUploadReceipt: vi.fn(),
     getDownloadBookkeeping: vi.fn(),
     beginDownloadBookkeeping: vi.fn(),
     downloadCatalogDataResult: vi.fn(),
@@ -129,6 +130,7 @@ beforeEach(() => {
   mocks.drive.uploadPromptsOnly.mockResolvedValue(true);
   mocks.drive.getState.mockResolvedValue(state);
   mocks.drive.commitBookkeeping.mockResolvedValue(undefined);
+  mocks.drive.getUploadReceipt.mockReturnValue({ files: [], complete: true });
   mocks.drive.getDownloadBookkeeping.mockResolvedValue([]);
   mocks.drive.downloadCatalogDataResult.mockResolvedValue({
     outlines: {},
@@ -319,7 +321,7 @@ describe('cloud sync messages', () => {
         },
         sender(),
       ),
-    ).resolves.toEqual({ ok: false, partial: true, error: 'highlight_upload_failed', state });
+    ).resolves.toMatchObject({ ok: false, partial: true, error: 'highlight_upload_failed', state });
     expect(mocks.drive.upload.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.highlights.push.mock.invocationCallOrder[0],
     );

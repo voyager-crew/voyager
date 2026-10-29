@@ -11,10 +11,11 @@ import type {
 import type { PluginStateMap } from '@/features/plugins/storage/pluginState';
 import type { StarredMessagesData } from '@/features/savedLibrary/starTypes';
 
-import type { DriveHistoryRestoreFile } from './driveHistory';
+import type { DriveHistoryRestoreFile, DriveHistoryRestoreTarget } from './driveHistory';
 import type { FolderData } from './folder';
 import type { HighlightExportPayloadV1 } from './highlight';
 import type { UploadGuardRefusedFile } from './syncUploadGuard';
+import type { CloudUploadReceipt } from './syncUploadReceipt';
 
 /**
  * Sync mode configuration
@@ -274,6 +275,8 @@ export interface SyncMessage {
     /** Explicitly accepted guard refusals for this upload request only. */
     force?: boolean;
     files?: string[];
+    targets?: DriveHistoryRestoreTarget[];
+    uploadReceipt?: CloudUploadReceipt;
   };
 }
 
@@ -287,4 +290,5 @@ export interface SyncResponse {
   data?: SyncData;
   refusedFiles?: UploadGuardRefusedFile[];
   files?: DriveHistoryRestoreFile[];
+  uploadReceipt?: CloudUploadReceipt;
 }

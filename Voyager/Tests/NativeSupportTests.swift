@@ -314,10 +314,6 @@ final class NativeSupportTests: XCTestCase {
       ),
       (["action": "iCloudAccountStatus"], .iCloudAccountStatus),
       (
-        ["action": "iCloudWriteFile", "fileName": "prompts.json", "json": "{}"],
-        .iCloudWriteFile(VoyagerICloudWriteRequest(fileName: "prompts.json", json: "{}"))
-      ),
-      (
         ["action": "iCloudReadFile", "fileName": "prompts.json"],
         .iCloudReadFile(fileName: "prompts.json")
       ),
@@ -331,15 +327,6 @@ final class NativeSupportTests: XCTestCase {
     for (message, expected) in cases {
       XCTAssertEqual(try VoyagerNativeMessageCodec.decodeRequest(from: message), expected)
     }
-  }
-
-  func testNativeMessageRejectsMissingRequiredPayload() {
-    XCTAssertThrowsError(
-      try VoyagerNativeMessageCodec.decodeRequest(from: [
-        "action": "iCloudWriteFile",
-        "fileName": "prompts.json",
-      ])
-    )
   }
 
   func testHistoryCreateRoundTripsUnknownMediaWithoutParsingIt() throws {
@@ -400,7 +387,8 @@ final class NativeSupportTests: XCTestCase {
     let prefix = "multipart/related; boundary="
     XCTAssertTrue(upload.contentType.hasPrefix(prefix))
     let boundary = String(upload.contentType.dropFirst(prefix.count))
-    let metadataHeader = Data("--\(boundary)\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n".utf8)
+    let metadataHeader = Data(
+      "--\(boundary)\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n".utf8)
     let separator = Data("\r\n--\(boundary)\r\nContent-Type: application/json\r\n\r\n".utf8)
     XCTAssertTrue(upload.body.starts(with: metadataHeader))
     let mediaBoundary = try XCTUnwrap(upload.body.range(of: separator))

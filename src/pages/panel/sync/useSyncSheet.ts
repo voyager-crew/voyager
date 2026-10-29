@@ -28,7 +28,7 @@ import {
 } from './syncActions';
 import { restoredLabel, runFailureText, runUndoText, syncedLabel } from './syncCopy';
 import { type RunKind, isPending, isSyncableRow, lastSyncedAt, planRun } from './syncPlan';
-import { type RowStatus, type StatusRow, sendSync } from './syncProtocol';
+import { type RowStatus, sendSync } from './syncProtocol';
 import { type RunState, startRunMachine } from './syncRunMachine';
 import type { SheetPage } from './syncScopes';
 import { EMPTY_SHEET, type SheetNotice, startSheetMachine } from './syncSheetMachine';
@@ -82,7 +82,6 @@ export function useSyncSheet(inputs: SyncSheetInputs) {
   const syncSites = inputs.sites.filter((site) => isSyncableRow(site.key));
   const idle = inputs.idleSites.filter((site) => isSyncableRow(site.key));
   const dataRef = useRef(EMPTY_SHEET);
-  const before = useRef<ReadonlyMap<string, StatusRow>>(new Map());
 
   const env = useMemo<SheetEnvironment>(
     () => ({
@@ -125,7 +124,7 @@ export function useSyncSheet(inputs: SyncSheetInputs) {
     dataRef.current = sheet.data;
   }, [sheet.data]);
   const [run, sendRun] = useMachine(
-    () => startRunMachine({ runStep: createStepRunner(env, () => before.current) }),
+    () => startRunMachine({ runStep: createStepRunner(env) }),
     IDLE_RUN,
   );
 
@@ -230,7 +229,6 @@ export function useSyncSheet(inputs: SyncSheetInputs) {
   const start = (kind: RunKind) => {
     setMenuOpen(false);
     setStatusRecordWarning(false);
-    before.current = new Map(sheet.data.rows.map((row) => [row.row, row]));
     sendRun({ type: 'start', steps: planRun(kind, runnable) });
   };
 

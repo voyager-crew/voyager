@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GoogleDriveBackupFolder } from '../GoogleDriveBackupFolder';
 import { GoogleDriveFiles } from '../GoogleDriveFiles';
 import { GoogleDriveUploadFiles } from '../GoogleDriveUploadFiles';
+import { DriveVersionChangedError } from '../GoogleDriveWriteVersion';
 import { FakeSyncDrive } from './fixtures/fakeSyncDrive';
 
 vi.mock('@/core/utils/browser', () => ({
@@ -38,6 +39,43 @@ afterEach(() => {
 });
 
 describe('Drive upload commit safety', () => {
+  it.each(['before commit', 'while archiving'])(
+    'refuses to upload into a file another device trashed %s',
+    async (timing) => {
+      const d = fixture();
+      d.drive.put(source, payload('original'));
+      const upload = d.upload();
+      upload.register(source);
+      await upload.prepare('token');
+      if (timing === 'before commit') d.drive.trashed.add(source);
+      else d.drive.beforeWrite = async () => void d.drive.trashed.add(source);
+
+      await expect(upload.write('token', source, payload('new'))).rejects.toBeInstanceOf(
+        DriveVersionChangedError,
+      );
+
+      expect(d.drive.payload(source)).toEqual(payload('original'));
+      expect(d.drive.trashed.has(source)).toBe(true);
+      expect(d.drive.writes).not.toContain(source);
+      expect(upload.getReceipt().files).toEqual([]);
+    },
+  );
+
+  it('archives the other device version that arrived after this upload prepared', async () => {
+    const d = fixture();
+    d.drive.put(source, payload('original'));
+    const deviceA = d.upload();
+    deviceA.register(source);
+    await deviceA.prepare('token');
+    await d.upload().write('token', source, payload('device B'));
+    await deviceA.write('token', source, payload('device A'));
+
+    expect(d.drive.payload(source)).toEqual(payload('device A'));
+    expect(d.drive.histories(source).map(({ id }) => d.drive.payload(id))).toContainEqual(
+      payload('device B'),
+    );
+  });
+
   it('restoring a revisited version can still be reversed to the immediately replaced content', async () => {
     const d = fixture();
     d.drive.put(source, payload('A'));

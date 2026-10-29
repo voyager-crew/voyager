@@ -1,5 +1,6 @@
 import type { DriveHistoryRestoreFile, DriveHistoryRestoreTarget } from '@/core/types/driveHistory';
 import type { SyncPlatform } from '@/core/types/sync';
+import type { CloudUploadReceipt } from '@/core/types/syncUploadReceipt';
 import {
   FOLDER_PLATFORMS,
   FOLDER_PLATFORM_IDS,
@@ -63,6 +64,7 @@ export async function restoreDrivePreviousVersion(
   },
   targets: readonly DriveHistoryRestoreTarget[],
   interactive = true,
+  receipt?: CloudUploadReceipt,
 ): Promise<DriveHistoryRestoreFile[]> {
   const names = targets.map(({ name }) => name);
   if (names.some((name) => !isDriveSyncFileName(name))) throw new Error('invalid_sync_files');
@@ -82,5 +84,5 @@ export async function restoreDrivePreviousVersion(
   options.uploads.setBeforeFirstWrite(async () => {
     await options.session.run(() => options.auth.getToken(interactive));
   });
-  return options.session.run(() => options.uploads.restoreHistory(token, names));
+  return options.session.run(() => options.uploads.restoreHistory(token, names, receipt));
 }
