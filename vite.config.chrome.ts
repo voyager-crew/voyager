@@ -145,6 +145,7 @@ export default mergeConfig(
       outDir,
       rollupOptions: {
         input: {
+          panel: resolve(__dirname, 'src/pages/panel/index.html'),
           // Opened by the background on first install; nothing in the manifest
           // references it, so it must be a build input of its own.
           welcome: resolve(__dirname, 'src/pages/welcome/index.html'),

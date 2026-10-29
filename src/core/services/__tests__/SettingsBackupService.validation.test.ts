@@ -169,6 +169,69 @@ describe('stored-only settings and safe restore', () => {
   });
 
   it.each(['merge', 'overwrite'] as const)(
+    '%s skips malformed panel shortcut fields without replacing local shortcuts',
+    async (mode) => {
+      const saved = {
+        enabled: false,
+        shortcuts: { next: { action: 'timeline:next', modifiers: [], key: 'n' } },
+      };
+      for (const panelToggle of [
+        null,
+        [],
+        { modifiers: 'Alt' },
+        { modifiers: ['AltGraph'] },
+        { key: 42 },
+        { code: 42 },
+        { code: '' },
+        { sequenceLength: 0 },
+        { sequenceLength: 1.5 },
+      ]) {
+        const state: Record<string, unknown> = { [StorageKeys.TIMELINE_SHORTCUTS]: saved };
+        await restoreBackupableSyncSettings(
+          {
+            [StorageKeys.TIMELINE_SHORTCUTS]: {
+              enabled: true,
+              shortcuts: { panelToggle },
+            },
+            [StorageKeys.CHAT_FONT_SIZE]: 120,
+          },
+          storageWith(state),
+          mode,
+        );
+        expect(state).toEqual({
+          [StorageKeys.TIMELINE_SHORTCUTS]: saved,
+          [StorageKeys.CHAT_FONT_SIZE]: 120,
+        });
+      }
+    },
+  );
+
+  it.each(['merge', 'overwrite'] as const)(
+    '%s restores an opted-in vv shortcut without adding defaults or dropping extra nested data',
+    async (mode) => {
+      const shortcuts = {
+        enabled: false,
+        shortcuts: {
+          previous: { action: 'timeline:previous', modifiers: [], key: 'p' },
+          panelToggle: { action: 'panel:toggle', modifiers: [], key: 'v', sequenceLength: 2 },
+          futureAction: { key: 'leave intact' },
+        },
+        futureChoice: 'leave intact',
+      };
+      const source = { [StorageKeys.TIMELINE_SHORTCUTS]: shortcuts };
+      const payload = await exportBackupableSyncSettings(storageWith(source));
+      const restored: Record<string, unknown> = { unrelated: 'local data' };
+      await restoreBackupableSyncSettings(
+        JSON.parse(JSON.stringify(payload.data)),
+        storageWith(restored),
+        mode,
+      );
+      expect(payload.data).toEqual(source);
+      expect(restored).toEqual({ ...source, unrelated: 'local data' });
+    },
+  );
+
+  it.each(['merge', 'overwrite'] as const)(
     '%s ignores every old account isolation value without removing or migrating stored keys',
     async (mode) => {
       for (const cloudChoice of [true, false, null]) {

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 import { DEFAULT_HIGHLIGHT_COLOR_PALETTE } from '@/core/types/highlight';
+import { keyboardShortcutFromEvent } from '@/core/types/keyboardShortcut';
 import { resolveVisualEffect } from '@/core/utils/visualEffectValues';
 import { WATERMARK_STORAGE_KEYS } from '@/core/utils/watermarkSettings';
 import {
@@ -110,7 +111,23 @@ describe('v2.2.1 settings file compatibility', () => {
   it.each(['merge', 'overwrite'] as const)(
     'restores this build’s sparse file with the real released %s reader',
     async (mode) => {
+      const shortcuts = {
+        ...releasedDefaults.BACKUPABLE_SYNC_SETTINGS_DEFAULTS[StorageKeys.TIMELINE_SHORTCUTS],
+        enabled: false,
+        shortcuts: {
+          ...releasedDefaults.BACKUPABLE_SYNC_SETTINGS_DEFAULTS[StorageKeys.TIMELINE_SHORTCUTS]
+            .shortcuts,
+          next: { action: 'timeline:next', modifiers: [], key: 'n' },
+          previous: keyboardShortcutFromEvent({
+            event: new KeyboardEvent('keydown', { key: '∫', code: 'KeyB', altKey: true }),
+            action: 'timeline:previous',
+          }),
+          panelToggle: { action: 'panel:toggle', modifiers: ['Alt'], key: 'V', code: 'KeyV' },
+          futureAction: { key: 'kept by both readers' },
+        },
+      };
       const source = {
+        [StorageKeys.TIMELINE_SHORTCUTS]: shortcuts,
         [StorageKeys.CHAT_WIDTH]: 85,
         [StorageKeys.EDIT_INPUT_WIDTH]: 85,
         [StorageKeys.SIDEBAR_WIDTH]: 390,
@@ -127,6 +144,7 @@ describe('v2.2.1 settings file compatibility', () => {
       const data: unknown = JSON.parse(JSON.stringify(payload.data));
       expect(payload.format).toBe('gemini-voyager.settings.v1');
       expect(payload.data).toEqual({
+        [StorageKeys.TIMELINE_SHORTCUTS]: shortcuts,
         [StorageKeys.CHAT_WIDTH]: 85,
         [StorageKeys.EDIT_INPUT_WIDTH]: 85,
         [StorageKeys.SIDEBAR_WIDTH]: 390,
@@ -150,6 +168,7 @@ describe('v2.2.1 settings file compatibility', () => {
 
       expect(restored).toEqual({
         ...before,
+        [StorageKeys.TIMELINE_SHORTCUTS]: shortcuts,
         [StorageKeys.CHAT_WIDTH]: 85,
         [StorageKeys.EDIT_INPUT_WIDTH]: 85,
         [StorageKeys.SIDEBAR_WIDTH]: 390,
@@ -170,14 +189,34 @@ describe('v2.2.1 settings file compatibility', () => {
           restored[StorageKeys.GV_SNOW_EFFECT],
         ),
       ).toBe('snow');
+
+      // A released writer must carry the new nested field back to this build as well.
+      const releasedFile = await released.exportBackupableSyncSettings(storageWith(restored));
+      const here: Record<string, unknown> = {};
+      await restoreBackupableSyncSettings(
+        JSON.parse(JSON.stringify(releasedFile.data)),
+        storageWith(here),
+        mode,
+      );
+      expect(here[StorageKeys.TIMELINE_SHORTCUTS]).toEqual(shortcuts);
     },
   );
 
   it.each(['merge', 'overwrite'] as const)(
     'restores the real released full-default file here in %s mode without clearing null or isolation choices',
     async (mode) => {
+      const shortcuts = {
+        ...releasedDefaults.BACKUPABLE_SYNC_SETTINGS_DEFAULTS[StorageKeys.TIMELINE_SHORTCUTS],
+        enabled: false,
+        shortcuts: {
+          ...releasedDefaults.BACKUPABLE_SYNC_SETTINGS_DEFAULTS[StorageKeys.TIMELINE_SHORTCUTS]
+            .shortcuts,
+          previous: { action: 'timeline:previous', modifiers: ['Alt'], key: '√' },
+        },
+      };
       const payload = await released.exportBackupableSyncSettings(
         storageWith({
+          [StorageKeys.TIMELINE_SHORTCUTS]: shortcuts,
           [StorageKeys.CHAT_FONT_SIZE]: 120,
           [StorageKeys.COACHMARKS_SEEN]: ['cloud', 'shared'],
           [StorageKeys.FOLDER_HIDE_ARCHIVED_NUDGE_SHOWN_AISTUDIO]: true,
@@ -193,6 +232,11 @@ describe('v2.2.1 settings file compatibility', () => {
       );
       expect(payload.data[StorageKeys.LANGUAGE]).toBeNull();
       expect(payload.data[StorageKeys.GV_ACCOUNT_ISOLATION_ENABLED_GEMINI]).toBe(true);
+      expect(payload.data).not.toHaveProperty([
+        StorageKeys.TIMELINE_SHORTCUTS,
+        'shortcuts',
+        'panelToggle',
+      ]);
 
       const before = {
         [StorageKeys.LANGUAGE]: 'fr',
@@ -233,6 +277,7 @@ describe('v2.2.1 settings file compatibility', () => {
       expect(restored).toEqual({
         ...before,
         ...nonNullDefaults,
+        [StorageKeys.TIMELINE_SHORTCUTS]: shortcuts,
         [StorageKeys.CHAT_FONT_SIZE]: 120,
         [StorageKeys.COACHMARKS_SEEN]:
           mode === 'merge' ? ['local', 'shared', 'cloud'] : ['cloud', 'shared'],

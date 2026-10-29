@@ -1,5 +1,6 @@
 import { getVoyagerBuildTarget } from '@/core/utils/browser';
 import { isRemoteAnnouncementRuntimeMessage } from '@/features/announcements/background';
+import { isPanelRuntimeMessage } from '@/features/panel/protocol';
 import {
   chatGptHandoffTabIdResponse,
   handleChatGptHandoffExpiryMessage,
@@ -10,6 +11,7 @@ import { CHATGPT_HANDOFF_GET_TAB_ID_MESSAGE } from '@/features/plugins/builtin/c
 import { createCatalogOutlineMessageHandler } from './catalogOutlineMessages';
 import { handleHighlightRuntimeMessage } from './highlightMessages';
 import { handlePageRuntimeMessage } from './pageRuntimeMessages';
+import { createPanelBackground } from './panelMessages';
 import { handleRuntimeImageMessage, isRuntimeImageMessage } from './runtimeImageMessages';
 import { isHandledBackgroundRuntimeMessage } from './runtimeMessageRouting';
 import { createSendTimeMessageHandler } from './sendTimeMessages';
@@ -42,8 +44,11 @@ export function registerBackgroundRuntimeMessages(owners: {
 }): void {
   const handleSendTimeMessage = createSendTimeMessageHandler();
   const handleCatalogOutlineMessage = createCatalogOutlineMessageHandler();
+  const panel = createPanelBackground();
+  panel.registerListeners();
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (!isHandledBackgroundRuntimeMessage(message)) return undefined;
+    if (!isPanelRuntimeMessage(message) && !isHandledBackgroundRuntimeMessage(message))
+      return undefined;
 
     if (getVoyagerBuildTarget() === 'safari' && isRuntimeImageMessage(message)) {
       void handleRuntimeImageMessage(message, sender)
@@ -58,6 +63,11 @@ export function registerBackgroundRuntimeMessages(owners: {
     }
     (async () => {
       try {
+        const panelResponse = panel.handle(message, sender);
+        if (panelResponse) {
+          sendResponse(await panelResponse);
+          return;
+        }
         if (isRuntimeImageMessage(message)) {
           sendResponse(await handleRuntimeImageMessage(message, sender));
           return;

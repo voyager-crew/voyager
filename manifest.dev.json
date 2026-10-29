@@ -10,6 +10,7 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "src/pages/panel/index.html",
         "contentStyle.css",
         "changelog-activity-view.png",
         "watermark-native-steps.png",

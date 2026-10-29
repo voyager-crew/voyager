@@ -1,4 +1,5 @@
 import { StorageKeys } from '@/core/types/common';
+import { isRestorableKeyboardShortcutStorage } from '@/core/types/keyboardShortcut';
 
 import { BACKUPABLE_SYNC_SETTINGS_DEFAULTS } from './settingsBackupDefaults';
 
@@ -36,6 +37,10 @@ export function filterRestorableSyncSettings(value: unknown): Record<string, unk
     if (!Object.hasOwn(value, key)) continue;
     const stored = value[key];
     if (stored === null || stored === undefined) continue;
+    if (key === StorageKeys.TIMELINE_SHORTCUTS) {
+      if (isRestorableKeyboardShortcutStorage(stored)) settings[key] = stored;
+      continue;
+    }
     const matches =
       defaultValue === null
         ? nullableChecks[key](stored)

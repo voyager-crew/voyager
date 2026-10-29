@@ -56,11 +56,14 @@ for (const [locale, keys] of keysByLocale) {
   for (const key of mismatched.slice(0, 5)) console.error(`  ~ ${key}`);
 }
 
-const fragmentDirectories = readdirSync(primitiveDirectory, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => join(primitiveDirectory, entry.name, 'messages'))
-  .filter((directory) => existsSync(directory))
-  .sort();
+const fragmentDirectories = [
+  ...readdirSync(primitiveDirectory, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => join(primitiveDirectory, entry.name, 'messages'))
+    .filter((directory) => existsSync(directory)),
+  'src/pages/content/panelShell/messages',
+  'src/pages/panel/messages',
+].sort();
 const fragmentOwnerByKey = new Map();
 let fragmentKeyCount = 0;
 
@@ -112,5 +115,5 @@ if (failed) {
 
 console.log(
   `OK: all ${keysByLocale.size} locales are consistent (${referenceKeys.size} keys, ` +
-    `${fragmentKeyCount} more in ${fragmentDirectories.length} primitive fragments)`,
+    `${fragmentKeyCount} more in ${fragmentDirectories.length} message fragments)`,
 );

@@ -131,6 +131,7 @@ export default mergeConfig(
       outDir,
       rollupOptions: {
         input: {
+          panel: resolve(__dirname, 'src/pages/panel/index.html'),
           sakuraRenderer: resolve(__dirname, 'src/pages/sakuraRenderer/index.html'),
           welcome: resolve(__dirname, 'src/pages/welcome/index.html'),
           library: resolve(__dirname, 'src/pages/library/index.html'),

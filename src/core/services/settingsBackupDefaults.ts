@@ -1,31 +1,9 @@
 import { type StorageKey, StorageKeys } from '@/core/types/common';
 import { DEFAULT_HIGHLIGHT_COLOR_PALETTE } from '@/core/types/highlight';
+import { DEFAULT_KEYBOARD_SHORTCUTS } from '@/core/types/keyboardShortcut';
 
 const DEFAULT_TIMELINE_SHORTCUTS = {
-  shortcuts: {
-    previous: {
-      action: 'timeline:previous',
-      modifiers: [],
-      key: 'k',
-    },
-    next: {
-      action: 'timeline:next',
-      modifiers: [],
-      key: 'j',
-    },
-    first: {
-      action: 'timeline:first',
-      modifiers: [],
-      key: 'g',
-      sequenceLength: 2,
-    },
-    last: {
-      action: 'timeline:last',
-      modifiers: ['Shift'],
-      key: 'G',
-      sequenceLength: 2,
-    },
-  },
+  shortcuts: DEFAULT_KEYBOARD_SHORTCUTS,
   enabled: true,
 } as const;
 

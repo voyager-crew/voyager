@@ -1,25 +1,16 @@
-/**
- * KeyboardShortcutService - Manages keyboard shortcuts for timeline navigation
- *
- * Design Patterns:
- * - Singleton: Ensures single instance across application
- * - Strategy: Configurable shortcut matching strategies
- * - Observer: Event-based callback system
- *
- * Features:
- * - Configurable shortcuts with modifier keys
- * - Chrome storage integration for persistence
- * - Type-safe action handling
- * - Collision detection with browser shortcuts
- */
 import { StorageKeys } from '@/core/types/common';
-import type {
-  KeyboardShortcut,
-  KeyboardShortcutConfig,
-  KeyboardShortcutStorage,
-  ModifierKey,
-  ShortcutAction,
-  ShortcutMatch,
+import {
+  DEFAULT_KEYBOARD_SHORTCUTS,
+  type KeyboardShortcut,
+  type KeyboardShortcutConfigInput,
+  type KeyboardShortcutStorage,
+  type ResolvedKeyboardShortcutConfig,
+  type ShortcutAction,
+  type ShortcutMatch,
+  TIMELINE_SHORTCUT_ACTIONS,
+  findKeyboardShortcutConflict,
+  isRestorableKeyboardShortcutStorage,
+  normalizeKeyboardShortcutConfig,
 } from '@/core/types/keyboardShortcut';
 import { isMac } from '@/core/utils/browser';
 import { composedEventTarget, deepActiveElement } from '@/core/utils/composedTarget';
@@ -29,34 +20,8 @@ import { composedEventTarget, deepActiveElement } from '@/core/utils/composedTar
  */
 const SEQUENCE_TIMEOUT_MS = 500;
 
-/**
- * Default keyboard shortcuts configuration
- * Using vim-style j/k (convenient, no modifiers needed)
- */
-const DEFAULT_SHORTCUTS: KeyboardShortcutConfig = {
-  previous: {
-    action: 'timeline:previous',
-    modifiers: [],
-    key: 'k',
-  },
-  next: {
-    action: 'timeline:next',
-    modifiers: [],
-    key: 'j',
-  },
-  first: {
-    action: 'timeline:first',
-    modifiers: [],
-    key: 'g',
-    sequenceLength: 2,
-  },
-  last: {
-    action: 'timeline:last',
-    modifiers: ['Shift'],
-    key: 'G',
-    sequenceLength: 2,
-  },
-};
+/** Only these actions opt into editable targets, and only with a modifier and no sequence. */
+const EDITABLE_MODIFIER_ACTIONS: ReadonlySet<ShortcutAction> = new Set(['panel:toggle']);
 
 /**
  * Callback type for shortcut actions
@@ -72,7 +37,7 @@ export interface ShortcutLease {
 }
 
 interface LoadedShortcutConfig {
-  config: KeyboardShortcutConfig;
+  config: ResolvedKeyboardShortcutConfig;
   enabled: boolean;
 }
 
@@ -83,9 +48,9 @@ interface LoadedShortcutConfig {
 export class KeyboardShortcutService {
   private static instance: KeyboardShortcutService | null = null;
 
-  private config: KeyboardShortcutConfig;
+  private config: ResolvedKeyboardShortcutConfig;
   private enabled: boolean = true;
-  private listeners: Set<ShortcutCallback> = new Set();
+  private listeners = new Map<ShortcutCallback, readonly ShortcutAction[]>();
   private keydownHandler: ((e: KeyboardEvent) => void) | null = null;
   private storageChangeHandler:
     | ((changes: Record<string, chrome.storage.StorageChange>, areaName: string) => void)
@@ -105,7 +70,7 @@ export class KeyboardShortcutService {
   private lastSequenceTime: number = 0;
 
   private constructor() {
-    this.config = DEFAULT_SHORTCUTS;
+    this.config = normalizeKeyboardShortcutConfig(undefined);
   }
 
   /**
@@ -173,41 +138,47 @@ export class KeyboardShortcutService {
    */
   private async loadConfig(): Promise<LoadedShortcutConfig | null> {
     try {
-      let stored: KeyboardShortcutStorage | undefined;
+      let stored: unknown;
       if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
-        const result = (await chrome.storage.sync.get(StorageKeys.TIMELINE_SHORTCUTS)) ?? {};
-        stored = result[StorageKeys.TIMELINE_SHORTCUTS] as KeyboardShortcutStorage | undefined;
-        if (!stored?.shortcuts) return null;
+        const result: Record<string, unknown> =
+          (await chrome.storage.sync.get(StorageKeys.TIMELINE_SHORTCUTS)) ?? {};
+        stored = result[StorageKeys.TIMELINE_SHORTCUTS];
       } else {
         // Fallback to localStorage
         const raw = localStorage.getItem(StorageKeys.TIMELINE_SHORTCUTS);
         if (!raw) return null;
-        stored = JSON.parse(raw) as KeyboardShortcutStorage;
+        stored = JSON.parse(raw) as unknown;
       }
       return this.readStoredConfig(stored);
     } catch (error) {
       console.warn('[KeyboardShortcut] Failed to load config, using defaults:', error);
-      return { config: DEFAULT_SHORTCUTS, enabled: true };
+      return { config: normalizeKeyboardShortcutConfig(undefined), enabled: true };
     }
   }
 
-  private readStoredConfig(stored: KeyboardShortcutStorage): LoadedShortcutConfig {
-    const normalized = this.normalizeConfig(stored.shortcuts);
+  private readStoredConfig(stored: unknown): LoadedShortcutConfig | null {
+    if (typeof stored !== 'object' || stored === null || !('shortcuts' in stored)) return null;
     return {
-      config: this.validateConfig(normalized) ? normalized : DEFAULT_SHORTCUTS,
-      enabled: stored.enabled ?? true,
+      config: normalizeKeyboardShortcutConfig(stored.shortcuts),
+      enabled:
+        !('enabled' in stored) || typeof stored.enabled !== 'boolean' ? true : stored.enabled,
     };
   }
 
   /**
    * Save configuration to chrome storage
    */
-  async saveConfig(config: KeyboardShortcutConfig, enabled: boolean = this.enabled): Promise<void> {
-    const normalized = this.normalizeConfig(config);
-
-    if (!this.validateConfig(normalized)) {
+  async saveConfig(
+    config: KeyboardShortcutConfigInput,
+    enabled: boolean = this.enabled,
+  ): Promise<void> {
+    if (!isRestorableKeyboardShortcutStorage({ shortcuts: config, enabled })) {
       throw new Error('Invalid shortcut configuration');
     }
+    const normalized = normalizeKeyboardShortcutConfig(config, this.config.panelToggle);
+    const conflict = findKeyboardShortcutConflict(normalized);
+    // An ambiguous save must leave both the live bindings and the stored choice intact.
+    if (conflict) throw new Error(`Conflicting shortcut bindings: ${conflict.join(', ')}`);
 
     this.liveRevision += 1;
     this.applyConfig({ config: normalized, enabled });
@@ -230,75 +201,6 @@ export class KeyboardShortcutService {
   }
 
   /**
-   * Merge partial or legacy shortcut config with defaults
-   */
-  private normalizeConfig(
-    config: Partial<KeyboardShortcutConfig> | null | undefined,
-  ): KeyboardShortcutConfig {
-    return {
-      previous: this.normalizeShortcut(config?.previous, DEFAULT_SHORTCUTS.previous),
-      next: this.normalizeShortcut(config?.next, DEFAULT_SHORTCUTS.next),
-      first: this.normalizeShortcut(config?.first, DEFAULT_SHORTCUTS.first),
-      last: this.normalizeShortcut(config?.last, DEFAULT_SHORTCUTS.last),
-    };
-  }
-
-  /**
-   * Normalize individual shortcut with safe defaults
-   */
-  private normalizeShortcut(
-    shortcut: Partial<KeyboardShortcut> | undefined,
-    fallback: KeyboardShortcut,
-  ): KeyboardShortcut {
-    return {
-      action: fallback.action,
-      modifiers: Array.isArray(shortcut?.modifiers) ? shortcut.modifiers : fallback.modifiers,
-      key:
-        typeof shortcut?.key === 'string' && shortcut.key.length > 0 ? shortcut.key : fallback.key,
-      sequenceLength:
-        typeof shortcut?.sequenceLength === 'number' && Number.isInteger(shortcut.sequenceLength)
-          ? shortcut.sequenceLength
-          : (fallback.sequenceLength ?? 1),
-    };
-  }
-
-  /**
-   * Validate shortcut configuration
-   */
-  private validateConfig(config: KeyboardShortcutConfig): boolean {
-    try {
-      return !!(
-        config.previous &&
-        config.next &&
-        config.first &&
-        config.last &&
-        this.isValidShortcut(config.previous) &&
-        this.isValidShortcut(config.next) &&
-        this.isValidShortcut(config.first) &&
-        this.isValidShortcut(config.last)
-      );
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Validate individual shortcut
-   */
-  private isValidShortcut(shortcut: KeyboardShortcut): boolean {
-    const validModifiers: ModifierKey[] = ['Alt', 'Ctrl', 'Shift', 'Meta'];
-
-    return (
-      Array.isArray(shortcut.modifiers) &&
-      shortcut.modifiers.every((m) => validModifiers.includes(m)) &&
-      typeof shortcut.key === 'string' &&
-      shortcut.key.length > 0 &&
-      Number.isInteger(shortcut.sequenceLength ?? 1) &&
-      (shortcut.sequenceLength ?? 1) > 0
-    );
-  }
-
-  /**
    * Attach keyboard event listener
    */
   private attachKeyboardListener(): void {
@@ -306,21 +208,33 @@ export class KeyboardShortcutService {
 
     this.keydownHandler = (event: KeyboardEvent) => {
       // Nobody would act on a match, so the key belongs to the page.
-      if (!this.enabled || this.listeners.size === 0) return;
+      if (this.listeners.size === 0) return;
 
       if (this.isImeComposing(event)) {
         this.resetSequence();
         return;
       }
 
-      // Ignore shortcuts when user is typing in input fields
-      if (this.isTypingInInputField(event)) {
-        this.resetSequence();
-        return;
-      }
+      const editing = this.isTypingInInputField(event);
+      if (editing) this.resetSequence();
+      const available = Object.values(this.config).filter(
+        (shortcut) =>
+          (this.enabled || shortcut.action === 'panel:toggle') &&
+          this.hasListener(shortcut.action) &&
+          (!editing ||
+            (EDITABLE_MODIFIER_ACTIONS.has(shortcut.action) &&
+              shortcut.modifiers.length > 0 &&
+              (shortcut.sequenceLength ?? 1) === 1)),
+      );
+      // Old backups may already contain conflicts. Keep the core panel reachable without
+      // rewriting those choices; without a panel subscriber, timeline matching stays unchanged.
+      const panel = available.find(
+        (shortcut) => shortcut.action === 'panel:toggle' && this.isShortcutPressed(event, shortcut),
+      );
+      const shortcuts = panel ? [panel] : available;
 
       // Check for key sequences first (gg → first, GG → last)
-      const sequenceMatch = this.matchSequence(event);
+      const sequenceMatch = editing ? null : this.matchSequence(event, shortcuts);
       if (sequenceMatch) {
         event.preventDefault();
         event.stopPropagation();
@@ -328,12 +242,14 @@ export class KeyboardShortcutService {
         return;
       }
 
-      const match = this.matchShortcut(event);
+      const match = this.matchShortcut(event, shortcuts);
       if (match) {
         event.preventDefault();
         event.stopPropagation();
         this.resetSequence();
-        this.notifyListeners(match.action, event);
+        // Holding Option+V must neither toggle repeatedly nor start typing its layout character.
+        if (match.action !== 'panel:toggle' || !event.repeat)
+          this.notifyListeners(match.action, event);
       }
     };
 
@@ -381,8 +297,8 @@ export class KeyboardShortcutService {
         const change = changes[StorageKeys.TIMELINE_SHORTCUTS];
         if (!change) return;
         this.liveRevision += 1;
-        const newValue = change.newValue as KeyboardShortcutStorage | undefined;
-        if (newValue?.shortcuts) this.applyConfig(this.readStoredConfig(newValue));
+        const loaded = this.readStoredConfig(change.newValue);
+        if (loaded) this.applyConfig(loaded);
       };
 
       chrome.storage.onChanged.addListener(this.storageChangeHandler);
@@ -392,18 +308,13 @@ export class KeyboardShortcutService {
   /**
    * Match keyboard event to shortcut (Strategy Pattern)
    */
-  private matchShortcut(event: KeyboardEvent): ShortcutMatch | null {
-    const shortcuts = [
-      { action: 'timeline:previous' as const, config: this.config.previous },
-      { action: 'timeline:next' as const, config: this.config.next },
-      { action: 'timeline:first' as const, config: this.config.first },
-      { action: 'timeline:last' as const, config: this.config.last },
-    ];
-
-    // Check if any shortcut matches
-    for (const { action, config } of shortcuts) {
-      if ((config.sequenceLength ?? 1) === 1 && this.isShortcutPressed(event, config)) {
-        return { action, event };
+  private matchShortcut(
+    event: KeyboardEvent,
+    shortcuts: readonly KeyboardShortcut[],
+  ): ShortcutMatch | null {
+    for (const shortcut of shortcuts) {
+      if ((shortcut.sequenceLength ?? 1) === 1 && this.isShortcutPressed(event, shortcut)) {
+        return { action: shortcut.action, event };
       }
     }
 
@@ -415,7 +326,7 @@ export class KeyboardShortcutService {
    */
   private isShortcutPressed(event: KeyboardEvent, shortcut: KeyboardShortcut): boolean {
     // Check key match
-    if (event.key !== shortcut.key) return false;
+    if (shortcut.code ? event.code !== shortcut.code : event.key !== shortcut.key) return false;
 
     // Check modifier matches
     const hasAlt = shortcut.modifiers.includes('Alt');
@@ -434,17 +345,16 @@ export class KeyboardShortcutService {
   /**
    * Match key sequence (gg → timeline:first, GG → timeline:last)
    */
-  private matchSequence(event: KeyboardEvent): ShortcutMatch | null {
+  private matchSequence(
+    event: KeyboardEvent,
+    shortcuts: readonly KeyboardShortcut[],
+  ): ShortcutMatch | null {
     // Don't process sequences on key repeat (held down)
     if (event.repeat) return null;
 
-    const sequenceShortcuts = [
-      { action: 'timeline:first' as const, config: this.config.first },
-      { action: 'timeline:last' as const, config: this.config.last },
-    ];
     const now = Date.now();
 
-    for (const { action, config } of sequenceShortcuts) {
+    for (const config of shortcuts) {
       if ((config.sequenceLength ?? 1) <= 1 || !this.isShortcutPressed(event, config)) {
         continue;
       }
@@ -455,7 +365,7 @@ export class KeyboardShortcutService {
         now - this.lastSequenceTime < SEQUENCE_TIMEOUT_MS
       ) {
         this.resetSequence();
-        return { action, event };
+        return { action: config.action, event };
       }
 
       this.lastSequenceSignature = signature;
@@ -475,14 +385,15 @@ export class KeyboardShortcutService {
 
   private getShortcutSignature(shortcut: KeyboardShortcut): string {
     const modifiers = [...shortcut.modifiers].sort().join('+');
-    return `${modifiers}|${shortcut.key}|${shortcut.sequenceLength ?? 1}`;
+    return `${shortcut.action}|${modifiers}|${shortcut.code ?? shortcut.key}|${shortcut.sequenceLength ?? 1}`;
   }
 
   /**
    * Notify all registered listeners (Observer Pattern)
    */
   private notifyListeners(action: ShortcutAction, event: KeyboardEvent): void {
-    this.listeners.forEach((callback) => {
+    this.listeners.forEach((actions, callback) => {
+      if (!actions.includes(action)) return;
       try {
         callback(action, event);
       } catch (error) {
@@ -491,11 +402,12 @@ export class KeyboardShortcutService {
     });
   }
 
-  /**
-   * Register a shortcut callback
-   */
-  on(callback: ShortcutCallback): () => void {
-    this.listeners.add(callback);
+  /** Existing callers receive timeline actions; the shell opts in with ['panel:toggle']. */
+  on(
+    callback: ShortcutCallback,
+    actions: readonly ShortcutAction[] = TIMELINE_SHORTCUT_ACTIONS,
+  ): () => void {
+    this.listeners.set(callback, actions);
     // Return unsubscribe function
     return () => this.off(callback);
   }
@@ -507,17 +419,16 @@ export class KeyboardShortcutService {
     this.listeners.delete(callback);
   }
 
+  private hasListener(action: ShortcutAction): boolean {
+    return [...this.listeners.values()].some((actions) => actions.includes(action));
+  }
+
   /**
    * Get current configuration
    */
-  getConfig(): { config: KeyboardShortcutConfig; enabled: boolean } {
+  getConfig(): { config: ResolvedKeyboardShortcutConfig; enabled: boolean } {
     return {
-      config: {
-        previous: { ...this.config.previous },
-        next: { ...this.config.next },
-        first: { ...this.config.first },
-        last: { ...this.config.last },
-      },
+      config: structuredClone(this.config),
       enabled: this.enabled,
     };
   }
@@ -526,14 +437,13 @@ export class KeyboardShortcutService {
    * Reset to default shortcuts
    */
   async resetToDefaults(): Promise<void> {
-    await this.saveConfig(DEFAULT_SHORTCUTS, true);
+    await this.saveConfig(DEFAULT_KEYBOARD_SHORTCUTS, true);
   }
 
   /**
    * Enable/disable shortcuts
    */
   async setEnabled(enabled: boolean): Promise<void> {
-    this.enabled = enabled;
     await this.saveConfig(this.config, enabled);
   }
 

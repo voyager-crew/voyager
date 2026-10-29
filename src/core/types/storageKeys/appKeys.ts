@@ -72,6 +72,8 @@ export const APP_STORAGE_KEYS = {
   GV_POPUP_SCROLL_TOP: 'gvPopupScrollTop',
   // Device-local last query entered in the popup settings search.
   GV_POPUP_SETTINGS_SEARCH_QUERY: 'gvPopupSettingsSearchQuery',
+  // Per-site panel viewport coordinates on this device; never synced or backed up.
+  PANEL_POSITIONS: 'gvPanelPositions',
 
   // Context sync
   CONTEXT_SYNC_ENABLED: 'contextSyncEnabled',

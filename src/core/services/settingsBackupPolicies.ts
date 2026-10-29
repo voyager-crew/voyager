@@ -402,6 +402,11 @@ export const NON_SETTINGS_BACKUP_POLICIES = {
     disposition: 'device-local',
     reason: 'Popup settings search query is device-local UI state.',
   },
+  [StorageKeys.PANEL_POSITIONS]: {
+    storage: 'local',
+    disposition: 'device-local',
+    reason: 'Per-site panel coordinates belong to this device and viewport.',
+  },
   [StorageKeys.FOLDER_PROJECT_PENDING_FOLDER_ID]: {
     storage: 'local',
     disposition: 'transient',
