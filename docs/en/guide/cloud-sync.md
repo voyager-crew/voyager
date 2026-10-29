@@ -14,8 +14,6 @@ Voyager Cloud Sync backs up your folders, prompt library, starred messages, and 
 | Plugin configuration    | Yes    | Install/enable state and plugin settings; site permissions remain per-device                                     |
 | Model answers           | No     | Star backups contain user prompts, not model answers                                                             |
 
-<!-- D4: draft wording, waiting for Jesse to confirm -->
-
 **Enable Hard Isolation** no longer travels in the cloud settings file. Your browser's own sync (Chrome sync, for example) still carries it between computers signed in to the same browser profile.
 
 ## Starred Data and Sync Limits

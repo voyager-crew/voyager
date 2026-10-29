@@ -14,8 +14,6 @@ La sincronización en la nube de Voyager guarda una copia de seguridad de tus ca
 | Configuración de plugins        | Sí           | Estado de instalación y activación, y ajustes del plugin; los permisos del sitio siguen siendo por dispositivo   |
 | Respuestas del modelo           | No           | Las copias de destacados contienen los prompts del usuario, no las respuestas del modelo                         |
 
-<!-- D4: draft wording, waiting for Jesse to confirm -->
-
 **Enable Hard Isolation** ya no viaja en el archivo de ajustes de la nube. La sincronización propia de tu navegador (por ejemplo, la de Chrome) sigue llevándolo entre ordenadores con el mismo perfil del navegador.
 
 ## Datos destacados y límites de sincronización

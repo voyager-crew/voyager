@@ -14,8 +14,6 @@ La Synchro Cloud de Voyager sauvegarde vos dossiers, votre bibliothèque de prom
 | Configuration des extensions | Oui         | État d'installation et d'activation, et réglages des extensions ; les autorisations de site restent propres à chaque appareil |
 | Réponses du modèle           | Non         | Les sauvegardes des favoris contiennent les prompts utilisateur, pas les réponses du modèle                                   |
 
-<!-- D4: draft wording, waiting for Jesse to confirm -->
-
 **Enable Hard Isolation** ne fait plus partie du fichier de réglages du cloud. La synchronisation propre à votre navigateur (celle de Chrome, par exemple) le transmet toujours entre les ordinateurs connectés au même profil de navigateur.
 
 ## Données favorites et limites de synchronisation

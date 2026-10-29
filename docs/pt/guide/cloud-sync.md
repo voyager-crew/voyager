@@ -14,8 +14,6 @@ A Sincronização na Nuvem do Voyager faz backup das suas pastas, da biblioteca 
 | Configuração de plugins        | Sim          | Estado de instalação/ativação e configurações do plugin; as permissões de sites continuam por dispositivo    |
 | Respostas do modelo            | Não          | Os backups de estrelas contêm prompts do usuário, não respostas do modelo                                    |
 
-<!-- D4: draft wording, waiting for Jesse to confirm -->
-
 **Enable Hard Isolation** não vai mais no arquivo de configurações da nuvem. A sincronização do próprio navegador (a do Chrome, por exemplo) continua levando essa opção entre computadores conectados ao mesmo perfil do navegador.
 
 ## Dados com estrela e limites de sincronização
