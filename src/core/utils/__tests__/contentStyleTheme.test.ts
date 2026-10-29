@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { BUNDLED_SITE_ADAPTERS } from '@/features/plugins/catalog/sites';
+import { folderSkinCss } from '@/features/plugins/verbs/folders/skinCss';
 import { contentStylePartPaths } from '@/tests/contentStyle';
 
 /**
@@ -32,8 +34,6 @@ const STYLESHEETS = [
   'src/pages/content/folder/sidebarTreeTokens.css',
   'src/pages/content/folder/aistudioTreeTokens.css',
   'src/features/plugins/verbs/folders/sectionTree.css',
-  'src/features/plugins/verbs/folders/skins/claude.css',
-  'src/features/plugins/verbs/folders/skins/deepseek.css',
   'src/pages/content/folder/folderSettings/folderSettings.css',
   'src/pages/content/folder/sidebarActivityList.css',
   'src/features/plugins/catalog/sites/chatgpt/plugins/reading-width/style.css',
@@ -69,15 +69,29 @@ function stripComments(css: string): string {
   return css.replace(/\/\*[\s\S]*?\*\//g, ' ');
 }
 
+function expectSharedScheme(css: string): void {
+  const parsed = stripComments(css);
+  const found = HOST_DIALECTS.filter(({ pattern }) => pattern.test(parsed)).map(({ name }) => name);
+
+  expect(
+    found,
+    "Use html[data-gv-scheme='dark'] instead. A site that marks its theme some other " +
+      'way says so in its site.json theme descriptor, which platformTheme already reads.',
+  ).toEqual([]);
+}
+
 describe.each(STYLESHEETS)('%s', (stylesheet) => {
   it('routes light/dark through data-gv-scheme, never a host dialect', () => {
-    const css = stripComments(readFileSync(resolve(__dirname, '../../../..', stylesheet), 'utf8'));
-    const found = HOST_DIALECTS.filter(({ pattern }) => pattern.test(css)).map(({ name }) => name);
-
-    expect(
-      found,
-      "Use html[data-gv-scheme='dark'] instead. A site that marks its theme some other " +
-        'way says so in its site.json theme descriptor, which platformTheme already reads.',
-    ).toEqual([]);
+    expectSharedScheme(readFileSync(resolve(__dirname, '../../../..', stylesheet), 'utf8'));
   });
+});
+
+it.each(
+  BUNDLED_SITE_ADAPTERS.flatMap((site) =>
+    site.folderSkin
+      ? [[site.id, folderSkinCss(`gv-${site.id}-folder-section`, site.folderSkin)] as const]
+      : [],
+  ),
+)('%s folder tokens generate CSS using the shared scheme', (_site, css) => {
+  expectSharedScheme(css);
 });

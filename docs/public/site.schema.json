@@ -206,6 +206,9 @@
     "folders": {
       "$ref": "site-sections/folders.schema.json"
     },
+    "folderSkin": {
+      "$ref": "site-sections/folder-skin.schema.json"
+    },
     "bridge": {
       "type": "object",
       "description": "Local Bridge kill switch: the ops the extension may run for `voyager serve` on this site. A missing or invalid section denies every op, and only a fresh remote catalog newer than the packaged one can allow them. Removing an op from `allow` revokes it at the next catalog revision.",

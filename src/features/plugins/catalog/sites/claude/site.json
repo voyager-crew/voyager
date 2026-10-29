@@ -70,5 +70,31 @@
       },
       "titleSuffix": "\\s+-\\s+Claude$"
     }
+  },
+  "folderSkin": {
+    "rowHeight": "32px",
+    "rowRadius": "var(--df-radius-pill, 8px)",
+    "light": {
+      "heading": "var(--cds-text-muted, #829181)",
+      "text": "var(--cds-text-primary, #5c6a72)",
+      "textMuted": "var(--cds-text-secondary, #708089)",
+      "surface": "var(--cds-surface-popover, #fffbef)",
+      "surfaceContainer": "var(--cds-surface-popover, #fffbef)",
+      "surfaceHover": "var(--cds-fill-ghost-hover, rgba(11, 11, 11, 0.05))",
+      "surfaceActive": "var(--cds-fill-ghost-selected, rgba(11, 11, 11, 0.1))",
+      "outline": "var(--cds-border, rgba(92, 106, 114, 0.18))",
+      "danger": "var(--cds-text-danger, #8e2626)",
+      "dangerSoft": "color-mix(in oklab, var(--cds-fill-danger, #d03b3b) 10%, transparent)"
+    },
+    "dark": {
+      "heading": "var(--cds-text-muted, rgba(255, 255, 255, 0.5))",
+      "text": "var(--cds-text-primary, #f5f4ef)",
+      "textMuted": "var(--cds-text-secondary, rgba(255, 255, 255, 0.7))",
+      "surface": "var(--cds-surface-popover, #30302e)",
+      "surfaceContainer": "var(--cds-surface-popover, #30302e)",
+      "surfaceHover": "var(--cds-fill-ghost-hover, rgba(255, 255, 255, 0.06))",
+      "surfaceActive": "var(--cds-fill-ghost-selected, rgba(255, 255, 255, 0.1))",
+      "outline": "var(--cds-border, rgba(255, 255, 255, 0.12))"
+    }
   }
 }

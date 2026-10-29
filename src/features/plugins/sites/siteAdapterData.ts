@@ -1,17 +1,10 @@
 /**
  * `site.json` — the data form of a SiteAdapter.
  *
- * The same shape is read from three places, so one validator covers them all:
- *   - the bundled snapshot `catalog/sites/<site>/site.json` (thin-shell adapters
- *     in `sites/adapters/` export the validated result);
- *   - the `site` section of a published per-host catalog file, which can
- *     override the bundled adapter at runtime (remote override);
- *   - `scripts/build-plugin-catalog.ts`, which validates before publishing.
+ * One reader covers bundled adapters, online host files and catalog publishing.
  *
- * Remote input is UNTRUSTED: every field is shape-checked, colours must be hex
- * literals (they are concatenated into `color-mix(...)`), and sizes are
- * capped. No schema library by design (D17) — hand-written guards like
- * `manifest/validate.ts`.
+ * Remote input is untrusted: fields are shape-checked and sizes capped.
+ * No schema library by design (D17); sections own their value grammars.
  *
  * Two verdicts share one reader. `readSiteAdapterData` is the runtime read:
  * a selector key outside this build's vocabulary is dropped and reported in
@@ -32,6 +25,7 @@ import {
   readBridgePolicySection,
 } from './sections/bridgePolicyData';
 import { type SiteExportConfig, readExportConfig } from './sections/exportData';
+import { type FolderSkin, readFolderSkin } from './sections/folderSkinData';
 import { type FoldersSection, readFoldersSection } from './sections/foldersData';
 import { type SiteLocatorProfiles, readSiteLocators } from './sections/locatorData';
 import { type ModelPickerSection, readModelPickerSection } from './sections/modelPickerData';
@@ -62,6 +56,7 @@ export interface SiteAdapterData {
   readonly pageHooks?: PageHooksSection;
   readonly bridge?: BridgePolicySection;
   readonly folders?: FoldersSection;
+  readonly folderSkin?: FolderSkin;
   readonly locators?: SiteLocatorProfiles;
 }
 
@@ -232,7 +227,7 @@ export interface SiteAdapterDataRead {
   /**
    * Non-fatal runtime problems: unknown selectors, malformed bundled-only
    * `accountSlots`, `conversationRoutes`, and broken optional
-   * `modelPicker`, `projects`, `pageHooks`, `bridge`, `folders`, `prompt`.
+   * `modelPicker`, `projects`, `pageHooks`, `bridge`, `folders`, `folderSkin`, `prompt`.
    * Unreadable fields/sections are omitted; other repairs remain usable.
    * Publishing fails on any issue (a missing `bridge` denies the bridge).
    */
@@ -285,6 +280,7 @@ function parseSiteAdapterData(input: unknown, tolerateSemantic = false): SiteAda
   const pageHooksRead = readPageHooksSection(input.pageHooks, isValidSelectorSyntax);
   const bridgeRead = readBridgePolicySection(input.bridge);
   const foldersRead = readFoldersSection(input.folders, isValidSelectorSyntax);
+  const skinRead = readFolderSkin(input.folderSkin);
   const locatorsRead = readSiteLocators(input.locators, input.id, isValidSelectorSyntax);
 
   if (!nonEmptyString(input.id) || !SITE_ID_PATTERN.test(input.id)) {
@@ -330,6 +326,7 @@ function parseSiteAdapterData(input: unknown, tolerateSemantic = false): SiteAda
     ...pageHooksRead.issues,
     ...bridgeRead.issues,
     ...foldersRead.issues,
+    ...skinRead.issues,
     ...promptRead.issues,
     ...locatorsRead.issues,
   ];
@@ -450,6 +447,7 @@ function parseSiteAdapterData(input: unknown, tolerateSemantic = false): SiteAda
         ...(pageHooksRead.pageHooks ? { pageHooks: pageHooksRead.pageHooks } : {}),
         ...(bridgeRead.policy ? { bridge: bridgeRead.policy } : {}),
         ...(foldersRead.folders ? { folders: foldersRead.folders } : {}),
+        ...(skinRead.folderSkin ? { folderSkin: skinRead.folderSkin } : {}),
         ...(exportConfig ? { export: exportConfig } : {}),
         ...(locatorsRead.locators ? { locators: locatorsRead.locators } : {}),
       },
@@ -483,6 +481,7 @@ export function siteAdapterToData(adapter: SiteAdapter): SiteAdapterData {
     ...(adapter.pageHooks ? { pageHooks: { ...adapter.pageHooks } } : {}),
     ...(adapter.bridge ? { bridge: bridgePolicySectionToData(adapter.bridge) } : {}),
     ...(adapter.folders ? { folders: { ...adapter.folders } } : {}),
+    ...(adapter.folderSkin ? { folderSkin: adapter.folderSkin } : {}),
     ...(adapter.locators ? { locators: { ...adapter.locators } } : {}),
   };
 }

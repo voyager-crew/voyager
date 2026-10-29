@@ -170,15 +170,6 @@ export const PLUGINS_SITE_KNOWLEDGE_EXCEPTIONS: readonly SiteKnowledgeException[
     reason: 'dispatch native Gemini and AI Studio folder extensions.',
   },
   {
-    file: 'src/features/plugins/verbs/folders/siteData.ts',
-    kind: 'presentation',
-    values: {
-      claude: 1,
-      deepseek: 1,
-    },
-    reason: 'existing Claude and DeepSeek shadow-root folder skins.',
-  },
-  {
     file: 'src/features/plugins/verbs/sendShortcut/index.ts',
     kind: 'platform-branch',
     values: {

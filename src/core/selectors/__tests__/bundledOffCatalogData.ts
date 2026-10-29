@@ -8,7 +8,8 @@ import type { PluginManifest } from '@/features/plugins/types';
 import type { BundledOffEntry } from './bundledOffData';
 
 const CATALOG_ROOT = join(process.cwd(), 'src/features/plugins/catalog/sites');
-// Semantic selectors are pinned separately; the loader stamps catalogRevision itself.
+// Selectors are pinned separately; the loader stamps catalogRevision. Relocated folderSkin
+// values are compared against the old CSS through PluginHost in folderSkinParity.test.ts.
 const SITE_RUNTIME_FIELDS = {
   id: true,
   matches: true,
@@ -28,7 +29,10 @@ const SITE_RUNTIME_FIELDS = {
   bridge: true,
   folders: true,
   locators: true,
-} satisfies Record<Exclude<keyof SiteAdapterData, 'label' | 'selectors' | 'catalogRevision'>, true>;
+} satisfies Record<
+  Exclude<keyof SiteAdapterData, 'label' | 'selectors' | 'catalogRevision' | 'folderSkin'>,
+  true
+>;
 
 type PluginMetadata =
   | 'version'

@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://voyager.nagi.fun/site-sections/folder-skin.schema.json",
+  "title": "Voyager site adapter: folder appearance",
+  "description": "Design tokens for the sidebar folder section and its shadow popover. Kept outside folders for older clients. Unknown or invalid tokens drop the skin; online readers retain the bundled skin. No selectors, CSS property names, storage or account policy are accepted. The runtime reader additionally checks colour function arguments, nesting and metric bounds.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["rowHeight", "rowRadius", "light", "dark"],
+  "properties": {
+    "rowHeight": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^(?:0?(?:1[6-9]|[2-5][0-9]|6[0-4])px|var\\(--[a-z][a-z0-9-]{0,79}, 0?(?:1[6-9]|[2-5][0-9]|6[0-4])px\\))$",
+      "description": "Row height, 16-64px, optionally following a host CSS variable with a bounded fallback."
+    },
+    "rowRadius": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^(?:(?:0{0,2}[0-9]|0?[12][0-9]|0?3[0-2])px|var\\(--[a-z][a-z0-9-]{0,79}, (?:0{0,2}[0-9]|0?[12][0-9]|0?3[0-2])px\\))$",
+      "description": "Row radius, 0-32px, optionally following a host CSS variable with a bounded fallback."
+    },
+    "light": {
+      "$ref": "#/$defs/lightPalette"
+    },
+    "dark": {
+      "$ref": "#/$defs/palette",
+      "description": "Overrides for dark mode. Omitted colours inherit from the light palette."
+    },
+    "header": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["height", "paddingInlineEnd"],
+      "description": "An opaque sticky header that reserves the corner occupied by a host history control. Requires light.sidebar.",
+      "properties": {
+        "height": {
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 64
+        },
+        "paddingInlineEnd": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 128
+        }
+      }
+    }
+  },
+  "if": {
+    "required": ["header"]
+  },
+  "then": {
+    "properties": {
+      "light": {
+        "required": ["sidebar"]
+      }
+    }
+  },
+  "$defs": {
+    "color": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^(?:#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|transparent|(?:var|rgba?|color-mix)\\([a-zA-Z0-9#(),.% -]+\\))$",
+      "description": "Hex, transparent, rgb/rgba, var(--name, fallback), or color-mix(in oklab|srgb, color percentage%, transparent). Variables require a valid fallback. RGB channels, alpha and mix percentages are bounded; nesting is limited. No resources, declaration escapes or arbitrary CSS are allowed."
+    },
+    "palette": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "heading": { "$ref": "#/$defs/color" },
+        "text": { "$ref": "#/$defs/color" },
+        "textMuted": { "$ref": "#/$defs/color" },
+        "surface": { "$ref": "#/$defs/color" },
+        "surfaceContainer": { "$ref": "#/$defs/color" },
+        "surfaceHover": { "$ref": "#/$defs/color" },
+        "surfaceActive": { "$ref": "#/$defs/color" },
+        "outline": { "$ref": "#/$defs/color" },
+        "danger": { "$ref": "#/$defs/color" },
+        "dangerSoft": { "$ref": "#/$defs/color" },
+        "sidebar": { "$ref": "#/$defs/color" }
+      }
+    },
+    "lightPalette": {
+      "type": "object",
+      "anyOf": [{ "$ref": "#/$defs/palette" }],
+      "required": [
+        "heading",
+        "text",
+        "textMuted",
+        "surface",
+        "surfaceContainer",
+        "surfaceHover",
+        "surfaceActive",
+        "outline",
+        "danger",
+        "dangerSoft"
+      ]
+    }
+  }
+}

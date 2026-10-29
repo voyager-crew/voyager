@@ -20,6 +20,7 @@ import type { TranslationKey } from '@/utils/translations';
 
 import type { BridgePolicySection } from './sites/sections/bridgePolicyData';
 import type { SiteExportConfig } from './sites/sections/exportData';
+import type { FolderSkin } from './sites/sections/folderSkinData';
 import type { FoldersSection } from './sites/sections/foldersData';
 import type { ModelPickerSection } from './sites/sections/modelPickerData';
 import type { PageHooksSection } from './sites/sections/pageHooksData';
@@ -138,6 +139,8 @@ export interface SiteAdapter {
    * and where, never comes from here (`features/folder/sites/folderSiteTable.ts`).
    */
   readonly folders?: FoldersSection;
+  /** Validated appearance tokens for the folder section and its shadow popover. */
+  readonly folderSkin?: FolderSkin;
 }
 
 // ---------------------------------------------------------------------------

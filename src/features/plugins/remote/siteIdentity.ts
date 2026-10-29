@@ -73,6 +73,7 @@ export function protectSiteAdapterIdentity(bundled: SiteAdapter, remote: SiteAda
           }
         : undefined,
     folders: protectFolders(bundled.folders, remote.folders),
+    folderSkin: remote.folderSkin ?? bundled.folderSkin,
     projects: protectProjects(bundled.projects, remote.projects),
     export: bundled.export
       ? {

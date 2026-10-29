@@ -2,6 +2,9 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { BUNDLED_SITE_ADAPTERS } from '@/features/plugins/catalog/sites';
+import { folderSkinCss } from '@/features/plugins/verbs/folders/skinCss';
+
 /**
  * The folder tree laid into a sidebar is one structural sheet,
  * `floatingTree/inlineTree.css`, and a skin per site that only sets its
@@ -20,20 +23,23 @@ const FULL_SKINS = [
   'src/features/plugins/verbs/folders/sectionTree.css',
 ] as const;
 
-/** Site sheets layered over a full skin: tokens, plus listed exceptions. */
+/** Site sheets layered over a full skin: tokens, plus the shared header layout. */
 const SITE_SKINS = [
-  'src/pages/content/folder/aistudioTreeTokens.css',
-  'src/features/plugins/verbs/folders/skins/claude.css',
-  'src/features/plugins/verbs/folders/skins/deepseek.css',
+  ['AI Studio', read('src/pages/content/folder/aistudioTreeTokens.css')],
+  ...BUNDLED_SITE_ADAPTERS.flatMap((site) =>
+    site.folderSkin
+      ? [[site.id, folderSkinCss(`gv-${site.id}-folder-section`, site.folderSkin)] as const]
+      : [],
+  ),
 ] as const;
 
 /**
- * Structural rules a site genuinely needs, each explained beside the rule.
- * DeepSeek pins its own "select chats" button over the section's header.
+ * A shared header layout reserves space for a host's pinned history control.
+ * The tree itself must still be skinned only through its tokens.
  */
 const STRUCTURAL_EXCEPTIONS: ReadonlyArray<RegExp> = [
-  /\.gv-deepseek-folder-section__header\b/,
-  /\.gv-deepseek-folder-section__selection\b/,
+  /\.gv-[a-z0-9-]+-folder-section__header\b/,
+  /\.gv-[a-z0-9-]+-folder-section__selection\b/,
 ];
 
 function rules(css: string): Array<{ selector: string; declarations: string[] }> {
@@ -59,8 +65,12 @@ function definedTokens(css: string): Set<string> {
 }
 
 describe('inline folder tree skins', () => {
-  it.each([...FULL_SKINS, ...SITE_SKINS])('%s sets tokens, not layout', (path) => {
+  it.each(FULL_SKINS)('%s sets tokens, not layout', (path) => {
     expect(layoutRules(read(path))).toEqual([]);
+  });
+
+  it.each(SITE_SKINS)('%s sets tokens, with only the shared header layout', (_site, css) => {
+    expect(layoutRules(css)).toEqual([]);
   });
 
   it.each(FULL_SKINS)('%s sets every token the shared tree reads', (path) => {

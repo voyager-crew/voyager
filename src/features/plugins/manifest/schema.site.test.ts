@@ -4,7 +4,12 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { siteAdapterToData, validateSiteAdapterData } from '../sites/siteAdapterData';
+import { requireBundledSiteAdapter } from '../catalog/sites';
+import {
+  readSiteAdapterData,
+  siteAdapterToData,
+  validateSiteAdapterData,
+} from '../sites/siteAdapterData';
 import { check, listBundledSites, siteSchema } from './__tests__/jsonSchemaCheck';
 
 describe('site.schema.json', () => {
@@ -56,6 +61,32 @@ describe('site.schema.json', () => {
 
     for (const broken of [noId, badKey, badCapability, badTheme, negativeRevision]) {
       expect(validateSiteAdapterData(broken).success).toBe(false);
+    }
+  });
+
+  it('rejects folder appearance outside the bounded token contract', () => {
+    const adapter = requireBundledSiteAdapter('deepseek');
+    const base = siteAdapterToData(adapter);
+    const skin = adapter.folderSkin!;
+    const invalid = [
+      { ...skin, storageKey: 'other-folders' },
+      { ...skin, light: { ...skin.light, text: undefined } },
+      { ...skin, light: { ...skin.light, text: 'url(https://example.com/pixel)' } },
+      { ...skin, dark: { text: '#fff;display:none' } },
+      { ...skin, dark: { arbitrary: '#fff' } },
+      { ...skin, rowHeight: '65px' },
+      { ...skin, rowRadius: 'var(--radius, 33px)' },
+      { ...skin, header: { height: 15, paddingInlineEnd: 28 } },
+      { ...skin, header: { height: 36, paddingInlineEnd: 129 } },
+      { ...skin, light: { ...skin.light, sidebar: undefined } },
+    ];
+    for (const folderSkin of invalid) {
+      const raw = { ...base, folderSkin };
+      expect(check(raw, siteSchema), JSON.stringify(folderSkin)).not.toEqual([]);
+      const read = readSiteAdapterData(raw);
+      expect(read.result.success).toBe(true);
+      expect(read.sectionIssues.some((issue) => issue.path.startsWith('folderSkin'))).toBe(true);
+      if (read.result.success) expect(read.result.data.folderSkin).toBeUndefined();
     }
   });
 });

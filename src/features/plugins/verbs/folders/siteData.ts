@@ -7,7 +7,6 @@
  * extension does not give that site, gets no folders here.
  */
 import type { ConversationReference } from '@/core/types/folder';
-import type { FolderPlatform } from '@/features/folder/platforms';
 import { folderSiteForPage } from '@/features/folder/sites/folderSiteTable';
 import { routeFolderSiteOf } from '@/features/folder/sites/routeFolderSites';
 import {
@@ -27,19 +26,7 @@ import { createRowMenu } from './rowMenu';
 import { createRowRename } from './rowRename';
 import { siteSectionCss } from './sectionCss';
 import { createSectionDom } from './sectionDom';
-import claudeSkin from './skins/claude.css?raw';
-import deepseekSkin from './skins/deepseek.css?raw';
 import type { HideFiledDom, SiteFoldersAdapter } from './types';
-
-/**
- * Each site's colour and metric tokens for the section's shadow root, which a
- * plugin stylesheet (page CSS) cannot reach; a site without one gets the
- * shared defaults.
- */
-const SECTION_SKINS: Partial<Readonly<Record<FolderPlatform, string>>> = {
-  claude: claudeSkin,
-  deepseek: deepseekSkin,
-};
 
 /** Ids a hidden row may carry; anything else is never trusted. */
 const ROW_ID = /^[A-Za-z0-9_-]+$/;
@@ -168,10 +155,7 @@ export function siteFoldersFromData(
     },
     section: {
       className,
-      css: siteSectionCss(
-        className,
-        Object.prototype.hasOwnProperty.call(SECTION_SKINS, site) ? SECTION_SKINS[site] : undefined,
-      ),
+      css: siteSectionCss(className, adapter?.folderSkin),
       anchor: dom.anchor,
       conversationHref,
       policy,
