@@ -61,11 +61,18 @@ export function usePromptDataTransfer(
     });
   });
   const { offer, withdraw } = undo;
-  /** A cloud failure: the card's generic error, plus the reason when one is known. */
+  /**
+   * A cloud failure. A known reason goes on its own line under a short title; without one the
+   * card's generic error, which asks to check the Google Drive sign-in, stands alone.
+   */
   const cloudError = useCallback(
     (error: unknown, excludedRows?: SyncScopeRow[]) => {
       const lines = reasonLines(t, error, excludedRows);
-      setStatus({ kind: 'err', text: t('promptCloudError'), ...(lines.length ? { lines } : {}) });
+      setStatus(
+        lines.length
+          ? { kind: 'err', text: t('promptCloudFailed'), lines }
+          : { kind: 'err', text: t('promptCloudError') },
+      );
     },
     [t],
   );

@@ -128,12 +128,14 @@ describe('Prompt Manager card cloud transfers', () => {
     expect(status()).not.toContain('sync_bookkeeping_failed');
   });
 
-  it('names a known reason under the card’s generic error, without the raw code', async () => {
-    sendMessage.mockResolvedValue({ ok: false, error: 'cloud_read_failed' });
+  it('names a known reason under a short title, without the raw code', async () => {
+    sendMessage.mockResolvedValue({ ok: false, error: 'not_authenticated' });
     await act(async () => button('promptCloudPull')!.click());
-    await vi.waitFor(() => expect(status()).toContain('promptCloudError'));
+    await vi.waitFor(() => expect(status()).toContain('promptCloudFailed'));
 
-    expect(status()).toContain('syncReasonCloudRead');
-    expect(status()).not.toContain('cloud_read_failed');
+    expect(status()).toContain('syncReasonSignIn');
+    expect(status()).not.toContain('not_authenticated');
+    // The generic title also asks to check the sign-in, so beside the reason it would repeat it.
+    expect(status()).not.toContain('promptCloudError');
   });
 });

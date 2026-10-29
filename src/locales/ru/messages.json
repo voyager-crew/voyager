@@ -3417,6 +3417,10 @@
     "message": "Не удалось синхронизировать с облаком. Убедитесь, что вы вошли в Google Drive.",
     "description": "Toast: cloud prompt sync failed / not signed in"
   },
+  "promptCloudFailed": {
+    "message": "Не удалось синхронизировать с облаком.",
+    "description": "Prompt Manager card: cloud pull or push failed; the reason is shown on the line below"
+  },
   "storageQuotaTitle": {
     "message": "Хранилище"
   },

@@ -3417,6 +3417,10 @@
     "message": "雲端同步失敗，請確認已登入 Google Drive。",
     "description": "Toast: cloud prompt sync failed / not signed in"
   },
+  "promptCloudFailed": {
+    "message": "雲端同步失敗。",
+    "description": "Prompt Manager card: cloud pull or push failed; the reason is shown on the line below"
+  },
   "storageQuotaTitle": {
     "message": "儲存空間"
   },

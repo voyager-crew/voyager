@@ -3417,6 +3417,10 @@
     "message": "클라우드 동기화에 실패했습니다. Google Drive에 로그인했는지 확인하세요.",
     "description": "Toast: cloud prompt sync failed / not signed in"
   },
+  "promptCloudFailed": {
+    "message": "클라우드 동기화에 실패했습니다.",
+    "description": "Prompt Manager card: cloud pull or push failed; the reason is shown on the line below"
+  },
   "storageQuotaTitle": {
     "message": "저장 공간"
   },

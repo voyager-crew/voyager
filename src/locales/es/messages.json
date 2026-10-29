@@ -3417,6 +3417,10 @@
     "message": "Error de sincronización en la nube. Asegúrate de haber iniciado sesión en Google Drive.",
     "description": "Toast: cloud prompt sync failed / not signed in"
   },
+  "promptCloudFailed": {
+    "message": "Error de sincronización en la nube.",
+    "description": "Prompt Manager card: cloud pull or push failed; the reason is shown on the line below"
+  },
   "storageQuotaTitle": {
     "message": "Almacenamiento"
   },

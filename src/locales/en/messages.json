@@ -3417,6 +3417,10 @@
     "message": "Cloud sync failed. Make sure you're signed in to Google Drive.",
     "description": "Toast: cloud prompt sync failed / not signed in"
   },
+  "promptCloudFailed": {
+    "message": "Cloud sync failed.",
+    "description": "Prompt Manager card: cloud pull or push failed; the reason is shown on the line below"
+  },
   "storageQuotaTitle": {
     "message": "Storage"
   },
