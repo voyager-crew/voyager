@@ -472,7 +472,7 @@ describe('CloudSyncSnapshotService', () => {
     },
   );
 
-  it('keeps markers through later edits and consumes no writes on a second undo until capture replaces them', async () => {
+  it('keeps suppression through later edits and replacement downloads while undo remains single use', async () => {
     const key = StorageKeys.FOLDER_DATA;
     const applied = { folders: ['From Drive'], folderContents: {} };
     const h = setup();
@@ -490,7 +490,7 @@ describe('CloudSyncSnapshotService', () => {
     expect(await isUndoneCloudSyncValue({ area: 'local', key, value: applied })).toBe(true);
     expect(withoutSlot(h.stored.local)).toEqual({ unrelated: 'a new edit' });
     await h.service.capture({ context: CONTEXT, keys: [{ area: 'local', key: 'unrelated' }] });
-    expect(await isUndoneCloudSyncValue({ area: 'local', key, value: applied })).toBe(false);
+    expect(await isUndoneCloudSyncValue({ area: 'local', key, value: applied })).toBe(true);
     expect((await h.service.read())?.entries).toEqual([
       { area: 'local', key: 'unrelated', existed: true, value: 'a new edit' },
     ]);

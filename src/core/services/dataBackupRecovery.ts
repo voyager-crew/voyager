@@ -53,8 +53,8 @@ export async function removeUndoneBackupCopy(
     write(operation: () => void): void | Promise<void>;
   },
 ): Promise<void> {
-  // Durable writes share a background queue whose bridge has no compare-delete.
-  // Keep those copies: recovery rejects matching content without risking a newer backup.
+  // Undo/capture asks the background backup owner to compare-delete durable copies.
+  // Recovery here only owns page storage; retained suppression also covers cleanup failures.
   if (copy.source === 'durable') return;
   const version = store.version(copy.key);
   try {

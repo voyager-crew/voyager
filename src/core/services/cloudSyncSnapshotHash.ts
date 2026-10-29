@@ -3,7 +3,7 @@ import { HIGHLIGHT_INDEX_KEY_PREFIX, HIGHLIGHT_PLATFORMS } from '@/core/types/hi
 import { hashValue } from '@/core/utils/canonicalHash';
 import { normalizeTimelineHierarchyData } from '@/features/timeline/hierarchyTypes';
 
-import { folderSnapshotProjections } from './cloudSyncFolderProjection';
+import { folderSnapshotProjectionValues } from './cloudSyncFolderProjection';
 import type { SnapshotValueHash, StorageWriteKey } from './cloudSyncSnapshotTypes';
 import { parseIndex } from './highlightAnnotationData';
 
@@ -29,7 +29,12 @@ export async function hashSnapshotValue(
 ): Promise<SnapshotValueHash> {
   const content = cloudSyncContent(value);
   const hash = await hashValue(content);
-  const folderProjections = await folderSnapshotProjections(target, content);
+  const folderProjections = await Promise.all(
+    folderSnapshotProjectionValues(target, content).map(async ({ projection, value }) => ({
+      projection,
+      hash: await hashValue(value),
+    })),
+  );
   if (folderProjections.length) return { ...target, hash, projections: folderProjections };
   if (target.area === 'local' && target.key.startsWith(HIGHLIGHT_INDEX_KEY_PREFIX)) {
     const index = parseIndex(content, target.key.slice(HIGHLIGHT_INDEX_KEY_PREFIX.length), 0);

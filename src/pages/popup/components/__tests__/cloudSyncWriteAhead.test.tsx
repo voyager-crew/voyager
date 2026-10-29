@@ -215,7 +215,7 @@ describe('popup write-ahead download receipts', () => {
     },
   );
 
-  it('does not count a downloaded value already equal to the original as restored', async () => {
+  it('does not count or suppress a downloaded value already equal to the original', async () => {
     h.stored[folderKey] = emptyFolders;
     await h.render();
     await (
@@ -232,7 +232,7 @@ describe('popup write-ahead download receipts', () => {
     expect(h.stored[SLOT]).toMatchObject({ kind: 'undone' });
     expect(
       await isUndoneCloudSyncValue({ area: 'local', key: folderKey, value: emptyFolders }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('does not report a key returned to its original value while undo publishes markers', async () => {

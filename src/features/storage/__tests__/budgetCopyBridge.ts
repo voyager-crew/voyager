@@ -5,8 +5,9 @@
  */
 import { storageQuotaService } from '@/core/services/StorageQuotaService';
 import { writeBudgetCopy } from '@/pages/background/budgetCopies';
+import { cleanUndoneBudgetCopies } from '@/pages/background/budgetCopyUndo';
 
-import { isWriteCopyMessage } from '../budgetCopyMessage';
+import { isCleanUndoneCopiesMessage, isWriteCopyMessage } from '../budgetCopyMessage';
 import { createStorageBudget } from '../storageBudget';
 
 export function budgetCopyBridge(
@@ -18,6 +19,8 @@ export function budgetCopyBridge(
     barrier: async () => undefined,
   });
   return async (message) => {
+    if (isCleanUndoneCopiesMessage(message))
+      return cleanUndoneBudgetCopies(budget, chrome.storage.local);
     if (!isWriteCopyMessage(message)) throw new Error('unexpected message');
     return writeBudgetCopy(message.key, message.value, {
       budget,

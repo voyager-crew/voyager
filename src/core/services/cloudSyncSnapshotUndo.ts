@@ -3,10 +3,12 @@ import { canonicalJson } from '@/core/utils/canonicalHash';
 
 import { CloudSyncFailure } from './CloudSyncFailure';
 import type { SnapshotStorage } from './CloudSyncSnapshotService';
+import { cloudSyncUndoMarkers } from './CloudSyncUndoMarkers';
 import { assertCloudSyncUndoOwnerWritable } from './CloudSyncUndoOwners';
+import { retryCloudSyncBackupCleanup } from './cloudSyncBackupCleanup';
 import { prepareHighlightSnapshotUndo, repairHighlightUndoIndexes } from './cloudSyncHighlightUndo';
 import { mergeSnapshotContexts } from './cloudSyncSnapshotContext';
-import { cloudSyncContent, hashCloudSyncContent } from './cloudSyncSnapshotHash';
+import { cloudSyncContent, hashCloudSyncContent, hashSnapshotValue } from './cloudSyncSnapshotHash';
 import type {
   CloudSyncAppliedHash,
   CloudSyncKind,
@@ -17,6 +19,7 @@ import type {
   CloudSyncUndoProgressMarker,
   CloudSyncUndoResult,
   SnapshotEntry,
+  SnapshotValueHash,
   StorageWriteKey,
 } from './cloudSyncSnapshotTypes';
 
@@ -28,16 +31,37 @@ function identity(target: StorageWriteKey): string {
 
 type KeyReceipts = [CloudSyncAppliedHash, ...CloudSyncAppliedHash[]];
 
-function markerFor(receipts: KeyReceipts, replacedHash = receipts[0].hash): CloudSyncUndoMarker {
+function priorContentHashes(prior: SnapshotValueHash): ReadonlySet<string> {
+  return new Set([
+    prior.hash,
+    ...(prior.projections ?? []).flatMap(({ projection, hash }) =>
+      projection === 'folder-normalized' || projection === 'folder-loaded' ? [hash] : [],
+    ),
+  ]);
+}
+
+function markerFor(
+  receipts: KeyReceipts,
+  prior: SnapshotValueHash,
+  priorHashes: ReadonlySet<string>,
+): CloudSyncUndoMarker | null {
+  // Raw and deterministic owner forms of the baseline remain valid recovery data.
+  const changed = receipts.filter((receipt) => !priorHashes.has(receipt.hash));
+  const first = changed[0];
+  if (!first) return null;
   const projections = new Map<string, Set<string>>();
-  for (const receipt of receipts) {
+  const priorProjections = new Map(
+    prior.projections?.map(({ projection, hash }) => [projection, hash]),
+  );
+  for (const receipt of changed) {
     for (const { projection, hash } of receipt.projections ?? []) {
+      if (priorHashes.has(hash) || priorProjections.get(projection) === hash) continue;
       const hashes = projections.get(projection) ?? new Set<string>();
       hashes.add(hash);
       projections.set(projection, hashes);
     }
   }
-  const contexts = receipts
+  const contexts = changed
     .flatMap((receipt) => receipt.contexts ?? [])
     .reduce(
       (all, context) => mergeSnapshotContexts(all, context),
@@ -45,11 +69,11 @@ function markerFor(receipts: KeyReceipts, replacedHash = receipts[0].hash): Clou
     );
   return {
     ...(contexts.length ? { contexts } : {}),
-    area: receipts[0].area,
-    key: receipts[0].key,
-    replacedHash,
-    appliedHash: receipts[0].hash,
-    appliedHashes: [...new Set(receipts.map(({ hash }) => hash))],
+    area: first.area,
+    key: first.key,
+    replacedHash: first.hash,
+    appliedHash: first.hash,
+    appliedHashes: [...new Set(changed.map(({ hash }) => hash))],
     projections: [...projections].map(([projection, hashes]) => ({
       projection,
       hashes: [...hashes],
@@ -100,31 +124,55 @@ export async function undoCapturedCloudSyncSnapshot(
       kept.set(kind, targets);
     }
   };
-  const candidates: Array<(typeof written)[number] & { priorHash: string }> = [];
+  const candidates: Array<
+    (typeof written)[number] & {
+      priorHash: string;
+      priorHashes: ReadonlySet<string>;
+      marker: CloudSyncUndoMarker | null;
+    }
+  > = [];
   const completed: CloudSyncUndoMarker[] = [];
   const progress = new Map<string, CloudSyncUndoProgressMarker>();
+  const restoreKeys = new Map<string, StorageWriteKey>();
+  const restoreIntent = (entry: StorageWriteKey) =>
+    restoreKeys.set(identity(entry), { area: entry.area, key: entry.key });
   let restoredKeys = 0;
   for (const item of written) {
     if (item.entry.preserve || (item.entry.area === 'local' && blocked.has(item.entry.key))) {
       keep(item.entry, item.receipts);
       continue;
     }
-    const priorHash = await hashCloudSyncContent(item.entry.existed ? item.entry.value : undefined);
+    const prior = await hashSnapshotValue(
+      item.entry,
+      item.entry.existed ? item.entry.value : undefined,
+    );
+    const priorHash = prior.hash;
+    const priorHashes = priorContentHashes(prior);
     const hash = await currentHash(storage, item.entry);
-    const marker = markerFor(item.receipts);
+    const marker = markerFor(item.receipts, prior, priorHashes);
     // Even an unwritten receipt can leave a page mirror; suppress it without counting a restore.
     if (hash === priorHash) {
       const previous =
         snapshot.kind === 'undoing'
           ? snapshot.markers.find((entry) => identity(entry) === identity(item.entry))
           : undefined;
-      const resumed = previous !== undefined && !previous.suppressionOnly;
-      if (resumed) restoredKeys += 1;
-      completed.push(marker);
-      progress.set(identity(item.entry), resumed ? marker : { ...marker, suppressionOnly: true });
+      const resumed =
+        snapshot.kind === 'undoing' &&
+        (snapshot.restoreKeys === undefined
+          ? previous !== undefined && !previous.suppressionOnly
+          : snapshot.restoreKeys.some((entry) => identity(entry) === identity(item.entry)));
+      if (resumed) {
+        restoredKeys += 1;
+        restoreIntent(item.entry);
+      }
+      if (marker) {
+        completed.push(marker);
+        progress.set(identity(item.entry), resumed ? marker : { ...marker, suppressionOnly: true });
+      }
     } else if (item.receipts.some((receipt) => receipt.hash === hash)) {
-      candidates.push({ ...item, priorHash });
-      progress.set(identity(item.entry), marker);
+      candidates.push({ ...item, priorHash, priorHashes, marker });
+      restoreIntent(item.entry);
+      if (marker) progress.set(identity(item.entry), marker);
     } else keep(item.entry, item.receipts);
   }
   const assertCurrent = async () => {
@@ -141,23 +189,26 @@ export async function undoCapturedCloudSyncSnapshot(
         kind: 'undoing',
         entries: written.map(({ entry }) => entry),
         markers: [...progress.values()],
+        restoreKeys: [...restoreKeys.values()],
       },
     });
   };
   await persistProgress();
-  for (const { entry, receipts, priorHash } of candidates) {
+  for (const { entry, receipts, priorHash, priorHashes, marker } of candidates) {
     await assertCurrent();
     // Slot persistence and earlier key writes can both be outlived by ordinary user edits.
     const hash = await currentHash(storage, entry);
     if (hash === null || hash === priorHash || !receipts.some((receipt) => receipt.hash === hash)) {
       if (hash === priorHash) {
-        const marker = markerFor(receipts);
-        completed.push(marker);
-        progress.set(identity(entry), { ...marker, suppressionOnly: true });
+        if (marker) {
+          completed.push(marker);
+          progress.set(identity(entry), { ...marker, suppressionOnly: true });
+        }
       } else {
         keep(entry, receipts);
         progress.delete(identity(entry));
       }
+      restoreKeys.delete(identity(entry));
       // A subsequent failed restore must not count this unchanged key when undo resumes.
       await persistProgress();
       continue;
@@ -166,12 +217,22 @@ export async function undoCapturedCloudSyncSnapshot(
     assertCloudSyncUndoOwnerWritable(entry);
     if (entry.existed) await storage[entry.area].set({ [entry.key]: entry.value });
     else await storage[entry.area].remove([entry.key]);
-    completed.push(markerFor(receipts, hash));
+    if (marker)
+      completed.push({
+        ...marker,
+        replacedHash: priorHashes.has(hash) ? marker.replacedHash : hash,
+      });
     restoredKeys += 1;
   }
   await repairHighlightUndoIndexes(snapshot, repair, storage, assertCurrent);
   await assertCurrent();
-  await storage.local.set({ [SLOT]: { kind: 'undone', markers: completed } });
+  const undone: CloudSyncSnapshotSlot = {
+    kind: 'undone',
+    markers: completed,
+    ...(snapshot.retainedMarkers ? { retainedMarkers: snapshot.retainedMarkers } : {}),
+  };
+  await storage.local.set({ [SLOT]: undone });
+  void retryCloudSyncBackupCleanup(cloudSyncUndoMarkers(undone));
   const keptKinds: CloudSyncUndoKept[] = [...kept].map(([kind, keys]) => ({
     kind,
     keys,

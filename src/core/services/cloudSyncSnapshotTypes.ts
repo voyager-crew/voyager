@@ -81,18 +81,26 @@ interface SnapshotData {
   readonly run?: CloudSyncRun;
   readonly entries: readonly SnapshotEntry[];
   readonly appliedHashes: readonly CloudSyncAppliedHash[];
+  /** Suppression outlives a slot while parked page recovery copies cannot be acknowledged. */
+  readonly retainedMarkers?: readonly CloudSyncUndoMarker[];
 }
 
 export type CloudSyncSnapshot = SnapshotData &
   (
     | { readonly kind: 'snapshot' }
-    | { readonly kind: 'undoing'; readonly markers: readonly CloudSyncUndoProgressMarker[] }
+    | {
+        readonly kind: 'undoing';
+        readonly markers: readonly CloudSyncUndoProgressMarker[];
+        /** Physical restore intent, independent from hashes eligible for suppression. */
+        readonly restoreKeys?: readonly StorageWriteKey[];
+      }
   );
 
 /** Contains only suppression hashes, never values that can be restored a second time. */
 export interface CloudSyncUndoneRecord {
   readonly kind: 'undone';
   readonly markers: readonly CloudSyncUndoMarker[];
+  readonly retainedMarkers?: readonly CloudSyncUndoMarker[];
 }
 
 export type CloudSyncSnapshotSlot = CloudSyncSnapshot | CloudSyncUndoneRecord;
@@ -219,6 +227,9 @@ export function parseCloudSyncSnapshot(value: unknown): CloudSyncSnapshot | null
   if (!appliedHashes) return null;
   const run = value.run === undefined ? undefined : parseRun(value.run);
   if ((value.run !== undefined && !run) || (context.source === 'sync-run') !== !!run) return null;
+  const retainedMarkers =
+    value.retainedMarkers === undefined ? undefined : parseUndoMarkers(value.retainedMarkers);
+  if (value.retainedMarkers !== undefined && !retainedMarkers) return null;
   const data = {
     id: value.id,
     timestamp: value.timestamp,
@@ -226,12 +237,32 @@ export function parseCloudSyncSnapshot(value: unknown): CloudSyncSnapshot | null
     entries,
     appliedHashes,
     ...(run ? { run } : {}),
+    ...(retainedMarkers ? { retainedMarkers } : {}),
   };
   if (value.kind === 'undoing') {
     const markers = parseUndoMarkers(value.markers, true);
-    return markers ? { ...data, kind: 'undoing', markers } : null;
+    const restoreKeys =
+      value.restoreKeys === undefined ? undefined : parseRestoreKeys(value.restoreKeys, seen);
+    if (!markers || (value.restoreKeys !== undefined && !restoreKeys)) return null;
+    return { ...data, kind: 'undoing', markers, ...(restoreKeys ? { restoreKeys } : {}) };
   }
   return { ...data, kind: 'snapshot' };
+}
+
+function parseRestoreKeys(value: unknown, captured: ReadonlySet<string>): StorageWriteKey[] | null {
+  if (!Array.isArray(value)) return null;
+  const result: StorageWriteKey[] = [];
+  const seen = new Set<string>();
+  for (const raw of value) {
+    if (!isRecord(raw)) return null;
+    const target = parseTarget(raw);
+    if (!target) return null;
+    const identity = JSON.stringify([target.area, target.key]);
+    if (!captured.has(identity) || seen.has(identity)) return null;
+    seen.add(identity);
+    result.push({ area: target.area, key: target.key });
+  }
+  return result;
 }
 
 function isContentHash(value: unknown): value is string {
@@ -372,7 +403,10 @@ function parseUndoMarkers(value: unknown, progress = false): CloudSyncUndoProgre
 export function parseCloudSyncSnapshotSlot(value: unknown): CloudSyncSnapshotSlot | null {
   if (isRecord(value) && value.kind === 'undone') {
     const markers = parseUndoMarkers(value.markers);
-    return markers ? { kind: 'undone', markers } : null;
+    const retainedMarkers =
+      value.retainedMarkers === undefined ? undefined : parseUndoMarkers(value.retainedMarkers);
+    if (!markers || (value.retainedMarkers !== undefined && !retainedMarkers)) return null;
+    return { kind: 'undone', markers, ...(retainedMarkers ? { retainedMarkers } : {}) };
   }
   return parseCloudSyncSnapshot(value);
 }

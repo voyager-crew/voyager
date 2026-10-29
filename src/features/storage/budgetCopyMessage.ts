@@ -8,6 +8,7 @@ import browser from 'webextension-polyfill';
 import { parseDataBackupKey } from '@/core/services/dataBackupKeys';
 
 export const WRITE_COPY_MESSAGE = 'gv.storageBudget.writeCopy';
+export const CLEAN_UNDONE_COPIES_MESSAGE = 'gv.storageBudget.cleanUndoneCopies';
 
 export interface WriteCopyMessage {
   type: typeof WRITE_COPY_MESSAGE;
@@ -16,6 +17,30 @@ export interface WriteCopyMessage {
 }
 
 export type WriteCopyReply = { status: 'saved' } | { status: 'skipped' };
+export type CleanUndoneCopiesReply = { status: 'cleared' } | { status: 'failed' };
+
+export function isCleanUndoneCopiesMessage(
+  message: unknown,
+): message is { type: typeof CLEAN_UNDONE_COPIES_MESSAGE } {
+  return (
+    typeof message === 'object' &&
+    message !== null &&
+    'type' in message &&
+    message.type === CLEAN_UNDONE_COPIES_MESSAGE
+  );
+}
+
+/** The background reads the current suppression itself and cleans inside its backup write queue. */
+export async function requestUndoneBackupCleanup(): Promise<boolean> {
+  try {
+    const reply: unknown = await browser.runtime.sendMessage({ type: CLEAN_UNDONE_COPIES_MESSAGE });
+    return (
+      typeof reply === 'object' && reply !== null && 'status' in reply && reply.status === 'cleared'
+    );
+  } catch {
+    return false;
+  }
+}
 
 export function isWriteCopyMessage(message: unknown): message is WriteCopyMessage {
   if (typeof message !== 'object' || message === null) return false;

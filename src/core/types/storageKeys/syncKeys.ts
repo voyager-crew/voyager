@@ -4,4 +4,6 @@ export const SYNC_STORAGE_KEYS = {
   CLOUD_SYNC_BOOKKEEPING: 'gvCloudSyncBookkeeping',
   // Latest pre-apply copy of exactly the storage keys a download will write.
   CLOUD_SYNC_PRE_APPLY_SNAPSHOT: 'gvCloudSyncPreApplySnapshot',
+  // One newest unreadable pre-apply slot, retained verbatim for recovery or inspection.
+  CLOUD_SYNC_SNAPSHOT_QUARANTINE: 'gvCloudSyncSnapshotQuarantine',
 } as const;

@@ -41,7 +41,7 @@ describe('StorageKeys', () => {
   });
 
   it('keeps the phase 3 sync data under its shipped storage keys', () => {
-    expect(SYNC_STORAGE_KEYS).toEqual({
+    expect(SYNC_STORAGE_KEYS).toMatchObject({
       CLOUD_SYNC_SCOPE: 'gvCloudSyncScope',
       CLOUD_SYNC_BOOKKEEPING: 'gvCloudSyncBookkeeping',
       CLOUD_SYNC_PRE_APPLY_SNAPSHOT: 'gvCloudSyncPreApplySnapshot',

@@ -11,12 +11,19 @@ import { createWriteQueue } from '@/features/storage/writeQueue';
 
 import { CloudSyncFailure, cloudSyncFailureCode } from './CloudSyncFailure';
 import { runCloudSyncUndoOwners } from './CloudSyncUndoOwners';
+import { acknowledgeCloudSyncBackups } from './cloudSyncBackupAcknowledgment';
+import { retryCloudSyncBackupCleanup } from './cloudSyncBackupCleanup';
+import {
+  parseStoredCloudSyncSnapshotSlot,
+  readCloudSyncCaptureState,
+} from './cloudSyncSnapshotCapture';
 import {
   assertReadySnapshotRun,
   sameSnapshotContext,
   mergeSnapshotContexts,
 } from './cloudSyncSnapshotContext';
 import { hashSnapshotValue, hashCloudSyncContent } from './cloudSyncSnapshotHash';
+import { releaseCloudSyncSnapshotQuarantine } from './cloudSyncSnapshotQuarantine';
 import {
   type CloudSyncAppliedValue,
   type CloudSyncRun,
@@ -26,7 +33,6 @@ import {
   type SnapshotContext,
   type SnapshotEntry,
   type StorageWriteKey,
-  parseCloudSyncSnapshotSlot,
 } from './cloudSyncSnapshotTypes';
 import { undoCapturedCloudSyncSnapshot } from './cloudSyncSnapshotUndo';
 
@@ -69,6 +75,7 @@ export interface SnapshotExtensionOptions {
 }
 
 const SLOT = StorageKeys.CLOUD_SYNC_PRE_APPLY_SNAPSHOT;
+const QUARANTINE = StorageKeys.CLOUD_SYNC_SNAPSHOT_QUARANTINE;
 
 function keyIdentity(target: StorageWriteKey): string {
   return JSON.stringify([target.area, target.key]);
@@ -81,7 +88,10 @@ function receiptIdentity(receipt: StorageWriteKey & { readonly hash: string }): 
 function uniqueKeys(keys: readonly StorageWriteKey[]): StorageWriteKey[] {
   const unique = new Map<string, StorageWriteKey>();
   for (const target of keys) {
-    if (!target.key || (target.area === 'local' && target.key === SLOT)) {
+    if (
+      !target.key ||
+      (target.area === 'local' && (target.key === SLOT || target.key === QUARANTINE))
+    ) {
       throw new Error('Invalid cloud snapshot key');
     }
     unique.set(keyIdentity(target), { area: target.area, key: target.key });
@@ -98,15 +108,8 @@ export class CloudSyncSnapshotService {
   private async readSlot(): Promise<CloudSyncSnapshotSlot | null> {
     const raw: unknown = (await this.storage().local.get([SLOT]))[SLOT];
     if (raw === undefined) return null;
-    const snapshot = parseCloudSyncSnapshotSlot(raw);
-    if (
-      !snapshot ||
-      (snapshot.kind === 'undone' ? snapshot.markers : snapshot.entries).some(
-        (entry) => entry.area === 'local' && entry.key === SLOT,
-      )
-    ) {
-      throw new Error('Invalid cloud snapshot');
-    }
+    const snapshot = parseStoredCloudSyncSnapshotSlot(raw);
+    if (!snapshot) throw new Error('Invalid cloud snapshot');
     return snapshot;
   }
 
@@ -267,11 +270,18 @@ export class CloudSyncSnapshotService {
           );
         return this.extendSlot(input.snapshotId, input.keys, { context: input.context });
       }
+      const entries = await this.captureEntries(uniqueKeys(input.keys));
+      // Read suppression last: another context may have undone a key while capture read its targets.
+      // A different slot cannot acknowledge parked page localStorage recovery copies.
+      const { raw, previous, retainedMarkers } = await readCloudSyncCaptureState(
+        this.storage().local,
+      );
       const snapshot: CloudSyncSnapshot = {
         kind: 'snapshot',
         appliedHashes: [],
         id: crypto.randomUUID(),
         timestamp: Date.now(),
+        ...(retainedMarkers.length ? { retainedMarkers } : {}),
         // A Round C reader rejects this source before touching user data: run undo has new protection rules.
         context: input.run ? { ...input.context, source: 'sync-run' } : input.context,
         ...(input.run
@@ -283,12 +293,18 @@ export class CloudSyncSnapshotService {
               },
             }
           : {}),
-        entries: (await this.captureEntries(uniqueKeys(input.keys))).map((entry) =>
+        entries: entries.map((entry) =>
           input.run ? { ...entry, contexts: [input.context] } : entry,
         ),
       };
       // A failed persist propagates: the caller must perform zero apply writes.
-      await this.storage().local.set({ [SLOT]: snapshot });
+      // Keep one newest unreadable slot verbatim; a corrupt old Undo cannot block future downloads.
+      await this.storage().local.set({
+        ...(raw !== undefined && !previous ? { [QUARANTINE]: raw } : {}),
+        [SLOT]: snapshot,
+      });
+      // Cleanup uses another owner's queue; suppression keeps it safe without blocking this queue.
+      void retryCloudSyncBackupCleanup(retainedMarkers);
       return snapshot;
     });
   }
@@ -308,14 +324,34 @@ export class CloudSyncSnapshotService {
   /** Drop only unreceipted targets. A prepared write may have committed before reporting failure. */
   finish(snapshotId: string): Promise<void> {
     return this.serialize(async () => {
-      const slot = await this.readSlot();
+      const storage = this.storage().local;
+      const observed = await storage.get([SLOT, QUARANTINE]);
+      const slot = parseStoredCloudSyncSnapshotSlot(observed[SLOT]);
+      if (observed[SLOT] !== undefined && !slot) throw new Error('Invalid cloud snapshot');
       if (!slot || slot.kind !== 'snapshot' || slot.id !== snapshotId) return;
       const receipted = new Set(slot.appliedHashes.map(keyIdentity));
       const entries = slot.entries.filter((entry) => receipted.has(keyIdentity(entry)));
-      if (entries.length === slot.entries.length) return;
-      await this.storage().local.set({
-        [SLOT]: entries.length || slot.run ? { ...slot, entries } : { kind: 'undone', markers: [] },
-      });
+      const retainedMarkers = slot.retainedMarkers
+        ? await acknowledgeCloudSyncBackups(slot, this.storage())
+        : undefined;
+      if (entries.length === slot.entries.length && retainedMarkers === slot.retainedMarkers) {
+        await releaseCloudSyncSnapshotQuarantine(storage, observed[SLOT], observed[QUARANTINE]);
+        return;
+      }
+      const current = await this.readSlot();
+      if (JSON.stringify(current) !== JSON.stringify(slot)) return;
+      const { retainedMarkers: _retained, ...finished } = slot;
+      const retained = retainedMarkers?.length ? { retainedMarkers } : {};
+      const settled: CloudSyncSnapshotSlot =
+        entries.length || slot.run
+          ? { ...finished, entries, ...retained }
+          : {
+              kind: 'undone',
+              markers: [],
+              ...retained,
+            };
+      await storage.set({ [SLOT]: settled });
+      await releaseCloudSyncSnapshotQuarantine(storage, settled, observed[QUARANTINE]);
     });
   }
 

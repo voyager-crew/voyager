@@ -40,6 +40,11 @@ export const NON_SETTINGS_BACKUP_POLICIES = {
     disposition: 'device-local',
     reason: 'The latest pre-apply undo snapshot belongs to this installation, outside backups.',
   },
+  [StorageKeys.CLOUD_SYNC_SNAPSHOT_QUARANTINE]: {
+    storage: 'local',
+    disposition: 'device-local',
+    reason: 'An unreadable pre-apply snapshot is retained locally, outside settings backups.',
+  },
   [StorageKeys.GV_ACCOUNT_ISOLATION_ENABLED]: {
     storage: 'sync',
     disposition: 'device-local',
