@@ -64,30 +64,6 @@ describe('canonical folder write receipts', () => {
     expect(memory.values.local.get(KEY)).toEqual(LATER);
   });
 
-  it('receipts the exact AI Studio folder and prompt values before their atomic write', async () => {
-    const key = StorageKeys.FOLDER_DATA_AISTUDIO;
-    const prompts = [{ id: 'p1', text: 'From Drive' }];
-    const set = chrome.storage.local.set.bind(chrome.storage.local);
-    vi.spyOn(chrome.storage.local, 'set').mockImplementation(async (items) => {
-      await set(items);
-      memory.external('local', key, LATER);
-      memory.external('local', StorageKeys.PROMPT_ITEMS, []);
-    });
-    const beforeWrite = vi.fn(async () => {});
-
-    await new AIStudioFolderStorageAdapter().saveData(
-      key,
-      DATA,
-      { [StorageKeys.PROMPT_ITEMS]: prompts },
-      beforeWrite,
-    );
-    expect(beforeWrite).toHaveBeenCalledExactlyOnceWith({
-      [key]: DATA,
-      [StorageKeys.PROMPT_ITEMS]: prompts,
-    });
-    expect(memory.values.local.get(key)).toEqual(LATER);
-  });
-
   it('retains Safari intent when a later canonical edit makes verification fail', async () => {
     const set = chrome.storage.local.set.bind(chrome.storage.local);
     vi.spyOn(chrome.storage.local, 'set').mockImplementation(async (items) => {

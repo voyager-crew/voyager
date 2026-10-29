@@ -45,6 +45,149 @@ afterEach(() => {
 });
 
 describe('stable cloud identity through real background messages', () => {
+  it('a legacy update during guard reads remains available after the prepared upload commits', async () => {
+    const d = await createGuardDevice({ scope });
+    d.values[StorageKeys.GV_ACCOUNT_PROFILE_MAP] = boundProfiles();
+    const legacy = scoped(guardFiles.prompts, scope.accountKey);
+    const primary = scoped(guardFiles.prompts, emailKey);
+    d.drive.put(primary, guardEnvelope('prompts', [guardPrompt('kept')]));
+    d.drive.put(legacy, guardEnvelope('prompts', [guardPrompt('prepared')]));
+    d.values[StorageKeys.PROMPT_ITEMS] = [guardPrompt('kept')];
+    let sourceRead = false;
+    d.drive.beforeRead = async (name) => {
+      if (name === legacy) sourceRead = true;
+    };
+    d.drive.beforeFind = async (name) => {
+      if (name === legacy && sourceRead) {
+        d.drive.put(legacy, guardEnvelope('prompts', [guardPrompt('arrived-during-guard')]));
+        d.drive.beforeFind = undefined;
+      }
+    };
+    await expect(d.request()).resolves.toMatchObject({ ok: true });
+    expect(d.drive.payload<{ items: unknown[] }>(primary).items).toEqual([
+      guardPrompt('kept'),
+      guardPrompt('prepared'),
+    ]);
+    await expect(d.request()).resolves.toMatchObject({ ok: true });
+    expect(d.drive.payload<{ items: unknown[] }>(primary).items).toEqual([
+      guardPrompt('kept'),
+      guardPrompt('arrived-during-guard'),
+    ]);
+  });
+
+  it.each(['googleDrive', 'icloud'] as const)(
+    'only completed legacy downloads suppress the same source after a later local deletion (%s)',
+    async (provider) => {
+      const d = await createGuardDevice({ scope, provider });
+      d.values[StorageKeys.GV_ACCOUNT_PROFILE_MAP] = boundProfiles();
+      const legacy = scoped(guardFiles.prompts, scope.accountKey);
+      const primary = scoped(guardFiles.prompts, emailKey);
+      d.drive.put(primary, guardEnvelope('prompts', [guardPrompt('kept')]));
+      d.drive.put(legacy, guardEnvelope('prompts', [guardPrompt('deleted')]));
+      const write = chrome.storage.local.set;
+      const failure = vi.spyOn(chrome.storage.local, 'set').mockImplementation(async (items) => {
+        if (Object.hasOwn(items, StorageKeys.CLOUD_SYNC_PRE_APPLY_SNAPSHOT))
+          throw new Error('storage full');
+        await write(items);
+      });
+      await expect(d.request('gv.sync.pullPromptsMerge')).resolves.toMatchObject({ ok: false });
+      expect(d.values[StorageKeys.PROMPT_ITEMS]).toEqual([]);
+      expect(d.values[StorageKeys.CLOUD_SYNC_BOOKKEEPING]).toBeUndefined();
+      failure.mockRestore();
+      await expect(d.request('gv.sync.pullPromptsMerge')).resolves.toMatchObject({ ok: true });
+      expect(d.values[StorageKeys.PROMPT_ITEMS]).toEqual([
+        guardPrompt('kept'),
+        guardPrompt('deleted'),
+      ]);
+      d.values[StorageKeys.PROMPT_ITEMS] = [guardPrompt('kept')];
+      await expect(d.request('gv.sync.pullPromptsMerge')).resolves.toMatchObject({ ok: true });
+      expect(d.values[StorageKeys.PROMPT_ITEMS]).toEqual([guardPrompt('kept')]);
+      // Publishing the local checkpoint prevents another device from replaying the old source.
+      await expect(d.request()).resolves.toMatchObject({ ok: true });
+      expect(d.drive.payload<{ items: unknown[] }>(primary).items).toEqual([guardPrompt('kept')]);
+      d.drive.put(legacy, guardEnvelope('prompts', [guardPrompt('newer')]));
+      await expect(d.request('gv.sync.pullPromptsMerge')).resolves.toMatchObject({ ok: true });
+      expect(d.values[StorageKeys.PROMPT_ITEMS]).toEqual([
+        guardPrompt('kept'),
+        guardPrompt('newer'),
+      ]);
+    },
+  );
+
+  it('a failed email upload never consumes its legacy merge', async () => {
+    const d = await createGuardDevice({ scope });
+    d.values[StorageKeys.GV_ACCOUNT_PROFILE_MAP] = boundProfiles();
+    const legacy = scoped(guardFiles.prompts, scope.accountKey);
+    const primary = scoped(guardFiles.prompts, emailKey);
+    d.drive.put(primary, guardEnvelope('prompts', [guardPrompt('kept')]));
+    d.drive.put(legacy, guardEnvelope('prompts', [guardPrompt('must-retry')]));
+    d.values[StorageKeys.PROMPT_ITEMS] = [guardPrompt('kept')];
+    d.drive.failWrites.add(primary);
+    const writing = d.request();
+    await vi.runAllTimersAsync();
+    await expect(writing).resolves.toMatchObject({ ok: false });
+    expect(d.drive.payload(primary)).not.toHaveProperty('legacyMergeSources');
+    d.drive.failWrites.delete(primary);
+    await expect(d.request()).resolves.toMatchObject({ ok: true });
+    expect(d.drive.payload<{ items: unknown[] }>(primary).items).toEqual([
+      guardPrompt('kept'),
+      guardPrompt('must-retry'),
+    ]);
+  });
+
+  it.each(['chrome', 'safari', 'icloud'] as const)(
+    'does not resurrect a deleted legacy prompt on this device or a new device, but imports a changed old-device file (%s)',
+    async (runtime) => {
+      const options = {
+        scope,
+        safari: runtime === 'safari',
+        provider: runtime === 'icloud' ? ('icloud' as const) : ('googleDrive' as const),
+      };
+      const d = await createGuardDevice(options);
+      d.values[StorageKeys.GV_ACCOUNT_PROFILE_MAP] = boundProfiles();
+      const legacy = scoped(guardFiles.prompts, scope.accountKey);
+      const primary = scoped(guardFiles.prompts, emailKey);
+      d.drive.put(legacy, guardEnvelope('prompts', [guardPrompt('deleted')]));
+      d.setLocal('prompts', 1);
+      await expect(d.request()).resolves.toMatchObject({ ok: true });
+      expect(d.drive.payload<{ items: unknown[] }>(primary).items).toEqual([
+        guardPrompt('prompt-0'),
+        guardPrompt('deleted'),
+      ]);
+      // The source stays frozen. A subsequent local deletion must survive both directions.
+      await expect(d.request()).resolves.toMatchObject({ ok: true });
+      expect(d.drive.payload<{ items: unknown[] }>(primary).items).toEqual([
+        guardPrompt('prompt-0'),
+      ]);
+      await expect(d.request('gv.sync.download')).resolves.toMatchObject({
+        ok: true,
+        data: { prompts: { items: [guardPrompt('prompt-0')] } },
+      });
+
+      const other = await createGuardDevice(options);
+      other.values[StorageKeys.GV_ACCOUNT_PROFILE_MAP] = boundProfiles();
+      for (const [id, text] of d.drive.files) other.drive.files.set(id, text);
+      for (const [id, metadata] of d.drive.metadata)
+        other.drive.metadata.set(id, structuredClone(metadata));
+      await expect(other.request('gv.sync.download')).resolves.toMatchObject({
+        ok: true,
+        data: { prompts: { items: [guardPrompt('prompt-0')] } },
+      });
+      other.drive.put(legacy, guardEnvelope('prompts', [guardPrompt('old-device-new')]));
+      other.setLocal('prompts', 1);
+      await expect(other.request()).resolves.toMatchObject({ ok: true });
+      expect(other.drive.payload<{ items: unknown[] }>(primary).items).toEqual([
+        guardPrompt('prompt-0'),
+        guardPrompt('old-device-new'),
+      ]);
+      await expect(other.request()).resolves.toMatchObject({ ok: true });
+      expect(other.drive.payload<{ items: unknown[] }>(primary).items).toEqual([
+        guardPrompt('prompt-0'),
+      ]);
+      expect(d.drive.payload<{ items: unknown[] }>(legacy).items).toEqual([guardPrompt('deleted')]);
+    },
+  );
+
   it.each([false, true])(
     'route-first local buckets use the observed email for upload and download (Safari=%s)',
     async (safari) => {
@@ -116,7 +259,7 @@ describe('stable cloud identity through real background messages', () => {
     expect(d.values).toEqual(local);
   });
 
-  it('merges only a bound legacy route source, filters route-bearing content, and never writes that source', async () => {
+  it('seeds a bound route source once, filters foreign content, and keeps later deletions', async () => {
     const d = await createGuardDevice({ scope });
     d.values[StorageKeys.GV_ACCOUNT_PROFILE_MAP] = boundProfiles();
     const legacyName = (name: string) => scoped(name, scope.accountKey);
@@ -217,6 +360,16 @@ describe('stable cloud identity through real background messages', () => {
     expect(d.drive.payload(emailName(guardFiles.prompts))).toMatchObject({
       items: [guardPrompt('prompt-0'), guardPrompt('legacy-prompt')],
     });
+    await expect(d.request()).resolves.toMatchObject({ ok: true });
+    expect(d.drive.payload<{ items: unknown[] }>(emailName(guardFiles.prompts)).items).toEqual([
+      guardPrompt('prompt-0'),
+    ]);
+    const after = await d.request('gv.sync.download');
+    expect(after).toHaveProperty('ok', true);
+    expect(after).toHaveProperty('data.folders.data', guardFolders(1));
+    expect(after).toHaveProperty('data.prompts.items', [guardPrompt('prompt-0')]);
+    expect(after).toHaveProperty('data.forks.data', guardForks(1));
+    expect(after).toHaveProperty('data.timelineHierarchy.data', guardHierarchy(1));
   });
 
   it('skips a legacy route file whose profile is bound to another email', async () => {

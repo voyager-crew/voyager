@@ -7,6 +7,7 @@ import {
 import type { TranslationKey } from '@/utils/translations';
 
 import type { CloudApplySkip } from './CloudSyncApplyPlan';
+import { CloudSyncFailure, cloudSyncFailureCode } from './CloudSyncFailure';
 import {
   type SnapshotContext,
   type CloudSyncAppliedValue,
@@ -33,8 +34,9 @@ export class CloudRestoreError extends Error {
     cause: unknown,
     readonly reason?: TranslationKey,
     readonly skipped: readonly CloudApplySkip[] = [],
+    readonly snapshotId?: string,
   ) {
-    super(cause instanceof Error ? cause.message : String(cause));
+    super(cause instanceof Error ? cause.message : String(cause), { cause });
     this.name = 'CloudRestoreError';
   }
 }
@@ -70,19 +72,25 @@ export interface CloudRestoreResult {
   readonly snapshotId?: string;
 }
 
-type Progress = { index: number; restored: CloudRestorePart[] };
+type Progress = { index: number; restored: CloudRestorePart[]; snapshotId?: string };
 type AppliedProgress = Progress & { snapshotId: string };
+type Termination = { status: 'active' } | { status: 'failed'; error: unknown };
 type ApplyState =
-  | ({ status: 'capturing' } & Progress)
+  | ({ status: 'capturing'; termination: Termination } & Progress)
   | ({ status: 'checking' } & AppliedProgress)
-  | ({ status: 'writing' } & AppliedProgress)
-  | ({ status: 'done' } & AppliedProgress)
-  | ({ status: 'failed'; error: unknown; snapshotId?: string } & Progress);
+  | ({ status: 'writing'; termination: Termination } & AppliedProgress)
+  | ({ status: 'finishing'; termination: Termination } & Progress)
+  | ({ status: 'done' } & Progress)
+  | ({ status: 'failed'; error: unknown } & Progress);
 type ApplyEvent =
   | { type: 'captured'; snapshotId: string }
+  | { type: 'empty' }
   | { type: 'checked' }
   | { type: 'applied'; wrote: boolean }
-  | { type: 'failed'; error: unknown };
+  | { type: 'failed'; error: unknown }
+  | { type: 'cancel'; error: unknown }
+  | { type: 'finished' }
+  | { type: 'finishFailed'; error: unknown };
 
 /** Persist a single snapshot before the first owner, retaining it on partial failure. */
 export async function applyCloudRestore(input: CloudRestoreInput): Promise<CloudRestoreResult> {
@@ -90,7 +98,7 @@ export async function applyCloudRestore(input: CloudRestoreInput): Promise<Cloud
   const beforeWrite = async (snapshotId: string, writes: readonly CloudSyncAppliedValue[]) => {
     await recordCloudSyncWrites(snapshotId, writes);
     if (input.signal?.aborted || !((await input.current?.()) ?? true) || input.signal?.aborted)
-      throw new Error('Download cancelled');
+      throw new CloudSyncFailure('download_cancelled', 'Download cancelled');
   };
   const emptyPluginOverwrite =
     input.mode === 'overwrite' &&
@@ -168,9 +176,8 @@ export async function applyCloudRestore(input: CloudRestoreInput): Promise<Cloud
       input.refusal,
       undefined,
       skipped,
+      input.snapshotId,
     );
-  if (!steps.length) return { restored, skipped, snapshotId: input.snapshotId };
-
   let complete!: (value: CloudRestoreResult) => void;
   let fail!: (error: CloudRestoreError) => void;
   const result = new Promise<CloudRestoreResult>((resolve, reject) => {
@@ -183,25 +190,67 @@ export async function applyCloudRestore(input: CloudRestoreInput): Promise<Cloud
       transition(state, event) {
         if (state.status === 'done' || state.status === 'failed') return state;
         switch (event.type) {
-          case 'failed':
-            return { ...state, status: 'failed', error: event.error };
-          case 'captured':
-            return state.status === 'capturing'
-              ? { ...state, status: 'checking', snapshotId: event.snapshotId }
-              : state;
-          case 'checked':
-            return state.status === 'checking' ? { ...state, status: 'writing' } : state;
-          case 'applied': {
-            if (state.status !== 'writing') return state;
-            const restored = event.wrote
-              ? [...state.restored, ...steps[state.index].parts]
-              : state.restored;
+          case 'cancel':
+            // Keep issued capture/writes alive until they settle; abort starts no later owner.
+            if ('termination' in state)
+              return state.termination.status === 'failed'
+                ? state
+                : { ...state, termination: { status: 'failed', error: event.error } };
             return {
               ...state,
-              status: state.index + 1 === steps.length ? 'done' : 'checking',
-              index: state.index + 1,
-              restored,
+              status: 'finishing',
+              termination: { status: 'failed', error: event.error },
             };
+          case 'failed':
+            return {
+              ...state,
+              status: 'finishing',
+              termination:
+                'termination' in state && state.termination.status === 'failed'
+                  ? state.termination
+                  : { status: 'failed', error: event.error },
+            };
+          case 'captured':
+            if (state.status !== 'capturing') return state;
+            return state.termination.status === 'failed'
+              ? { ...state, status: 'finishing', snapshotId: event.snapshotId }
+              : {
+                  index: state.index,
+                  restored: state.restored,
+                  status: 'checking',
+                  snapshotId: event.snapshotId,
+                };
+          case 'empty':
+            return state.status === 'capturing' ? { ...state, status: 'finishing' } : state;
+          case 'checked':
+            return state.status === 'checking'
+              ? { ...state, status: 'writing', termination: { status: 'active' } }
+              : state;
+          case 'applied': {
+            if (state.status !== 'writing') return state;
+            const progress = {
+              index: state.index + 1,
+              snapshotId: state.snapshotId,
+              restored: event.wrote
+                ? [...state.restored, ...steps[state.index].parts]
+                : state.restored,
+            };
+            return state.termination.status === 'failed' || progress.index === steps.length
+              ? { ...progress, status: 'finishing', termination: state.termination }
+              : { ...progress, status: 'checking' };
+          }
+          case 'finished':
+          case 'finishFailed': {
+            if (state.status !== 'finishing') return state;
+            const termination =
+              state.termination.status === 'failed'
+                ? state.termination
+                : event.type === 'finishFailed'
+                  ? { status: 'failed' as const, error: event.error }
+                  : state.termination;
+            return termination.status === 'failed'
+              ? { ...state, status: 'failed', error: termination.error }
+              : { ...state, status: 'done' };
           }
           default: {
             const _exhaustive: never = event;
@@ -213,35 +262,46 @@ export async function applyCloudRestore(input: CloudRestoreInput): Promise<Cloud
         capturing(stay) {
           void (async () => {
             if (input.signal?.aborted || !((await input.current?.()) ?? true))
-              throw new Error('Download cancelled');
-            if (stay.signal.aborted) return;
+              throw new CloudSyncFailure('download_cancelled', 'Download cancelled');
+            if (stay.state().termination.status === 'failed')
+              throw new CloudSyncFailure('download_cancelled', 'Download cancelled');
+            if (!steps.length) {
+              stay.send({ type: 'empty' });
+              return;
+            }
             const snapshot = await captureCloudSyncSnapshot({
               context: input.snapshot,
               keys: steps.flatMap((step) => step.keys),
               snapshotId: input.snapshotId,
+            }).catch((cause: unknown) => {
+              if (cloudSyncFailureCode(cause) === 'snapshot_superseded') throw cause;
+              throw new CloudSyncFailure(
+                'snapshot_failed',
+                cause instanceof Error ? cause.message : String(cause),
+                { cause },
+              );
             });
-            if (stay.signal.aborted) {
-              await finishCloudSyncSnapshot(snapshot.id);
-              return;
-            }
             stay.send({ type: 'captured', snapshotId: snapshot.id });
           })().catch((error) => stay.send({ type: 'failed', error }));
         },
         checking(stay) {
           void (async () => {
             if ((await readCloudSyncSnapshot())?.id !== stay.state().snapshotId)
-              throw new Error('Cloud snapshot is no longer current');
+              throw new CloudSyncFailure(
+                'snapshot_superseded',
+                'Cloud snapshot is no longer current',
+              );
             if (
               input.signal?.aborted ||
               !((await input.current?.()) ?? true) ||
               stay.signal.aborted
             )
-              throw new Error('Download cancelled');
+              throw new CloudSyncFailure('download_cancelled', 'Download cancelled');
             stay.send({ type: 'checked' });
           })().catch((error) => stay.send({ type: 'failed', error }));
         },
         writing(stay) {
-          const operation = steps[stay.state().index].run(stay.state().snapshotId);
+          const operation = (async () => steps[stay.state().index].run(stay.state().snapshotId))();
           stay.scope.effect(
             () => async () => {
               await operation.catch(() => undefined);
@@ -252,6 +312,23 @@ export async function applyCloudRestore(input: CloudRestoreInput): Promise<Cloud
             (wrote) => stay.send({ type: 'applied', wrote }),
             (error) => stay.send({ type: 'failed', error }),
           );
+        },
+        finishing(stay) {
+          void (async () => {
+            const { snapshotId } = stay.state();
+            if (snapshotId !== undefined) await finishCloudSyncSnapshot(snapshotId);
+            if (
+              stay.state().termination.status === 'active' &&
+              (input.signal?.aborted ||
+                !((await input.current?.()) ?? true) ||
+                input.signal?.aborted)
+            )
+              stay.send({
+                type: 'cancel',
+                error: new CloudSyncFailure('download_cancelled', 'Download cancelled'),
+              });
+            stay.send({ type: 'finished' });
+          })().catch((error: unknown) => stay.send({ type: 'finishFailed', error }));
         },
         done(stay) {
           complete({
@@ -269,30 +346,30 @@ export async function applyCloudRestore(input: CloudRestoreInput): Promise<Cloud
               state.error,
               undefined,
               skipped,
+              state.snapshotId,
             ),
           );
         },
       },
     },
-    { status: 'capturing', index: 0, restored },
+    {
+      status: 'capturing',
+      index: 0,
+      restored,
+      snapshotId: input.snapshotId,
+      termination: { status: 'active' },
+    },
   );
-  const abort = () => machine.send({ type: 'failed', error: new Error('Download cancelled') });
+  const abort = () =>
+    machine.send({
+      type: 'cancel',
+      error: new CloudSyncFailure('download_cancelled', 'Download cancelled'),
+    });
   input.signal?.addEventListener('abort', abort, { once: true });
-  const outcome = await result.then(
-    (value) => ({ ok: true, value }) as const,
-    (error: unknown) => ({ ok: false, error }) as const,
-  );
-  input.signal?.removeEventListener('abort', abort);
-  await machine.stop();
-  const state = machine.state;
-  if ('snapshotId' in state && state.snapshotId !== undefined) {
-    try {
-      await finishCloudSyncSnapshot(state.snapshotId);
-    } catch (error) {
-      // Cleanup must not hide which owner a failed write-ahead receipt prevented.
-      if (outcome.ok) throw new CloudRestoreError(state.restored, [], error, undefined, skipped);
-    }
+  try {
+    return await result;
+  } finally {
+    input.signal?.removeEventListener('abort', abort);
+    await machine.stop();
   }
-  if (!outcome.ok) throw outcome.error;
-  return outcome.value;
 }

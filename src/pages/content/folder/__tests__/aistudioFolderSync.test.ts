@@ -77,7 +77,7 @@ describe('AI Studio folder sync across contexts', () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(bucketReads(GLOBAL_KEY)).toBe(readsAfterMount);
-    expect(local.gvPromptItems).toEqual([prompt]);
+    expect(local.gvPromptItems).toEqual([]);
     expect(manager.data.folders.map((folder) => folder.name)).toEqual(['Edited here', 'Cloud']);
   });
 

@@ -68,7 +68,7 @@ describe("an AI Studio user's folders from the folder manager", () => {
     expect(dataWrites()).toEqual([]);
   });
 
-  it('upload as the same folder file', async () => {
+  it('requests only this site and keeps stored folders intact', async () => {
     const transfer = await openStored();
     mockBrowser.runtime.sendMessage.mockResolvedValue({ ok: true });
 
@@ -77,8 +77,12 @@ describe("an AI Studio user's folders from the folder manager", () => {
     const upload = mockBrowser.runtime.sendMessage.mock.calls
       .map(([message]) => message as { type: string; payload?: unknown })
       .find((message) => message.type === 'gv.sync.upload');
-    // The background writes these folders, unmarked, as the Drive file `exported` is.
-    expect(upload?.payload).toEqual({ folders: STORED, prompts: [], platform: 'aistudio' });
+    expect(upload?.payload).toMatchObject({
+      platform: 'aistudio',
+      selection: 'site',
+    });
+    expect(upload?.payload).not.toHaveProperty('prompts');
+    expect(local[GLOBAL_KEY]).toEqual(STORED);
   });
 
   it('import from its file into an empty store as the same folders, Uncategorized left out', () => {

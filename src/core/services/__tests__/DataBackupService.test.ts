@@ -1,105 +1,19 @@
-import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+import './fixtures/dataBackupHarness';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import browser from 'webextension-polyfill';
 
-import { budgetCopyBridge } from '@/features/storage/__tests__/budgetCopyBridge';
-
 import { DataBackupService } from '../DataBackupService';
-
-// One in-memory extension storage behind both browser.storage.local (writes)
-// and chrome.storage.local (StorageQuotaService's headroom probe). `set` rejects
-// past `QUOTA_BYTES`, counting bytes the way Chrome does.
-const extension = vi.hoisted(() => {
-  const store: Record<string, unknown> = {};
-  const itemBytes = (key: string, value: unknown): number => {
-    const encoder = new TextEncoder();
-    return encoder.encode(key).byteLength + encoder.encode(JSON.stringify(value)).byteLength;
-  };
-  const bytesIn = (items: Record<string, unknown>, keys?: string[] | null): number =>
-    (keys ?? Object.keys(items))
-      .filter((key) => key in items)
-      .reduce((sum, key) => sum + itemBytes(key, items[key]), 0);
-  const list = (keys?: string | string[] | null): string[] =>
-    keys == null ? Object.keys(store) : Array.isArray(keys) ? keys : [keys];
-  const area = {
-    QUOTA_BYTES: undefined as number | undefined,
-    get: async (keys?: string | string[] | null) =>
-      Object.fromEntries(
-        list(keys)
-          .filter((key) => key in store)
-          .map((key) => [key, store[key]]),
-      ),
-    set: async (items: Record<string, unknown>) => {
-      const quota = area.QUOTA_BYTES ?? Number.POSITIVE_INFINITY;
-      if (bytesIn({ ...store, ...items }) > quota) throw new Error('QUOTA_BYTES quota exceeded');
-      Object.assign(store, items);
-    },
-    remove: async (keys: string | string[]) => {
-      for (const key of list(keys)) delete store[key];
-    },
-    getBytesInUse: async (keys?: string | string[] | null) =>
-      bytesIn(store, keys == null ? null : list(keys)),
-  };
-  return { store, area, itemBytes };
-});
-const durableStore = extension.store;
-
-/** The background end of `runtime.sendMessage`; `null` while the background is unreachable. */
-const runtime = vi.hoisted(() => ({
-  background: null as null | ((message: unknown) => Promise<unknown>),
-}));
-
-vi.mock('webextension-polyfill', () => ({
-  default: {
-    runtime: {
-      sendMessage: vi.fn((message: unknown) =>
-        runtime.background
-          ? runtime.background(message)
-          : Promise.reject(new Error('Could not establish connection')),
-      ),
-    },
-    storage: {
-      local: {
-        get: vi.fn((keys) => extension.area.get(keys)),
-        set: vi.fn((items) => extension.area.set(items)),
-        remove: vi.fn((keys) => extension.area.remove(keys)),
-      },
-    },
-  },
-}));
-
-// Toggle Safari detection per test. Read once per DataBackupService construction.
-let isSafariValue = false;
-vi.mock('@/core/utils/browser', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/core/utils/browser')>()),
-  isSafari: () => isSafariValue,
-}));
-
-const chromeLocal = chrome.storage.local;
-
-function resetStores(): void {
-  vi.clearAllMocks();
-  vi.mocked(browser.storage.local.set).mockImplementation((items) => extension.area.set(items));
-  localStorage.clear();
-  for (const key of Object.keys(durableStore)) delete durableStore[key];
-  extension.area.QUOTA_BYTES = undefined;
-  (chrome.storage as { local: unknown }).local = extension.area;
-  runtime.background = budgetCopyBridge((items) => browser.storage.local.set(items));
-}
-
-const usedBytes = (): number =>
-  Object.entries(durableStore).reduce(
-    (sum, [key, value]) => sum + extension.itemBytes(key, value),
-    0,
-  );
-
-/** Chrome and Firefox require `unlimitedStorage`: no practical quota, only the soft cap. */
-function grantUnlimitedStorage(): void {
-  const runtimeApi = chrome.runtime as { getManifest?: () => unknown };
-  runtimeApi.getManifest = () => ({ permissions: ['unlimitedStorage'] });
-  onTestFinished(() => {
-    delete runtimeApi.getManifest;
-  });
-}
+import {
+  chromeLocal,
+  durableStore,
+  extension,
+  grantUnlimitedStorage,
+  limitLocalStorage,
+  resetStores,
+  runtime,
+  safari,
+  usedBytes,
+} from './fixtures/dataBackupHarness';
 
 interface Sample {
   folders: number[];
@@ -109,7 +23,7 @@ const PRIMARY_KEY = 'gvBackup_test-ns_primary';
 
 describe('DataBackupService durable mirror (Safari)', () => {
   beforeEach(() => {
-    isSafariValue = false;
+    safari.enabled = false;
     resetStores();
   });
 
@@ -120,7 +34,7 @@ describe('DataBackupService durable mirror (Safari)', () => {
   });
 
   it('writes only to localStorage on non-Safari and recovers from it', async () => {
-    isSafariValue = false;
+    safari.enabled = false;
     const service = new DataBackupService<Sample>('test-ns');
     const data: Sample = { folders: [1, 2, 3] };
 
@@ -128,11 +42,11 @@ describe('DataBackupService durable mirror (Safari)', () => {
     expect(localStorage.getItem(PRIMARY_KEY)).toBeTruthy();
     // No durable mirror writes on non-Safari browsers.
     expect(Object.keys(durableStore)).toHaveLength(0);
-    expect(service.recoverFromBackup()).toEqual(data);
+    expect(await service.recoverFromBackupForKey('gvFolderData')).toEqual(data);
   });
 
   it('mirrors backups to the durable store on Safari', async () => {
-    isSafariValue = true;
+    safari.enabled = true;
     const service = new DataBackupService<Sample>('test-ns');
     await service.ensureHydrated();
 
@@ -143,7 +57,7 @@ describe('DataBackupService durable mirror (Safari)', () => {
   });
 
   it('restores backups from the durable store after Safari evicts localStorage', async () => {
-    isSafariValue = true;
+    safari.enabled = true;
     const data: Sample = { folders: [5, 5, 5] };
 
     const writer = new DataBackupService<Sample>('test-ns');
@@ -156,18 +70,18 @@ describe('DataBackupService durable mirror (Safari)', () => {
     expect(localStorage.getItem(PRIMARY_KEY)).toBeNull();
 
     // A fresh page session hydrates from the durable mirror before recovery,
-    // so the sync recoverFromBackup() still finds the data.
+    // so the account-keyed recovery still finds the data.
     const reader = new DataBackupService<Sample>('test-ns');
     await reader.ensureHydrated();
     expect(localStorage.getItem(PRIMARY_KEY)).toBeTruthy();
-    expect(reader.recoverFromBackup()).toEqual(data);
+    expect(await reader.recoverFromBackupForKey('gvFolderData')).toEqual(data);
   });
 
   it('still recovers a Safari backup older than 7 days (the ITP window the mirror targets)', async () => {
     vi.useFakeTimers();
     try {
       vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
-      isSafariValue = true;
+      safari.enabled = true;
       const data: Sample = { folders: [7, 7, 7] };
 
       const writer = new DataBackupService<Sample>('test-ns');
@@ -181,7 +95,7 @@ describe('DataBackupService durable mirror (Safari)', () => {
       const reader = new DataBackupService<Sample>('test-ns');
       await reader.ensureHydrated();
       // Must NOT be rejected as "too old" — that would defeat the whole fix.
-      expect(reader.recoverFromBackup()).toEqual(data);
+      expect(await reader.recoverFromBackupForKey('gvFolderData')).toEqual(data);
     } finally {
       vi.useRealTimers();
     }
@@ -191,30 +105,17 @@ describe('DataBackupService durable mirror (Safari)', () => {
     vi.useFakeTimers();
     try {
       vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
-      isSafariValue = false;
+      safari.enabled = false;
       const service = new DataBackupService<Sample>('test-ns');
       await service.createPrimaryBackup({ folders: [1] });
 
       vi.setSystemTime(new Date('2026-01-09T00:00:00Z')); // 8 days later
-      expect(service.recoverFromBackup()).toBeNull();
+      expect(await service.recoverFromBackupForKey('gvFolderData')).toBeNull();
     } finally {
       vi.useRealTimers();
     }
   });
 });
-
-// Atomic quota stand-in: an unsuccessful replacement must leave the old value intact.
-function limitLocalStorage(limit: number): void {
-  const values = new Map<string, string>();
-  const setItem = localStorage.setItem.bind(localStorage);
-  vi.spyOn(localStorage, 'setItem').mockImplementation((key, value) => {
-    const next = new Map(values).set(key, value);
-    const size = [...next].reduce((sum, [name, stored]) => sum + name.length + stored.length, 0);
-    if (size > limit) throw new DOMException('Storage full', 'QuotaExceededError');
-    setItem(key, value);
-    values.set(key, value);
-  });
-}
 
 const EMERGENCY_KEY = 'gvBackup_test-ns_emergency';
 const BEFORE_UNLOAD_KEY = 'gvBackup_test-ns_beforeUnload';
@@ -222,7 +123,7 @@ const MiB = 1024 * 1024;
 
 describe('DataBackupService quota fallback', () => {
   beforeEach(() => {
-    isSafariValue = false;
+    safari.enabled = false;
     resetStores();
   });
 
@@ -247,7 +148,7 @@ describe('DataBackupService quota fallback', () => {
     expect(localStorage.getItem(EMERGENCY_KEY)).toBe(previous);
     const reader = new DataBackupService<Sample>('test-ns');
     await reader.ensureHydrated();
-    expect(reader.recoverFromBackup()).toEqual(newer);
+    expect(await reader.recoverFromBackupForKey('gvFolderData')).toEqual(newer);
   });
 
   it('reports failure when both stores reject a write and retains both older backups', async () => {
@@ -263,13 +164,13 @@ describe('DataBackupService quota fallback', () => {
     expect(localStorage.getItem(EMERGENCY_KEY)).toBe(previous);
     expect(durableStore[EMERGENCY_KEY]).toBe(previous);
     await writer.ensureHydrated();
-    expect(writer.recoverFromBackup()).toEqual(old);
+    expect(await writer.recoverFromBackupForKey('gvFolderData')).toEqual(old);
   });
 
   it.each([false, true])(
     'recovers an absent emergency slot while localStorage stays full (Safari: %s)',
-    async (safari) => {
-      isSafariValue = safari;
+    async (isSafari) => {
+      safari.enabled = isSafari;
       limitLocalStorage(700);
       const data: Sample = { folders: Array(300).fill(100) };
       const writer = new DataBackupService<Sample>('test-ns');
@@ -279,7 +180,7 @@ describe('DataBackupService quota fallback', () => {
       const reader = new DataBackupService<Sample>('test-ns');
       await reader.ensureHydrated();
       expect(localStorage.getItem(EMERGENCY_KEY)).toBeNull();
-      expect(reader.recoverFromBackup()).toEqual(data);
+      expect(await reader.recoverFromBackupForKey('gvFolderData')).toEqual(data);
     },
   );
 
@@ -296,7 +197,7 @@ describe('DataBackupService quota fallback', () => {
 
     const reader = new DataBackupService<Sample>('test-ns');
     await reader.ensureHydrated();
-    expect(reader.recoverFromBackup()).toEqual(data);
+    expect(await reader.recoverFromBackupForKey('gvFolderData')).toEqual(data);
   });
 
   it('rejects an invalid durable copy and keeps the valid local copy', async () => {
@@ -310,7 +211,7 @@ describe('DataBackupService quota fallback', () => {
       metadata: { timestamp: new Date().toISOString() },
     });
     await service.ensureHydrated();
-    expect(service.recoverFromBackup()).toEqual(data);
+    expect(await service.recoverFromBackupForKey('gvFolderData')).toEqual(data);
   });
 
   it('does not let an older delayed fallback replace a newer emergency backup', async () => {
@@ -338,7 +239,7 @@ describe('DataBackupService quota fallback', () => {
 
     const reader = new DataBackupService<Sample>('test-ns');
     await reader.ensureHydrated();
-    expect(reader.recoverFromBackup()).toEqual(newer);
+    expect(await reader.recoverFromBackupForKey('gvFolderData')).toEqual(newer);
   });
 
   it('clears durable fallbacks as well as page slots', async () => {
@@ -347,7 +248,7 @@ describe('DataBackupService quota fallback', () => {
     await service.createEmergencyBackup({ folders: Array(300).fill(100) });
     service.clearAllBackups();
     await service.ensureHydrated();
-    expect(service.recoverFromBackup()).toBeNull();
+    expect(await service.recoverFromBackupForKey('gvFolderData')).toBeNull();
     expect(Object.keys(durableStore)).toHaveLength(0);
   });
   it("recovers another tab's newer fallback beside an older page copy", async () => {
@@ -369,7 +270,7 @@ describe('DataBackupService quota fallback', () => {
     vi.setSystemTime(new Date('2026-01-01T00:00:03Z'));
     const reader = new DataBackupService<Sample>('test-ns');
     await reader.ensureHydrated();
-    expect(reader.recoverFromBackup()).toEqual(newer);
+    expect(await reader.recoverFromBackupForKey('gvFolderData')).toEqual(newer);
   });
 
   it('skips a fallback copy that would not leave the reserve free for other data', async () => {
@@ -399,7 +300,7 @@ describe('DataBackupService quota fallback', () => {
   });
 
   it('sends the Safari unload copy while an earlier mirror write is still in flight', async () => {
-    isSafariValue = true;
+    safari.enabled = true;
     let release!: () => void;
     const held = new Promise<void>((resolve) => {
       release = resolve;
@@ -429,7 +330,7 @@ describe('DataBackupService quota fallback', () => {
     expect(JSON.parse(durableStore[BEFORE_UNLOAD_KEY] as string).data).toEqual(latest);
   });
   it('lets a Safari unload copy replace a same-size slot that only fits by reuse', async () => {
-    isSafariValue = true;
+    safari.enabled = true;
     const unloadAt = async (service: DataBackupService<Sample>, data: Sample) => {
       service.setupBeforeUnloadBackup(() => data);
       window.dispatchEvent(new Event('beforeunload'));
@@ -472,18 +373,18 @@ describe('DataBackupService quota fallback', () => {
     await recovery;
 
     expect(recovered).toBe(true);
-    expect(service.recoverFromBackup()).toEqual(landed);
+    expect(await service.recoverFromBackupForKey('gvFolderData')).toEqual(landed);
   });
 
   it('skips the copy when the background cannot be reached, keeping the page copy', async () => {
-    isSafariValue = true;
+    safari.enabled = true;
     runtime.background = null;
     const data: Sample = { folders: [1] };
     const service = new DataBackupService<Sample>('test-ns');
 
     expect(await service.createPrimaryBackup(data)).toBe(true);
     expect(durableStore).not.toHaveProperty(PRIMARY_KEY);
-    expect(service.recoverFromBackup()).toEqual(data);
+    expect(await service.recoverFromBackupForKey('gvFolderData')).toEqual(data);
   });
 
   it("admits one of three tabs' 3 MiB fallbacks on 15 MiB used (T25a)", async () => {
@@ -501,7 +402,7 @@ describe('DataBackupService quota fallback', () => {
   });
 
   it('admits an unload copy against the slot bytes when it writes, not when the tab measured (T26e)', async () => {
-    isSafariValue = true;
+    safari.enabled = true;
     grantUnlimitedStorage();
     const big: Sample = { folders: Array.from({ length: 2_000_000 }, () => 1) };
     const small: Sample = { folders: [1] };

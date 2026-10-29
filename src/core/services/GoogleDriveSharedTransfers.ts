@@ -6,8 +6,9 @@ import type {
   SyncState,
 } from '@/core/types/sync';
 import type { PromptExportPayload } from '@/core/types/sync';
-import type { DriveReadResult } from '@/core/utils/driveReadResult';
+import { readDriveValue, type DriveReadResult } from '@/core/utils/driveReadResult';
 
+import { DRIVE_NOT_AUTHENTICATED } from './CloudSyncFailure';
 import type { GoogleDriveAuth } from './GoogleDriveAuth';
 import { GoogleDriveSyncPayloads, assertHighlightPayloadForScope } from './GoogleDriveSyncPayloads';
 import { GoogleDriveSyncSession, SyncSessionEndedError } from './GoogleDriveSyncSession';
@@ -43,7 +44,7 @@ export class GoogleDriveSharedTransfers {
           this.updateState({ isSyncing: false, isAuthenticated: false });
           return false;
         }
-        throw new Error('Not authenticated');
+        throw new Error(DRIVE_NOT_AUTHENTICATED);
       }
 
       this.payloads.beforeFirstWrite(async () => {
@@ -84,9 +85,9 @@ export class GoogleDriveSharedTransfers {
       if (!token) {
         if (!interactive) {
           this.updateState({ isSyncing: false, isAuthenticated: false });
-          return { kind: 'failed', error: new Error('Not authenticated') };
+          return { kind: 'failed', error: new Error(DRIVE_NOT_AUTHENTICATED) };
         }
-        throw new Error('Not authenticated');
+        throw new Error(DRIVE_NOT_AUTHENTICATED);
       }
 
       const prompts = await this.payloads.downloadPrompts(token, accountScope);
@@ -133,7 +134,7 @@ export class GoogleDriveSharedTransfers {
           this.updateState({ isSyncing: false, isAuthenticated: false });
           return false;
         }
-        throw new Error('Not authenticated');
+        throw new Error(DRIVE_NOT_AUTHENTICATED);
       }
 
       this.payloads.beforeFirstWrite(async () => {
@@ -163,6 +164,17 @@ export class GoogleDriveSharedTransfers {
     interactive: boolean = true,
     purpose: 'download' | 'upload' = 'download',
   ): Promise<HighlightExportPayload | null> {
+    const result = await this.downloadHighlightsResult(accountScope, interactive, purpose);
+    if (result.kind === 'unrecognized')
+      this.updateState({ error: 'Invalid highlight sync payload' });
+    return result.kind === 'found' ? result.value : null;
+  }
+
+  async downloadHighlightsResult(
+    accountScope: SyncAccountScope,
+    interactive: boolean = true,
+    purpose: 'download' | 'upload' = 'download',
+  ): Promise<DriveReadResult<HighlightExportPayload>> {
     try {
       this.updateState({ isSyncing: true, error: null });
 
@@ -172,12 +184,15 @@ export class GoogleDriveSharedTransfers {
       if (!token) {
         if (!interactive) {
           this.updateState({ isSyncing: false, isAuthenticated: false });
-          return null;
+          return { kind: 'failed', error: new Error(DRIVE_NOT_AUTHENTICATED) };
         }
-        throw new Error('Not authenticated');
+        throw new Error(DRIVE_NOT_AUTHENTICATED);
       }
 
-      const downloaded = await this.payloads.downloadHighlights(token, accountScope);
+      const downloaded = await readDriveValue(() =>
+        this.payloads.downloadHighlights(token, accountScope),
+      );
+      if (downloaded.kind === 'failed') throw downloaded.error;
       this.updateState({ isSyncing: false, error: null });
       return downloaded;
     } catch (error) {
@@ -185,7 +200,7 @@ export class GoogleDriveSharedTransfers {
       const errorMessage = error instanceof Error ? error.message : 'Download failed';
       console.error('[GoogleDriveSyncService] Highlights-only download failed:', error);
       this.updateState({ isSyncing: false, error: errorMessage });
-      return null;
+      return { kind: 'failed', error };
     }
   }
 }

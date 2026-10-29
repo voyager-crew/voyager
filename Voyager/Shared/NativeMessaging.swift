@@ -10,6 +10,7 @@ enum VoyagerNativeRequest: Codable, Equatable {
   case googleDriveEnsureFile(VoyagerGoogleDriveEnsureRequest)
   case googleDriveUploadFile(VoyagerGoogleDriveFileRequest)
   case googleDriveDownloadFile(fileID: String)
+  case googleDriveGetFileMetadata(fileID: String)
   case googleDriveCreateFile(VoyagerGoogleDriveCreateRequest)
   case googleDriveListHistory(sourceFileName: String)
   case googleDriveTrashFile(fileID: String)
@@ -30,6 +31,7 @@ enum VoyagerNativeRequest: Codable, Equatable {
     case .googleDriveEnsureFile: return Action.googleDriveEnsureFile.rawValue
     case .googleDriveUploadFile: return Action.googleDriveUploadFile.rawValue
     case .googleDriveDownloadFile: return Action.googleDriveDownloadFile.rawValue
+    case .googleDriveGetFileMetadata: return Action.googleDriveGetFileMetadata.rawValue
     case .googleDriveCreateFile: return Action.googleDriveCreateFile.rawValue
     case .googleDriveListHistory: return Action.googleDriveListHistory.rawValue
     case .googleDriveTrashFile: return Action.googleDriveTrashFile.rawValue
@@ -51,6 +53,7 @@ enum VoyagerNativeRequest: Codable, Equatable {
     case googleDriveEnsureFile
     case googleDriveUploadFile
     case googleDriveDownloadFile
+    case googleDriveGetFileMetadata
     case googleDriveCreateFile
     case googleDriveListHistory
     case googleDriveTrashFile
@@ -123,6 +126,8 @@ enum VoyagerNativeRequest: Codable, Equatable {
       self = .googleDriveDownloadFile(
         fileID: try container.decode(String.self, forKey: .fileID)
       )
+    case .googleDriveGetFileMetadata:
+      self = .googleDriveGetFileMetadata(fileID: try container.decode(String.self, forKey: .fileID))
     case .googleDriveCreateFile:
       self = .googleDriveCreateFile(
         VoyagerGoogleDriveCreateRequest(
@@ -193,6 +198,9 @@ enum VoyagerNativeRequest: Codable, Equatable {
       try container.encode(request.json, forKey: .json)
     case .googleDriveDownloadFile(let fileID):
       try container.encode(Action.googleDriveDownloadFile, forKey: .action)
+      try container.encode(fileID, forKey: .fileID)
+    case .googleDriveGetFileMetadata(let fileID):
+      try container.encode(Action.googleDriveGetFileMetadata, forKey: .action)
       try container.encode(fileID, forKey: .fileID)
     case .googleDriveCreateFile(let request):
       try container.encode(Action.googleDriveCreateFile, forKey: .action)

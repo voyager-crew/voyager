@@ -26,17 +26,14 @@ export class AIStudioFolderStorageAdapter implements IFolderStorageAdapter {
     return (result[key] as FolderData | undefined) ?? null;
   }
 
-  /**
-   * `companions` share the folder write's `set` call, so they land together or not
-   * at all. Authorization is refreshed immediately before that physical call.
-   */
+  /** Authorization is refreshed immediately before the physical folder write. */
   async saveData(
     key: string,
     data: FolderData,
-    companions?: Record<string, unknown>,
+    _companions?: Record<string, unknown>,
     beforeWrite?: FolderWriteReceipt,
   ): Promise<void> {
-    const items = { [key]: data, ...companions };
+    const items = { [key]: data };
     if (beforeWrite) await beforeWrite(items);
     await this.write(key, () => chrome.storage.local.set(items));
   }

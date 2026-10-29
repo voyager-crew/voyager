@@ -81,7 +81,7 @@ describe('catalog restore snapshot targets', () => {
           stars: {},
         },
       }),
-    ).toBe(true);
+    ).toEqual({ restored: true, snapshotId: expect.any(String) });
     expect(memory.values.local.get(CHATGPT)).toEqual(cloudChatgpt);
     expect(memory.values.local.get(CLAUDE)).toEqual({ conversations: {} });
     expect((await readCloudSyncSnapshot())?.entries).toEqual([

@@ -12,6 +12,7 @@ import type {
 import { HIGHLIGHT_DEVICE_ID_KEY, HIGHLIGHT_SCHEMA_VERSION } from '@/core/types/highlight';
 import { type StorageBudget, storageBudget } from '@/features/storage/storageBudget';
 
+import { registerCloudSyncUndoOwner } from './CloudSyncUndoOwners';
 import {
   HighlightAnnotationError,
   anchorIdentity,
@@ -62,6 +63,13 @@ export interface HighlightAccountSnapshot {
 
 export interface HighlightImportMergeOptions {
   clearMarker?: HighlightClearMarkerV1;
+  /** Runs inside the owner queue, before any key in the complete import plan is changed. */
+  prepareWrite?: (
+    setItems: Record<string, unknown>,
+    removeKeys: readonly string[],
+  ) => Promise<void>;
+  /** Awaited before each physical write; an undefined value describes a removal. */
+  beforeWrite?: (values: Record<string, unknown>) => Promise<void>;
 }
 
 export interface HighlightQueryOptions {
@@ -88,6 +96,8 @@ export interface HighlightAnnotationServiceDependencies {
 export class HighlightAnnotationService {
   private readonly store: HighlightAnnotationStore;
   private operationQueue: Promise<unknown> = Promise.resolve();
+  private readonly admitUndo = <T>(operation: () => Promise<T>): Promise<T> =>
+    this.serialize(operation);
 
   constructor(dependencies: HighlightAnnotationServiceDependencies = {}) {
     this.store = new HighlightAnnotationStore(dependencies);
@@ -514,7 +524,10 @@ export class HighlightAnnotationService {
       effectiveMarker,
       () => this.store.now,
     );
-    await this.store.commit(plan.setItems, plan.removeKeys);
+    if (options.prepareWrite || options.beforeWrite)
+      registerCloudSyncUndoOwner(getHighlightIndexStorageKey(scope), this.admitUndo);
+    await options.prepareWrite?.(plan.setItems, plan.removeKeys);
+    await this.store.commit(plan.setItems, plan.removeKeys, { beforeWrite: options.beforeWrite });
     return plan.getStats();
   }
 }

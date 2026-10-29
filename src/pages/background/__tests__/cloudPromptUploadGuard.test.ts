@@ -4,6 +4,7 @@ import { StorageKeys } from '@/core/types/common';
 import type { SyncAccountScope, SyncProvider } from '@/core/types/sync';
 import { FOLDER_PLATFORMS, FOLDER_PLATFORM_IDS } from '@/features/folder/platforms';
 
+import { refusedGuardToken } from './fixtures/guardConfirmation';
 import {
   createGuardDevice,
   guardData,
@@ -42,7 +43,12 @@ describe('guard refusal, force and provider boundaries', () => {
     });
     expect(d.drive.files).toEqual(cloud);
     expect(d.values).toEqual(local);
-    await expect(d.request('gv.sync.upload', { force: true })).resolves.toMatchObject({ ok: true });
+    await expect(
+      d.request('gv.sync.upload', {
+        force: true,
+        guardToken: await refusedGuardToken(d.request()),
+      }),
+    ).resolves.toMatchObject({ ok: true });
     expect(d.drive.payload(guardFiles[kind])).toMatchObject(
       kind === 'prompts' ? { items: guardData(kind, 1) } : { data: guardData(kind, 1) },
     );
@@ -61,7 +67,12 @@ describe('guard refusal, force and provider boundaries', () => {
     });
     expect(d.drive.files).toEqual(cloud);
     expect(d.values).toEqual(local);
-    await expect(d.request('gv.sync.upload', { force: true })).resolves.toMatchObject({ ok: true });
+    await expect(
+      d.request('gv.sync.upload', {
+        force: true,
+        guardToken: await refusedGuardToken(d.request()),
+      }),
+    ).resolves.toMatchObject({ ok: true });
     expect(d.drive.payload(guardFiles.prompts)).toMatchObject({ items: [guardPrompt('prompt-0')] });
   });
 
@@ -103,7 +114,12 @@ describe('guard refusal, force and provider boundaries', () => {
       });
       expect(d.drive.files).toEqual(cloud);
       expect(d.values).toEqual(local);
-      await expect(d.request('gv.sync.upload', { force: true })).resolves.toMatchObject({
+      await expect(
+        d.request('gv.sync.upload', {
+          force: true,
+          guardToken: await refusedGuardToken(d.request()),
+        }),
+      ).resolves.toMatchObject({
         ok: true,
       });
       expect(d.drive.payload(guardFiles.folders)).toMatchObject({ data: guardFolders(11) });
@@ -153,6 +169,7 @@ describe('guard refusal, force and provider boundaries', () => {
     const outcome = await pending;
     expect(outcome).toMatchObject({
       ok: false,
+      error: 'cloud_read_failed',
       state: { error: 'Download failed: 503', isSyncing: false },
     });
     expect(outcome).not.toMatchObject({ error: 'upload_guard_refused' });
@@ -160,12 +177,12 @@ describe('guard refusal, force and provider boundaries', () => {
     expect(d.values).toEqual(local);
   });
 
-  it('force preserves the existing omission of an empty whole-upload prompts list', async () => {
+  it('an empty whole-upload prompts list stays omitted without requiring force', async () => {
     const d = await createGuardDevice();
     d.putCloud('prompts', 24);
     d.setLocal('folders', 1);
     const promptsBefore = d.drive.files.get(guardFiles.prompts);
-    await expect(d.request('gv.sync.upload', { force: true })).resolves.toMatchObject({ ok: true });
+    await expect(d.request('gv.sync.upload')).resolves.toMatchObject({ ok: true });
     expect(d.drive.files.get(guardFiles.prompts)).toBe(promptsBefore);
     expect(d.drive.payload(guardFiles.folders)).toMatchObject({ data: guardFolders(1) });
     expect(d.values[StorageKeys.PROMPT_ITEMS]).toEqual([]);
@@ -254,7 +271,12 @@ describe('prompts merge upload guard', () => {
     });
     expect(d.drive.files).toEqual(cloud);
     expect(d.values).toEqual(local);
-    await expect(d.request('gv.sync.pushPromptsMerge', { force: true })).resolves.toMatchObject({
+    await expect(
+      d.request('gv.sync.pushPromptsMerge', {
+        force: true,
+        guardToken: await refusedGuardToken(d.request('gv.sync.pushPromptsMerge')),
+      }),
+    ).resolves.toMatchObject({
       ok: true,
       count: 1,
     });
@@ -288,7 +310,12 @@ describe('prompts merge upload guard', () => {
     });
     expect(d.drive.files).toEqual(cloud);
     expect(d.values).toEqual(local);
-    await expect(d.request('gv.sync.pushPromptsMerge', { force: true })).resolves.toMatchObject({
+    await expect(
+      d.request('gv.sync.pushPromptsMerge', {
+        force: true,
+        guardToken: await refusedGuardToken(d.request('gv.sync.pushPromptsMerge')),
+      }),
+    ).resolves.toMatchObject({
       ok: true,
       count: 1,
     });
@@ -326,7 +353,12 @@ describe('prompts merge upload guard', () => {
     });
     expect(d.drive.files).toEqual(cloud);
     expect(d.values).toEqual(local);
-    await expect(d.request('gv.sync.pushPromptsMerge', { force: true })).resolves.toMatchObject({
+    await expect(
+      d.request('gv.sync.pushPromptsMerge', {
+        force: true,
+        guardToken: await refusedGuardToken(d.request('gv.sync.pushPromptsMerge')),
+      }),
+    ).resolves.toMatchObject({
       ok: true,
     });
     expect(d.drive.payload(guardFiles.prompts)).toMatchObject({ items: [guardPrompt('prompt-0')] });

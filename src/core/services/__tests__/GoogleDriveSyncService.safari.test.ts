@@ -6,11 +6,9 @@ const downloadSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
 const downloadSafariGoogleDriveText = vi.hoisted(() => vi.fn());
 const ensureSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
 const findSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
-const getSafariGoogleDriveRetryDelay = vi.hoisted(() => vi.fn((): number | null => null));
-const isSafariGoogleDriveAuthError = vi.hoisted(() => vi.fn(() => false));
 const requestSafariGoogleDriveSession = vi.hoisted(() => vi.fn());
 const signOutSafariGoogleDrive = vi.hoisted(() => vi.fn());
-const uploadSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
+const sendNativeMessage = vi.hoisted(() => vi.fn());
 const uploadSafariGoogleDriveText = vi.hoisted(() => vi.fn());
 const createSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
 const listSafariGoogleDriveHistory = vi.hoisted(() => vi.fn());
@@ -28,20 +26,22 @@ vi.mock('@/core/utils/browser', () => ({
   isSafari: () => safariRuntime.userAgentMatches,
 }));
 
-vi.mock('@/core/utils/safariGoogleDrive', () => ({
+vi.mock('@/core/utils/safariGoogleDrive', async (original) => ({
+  ...(await original<typeof import('@/core/utils/safariGoogleDrive')>()),
   downloadSafariGoogleDriveFile,
   downloadSafariGoogleDriveText,
   ensureSafariGoogleDriveFile,
   findSafariGoogleDriveFile,
-  getSafariGoogleDriveRetryDelay,
-  isSafariGoogleDriveAuthError,
   requestSafariGoogleDriveSession,
   signOutSafariGoogleDrive,
-  uploadSafariGoogleDriveFile,
   uploadSafariGoogleDriveText,
   createSafariGoogleDriveFile,
   listSafariGoogleDriveHistory,
   trashSafariGoogleDriveFile,
+}));
+
+vi.mock('webextension-polyfill', () => ({
+  default: { runtime: { sendNativeMessage } },
 }));
 
 vi.mock('@/core/utils/safariICloudSync', () => ({
@@ -71,6 +71,15 @@ async function loadServiceClass() {
 }
 
 beforeEach(() => {
+  sendNativeMessage.mockReset().mockResolvedValue({
+    success: true,
+    data: {
+      saved: true,
+      id: 'native-file-id',
+      md5Checksum: 'native-upload',
+      modifiedTime: '2026-10-29T00:00:00Z',
+    },
+  });
   findSafariGoogleDriveFile.mockResolvedValue(null);
   downloadSafariGoogleDriveText.mockResolvedValue(null);
   listSafariGoogleDriveHistory.mockResolvedValue([]);
@@ -85,8 +94,6 @@ afterEach(() => {
   vi.unstubAllGlobals();
   getSafariICloudRetryDelay.mockReturnValue(null);
   isSafariICloudConflictError.mockReturnValue(false);
-  getSafariGoogleDriveRetryDelay.mockReturnValue(null);
-  isSafariGoogleDriveAuthError.mockReturnValue(false);
   safariRuntime.buildTarget = 'safari';
   safariRuntime.userAgentMatches = false;
 });
@@ -169,7 +176,6 @@ describe('GoogleDriveSyncService Safari authentication', () => {
       requiresAppLaunch: false,
     });
     ensureSafariGoogleDriveFile.mockResolvedValue('native-file-id');
-    uploadSafariGoogleDriveFile.mockResolvedValue(undefined);
 
     const GoogleDriveSyncService = await loadServiceClass();
     const service = createDriveTestClient(new GoogleDriveSyncService());
@@ -179,10 +185,14 @@ describe('GoogleDriveSyncService Safari authentication', () => {
       service.uploadPromptsOnly([{ id: '1', text: 'Hi', tags: [], createdAt: 1 }]),
     ).resolves.toBe(true);
     expect(ensureSafariGoogleDriveFile).toHaveBeenCalledWith('gemini-voyager-prompts.json', null);
-    expect(uploadSafariGoogleDriveFile).toHaveBeenCalledWith(
-      'native-file-id',
-      expect.objectContaining({ format: 'gemini-voyager.prompts.v1' }),
-    );
+    expect(sendNativeMessage).toHaveBeenCalledWith('com.yourCompany.Gemini-Voyager', {
+      action: 'googleDriveUploadFile',
+      fileID: 'native-file-id',
+      json: expect.any(String),
+    });
+    expect(JSON.parse(sendNativeMessage.mock.calls[0][1].json).items).toEqual([
+      { id: '1', text: 'Hi', tags: [], createdAt: 1 },
+    ]);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -193,10 +203,11 @@ describe('GoogleDriveSyncService Safari authentication', () => {
       requiresAppLaunch: false,
     });
     ensureSafariGoogleDriveFile.mockResolvedValue('native-file-id');
-    uploadSafariGoogleDriveFile.mockRejectedValue(
-      new Error('Google Drive access must be authorized again. Open Voyager to reconnect.'),
-    );
-    isSafariGoogleDriveAuthError.mockReturnValue(true);
+    sendNativeMessage.mockResolvedValue({
+      success: false,
+      code: 'drive_auth_required',
+      error: 'Google Drive access must be authorized again. Open Voyager to reconnect.',
+    });
 
     const GoogleDriveSyncService = await loadServiceClass();
     const service = createDriveTestClient(new GoogleDriveSyncService());
@@ -205,7 +216,7 @@ describe('GoogleDriveSyncService Safari authentication', () => {
     await expect(
       service.uploadPromptsOnly([{ id: '1', text: 'Hi', tags: [], createdAt: 1 }]),
     ).resolves.toBe(false);
-    expect(uploadSafariGoogleDriveFile).toHaveBeenCalledOnce();
+    expect(sendNativeMessage).toHaveBeenCalledOnce();
     await expect(service.getState()).resolves.toMatchObject({
       isAuthenticated: false,
       error: expect.stringContaining('authorized again'),
@@ -220,10 +231,12 @@ describe('GoogleDriveSyncService Safari authentication', () => {
       requiresAppLaunch: false,
     });
     ensureSafariGoogleDriveFile.mockResolvedValue('native-file-id');
-    uploadSafariGoogleDriveFile
-      .mockRejectedValueOnce(new Error('Google Drive is rate limiting requests.'))
-      .mockResolvedValue(undefined);
-    getSafariGoogleDriveRetryDelay.mockReturnValue(2_500);
+    sendNativeMessage.mockResolvedValueOnce({
+      success: false,
+      code: 'drive_rate_limited',
+      retryAfterMs: 2500,
+      error: 'Google Drive is rate limiting requests.',
+    });
 
     const GoogleDriveSyncService = await loadServiceClass();
     const service = createDriveTestClient(new GoogleDriveSyncService());
@@ -231,13 +244,13 @@ describe('GoogleDriveSyncService Safari authentication', () => {
 
     const upload = service.uploadPromptsOnly([{ id: '1', text: 'Hi', tags: [], createdAt: 1 }]);
     await vi.advanceTimersByTimeAsync(0);
-    expect(uploadSafariGoogleDriveFile).toHaveBeenCalledOnce();
+    expect(sendNativeMessage).toHaveBeenCalledOnce();
     await vi.advanceTimersByTimeAsync(2_499);
-    expect(uploadSafariGoogleDriveFile).toHaveBeenCalledOnce();
+    expect(sendNativeMessage).toHaveBeenCalledOnce();
     await vi.advanceTimersByTimeAsync(1);
 
     await expect(upload).resolves.toBe(true);
-    expect(uploadSafariGoogleDriveFile).toHaveBeenCalledTimes(2);
+    expect(sendNativeMessage).toHaveBeenCalledTimes(2);
   });
 
   it('downloads Safari Drive data through the native process', async () => {

@@ -1,3 +1,4 @@
+import { CloudSyncFailure } from '@/core/services/CloudSyncFailure';
 import {
   captureCloudSyncSnapshot,
   finishCloudSyncSnapshot,
@@ -7,42 +8,112 @@ import {
 } from '@/core/services/CloudSyncSnapshotService';
 import { startMachine, type Stay } from '@/features/plugins/runtime/stateMachine';
 
-type State = { snapshotId?: string } & (
-  | { status: 'snapshot' }
-  | { status: 'folders' }
-  | { status: 'extras' }
-  | { status: 'catalog' }
-  | { status: 'finished'; catalogRestored: boolean }
+import {
+  FolderCloudApplyError,
+  type FolderCloudApplyPart,
+  type FolderCloudApplyResult,
+} from './cloudDownloadApplyResult';
+
+export { FolderCloudApplyError, type FolderCloudApplyResult } from './cloudDownloadApplyResult';
+
+type Phase = 'snapshot' | 'folders' | 'extras' | 'catalog';
+type Progress = {
+  snapshotId?: string;
+  restored: FolderCloudApplyPart[];
+  catalogRestored: boolean;
+};
+type Termination =
+  | { status: 'active' }
   | { status: 'cancelled' }
-  | { status: 'failed'; error: unknown }
-);
+  | { status: 'failed'; error: unknown };
+type ActiveState = {
+  [K in Phase]: Progress & { status: K; termination: Termination };
+}[Phase];
+type State =
+  | ActiveState
+  | (Progress & { status: 'finishing'; termination: Termination })
+  | (Progress & { status: 'finished' | 'cancelled' })
+  | (Progress & { status: 'failed'; error: unknown });
 
 type Event =
   | { type: 'snapshotted'; snapshotId?: string }
-  | { type: 'foldersSaved' }
-  | { type: 'extrasSaved' }
+  | { type: 'foldersSaved'; restored: boolean }
+  | { type: 'extrasSaved'; restored: boolean }
   | { type: 'catalogSaved'; restored: boolean }
   | { type: 'cancel' }
-  | { type: 'fail'; error: unknown };
+  | { type: 'stopped' }
+  | { type: 'fail'; error: unknown }
+  | { type: 'finished' }
+  | { type: 'finishFailed'; error: unknown };
 
 function transition(state: State, event: Event): State {
-  if (['finished', 'cancelled', 'failed'].includes(state.status)) return state;
+  if (!('termination' in state)) return state;
+  const progress: Progress = {
+    snapshotId: state.snapshotId,
+    restored: state.restored,
+    catalogRestored: state.catalogRestored,
+  };
+  const next = (status: Phase | 'finished', changes: Partial<Progress> = {}): State => {
+    const settled = { ...progress, ...changes };
+    if (state.termination.status !== 'active' || status === 'finished')
+      return { ...settled, status: 'finishing', termination: state.termination };
+    return { ...settled, status, termination: { status: 'active' } };
+  };
   switch (event.type) {
     case 'cancel':
-      return { ...state, status: 'cancelled' };
+      // Keep this stay alive so its already-issued owner can report the value it committed.
+      return state.termination.status === 'active'
+        ? { ...state, termination: { status: 'cancelled' } }
+        : state;
+    case 'stopped':
+      return {
+        ...progress,
+        status: 'finishing',
+        termination:
+          state.termination.status === 'active' ? { status: 'cancelled' } : state.termination,
+      };
     case 'fail':
-      return { ...state, status: 'failed', error: event.error };
+      return {
+        ...progress,
+        status: 'finishing',
+        termination:
+          state.termination.status === 'active'
+            ? { status: 'failed', error: event.error }
+            : state.termination,
+      };
+    case 'finished':
+    case 'finishFailed': {
+      if (state.status !== 'finishing') return state;
+      const termination =
+        state.termination.status === 'active' && event.type === 'finishFailed'
+          ? { status: 'failed' as const, error: event.error }
+          : state.termination;
+      if (termination.status === 'failed')
+        return { ...progress, status: 'failed', error: termination.error };
+      return { ...progress, status: termination.status === 'cancelled' ? 'cancelled' : 'finished' };
+    }
     case 'snapshotted':
       return state.status === 'snapshot'
-        ? { status: 'folders', snapshotId: event.snapshotId }
+        ? next('folders', { snapshotId: event.snapshotId })
         : state;
     case 'foldersSaved':
-      return state.status === 'folders' ? { ...state, status: 'extras' } : state;
+      return state.status === 'folders'
+        ? next('extras', {
+            restored: event.restored ? [...state.restored, 'folders'] : state.restored,
+          })
+        : state;
     case 'extrasSaved':
-      return state.status === 'extras' ? { ...state, status: 'catalog' } : state;
+      return state.status === 'extras'
+        ? next('catalog', {
+            restored: event.restored ? [...state.restored, 'extras'] : state.restored,
+          })
+        : state;
     case 'catalogSaved':
       return state.status === 'catalog'
-        ? { ...state, status: 'finished', catalogRestored: event.restored }
+        ? next('finished', {
+            catalogRestored: event.restored,
+            restored: event.restored ? [...state.restored, 'catalog'] : state.restored,
+          })
         : state;
     default: {
       const exhaustive: never = event;
@@ -51,11 +122,7 @@ function transition(state: State, event: Event): State {
   }
 }
 
-export type FolderCloudApplyResult =
-  | { status: 'applied'; catalogRestored: boolean }
-  | { status: 'cancelled' };
-
-/** Each phase may finish late; only the active stay can start the next write. */
+/** Each phase drains its issued work; cancellation prevents any later owner from starting. */
 export async function applyFolderCloudDownload(options: {
   context: SnapshotContext;
   keys: readonly StorageWriteKey[];
@@ -66,52 +133,44 @@ export async function applyFolderCloudDownload(options: {
   restoreExtras?: (snapshotId: string) => Promise<boolean>;
   restoreCatalog?: (snapshotId: string) => Promise<boolean>;
 }): Promise<FolderCloudApplyResult> {
-  let resolve!: (result: FolderCloudApplyResult) => void;
-  let reject!: (error: unknown) => void;
-  const completion = new Promise<FolderCloudApplyResult>((done, fail) => {
-    resolve = done;
-    reject = fail;
+  let complete!: () => void;
+  const completion = new Promise<void>((resolve) => {
+    complete = resolve;
   });
-  const run = (stay: Stay<State, Event>, operation: () => Promise<Event>) => {
+  const run = (stay: Stay<ActiveState, Event>, operation: () => Promise<Event>) => {
     stay.scope.on(window, 'pagehide', () => stay.send({ type: 'cancel' }));
-    void (async () => {
-      if (!options.current()) {
-        stay.send({ type: 'cancel' });
+    const stopped = () => !options.current() || stay.state().termination.status !== 'active';
+    const pending = (async () => {
+      if (stopped()) {
+        stay.send({ type: 'stopped' });
         return;
       }
       const state = stay.state();
       if (state.status !== 'snapshot' && state.snapshotId !== undefined) {
         const snapshot = await readCloudSyncSnapshot();
-        if (stay.signal.aborted) return;
-        if (!options.current()) {
-          stay.send({ type: 'cancel' });
+        if (stopped()) {
+          stay.send({ type: 'stopped' });
           return;
         }
         if (snapshot?.id !== state.snapshotId)
-          throw new Error('Cloud snapshot is no longer current');
+          throw new CloudSyncFailure('snapshot_superseded', 'Cloud snapshot is no longer current');
       }
-      if (stay.signal.aborted) return;
-      const pending = operation();
-      if (state.status !== 'snapshot')
-        stay.scope.effect(
-          () => async () => {
-            await pending.catch(() => undefined);
-          },
-          'finish-owner-receipt',
-        );
-      const event = await pending;
-      if (stay.signal.aborted) return;
-      stay.send(options.current() ? event : { type: 'cancel' });
-    })().catch((error: unknown) => {
-      if (!stay.signal.aborted) stay.send({ type: 'fail', error });
-    });
+      const event = await operation();
+      if (!options.current()) stay.send({ type: 'cancel' });
+      stay.send(event);
+    })().catch((error: unknown) => stay.send({ type: 'fail', error }));
+    stay.scope.effect(
+      () => async () => {
+        await pending;
+      },
+      'finish-owner-receipt',
+    );
   };
   const runOwner = (
     owner: ((snapshotId: string) => Promise<boolean>) | undefined,
     state: State,
-    absent: boolean,
-  ) => {
-    if (!owner) return Promise.resolve(absent);
+  ): Promise<boolean | undefined> => {
+    if (!owner) return Promise.resolve(undefined);
     if (!state.snapshotId) return Promise.reject(new Error('Cloud snapshot is missing'));
     return owner(state.snapshotId);
   };
@@ -129,46 +188,70 @@ export async function applyFolderCloudDownload(options: {
               options.restoreExtras ||
               options.restoreCatalog
             ) {
-              // No owner starts writing until the entire slot is durable.
               const snapshot = await captureCloudSyncSnapshot({
                 context: options.context,
                 keys: options.keys,
                 snapshotId: options.snapshotId,
+              }).catch((cause: unknown) => {
+                throw new CloudSyncFailure(
+                  'snapshot_failed',
+                  cause instanceof Error ? cause.message : String(cause),
+                  { cause },
+                );
               });
-              if (stay.signal.aborted) await finishCloudSyncSnapshot(snapshot.id);
               return { type: 'snapshotted', snapshotId: snapshot.id };
             }
             return { type: 'snapshotted' };
           }),
         folders: (stay) =>
-          run(stay, async () =>
-            (await runOwner(options.saveFolders, stay.state(), true))
-              ? { type: 'foldersSaved' }
-              : { type: 'cancel' },
-          ),
+          run(stay, async () => {
+            const saved = await runOwner(options.saveFolders, stay.state());
+            return saved === false
+              ? { type: 'stopped' }
+              : { type: 'foldersSaved', restored: saved === true };
+          }),
         extras: (stay) =>
-          run(stay, async () =>
-            (await runOwner(options.restoreExtras, stay.state(), true))
-              ? { type: 'extrasSaved' }
-              : { type: 'cancel' },
-          ),
+          run(stay, async () => {
+            const saved = await runOwner(options.restoreExtras, stay.state());
+            return saved === false
+              ? { type: 'stopped' }
+              : { type: 'extrasSaved', restored: saved === true };
+          }),
         catalog: (stay) =>
           run(stay, async () => ({
             type: 'catalogSaved',
-            restored: await runOwner(options.restoreCatalog, stay.state(), false),
+            restored: (await runOwner(options.restoreCatalog, stay.state())) === true,
           })),
-        finished: (stay) =>
-          resolve({ status: 'applied', catalogRestored: stay.state().catalogRestored }),
-        cancelled: () => resolve({ status: 'cancelled' }),
-        failed: (stay) => reject(stay.state().error),
+        finishing: (stay) => {
+          stay.scope.on(window, 'pagehide', () => stay.send({ type: 'cancel' }));
+          void (async () => {
+            if (!options.current()) stay.send({ type: 'cancel' });
+            const { snapshotId } = stay.state();
+            if (snapshotId) await finishCloudSyncSnapshot(snapshotId);
+            if (!options.current()) stay.send({ type: 'cancel' });
+            stay.send({ type: 'finished' });
+          })().catch((error: unknown) => stay.send({ type: 'finishFailed', error }));
+        },
+        finished: complete,
+        cancelled: complete,
+        failed: complete,
       },
     },
-    { status: 'snapshot' },
+    {
+      status: 'snapshot',
+      termination: { status: 'active' },
+      snapshotId: options.snapshotId,
+      restored: [],
+      catalogRestored: false,
+    },
   );
-  try {
-    return await completion;
-  } finally {
-    await machine.stop();
-    if (machine.state.snapshotId) await finishCloudSyncSnapshot(machine.state.snapshotId);
-  }
+  await completion;
+  await machine.stop();
+  const state = machine.state;
+  if (state.status === 'failed')
+    throw new FolderCloudApplyError(state.restored, state.error, state.snapshotId);
+  const progress = { restored: state.restored, snapshotId: state.snapshotId };
+  return state.status === 'finished'
+    ? { ...progress, status: 'applied', catalogRestored: state.catalogRestored }
+    : { ...progress, status: 'cancelled' };
 }

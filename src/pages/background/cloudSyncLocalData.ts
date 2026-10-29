@@ -47,22 +47,28 @@ function parseStoredFolderData(value: unknown): FolderData | null {
 export async function loadAuthoritativeSyncPayload(
   platform: SyncPlatform,
   accountScope: SyncAccountScope | null,
+  selection?: { site: boolean; shared: boolean },
 ): Promise<{ folders: FolderData; prompts: PromptItem[] }> {
   const definition = FOLDER_PLATFORMS[platform];
   const baseFolderStorageKey = definition.folderStorageKey;
   const folderStorageKey = accountScope
     ? buildScopedStorageKey(baseFolderStorageKey, accountScope.accountKey)
     : baseFolderStorageKey;
-  const stored = await chrome.storage.local.get([
-    folderStorageKey,
-    ...(definition.syncsSharedData ? [StorageKeys.PROMPT_ITEMS] : []),
+  const stored = await chrome.storage.local.get<Record<string, unknown>>([
+    ...(selection?.site !== false ? [folderStorageKey] : []),
+    ...(definition.syncsSharedData && selection?.shared !== false
+      ? [StorageKeys.PROMPT_ITEMS]
+      : []),
   ]);
-  const folders = parseStoredFolderData(stored[folderStorageKey]);
+  const folders =
+    selection?.site === false
+      ? { folders: [], folderContents: {} }
+      : parseStoredFolderData(stored[folderStorageKey]);
   if (!folders) {
     throw new Error('Local folder data is unavailable or invalid');
   }
 
-  if (!definition.syncsSharedData) return { folders, prompts: [] };
+  if (!definition.syncsSharedData || selection?.shared === false) return { folders, prompts: [] };
   return { folders, prompts: normalizeLocalPromptsForSync(stored[StorageKeys.PROMPT_ITEMS]) };
 }
 
@@ -162,10 +168,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /** Read the same primary/legacy hierarchy as before, without a corrupt-to-empty fallback. */
 export async function loadTimelineHierarchyForSync(
   scope: SyncAccountScope | null,
+  captured?: Record<string, unknown>,
 ): Promise<TimelineHierarchyData> {
-  const values = await chrome.storage.local.get(
-    getTimelineHierarchyStorageKeysToRead(scope?.accountKey),
-  );
+  const values =
+    captured ??
+    (await chrome.storage.local.get<Record<string, unknown>>(
+      getTimelineHierarchyStorageKeysToRead(scope?.accountKey),
+    ));
   const primaryKey = getTimelineHierarchyStorageKey(scope?.accountKey);
   const selectedKey = Object.prototype.hasOwnProperty.call(values, primaryKey)
     ? primaryKey
@@ -182,8 +191,12 @@ export async function loadTimelineHierarchyForSync(
 }
 
 /** Only a genuinely missing plugin map may stand for an empty local upload. */
-export async function readPluginStateForSync(): Promise<PluginStateMap> {
-  const result = await chrome.storage.local.get({ [StorageKeys.PLUGINS_STATE]: {} });
+export async function readPluginStateForSync(
+  captured?: Record<string, unknown>,
+): Promise<PluginStateMap> {
+  const result =
+    captured ??
+    (await chrome.storage.local.get<Record<string, unknown>>({ [StorageKeys.PLUGINS_STATE]: {} }));
   const raw: unknown = result[StorageKeys.PLUGINS_STATE];
   if (raw === undefined) return {};
   if (!isRecord(raw)) throw new Error('Upload failed');

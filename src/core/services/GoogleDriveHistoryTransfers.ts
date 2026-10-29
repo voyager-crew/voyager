@@ -26,7 +26,7 @@ export function driveHistoryBaseName(name: string): string {
 /** Restore uses the same global files and account-capable owners as upload naming. */
 export function driveHistoryAccountPlatform(
   name: string,
-  requestedPlatform: SyncPlatform = 'gemini',
+  requestedPlatform?: SyncPlatform,
 ): AccountScopedFolderPlatform | null {
   const base = driveHistoryBaseName(name);
   const folderPlatform = FOLDER_PLATFORM_IDS.find(
@@ -41,11 +41,17 @@ export function driveHistoryAccountPlatform(
     return null;
   if (
     base === PROMPTS_FILE_NAME &&
+    requestedPlatform !== undefined &&
     FOLDER_PLATFORMS[requestedPlatform].syncsSharedData &&
     supportsAccountIsolation(requestedPlatform)
   )
     return requestedPlatform;
-  return 'gemini';
+  return (
+    FOLDER_PLATFORM_IDS.find(
+      (platform): platform is AccountScopedFolderPlatform =>
+        supportsAccountIsolation(platform) && FOLDER_PLATFORMS[platform].syncsConversationExtras,
+    ) ?? null
+  );
 }
 
 export async function restoreDrivePreviousVersion(

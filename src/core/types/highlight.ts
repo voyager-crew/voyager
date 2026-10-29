@@ -25,7 +25,8 @@ export const HIGHLIGHT_LIMITS = {
   recordBytes: 32 * 1024,
 } as const;
 
-export type HighlightPlatform = 'gemini' | 'aistudio';
+export const HIGHLIGHT_PLATFORMS = ['gemini', 'aistudio'] as const;
+export type HighlightPlatform = (typeof HIGHLIGHT_PLATFORMS)[number];
 export type HighlightRole = 'assistant' | 'user';
 export const HIGHLIGHT_COLORS = ['yellow', 'green', 'blue', 'pink'] as const;
 export type HighlightPresetColor = (typeof HIGHLIGHT_COLORS)[number];
@@ -329,8 +330,8 @@ function utf8Bytes(value: string): number {
   return new TextEncoder().encode(value).byteLength;
 }
 
-function isPlatform(value: unknown): value is HighlightPlatform {
-  return value === 'gemini' || value === 'aistudio';
+export function isHighlightPlatform(value: unknown): value is HighlightPlatform {
+  return HIGHLIGHT_PLATFORMS.some((platform) => platform === value);
 }
 
 function isRole(value: unknown): value is HighlightRole {
@@ -407,7 +408,7 @@ export function isHighlightRecordV1(value: unknown): value is HighlightRecordV1 
     typeof value.id !== 'string' ||
     value.id.length === 0 ||
     value.id.length > 128 ||
-    !isPlatform(value.platform) ||
+    !isHighlightPlatform(value.platform) ||
     typeof value.accountHash !== 'string' ||
     value.accountHash.length === 0 ||
     value.accountHash.length > 128 ||
@@ -460,7 +461,7 @@ export function isHighlightExportPayloadV1(value: unknown): value is HighlightEx
     !Number.isNaN(Date.parse(value.exportedAt)) &&
     typeof value.version === 'string' &&
     value.version.length > 0 &&
-    isPlatform(value.accountScope.platform) &&
+    isHighlightPlatform(value.accountScope.platform) &&
     typeof value.accountScope.accountHash === 'string' &&
     value.accountScope.accountHash.length > 0 &&
     (value.clearMarker === undefined || isHighlightClearMarkerV1(value.clearMarker)) &&

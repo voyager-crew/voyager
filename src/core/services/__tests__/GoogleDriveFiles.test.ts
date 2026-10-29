@@ -95,7 +95,7 @@ describe('GoogleDriveFiles', () => {
     expect(attempts).toEqual([0, 1000, 3000]);
     expect(authLost).not.toHaveBeenCalled();
     expect(fetch).toHaveBeenCalledWith(
-      'https://www.googleapis.com/upload/drive/v3/files/file-id?uploadType=media',
+      'https://www.googleapis.com/upload/drive/v3/files/file-id?uploadType=media&fields=id,md5Checksum,modifiedTime',
       {
         method: 'PATCH',
         headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },

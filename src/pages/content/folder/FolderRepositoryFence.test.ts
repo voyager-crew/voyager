@@ -132,23 +132,20 @@ describe('legacy folder authority fence', () => {
   );
 
   it.each(['legacy', 'owner'])(
-    'gates deletion and atomic companions for %s authority',
+    'gates folder saves and deletion for %s authority',
     async (authority) => {
       const key = StorageKeys.FOLDER_DATA_CHATGPT;
-      const marker = `${key}:imported`;
       stored[key] = clone(initial);
-      stored[marker] = false;
       stored[AUTHORITY_FENCE_KEY] = fence('chatgpt', authority);
       const guard = new LegacyFolderFence(key, () => {});
       const adapter = new AIStudioFolderStorageAdapter();
       adapter.setWriteGate((_key, operation) => guard.write(operation));
       const edited = { ...initial, folders: [{ ...initial.folders[0], name: 'Edited' }] };
-      const save = adapter.saveData(key, edited, { [marker]: true });
+      const save = adapter.saveData(key, edited);
       if (authority === 'owner')
         await expect(save).rejects.toBeInstanceOf(LegacyFolderWriteRefusedError);
       else await save;
       expect(stored[key]).toEqual(authority === 'owner' ? initial : edited);
-      expect(stored[marker]).toBe(authority !== 'owner');
       const remove = adapter.removeData(key);
       if (authority === 'owner')
         await expect(remove).rejects.toBeInstanceOf(LegacyFolderWriteRefusedError);

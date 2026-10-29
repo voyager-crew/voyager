@@ -1,16 +1,28 @@
 /** Catalog operations share the service's queue and prepare every site's files before writes. */
 import type { SyncState } from '@/core/types/sync';
+import { readDriveValue } from '@/core/utils/driveReadResult';
 import type { StarStore } from '@/features/savedLibrary/starStore';
 import type { StarsExportPayloadV2 } from '@/features/savedLibrary/starSyncPayload';
 import type { CatalogTimelineBuckets } from '@/features/timeline/catalogHierarchySync';
 
+import { DRIVE_NOT_AUTHENTICATED } from './CloudSyncFailure';
 import type { GoogleDriveCatalogTimeline } from './GoogleDriveCatalogTimeline';
+import type { DriveDownloadKindStatus } from './GoogleDriveDownloadKinds';
 import type { GoogleDriveSyncPayloads } from './GoogleDriveSyncPayloads';
 import { SyncSessionEndedError } from './GoogleDriveSyncSession';
 import type { StarDriveSyncCoordinator, StarTransferPort } from './StarDriveSyncCoordinator';
 
 export interface CatalogSession {
   assertActive(): void;
+}
+
+export interface CatalogDownloadReport {
+  outlines: CatalogTimelineBuckets;
+  stars: Record<string, StarsExportPayloadV2>;
+  statuses: Record<
+    string,
+    { timelineHierarchy: DriveDownloadKindStatus; stars: DriveDownloadKindStatus }
+  >;
 }
 
 type RunCatalogTransfer = <T>(
@@ -64,6 +76,29 @@ export class GoogleDriveCatalogTransfers {
   }
 
   /** The cloud timeline outlines of the listed catalog sites, or null when the download failed. */
+  async downloadCatalogDataResult(
+    sites: readonly string[],
+    interactive: boolean = true,
+  ): Promise<CatalogDownloadReport | null> {
+    return this.run('Catalog download', interactive, null, async (token, session) => {
+      const report: CatalogDownloadReport = { outlines: {}, stars: {}, statuses: {} };
+      for (const site of sites) {
+        const outline = await readDriveValue(() => this.timeline.read(token, site));
+        if (outline.kind === 'failed') throw outline.error;
+        const stars = await readDriveValue(
+          async () => (await this.payloads.downloadCatalogStars(token, [site]))[site] ?? null,
+        );
+        if (stars.kind === 'failed') throw stars.error;
+        if (outline.kind === 'found') Object.assign(report.outlines, outline.value);
+        if (stars.kind === 'found') report.stars[site] = stars.value;
+        report.statuses[site] = { timelineHierarchy: outline.kind, stars: stars.kind };
+        session.assertActive();
+      }
+      return report;
+    });
+  }
+
+  /** The cloud timeline outlines of the listed catalog sites, or null when the download failed. */
   async downloadCatalogTimeline(
     sites: readonly string[],
     interactive: boolean = true,
@@ -112,7 +147,7 @@ export function createCatalogTransferRunner(options: CatalogTransferOptions): Ru
           options.updateState({ isSyncing: false, isAuthenticated: false });
           return fallback;
         }
-        throw new Error('Not authenticated');
+        throw new Error(DRIVE_NOT_AUTHENTICATED);
       }
       const result = await run(token, session);
       options.updateState({ isSyncing: false, error: null });

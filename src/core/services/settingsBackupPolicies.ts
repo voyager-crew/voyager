@@ -25,6 +25,16 @@ type NonSettingsStorageKey = Exclude<StorageKey, BackupableSettingsKey>;
  * make a new key fail fast until its sync/backup behavior is an explicit choice.
  */
 export const NON_SETTINGS_BACKUP_POLICIES = {
+  [StorageKeys.CLOUD_SYNC_SCOPE]: {
+    storage: 'local',
+    disposition: 'device-local',
+    reason: 'The sync rows selected on this device never travel in a settings backup.',
+  },
+  [StorageKeys.CLOUD_SYNC_BOOKKEEPING]: {
+    storage: 'local',
+    disposition: 'device-local',
+    reason: 'Successful file hashes and cloud metadata describe this device only.',
+  },
   [StorageKeys.CLOUD_SYNC_PRE_APPLY_SNAPSHOT]: {
     storage: 'local',
     disposition: 'device-local',

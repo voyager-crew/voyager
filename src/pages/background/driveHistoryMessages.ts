@@ -1,4 +1,5 @@
 import { accountIsolationService } from '@/core/services/AccountIsolationService';
+import { requireSyncScope } from '@/core/services/CloudSyncScope';
 import { isDriveSyncFileName } from '@/core/services/GoogleDriveHistoryPayload';
 import {
   driveHistoryAccountPlatform,
@@ -18,7 +19,7 @@ import type { GoogleDriveSyncTransfer } from '@/core/services/GoogleDriveSyncTra
 import type { DriveHistoryRestoreTarget } from '@/core/types/driveHistory';
 import type { SyncAccountScope } from '@/core/types/sync';
 import { toSyncAccountScope } from '@/core/utils/syncAccountScope';
-import { FOLDER_PLATFORMS } from '@/features/folder/platforms';
+import { FOLDER_PLATFORMS, FOLDER_PLATFORM_IDS } from '@/features/folder/platforms';
 import { catalogStarsFileName } from '@/features/savedLibrary/starSitePolicy';
 import { catalogTimelineFileName } from '@/features/timeline/catalogHierarchySync';
 
@@ -93,6 +94,16 @@ export async function handleDriveHistoryMessage(
   )
     return { ok: false, error: 'untrusted_sender' };
   const explicitScope = parseSyncScope('accountScope' in raw ? raw.accountScope : null);
+  for (const name of raw.files) {
+    const base = driveHistoryBaseName(name);
+    const shared = [PROMPTS_FILE_NAME, SETTINGS_FILE_NAME, PLUGINS_FILE_NAME].includes(base);
+    const catalogSite = /\.site-([a-z0-9-]+)\.json$/.exec(base)?.[1];
+    const siteId =
+      catalogSite ??
+      FOLDER_PLATFORM_IDS.find((site) => FOLDER_PLATFORMS[site].driveFoldersFileName === base) ??
+      platform;
+    await requireSyncScope(shared ? { kind: 'shared' } : { kind: 'site', siteId });
+  }
   const pageUrl = getSenderPageUrl(sender) ?? null;
   const targets: DriveHistoryRestoreTarget[] = [];
   for (const name of raw.files) {

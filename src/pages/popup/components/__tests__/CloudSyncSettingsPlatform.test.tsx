@@ -219,6 +219,7 @@ describe('CloudSyncSettings platform routing', () => {
       .find((sent) => sent.type === 'gv.sync.upload');
     expect(message?.payload).toEqual({
       platform: 'chatgpt',
+      selection: 'all',
       accountScope: null,
       timelineHierarchyAccountScope: null,
       highlightAccountScope: null,
@@ -245,6 +246,7 @@ describe('CloudSyncSettings platform routing', () => {
         .find((sent) => sent.type === 'gv.sync.download');
       expect(message?.payload).toEqual({
         platform: 'chatgpt',
+        selection: 'all',
         accountScope: null,
         timelineHierarchyAccountScope: null,
         highlightAccountScope: null,

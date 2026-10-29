@@ -16,6 +16,7 @@ export interface PreparedDriveHistory {
   current: string | null;
   entries: DriveHistoryFile[];
   recognized: Array<{ entry: DriveHistoryFile; text: string }>;
+  archived: Map<string, string>;
 }
 
 export function newestHistoryFirst(entries: readonly DriveHistoryFile[]): DriveHistoryFile[] {
@@ -59,15 +60,18 @@ export class GoogleDriveUploadHistory {
   constructor(private readonly files: DriveHistoryPort) {}
 
   async prepare(token: string, source: string, id: string | null): Promise<PreparedDriveHistory> {
-    if (!this.files.supportsHistory()) return { current: null, entries: [], recognized: [] };
+    if (!this.files.supportsHistory())
+      return { current: null, entries: [], recognized: [], archived: new Map() };
     const current = id ? await this.files.downloadText(token, id) : null;
     const entries = await this.files.listHistory(token, source);
     const recognized: PreparedDriveHistory['recognized'] = [];
+    const archived = new Map<string, string>();
     for (const entry of newestHistoryFirst(entries)) {
       const text = await this.files.downloadText(token, entry.id);
+      if (text !== null) archived.set(entry.id, text);
       if (text && isRecognizedHistoryContent(source, text)) recognized.push({ entry, text });
     }
-    return { current, entries, recognized };
+    return { current, entries, recognized, archived };
   }
 
   async preserve(
@@ -76,6 +80,8 @@ export class GoogleDriveUploadHistory {
     plan: PreparedDriveHistory,
   ): Promise<DriveHistoryFile | null> {
     if (!plan.current || !this.files.supportsHistory()) return null;
+    const latest = newestHistoryFirst(plan.entries)[0];
+    if (latest && plan.archived.get(latest.id) === plan.current) return null;
     const entry = await this.files.createHistory(
       token,
       nextHistoryName(source, plan.entries),
@@ -83,17 +89,22 @@ export class GoogleDriveUploadHistory {
       plan.current,
     );
     plan.entries.push(entry);
+    plan.archived.set(entry.id, plan.current);
     if (isRecognizedHistoryContent(source, plan.current)) {
       plan.recognized.push({ entry, text: plan.current });
     }
-    // Failed legacy archives and unknown raw media cannot evict a recoverable backup.
+    return entry;
+  }
+
+  /** Failed replacements must never evict the actual previous versions. */
+  async retain(token: string, plan: PreparedDriveHistory): Promise<void> {
     const discarded = newestHistoryFirst(plan.recognized.map(({ entry }) => entry)).slice(
       DRIVE_HISTORY_KEEP_COUNT,
     );
     for (const stale of discarded) await this.files.trash(token, stale.id);
     const trashed = new Set(discarded.map(({ id }) => id));
+    for (const id of trashed) plan.archived.delete(id);
     plan.entries = plan.entries.filter(({ id }) => !trashed.has(id));
     plan.recognized = plan.recognized.filter(({ entry }) => !trashed.has(entry.id));
-    return entry;
   }
 }

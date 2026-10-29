@@ -176,6 +176,16 @@ describe('GoogleDriveSyncPayloads', () => {
       stars: null,
       forks: null,
       timelineHierarchy: hierarchy,
+      kindStatus: {
+        folders: 'found',
+        prompts: 'found',
+        settings: 'missing',
+        plugins: 'missing',
+        starred: 'missing',
+        stars: 'missing',
+        forks: 'missing',
+        timelineHierarchy: 'found',
+      },
     });
 
     expect(files.prepareDownload).toHaveBeenCalledExactlyOnceWith('token');

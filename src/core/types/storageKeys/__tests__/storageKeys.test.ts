@@ -40,6 +40,14 @@ describe('StorageKeys', () => {
     expect({ ...StorageKeys }).toMatchObject(storageKeysBeforeSplit);
   });
 
+  it('keeps the phase 3 sync data under its shipped storage keys', () => {
+    expect(SYNC_STORAGE_KEYS).toEqual({
+      CLOUD_SYNC_SCOPE: 'gvCloudSyncScope',
+      CLOUD_SYNC_BOOKKEEPING: 'gvCloudSyncBookkeeping',
+      CLOUD_SYNC_PRE_APPLY_SNAPSHOT: 'gvCloudSyncPreApplySnapshot',
+    });
+  });
+
   it('types StorageKey as a union of literals rather than string', () => {
     expectTypeOf<StorageKey>().not.toEqualTypeOf<string>();
     expectTypeOf<string>().not.toExtend<StorageKey>();

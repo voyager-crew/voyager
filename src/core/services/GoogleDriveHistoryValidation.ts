@@ -1,4 +1,3 @@
-import { StorageKeys } from '@/core/types/common';
 import { isHighlightExportPayloadV1 } from '@/core/types/highlight';
 import type { SyncPlatform } from '@/core/types/sync';
 import { FOLDER_PLATFORMS } from '@/features/folder/platforms';
@@ -9,10 +8,9 @@ import { decodeStarSyncSources } from '@/features/savedLibrary/starSyncPayload';
 import { decodeCatalogTimelinePayload } from '@/features/timeline/catalogHierarchySync';
 import { normalizeTimelineHierarchyData } from '@/features/timeline/hierarchyTypes';
 
-import { filterBackupableSyncSettings } from './SettingsBackupService';
 import { decodePromptDrivePayload } from './drivePromptPayload';
 import { anchorIdentity, isClearedByMarker } from './highlightAnnotationData';
-import { filterRestorableSyncSettings } from './settingsBackupValidation';
+import { isRecognizedSettingsHistory } from './settingsHistoryValidation';
 
 export type SharedHistoryKind =
   | 'prompts'
@@ -176,16 +174,7 @@ export function isLosslessSharedHistory(kind: SharedHistoryKind, raw: unknown): 
         sameContent(raw.data, normalizeTimelineHierarchyData(raw.data))
       );
     case 'settings':
-      // Merge restore filters and deduplicates coachmark ids even with no local state.
-      const seen = raw.data[StorageKeys.COACHMARKS_SEEN];
-      return (
-        raw.format === 'gemini-voyager.settings.v1' &&
-        (seen === undefined ||
-          (Array.isArray(seen) &&
-            seen.every((id) => typeof id === 'string') &&
-            new Set(seen).size === seen.length)) &&
-        sameContent(raw.data, filterBackupableSyncSettings(filterRestorableSyncSettings(raw.data)))
-      );
+      return raw.format === 'gemini-voyager.settings.v1' && isRecognizedSettingsHistory(raw.data);
     default: {
       const exhaustive: never = kind;
       return exhaustive;

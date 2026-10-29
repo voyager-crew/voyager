@@ -154,9 +154,31 @@ async function device() {
           success: true,
           data: { found: drive.files.has(name), json: drive.files.get(name) },
         };
+      case 'googleDriveGetFileMetadata': {
+        const response = await drive.fetch(
+          `https://www.googleapis.com/drive/v3/files/${name}?fields=id,md5Checksum,modifiedTime,trashed`,
+        );
+        return {
+          success: true,
+          data:
+            response.status === 404
+              ? { found: false }
+              : { found: true, ...(await response.json()) },
+        };
+      }
       case 'googleDriveUploadFile':
         drive.files.set(name, String(message.json));
-        return { success: true, data: { saved: true } };
+        return {
+          success: true,
+          data: {
+            saved: true,
+            ...(await (
+              await drive.fetch(
+                `https://www.googleapis.com/drive/v3/files/${name}?fields=id,md5Checksum,modifiedTime`,
+              )
+            ).json()),
+          },
+        };
       default:
         throw new Error(`Unexpected native action ${String(message.action)}`);
     }
@@ -321,7 +343,10 @@ describe('runtime cloud sync queue', () => {
     const cloud = new Map(d.drive.files);
     d.values[StorageKeys.PROMPT_ITEMS] = 'unreadable';
     const local = structuredClone(d.values);
-    await expect(d.request('gv.sync.upload')).rejects.toThrow('Local prompt data is invalid');
+    await expect(d.request('gv.sync.upload')).resolves.toEqual({
+      ok: false,
+      error: 'local_read_failed',
+    });
     await expect(d.service.getState()).resolves.toMatchObject({ error: null, isSyncing: false });
     expect(d.identity).not.toHaveBeenCalled();
     expect(d.drive.files).toEqual(cloud);

@@ -126,14 +126,14 @@ describe('AI Studio command boundaries', () => {
     });
   });
 
-  it('commits prepared folder and prompt data in the existing single write', async () => {
+  it('commits prepared folders without restoring shared prompt companions', async () => {
     const { commands, repository, hooks } = fixture({ folders: [], folderContents: {} });
     const draft = { folders: [folder('new')], folderContents: { new: [] } };
     const beforeWrite = vi.fn(async () => {});
     await expect(
       commands.runBulk({ kind: 'commitPreparedData', data: draft, prompts: [], beforeWrite }),
     ).resolves.toEqual({ kind: 'saved' });
-    expect(repository.replaceData).toHaveBeenCalledWith(draft, { gvPromptItems: [] }, beforeWrite);
+    expect(repository.replaceData).toHaveBeenCalledWith(draft, undefined, beforeWrite);
     expect(repository.replaceData).toHaveBeenCalledTimes(1);
     expect(hooks.onDraftSettled).toHaveBeenCalledTimes(1);
   });

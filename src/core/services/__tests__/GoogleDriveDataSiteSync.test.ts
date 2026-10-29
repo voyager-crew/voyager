@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 /**
  * Cloud sync of Nimbus, a site the bundle describes only by data
  * (`verbs/folders/__tests__/dataSiteCatalog.ts`), through the background's
@@ -94,12 +95,24 @@ function createBoundaries(initial: Record<string, unknown>) {
       if (url.pathname.startsWith('/upload/drive/v3/files/')) {
         uploaded.push(name);
         media.set(name, String(init?.body));
-        return Response.json({ id: name });
+        return Response.json({
+          id: name,
+          md5Checksum: createHash('md5').update(String(init?.body)).digest('hex'),
+          modifiedTime: EXPORTED_AT,
+        });
       }
       if (url.searchParams.get('alt') === 'media') {
         return new Response(media.get(name), { headers: { 'Content-Type': 'application/json' } });
       }
-      return Response.json({ parents: [folder.id], trashed: false });
+      return Response.json({
+        id: name,
+        parents: [folder.id],
+        trashed: false,
+        md5Checksum: createHash('md5')
+          .update(media.get(name) ?? '')
+          .digest('hex'),
+        modifiedTime: EXPORTED_AT,
+      });
     }),
   );
   return { storage, media, uploaded };
@@ -186,11 +199,11 @@ describe('Drive sync of a site described only by data', () => {
       ).resolves.toEqual({ ok: false, error: 'untrusted_sender' });
       await expect(
         handler({ type: 'gv.sync.download', payload: { platform: DATA_SITE.id } }, sender),
-      ).resolves.toEqual({ ok: false, error: 'unsupported_sync_platform' });
+      ).resolves.toEqual({ ok: false, error: 'untrusted_sender' });
     }
     await expect(
       handler({ type: 'gv.sync.download', payload: { platform: 'orbit' } }, OWN_TAB),
-    ).resolves.toEqual({ ok: false, error: 'unsupported_sync_platform' });
+    ).resolves.toEqual({ ok: false, error: 'untrusted_sender' });
     // A Nimbus tab cannot reach a frozen site's bucket either.
     await expect(
       handler({ type: 'gv.sync.upload', payload: { platform: 'chatgpt' } }, OWN_TAB),

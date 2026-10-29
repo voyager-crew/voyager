@@ -318,41 +318,42 @@ describe('popup download apply snapshot and overwrite policy', () => {
     }
   });
 
-  it('captures a corrupt fork group index before the owner repairs it', async () => {
-    const node = {
-      conversationId: 'cloud',
-      turnId: 'turn',
-      conversationUrl: 'https://gemini.google.com/app/cloud',
-      forkGroupId: 'group',
+  it('keeps corrupt local forks untouched and reports the kind as failed', async () => {
+    const localNode = {
+      conversationId: 'local-only',
+      turnId: 'local-turn',
+      conversationUrl: 'https://gemini.google.com/app/local-only',
+      forkGroupId: 'local-group',
       forkIndex: 0,
       createdAt: 1,
     };
-    const corrupt = { nodes: { cloud: [node] }, groups: null };
+    const cloudNode = {
+      ...localNode,
+      conversationId: 'cloud',
+      turnId: 'cloud-turn',
+      conversationUrl: 'https://gemini.google.com/app/cloud',
+      forkGroupId: 'cloud-group',
+    };
+    const corrupt = { nodes: { 'local-only': [localNode] }, groups: null };
     h.stored[StorageKeys.FORK_NODES] = corrupt;
     await h.render();
-    await (
-      await h.transfer.prepareDownload()
-    ).restore(
-      {
-        forks: {
-          format: 'gemini-voyager.forks.v1',
-          data: { nodes: { cloud: [node] }, groups: {} },
+    await expect(
+      (await h.transfer.prepareDownload()).restore(
+        {
+          forks: {
+            format: 'gemini-voyager.forks.v1',
+            data: { nodes: { cloud: [cloudNode] }, groups: {} },
+          },
         },
-      },
-      'overwrite',
-      false,
+        'overwrite',
+        false,
+      ),
+    ).rejects.toMatchObject({ restored: [], failed: ['forks'] });
+    expect(h.stored[StorageKeys.FORK_NODES]).toEqual(corrupt);
+    expect((await readCloudSyncSnapshot())?.appliedHashes ?? []).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: 'forks' })]),
     );
-    expect(h.stored[StorageKeys.FORK_NODES]).toEqual({
-      nodes: { cloud: [node] },
-      groups: { group: ['cloud:turn'] },
-    });
-    expect((await readCloudSyncSnapshot())?.entries).toContainEqual({
-      area: 'local',
-      key: StorageKeys.FORK_NODES,
-      existed: true,
-      value: corrupt,
-    });
-    await expect(undoCloudSyncSnapshot()).resolves.toMatchObject({ status: 'restored' });
+    await expect(undoCloudSyncSnapshot()).resolves.toEqual({ status: 'absent' });
     expect(h.stored[StorageKeys.FORK_NODES]).toEqual(corrupt);
   });
 
@@ -426,8 +427,12 @@ describe('popup download apply snapshot and overwrite policy', () => {
       .catch((error: unknown) => error);
     await capturing;
     await h.unmount();
-    expect(await applying).toMatchObject({ restored: [], message: 'Download cancelled' });
     release();
+    expect(await applying).toMatchObject({
+      restored: [],
+      message: 'Download cancelled',
+      snapshotId: expect.any(String),
+    });
     await readCloudSyncSnapshot();
     const { [StorageKeys.CLOUD_SYNC_PRE_APPLY_SNAPSHOT]: _slot, ...stored } = h.stored;
     expect(stored).toEqual(prior);

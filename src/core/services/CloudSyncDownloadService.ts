@@ -26,6 +26,7 @@ import {
   type CloudRestoreStep,
   applyCloudRestore,
 } from './CloudSyncApplyService';
+import { CloudSyncFailure } from './CloudSyncFailure';
 import { STAR_RESTORE_KEYS, planCatalogRestore, planForkRestore } from './CloudSyncRestoreKeys';
 import type { SnapshotContext } from './CloudSyncSnapshotService';
 
@@ -36,6 +37,13 @@ export interface CloudDownloadData extends CloudApplyDownload {
   forks?: unknown;
   /** Background-owned highlights can start the same snapshot before returning their result. */
   snapshotId?: string;
+  /** Background-authorized rows; absent retains the old response contract. */
+  selection?: {
+    site: boolean;
+    shared: boolean;
+    conversationExtras?: boolean;
+    timelineHierarchy?: boolean;
+  };
 }
 
 export interface PopupRestoreContext {
@@ -88,8 +96,15 @@ export async function applyPopupCloudDownload(input: {
 }) {
   const { context, local, data, mode } = input;
   const definition = FOLDER_PLATFORMS[context.payload.platform];
+  const site = data.selection?.site !== false;
+  const shared = data.selection?.shared ?? definition.syncsSharedData;
+  const conversationExtras =
+    site && (data.selection?.conversationExtras ?? definition.syncsConversationExtras);
+  const timelineHierarchy =
+    site && (data.selection?.timelineHierarchy ?? definition.syncsConversationExtras);
   const payloads = readCloudApplyPayloads(data);
   if (
+    site &&
     definition.folderExport &&
     data.folders &&
     (mode === 'merge' || payloads.folders.status === 'found')
@@ -99,26 +114,30 @@ export async function applyPopupCloudDownload(input: {
       if (mode === 'overwrite') payloads.folders = { status: 'unrecognized' };
       else
         throw new CloudRestoreError(
-          [],
+          input.highlightsRestored ? ['highlights'] : [],
           ['folders'],
           new Error(`Invalid ${definition.folderExport.platform} folder backup`),
           validated.reason === 'wrong-site'
             ? 'folder_import_wrong_site'
             : 'folder_import_invalid_format',
+          [],
+          data.snapshotId,
         );
     } else payloads.folders = { status: 'found', value: validated.payload.data };
   }
   const plan = createCloudSyncApplyPlan({
     mode,
     payloads,
-    shared: definition.syncsSharedData,
-    conversationExtras: definition.syncsConversationExtras,
+    shared,
+    site,
+    conversationExtras,
+    timelineHierarchy,
   });
   const storageUpdate: Record<string, unknown> = {};
   const storageParts: CloudRestorePart[] = [];
   const storageKinds: Record<string, CloudRestorePart> = {};
   // Missing is never converted to an empty overwrite; a recognized empty list still applies.
-  if (plan.folders !== undefined || mode === 'merge') {
+  if (site && (plan.folders !== undefined || mode === 'merge')) {
     storageUpdate[local.folderStorageKey] =
       mode === 'overwrite'
         ? plan.folders
@@ -126,10 +145,7 @@ export async function applyPopupCloudDownload(input: {
     storageParts.push('folders');
     storageKinds[local.folderStorageKey] = 'folders';
   }
-  if (
-    definition.syncsConversationExtras &&
-    (plan.timelineHierarchy !== undefined || mode === 'merge')
-  ) {
+  if (timelineHierarchy && (plan.timelineHierarchy !== undefined || mode === 'merge')) {
     storageUpdate[context.timelineHierarchyStorageKey] =
       mode === 'overwrite'
         ? plan.timelineHierarchy
@@ -142,7 +158,7 @@ export async function applyPopupCloudDownload(input: {
   }
   const owners: CloudRestoreStep[] = [];
   let nameConflicts = 0;
-  if (definition.syncsSharedData && (plan.prompts !== undefined || mode === 'merge')) {
+  if (shared && (plan.prompts !== undefined || mode === 'merge')) {
     owners.push({
       parts: ['prompts'],
       keys: [{ area: 'local', key: PROMPT_LIBRARY_KEY }],
@@ -166,7 +182,7 @@ export async function applyPopupCloudDownload(input: {
     });
   }
   if (
-    definition.syncsConversationExtras &&
+    conversationExtras &&
     [data.starred, data.stars].some((value) => value !== null && typeof value === 'object')
   ) {
     owners.push({
@@ -182,8 +198,17 @@ export async function applyPopupCloudDownload(input: {
         ).status === 'merged',
     });
   }
-  if (definition.syncsConversationExtras && data.forks && typeof data.forks === 'object') {
-    const forks = await planForkRestore(data.forks);
+  if (conversationExtras && data.forks && typeof data.forks === 'object') {
+    const forks = await planForkRestore(data.forks).catch((cause: unknown) => {
+      throw new CloudRestoreError(
+        input.highlightsRestored ? ['highlights'] : [],
+        ['forks'],
+        cause,
+        undefined,
+        plan.skipped,
+        data.snapshotId,
+      );
+    });
     owners.push({
       parts: ['forks'],
       keys: forks.keys,
@@ -196,7 +221,18 @@ export async function applyPopupCloudDownload(input: {
         )) === 'merged',
     });
   }
-  owners.push(...(await catalogOwner(input.send, input.catalog)));
+  // Planning may fail after the background already applied highlights into this snapshot.
+  const catalogSteps = await catalogOwner(input.send, input.catalog).catch((cause: unknown) => {
+    throw new CloudRestoreError(
+      input.highlightsRestored ? ['highlights'] : [],
+      ['outlines'],
+      cause,
+      undefined,
+      plan.skipped,
+      data.snapshotId,
+    );
+  });
+  owners.push(...catalogSteps);
   const result = await applyCloudRestore({
     mode,
     highlightsRestored: input.highlightsRestored,
@@ -216,7 +252,10 @@ export async function applyPopupCloudDownload(input: {
     current: input.current,
     signal: input.signal,
     refusal: local.accountChanged
-      ? new Error('The tab switched to another account during the download')
+      ? new CloudSyncFailure(
+          'account_changed',
+          'The tab switched to another account during the download',
+        )
       : undefined,
   });
   return { ...result, foldersMissing: payloads.folders.status !== 'found', nameConflicts };
@@ -228,19 +267,31 @@ export async function applyPopupCatalogDownload(input: {
   catalog: PulledCatalogTimeline | null;
   snapshot: SnapshotContext;
   snapshotId?: string;
+  highlightsRestored?: boolean;
   current?: () => Promise<boolean>;
   signal?: AbortSignal;
-}): Promise<boolean> {
-  if (!input.catalog) return false;
+}): Promise<{ restored: boolean; snapshotId?: string }> {
+  const owners = await catalogOwner(input.send, { status: 'pulled', value: input.catalog }).catch(
+    (cause: unknown) => {
+      throw new CloudRestoreError(
+        input.highlightsRestored ? ['highlights'] : [],
+        ['outlines'],
+        cause,
+        undefined,
+        [],
+        input.snapshotId,
+      );
+    },
+  );
   const result = await applyCloudRestore({
     mode: 'merge',
-    highlightsRestored: false,
+    highlightsRestored: input.highlightsRestored ?? false,
     storageUpdate: {},
-    owners: await catalogOwner(input.send, { status: 'pulled', value: input.catalog }),
+    owners,
     snapshot: input.snapshot,
     snapshotId: input.snapshotId,
     current: input.current,
     signal: input.signal,
   });
-  return result.restored.includes('outlines');
+  return { restored: result.restored.includes('outlines'), snapshotId: result.snapshotId };
 }

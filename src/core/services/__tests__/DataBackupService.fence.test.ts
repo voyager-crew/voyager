@@ -89,7 +89,7 @@ describe.each([
     authorization.resolve({});
     expect(await earlier).toBe(false);
     expect(JSON.parse(localStorage.getItem(emergency)!).data).toEqual({ folders: ['Newest'] });
-    expect(backup.recoverFromBackup()).toEqual({ folders: ['Newest'] });
+    expect(await backup.recoverFromBackupForKey('gvFolderData')).toEqual({ folders: ['Newest'] });
   });
 
   it('delayed primary metadata cannot replace a newer primary snapshot', async () => {
@@ -106,7 +106,9 @@ describe.each([
     expect(await backup.createPrimaryBackup({ folders: ['Newest', 'Also newest'] })).toBe(true);
     authorization.resolve({});
     await earlier;
-    expect(backup.recoverFromBackup()).toEqual({ folders: ['Newest', 'Also newest'] });
+    expect(await backup.recoverFromBackupForKey('gvFolderData')).toEqual({
+      folders: ['Newest', 'Also newest'],
+    });
     expect(JSON.parse(localStorage.getItem(metadata)!).primary.itemCount).toBe(2);
   });
 

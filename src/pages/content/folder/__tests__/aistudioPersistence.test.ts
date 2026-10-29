@@ -225,7 +225,7 @@ describe('AI Studio folder persistence', () => {
         expect(local.gvPromptItems).toEqual([]);
         writes.tail.resolve(saved);
         await syncing;
-        expect(local.gvPromptItems).toEqual(saved ? [prompt] : []);
+        expect(local.gvPromptItems).toEqual([]);
         if (saved) {
           expect(notificationText()).toContain(getTranslationSync('downloadMergeSuccess'));
           expect(
@@ -307,9 +307,8 @@ describe('AI Studio folder persistence', () => {
     },
   );
 
-  it('does not announce cloud sync success when writing merged prompts fails', async () => {
+  it('syncs site folders even when shared prompt writes would fail', async () => {
     const manager = await mountManager();
-    const original = structuredClone(manager.data);
     local.gvPromptItems = [];
     mockBrowser.runtime.sendMessage.mockResolvedValue({
       ok: true,
@@ -322,10 +321,10 @@ describe('AI Studio folder persistence', () => {
 
     await manager.transfer.sync();
 
-    expect(notificationText()).not.toContain(getTranslationSync('downloadMergeSuccess'));
-    expect(hasErrorNotice()).toBe(true);
-    expect(manager.data).toEqual(original);
-    expect(local[manager.activeStorageKey]).toEqual(original);
+    expect(notificationText()).toContain(getTranslationSync('downloadMergeSuccess'));
+    expect(hasErrorNotice()).toBe(false);
+    expect(manager.data.folders.map((folder) => folder.name)).toEqual(['Private a', 'Cloud']);
+    expect(local[manager.activeStorageKey]).toEqual(manager.data);
     expect(local.gvPromptItems).toEqual([]);
   });
 

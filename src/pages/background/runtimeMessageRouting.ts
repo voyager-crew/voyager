@@ -161,6 +161,8 @@ const HANDLED_BACKGROUND_MESSAGE_TYPES = new Set([
   CATALOG_TIMELINE_PUSH_MESSAGE,
   CATALOG_TIMELINE_PULL_MESSAGE,
   'gv.sync.getState',
+  'gv.sync.getStatus',
+  'gv.sync.completeDownload',
   'gv.sync.setMode',
   'gv.sync.setProvider',
   'gv.openPopup',

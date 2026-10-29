@@ -32,20 +32,12 @@ function device() {
     storage: { local: local.area, sync: sync.area },
   });
   const drive = new FakeSyncDrive();
-  const discoveryQueries: string[] = [];
   vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input));
     if (url.hostname === 'accounts.google.com') return new Response('');
-    const query = url.searchParams.get('q') ?? '';
-    if (
-      url.pathname === '/drive/v3/files' &&
-      !init?.method &&
-      (query.includes('mimeType=') || query.startsWith('('))
-    )
-      discoveryQueries.push(query);
     return drive.fetch(input, init);
   });
-  return { drive, discoveryQueries, service: new GoogleDriveSyncService() };
+  return { drive, service: new GoogleDriveSyncService() };
 }
 
 beforeEach(() => {
@@ -71,11 +63,10 @@ describe('sync turn port and shared Drive cache', () => {
     expect(d.drive.payload<PromptExportPayload>(promptsFile).items).toEqual([prompt('turn-owned')]);
   });
 
-  it('reuses discovery across prompts-only and highlights-only queue turns', async () => {
+  it('keeps prompts and highlights independent across queue turns', async () => {
     const d = device();
     const highlights = createHighlightPayload(scope);
     await d.service.runExclusive((port) => port.uploadPromptsOnly([prompt('first')]));
-    expect(d.discoveryQueries).toHaveLength(3);
 
     await expect(
       d.service.runExclusive((port) => port.downloadPromptsOnly()),
@@ -90,7 +81,6 @@ describe('sync turn port and shared Drive cache', () => {
       d.service.runExclusive((port) => port.uploadPromptsOnly([prompt('latest')])),
     ).resolves.toBe(true);
 
-    expect(d.discoveryQueries).toHaveLength(3);
     expect(d.drive.payload<PromptExportPayload>(promptsFile).items).toEqual([prompt('latest')]);
     expect(
       [...d.drive.files.keys()].filter((name) => name.startsWith('gemini-voyager-highlights.')),
@@ -102,7 +92,6 @@ describe('sync turn port and shared Drive cache', () => {
     async (ending) => {
       const d = device();
       await d.service.runExclusive((port) => port.uploadPromptsOnly([prompt('before')]));
-      expect(d.discoveryQueries).toHaveLength(3);
 
       if (ending === 'sign-out') {
         await d.service.signOut();
@@ -120,7 +109,6 @@ describe('sync turn port and shared Drive cache', () => {
         d.service.runExclusive((port) => port.downloadPromptsOnly()),
       ).resolves.toMatchObject({ kind: 'found', value: { items: [prompt('after')] } });
 
-      expect(d.discoveryQueries).toHaveLength(6);
       expect(d.drive.payload<PromptExportPayload>(promptsFile).items).toEqual([prompt('after')]);
     },
   );

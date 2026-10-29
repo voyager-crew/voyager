@@ -1,8 +1,66 @@
 import Foundation
 
+struct VoyagerGoogleDriveMetadataResponse: Codable {
+  let found: Bool
+  let id: String?
+  let md5Checksum: String?
+  let modifiedTime: String?
+}
+
+struct VoyagerGoogleDriveUploadMetadataResponse: Codable {
+  let saved: Bool
+  let id: String?
+  let md5Checksum: String?
+  let modifiedTime: String?
+
+  init(_ metadata: VoyagerGoogleDriveMetadataResponse) {
+    saved = true
+    id = metadata.id
+    md5Checksum = metadata.md5Checksum
+    modifiedTime = metadata.modifiedTime
+  }
+}
+
 /** Sibling history files are created with their media before they enter retention. */
 extension GoogleDriveService {
   private static let historySourceProperty = "voyagerHistorySource"
+
+  /** Status reads file metadata only and uses the existing drive.file authorization. */
+  func fileMetadata(
+    fileID: String,
+    completion: @escaping (Result<VoyagerGoogleDriveMetadataResponse, Error>) -> Void
+  ) {
+    guard !fileID.isEmpty else {
+      completion(.failure(GoogleDriveServiceError.invalidResponse))
+      return
+    }
+    performRequest(
+      method: "GET",
+      path: "/drive/v3/files/\(fileID)",
+      queryItems: [URLQueryItem(name: "fields", value: "id,md5Checksum,modifiedTime,trashed")]
+    ) { result in
+      completion(result.flatMap { response in
+        if response.statusCode == 404 {
+          return .success(VoyagerGoogleDriveMetadataResponse(
+            found: false, id: nil, md5Checksum: nil, modifiedTime: nil
+          ))
+        }
+        guard response.isSuccessful else { return .failure(self.requestFailure(response)) }
+        return Result {
+          let metadata = try JSONDecoder().decode(DriveSyncMetadata.self, from: response.data)
+          if metadata.trashed == true {
+            return VoyagerGoogleDriveMetadataResponse(found: false, id: nil, md5Checksum: nil, modifiedTime: nil)
+          }
+          guard let checksum = metadata.md5Checksum, !checksum.isEmpty,
+            let modifiedTime = metadata.modifiedTime, !modifiedTime.isEmpty
+          else { throw GoogleDriveServiceError.invalidResponse }
+          return VoyagerGoogleDriveMetadataResponse(
+            found: true, id: metadata.id, md5Checksum: checksum, modifiedTime: modifiedTime
+          )
+        }
+      })
+    }
+  }
 
   func createFile(
     named fileName: String,
@@ -191,4 +249,11 @@ private struct DriveHistoryItem: Decodable {
   let id: String
   let name: String
   let createdTime: String
+}
+
+private struct DriveSyncMetadata: Decodable {
+  let id: String
+  let md5Checksum: String?
+  let modifiedTime: String?
+  let trashed: Bool?
 }

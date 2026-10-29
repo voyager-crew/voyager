@@ -273,7 +273,10 @@ describe('cloud sync read safety through the background handler', () => {
       browser.failLocal(key);
       const beforeDrive = new Map(browser.drive);
       const beforeStorage = structuredClone(browser.values);
-      await expect(browser.request('gv.sync.upload')).rejects.toThrow('Storage unavailable');
+      await expect(browser.request('gv.sync.upload')).resolves.toEqual({
+        ok: false,
+        error: 'local_read_failed',
+      });
       expect(browser.drive).toEqual(beforeDrive);
       expect(browser.values).toEqual(beforeStorage);
       expect(browser.writes()).toBe(0);
@@ -283,16 +286,12 @@ describe('cloud sync read safety through the background handler', () => {
   it('a successful full upload replaces the fake Drive files with the actual local data', async () => {
     const browser = await device();
     await expect(browser.request('gv.sync.upload')).resolves.toMatchObject({ ok: true });
-    expect(JSON.parse(browser.drive.get(foldersFile)!)).toMatchObject({
-      data: folders('Local folders'),
+    expect(JSON.parse(browser.drive.get(foldersFile)!).data).toEqual(folders('Local folders'));
+    expect(JSON.parse(browser.drive.get(promptsFile)!).items).toEqual([prompt('local')]);
+    expect(JSON.parse(browser.drive.get(pluginsFile)!).data).toEqual({
+      'test.plugin': { enabled: true, installedAt: 1 },
     });
-    expect(JSON.parse(browser.drive.get(promptsFile)!)).toMatchObject({ items: [prompt('local')] });
-    expect(JSON.parse(browser.drive.get(pluginsFile)!)).toMatchObject({
-      data: { 'test.plugin': { enabled: true, installedAt: 1 } },
-    });
-    expect(JSON.parse(browser.drive.get(hierarchyFile)!)).toMatchObject({
-      data: hierarchy('local'),
-    });
+    expect(JSON.parse(browser.drive.get(hierarchyFile)!).data).toEqual(hierarchy('local'));
     expect(browser.values[StorageKeys.PROMPT_ITEMS]).toEqual([prompt('local')]);
     expect(browser.writes()).toBeGreaterThan(0);
   });
@@ -303,7 +302,10 @@ describe('cloud sync read safety through the background handler', () => {
       const browser = await device();
       browser.values[StorageKeys.PLUGINS_STATE] = raw;
       const beforeDrive = new Map(browser.drive);
-      await expect(browser.request('gv.sync.upload')).rejects.toThrow('Upload failed');
+      await expect(browser.request('gv.sync.upload')).resolves.toEqual({
+        ok: false,
+        error: 'local_read_failed',
+      });
       expect(browser.drive).toEqual(beforeDrive);
       expect(browser.values[StorageKeys.PLUGINS_STATE]).toEqual(raw);
       expect(browser.writes()).toBe(0);
@@ -437,7 +439,7 @@ describe('cloud sync read safety through the background handler', () => {
       kind: 'missing',
     });
     await expect(browser.request('gv.sync.pushPromptsMerge')).resolves.toMatchObject({ ok: true });
-    expect(JSON.parse(browser.drive.get(promptsFile)!)).toMatchObject({ items: [prompt('local')] });
+    expect(JSON.parse(browser.drive.get(promptsFile)!).items).toEqual([prompt('local')]);
     expect(browser.values[StorageKeys.PROMPT_ITEMS]).toEqual([prompt('local')]);
   });
 

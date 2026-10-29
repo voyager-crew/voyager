@@ -480,4 +480,58 @@ describe('CloudSyncSettings download', () => {
       },
     });
   });
+  it.each([false, true])(
+    'acknowledges only a fully applied download (write failure=%s)',
+    async (failed) => {
+      const cloud = {
+        folders: [
+          {
+            id: 'new',
+            name: 'Cloud',
+            parentId: null,
+            isExpanded: true,
+            createdAt: 1,
+            updatedAt: 1,
+          },
+        ],
+        folderContents: { new: [] },
+      };
+      const send = vi.fn(async (message: { type?: string }) => {
+        if (message.type === 'gv.sync.getState') return { ok: true, state: baseState };
+        if (message.type === 'gv.sync.download')
+          return {
+            ok: true,
+            operationId: 'popup-download',
+            catalog: null,
+            data: { folders: { data: cloud } },
+          };
+        return { ok: true };
+      });
+      const chromeMock = createChromeMock(send);
+      if (failed) vi.mocked(chromeMock.storage.local.set).mockRejectedValue(new Error('quota'));
+      (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
+      await act(async () => {
+        root = createRoot(container);
+        root.render(<CloudSyncSettings />);
+      });
+      await flushMicrotasks();
+      const download = Array.from(container.querySelectorAll('button')).find((button) =>
+        button.textContent?.includes('syncMerge'),
+      );
+      await act(async () => {
+        download?.click();
+      });
+      await waitForCloudSyncAction(download);
+      expect(send).toHaveBeenCalledWith({
+        type: 'gv.sync.completeDownload',
+        payload: { operationId: 'popup-download', success: !failed },
+      });
+      expect(send).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'gv.sync.catalogTimeline.pull' }),
+      );
+      expect(
+        (await chromeMock.storage.local.get(StorageKeys.FOLDER_DATA))[StorageKeys.FOLDER_DATA],
+      ).toEqual(failed ? { folders: [], folderContents: {} } : cloud);
+    },
+  );
 });

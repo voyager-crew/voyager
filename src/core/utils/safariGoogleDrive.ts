@@ -112,12 +112,6 @@ export async function ensureSafariGoogleDriveFile(
   return fileIDFromResponse(response);
 }
 
-export async function uploadSafariGoogleDriveFile(fileID: string, data: unknown): Promise<void> {
-  const json = JSON.stringify(data);
-  if (typeof json !== 'string') throw new Error('Safari Google Drive upload failed');
-  return uploadSafariGoogleDriveText(fileID, json);
-}
-
 /** Preserve the exact media body when archiving an existing file, including unknown formats. */
 export async function uploadSafariGoogleDriveText(fileID: string, json: string): Promise<void> {
   const response = await sendNativeMessage({ action: 'googleDriveUploadFile', fileID, json });

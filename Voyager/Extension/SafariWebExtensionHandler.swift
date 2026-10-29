@@ -45,6 +45,8 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
       uploadGoogleDriveFile(request: request, context: context)
     case .googleDriveDownloadFile(let fileID):
       downloadGoogleDriveFile(fileID: fileID, context: context)
+    case .googleDriveGetFileMetadata(let fileID):
+      getGoogleDriveFileMetadata(fileID: fileID, context: context)
     case .googleDriveCreateFile(let request):
       createGoogleDriveFile(request: request, context: context)
     case .googleDriveListHistory(let sourceFileName):
@@ -259,10 +261,10 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
   ) {
     GoogleDriveService.shared.upload(fileID: request.fileID, json: request.json) { result in
       switch result {
-      case .success:
+      case .success(let metadata):
         self.respondWithSuccess(
           context: context,
-          data: VoyagerGoogleDriveUploadResponse(saved: true)
+          data: VoyagerGoogleDriveUploadMetadataResponse(metadata)
         )
       case .failure(let error):
         self.respondWithGoogleDriveError(context: context, error: error)
@@ -278,6 +280,17 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
           context: context,
           data: VoyagerGoogleDriveDownloadResponse(json: json, found: json != nil)
         )
+      case .failure(let error):
+        self.respondWithGoogleDriveError(context: context, error: error)
+      }
+    }
+  }
+
+  private func getGoogleDriveFileMetadata(fileID: String, context: NSExtensionContext) {
+    GoogleDriveService.shared.fileMetadata(fileID: fileID) { result in
+      switch result {
+      case .success(let metadata):
+        self.respondWithSuccess(context: context, data: metadata)
       case .failure(let error):
         self.respondWithGoogleDriveError(context: context, error: error)
       }

@@ -17,6 +17,7 @@ import type {
   HighlightStorageAdapter,
   HighlightQueryOptions,
   HighlightClearAllAccountsResult,
+  HighlightImportMergeOptions,
 } from './HighlightAnnotationService';
 import {
   HighlightAnnotationError,
@@ -261,12 +262,23 @@ export class HighlightAnnotationStore {
   async commit(
     setItems: Record<string, unknown>,
     removeKeys: readonly string[] = [],
-    options: { allowOverCapGrowth?: boolean } = {},
+    options: {
+      allowOverCapGrowth?: boolean;
+      beforeWrite?: HighlightImportMergeOptions['beforeWrite'];
+    } = {},
   ): Promise<void> {
+    // Freeze a cloud import before its receipt awaits storage; the write must match that receipt.
+    const values = options.beforeWrite ? structuredClone(setItems) : setItems;
     const step = async (reservedBytes: number) => {
-      await this.assertWithinSoftCap(setItems, removeKeys, options, reservedBytes);
-      if (Object.keys(setItems).length > 0) await this.storage.set(setItems);
-      if (removeKeys.length > 0) await this.storage.remove(removeKeys);
+      await this.assertWithinSoftCap(values, removeKeys, options, reservedBytes);
+      if (Object.keys(values).length > 0) {
+        await options.beforeWrite?.(values);
+        await this.storage.set(values);
+      }
+      if (removeKeys.length > 0) {
+        await options.beforeWrite?.(Object.fromEntries(removeKeys.map((key) => [key, undefined])));
+        await this.storage.remove(removeKeys);
+      }
     };
     const budget = this.dependencies.budget;
     await (budget ? budget.runChecked(step) : step(0));

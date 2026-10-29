@@ -150,7 +150,7 @@ describe('normalizable local data through the background upload', () => {
     });
     await expect(d.upload()).resolves.toMatchObject({ ok: true });
     expect(d.drive.payload(promptsFile)).toMatchObject({
-      items: [{ ...prompt, tags: ['review', '1'], createdAt: 0 }],
+      items: [{ ...prompt, text: ' Local ', tags: ['review', '1'], createdAt: 0 }],
     });
     expect(d.drive.payload(hierarchyFile)).toMatchObject({
       data: {
@@ -191,8 +191,8 @@ describe('normalizable local data through the background upload', () => {
     async (_kind, key, raw) => {
       const d = await device({ [String(key)]: raw });
       const cloud = new Map(d.drive.files);
-      const outcome = await Promise.resolve(d.upload()).catch(() => ({ ok: false }));
-      expect(outcome).toMatchObject({ ok: false });
+      const outcome = await d.upload();
+      expect(outcome).toEqual({ ok: false, error: 'local_read_failed' });
       expect(d.drive.files).toEqual(cloud);
     },
   );

@@ -130,12 +130,15 @@ final class GoogleDriveService {
   func upload(
     fileID: String,
     json: String,
-    completion: @escaping (Result<Void, Error>) -> Void
+    completion: @escaping (Result<VoyagerGoogleDriveMetadataResponse, Error>) -> Void
   ) {
     performRequest(
       method: "PATCH",
       path: "/upload/drive/v3/files/\(fileID)",
-      queryItems: [URLQueryItem(name: "uploadType", value: "media")],
+      queryItems: [
+        URLQueryItem(name: "uploadType", value: "media"),
+        URLQueryItem(name: "fields", value: "id,md5Checksum,modifiedTime"),
+      ],
       contentType: "application/json",
       body: Data(json.utf8)
     ) { result in
@@ -147,7 +150,18 @@ final class GoogleDriveService {
           completion(.failure(self.requestFailure(response)))
           return
         }
-        completion(.success(()))
+        do {
+          let metadata = try JSONDecoder().decode(DriveUploadMetadata.self, from: response.data)
+          completion(.success(VoyagerGoogleDriveMetadataResponse(
+            found: true, id: metadata.id, md5Checksum: metadata.md5Checksum,
+            modifiedTime: metadata.modifiedTime
+          )))
+        } catch {
+          // The media write succeeded. Missing receipt fields must never retry that write.
+          completion(.success(VoyagerGoogleDriveMetadataResponse(
+            found: true, id: nil, md5Checksum: nil, modifiedTime: nil
+          )))
+        }
       }
     }
   }
@@ -599,6 +613,12 @@ struct DriveUpdateMetadata: Encodable {
 private struct DriveParentMetadata: Decodable {
   let parents: [String]?
   let trashed: Bool?
+}
+
+private struct DriveUploadMetadata: Decodable {
+  let id: String
+  let md5Checksum: String
+  let modifiedTime: String
 }
 
 enum GoogleDriveServiceError: LocalizedError, Equatable {

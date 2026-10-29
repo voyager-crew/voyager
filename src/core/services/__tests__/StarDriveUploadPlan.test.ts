@@ -22,12 +22,13 @@ const item: StarredMessage = {
 
 function local() {
   const values: Record<string, unknown> = {};
-  let reads = 0;
-  let failAt = Infinity;
+  let failNext = false;
   const area = {
     get: async () => {
-      reads += 1;
-      if (reads === failAt) throw new Error('storage unavailable');
+      if (failNext) {
+        failNext = false;
+        throw new Error('storage unavailable');
+      }
       return structuredClone(values);
     },
     set: async (items: Record<string, unknown>) => {
@@ -37,8 +38,8 @@ function local() {
   return {
     store: createStarStore(area),
     values,
-    failAfterReads(count: number) {
-      failAt = reads + count;
+    failNextRead() {
+      failNext = true;
     },
   };
 }
@@ -94,8 +95,13 @@ it('a later local snapshot failure leaves every cloud file intact', async () => 
   await source.store.add(item);
   const first = remote();
   const second = remote();
-  // Two merge reads and the first snapshot succeed; the second snapshot cannot be read.
-  source.failAfterReads(4);
+  // Storage becomes unavailable after cloud preflight, before any file can be written.
+  const read = second.port.read;
+  second.port.read = async () => {
+    const value = await read();
+    source.failNextRead();
+    return value;
+  };
 
   await expect(
     new StarDriveSyncCoordinator().prepare(source.store, [

@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 export interface FakeDriveMetadata {
   id: string;
   name: string;
@@ -6,6 +8,8 @@ export interface FakeDriveMetadata {
   appProperties?: Record<string, string>;
   createdTime?: string;
   trashed?: boolean;
+  md5Checksum?: string;
+  modifiedTime?: string;
 }
 
 /** A Drive media store shared by the real transport and sync-service regression tests. */
@@ -49,14 +53,19 @@ export class FakeSyncDrive {
   }
 
   private fileMetadata(id: string): FakeDriveMetadata {
-    return (
-      this.metadata.get(id) ?? {
-        id,
-        name: id,
-        parents: [this.folder.id],
-        createdTime: new Date((this.serverNow?.() ?? Date.now()) + this.sequence++).toISOString(),
-      }
-    );
+    const metadata = this.metadata.get(id) ?? {
+      id,
+      name: id,
+      parents: [this.folder.id],
+      createdTime: new Date((this.serverNow?.() ?? Date.now()) + this.sequence++).toISOString(),
+    };
+    return {
+      ...metadata,
+      md5Checksum: createHash('md5')
+        .update(this.files.get(id) ?? '')
+        .digest('hex'),
+      modifiedTime: metadata.modifiedTime ?? metadata.createdTime,
+    };
   }
 
   private allFiles(): FakeDriveMetadata[] {
@@ -145,8 +154,13 @@ export class FakeSyncDrive {
       if (this.failWrites.has(name)) return new Response('', { status: 503 });
       this.files.set(name, body);
       this.metadata.set(name, this.fileMetadata(name));
+      const metadata = this.metadata.get(name);
+      if (metadata)
+        metadata.modifiedTime = new Date(
+          (this.serverNow?.() ?? Date.now()) + this.sequence++,
+        ).toISOString();
       this.writes.push(name);
-      return Response.json({ id: name });
+      return Response.json(this.fileMetadata(name));
     }
     if (url.searchParams.get('alt') === 'media') {
       await this.beforeRead?.(name);

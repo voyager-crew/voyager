@@ -4,6 +4,7 @@ const unavailable = async (): Promise<never> => {
 };
 
 export const noDriveHistory = {
+  metadata: unavailable,
   supportsHistory: () => false,
   downloadText: unavailable,
   uploadText: unavailable,

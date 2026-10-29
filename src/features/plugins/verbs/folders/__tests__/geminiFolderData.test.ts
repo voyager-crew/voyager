@@ -212,7 +212,7 @@ describe("a Gemini user's folders from the folder manager", () => {
     });
   });
 
-  it('upload as the same folders', async () => {
+  it('requests only this site and keeps stored folders intact', async () => {
     local[KEY] = structuredClone(STORED);
     const page = await openGemini();
     vi.mocked(chrome.runtime.sendMessage).mockClear();
@@ -223,7 +223,12 @@ describe("a Gemini user's folders from the folder manager", () => {
       .mocked(chrome.runtime.sendMessage)
       .mock.calls.map(([message]: unknown[]) => message as { type: string; payload?: unknown })
       .find((message) => message.type === 'gv.sync.upload');
-    expect(upload?.payload).toEqual(expand(fixture.uploaded));
+    expect(upload?.payload).toMatchObject({
+      platform: 'gemini',
+      selection: 'site',
+    });
+    expect(upload?.payload).not.toHaveProperty('prompts');
+    expect(local[KEY]).toEqual(STORED);
   });
 
   it('export as the same file', async () => {

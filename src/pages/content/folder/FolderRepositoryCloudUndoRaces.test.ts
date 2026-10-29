@@ -281,7 +281,6 @@ describe.each(adapters)('cloud undo races through $name folders', ({ create }) =
         ),
       ).toBe(true);
       const syncItems = { [UNDO_FAILURE_KEY]: 'downloaded' };
-      await chrome.storage.sync.set(syncItems);
       await recordCloudSyncWrites(snapshot.id, [
         {
           area: 'sync',
@@ -290,6 +289,7 @@ describe.each(adapters)('cloud undo races through $name folders', ({ create }) =
           value: syncItems[UNDO_FAILURE_KEY],
         },
       ]);
+      await chrome.storage.sync.set(syncItems);
       await finishCloudSyncSnapshot(snapshot.id);
       await repository.session!.backup.finishPendingWrites();
       await settleReloads();

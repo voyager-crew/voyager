@@ -19,23 +19,32 @@ export async function mergeLegacyUploadSnapshot(
   const definition = FOLDER_PLATFORMS[snapshot.platform];
   const initial = createDriveInitialPayloads(snapshot, new Date());
   const folderScope = definition.accountIsolationStorageKey === null ? null : snapshot.accountScope;
-  const folders = await scoped.mergeForUpload(
-    token,
-    definition.driveFoldersFileName,
-    folderScope,
-    initial.folderPayload,
-  );
+  const selection = snapshot.selection ?? {};
+  const folders =
+    selection.site === false
+      ? initial.folderPayload
+      : await scoped.mergeForUpload(
+          token,
+          definition.driveFoldersFileName,
+          folderScope,
+          initial.folderPayload,
+        );
   const next = { ...snapshot, folders: folders.data };
-  if (!definition.syncsSharedData) return next;
-  next.prompts = (
-    await scoped.mergeForUpload(
-      token,
-      PROMPTS_FILE_NAME,
-      snapshot.accountScope,
-      initial.promptPayload,
-    )
-  ).items;
-  if (definition.syncsConversationExtras && snapshot.forks) {
+  if (definition.syncsSharedData && selection.shared !== false)
+    next.prompts = (
+      await scoped.mergeForUpload(
+        token,
+        PROMPTS_FILE_NAME,
+        snapshot.accountScope,
+        initial.promptPayload,
+      )
+    ).items;
+  if (
+    selection.site !== false &&
+    definition.syncsConversationExtras &&
+    selection.conversationExtras !== false &&
+    snapshot.forks
+  ) {
     const payload: ForkExportPayload = {
       format: 'gemini-voyager.forks.v1',
       exportedAt: initial.folderPayload.exportedAt,
@@ -45,7 +54,12 @@ export async function mergeLegacyUploadSnapshot(
       await scoped.mergeForUpload(token, FORKS_FILE_NAME, snapshot.accountScope, payload)
     ).data;
   }
-  if (definition.syncsConversationExtras && snapshot.timelineHierarchy) {
+  if (
+    selection.site !== false &&
+    definition.syncsConversationExtras &&
+    selection.timelineHierarchy !== false &&
+    snapshot.timelineHierarchy
+  ) {
     const payload: TimelineHierarchyExportPayload = {
       format: 'gemini-voyager.timeline-hierarchy.v1',
       exportedAt: initial.folderPayload.exportedAt,

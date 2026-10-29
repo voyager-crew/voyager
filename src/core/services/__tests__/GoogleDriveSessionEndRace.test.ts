@@ -112,7 +112,15 @@ it.each(['provider switch', 'sign-out'] as const)(
         case 'googleDriveUploadFile':
           drive.set(String(message.fileID), JSON.parse(String(message.json)));
           contentWrites.push('googleDrive');
-          return { success: true, data: { saved: true } };
+          return {
+            success: true,
+            data: {
+              saved: true,
+              id: message.fileID,
+              md5Checksum: 'uploaded',
+              modifiedTime: '2026-10-29T00:00:00Z',
+            },
+          };
         case 'iCloudWriteFile':
           cloud.set(String(message.fileName), JSON.parse(String(message.json)));
           contentWrites.push('icloud');

@@ -24,7 +24,7 @@ import { nativeStartPointSiteForHost } from '@/features/plugins/sites/hostPolicy
 
 import { isTrustedExtensionPageSender } from './runtimeMessageRouting';
 
-function isHighlightPlatform(value: unknown): value is HighlightPlatform {
+export function isHighlightPlatform(value: unknown): value is HighlightPlatform {
   return value === 'gemini' || value === 'aistudio';
 }
 

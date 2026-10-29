@@ -61,7 +61,6 @@ type ManagerInternals = {
   injectUI: () => void;
   destroy: () => void;
   init: () => Promise<void>;
-  /** The folders plugin turning on or off. */
   setFolders: (enabled: boolean) => void;
   initializeFolderUI: () => Promise<void>;
   syncConversationTitlesFromPromptList: () => Promise<void>;
@@ -221,8 +220,8 @@ describe('H1 — runtime message listener response contract', () => {
   });
 });
 
-describe('Drive prompt merge', () => {
-  it('preserves the local name when a newer legacy cloud prompt omits it', async () => {
+describe('Drive folder sync', () => {
+  it('keeps shared prompts unchanged', async () => {
     const local: PromptItem = {
       id: 'prompt-1',
       name: 'Keep this name',
@@ -240,6 +239,19 @@ describe('Drive prompt merge', () => {
     };
 
     const data: FolderData = { folders: [], folderContents: {} };
+    const downloaded: FolderData = {
+      folders: [
+        {
+          id: 'downloaded',
+          name: 'Cloud',
+          parentId: null,
+          isExpanded: true,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      ],
+      folderContents: { downloaded: [] },
+    };
     const key = StorageKeys.FOLDER_DATA_AISTUDIO;
     const storage = createMemoryStorage();
     storage.values.local.set(key, structuredClone(data));
@@ -253,7 +265,7 @@ describe('Drive prompt merge', () => {
     adapter.setWriteGate(async (_key, operation) => operation());
     vi.mocked(browser.runtime.sendMessage).mockResolvedValue({
       ok: true,
-      data: { folders: { data }, prompts: { items: [cloud] } },
+      data: { folders: { data: downloaded }, prompts: { items: [cloud] } },
     });
     const transfer = new AIStudioTransfer({
       t: (key) => key,
@@ -261,8 +273,8 @@ describe('Drive prompt merge', () => {
       activation: () => 1,
       canEdit: () => true,
       data: () => data,
-      replaceData: async (folders, prompts) => {
-        await adapter.saveData(key, folders, { [StorageKeys.PROMPT_ITEMS]: prompts });
+      replaceData: async (folders, _prompts, beforeWrite) => {
+        await adapter.saveData(key, folders, undefined, beforeWrite);
         session.data = folders;
         return true;
       },
@@ -272,10 +284,8 @@ describe('Drive prompt merge', () => {
     try {
       await transfer.sync();
 
-      expect(storage.values.local.get(StorageKeys.PROMPT_ITEMS)).toEqual([
-        { ...cloud, name: 'Keep this name' },
-      ]);
-      expect(storage.values.local.get(key)).toEqual(data);
+      expect(storage.values.local.get(StorageKeys.PROMPT_ITEMS)).toEqual([local]);
+      expect(storage.values.local.get(key)).toEqual(downloaded);
     } finally {
       chrome.storage = originalStorage;
     }
@@ -308,7 +318,6 @@ describe('H7 — single-scan native title sync', () => {
     expect(internals.data.folderContents.folderA[0]?.title).toBe('Native One');
     expect(internals.data.folderContents.folderA[1]?.title).toBe('Native Two');
     expect(internals.data.folderContents.folderB[0]?.title).toBe('Native Three');
-    // One collectNativePromptTitles scan — not 3 selector scans per conversation.
     expect(qsaSpy).toHaveBeenCalledTimes(1);
     expect(internals.save).toHaveBeenCalledTimes(1);
     expect(internals.render).toHaveBeenCalledTimes(1);
@@ -374,7 +383,6 @@ describe('M11 — folders-off lifecycle teardown', () => {
     expect(vi.getTimerCount()).toBeGreaterThan(0);
     expect(document.querySelector('.gv-folder-container')).not.toBeNull();
     expect(document.querySelector('.gv-library-drop-zone')).not.toBeNull();
-    // Layout belongs to its official plugin; native folders work without that plugin.
     expect(document.querySelector('.gv-sidebar-resize-handle')).toBeNull();
 
     internals.setFolders(false);
@@ -409,7 +417,6 @@ describe('M11 — folders-off lifecycle teardown', () => {
   it('tears down on folders off and, on folders on, binds the account before the panel returns', async () => {
     vi.useFakeTimers();
     const internals = mountLibraryPage();
-    // Started as the page starts it, so turning folders back on rebinds a running session.
     await internals.init();
     const container = internals.container;
     expect(container).not.toBeNull();

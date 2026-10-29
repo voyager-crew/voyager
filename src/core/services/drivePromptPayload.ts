@@ -1,6 +1,8 @@
 import type { PromptExportPayload } from '@/core/types/sync';
 import { PromptImportExportService } from '@/features/backup/services/PromptImportExportService';
 
+import { normalizePromptSyncItems } from './losslessPromptSyncData';
+
 /** Empty envelopes are recognized; unrelated or corrupt files cannot become an empty library. */
 export function decodePromptDrivePayload(value: unknown): PromptExportPayload | null {
   if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
@@ -14,6 +16,11 @@ export function decodePromptDrivePayload(value: unknown): PromptExportPayload | 
       };
     }
   }
-  const result = PromptImportExportService.validatePayload(value);
-  return result.success ? result.data : null;
+  const raw = Array.isArray(value)
+    ? value
+    : value !== null && typeof value === 'object' && 'items' in value
+      ? value.items
+      : null;
+  const items = normalizePromptSyncItems(raw);
+  return items?.length ? PromptImportExportService.exportToPayload(items) : null;
 }

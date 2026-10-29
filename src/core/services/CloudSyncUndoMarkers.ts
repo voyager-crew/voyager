@@ -17,7 +17,7 @@ export async function isUndoneCloudSyncValue(
   if (!marker) return false;
   const hashes =
     input.projection === undefined
-      ? [marker.replacedHash, marker.appliedHash, ...(marker.appliedHashes ?? [])]
+      ? contentHashes(marker)
       : (marker.projections.find((entry) => entry.projection === input.projection)?.hashes ?? []);
   if (!hashes.length) return false;
   const hash = await hashCloudSyncContent(input.value);
@@ -35,8 +35,19 @@ export async function isUndoneCloudSyncValue(
   return (
     !!active &&
     (input.projection === undefined
-      ? [active.replacedHash, active.appliedHash, ...(active.appliedHashes ?? [])]
+      ? contentHashes(active)
       : (active.projections.find((entry) => entry.projection === input.projection)?.hashes ?? [])
     ).includes(hash)
   );
+}
+
+function contentHashes(marker: import('./cloudSyncSnapshotTypes').CloudSyncUndoMarker) {
+  return [
+    marker.replacedHash,
+    marker.appliedHash,
+    ...(marker.appliedHashes ?? []),
+    ...marker.projections.flatMap(({ projection, hashes }) =>
+      projection === 'folder-normalized' || projection === 'folder-loaded' ? hashes : [],
+    ),
+  ];
 }

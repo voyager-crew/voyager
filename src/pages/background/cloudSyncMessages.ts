@@ -1,89 +1,51 @@
-import { accountIsolationService } from '@/core/services/AccountIsolationService';
+import { cloudSyncFailureCode } from '@/core/services/CloudSyncFailure';
+import { requireSyncScope, SyncScopeExcludedError } from '@/core/services/CloudSyncScope';
+import { CloudSyncUploadGuardTokens } from '@/core/services/CloudSyncUploadGuardTokens';
 import { AccountUnconfirmedError } from '@/core/services/GoogleDriveIdentity';
+import { PROMPTS_FILE_NAME } from '@/core/services/GoogleDriveSyncFileNames';
 import { googleDriveSyncService } from '@/core/services/GoogleDriveSyncService';
 import type { GoogleDriveSyncTransfer } from '@/core/services/GoogleDriveSyncTransfer';
-import { HighlightDriveSyncCoordinator } from '@/core/services/HighlightDriveSyncCoordinator';
-import { logger } from '@/core/services/LoggerService';
-import { exportBackupableSyncSettings } from '@/core/services/SettingsBackupService';
 import { getHighlightAccountHash } from '@/core/services/highlightAnnotationData';
 import type { SyncAccountScope, SyncMode, SyncPlatform, SyncProvider } from '@/core/types/sync';
 import { getPromptNameConflictIds } from '@/core/utils/promptName';
-import { toSyncAccountScope } from '@/core/utils/syncAccountScope';
-import { FOLDER_PLATFORMS, supportsAccountIsolation } from '@/features/folder/platforms';
-import type { StarStore } from '@/features/savedLibrary/starStore';
-import type { StarredMessagesData } from '@/features/savedLibrary/starTypes';
-import type { ForkNodesData } from '@/pages/content/fork/forkTypes';
 
 import {
   handleCatalogTimelineSyncMessage,
   isCatalogTimelineSyncMessage,
 } from './catalogTimelineSyncMessages';
+import { handleCloudSyncDownload } from './cloudSyncDownload';
+import { CloudSyncDownloadTracking } from './cloudSyncDownloadTracking';
+import { resolveAccountScopeForMessage } from './cloudSyncRequest';
 import {
-  loadAuthoritativeSyncPayload,
-  loadTimelineHierarchyForSync,
-  readPluginStateForSync,
-  filterStarredByRouteScope,
-  filterForkNodesByRouteScope,
-  retargetForkNodesToRoute,
-} from './cloudSyncLocalData';
-import { handleDriveHistoryMessage } from './driveHistoryMessages';
-import { isHighlightCloudSyncRequested, notifyHighlightChanged } from './highlightMessages';
-import { mergeCloudPrompts, mergeCloudPromptsForUpload } from './promptDriveMerge';
+  assertCloudSyncSnapshotRunRequest,
+  captureCloudSyncSnapshotRun,
+  parseCloudSyncSnapshotRun,
+  settleCloudSyncRunRow,
+} from './cloudSyncSnapshotRun';
+import { handleCloudSyncStatus } from './cloudSyncStatusMessages';
+import { handleCloudSyncUpload, type CloudSyncReaders } from './cloudSyncUpload';
+import { handleDriveHistoryMessage, parseSyncScope } from './driveHistoryMessages';
+import { notifyHighlightChanged } from './highlightMessages';
+import { downloadCloudPrompts, mergeCloudPromptsForUpload } from './promptDriveMerge';
 import { promptLibraryOwner } from './queueOwners';
-import {
-  isTrustedSharedDataSyncSender,
-  isTrustedSyncMessageSender,
-  parseSyncPlatform,
-} from './runtimeMessageRouting';
+import { isTrustedSharedDataSyncSender } from './runtimeMessageRouting';
 
 function isSyncAccountScope(value: unknown): value is SyncAccountScope {
-  if (typeof value !== 'object' || value === null) return false;
-  const scope = value as Record<string, unknown>;
-  return (
-    typeof scope.accountKey === 'string' &&
-    typeof scope.accountId === 'number' &&
-    Number.isFinite(scope.accountId) &&
-    (typeof scope.routeUserId === 'string' || scope.routeUserId === null)
-  );
+  return parseSyncScope(value) !== null;
 }
-
-async function resolveAccountScopeForMessage(
-  sender: chrome.runtime.MessageSender,
-  platform: SyncPlatform,
-  explicitScope?: SyncAccountScope,
-  persist: boolean = true,
-): Promise<SyncAccountScope | null> {
-  if (!supportsAccountIsolation(platform)) return null;
-  const enabled = await accountIsolationService.isIsolationEnabled({
-    platform,
-    pageUrl: sender.tab?.url ?? null,
-  });
-  if (!enabled) return null;
-  if (explicitScope) return explicitScope;
-
-  const hints = { pageUrl: sender.tab?.url ?? null };
-  const resolved = persist
-    ? await accountIsolationService.resolveAccountScope(hints)
-    : await accountIsolationService.resolveAccountScope(hints, false);
-  return toSyncAccountScope(resolved);
-}
-
 type SyncPayload = {
   interactive?: boolean;
   platform?: unknown;
   accountScope?: unknown;
-  timelineHierarchyAccountScope?: unknown;
-  highlightAccountScope?: unknown;
-  includeHighlights?: boolean;
   mode?: SyncMode;
   provider?: SyncProvider;
   force?: boolean;
+  guardToken?: string;
+  snapshotRun?: unknown;
 };
-export function createCloudSyncMessageHandler(readers: {
-  getAllStarredMessages(): Promise<StarredMessagesData>;
-  getAllForkNodes(): Promise<ForkNodesData>;
-  starStore?: StarStore;
-}) {
+export function createCloudSyncMessageHandler(readers: CloudSyncReaders) {
+  const tracking = new CloudSyncDownloadTracking();
+  const guardTokens = new CloudSyncUploadGuardTokens();
   async function handle(
     message: { type: string; payload?: unknown },
     sender: chrome.runtime.MessageSender,
@@ -92,7 +54,7 @@ export function createCloudSyncMessageHandler(readers: {
     const payload = message.payload as SyncPayload | undefined;
     if (message.type === 'gv.sync.restorePreviousVersion')
       return handleDriveHistoryMessage(message.payload, sender, drive);
-    if (isCatalogTimelineSyncMessage(message.type)) {
+    if (isCatalogTimelineSyncMessage(message.type))
       return handleCatalogTimelineSyncMessage(
         message.type,
         payload,
@@ -100,229 +62,37 @@ export function createCloudSyncMessageHandler(readers: {
         readers.starStore,
         drive,
       );
-    }
     switch (message.type) {
-      case 'gv.sync.upload': {
-        const {
-          interactive,
-          platform: rawPlatform,
-          accountScope: rawScope,
-          timelineHierarchyAccountScope: rawTimelineHierarchyScope,
-          highlightAccountScope: rawHighlightScope,
-          includeHighlights,
-        } = payload as {
-          interactive?: boolean;
-          platform?: unknown;
-          accountScope?: unknown;
-          timelineHierarchyAccountScope?: unknown;
-          highlightAccountScope?: unknown;
-          includeHighlights?: boolean;
-        };
-        const platform = parseSyncPlatform(rawPlatform);
-        if (!platform || !isTrustedSyncMessageSender(sender, platform)) {
-          return { ok: false, error: 'untrusted_sender' };
-        }
-        const { syncsSharedData, syncsConversationExtras } = FOLDER_PLATFORMS[platform];
-        const syncHighlights =
-          syncsSharedData &&
-          (await isHighlightCloudSyncRequested(platform, includeHighlights === true));
-        const accountScope = await resolveAccountScopeForMessage(
+      case 'gv.sync.upload':
+        return handleCloudSyncUpload(
+          message.payload,
           sender,
-          platform,
-          isSyncAccountScope(rawScope) ? rawScope : undefined,
-          false,
-        );
-        await drive.confirmAccountScope(accountScope);
-        const { folders, prompts } = await loadAuthoritativeSyncPayload(platform, accountScope);
-        const timelineHierarchyAccountScope =
-          syncsConversationExtras && isSyncAccountScope(rawTimelineHierarchyScope)
-            ? rawTimelineHierarchyScope
-            : null;
-        const highlightAccountScope =
-          syncsConversationExtras && isSyncAccountScope(rawHighlightScope)
-            ? rawHighlightScope
-            : (timelineHierarchyAccountScope ?? (isSyncAccountScope(rawScope) ? rawScope : null));
-        const shouldSyncHighlights = syncHighlights && highlightAccountScope !== null;
-        await drive.confirmAccountScope(timelineHierarchyAccountScope);
-        if (shouldSyncHighlights) await drive.confirmAccountScope(highlightAccountScope);
-        // Also get the conversation extras (stars, forks, timeline hierarchy) from local storage
-        // The queued store reads/reconciles stars after the upload guard passes.
-        const starredDataRaw =
-          syncsConversationExtras && !readers.starStore
-            ? await readers.getAllStarredMessages()
-            : null;
-        const forksDataRaw = syncsConversationExtras ? await readers.getAllForkNodes() : null;
-        const timelineHierarchyData = syncsConversationExtras
-          ? await loadTimelineHierarchyForSync(timelineHierarchyAccountScope)
-          : null;
-        const starredData =
-          starredDataRaw && accountScope
-            ? filterStarredByRouteScope(starredDataRaw, accountScope.routeUserId)
-            : starredDataRaw;
-        const forksData =
-          forksDataRaw && accountScope
-            ? filterForkNodesByRouteScope(forksDataRaw, accountScope.routeUserId)
-            : forksDataRaw;
-        const settingsPayload = syncsSharedData ? await exportBackupableSyncSettings() : null;
-        const pluginState = syncsSharedData ? await readPluginStateForSync() : null;
-        const highlightPlan =
-          shouldSyncHighlights && highlightAccountScope
-            ? await new HighlightDriveSyncCoordinator(drive).preparePush(
-                highlightAccountScope,
-                interactive !== false,
-              )
-            : null;
-        if (highlightPlan && !highlightPlan.ok) {
-          return {
-            ok: false,
-            error: highlightPlan.result.error ?? 'Highlight upload failed',
-            state: await drive.getState(),
-          };
-        }
-        const upload = await drive.upload(
-          folders,
-          prompts,
-          starredData,
-          interactive !== false,
-          platform,
-          forksData,
-          timelineHierarchyData,
-          accountScope,
-          timelineHierarchyAccountScope,
-          settingsPayload?.data ?? null,
-          pluginState,
-          readers.starStore,
-          { force: payload?.force === true },
-          accountScope && !isSyncAccountScope(rawScope)
-            ? async () => {
-                await resolveAccountScopeForMessage(sender, platform);
-              }
-            : undefined,
-        );
-        if (upload.kind === 'refused') {
-          return {
-            ok: false,
-            error: upload.error,
-            refusedFiles: upload.refusedFiles,
-            state: await drive.getState(),
-          };
-        }
-        const success = upload.kind === 'uploaded';
-        if (success && highlightPlan?.ok && highlightAccountScope) {
-          const highlightResult = await highlightPlan.commit();
-          if (!highlightResult.ok) {
-            return {
-              ok: false,
-              error: highlightResult.error ?? 'Highlight upload failed',
-              partial: true,
-              state: await drive.getState(),
-            };
-          }
-          await notifyHighlightChanged({
-            platform: 'gemini',
-            accountHash: getHighlightAccountHash({
-              ...highlightAccountScope,
+          drive,
+          readers,
+          guardTokens,
+          async (scope) =>
+            notifyHighlightChanged({
               platform: 'gemini',
+              accountHash: getHighlightAccountHash({ ...scope, platform: 'gemini' }),
             }),
-          });
-        }
-        return {
-          ok: success,
-          highlights: syncHighlights
-            ? { synced: success && shouldSyncHighlights, skipped: !shouldSyncHighlights }
-            : undefined,
-          state: await drive.getState(),
-        };
-      }
-      case 'gv.sync.download': {
-        const interactive = payload?.interactive !== false;
-        const platform = parseSyncPlatform(payload?.platform);
-        // Downloads hand cloud data back to the sender, so they need the same sender as uploads.
-        if (!platform || !isTrustedSyncMessageSender(sender, platform)) {
-          return { ok: false, error: 'unsupported_sync_platform' };
-        }
-        const { syncsSharedData, syncsConversationExtras } = FOLDER_PLATFORMS[platform];
-        const syncHighlights =
-          syncsSharedData &&
-          (await isHighlightCloudSyncRequested(platform, payload?.includeHighlights === true));
-        const rawScope = payload?.accountScope;
-        const rawTimelineHierarchyScope = payload?.timelineHierarchyAccountScope;
-        const rawHighlightScope = payload?.highlightAccountScope;
-        const accountScope = await resolveAccountScopeForMessage(
+        );
+      case 'gv.sync.download':
+        return handleCloudSyncDownload(
+          message.payload,
           sender,
-          platform,
-          isSyncAccountScope(rawScope) ? rawScope : undefined,
-          false,
-        );
-        await drive.confirmAccountScope(accountScope);
-        const timelineHierarchyAccountScope =
-          syncsConversationExtras && isSyncAccountScope(rawTimelineHierarchyScope)
-            ? rawTimelineHierarchyScope
-            : null;
-        const highlightAccountScope =
-          syncsConversationExtras && isSyncAccountScope(rawHighlightScope)
-            ? rawHighlightScope
-            : (timelineHierarchyAccountScope ?? (isSyncAccountScope(rawScope) ? rawScope : null));
-        const shouldSyncHighlights = syncHighlights && highlightAccountScope !== null;
-        await drive.confirmAccountScope(timelineHierarchyAccountScope);
-        if (shouldSyncHighlights) await drive.confirmAccountScope(highlightAccountScope);
-        const data = await drive.download(
-          interactive,
-          platform,
-          accountScope,
-          timelineHierarchyAccountScope,
-        );
-        if (!data) {
-          const state = await drive.getState();
-          if (state.error) return { ok: false, error: state.error, state };
-        }
-        const routeUserId = accountScope?.routeUserId;
-        if (data?.forks?.data?.nodes && routeUserId) {
-          data.forks = {
-            ...data.forks,
-            data: retargetForkNodesToRoute(data.forks.data, routeUserId),
-          };
-        }
-        let highlightSyncResult: { synced: boolean; count: number; empty: boolean } | undefined;
-        if (shouldSyncHighlights && highlightAccountScope) {
-          const highlightResult = await new HighlightDriveSyncCoordinator(drive).pull(
-            highlightAccountScope,
-            interactive,
-          );
-          if (!highlightResult.ok) {
-            return {
-              ok: false,
-              error: highlightResult.error ?? 'Highlight download failed',
-              partial: data !== null,
-              state: await drive.getState(),
-            };
-          }
-          await notifyHighlightChanged({
-            platform: 'gemini',
-            accountHash: getHighlightAccountHash({
-              ...highlightAccountScope,
+          drive,
+          readers,
+          tracking,
+          async (scope) =>
+            notifyHighlightChanged({
               platform: 'gemini',
+              accountHash: getHighlightAccountHash({ ...scope, platform: 'gemini' }),
             }),
-          });
-          highlightSyncResult = {
-            synced: true,
-            count: highlightResult.count,
-            empty: highlightResult.empty === true,
-          };
-        }
-        // NOTE: We intentionally do NOT save to storage here.
-        // The caller (Popup) is responsible for merging with local data and saving.
-        // This prevents data loss from overwriting local changes.
-        logger.info(`[Background] Downloaded data for ${platform}, returning to caller for merge`);
-        return {
-          ok: true,
-          data,
-          highlights:
-            highlightSyncResult ??
-            (syncHighlights ? { synced: false, skipped: !shouldSyncHighlights } : undefined),
-          state: await drive.getState(),
-        };
-      }
+        );
+      case 'gv.sync.getStatus':
+        return handleCloudSyncStatus(message.payload, sender, drive, readers);
+      case 'gv.sync.completeDownload':
+        return tracking.complete(message.payload, sender, drive);
       // Prompts-only cloud merge, run END-TO-END in the background so the
       // operation survives the extension popup closing when the Google
       // account picker steals focus during interactive auth. Merging in the
@@ -330,27 +100,65 @@ export function createCloudSyncMessageHandler(readers: {
       // the user had to click again.
       case 'gv.sync.pullPromptsMerge': {
         if (!isTrustedSharedDataSyncSender(sender)) return { ok: false, error: 'untrusted_sender' };
+        const snapshotRun = parseCloudSyncSnapshotRun(payload?.snapshotRun);
+        await assertCloudSyncSnapshotRunRequest(snapshotRun, sender);
+        await requireSyncScope({ kind: 'shared' });
+        drive.beginDownloadBookkeeping();
         const { interactive, accountScope: rawScope } = (payload ?? {}) as {
           interactive?: boolean;
           accountScope?: unknown;
         };
+        const platform = 'gemini' as const;
         const accountScope = await resolveAccountScopeForMessage(
           sender,
-          'gemini',
+          platform,
           isSyncAccountScope(rawScope) ? rawScope : undefined,
           false,
         );
         await drive.confirmAccountScope(accountScope);
         const cloudRead = await drive.downloadPromptsOnly(accountScope, interactive !== false);
         if (cloudRead.kind === 'failed' || cloudRead.kind === 'unrecognized') {
-          return { ok: false, state: await drive.getState() };
+          return {
+            ok: false,
+            error:
+              cloudRead.kind === 'failed' &&
+              cloudSyncFailureCode(cloudRead.error) === 'not_authenticated'
+                ? 'not_authenticated'
+                : 'cloud_read_failed',
+            state: await drive.getState(),
+          };
         }
         const cloudPayload = cloudRead.kind === 'found' ? cloudRead.value : null;
-        const outcome = await mergeCloudPrompts(promptLibraryOwner, cloudPayload);
-        return { ...outcome, state: await drive.getState() };
+        const files = await drive.getDownloadBookkeeping();
+        const context = {
+          source: 'popup-restore' as const,
+          platform,
+          accountScope: accountScope ?? null,
+          ...(snapshotRun ? { selection: 'shared' as const } : {}),
+        };
+        const run = await captureCloudSyncSnapshotRun(snapshotRun, sender, context);
+        const { value: outcome, releaseFailed } = await settleCloudSyncRunRow(run, () =>
+          downloadCloudPrompts(
+            promptLibraryOwner,
+            cloudPayload,
+            context,
+            async (items) => {
+              await drive.commitAppliedBookkeeping(
+                files.map((file) => ({ ...file, content: items })),
+              );
+            },
+            { snapshotId: run?.snapshotId },
+          ),
+        );
+        return {
+          ...outcome,
+          ...(releaseFailed && outcome.ok ? { warning: 'sync_bookkeeping_failed' } : {}),
+          state: await drive.getState(),
+        };
       }
       case 'gv.sync.pushPromptsMerge': {
         if (!isTrustedSharedDataSyncSender(sender)) return { ok: false, error: 'untrusted_sender' };
+        await requireSyncScope({ kind: 'shared' });
         const platform: SyncPlatform = 'gemini';
         const { interactive, accountScope: rawScope } = (payload ?? {}) as {
           interactive?: boolean;
@@ -362,7 +170,7 @@ export function createCloudSyncMessageHandler(readers: {
           isSyncAccountScope(rawScope) ? rawScope : undefined,
           false,
         );
-        await drive.confirmAccountScope(accountScope);
+        const accountIdentity = await drive.confirmAccountScope(accountScope);
         // Guard the merged list in the prompt-owner turn, before it writes locally.
         const cloudRead = await drive.downloadPromptsOnly(
           accountScope,
@@ -370,7 +178,15 @@ export function createCloudSyncMessageHandler(readers: {
           'upload',
         );
         if (cloudRead.kind === 'failed') {
-          return { ok: false, state: await drive.getState() };
+          return {
+            ok: false,
+            error:
+              cloudRead.kind === 'failed' &&
+              cloudSyncFailureCode(cloudRead.error) === 'not_authenticated'
+                ? 'not_authenticated'
+                : 'cloud_read_failed',
+            state: await drive.getState(),
+          };
         }
         const cloudPayload =
           cloudRead.kind === 'found'
@@ -378,19 +194,35 @@ export function createCloudSyncMessageHandler(readers: {
             : cloudRead.kind === 'missing'
               ? null
               : undefined;
-        const merged = await mergeCloudPromptsForUpload(promptLibraryOwner, cloudPayload, {
-          force: payload?.force === true,
-        });
+        const merged = await mergeCloudPromptsForUpload(
+          promptLibraryOwner,
+          cloudPayload,
+          guardTokens.forRequest(
+            {
+              provider: (await drive.getState()).provider,
+              operation: 'pushPromptsMerge',
+              platform,
+              accountScope,
+              accountIdentity,
+              files: [PROMPTS_FILE_NAME],
+            },
+            {
+              force: payload?.force === true,
+              guardToken: typeof payload?.guardToken === 'string' ? payload.guardToken : undefined,
+            },
+          ),
+        );
         if (merged.kind === 'refused') {
           return {
             ok: false,
             error: merged.error,
             refusedFiles: merged.refusedFiles,
+            guardToken: merged.guardToken,
             state: await drive.getState(),
           };
         }
         if (merged.kind === 'failed') {
-          return { ok: false, state: await drive.getState() };
+          return { ok: false, error: 'local_read_failed', state: await drive.getState() };
         }
         const localPrompts = merged.items;
         const uploaded = await drive.uploadPromptsOnly(
@@ -403,8 +235,10 @@ export function createCloudSyncMessageHandler(readers: {
               }
             : undefined,
         );
+        if (uploaded) await drive.commitBookkeeping();
         return {
           ok: uploaded,
+          ...(!uploaded ? { error: cloudSyncFailureCode((await drive.getState()).error) } : {}),
           count: localPrompts.length,
           nameConflicts: getPromptNameConflictIds(localPrompts).size,
           state: await drive.getState(),
@@ -451,10 +285,19 @@ export function createCloudSyncMessageHandler(readers: {
           .runExclusive((drive) => handle(message, sender, drive))
           .catch((error: unknown) => {
             if (
+              error instanceof Error &&
+              ['untrusted_sender', 'invalid_sync_request'].includes(error.message)
+            )
+              return { ok: false, error: error.message };
+            if (error instanceof SyncScopeExcludedError)
+              return { ok: false, error: error.code, excludedRows: error.rows };
+            if (
               error instanceof AccountUnconfirmedError ||
               (error instanceof Error && error.message === 'account_unconfirmed')
             )
               return { ok: false, error: 'account_unconfirmed' };
+            const code = cloudSyncFailureCode(error);
+            if (code) return { ok: false, error: code };
             throw error;
           });
   };

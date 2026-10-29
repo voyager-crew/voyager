@@ -9,7 +9,7 @@ import {
   isSafariGoogleDriveAuthError,
   requestSafariGoogleDriveSession,
   signOutSafariGoogleDrive,
-  uploadSafariGoogleDriveFile,
+  uploadSafariGoogleDriveText,
 } from '../safariGoogleDrive';
 
 const sendNativeMessage = vi.hoisted(() => vi.fn());
@@ -60,7 +60,7 @@ describe('Safari Google Drive native transport', () => {
     });
   });
 
-  it('serializes uploads and parses downloads at the bridge boundary', async () => {
+  it('preserves history text uploads and parses downloads at the bridge boundary', async () => {
     sendNativeMessage
       .mockResolvedValueOnce({ success: true, data: { saved: true } })
       .mockResolvedValueOnce({
@@ -68,7 +68,7 @@ describe('Safari Google Drive native transport', () => {
         data: { found: true, json: '{"items":[1,2]}' },
       });
 
-    await expect(uploadSafariGoogleDriveFile('file-1', { items: [1, 2] })).resolves.toBeUndefined();
+    await expect(uploadSafariGoogleDriveText('file-1', '{"items":[1,2]}')).resolves.toBeUndefined();
     expect(sendNativeMessage).toHaveBeenNthCalledWith(1, 'com.yourCompany.Gemini-Voyager', {
       action: 'googleDriveUploadFile',
       fileID: 'file-1',
@@ -110,7 +110,7 @@ describe('Safari Google Drive native transport', () => {
       code: 'drive_auth_required',
     });
 
-    const failure = await uploadSafariGoogleDriveFile('file-1', {}).catch(
+    const failure = await uploadSafariGoogleDriveText('file-1', '{}').catch(
       (error: unknown) => error,
     );
     expect(failure).toBeInstanceOf(SafariGoogleDriveError);

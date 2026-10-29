@@ -24,7 +24,6 @@ import { requestBudgetCopy } from '@/features/storage/budgetCopyMessage';
 import { dataBackupKey } from './dataBackupKeys';
 import {
   parseBackupRecoveryData,
-  readBackupRecoveryCopies,
   readLiveBackupRecoveryCopies,
   recoverBackupForKey,
   removeUndoneBackupCopy,
@@ -379,20 +378,6 @@ export class DataBackupService<T = unknown> {
     };
 
     window.addEventListener('beforeunload', this.beforeUnloadHandler);
-  }
-
-  /** Keep slot priority, choosing the newest valid page/durable copy in each slot. */
-  recoverFromBackup(): T | null {
-    for (const key of [this.primaryKey, this.emergencyKey, this.beforeUnloadKey]) {
-      const candidates = readBackupRecoveryCopies(key, this.durableBackups)
-        .flatMap((copy) => {
-          const parsed = this.parseRecoveryCopy(copy.serialized);
-          return parsed ? [parsed] : [];
-        })
-        .sort((a, b) => b.timestamp - a.timestamp);
-      if (candidates.length > 0 && candidates[0].data) return candidates[0].data;
-    }
-    return null;
   }
 
   /** Folder recovery skips only copies whose data matches that bucket's undo markers. */

@@ -79,7 +79,10 @@ export interface PromptLibraryOwner {
    * Run `change` on the freshly read library inside the queue. It returns the
    * list to store, or null to leave storage untouched, and a result.
    */
-  transact<T>(change: (stored: unknown[]) => { items: unknown[] | null; result: T }): Promise<T>;
+  transact<T>(
+    change: (stored: unknown[]) => { items: unknown[] | null; result: T },
+    beforeWrite?: (items: unknown[]) => Promise<void>,
+  ): Promise<T>;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -298,10 +301,15 @@ export function createPromptLibraryOwner(options: {
 
   const transact = <T>(
     change: (stored: unknown[]) => { items: unknown[] | null; result: T },
+    beforeWrite?: (items: unknown[]) => Promise<void>,
   ): Promise<T> =>
     serialize(async () => {
       const { items, result } = change(await readStored());
-      if (items) await options.area.set({ [PROMPT_LIBRARY_KEY]: items });
+      if (items) {
+        // Cloud import captures and receipts inside this queue, after earlier local edits settle.
+        if (beforeWrite) await beforeWrite(items);
+        await options.area.set({ [PROMPT_LIBRARY_KEY]: items });
+      }
       return result;
     }, [PROMPT_LIBRARY_KEY]);
 

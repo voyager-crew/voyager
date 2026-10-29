@@ -120,11 +120,7 @@ export function createAIStudioCommands(
       const session = repository.session;
       if (!session || !repository.canEdit) return failed('read_only');
       try {
-        const saved = await repository.replaceData(
-          body.data,
-          body.prompts ? { gvPromptItems: body.prompts } : undefined,
-          body.beforeWrite,
-        );
+        const saved = await repository.replaceData(body.data, undefined, body.beforeWrite);
         return saved ? { kind: 'saved' } : failed('storage_error');
       } finally {
         if (repository.session === session) hooks.onDraftSettled();

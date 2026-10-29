@@ -1,8 +1,11 @@
 import { StorageKeys } from '@/core/types/common';
 import { canonicalJson } from '@/core/utils/canonicalHash';
 
+import { CloudSyncFailure } from './CloudSyncFailure';
 import type { SnapshotStorage } from './CloudSyncSnapshotService';
 import { assertCloudSyncUndoOwnerWritable } from './CloudSyncUndoOwners';
+import { prepareHighlightSnapshotUndo, repairHighlightUndoIndexes } from './cloudSyncHighlightUndo';
+import { mergeSnapshotContexts } from './cloudSyncSnapshotContext';
 import { cloudSyncContent, hashCloudSyncContent } from './cloudSyncSnapshotHash';
 import type {
   CloudSyncAppliedHash,
@@ -34,7 +37,14 @@ function markerFor(receipts: KeyReceipts, replacedHash = receipts[0].hash): Clou
       projections.set(projection, hashes);
     }
   }
+  const contexts = receipts
+    .flatMap((receipt) => receipt.contexts ?? [])
+    .reduce(
+      (all, context) => mergeSnapshotContexts(all, context),
+      [] as readonly import('./cloudSyncSnapshotTypes').SnapshotContext[],
+    );
   return {
+    ...(contexts.length ? { contexts } : {}),
     area: receipts[0].area,
     key: receipts[0].key,
     replacedHash,
@@ -63,10 +73,11 @@ async function currentHash(
 
 /** Only receipted values can be undone. A later edit belongs to its writer. */
 export async function undoCapturedCloudSyncSnapshot(
-  snapshot: CloudSyncSnapshot,
+  inputSnapshot: CloudSyncSnapshot,
   storage: SnapshotStorage,
   readSlot: () => Promise<CloudSyncSnapshotSlot | null>,
 ): Promise<CloudSyncUndoResult> {
+  const { snapshot, blocked, repair } = await prepareHighlightSnapshotUndo(inputSnapshot, storage);
   const applied = new Map<string, KeyReceipts>();
   for (const receipt of snapshot.appliedHashes) {
     const receipts = applied.get(identity(receipt));
@@ -81,7 +92,11 @@ export async function undoCapturedCloudSyncSnapshot(
   const keep = (entry: SnapshotEntry, receipts: KeyReceipts) => {
     for (const kind of new Set(receipts.map((receipt) => receipt.kind))) {
       const targets = kept.get(kind) ?? [];
-      targets.push({ area: entry.area, key: entry.key });
+      targets.push({
+        area: entry.area,
+        key: entry.key,
+        ...(entry.contexts ? { contexts: entry.contexts } : {}),
+      });
       kept.set(kind, targets);
     }
   };
@@ -90,6 +105,10 @@ export async function undoCapturedCloudSyncSnapshot(
   const progress = new Map<string, CloudSyncUndoProgressMarker>();
   let restoredKeys = 0;
   for (const item of written) {
+    if (item.entry.preserve || (item.entry.area === 'local' && blocked.has(item.entry.key))) {
+      keep(item.entry, item.receipts);
+      continue;
+    }
     const priorHash = await hashCloudSyncContent(item.entry.existed ? item.entry.value : undefined);
     const hash = await currentHash(storage, item.entry);
     const marker = markerFor(item.receipts);
@@ -111,7 +130,7 @@ export async function undoCapturedCloudSyncSnapshot(
   const assertCurrent = async () => {
     const current = await readSlot();
     if (!current || current.kind === 'undone' || current.id !== snapshot.id)
-      throw new Error('Cloud snapshot is no longer current');
+      throw new CloudSyncFailure('snapshot_superseded', 'Cloud snapshot is no longer current');
   };
   const persistProgress = async () => {
     await assertCurrent();
@@ -150,6 +169,7 @@ export async function undoCapturedCloudSyncSnapshot(
     completed.push(markerFor(receipts, hash));
     restoredKeys += 1;
   }
+  await repairHighlightUndoIndexes(snapshot, repair, storage, assertCurrent);
   await assertCurrent();
   await storage.local.set({ [SLOT]: { kind: 'undone', markers: completed } });
   const keptKinds: CloudSyncUndoKept[] = [...kept].map(([kind, keys]) => ({

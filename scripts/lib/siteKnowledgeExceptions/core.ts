@@ -142,10 +142,10 @@ export const CORE_SITE_KNOWLEDGE_EXCEPTIONS: readonly SiteKnowledgeException[] =
     file: 'src/core/types/highlight.ts',
     kind: 'serialized-value',
     values: {
-      gemini: 2,
-      aistudio: 2,
+      gemini: 1,
+      aistudio: 1,
     },
-    reason: 'existing highlight platform type and runtime parser.',
+    reason: 'existing highlight platform list owns the derived type and runtime parser.',
   },
   {
     file: 'src/core/types/sync.ts',

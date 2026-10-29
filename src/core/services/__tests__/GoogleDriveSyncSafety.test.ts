@@ -323,6 +323,7 @@ describe.each(['timeline', 'stars'] as const)('multi-site %s uploads', (kind) =>
       await d.store.add(star('local'));
     }
     const before = new Map(drive.files);
+    const localBefore = structuredClone(d.values);
     const pending =
       kind === 'timeline'
         ? d.service.uploadCatalogTimeline({
@@ -335,6 +336,6 @@ describe.each(['timeline', 'stars'] as const)('multi-site %s uploads', (kind) =>
 
     await expect(pending).resolves.toBe(false);
     expect(drive.files).toEqual(before);
-    expect(d.values[StorageKeys.PROMPT_ITEMS]).toEqual([prompt('local')]);
+    expect(d.values).toEqual(localBefore);
   });
 });

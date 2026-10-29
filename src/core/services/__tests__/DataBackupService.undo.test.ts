@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import browser from 'webextension-polyfill';
 
 import { StorageKeys } from '@/core/types/common';
+import type { FolderData } from '@/core/types/folder';
+import { normalizeFolderData } from '@/features/folder/model/folderData';
 import { type MemoryStorage, createMemoryStorage } from '@/tests/memoryStorage';
 
 import {
@@ -44,10 +46,10 @@ async function undoApplied() {
     context: { source: 'folder-panel-download', platform: 'gemini', accountScope: null },
     keys: [{ area: 'local', key: KEY }],
   });
-  await chrome.storage.local.set({ [KEY]: applied });
   await extendCloudSyncSnapshot(snapshot.id, [{ area: 'local', key: KEY }], {
     applied: [{ area: 'local', key: KEY, kind: 'folders', value: applied }],
   });
+  await chrome.storage.local.set({ [KEY]: applied });
   expect(await undoCloudSyncSnapshot()).toMatchObject({ status: 'restored' });
   expect(memory.values.local.has(KEY)).toBe(false);
 }
@@ -65,6 +67,43 @@ afterEach(() => {
 });
 
 describe('backup recovery after cloud undo', () => {
+  it('suppresses the exact normalized folder backup while keeping a real later edit recoverable', async () => {
+    const downloaded: FolderData = {
+      folders: [
+        {
+          id: 'cloud',
+          name: 'Cloud',
+          parentId: null,
+          isExpanded: true,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      ],
+      folderContents: {},
+    };
+    memory.values.local.set(KEY, { corrupt: true });
+    const snapshot = await captureCloudSyncSnapshot({
+      context: { source: 'popup-restore', platform: 'gemini', accountScope: null },
+      keys: [{ area: 'local', key: KEY }],
+    });
+    await extendCloudSyncSnapshot(snapshot.id, [{ area: 'local', key: KEY }], {
+      applied: [{ area: 'local', key: KEY, kind: 'folders', value: downloaded }],
+    });
+    await chrome.storage.local.set({ [KEY]: downloaded });
+    const normalized = normalizeFolderData(downloaded);
+    localStorage.setItem(PRIMARY, serialized(normalized));
+    expect(await undoCloudSyncSnapshot()).toMatchObject({ status: 'restored' });
+    const service = new DataBackupService<FolderData>('undo-recovery');
+    await service.ensureHydrated();
+    expect(await service.recoverFromBackupForKey(KEY)).toBeNull();
+    expect(memory.values.local.get(KEY)).toEqual({ corrupt: true });
+    const edited = {
+      ...normalized,
+      folders: normalized.folders.map((folder) => ({ ...folder, name: 'Real edit' })),
+    };
+    localStorage.setItem(PRIMARY, serialized(edited));
+    expect(await service.recoverFromBackupForKey(KEY)).toEqual(edited);
+  });
   it('keeps an older durable copy beside a rejected newer page copy in the same slot', async () => {
     await undoApplied();
     const rejected = serialized(applied);

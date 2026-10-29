@@ -28,6 +28,7 @@ describe('popup cloud sync transfer operations', () => {
     const payload = await h.transfer.prepareUpload();
     expect(payload).toEqual({
       platform: 'gemini',
+      selection: 'all',
       accountScope: null,
       timelineHierarchyAccountScope: pageScope,
       highlightAccountScope: pageScope,
@@ -57,7 +58,9 @@ describe('popup cloud sync transfer operations', () => {
       await expect(prepare()).rejects.toThrow();
       // No `route:<n>`, shared `default` or unscoped bucket stands in for the unknown account.
       expect(accountIsolationService.resolveAccountScope).not.toHaveBeenCalled();
-      expect(localGet).not.toHaveBeenCalled();
+      expect(localGet.mock.calls.filter(([keys]) => keys !== StorageKeys.CLOUD_SYNC_SCOPE)).toEqual(
+        [],
+      );
       expect(localSet).not.toHaveBeenCalled();
     },
   );
@@ -74,7 +77,9 @@ describe('popup cloud sync transfer operations', () => {
     await h.render('aistudio', false);
     await expect(h.transfer.prepareUpload()).rejects.toThrow();
     await expect(h.transfer.prepareDownload()).rejects.toThrow();
-    expect(localGet).not.toHaveBeenCalled();
+    expect(localGet.mock.calls.filter(([keys]) => keys !== StorageKeys.CLOUD_SYNC_SCOPE)).toEqual(
+      [],
+    );
     expect(localSet).not.toHaveBeenCalled();
     expect(h.stored[shared]).toEqual(folders);
   });
@@ -180,7 +185,9 @@ describe('popup cloud sync transfer operations', () => {
     });
     const upload = h.transfer.prepareUpload();
     await vi.advanceTimersByTimeAsync(499);
-    expect(localGet).not.toHaveBeenCalled();
+    expect(localGet.mock.calls.filter(([keys]) => keys !== StorageKeys.CLOUD_SYNC_SCOPE)).toEqual(
+      [],
+    );
     await vi.advanceTimersByTimeAsync(1);
     expect((await upload).folders).toEqual(folders);
     expect(vi.getTimerCount()).toBe(0);
@@ -288,10 +295,67 @@ describe('popup cloud sync transfer operations', () => {
     );
     expect(download.payload).toEqual({
       platform: 'aistudio',
+      selection: 'all',
       accountScope: null,
       timelineHierarchyAccountScope: null,
       highlightAccountScope: null,
       includeHighlights: false,
     });
+  });
+  it('restores only shared data when the current site is excluded', async () => {
+    vi.mocked(accountIsolationService.isIsolationEnabled).mockResolvedValue(false);
+    h.stored[StorageKeys.CLOUD_SYNC_SCOPE] = { shared: true, sites: { gemini: false } };
+    h.stored[StorageKeys.FOLDER_DATA] = folders;
+    const localPrompt = { id: 'local', text: 'Local', tags: [], createdAt: 1 };
+    const cloudPrompt = { id: 'cloud', text: 'Cloud', tags: [], createdAt: 2 };
+    h.stored[StorageKeys.PROMPT_ITEMS] = [localPrompt];
+    await h.render('gemini', false);
+    const upload = await h.transfer.prepareUpload();
+    expect(upload.selection).toBe('shared');
+    expect(upload.includeHighlights).toBe(false);
+    const download = await h.transfer.prepareDownload();
+    await download.restore(
+      { folders: { data: emptyFolders }, prompts: { items: [cloudPrompt] } },
+      'overwrite',
+      false,
+      undefined,
+      null,
+    );
+    expect(h.stored[StorageKeys.FOLDER_DATA]).toEqual(folders);
+    expect(h.stored[StorageKeys.PROMPT_ITEMS]).toEqual([cloudPrompt]);
+    expect(tabMessage).not.toHaveBeenCalledWith(7, { type: 'gv.sync.requestData' });
+  });
+
+  it('keeps shared data untouched in a site restore when shared is excluded', async () => {
+    vi.mocked(accountIsolationService.isIsolationEnabled).mockResolvedValue(false);
+    h.stored[StorageKeys.CLOUD_SYNC_SCOPE] = { shared: false, sites: {} };
+    const prompts = [{ id: 'local', text: 'Local', tags: [], createdAt: 1 }];
+    h.stored[StorageKeys.PROMPT_ITEMS] = prompts;
+    await h.render('gemini', false);
+    const download = await h.transfer.prepareDownload();
+    await download.restore(
+      {
+        folders: { data: folders },
+        prompts: { items: [] },
+        settings: { data: { theme: 'dark' } },
+        plugins: { format: 'gemini-voyager.plugins.v1', data: {} },
+      },
+      'overwrite',
+      false,
+      undefined,
+      null,
+    );
+    expect(h.stored[StorageKeys.FOLDER_DATA]).toEqual(folders);
+    expect(h.stored[StorageKeys.PROMPT_ITEMS]).toEqual(prompts);
+    expect(h.stored[StorageKeys.PLUGINS_STATE]).toBeUndefined();
+  });
+
+  it('does not prepare either transfer when every requested row is excluded', async () => {
+    h.stored[StorageKeys.CLOUD_SYNC_SCOPE] = { shared: false, sites: { gemini: false } };
+    await h.render('gemini', false);
+    await expect(h.transfer.prepareUpload()).rejects.toThrow('sync_scope_excluded');
+    await expect(h.transfer.prepareDownload()).rejects.toThrow('sync_scope_excluded');
+    expect(tabMessage).not.toHaveBeenCalled();
+    expect(localSet).not.toHaveBeenCalled();
   });
 });

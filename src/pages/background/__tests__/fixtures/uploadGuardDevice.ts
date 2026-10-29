@@ -315,7 +315,29 @@ export async function createGuardDevice(
           return { success: false, error: 'Google Drive write failed' };
         drive.files.set(name, String(message.json));
         drive.writes.push(name);
-        return { success: true, data: { saved: true } };
+        return {
+          success: true,
+          data: {
+            saved: true,
+            ...(await (
+              await drive.fetch(
+                `https://www.googleapis.com/drive/v3/files/${name}?fields=id,md5Checksum,modifiedTime`,
+              )
+            ).json()),
+          },
+        };
+      case 'googleDriveGetFileMetadata': {
+        const response = await drive.fetch(
+          `https://www.googleapis.com/drive/v3/files/${name}?fields=id,md5Checksum,modifiedTime`,
+        );
+        return {
+          success: true,
+          data:
+            response.status === 404
+              ? { found: false }
+              : { found: true, ...(await response.json()) },
+        };
+      }
       case 'iCloudAccountStatus':
         return { success: true, data: { available: true } };
       case 'iCloudReadFile':

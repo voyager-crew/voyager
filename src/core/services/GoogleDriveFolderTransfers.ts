@@ -16,9 +16,13 @@ import { catalogStarSites } from '@/features/savedLibrary/starSitePolicy';
 import type { StarStore } from '@/features/savedLibrary/starStore';
 import { decodeStarSyncSources } from '@/features/savedLibrary/starSyncPayload';
 
+import { DRIVE_NOT_AUTHENTICATED, cloudSyncFailureCode } from './CloudSyncFailure';
 import type { GoogleDriveAuth } from './GoogleDriveAuth';
+import type { GoogleDriveCatalogTimeline } from './GoogleDriveCatalogTimeline';
+import { readLocalSyncStars } from './GoogleDriveLocalStars';
 import { GoogleDriveSyncPayloads, type GoogleDriveDownload } from './GoogleDriveSyncPayloads';
 import { GoogleDriveSyncSession, SyncSessionEndedError } from './GoogleDriveSyncSession';
+import type { DriveTransferSelection } from './GoogleDriveTransferSelection';
 import { logger } from './LoggerService';
 import type { StarDriveSyncCoordinator } from './StarDriveSyncCoordinator';
 import { createStarTransferSession } from './StarTransferSession';
@@ -31,6 +35,7 @@ export class GoogleDriveFolderTransfers {
     private readonly session: GoogleDriveSyncSession,
     private readonly updateState: (state: Partial<SyncState>) => void,
     private readonly saveState: () => Promise<void>,
+    private readonly catalogTimeline?: GoogleDriveCatalogTimeline,
   ) {}
 
   /** Upload the platform files and its shared data. */
@@ -49,6 +54,7 @@ export class GoogleDriveFolderTransfers {
     starStore?: StarStore,
     options: UploadGuardOptions = {},
     onGuardAllowed?: () => Promise<void>,
+    selection: DriveTransferSelection = {},
   ): Promise<UploadOutcome> {
     const capturedScope = accountScope ? { ...accountScope } : null;
     const capturedHierarchyScope = timelineHierarchyAccountScope
@@ -64,9 +70,9 @@ export class GoogleDriveFolderTransfers {
             '[GoogleDriveSyncService] Upload skipped: Not authenticated (non-interactive)',
           );
           this.updateState({ isSyncing: false, isAuthenticated: false });
-          return { kind: 'failed' };
+          return { kind: 'failed', code: 'not_authenticated' };
         }
-        throw new Error('Not authenticated');
+        throw new Error(DRIVE_NOT_AUTHENTICATED);
       }
 
       const payloads = this.payloads;
@@ -75,8 +81,12 @@ export class GoogleDriveFolderTransfers {
         payloads,
         capturedScope,
         this.session,
+        selection.includedCatalogSites,
       );
-      const { syncsConversationExtras } = FOLDER_PLATFORMS[platform];
+      const syncsConversationExtras =
+        FOLDER_PLATFORMS[platform].syncsConversationExtras &&
+        selection.site !== false &&
+        selection.conversationExtras !== false;
       if (syncsConversationExtras && starred && !starStore)
         throw new Error('Star uploads require the queued store');
       const snapshot = await payloads.prepareSnapshot(token, {
@@ -90,6 +100,7 @@ export class GoogleDriveFolderTransfers {
         timelineHierarchyAccountScope: capturedHierarchyScope,
         settings,
         plugins,
+        selection,
       });
       const plan = payloads.planUpload(snapshot);
       const guard = await payloads.guardUpload(token, snapshot, options);
@@ -102,22 +113,47 @@ export class GoogleDriveFolderTransfers {
         this.session.assertActive();
         await this.session.run(() => this.auth.getToken(interactive));
       });
+      const catalogPlan =
+        selection.catalog && this.catalogTimeline
+          ? await this.catalogTimeline.planUpload(token, selection.catalog.outlines)
+          : [];
       let commitStars: (() => Promise<void>) | undefined;
       if (syncsConversationExtras && starStore) {
         const remote = await port.read();
         const remoteSites = catalogStarSites(decodeStarSyncSources(remote, capturedScope));
         const sites = [
-          ...new Set([...(await this.localCatalogStarSites(starStore)), ...remoteSites]),
-        ].sort();
+          ...new Set([
+            ...(await this.localCatalogStarSites()),
+            ...remoteSites,
+            ...(selection.catalog?.starSites ?? []),
+          ]),
+        ]
+          .filter(
+            (site) =>
+              !selection.includedCatalogSites || selection.includedCatalogSites.includes(site),
+          )
+          .sort();
         commitStars = await this.starCoordinator.prepare(starStore, [
           { port, scope: capturedScope, source: remote },
           ...sites.map((site) => ({ port: catalogPort(site), scope: null })),
         ]);
       }
+      const commitCatalogStars =
+        starStore && selection.catalog && !syncsConversationExtras
+          ? await this.starCoordinator.prepare(
+              starStore,
+              selection.catalog.starSites.map((site) => ({ port: catalogPort(site), scope: null })),
+            )
+          : undefined;
       // All required reads and payloads are ready before any file can be created or replaced.
       await payloads.prepareUpload(token);
       const fileCount = await payloads.uploadPlan(token, plan);
+      if (catalogPlan.length)
+        await this.catalogTimeline?.uploadPlan(token, catalogPlan, () =>
+          this.session.assertActive(),
+        );
       await commitStars?.();
+      await commitCatalogStars?.();
       port.assertActive();
       const uploadTime = Date.now();
       // Update platform-specific upload time
@@ -135,7 +171,7 @@ export class GoogleDriveFolderTransfers {
       const errorMessage = error instanceof Error ? error.message : 'Upload failed';
       console.error('[GoogleDriveSyncService] Upload failed:', error);
       this.updateState({ isSyncing: false, error: errorMessage });
-      return { kind: 'failed' };
+      return { kind: 'failed', code: cloudSyncFailureCode(error) };
     }
   }
 
@@ -145,6 +181,7 @@ export class GoogleDriveFolderTransfers {
     platform: SyncPlatform = 'gemini',
     accountScope: SyncAccountScope | null = null,
     timelineHierarchyAccountScope: SyncAccountScope | null = null,
+    selection: DriveTransferSelection = {},
   ): Promise<GoogleDriveDownload | null> {
     const capturedScope = accountScope ? { ...accountScope } : null;
     const capturedHierarchyScope = timelineHierarchyAccountScope
@@ -162,11 +199,17 @@ export class GoogleDriveFolderTransfers {
           this.updateState({ isSyncing: false, isAuthenticated: false });
           return null;
         }
-        throw new Error('Not authenticated');
+        throw new Error(DRIVE_NOT_AUTHENTICATED);
       }
 
       const payloads = this.payloads;
-      const data = await payloads.download(token, platform, capturedScope, capturedHierarchyScope);
+      const data = await payloads.download(
+        token,
+        platform,
+        capturedScope,
+        capturedHierarchyScope,
+        selection,
+      );
       if (!data) {
         this.updateState({ isSyncing: false });
         return null;
@@ -190,7 +233,7 @@ export class GoogleDriveFolderTransfers {
   }
 
   /** The catalog sites with local stars or deletions, in a stable order. */
-  private async localCatalogStarSites(store: StarStore): Promise<string[]> {
-    return [...catalogStarSites(await store.getSyncSnapshot(null))].sort();
+  private async localCatalogStarSites(): Promise<string[]> {
+    return [...catalogStarSites(await readLocalSyncStars())].sort();
   }
 }

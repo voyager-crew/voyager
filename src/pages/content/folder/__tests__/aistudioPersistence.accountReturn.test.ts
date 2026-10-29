@@ -95,7 +95,7 @@ describe('AI Studio folder persistence across A → B → A', () => {
       await syncing;
       expect(manager.data.folders.map((folder) => folder.name)).toEqual(['Private a', 'Cloud']);
       expect(local[key]).toEqual(manager.data);
-      expect(local.gvPromptItems).toEqual([prompt]);
+      expect(local.gvPromptItems).toEqual([]);
       expect(treeText()).toContain('Cloud');
       expect(document.querySelector<HTMLButtonElement>('.gv-folder-add-btn')?.disabled).toBe(false);
       expect(notificationText()).not.toContain(getTranslationSync('downloadMergeSuccess'));

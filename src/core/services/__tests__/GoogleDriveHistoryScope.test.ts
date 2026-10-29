@@ -130,18 +130,21 @@ describe('history restore service target authority', () => {
       {
         name: 'gemini-voyager-settings.json',
         old: { format: 'gemini-voyager.settings.v1', data: { language: 'en' } },
+        current: { format: 'gemini-voyager.settings.v1', data: { language: 'fr' } },
       },
       {
         name: 'gemini-voyager-plugins.json',
         old: guardEnvelope('plugins', { plugin: { enabled: false, installedAt: 1 } }),
+        current: guardEnvelope('plugins', { plugin: { enabled: true, installedAt: 1 } }),
       },
       {
         name: 'gemini-voyager-chatgpt-folders.json',
         old: { ...guardEnvelope('folders', guardFolders(1)), platform: 'chatgpt' },
+        current: { ...guardEnvelope('folders', guardFolders(2)), platform: 'chatgpt' },
       },
     ];
-    for (const { name, old } of globals) {
-      d.drive.put(name, old);
+    for (const { name, old, current } of globals) {
+      d.drive.put(name, current);
       const history = name.replace(/\.json$/, '.backup-2026-10-29-110000.json');
       d.drive.put(history, old);
       d.drive.metadata.set(history, {

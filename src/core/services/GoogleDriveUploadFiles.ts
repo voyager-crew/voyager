@@ -50,22 +50,22 @@ export class GoogleDriveUploadFiles {
     }
   }
 
-  private async commitReady(token: string): Promise<void> {
+  private async commitReady(token: string, name: string): Promise<void> {
     await this.prepare(token);
-    for (const [name, target] of this.targets) {
-      if (target.kind === 'found') {
-        const id = await this.files.ensure(token, name, target.id);
-        this.targets.set(name, { kind: 'ready', id, history: target.history });
-      }
-    }
     const before = this.beforeFirstWrite;
     await before?.();
     if (this.beforeFirstWrite === before) this.beforeFirstWrite = null;
+    // Read-only targets stay missing; account persistence precedes creation or relocation.
+    const target = this.targets.get(name);
+    if (target?.kind === 'found') {
+      const id = await this.files.ensure(token, name, target.id);
+      this.targets.set(name, { kind: 'ready', id, history: target.history });
+    }
   }
 
   async write(token: string, name: string, payload: unknown): Promise<void> {
     this.register(name);
-    await this.commitReady(token);
+    await this.commitReady(token, name);
     const target = this.targets.get(name);
     if (!target?.id) throw new Error('Upload failed');
     const text = JSON.stringify(payload);
@@ -74,6 +74,7 @@ export class GoogleDriveUploadFiles {
     await this.files.upload(token, target.id, payload);
     // A verification retry snapshots the body it actually replaces, never an already saved copy.
     target.history.current = text;
+    await this.history.retain(token, target.history);
   }
 
   /** Restore is planned for all requested files before any current content can be replaced. */
@@ -93,16 +94,20 @@ export class GoogleDriveUploadFiles {
       }
       try {
         const history = await this.history.prepare(token, name, null);
-        const latest = history.recognized[0];
+        const id = await this.files.find(token, name);
+        history.current = id ? await this.files.downloadText(token, id) : null;
+        // An archive from an unsuccessful upload is not a previous version.
+        const latest = history.recognized.find(({ text }) => text !== history.current);
         if (!latest) {
           outcomes.push({
             name,
-            status: history.entries.length ? 'unrecognized_history' : 'no_history',
+            status:
+              history.entries.length && !history.recognized.length
+                ? 'unrecognized_history'
+                : 'no_history',
           });
           continue;
         }
-        const id = await this.files.find(token, name);
-        history.current = id ? await this.files.downloadText(token, id) : null;
         this.names.add(name);
         this.targets.set(name, { kind: 'found', id, history });
         planned.push({ name, text: latest.text, historyId: latest.entry.id });
@@ -112,13 +117,14 @@ export class GoogleDriveUploadFiles {
     }
     for (const { name, text, historyId } of planned) {
       try {
-        await this.commitReady(token);
+        await this.commitReady(token, name);
         const target = this.targets.get(name);
         if (!target?.id) throw new Error('Upload failed');
         if (target.history.current !== text)
           await this.history.preserve(token, name, target.history);
         await this.files.uploadText(token, target.id, text);
         target.history.current = text;
+        await this.history.retain(token, target.history);
         outcomes.push({ name, status: 'restored', historyId });
       } catch {
         outcomes.push({ name, status: 'write_failed' });

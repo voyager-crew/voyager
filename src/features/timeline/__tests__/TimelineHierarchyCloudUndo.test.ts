@@ -39,8 +39,8 @@ async function open(): Promise<TimelineState> {
 }
 
 async function applyHierarchy(snapshotId: string, value: TimelineHierarchyData): Promise<void> {
-  await chrome.storage.local.set({ [KEY]: value });
   await recordCloudSyncWrites(snapshotId, [{ area: 'local', key: KEY, kind: 'hierarchy', value }]);
+  await chrome.storage.local.set({ [KEY]: value });
 }
 
 beforeEach(() => {

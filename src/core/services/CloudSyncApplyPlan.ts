@@ -9,7 +9,7 @@ import {
 } from '@/features/timeline/hierarchyTypes';
 
 export type CloudApplyKind = 'folders' | 'prompts' | 'settings' | 'plugins' | 'timelineHierarchy';
-export type CloudPayloadStatus = 'found' | 'missing' | 'unrecognized';
+export type CloudPayloadStatus = 'found' | 'missing' | 'unrecognized' | 'failed';
 export type CloudPayload<T> =
   | { status: 'found'; value: T }
   | { status: 'missing' }
@@ -19,7 +19,7 @@ export interface CloudApplySkip {
   reason: 'missing' | 'unrecognized' | 'empty-plugin-map';
 }
 
-/** Transport statuses stay independent of the payload: null currently means missing. */
+/** Transport status wins over a null payload, which cannot distinguish a missing file from an invalid one. */
 export interface CloudApplyDownload {
   folders?: unknown;
   prompts?: unknown;
@@ -38,6 +38,7 @@ function payload<T>(
   status: CloudPayloadStatus | undefined,
   read: (value: unknown) => T | null,
 ): CloudPayload<T> {
+  if (status === 'failed') throw new Error('cloud_read_failed');
   if (status === 'missing' || status === 'unrecognized') return { status };
   if (raw == null) return { status: 'missing' };
   const value = read(raw);
@@ -90,6 +91,8 @@ export function createCloudSyncApplyPlan(input: {
   payloads: ApplyPayloads;
   shared: boolean;
   conversationExtras: boolean;
+  site?: boolean;
+  timelineHierarchy?: boolean;
 }) {
   const skipped: CloudApplySkip[] = [];
   const select = <T>(kind: CloudApplyKind, value: CloudPayload<T>, included: boolean) => {
@@ -110,14 +113,14 @@ export function createCloudSyncApplyPlan(input: {
     return value.value;
   };
   return {
-    folders: select('folders', input.payloads.folders, true),
+    folders: select('folders', input.payloads.folders, input.site !== false),
     prompts: select('prompts', input.payloads.prompts, input.shared),
     settings: select('settings', input.payloads.settings, input.shared),
     plugins: select('plugins', input.payloads.plugins, input.shared),
     timelineHierarchy: select(
       'timelineHierarchy',
       input.payloads.timelineHierarchy,
-      input.conversationExtras,
+      input.timelineHierarchy ?? input.conversationExtras,
     ),
     skipped,
   };

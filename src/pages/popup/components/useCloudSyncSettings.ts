@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { completeCloudSyncDownload } from '@/core/services/CloudSyncDownloadCompletion';
 import { StorageKeys } from '@/core/types/common';
 import type { SyncMode, SyncPlatform, SyncProvider, SyncState } from '@/core/types/sync';
 import { DEFAULT_SYNC_STATE } from '@/core/types/sync';
@@ -7,7 +8,7 @@ import { getVoyagerBuildTarget, isSafari } from '@/core/utils/browser';
 import { googleDriveUnavailableOn } from '@/core/utils/googleDriveSignIn';
 import { deleteSafariICloudBackup } from '@/core/utils/safariICloudSync';
 import { FOLDER_PLATFORMS, getFolderPlatformForHost } from '@/features/folder/platforms';
-import { pushCatalogTimeline } from '@/features/timeline/catalogTimelineCloud';
+import type { PulledCatalogTimeline } from '@/features/timeline/catalogTimelineCloud';
 import type { TranslationKey } from '@/utils/translations';
 
 import { useLanguage } from '../../../contexts/LanguageContext';
@@ -221,10 +222,6 @@ export function useCloudSyncSettings(sourceTabId?: number) {
       }
 
       if (response?.ok) {
-        // A Gemini upload has synced the catalog star files along with its own stars.
-        await pushCatalogTimeline((message) => chrome.runtime.sendMessage(message), {
-          stars: !FOLDER_PLATFORMS[payload.platform].syncsConversationExtras,
-        });
         setStatusMessage({
           text: t(response.highlights?.skipped ? 'syncSuccessHighlightsSkipped' : 'syncSuccess'),
           kind: response.highlights?.skipped ? 'warn' : 'ok',
@@ -252,6 +249,8 @@ export function useCloudSyncSettings(sourceTabId?: number) {
       setIsDownloading(true);
       setDownloadMode(mode);
 
+      let operationId: string | undefined;
+      let completed = false;
       try {
         const download = await prepareDownload();
 
@@ -271,9 +270,14 @@ export function useCloudSyncSettings(sourceTabId?: number) {
               };
               data?: CloudDownloadData | null;
               snapshotId?: string;
+              operationId?: string;
+              catalog?: PulledCatalogTimeline | null;
+              selection?: CloudDownloadData['selection'];
+              kindStatus?: CloudDownloadData['kindStatus'];
             }
           | undefined;
 
+        operationId = response?.operationId;
         if (response?.state) {
           setSyncState(response.state);
         }
@@ -284,7 +288,11 @@ export function useCloudSyncSettings(sourceTabId?: number) {
 
         if (!response.data) {
           // Catalog outlines and stars have files of their own; restore them without folders too.
-          const restored = await download.restoreCatalogTimeline(response.snapshotId);
+          const { restored } = await download.restoreCatalogTimeline(
+            response.snapshotId,
+            response.catalog,
+          );
+          completed = true;
           if (restored || response.highlights?.synced) {
             setStatusMessage({ text: t('syncSuccess'), kind: 'ok' });
             return;
@@ -294,11 +302,17 @@ export function useCloudSyncSettings(sourceTabId?: number) {
         }
 
         const { foldersMissing, nameConflicts, skipped } = await download.restore(
-          response.data,
+          {
+            ...response.data,
+            selection: response.selection ?? response.data.selection,
+            kindStatus: response.kindStatus ?? response.data.kindStatus,
+          },
           mode,
           response.highlights?.synced === true,
           response.snapshotId,
+          response.catalog,
         );
+        completed = true;
         setStatusMessage({
           text:
             mode === 'overwrite' && skipped.length > 0
@@ -324,6 +338,15 @@ export function useCloudSyncSettings(sourceTabId?: number) {
         console.error('[CloudSyncSettings] Download failed:', error);
         setStatusMessage({ text: cloudRestoreFailureText(t, error), kind: 'err' });
       } finally {
+        try {
+          await completeCloudSyncDownload(
+            (message) => chrome.runtime.sendMessage(message),
+            operationId,
+            completed,
+          );
+        } catch (error) {
+          setStatusMessage({ text: cloudRestoreFailureText(t, error), kind: 'err' });
+        }
         setIsDownloading(false);
         setDownloadMode(null);
       }

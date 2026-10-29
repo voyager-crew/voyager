@@ -20,6 +20,10 @@ const mocks = vi.hoisted(() => ({
     downloadPromptsOnly: vi.fn(),
     uploadPromptsOnly: vi.fn(),
     getState: vi.fn(),
+    commitBookkeeping: vi.fn(),
+    getDownloadBookkeeping: vi.fn(),
+    beginDownloadBookkeeping: vi.fn(),
+    downloadCatalogDataResult: vi.fn(),
     authenticate: vi.fn(),
     signOut: vi.fn(),
     setMode: vi.fn(),
@@ -90,6 +94,10 @@ const sender = (url = 'https://gemini.google.com/u/2/app'): chrome.runtime.Messa
   url,
   tab: { id: 7, url } as chrome.tabs.Tab,
 });
+const popupSender = (): chrome.runtime.MessageSender => ({
+  id: chrome.runtime.id,
+  url: chrome.runtime.getURL('src/pages/popup/index.html'),
+});
 const readers = () => ({
   getAllStarredMessages: vi.fn(async () => ({ messages: {} })),
   getAllForkNodes: vi.fn(async () => ({ nodes: {}, groups: {} })),
@@ -104,7 +112,7 @@ beforeEach(() => {
   };
   vi.mocked(chrome.storage.local.get).mockImplementation(async (keys: unknown) => {
     const names =
-      typeof keys === 'string' ? [keys] : Array.isArray(keys) ? keys : Object.keys(keys ?? {});
+      typeof keys === 'string' ? [keys] : Array.isArray(keys) ? keys : Object.keys(keys ?? stored);
     return Object.fromEntries(
       names.filter((key) => key in stored).map((key) => [key, structuredClone(stored[key])]),
     );
@@ -120,6 +128,13 @@ beforeEach(() => {
   mocks.drive.download.mockResolvedValue({ folders: folder('Cloud') });
   mocks.drive.uploadPromptsOnly.mockResolvedValue(true);
   mocks.drive.getState.mockResolvedValue(state);
+  mocks.drive.commitBookkeeping.mockResolvedValue(undefined);
+  mocks.drive.getDownloadBookkeeping.mockResolvedValue([]);
+  mocks.drive.downloadCatalogDataResult.mockResolvedValue({
+    outlines: {},
+    stars: {},
+    statuses: {},
+  });
 });
 
 describe('cloud sync messages', () => {
@@ -162,26 +177,12 @@ describe('cloud sync messages', () => {
               interactive: false,
             },
           },
-          sender(platform === 'gemini' ? undefined : 'https://aistudio.google.com/u/2/prompts'),
+          popupSender(),
         ),
-      ).resolves.toEqual({ ok: true, highlights: undefined, state });
-      expect(chrome.storage.local.get).toHaveBeenCalledWith([key, StorageKeys.PROMPT_ITEMS]);
-      expect(mocks.drive.upload).toHaveBeenCalledWith(
-        localFolders,
-        localPrompts,
-        platform === 'gemini' ? { messages: {} } : null,
-        false,
-        platform,
-        platform === 'gemini' ? { nodes: {}, groups: {} } : null,
-        platform === 'gemini' ? { conversations: {} } : null,
-        null,
-        null,
-        { gvTheme: 'dark' },
-        { 'voyager.test': { enabled: true, installedAt: 1 } },
-        undefined,
-        { force: false },
-        undefined,
-      );
+      ).resolves.toMatchObject({ ok: true, state });
+      const [uploadedFolders, uploadedPrompts] = mocks.drive.upload.mock.calls[0];
+      expect(uploadedFolders).toEqual(localFolders);
+      expect(uploadedPrompts).toEqual(localPrompts);
       if (platform === 'aistudio') {
         expect(snapshots.getAllStarredMessages).not.toHaveBeenCalled();
         expect(snapshots.getAllForkNodes).not.toHaveBeenCalled();
@@ -240,7 +241,7 @@ describe('cloud sync messages', () => {
           timelineHierarchyAccountScope: scope,
         },
       },
-      sender(),
+      popupSender(),
     );
     expect(chrome.storage.local.get).toHaveBeenCalledWith([folderKey, StorageKeys.PROMPT_ITEMS]);
     expect(chrome.storage.local.get).toHaveBeenCalledWith([
@@ -263,8 +264,9 @@ describe('cloud sync messages', () => {
       { gvTheme: 'dark' },
       { 'voyager.test': { enabled: true, installedAt: 1 } },
       undefined,
-      { force: false },
+      expect.objectContaining({ authorizeRefusal: expect.any(Function) }),
       undefined,
+      expect.objectContaining({ site: true, shared: true }),
     );
     expect(mocks.isolation.resolveAccountScope).not.toHaveBeenCalled();
   });
@@ -298,9 +300,9 @@ describe('cloud sync messages', () => {
             prompts: [],
           },
         },
-        sender(),
+        popupSender(),
       ),
-    ).rejects.toThrow('Local prompt data is invalid');
+    ).resolves.toEqual({ ok: false, error: 'local_read_failed' });
     expect(mocks.drive.upload).not.toHaveBeenCalled();
     expect(chrome.storage.local.set).not.toHaveBeenCalled();
   });
@@ -317,35 +319,44 @@ describe('cloud sync messages', () => {
         },
         sender(),
       ),
-    ).resolves.toEqual({ ok: false, partial: true, error: 'highlight_failed', state });
+    ).resolves.toEqual({ ok: false, partial: true, error: 'highlight_upload_failed', state });
     expect(mocks.drive.upload.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.highlights.push.mock.invocationCallOrder[0],
     );
     expect(mocks.highlights.notify).not.toHaveBeenCalled();
   });
 
-  it('returns downloaded data for the popup merge without writing storage, and blocks a cross-product sender URL fallback', async () => {
+  it('returns downloaded data and a snapshot for popup merge without changing user data, and blocks cross-product senders', async () => {
     const handle = createCloudSyncMessageHandler(readers());
+    const before = structuredClone(stored);
     await expect(
       handle(
         { type: 'gv.sync.download', payload: { platform: 'gemini', interactive: false } },
-        sender(),
+        popupSender(),
       ),
-    ).resolves.toEqual({
+    ).resolves.toMatchObject({
       ok: true,
       data: { folders: folder('Cloud') },
-      highlights: undefined,
+      snapshotId: expect.any(String),
+      operationId: expect.any(String),
       state,
     });
-    expect(mocks.drive.download).toHaveBeenCalledWith(false, 'gemini', null, null);
-    expect(chrome.storage.local.set).not.toHaveBeenCalled();
+    expect(mocks.drive.download).toHaveBeenCalledWith(
+      false,
+      'gemini',
+      null,
+      null,
+      expect.objectContaining({ site: true, shared: true }),
+    );
+    const { [StorageKeys.CLOUD_SYNC_PRE_APPLY_SNAPSHOT]: _snapshot, ...canonical } = stored;
+    expect(canonical).toEqual(before);
     mocks.drive.download.mockClear();
     await expect(
       handle(
         { type: 'gv.sync.download', payload: { platform: 'gemini' } },
         { tab: {} as chrome.tabs.Tab, url: 'https://claude.ai/chat/one' },
       ),
-    ).resolves.toEqual({ ok: false, error: 'unsupported_sync_platform' });
+    ).resolves.toEqual({ ok: false, error: 'untrusted_sender' });
     expect(mocks.drive.download).not.toHaveBeenCalled();
   });
   it('a failed star download is reported as a failure instead of an empty backup', async () => {
@@ -356,7 +367,7 @@ describe('cloud sync messages', () => {
         { type: 'gv.sync.download', payload: { platform: 'gemini' } },
         sender(),
       ),
-    ).resolves.toMatchObject({ ok: false, error: 'Invalid stars v2 envelope' });
+    ).resolves.toMatchObject({ ok: false, error: 'cloud_read_failed' });
     expect(chrome.storage.local.set).not.toHaveBeenCalled();
   });
 

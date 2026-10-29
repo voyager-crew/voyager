@@ -5,6 +5,7 @@ import { HIGHLIGHT_EXPORT_FORMAT } from '@/core/types/highlight';
 import type { SyncAccountScope } from '@/core/types/sync';
 import { hashString } from '@/core/utils/hash';
 
+import { refusedGuardToken } from './fixtures/guardConfirmation';
 import {
   createGuardDevice,
   guardData,
@@ -47,7 +48,10 @@ describe('whole-file upload guard through real background messages', () => {
         const cloudBefore = new Map(d.drive.files);
         const storageBefore = structuredClone(d.values);
         const result = await d.request();
-        if (refused) {
+        if (kind === 'prompts' && local === 0) {
+          expect(result).toMatchObject({ ok: true });
+          expect(d.drive.files.get(guardFiles.prompts)).toBe(cloudBefore.get(guardFiles.prompts));
+        } else if (refused) {
           expect(result).toMatchObject({
             ok: false,
             error: 'upload_guard_refused',
@@ -58,11 +62,8 @@ describe('whole-file upload guard through real background messages', () => {
           expect(d.values).toEqual(storageBefore);
         } else {
           expect(result).toMatchObject({ ok: true });
-          expect(d.drive.payload(guardFiles[kind])).toMatchObject(
-            kind === 'prompts'
-              ? { items: guardData(kind, local) }
-              : { data: guardData(kind, local) },
-          );
+          const payload = d.drive.payload<{ items?: unknown; data?: unknown }>(guardFiles[kind]);
+          expect(kind === 'prompts' ? payload.items : payload.data).toEqual(guardData(kind, local));
         }
       },
     );
@@ -244,12 +245,17 @@ describe('whole-file upload guard through real background messages', () => {
     });
     expect(d.drive.files).toEqual(cloud);
     expect(d.values).toEqual(local);
-    await expect(d.request('gv.sync.upload', { force: true })).resolves.toMatchObject({ ok: true });
+    await expect(
+      d.request('gv.sync.upload', {
+        force: true,
+        guardToken: await refusedGuardToken(d.request()),
+      }),
+    ).resolves.toMatchObject({ ok: true });
     expect(d.drive.payload(guardFiles.folders)).toMatchObject({ data: guardFolders(11) });
     expect(d.values.gvAccessToken).toBe('fresh-guard-token');
   });
 
-  it('a refused request releases an already queued force retry', async () => {
+  it('a refused request releases a queued unconfirmed retry without bypassing its guard', async () => {
     const d = await createGuardDevice();
     d.putCloud('folders', 24);
     d.setLocal('folders', 11);
@@ -272,7 +278,13 @@ describe('whole-file upload guard through real background messages', () => {
     const next = d.request('gv.sync.upload', { force: true });
     release();
     await expect(first).resolves.toMatchObject({ ok: false, error: 'upload_guard_refused' });
-    await expect(next).resolves.toMatchObject({ ok: true });
+    await expect(next).resolves.toMatchObject({ ok: false, error: 'upload_guard_refused' });
+    await expect(
+      d.request('gv.sync.upload', {
+        force: true,
+        guardToken: await refusedGuardToken(d.request()),
+      }),
+    ).resolves.toMatchObject({ ok: true });
     expect(d.drive.payload(guardFiles.folders)).toMatchObject({ data: guardFolders(11) });
     expect(d.values[StorageKeys.FOLDER_DATA]).toEqual(guardFolders(11));
     await expect(d.service.getState()).resolves.toMatchObject({ error: null, isSyncing: false });

@@ -70,9 +70,10 @@ function setup(
       kind: CloudSyncKind,
       items: Record<string, unknown>,
     ) {
-      await storage[area].set(items);
       const writes = Object.entries(items).map(([key, value]) => ({ area, key, kind, value }));
-      return service.extend(snapshotId, writes, { applied: writes });
+      const snapshot = await service.extend(snapshotId, writes, { applied: writes });
+      await storage[area].set(items);
+      return snapshot;
     },
   };
 }

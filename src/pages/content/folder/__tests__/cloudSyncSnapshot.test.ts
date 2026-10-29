@@ -107,7 +107,11 @@ beforeEach(() => {
   };
   blockSnapshot = undefined;
   blockRead = undefined;
-  download = { folders: { data: cloudFolders() }, prompts: { items: [] } };
+  download = {
+    folders: { data: cloudFolders() },
+    timelineHierarchy: { data: { conversations: {} } },
+    prompts: { items: [] },
+  };
   pulled = {};
   vi.mocked(chrome.storage.local.get).mockImplementation(async (keys) => {
     await blockRead?.(keys);
@@ -205,12 +209,6 @@ describe('folder panel pre-apply snapshot', () => {
         { area: 'local', key: FOLDER_KEY, existed: true, value: prior[FOLDER_KEY] },
         {
           area: 'local',
-          key: StorageKeys.PROMPT_ITEMS,
-          existed: true,
-          value: prior[StorageKeys.PROMPT_ITEMS],
-        },
-        {
-          area: 'local',
           key: StorageKeys.FORK_NODES,
           existed: true,
           value: prior[StorageKeys.FORK_NODES],
@@ -222,7 +220,7 @@ describe('folder panel pre-apply snapshot', () => {
         { area: 'local', key: CATALOG_KEY, existed: false },
       ]),
     );
-    expect(snapshot?.entries).toHaveLength(8);
+    expect(snapshot?.entries).toHaveLength(7);
     expect(await undoCloudSyncSnapshot()).toMatchObject({ status: 'restored' });
     expect(storedWithoutSnapshot()).toEqual(prior);
     expect(disk[SLOT]).toMatchObject({ kind: 'undone', markers: expect.any(Array) });
@@ -247,7 +245,7 @@ describe('folder panel pre-apply snapshot', () => {
     expect(h.notify).not.toHaveBeenCalledWith('downloadMergeSuccess', 'success');
   });
 
-  it('keeps prompts and hierarchy when their receipt fails after folders were applied', async () => {
+  it('keeps hierarchy when its receipt fails after folders were applied', async () => {
     const prior = structuredClone(disk);
     download = {
       ...download,
@@ -262,7 +260,7 @@ describe('folder panel pre-apply snapshot', () => {
         slot.appliedHashes.some(({ kind }) => kind === 'folders')
       ) {
         failed = true;
-        throw new Error('Prompts and hierarchy receipt quota exceeded');
+        throw new Error('Hierarchy receipt quota exceeded');
       }
     };
     const h = harness();
@@ -309,8 +307,8 @@ describe('folder panel pre-apply snapshot', () => {
     const syncing = h.transfer.sync();
     await started.promise;
     window.dispatchEvent(new Event('pagehide'));
-    await syncing;
     release.resolve();
+    await syncing;
     await readCloudSyncSnapshot();
 
     expect(storedWithoutSnapshot()).toEqual(prior);
@@ -336,7 +334,7 @@ describe('folder panel pre-apply snapshot', () => {
     expect(await readCloudSyncSnapshot()).toBeNull();
   });
 
-  it('captures AI Studio prompts written as folder companions', async () => {
+  it('keeps AI Studio shared prompts untouched by its cloud folder save', async () => {
     const key = StorageKeys.FOLDER_DATA_AISTUDIO;
     const prior = structuredClone(disk);
     await syncSiteFolders({
@@ -351,7 +349,7 @@ describe('folder panel pre-apply snapshot', () => {
           await new AIStudioFolderStorageAdapter().saveData(
             key,
             folders,
-            { [StorageKeys.PROMPT_ITEMS]: prompts },
+            prompts ? { [StorageKeys.PROMPT_ITEMS]: prompts } : undefined,
             onWritten,
           );
           return true;
@@ -360,17 +358,10 @@ describe('folder panel pre-apply snapshot', () => {
     });
 
     expect(disk[key]).toEqual(cloudFolders());
-    expect((await readCloudSyncSnapshot())?.entries).toEqual(
-      expect.arrayContaining([
-        { area: 'local', key, existed: false },
-        {
-          area: 'local',
-          key: StorageKeys.PROMPT_ITEMS,
-          existed: true,
-          value: prior[StorageKeys.PROMPT_ITEMS],
-        },
-      ]),
-    );
+    expect(disk[StorageKeys.PROMPT_ITEMS]).toEqual(prior[StorageKeys.PROMPT_ITEMS]);
+    expect((await readCloudSyncSnapshot())?.entries).toEqual([
+      { area: 'local', key, existed: false },
+    ]);
     expect(await undoCloudSyncSnapshot()).toMatchObject({ status: 'restored' });
     expect(storedWithoutSnapshot()).toEqual(prior);
     expect(disk[SLOT]).toMatchObject({ kind: 'undone', markers: expect.any(Array) });
@@ -389,7 +380,6 @@ describe('folder panel pre-apply snapshot', () => {
       context,
       keys: [{ area: 'local', key: StorageKeys.FOLDER_DATA }],
     });
-    await chrome.storage.local.set({ [StorageKeys.FOLDER_DATA]: { backgroundApplied: true } });
     await recordCloudSyncWrites(background.id, [
       {
         area: 'local',
@@ -398,6 +388,7 @@ describe('folder panel pre-apply snapshot', () => {
         value: { backgroundApplied: true },
       },
     ]);
+    await chrome.storage.local.set({ [StorageKeys.FOLDER_DATA]: { backgroundApplied: true } });
 
     await applyFolderCloudDownload({
       context,
@@ -406,10 +397,10 @@ describe('folder panel pre-apply snapshot', () => {
       current: () => true,
       saveFolders: async (snapshotId) => {
         const value = cloudFolders();
-        await chrome.storage.local.set({ [FOLDER_KEY]: value });
         await recordCloudSyncWrites(snapshotId, [
           { area: 'local', key: FOLDER_KEY, kind: 'folders', value },
         ]);
+        await chrome.storage.local.set({ [FOLDER_KEY]: value });
         return true;
       },
     });
@@ -446,10 +437,10 @@ describe('folder panel pre-apply snapshot', () => {
         current: () => true,
         saveFolders: async (snapshotId) => {
           const value = cloudFolders();
-          await chrome.storage.local.set({ [FOLDER_KEY]: value });
           await recordCloudSyncWrites(snapshotId, [
             { area: 'local', key: FOLDER_KEY, kind: 'folders', value },
           ]);
+          await chrome.storage.local.set({ [FOLDER_KEY]: value });
           const newer = await captureCloudSyncSnapshot({
             context: { source: 'popup-restore', platform: 'gemini', accountScope: null },
             keys: [{ area: 'local', key: StorageKeys.FOLDER_DATA }],
@@ -458,10 +449,10 @@ describe('folder panel pre-apply snapshot', () => {
           return true;
         },
         restoreExtras: async (snapshotId) => {
-          await chrome.storage.local.set({ [StorageKeys.PROMPT_ITEMS]: [] });
           await recordCloudSyncWrites(snapshotId, [
             { area: 'local', key: StorageKeys.PROMPT_ITEMS, kind: 'prompts', value: [] },
           ]);
+          await chrome.storage.local.set({ [StorageKeys.PROMPT_ITEMS]: [] });
           return true;
         },
       }),
@@ -489,10 +480,10 @@ describe('folder panel pre-apply snapshot', () => {
       current: () => current,
       saveFolders: async (snapshotId) => {
         const value = cloudFolders();
-        await chrome.storage.local.set({ [FOLDER_KEY]: value });
         await recordCloudSyncWrites(snapshotId, [
           { area: 'local', key: FOLDER_KEY, kind: 'folders', value },
         ]);
+        await chrome.storage.local.set({ [FOLDER_KEY]: value });
         return true;
       },
     });
@@ -500,7 +491,11 @@ describe('folder panel pre-apply snapshot', () => {
     current = false;
     release.resolve();
 
-    expect(await applying).toEqual({ status: 'cancelled' });
+    expect(await applying).toMatchObject({
+      status: 'cancelled',
+      restored: [],
+      snapshotId: expect.any(String),
+    });
     expect(storedWithoutSnapshot()).toEqual(prior);
   });
 });

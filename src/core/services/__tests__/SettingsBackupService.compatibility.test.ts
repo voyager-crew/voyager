@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { Script } from 'node:vm';
 import ts from 'typescript';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 import { DEFAULT_HIGHLIGHT_COLOR_PALETTE } from '@/core/types/highlight';
@@ -12,10 +12,21 @@ import {
   resolveEffectiveEnabled,
 } from '@/features/plugins/storage/legacySettingBindings';
 
+import { GoogleDriveBackupFolder } from '../GoogleDriveBackupFolder';
+import { GoogleDriveFiles } from '../GoogleDriveFiles';
+import { GoogleDriveUploadFiles } from '../GoogleDriveUploadFiles';
 import {
   exportBackupableSyncSettings,
   restoreBackupableSyncSettings,
 } from '../SettingsBackupService';
+import { FakeSyncDrive } from './fixtures/fakeSyncDrive';
+
+vi.mock('@/core/utils/browser', () => ({
+  getVoyagerBuildTarget: () => 'chrome',
+  isSafari: () => false,
+  isBrave: () => false,
+}));
+afterEach(() => vi.unstubAllGlobals());
 
 function storageWith(state: Record<string, unknown>) {
   return {
@@ -69,6 +80,33 @@ const released = releasedModule('SettingsBackupService', {
 }) as typeof import('../SettingsBackupService');
 
 describe('v2.2.1 settings file compatibility', () => {
+  it('restores the actual released full-default export as the previous Drive version', async () => {
+    const source = 'gemini-voyager-settings.json';
+    const previous = await released.exportBackupableSyncSettings(
+      storageWith({
+        [StorageKeys.CHAT_FONT_SIZE]: 120,
+        [StorageKeys.GV_ACCOUNT_ISOLATION_ENABLED_GEMINI]: true,
+      }),
+    );
+    const drive = new FakeSyncDrive();
+    drive.put(source, previous);
+    const original = drive.files.get(source);
+    vi.stubGlobal('fetch', drive.fetch);
+    const files = new GoogleDriveFiles(new GoogleDriveBackupFolder([source]), {
+      getProvider: () => 'googleDrive',
+      onAuthLost: () => {},
+    });
+    await new GoogleDriveUploadFiles(files).write(
+      'token',
+      source,
+      await exportBackupableSyncSettings(storageWith({ [StorageKeys.CHAT_FONT_SIZE]: 150 })),
+    );
+    await expect(
+      new GoogleDriveUploadFiles(files).restoreHistory('token', [source]),
+    ).resolves.toMatchObject([{ name: source, status: 'restored' }]);
+    expect(drive.files.get(source)).toBe(original);
+  });
+
   it.each(['merge', 'overwrite'] as const)(
     'restores this build’s sparse file with the real released %s reader',
     async (mode) => {

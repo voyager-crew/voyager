@@ -1,20 +1,19 @@
 /**
  * Gemini's in-page cloud upload and sync: the shared client, plus what only
- * Gemini's cloud copy carries. After the folders save, the merged prompts and
- * timeline hierarchy save before the background owners merge stars and forks.
+ * Gemini's cloud copy carries. After the folders save, the
+ * timeline hierarchy saves before the background owners merge stars and forks.
  */
 import {
   accountIsolationService,
   detectAccountContextFromDocument,
 } from '@/core/services/AccountIsolationService';
-import { isCloudRecord } from '@/core/services/CloudSyncApplyPlan';
+import { isCloudRecord, readCloudApplyPayloads } from '@/core/services/CloudSyncApplyPlan';
 import { STAR_RESTORE_KEYS, planForkRestore } from '@/core/services/CloudSyncRestoreKeys';
 import {
   recordCloudSyncWrites,
   type StorageWriteKey,
 } from '@/core/services/CloudSyncSnapshotService';
-import { StorageKeys } from '@/core/types/common';
-import type { PromptItem, SyncAccountScope } from '@/core/types/sync';
+import type { SyncAccountScope } from '@/core/types/sync';
 import { toSyncAccountScope } from '@/core/utils/syncAccountScope';
 import { cloneFolderData } from '@/features/folder/model/folderData';
 import { StarredMessagesService } from '@/features/savedLibrary/StarredMessagesService';
@@ -41,7 +40,7 @@ import {
   isCurrentTransfer,
 } from './folderTransferHost';
 
-/** The parts of Gemini's cloud copy beyond folders and prompts. */
+/** The parts of Gemini's cloud copy beyond folders. */
 type GeminiDownload = CloudDownload & {
   starred?: unknown;
   starredAccountHash?: string;
@@ -89,44 +88,32 @@ async function readLocalTimelineHierarchy(
 }
 
 /**
- * Saves the merged prompts and timeline hierarchy, then asks the serialized
+ * Saves the merged timeline hierarchy, then asks the serialized
  * owners to merge stars and forks. False when the run went stale or a part failed.
  */
 async function restoreBeyondFolders(
   host: FolderTransferHost,
   context: TransferContext,
   download: GeminiDownload,
-  prompts: PromptItem[],
   scopes: CloudSyncScopes,
   snapshotId: string,
 ): Promise<boolean> {
   const current = () => isCurrentTransfer(host, context);
-  const hierarchyScope = scopes.timelineHierarchyAccountScope;
-  const localHierarchy = await readLocalTimelineHierarchy(hierarchyScope);
-  if (!current()) return false;
-  // Save non-star data before asking the serialized owner to merge stars.
-  const values = {
-    [StorageKeys.PROMPT_ITEMS]: prompts,
-    [getTimelineHierarchyStorageKey(hierarchyScope?.accountKey)]: mergeTimelineHierarchy(
-      localHierarchy,
-      download.timelineHierarchy?.data || { conversations: {} },
-    ),
-  };
-  await recordCloudSyncWrites(
-    snapshotId,
-    Object.entries(values).map(([key, value]) => ({
-      area: 'local',
-      key,
-      value,
-      kind: key === StorageKeys.PROMPT_ITEMS ? 'prompts' : 'hierarchy',
-    })),
-  );
-  if (!current()) return false;
-  await chrome.storage.local.set(values);
-  if (!current()) return false;
+  const hierarchy = readCloudApplyPayloads(download).timelineHierarchy;
+  if (hierarchy.status === 'found') {
+    const hierarchyScope = scopes.timelineHierarchyAccountScope;
+    const localHierarchy = await readLocalTimelineHierarchy(hierarchyScope);
+    if (!current()) return false;
+    const key = getTimelineHierarchyStorageKey(hierarchyScope?.accountKey);
+    const value = mergeTimelineHierarchy(localHierarchy, hierarchy.value);
+    await recordCloudSyncWrites(snapshotId, [{ area: 'local', key, value, kind: 'hierarchy' }]);
+    if (!current()) return false;
+    await chrome.storage.local.set({ [key]: value });
+    if (!current()) return false;
+  }
 
   const { starred, starredAccountHash, stars, forks } = download;
-  const restored = [t('folder_title'), t('promptDataMigration')];
+  const restored = [t('folder_title')];
   // Only parts the backup has can fail, so an absent fork file is not reported as unrestored.
   const merges = [
     {
@@ -198,14 +185,20 @@ function geminiCloudSite(host: FolderTransferHost): CloudSyncSite {
           if (!saved && current()) host.notify(t('folder_save_error'), 'error');
           return saved;
         },
-        prepareRestore: async (download: GeminiDownload, prompts, scopes) => {
+        prepareRestore: async (download: GeminiDownload, _prompts, scopes) => {
           const forks = await planForkRestore(download.forks);
+          const hierarchy = readCloudApplyPayloads(download).timelineHierarchy;
           const keys: StorageWriteKey[] = [
-            { area: 'local', key: StorageKeys.PROMPT_ITEMS },
-            {
-              area: 'local',
-              key: getTimelineHierarchyStorageKey(scopes.timelineHierarchyAccountScope?.accountKey),
-            },
+            ...(hierarchy.status === 'found'
+              ? [
+                  {
+                    area: 'local' as const,
+                    key: getTimelineHierarchyStorageKey(
+                      scopes.timelineHierarchyAccountScope?.accountKey,
+                    ),
+                  },
+                ]
+              : []),
             ...([download.starred, download.stars].some(
               (value) => value !== null && typeof value === 'object',
             )
@@ -217,7 +210,7 @@ function geminiCloudSite(host: FolderTransferHost): CloudSyncSite {
           return {
             keys,
             run: (snapshotId: string) =>
-              restoreBeyondFolders(host, context, planned, prompts ?? [], scopes, snapshotId),
+              restoreBeyondFolders(host, context, planned, scopes, snapshotId),
           };
         },
       };
@@ -225,12 +218,12 @@ function geminiCloudSite(host: FolderTransferHost): CloudSyncSite {
   };
 }
 
-/** Upload this account's folders and the local prompts; the background adds starred messages. */
+/** Upload this account's folders and its own timeline data. */
 export function uploadFolders(host: FolderTransferHost): Promise<void> {
   return uploadSiteFolders(geminiCloudSite(host));
 }
 
-/** Download the cloud copy and merge it into this account's folders, prompts, hierarchy, stars and forks. */
+/** Download the cloud copy and merge it into this account's folders, hierarchy, stars and forks. */
 export function syncFolders(host: FolderTransferHost): Promise<void> {
   return syncSiteFolders(geminiCloudSite(host));
 }

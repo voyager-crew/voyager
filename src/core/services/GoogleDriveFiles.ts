@@ -8,7 +8,6 @@ import {
   findSafariGoogleDriveFile,
   getSafariGoogleDriveRetryDelay,
   isSafariGoogleDriveAuthError,
-  uploadSafariGoogleDriveFile,
   uploadSafariGoogleDriveText,
 } from '@/core/utils/safariGoogleDrive';
 import {
@@ -18,9 +17,15 @@ import {
   writeSafariICloudFile,
 } from '@/core/utils/safariICloudSync';
 
+import {
+  parseDriveFileMetadata,
+  type DriveFileMetadata,
+  DriveMetadataError,
+} from './CloudSyncBookkeeping';
 import { isSafariRuntime } from './GoogleDriveAuth';
 import type { GoogleDriveBackupFolder } from './GoogleDriveBackupFolder';
 import { GoogleDriveHistoryFiles } from './GoogleDriveHistoryFiles';
+import { readSafariDriveMetadata, uploadSafariDriveWithMetadata } from './GoogleDriveMetadata';
 import { logger } from './LoggerService';
 
 export const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
@@ -48,6 +53,24 @@ export class GoogleDriveFiles {
 
   supportsHistory(): boolean {
     return this.history.supported();
+  }
+
+  /** Status never downloads file media. A missing or trashed file has no cloud version. */
+  async metadata(token: string, id: string): Promise<DriveFileMetadata | null> {
+    return this.retryMedia(async () => {
+      if (this.options.getProvider() === 'icloud') throw new Error('unsupported_provider');
+      if (isSafariRuntime()) return readSafariDriveMetadata(id);
+      const response = await fetch(
+        `${DRIVE_API_BASE}/files/${encodeURIComponent(id)}?fields=id,md5Checksum,modifiedTime,trashed`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error('metadata_read_failed');
+      const value: unknown = await response.json();
+      if (value && typeof value === 'object' && 'trashed' in value && value.trashed === true)
+        return null;
+      return parseDriveFileMetadata(value);
+    });
   }
 
   async createHistory(
@@ -281,7 +304,7 @@ export class GoogleDriveFiles {
     return result.id;
   }
 
-  async upload(token: string, fileId: string, data: unknown): Promise<void> {
+  async upload(token: string, fileId: string, data: unknown): Promise<DriveFileMetadata | void> {
     let delay = INITIAL_RETRY_DELAY_MS;
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
@@ -291,11 +314,10 @@ export class GoogleDriveFiles {
         }
 
         if (isSafariRuntime()) {
-          await uploadSafariGoogleDriveFile(fileId, data);
-          return;
+          return await uploadSafariDriveWithMetadata(fileId, data);
         }
 
-        const url = `${DRIVE_UPLOAD_BASE}/files/${fileId}?uploadType=media`;
+        const url = `${DRIVE_UPLOAD_BASE}/files/${fileId}?uploadType=media&fields=id,md5Checksum,modifiedTime`;
         const response = await fetch(url, {
           method: 'PATCH',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -304,8 +326,13 @@ export class GoogleDriveFiles {
         if (!response.ok) {
           throw new Error(`Upload failed: ${response.status}`);
         }
-        return;
+        const metadata: unknown = await response.json().catch(() => {
+          throw new DriveMetadataError();
+        });
+        return parseDriveFileMetadata(metadata);
       } catch (error) {
+        // A malformed success receipt is not permission to repeat a media write that succeeded.
+        if (error instanceof DriveMetadataError) throw error;
         if (isSafariICloudConflictError(error)) throw error;
         if (this.markAuthLostIfNeeded(error)) throw error;
         if (attempt === MAX_RETRIES) throw error;
@@ -420,6 +447,7 @@ export class GoogleDriveFiles {
 export type DriveFilesPort = Pick<
   GoogleDriveFiles,
   | 'find'
+  | 'metadata'
   | 'ensure'
   | 'upload'
   | 'download'

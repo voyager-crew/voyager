@@ -10,6 +10,7 @@ import {
   applyPopupCloudDownload,
   type CloudDownloadData,
 } from '@/core/services/CloudSyncDownloadService';
+import { readCloudSyncScope, isSyncScopeIncluded } from '@/core/services/CloudSyncScope';
 import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
 import type { PromptItem, SyncAccountScope, SyncPlatform } from '@/core/types/sync';
@@ -20,7 +21,10 @@ import {
 } from '@/features/folder/platforms';
 import { startMachine } from '@/features/plugins/runtime/stateMachine';
 import { isPromptItemArray } from '@/features/prompt/library/promptLibraryOwner';
-import { pullCatalogTimeline } from '@/features/timeline/catalogTimelineCloud';
+import {
+  pullCatalogTimeline,
+  type PulledCatalogTimeline,
+} from '@/features/timeline/catalogTimelineCloud';
 import type { TimelineHierarchyData } from '@/features/timeline/hierarchyTypes';
 import {
   getTimelineHierarchyStorageKey,
@@ -65,8 +69,10 @@ type TargetTab = () => Promise<chrome.tabs.Tab | undefined>;
 
 interface CloudSyncContext {
   targetTabId: number | undefined;
+  included: { site: boolean; shared: boolean };
   payload: {
     platform: SyncPlatform;
+    selection: 'all' | 'shared';
     accountScope: SyncAccountScope | null;
     timelineHierarchyAccountScope: SyncAccountScope | null;
     highlightAccountScope: SyncAccountScope | null;
@@ -170,10 +176,15 @@ async function resolveCloudSyncContext(
   includeHighlights: boolean,
   getTargetTab: TargetTab,
 ): Promise<CloudSyncContext> {
+  const scope = await readCloudSyncScope();
+  const site = isSyncScopeIncluded(scope, { kind: 'site', siteId: platform });
+  const shared =
+    FOLDER_PLATFORMS[platform].syncsSharedData && isSyncScopeIncluded(scope, { kind: 'shared' });
+  if (!site && !shared) throw new Error('sync_scope_excluded');
   const targetTab = await getTargetTab();
   const capturedTarget = async () => targetTab;
   const accountScope = await resolvePageScope(platform, true, capturedTarget);
-  const extras = FOLDER_PLATFORMS[platform].syncsConversationExtras;
+  const extras = site && FOLDER_PLATFORMS[platform].syncsConversationExtras;
   const timelineHierarchyAccountScope = extras
     ? await resolvePageScope(platform, false, capturedTarget)
     : null;
@@ -182,8 +193,10 @@ async function resolveCloudSyncContext(
   const baseFolderStorageKey = FOLDER_PLATFORMS[platform].folderStorageKey;
   return {
     targetTabId: targetTab?.id,
+    included: { site, shared },
     payload: {
       platform,
+      selection: site ? 'all' : 'shared',
       accountScope,
       timelineHierarchyAccountScope,
       highlightAccountScope,
@@ -217,11 +230,13 @@ async function readLocalSyncData(
   let prompts: PromptItem[] = [];
   let timelineHierarchy: TimelineHierarchyData = { conversations: {} };
   try {
-    const response = await requestTabData<{
-      ok?: boolean;
-      data?: FolderData;
-      accountScope?: SyncAccountScope;
-    } | null>(getTargetTab, 'gv.sync.requestData', purpose === 'upload' ? 500 : 2000, platform);
+    const response = context.included.site
+      ? await requestTabData<{
+          ok?: boolean;
+          data?: FolderData;
+          accountScope?: SyncAccountScope;
+        } | null>(getTargetTab, 'gv.sync.requestData', purpose === 'upload' ? 500 : 2000, platform)
+      : undefined;
     if (response?.ok && response.data) {
       folders = response.data;
       hasLiveFolderSnapshot = true;
@@ -243,10 +258,12 @@ async function readLocalSyncData(
 
   try {
     const storageResult = await chrome.storage.local.get([
-      folderStorageKey,
+      ...(context.included.site ? [folderStorageKey] : []),
       // A restore leaves prompts to their owner, which reads them in its own turn.
-      ...(definition.syncsSharedData && purpose === 'upload' ? [StorageKeys.PROMPT_ITEMS] : []),
-      ...(definition.syncsConversationExtras && purpose === 'restore'
+      ...(context.included.shared && definition.syncsSharedData && purpose === 'upload'
+        ? [StorageKeys.PROMPT_ITEMS]
+        : []),
+      ...(context.included.site && definition.syncsConversationExtras && purpose === 'restore'
         ? getTimelineHierarchyStorageKeysToRead(timelineHierarchyAccountScope?.accountKey)
         : []),
     ]);
@@ -254,8 +271,9 @@ async function readLocalSyncData(
     // A successful empty live snapshot may be an unsaved deletion, rather than missing data.
     if (!hasLiveFolderSnapshot && storedFolders) folders = storedFolders;
     const storedPrompts = storageResult[StorageKeys.PROMPT_ITEMS];
-    if (definition.syncsSharedData && isPromptItemArray(storedPrompts)) prompts = storedPrompts;
-    if (definition.syncsConversationExtras && purpose === 'restore') {
+    if (context.included.shared && definition.syncsSharedData && isPromptItemArray(storedPrompts))
+      prompts = storedPrompts;
+    if (context.included.site && definition.syncsConversationExtras && purpose === 'restore') {
       const resolvedHierarchy = resolveTimelineHierarchyDataForStorageScope(
         storageResult as Record<string, unknown>,
         timelineHierarchyAccountScope?.accountKey,
@@ -284,6 +302,13 @@ async function isCurrentCloudRestore(
     )
       return false;
   }
+  if (!context.included.site) {
+    if (!context.payload.accountScope) return !signal.aborted;
+    const scope = await resolvePageScope(context.payload.platform, true, getTargetTab).catch(
+      () => undefined,
+    );
+    return !signal.aborted && scope?.accountKey === context.payload.accountScope.accountKey;
+  }
   const response = await requestTabData<{ ok?: boolean; accountScope?: SyncAccountScope }>(
     getTargetTab,
     'gv.sync.requestData',
@@ -308,10 +333,24 @@ async function restoreCloudDownload(
   mode: CloudRestoreMode,
   highlightsRestored: boolean,
   signal: AbortSignal,
+  downloadedCatalog?: PulledCatalogTimeline | null,
 ) {
   const send = (message: { type: string; payload?: unknown }) =>
     chrome.runtime.sendMessage(message);
-  const catalog = await pullCatalogTimeline(send).then(
+  const catalog = await (
+    downloadedCatalog !== undefined
+      ? Promise.resolve(downloadedCatalog)
+      : pullCatalogTimeline((message) =>
+          send({
+            ...message,
+            payload: {
+              interactive: true,
+              selection: context.payload.selection,
+              platform: context.payload.platform,
+            },
+          }),
+        )
+  ).then(
     (value) => ({ status: 'pulled' as const, value }),
     (error) => ({ status: 'failed' as const, error }),
   );
@@ -320,7 +359,7 @@ async function restoreCloudDownload(
   const result = await applyPopupCloudDownload({
     context,
     local,
-    data,
+    data: { ...data, selection: data.selection ?? context.included },
     mode,
     highlightsRestored,
     catalog,
@@ -392,6 +431,7 @@ export function useCloudSyncTransfer(
         mode: CloudRestoreMode,
         highlightsRestored: boolean,
         snapshotId?: string,
+        catalog?: PulledCatalogTimeline | null,
       ) =>
         restoreCloudDownload(
           context,
@@ -400,12 +440,24 @@ export function useCloudSyncTransfer(
           mode,
           highlightsRestored,
           lifetime.controller.signal,
+          catalog,
         ),
       /** Restores only the catalog outlines and stars, for a cloud without this site's files. */
-      restoreCatalogTimeline: async (snapshotId?: string) => {
+      restoreCatalogTimeline: async (
+        snapshotId?: string,
+        catalog?: PulledCatalogTimeline | null,
+      ) => {
         const send = (message: { type: string; payload?: unknown }) =>
           chrome.runtime.sendMessage(message);
-        const pulled = await pullCatalogTimeline(send);
+        const pulled =
+          catalog !== undefined
+            ? catalog
+            : await pullCatalogTimeline((message) =>
+                send({
+                  ...message,
+                  payload: { interactive: true, selection: context.payload.selection, platform },
+                }),
+              );
         return applyPopupCatalogDownload({
           send,
           catalog: pulled,

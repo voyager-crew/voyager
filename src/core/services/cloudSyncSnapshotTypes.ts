@@ -5,6 +5,8 @@ import { isFolderPlatform } from '@/features/folder/platforms';
 export interface StorageWriteKey {
   readonly area: 'local' | 'sync';
   readonly key: string;
+  /** Run row ownership; the physical area/key remains the restore identity. */
+  readonly contexts?: readonly SnapshotContext[];
 }
 
 export type CloudSyncKind =
@@ -26,6 +28,7 @@ export interface CloudSyncAppliedValue extends StorageWriteKey {
 
 export interface CloudSyncAppliedHash extends SnapshotValueHash {
   readonly kind: CloudSyncKind;
+  readonly operationIds?: readonly string[];
 }
 
 export interface CloudSyncUndoKept {
@@ -35,13 +38,18 @@ export interface CloudSyncUndoKept {
 }
 
 export interface SnapshotContext {
-  readonly source: 'popup-restore' | 'folder-panel-download';
+  readonly source: 'popup-restore' | 'folder-panel-download' | 'sync-run';
   readonly platform: SyncPlatform;
   readonly accountScope: SyncAccountScope | null;
+  readonly selection?: 'all' | 'site' | 'shared';
+  readonly timelineHierarchyAccountScope?: SyncAccountScope | null;
+  readonly highlightAccountScope?: SyncAccountScope | null;
 }
 
-export type SnapshotEntry = StorageWriteKey &
-  ({ readonly existed: false } | { readonly existed: true; readonly value: unknown });
+export type SnapshotEntry = StorageWriteKey & { readonly preserve?: true } & (
+    | { readonly existed: false }
+    | { readonly existed: true; readonly value: unknown }
+  );
 
 export interface SnapshotValueHash extends StorageWriteKey {
   readonly hash: string;
@@ -60,10 +68,17 @@ export interface CloudSyncUndoProgressMarker extends CloudSyncUndoMarker {
   readonly suppressionOnly?: true;
 }
 
+export interface CloudSyncRun {
+  readonly owner: string;
+  readonly contexts: readonly SnapshotContext[];
+  readonly active?: { readonly operationId: string; readonly context: SnapshotContext };
+}
+
 interface SnapshotData {
   readonly id: string;
   readonly timestamp: number;
   readonly context: SnapshotContext;
+  readonly run?: CloudSyncRun;
   readonly entries: readonly SnapshotEntry[];
   readonly appliedHashes: readonly CloudSyncAppliedHash[];
 }
@@ -84,6 +99,7 @@ export type CloudSyncSnapshotSlot = CloudSyncSnapshot | CloudSyncUndoneRecord;
 
 export type CloudSyncUndoResult =
   | { readonly status: 'absent' }
+  | { readonly status: 'superseded'; readonly snapshotId: string }
   | {
       readonly status: 'restored';
       readonly snapshotId: string;
@@ -117,14 +133,43 @@ function parseAccountScope(value: unknown): SyncAccountScope | null | undefined 
 function parseContext(value: unknown): SnapshotContext | null {
   if (
     !isRecord(value) ||
-    (value.source !== 'popup-restore' && value.source !== 'folder-panel-download') ||
+    (value.source !== 'popup-restore' &&
+      value.source !== 'folder-panel-download' &&
+      value.source !== 'sync-run') ||
     !isFolderPlatform(value.platform)
   ) {
     return null;
   }
   const accountScope = parseAccountScope(value.accountScope);
   if (accountScope === undefined) return null;
-  return { source: value.source, platform: value.platform, accountScope };
+  if (
+    value.selection !== undefined &&
+    value.selection !== 'all' &&
+    value.selection !== 'site' &&
+    value.selection !== 'shared'
+  )
+    return null;
+  const timeline =
+    value.timelineHierarchyAccountScope === undefined
+      ? undefined
+      : parseAccountScope(value.timelineHierarchyAccountScope);
+  const highlights =
+    value.highlightAccountScope === undefined
+      ? undefined
+      : parseAccountScope(value.highlightAccountScope);
+  if (
+    (value.timelineHierarchyAccountScope !== undefined && timeline === undefined) ||
+    (value.highlightAccountScope !== undefined && highlights === undefined)
+  )
+    return null;
+  return {
+    source: value.source,
+    platform: value.platform,
+    accountScope,
+    ...(value.selection === undefined ? {} : { selection: value.selection }),
+    ...(timeline === undefined ? {} : { timelineHierarchyAccountScope: timeline }),
+    ...(highlights === undefined ? {} : { highlightAccountScope: highlights }),
+  };
 }
 
 /** Storage is a boundary: reject an invalid slot without restoring or deleting it. */
@@ -158,16 +203,30 @@ export function parseCloudSyncSnapshot(value: unknown): CloudSyncSnapshot | null
     const identity = JSON.stringify([entry.area, entry.key]);
     if (seen.has(identity)) return null;
     seen.add(identity);
-    const target: StorageWriteKey = { area: entry.area, key: entry.key };
+    const target = parseTarget(entry);
+    if (!target || (entry.preserve !== undefined && entry.preserve !== true)) return null;
+    const protectedTarget = {
+      ...target,
+      ...(entry.preserve === true ? { preserve: true as const } : {}),
+    };
     entries.push(
       entry.existed
-        ? { ...target, existed: true, value: entry.value }
-        : { ...target, existed: false },
+        ? { ...protectedTarget, existed: true, value: entry.value }
+        : { ...protectedTarget, existed: false },
     );
   }
   const appliedHashes = parseAppliedHashes(value.appliedHashes ?? []);
   if (!appliedHashes) return null;
-  const data = { id: value.id, timestamp: value.timestamp, context, entries, appliedHashes };
+  const run = value.run === undefined ? undefined : parseRun(value.run);
+  if ((value.run !== undefined && !run) || (context.source === 'sync-run') !== !!run) return null;
+  const data = {
+    id: value.id,
+    timestamp: value.timestamp,
+    context,
+    entries,
+    appliedHashes,
+    ...(run ? { run } : {}),
+  };
   if (value.kind === 'undoing') {
     const markers = parseUndoMarkers(value.markers, true);
     return markers ? { ...data, kind: 'undoing', markers } : null;
@@ -179,11 +238,41 @@ function isContentHash(value: unknown): value is string {
   return typeof value === 'string' && (value === ABSENT_HASH || /^[a-f0-9]{64}$/.test(value));
 }
 
+function parseContexts(value: unknown): SnapshotContext[] | null {
+  if (!Array.isArray(value)) return null;
+  const result: SnapshotContext[] = [];
+  for (const raw of value) {
+    const context = parseContext(raw);
+    if (!context || context.source === 'sync-run') return null;
+    result.push(context);
+  }
+  return result;
+}
+
+function parseRun(value: unknown): CloudSyncRun | null {
+  if (!isRecord(value) || typeof value.owner !== 'string' || !value.owner) return null;
+  const contexts = parseContexts(value.contexts);
+  if (!contexts?.length) return null;
+  if (value.active === undefined) return { owner: value.owner, contexts };
+  if (
+    !isRecord(value.active) ||
+    typeof value.active.operationId !== 'string' ||
+    !value.active.operationId
+  )
+    return null;
+  const context = parseContext(value.active.context);
+  return context && context.source !== 'sync-run'
+    ? { owner: value.owner, contexts, active: { operationId: value.active.operationId, context } }
+    : null;
+}
+
 function parseTarget(value: Record<string, unknown>): StorageWriteKey | null {
+  const contexts = value.contexts === undefined ? undefined : parseContexts(value.contexts);
+  if (value.contexts !== undefined && !contexts) return null;
   return (value.area === 'local' || value.area === 'sync') &&
     typeof value.key === 'string' &&
     !!value.key
-    ? { area: value.area, key: value.key }
+    ? { area: value.area, key: value.key, ...(contexts ? { contexts } : {}) }
     : null;
 }
 
@@ -220,9 +309,16 @@ function parseAppliedHashes(value: unknown): CloudSyncAppliedHash[] | null {
         projections.push({ projection: item.projection, hash: item.hash });
       }
     }
+    if (
+      entry.operationIds !== undefined &&
+      (!Array.isArray(entry.operationIds) ||
+        !entry.operationIds.every((id: unknown) => typeof id === 'string' && !!id))
+    )
+      return null;
     result.push({
       ...target,
       kind: entry.kind,
+      ...(entry.operationIds === undefined ? {} : { operationIds: entry.operationIds }),
       hash: entry.hash,
       ...(projections.length ? { projections } : {}),
     });

@@ -66,6 +66,7 @@ function createBoundaries(
   const searchedNames: string[] = [];
   function storageArea(values: Record<string, unknown>, readKeys: string[]) {
     return {
+      getKeys: vi.fn(async () => Object.keys(values)),
       get: vi.fn(async (keys: string | string[] | Record<string, unknown> | null) => {
         const requested =
           typeof keys === 'string'
@@ -298,8 +299,10 @@ describe('ChatGPT Drive folder isolation', () => {
       settings: null,
       plugins: null,
       starred: null,
+      stars: null,
       forks: null,
       timelineHierarchy: null,
+      kindStatus: { folders: 'found' },
     });
 
     expect(boundaries.uploadedNames).toEqual([CHATGPT_FILE]);
