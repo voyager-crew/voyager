@@ -27,29 +27,31 @@ identity ambiguity and configured generation detection. The runner warns before 
 on generation or route changes. The primitive's scope owns its toolbar, dialog and active run.
 The `export` descriptor’s `title` and `generating` locators can use catalog updates. Its `read` and `messageKey` policies remain packaged: remote data cannot change virtual-history completeness or exported message identity.
 
-| Change                                                                               | Owner                                                                                |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| Platform selectors, titles and content dialect; ChatGPT crawl, session, thread watch | `adapter/`                                                                           |
-| Per-host export: label, entry points, turn source, lazy history; site registration   | `exportSite.ts`, `sites/` (+ `adapter/platformAdapters.ts`)                          |
-| Read turns and selectable messages from the page, Canvas snapshots, message ids      | `conversationCollector.ts` (+ `conversationDom.ts`, shared with fork)                |
-| One export run: preload, resume, preparation/release, final export, operation abort  | `exportRun.ts` (+ `preparedExport.ts`, `pendingExportState.ts`, `topNodePreload.ts`) |
-| Selection mode: checkboxes, bar, role filters, lazy-load refresh, Cancel/Escape      | `exportSelectionSession.ts` (DOM), `exportSelectionMachine.ts` (states and effects)  |
-| ChatGPT crawl progress (turns read) and its Cancel                                   | `adapter/chatgptTurnSource.ts`                                                       |
-| Export turn anchor health after collection                                           | `exportRun.ts`, `exportHealth.ts`                                                    |
-| Shared cancellation checks                                                           | `exportCancellation.ts`                                                              |
-| Centring the selection bar over the conversation                                     | `exportOverlayUi.ts`                                                                 |
-| Generated-UI iframe screenshots and their permission prompt                          | `generatedUiScreenshots.ts`                                                          |
-| Export item in Gemini conversation / sidebar / response menus                        | `conversationMenuExportObserver.ts` (+ `conversationMenuInjection.ts`)               |
-| Opening a sidebar conversation before exporting it                                   | `sidebarConversationNavigation.ts`                                                   |
-| Copy a single response as an image (button, width menu, Safari fallbacks)            | `responseCopyImageAction.ts`                                                         |
-| Gemini export as the `voyager.gemini-export` official plugin                         | `pluginHandler.ts`                                                                   |
-| Logo dropdown button (old Gemini layout) and its re-creation after re-renders        | `logoExportButton.ts`                                                                |
-| Always-visible toolbar (lr26 Gemini, ChatGPT and other plugin hosts)                 | `persistentExportToolbar.ts`, `exportEntryGate.ts`                                   |
-| Where that toolbar sits and which host controls it keeps clear of                    | `toolbarPlacement.ts`, `toolbarAvoidance.ts`, `toolbarOcclusion.ts`                  |
-| Dragging that toolbar and remembering its spot per site                              | `toolbarDrag.ts`, `toolbarPosition.ts`                                               |
-| The site's layout data that toolbar avoids, and its conversation-turn selector       | `toolbarTargets.ts` (`exportLayout.*` in each site's `selector-data/`)               |
-| Dictionaries, language reads and the `t()` used by every export surface              | `exportLocale.ts`                                                                    |
-| Progress, outcome and problem toasts of every export surface                         | `src/features/export/ui/exportToasts.ts`                                             |
+| Change                                                                                  | Owner                                                                                |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Platform selectors, titles and content dialect; ChatGPT crawl, session, thread watch    | `adapter/`                                                                           |
+| Per-host export: label, entry points, turn source, lazy history; site registration      | `exportSite.ts`, `sites/` (+ `adapter/platformAdapters.ts`)                          |
+| Selectable messages, visual order, selection grouping and final content conversion      | `conversationCollector.ts`                                                           |
+| Gemini turn proofs, thinking, Deep Research exclusions, Canvas grammar and star aliases | `sites/geminiCollectorPolicy.ts`, `sites/geminiTurnSource.ts`                        |
+| Mounted-page pairing and Canvas snapshot/append/release mechanics                       | `sites/inPlaceCollection.ts` (+ `conversationDom.ts`, shared with fork)              |
+| One export run: preload, resume, preparation/release, final export, operation abort     | `exportRun.ts` (+ `preparedExport.ts`, `pendingExportState.ts`, `topNodePreload.ts`) |
+| Selection mode: checkboxes, bar, role filters, lazy-load refresh, Cancel/Escape         | `exportSelectionSession.ts` (DOM), `exportSelectionMachine.ts` (states and effects)  |
+| ChatGPT crawl progress (turns read) and its Cancel                                      | `adapter/chatgptTurnSource.ts`                                                       |
+| Export turn anchor health after collection                                              | `exportRun.ts`, `exportHealth.ts`                                                    |
+| Shared cancellation checks                                                              | `exportCancellation.ts`                                                              |
+| Centring the selection bar over the conversation                                        | `exportOverlayUi.ts`                                                                 |
+| Generated-UI iframe screenshots and their permission prompt                             | `generatedUiScreenshots.ts`                                                          |
+| Export item in Gemini conversation / sidebar / response menus                           | `conversationMenuExportObserver.ts` (+ `conversationMenuInjection.ts`)               |
+| Opening a sidebar conversation before exporting it                                      | `sidebarConversationNavigation.ts`                                                   |
+| Copy a single response as an image (button, width menu, Safari fallbacks)               | `responseCopyImageAction.ts`                                                         |
+| Gemini export as the `voyager.gemini-export` official plugin                            | `pluginHandler.ts`                                                                   |
+| Logo dropdown button (old Gemini layout) and its re-creation after re-renders           | `logoExportButton.ts`                                                                |
+| Always-visible toolbar (lr26 Gemini, ChatGPT and other plugin hosts)                    | `persistentExportToolbar.ts`, `exportEntryGate.ts`                                   |
+| Where that toolbar sits and which host controls it keeps clear of                       | `toolbarPlacement.ts`, `toolbarAvoidance.ts`, `toolbarOcclusion.ts`                  |
+| Dragging that toolbar and remembering its spot per site                                 | `toolbarDrag.ts`, `toolbarPosition.ts`                                               |
+| The site's layout data that toolbar avoids, and its conversation-turn selector          | `toolbarTargets.ts` (`exportLayout.*` in each site's `selector-data/`)               |
+| Dictionaries, language reads and the `t()` used by every export surface                 | `exportLocale.ts`                                                                    |
+| Progress, outcome and problem toasts of every export surface                            | `src/features/export/ui/exportToasts.ts`                                             |
 
 Each owner takes its dependencies explicitly (site, translator, callbacks) and keeps
 its listeners, observers and timers beside the code that installs them. Page-wide observers
@@ -67,10 +69,13 @@ Keep these less obvious boundaries intact:
 - `generatedUiScreenshots.ensureGeneratedUiScreenshotPermission()` must run while the user gesture
   is still valid: before the run in the dialog, and before `takeSelection()` in selection mode.
 - `exportRun.ts` awaits `preparedExport.runPreparedExport()` through the entire selection session.
+  History preload finishes through this same path. Gemini's mounted-page reader and ChatGPT's
+  crawl both implement the existing prepare/read/release contract; no history branch bypasses it.
   A turn source's `prepare()` returns a session that owns what it read (ChatGPT: the crawl, the
   thread watch and the checkbox hosts) and stands in for the source until it is released after
-  selection ends, including cancellation, teardown and failures. Starting a preparation releases
-  the previous one, so an older run can never publish over a newer run.
+  selection ends, including cancellation, teardown and failures. ChatGPT starts a preparation
+  by releasing the previous one. The runner aborts any active run before starting another,
+  so an older run can never publish over a newer run.
 - Final builders read Saved Library stars once per build; selection needs no star input.
   Gemini keeps its verified stored turn aliases. ChatGPT captures the timeline's normalized
   user-bubble hash during the existing crawl or selected-prompt extraction; assistant-only

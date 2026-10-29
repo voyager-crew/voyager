@@ -9,8 +9,8 @@ export interface PreparedExportSteps<Session> {
 }
 
 /**
- * The export on a host that does not preload history: prepare the
- * conversation, then run the selection session. What the preparation read
+ * Prepare the conversation after any history preload, then run the selection
+ * session. What the preparation read
  * (ChatGPT's crawl and its thread watch) is released once the session ends,
  * however it ends.
  */

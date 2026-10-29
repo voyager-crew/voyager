@@ -1,0 +1,74 @@
+<div class="gv-image-export-doc">
+      <header class="gv-image-export-header">
+        <h1 class="gv-image-export-title">Voyager 测试</h1>
+        <div class="gv-image-export-meta">
+          <div>January 2, 2026 at 03:04 AM</div>
+          <div><a href="https://gemini.google.com/u/3/app/abc">https://gemini.google.com/u/3/app/abc</a></div>
+          <div>2 conversation turns</div>
+        </div>
+      </header>
+    
+          <article class="gv-image-export-turn">
+            <div class="gv-image-export-turn-header">Turn 1</div>
+            
+            <section class="gv-image-export-block">
+              <div class="gv-image-export-label">User</div>
+              <div class="gv-image-export-content"><p>Explain the integral</p>
+<p>with an example</p></div>
+            </section>
+            
+            
+            <section class="gv-image-export-block">
+              <div class="gv-image-export-label">Assistant</div>
+              <div class="gv-image-export-content"><h2>Overview</h2>
+<p>Inline <span class="math-inline" data-math="x^2">x2</span> and <strong>bold</strong> text.</p>
+<div class="math-block" data-math="\int_0^1 x\,dx"></div>
+<ul><li>first</li><li>second <code>value</code></li></ul>
+<pre><code class="language-python">print("hi")</code></pre>
+<table><thead><tr><th>A</th><th>B</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table>
+<blockquote><p>quoted</p></blockquote>
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aP1kAAAAASUVORK5CYII=" alt="One pixel diagram">
+<hr>
+<p>Done.</p></div>
+            </section>
+            
+          </article>
+        
+
+          <article class="gv-image-export-turn">
+            <div class="gv-image-export-turn-header">Turn 2</div>
+            
+            <section class="gv-image-export-block">
+              <div class="gv-image-export-label">User</div>
+              <div class="gv-image-export-content"><p>Write the result in Canvas</p></div>
+            </section>
+            
+            
+            <section class="gv-image-export-block">
+              <div class="gv-image-export-label">Assistant</div>
+              <div class="gv-image-export-content"><p>The document is ready.</p>
+<div class="gv-canvas-export-section"><h3>📄 Canvas Document: Integral notes</h3><pre style="white-space: pre-wrap;">## Worked example
+
+ 
+
+The definite integral is **one half**.
+
+ 
+
+- Choose the interval.
+- Evaluate the antiderivative.
+
+ 
+
+```
+result = 1 / 2
+```</pre></div></div>
+            </section>
+            
+          </article>
+        
+      <footer class="gv-image-export-footer">
+        <div>Exported from Voyager</div>
+        <div>Generated on January 2, 2026 at 03:04 AM</div>
+      </footer>
+    </div>

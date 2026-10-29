@@ -1,0 +1,19 @@
+{
+  "format": "gemini-voyager.chat.v1",
+  "url": "https://gemini.google.com/u/3/app/abc",
+  "exportedAt": "2026-01-02T03:04:05.000Z",
+  "count": 2,
+  "title": "Voyager 测试",
+  "items": [
+    {
+      "user": "Explain the integral\nwith an example",
+      "assistant": "## Overview\nInline $x^2$ and **bold** text.\n\n$$\n\\int_0^1 x\\,dx\n$$\n\n- first\n- second `value`\n\n```python\nprint(\"hi\")\n```\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n> quoted\n\n![One pixel diagram](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aP1kAAAAASUVORK5CYII=)\n\n---\nDone.",
+      "starred": false
+    },
+    {
+      "user": "Write the result in Canvas",
+      "assistant": "The document is ready.\n\n### 📄 Canvas Document: Integral notes\n\n## Worked example\n\n \n\nThe definite integral is **one half**.\n\n \n\n- Choose the interval.\n- Evaluate the antiderivative.\n\n \n\n```\nresult = 1 / 2\n```",
+      "starred": false
+    }
+  ]
+}

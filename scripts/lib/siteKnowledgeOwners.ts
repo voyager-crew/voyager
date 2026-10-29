@@ -244,6 +244,18 @@ export const SITE_KNOWLEDGE_OWNERS: readonly SiteKnowledgeOwner[] = [
   },
   {
     kind: 'table',
+    path: 'src/pages/content/export/sites/collectorPolicy.ts',
+    sites: ['gemini'],
+    reason: 'Packaged export page-reader policy registration.',
+  },
+  {
+    kind: 'file',
+    path: 'src/pages/content/export/sites/geminiCollectorPolicy.ts',
+    site: 'gemini',
+    reason: 'Gemini export turn, thinking, Canvas and response ownership policy.',
+  },
+  {
+    kind: 'table',
     path: 'src/pages/content/export/sites/resolveExportSite.ts',
     sites: ['gemini', 'chatgpt'],
     reason: 'Export site factory registry.',

@@ -34,14 +34,6 @@ export const CONTENT_EXPORT_SITE_KNOWLEDGE_EXCEPTIONS: readonly SiteKnowledgeExc
     reason: 'ChatGPT history-control locator proof.',
   },
   {
-    file: 'src/pages/content/export/conversationCollector.ts',
-    kind: 'platform-branch',
-    values: {
-      gemini: 2,
-    },
-    reason: 'native Gemini turn stamps and conversation collection behavior.',
-  },
-  {
     file: 'src/pages/content/export/conversationTurnOperation.ts',
     kind: 'platform-branch',
     values: {

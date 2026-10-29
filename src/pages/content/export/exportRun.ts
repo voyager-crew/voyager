@@ -194,17 +194,19 @@ export function createExportRunner(deps: ExportRunnerDeps): ExportRunner {
 
     // No preload loop: the source reads the thread itself, or we scroll to the top.
     const history = site.history;
-    if (!history) {
-      return runPreparedExport(
+    const readAndExport = () =>
+      runPreparedExport(
         site.turns,
         { signal, expectedUrl: state.url },
         {
-          scrollToTop: scrollToTopAndRender,
+          // A history protocol already positioned the page. Only an unprepared
+          // source without that protocol needs the generic scroll fallback.
+          scrollToTop: history ? async () => {} : scrollToTopAndRender,
           exportSelection: (session) =>
             performFinalExport(state, dict, lang, session ?? site.turns),
         },
       );
-    }
+    if (!history) return readAndExport();
 
     // A safety net, not a stop: past it the run offers the turns already loaded.
     if (state.attempt > MAX_PRELOAD_PAGES || (state.reloads ?? 0) > MAX_PRELOAD_RELOADS) {
@@ -212,7 +214,7 @@ export function createExportRunner(deps: ExportRunnerDeps): ExportRunner {
       clearPendingExportState(sessionStorage);
       const t = createExportTranslator(dict, lang);
       showExportAlert(t('export_history_partial'), t, 'warning');
-      await performFinalExport(state, dict, lang, site.turns);
+      await readAndExport();
       return;
     }
 
@@ -237,7 +239,7 @@ export function createExportRunner(deps: ExportRunnerDeps): ExportRunner {
     if (!topNode) {
       logger.debug('[Gemini Voyager] No top node found, proceeding to export directly.');
       clearPendingExportState(sessionStorage);
-      await performFinalExport(state, dict, lang, site.turns);
+      await readAndExport();
       return;
     }
 
@@ -295,7 +297,7 @@ export function createExportRunner(deps: ExportRunnerDeps): ExportRunner {
 
     logger.debug('[Gemini Voyager] No refresh or update detected. Exporting...');
     clearPendingExportState(sessionStorage);
-    await performFinalExport(state, dict, lang, site.turns);
+    await readAndExport();
   }
 
   async function executeExportSequenceWithProgress(

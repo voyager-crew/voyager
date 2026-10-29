@@ -1,0 +1,28 @@
+<div id="gv-deep-research-pdf-print-container" class="gv-print-only gv-deep-research-print-only">
+      <div class="gv-dr-print-document">
+        <div class="gv-dr-print-cover-page">
+          <div class="gv-dr-print-cover-content">
+            <h1 class="gv-dr-print-cover-title">Solar Report</h1>
+            <div class="gv-dr-print-meta">
+              <p>January 2, 2026 at 03:04 AM</p>
+              <p><a href="https://gemini.google.com/u/3/app/abc">https://gemini.google.com/u/3/app/abc</a></p>
+              <p>Deep Research Report</p>
+            </div>
+          </div>
+        </div>
+        <div class="gv-dr-print-content">
+          <div class="gv-dr-print-report"><h1>Solar Report</h1>
+<p>Panels convert <span class="math-inline" data-math="h\nu">hv</span> into current.</p>
+<h2>Findings</h2>
+<ul><li>Efficiency rose.</li></ul>
+<table><thead><tr><th>Year</th><th>Efficiency</th></tr></thead><tbody><tr><td>2025</td><td>24%</td></tr></tbody></table>
+<pre><code class="language-python">efficiency = 0.24</code></pre>
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aP1kAAAAASUVORK5CYII=" alt="Solar cell diagram">
+<p>Research source</p></div>
+        </div>
+        <div class="gv-dr-print-footer">
+          <p>Exported from <a href="https://github.com/voyager-crew/voyager">Voyager</a></p>
+          <p>Generated on January 2, 2026 at 03:04 AM</p>
+        </div>
+      </div>
+    </div>

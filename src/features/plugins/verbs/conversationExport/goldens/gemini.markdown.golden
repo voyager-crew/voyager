@@ -1,0 +1,75 @@
+# Voyager 测试
+
+**Date**: January 2, 2026 at 03:04 AM
+**Turns**: 2
+**Source**: [Gemini Chat](https://gemini.google.com/u/3/app/abc)
+
+---
+
+## Turn 1
+
+### 👤 User
+
+Explain the integral
+with an example
+
+### 🤖 Assistant
+
+## Overview
+Inline $x^2$ and **bold** text.
+
+$$
+\int_0^1 x\,dx
+$$
+
+- first
+- second `value`
+
+```python
+print("hi")
+```
+
+| A | B |
+| --- | --- |
+| 1 | 2 |
+
+> quoted
+
+![One pixel diagram](assets/img-001.png)
+
+---
+Done.
+
+## Turn 2
+
+### 👤 User
+
+Write the result in Canvas
+
+### 🤖 Assistant
+
+The document is ready.
+
+### 📄 Canvas Document: Integral notes
+
+## Worked example
+
+ 
+
+The definite integral is **one half**.
+
+ 
+
+- Choose the interval.
+- Evaluate the antiderivative.
+
+ 
+
+```
+result = 1 / 2
+```
+
+---
+
+*Exported from [Voyager](https://github.com/voyager-crew/voyager)*  
+*Generated on January 2, 2026 at 03:04 AM*

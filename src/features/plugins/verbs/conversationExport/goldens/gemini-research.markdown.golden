@@ -1,0 +1,22 @@
+# Solar Report
+Panels convert $h\nu$ into current.
+
+## Findings
+
+- Efficiency rose.
+
+| Year | Efficiency |
+| --- | --- |
+| 2025 | 24% |
+
+```python
+efficiency = 0.24
+```
+
+![Solar cell diagram](assets/img-001.png)
+Research source
+
+---
+
+Source: https://gemini.google.com/u/3/app/abc
+Exported at: 2026-01-02T03:04:05.000Z
