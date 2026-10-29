@@ -34,7 +34,7 @@ The `export` descriptor’s `title` and `generating` locators can use catalog up
 | Read turns and selectable messages from the page, Canvas snapshots, message ids      | `conversationCollector.ts` (+ `conversationDom.ts`, shared with fork)                |
 | One export run: preload, resume, preparation/release, final export, operation abort  | `exportRun.ts` (+ `preparedExport.ts`, `pendingExportState.ts`, `topNodePreload.ts`) |
 | Selection mode: checkboxes, bar, role filters, lazy-load refresh, Cancel/Escape      | `exportSelectionSession.ts` (DOM), `exportSelectionMachine.ts` (states and effects)  |
-| ChatGPT crawl progress (turns read) and its Cancel                                   | `chatgptCrawlProgress.ts`                                                            |
+| ChatGPT crawl progress (turns read) and its Cancel                                   | `adapter/chatgptTurnSource.ts`                                                       |
 | Export turn anchor health after collection                                           | `exportRun.ts`, `exportHealth.ts`                                                    |
 | Shared cancellation checks                                                           | `exportCancellation.ts`                                                              |
 | Centring the selection bar over the conversation                                     | `exportOverlayUi.ts`                                                                 |

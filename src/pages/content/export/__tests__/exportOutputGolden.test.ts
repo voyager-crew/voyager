@@ -5,30 +5,26 @@
  * each export reads it. These bytes are the serialized export format:
  * a refactor of collection or extraction must leave them unchanged.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { buildConversationIdFromUrl } from '@/core/utils/conversationIdentity';
-import { ConversationExportService } from '@/features/export/services/ConversationExportService';
 import {
   createContentExtractor,
   extractTurnContent,
 } from '@/features/export/services/DOMContentExtractor';
-import { createPDFPrintContainer } from '@/features/export/services/pdfPrintDocument';
-import type { ChatTurn, ConversationMetadata, ExportOptions } from '@/features/export/types/export';
-import { DEFAULT_EXPORT_SPEAKER_LABELS, ExportFormat } from '@/features/export/types/export';
+import type { ChatTurn, ConversationMetadata } from '@/features/export/types/export';
+import { ExportFormat } from '@/features/export/types/export';
 import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
 import { geminiAdapter } from '@/features/plugins/sites/adapters/gemini';
 import { StarredMessagesService } from '@/features/savedLibrary/StarredMessagesService';
 
 import { collectForkChatPairs } from '../../fork/chatPairs';
-import { mountThreadFixture } from '../adapter/__tests__/chatgptThreadFixture';
-import type { ChatGptCrawlTiming } from '../adapter/chatgptCrawl';
-import { createChatGptThreadPreparer } from '../adapter/chatgptThreadExport';
 import { buildChatGptAdapter } from '../adapter/platform/chatgpt';
 import { buildGeminiAdapter } from '../adapter/platform/gemini';
 import { createConversationCollector } from '../conversationCollector';
 import { createChatGptExportSite } from '../sites/chatgpt';
 import { createGeminiExportSite } from '../sites/gemini';
+import { exportText, normalizeMarkdown, printedTurns } from './exportOutputGoldenHarness';
 
 const GEMINI_CONVERSATION = `
   <main>
@@ -111,57 +107,6 @@ const DEEP_RESEARCH_REPORT = `
 
 const geminiExportAdapter = buildGeminiAdapter(geminiAdapter);
 const chatgptExportAdapter = buildChatGptAdapter(chatgptAdapter);
-
-let downloads: Blob[] = [];
-
-beforeEach(() => {
-  downloads = [];
-  vi.spyOn(StarredMessagesService, 'getStarredMessagesForConversation').mockResolvedValue([]);
-  URL.createObjectURL = vi.fn((blob: Blob) => {
-    downloads.push(blob);
-    return `blob:golden-${downloads.length}`;
-  });
-  URL.revokeObjectURL = vi.fn();
-  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
-  vi.spyOn(console, 'warn').mockImplementation(() => {});
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
-  document.body.innerHTML = '';
-  localStorage.clear();
-});
-
-async function exportText(
-  turns: ChatTurn[],
-  metadata: ConversationMetadata,
-  options: ExportOptions,
-): Promise<string> {
-  const result = await ConversationExportService.export(turns, metadata, options);
-  expect(result.success).toBe(true);
-  expect(downloads).toHaveLength(1);
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsText(downloads[0]);
-  });
-}
-
-/**
- * The export date is rendered in the runner's locale and time zone, and the
- * Markdown hard line break (two trailing spaces) is shown as `<br2>`.
- */
-function normalizeMarkdown(markdown: string): string {
-  return markdown
-    .replace(/^(\*\*Date\*\*: |\*Generated on ).*$/gm, '$1<date>')
-    .replace(/ {2}$/gm, '<br2>');
-}
-
-function printedTurns(turns: ChatTurn[], metadata: ConversationMetadata): string {
-  const container = createPDFPrintContainer(turns, metadata, DEFAULT_EXPORT_SPEAKER_LABELS);
-  return container.querySelector('.gv-print-content')?.innerHTML.replace(/\s+\n/g, '\n') ?? '';
-}
 
 describe('Gemini conversation export output', () => {
   async function geminiTurns(): Promise<ChatTurn[]> {
@@ -492,147 +437,6 @@ describe('ChatGPT earlier-DOM conversation export output', () => {
       <div class="math-block" data-math="\\sum_i x_i"><span class="katex-display"><span class="katex">sum</span></span></div>
       <pre><code class="language-ts">const x = 1;</code></pre>
       <ol><li>one</li><li>two</li></ol></div>
-                </div>
-            </div>
-            "
-    `);
-  });
-});
-
-describe('ChatGPT crawled conversation export output', () => {
-  const FAST: Partial<ChatGptCrawlTiming> = {
-    pollMs: 1,
-    settleMs: 4,
-    mountTimeoutMs: 400,
-    historyIdleMs: 25,
-    historyStallMs: 150,
-  };
-
-  /** The current DOM: the export crawls the virtualized thread and reads every message. */
-  async function crawledTurns(): Promise<ChatTurn[]> {
-    mountThreadFixture({
-      turns: [
-        { key: 'turn-01', height: 1500, user: 'What is energy?', assistant: 'Energy is work.' },
-        {
-          key: 'turn-02',
-          height: 1500,
-          user: 'First line\nSecond line',
-          assistant: 'Two lines noted.',
-        },
-      ],
-    });
-    const session = await createChatGptThreadPreparer().prepare({
-      extractor: createContentExtractor(chatgptExportAdapter),
-      timing: FAST,
-    });
-    const ids = session!.containers().map((message) => message.id);
-    expect(ids).toEqual(['turn-01:u', 'turn-01:a', 'turn-02:u', 'turn-02:a']);
-    const turns = await session!.build(new Set(ids), {});
-    session!.release();
-    return turns;
-  }
-
-  const metadata: ConversationMetadata = {
-    url: 'https://chatgpt.com/c/abc',
-    exportedAt: '2026-01-02T03:04:05.000Z',
-    count: 2,
-    title: 'Energy',
-    platform: chatgptExportAdapter.site.label,
-  };
-
-  it('writes the chat JSON', async () => {
-    const json = await exportText(await crawledTurns(), metadata, { format: ExportFormat.JSON });
-    expect(json).toMatchInlineSnapshot(`
-      "{
-        "format": "gemini-voyager.chat.v1",
-        "url": "https://chatgpt.com/c/abc",
-        "exportedAt": "2026-01-02T03:04:05.000Z",
-        "count": 2,
-        "title": "Energy",
-        "items": [
-          {
-            "user": "What is energy?",
-            "assistant": "Energy is work.",
-            "starred": false
-          },
-          {
-            "user": "First line\\nSecond line",
-            "assistant": "Two lines noted.",
-            "starred": false
-          }
-        ]
-      }"
-    `);
-  });
-
-  it('writes the Markdown', async () => {
-    const markdown = await exportText(await crawledTurns(), metadata, {
-      format: ExportFormat.MARKDOWN,
-    });
-    expect(normalizeMarkdown(markdown)).toMatchInlineSnapshot(`
-      "# Energy
-
-      **Date**: <date>
-      **Turns**: 2
-      **Source**: [ChatGPT Chat](https://chatgpt.com/c/abc)
-
-      ---
-
-      ## Turn 1
-
-      ### 👤 User
-
-      What is energy?
-
-      ### 🤖 Assistant
-
-      Energy is work.
-
-      ## Turn 2
-
-      ### 👤 User
-
-      First line
-      Second line
-
-      ### 🤖 Assistant
-
-      Two lines noted.
-
-      ---
-
-      *Exported from [Voyager](https://github.com/voyager-crew/voyager)*<br2>
-      *Generated on <date>"
-    `);
-  });
-
-  it('prints the PDF turns', async () => {
-    expect(printedTurns(await crawledTurns(), metadata)).toMatchInlineSnapshot(`
-      "
-            <div class="gv-print-turn ">
-              <div class="gv-print-turn-header">
-                <span class="gv-print-turn-number">Turn 1</span>
-              </div>
-              <div class="gv-print-turn-user">
-                <div class="gv-print-turn-label">👤 User</div>
-                <div class="gv-print-turn-text"><p>What is energy?</p></div>
-              </div>
-                <div class="gv-print-turn-assistant">
-                  <div class="gv-print-turn-label">🤖 Assistant</div>
-                  <div class="gv-print-turn-text"><p>Energy is work.</p></div>
-                </div>
-            </div>
-            <div class="gv-print-turn ">
-              <div class="gv-print-turn-header">
-                <span class="gv-print-turn-number">Turn 2</span>
-              </div>
-              <div class="gv-print-turn-user">
-                <div class="gv-print-turn-label">👤 User</div>
-                <div class="gv-print-turn-text"><p>First line<br>Second line</p></div>
-              </div>
-                <div class="gv-print-turn-assistant">
-                  <div class="gv-print-turn-label">🤖 Assistant</div>
-                  <div class="gv-print-turn-text"><p>Two lines noted.</p></div>
                 </div>
             </div>
             "

@@ -1,26 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  type ContentExtractor,
-  createContentExtractor,
-} from '@/features/export/services/DOMContentExtractor';
-import type { ExportContentDialect } from '@/features/export/services/exportContentDialect';
-import { normalizeText } from '@/features/export/services/exportDomPolicy';
+import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
 
 import { makeTurns, mountThreadFixture } from '../adapter/__tests__/chatgptThreadFixture';
 import type { ChatGptCrawlTiming } from '../adapter/chatgptCrawl';
-import {
-  type ChatGptThreadPreparer,
-  type ChatGptThreadSession,
-  createChatGptThreadPreparer,
-} from '../adapter/chatgptThreadExport';
+import { createChatGptTurnSource } from '../adapter/chatgptTurnSource';
+import { buildChatGptAdapter } from '../adapter/platform/chatgpt';
 import type { ExportSelectionOptions } from '../adapter/type';
-import { prepareChatGptExportWithProgress } from '../chatgptCrawlProgress';
+import type { ExportTurnSession } from '../exportSite';
 import { runPreparedExport } from '../preparedExport';
 import { trackMutationObservers } from './observerTracking';
 
-let extractor: ContentExtractor;
-let preparer: ChatGptThreadPreparer;
+let preparer: ReturnType<typeof createChatGptTurnSource>;
 /** Observers that are observing right now. */
 let observing: ReadonlySet<MutationObserver>;
 
@@ -37,12 +28,11 @@ const FAST: Partial<ChatGptCrawlTiming> = {
  * `onProgress` lets a test act mid-crawl.
  */
 function chatGptSource(onProgress?: (turns: number) => void): {
-  prepare: (options: ExportSelectionOptions) => Promise<ChatGptThreadSession | null>;
+  prepare: (options: ExportSelectionOptions) => Promise<ExportTurnSession | null>;
 } {
   return {
     prepare: (options) =>
-      prepareChatGptExportWithProgress(preparer, {
-        extractor,
+      preparer.prepare({
         ...options,
         timing: FAST,
         onProgress,
@@ -52,25 +42,9 @@ function chatGptSource(onProgress?: (turns: number) => void): {
 
 beforeEach(() => {
   document.body.replaceChildren();
-  preparer = createChatGptThreadPreparer();
+  preparer = createChatGptTurnSource(buildChatGptAdapter(chatgptAdapter));
   observing = trackMutationObservers();
   vi.spyOn(console, 'warn').mockImplementation(() => {});
-  extractor = createContentExtractor({
-    extractUserImage: (element: HTMLElement) => element.querySelectorAll('img'),
-    extractUserText: (
-      _lines: NodeListOf<HTMLElement>,
-      textParts: string[],
-      element: HTMLElement,
-    ) => {
-      const text = normalizeText(element.textContent || '');
-      if (text) textParts.push(text);
-    },
-    getUserAttachmentCandidates: () => [],
-    extractAssistantImage: () => undefined,
-    extractFormula: () => undefined,
-    extractCodeBlock: () => undefined,
-    extractInlineFormula: () => undefined,
-  } as unknown as ExportContentDialect);
 });
 
 afterEach(() => {
@@ -83,7 +57,7 @@ describe('runPreparedExport', () => {
     mountThreadFixture({ turns: makeTurns(4) });
     let observedDuringSelection = 0;
     let listed = 0;
-    let read = null as ChatGptThreadSession | null;
+    let read = null as ExportTurnSession | null;
 
     await runPreparedExport(
       chatGptSource(),
@@ -94,7 +68,7 @@ describe('runPreparedExport', () => {
         exportSelection: async (session) => {
           read = session;
           observedDuringSelection = observing.size;
-          listed = session?.containers().length ?? 0;
+          listed = session?.messages().length ?? 0;
         },
       },
     );
@@ -102,7 +76,7 @@ describe('runPreparedExport', () => {
     expect(observedDuringSelection).toBeGreaterThan(0);
     expect(listed).toBe(8);
     expect(observing.size).toBe(0);
-    expect(read?.containers()).toEqual([]);
+    expect(read?.messages()).toEqual([]);
   });
 
   it('stops watching the ChatGPT thread when the session fails', async () => {
@@ -161,7 +135,7 @@ describe('runPreparedExport', () => {
           exportSelection: async (session) => {
             // The cancelled export's cleanup has run by now.
             await firstEnded;
-            seen.listed = session?.containers().length ?? 0;
+            seen.listed = session?.messages().length ?? 0;
             seen.observing = observing.size;
           },
         },
@@ -187,15 +161,15 @@ describe('runPreparedExport', () => {
 
   it('ignores a release from a preparation that a newer one replaced', async () => {
     mountThreadFixture({ turns: makeTurns(3) });
-    const older = await prepareChatGptExportWithProgress(preparer, { extractor, timing: FAST });
-    const newer = await prepareChatGptExportWithProgress(preparer, { extractor, timing: FAST });
+    const older = await preparer.prepare({ timing: FAST });
+    const newer = await preparer.prepare({ timing: FAST });
 
     older?.release();
-    expect(newer?.containers()).toHaveLength(6);
+    expect(newer?.messages()).toHaveLength(6);
     expect(observing.size).toBe(1);
 
     newer?.release();
-    expect(newer?.containers()).toEqual([]);
+    expect(newer?.messages()).toEqual([]);
     expect(observing.size).toBe(0);
   });
 

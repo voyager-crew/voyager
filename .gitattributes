@@ -24,3 +24,6 @@
 *.ttf binary
 *.eot binary
 bun.lockb binary
+
+# Export goldens are byte-exact output, trailing spaces included
+*.golden -whitespace

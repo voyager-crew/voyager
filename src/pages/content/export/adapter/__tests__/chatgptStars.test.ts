@@ -6,9 +6,10 @@ import { CatalogTimelineAdapter } from '@/features/timeline/adapters/catalog/Cat
 import { CatalogTurnOwnership } from '@/features/timeline/adapters/catalog/CatalogTurnOwnership';
 import { setPageUrl } from '@/tests/pageUrl';
 
+import type { ExportTurnSession } from '../../exportSite';
 import { createChatGptExportSite } from '../../sites/chatgpt';
 import { buildChatGptTurnsForSelection } from '../chatgpt';
-import { createChatGptThreadPreparer, type ChatGptThreadSession } from '../chatgptThreadExport';
+import { createChatGptTurnSource } from '../chatgptTurnSource';
 import { buildChatGptAdapter } from '../platform/chatgpt';
 import {
   FAST,
@@ -25,7 +26,9 @@ setupChatGptStarTests();
 describe('ChatGPT Library stars on a crawled thread', () => {
   it('rejects a reply regenerated while its Library read is pending', async () => {
     const fixture = mountThreadFixture({ turns: makeTurns(3) });
-    const session = await createChatGptThreadPreparer().prepare({ extractor, timing: FAST });
+    const session = await createChatGptTurnSource(buildChatGptAdapter(chatgptAdapter)).prepare({
+      timing: FAST,
+    });
     if (!session) throw new Error('thread was not prepared');
     libraryRead.mockImplementation(async () => {
       fixture.replaceTurn('turn-03', { replyId: 'regenerated-reply' });
@@ -35,7 +38,7 @@ describe('ChatGPT Library stars on a crawled thread', () => {
       await expect(session.build(new Set(['turn-03:a']), {})).rejects.toThrow(
         'chatgpt_export_thread_changed',
       );
-      expect(session.containers()).toEqual([]);
+      expect(session.messages()).toEqual([]);
     } finally {
       session.release();
     }
@@ -43,7 +46,9 @@ describe('ChatGPT Library stars on a crawled thread', () => {
 
   it('does not revive a session released during its Library read', async () => {
     mountThreadFixture({ turns: makeTurns(2) });
-    const session = await createChatGptThreadPreparer().prepare({ extractor, timing: FAST });
+    const session = await createChatGptTurnSource(buildChatGptAdapter(chatgptAdapter)).prepare({
+      timing: FAST,
+    });
     if (!session) throw new Error('thread was not prepared');
     libraryRead.mockImplementation(async () => {
       session.release();
@@ -53,12 +58,14 @@ describe('ChatGPT Library stars on a crawled thread', () => {
     await expect(session.build(new Set(['turn-01:a']), {})).rejects.toThrow(
       'chatgpt_export_thread_incomplete',
     );
-    expect(session.containers()).toEqual([]);
+    expect(session.messages()).toEqual([]);
   });
 
   it('surfaces a Library failure in a crawled session build', async () => {
     mountThreadFixture({ turns: makeTurns(2) });
-    const session = await createChatGptThreadPreparer().prepare({ extractor, timing: FAST });
+    const session = await createChatGptTurnSource(buildChatGptAdapter(chatgptAdapter)).prepare({
+      timing: FAST,
+    });
     if (!session) throw new Error('thread was not prepared');
     libraryRead.mockRejectedValue(new Error('Library unavailable'));
     try {
@@ -75,7 +82,7 @@ describe('ChatGPT timeline and export star identity', () => {
   it.each(['retained', 'crawled'] as const)(
     'exports the real %s timeline marker star from the raw inner bubble despite controls and export line breaks',
     async (kind) => {
-      let session: ChatGptThreadSession | null = null;
+      let session: ExportTurnSession | null = null;
       if (kind === 'retained') mountRetained();
       else {
         const fixture = mountThreadFixture({
@@ -108,7 +115,9 @@ describe('ChatGPT timeline and export star identity', () => {
       timeline.turns.stop();
       libraryRead.mockResolvedValue([{ ...star('unused'), turnId: marker.id }]);
       if (kind === 'crawled') {
-        session = await createChatGptThreadPreparer().prepare({ extractor, timing: FAST });
+        session = await createChatGptTurnSource(buildChatGptAdapter(chatgptAdapter)).prepare({
+          timing: FAST,
+        });
         if (!session) throw new Error('Expected a crawled thread');
       }
       try {
@@ -152,7 +161,9 @@ describe('ChatGPT export Library inputs', () => {
         { key: 'last', height: 1500, user: 'Different', assistant: 'Last reply' },
       ],
     });
-    const session = await createChatGptThreadPreparer().prepare({ extractor, timing: FAST });
+    const session = await createChatGptTurnSource(buildChatGptAdapter(chatgptAdapter)).prepare({
+      timing: FAST,
+    });
     if (!session) throw new Error('Expected a crawled thread');
     try {
       expect(fixture.mountedKeys()).not.toContain('first');
@@ -203,7 +214,9 @@ describe.each(['retained', 'crawled'] as const)(
       mountThreadFixture({
         turns: [{ key: 'one', height: 200, user: 'Question', assistant: 'Answer' }],
       });
-      const session = await createChatGptThreadPreparer().prepare({ extractor, timing: FAST });
+      const session = await createChatGptTurnSource(buildChatGptAdapter(chatgptAdapter)).prepare({
+        timing: FAST,
+      });
       if (!session) throw new Error('Expected a crawled thread');
       return { turns: session, selected: new Set(['one:a']) };
     }

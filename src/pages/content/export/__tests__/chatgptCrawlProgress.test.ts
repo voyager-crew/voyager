@@ -1,25 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  type ContentExtractor,
-  createContentExtractor,
-} from '@/features/export/services/DOMContentExtractor';
-import type { ExportContentDialect } from '@/features/export/services/exportContentDialect';
-import { normalizeText } from '@/features/export/services/exportDomPolicy';
 import { showExportProgress } from '@/features/export/ui/exportToasts';
+import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
 import { toastDriver } from '@/tests/toastDriver';
 
 import { makeTurns, mountThreadFixture } from '../adapter/__tests__/chatgptThreadFixture';
 import type { ChatGptCrawlTiming } from '../adapter/chatgptCrawl';
-import {
-  type ChatGptThreadPreparer,
-  createChatGptThreadPreparer,
-} from '../adapter/chatgptThreadExport';
-import { prepareChatGptExportWithProgress } from '../chatgptCrawlProgress';
+import { createChatGptTurnSource } from '../adapter/chatgptTurnSource';
+import { buildChatGptAdapter } from '../adapter/platform/chatgpt';
 import { trackMutationObservers } from './observerTracking';
 
-let extractor: ContentExtractor;
-let preparer: ChatGptThreadPreparer;
+let preparer: ReturnType<typeof createChatGptTurnSource>;
 /** Observers that are observing right now. */
 let observing: ReadonlySet<MutationObserver>;
 
@@ -40,25 +31,9 @@ function progressText(): string {
 
 beforeEach(() => {
   document.body.replaceChildren();
-  preparer = createChatGptThreadPreparer();
+  preparer = createChatGptTurnSource(buildChatGptAdapter(chatgptAdapter));
   observing = trackMutationObservers();
   vi.spyOn(console, 'warn').mockImplementation(() => {});
-  extractor = createContentExtractor({
-    extractUserImage: (element: HTMLElement) => element.querySelectorAll('img'),
-    extractUserText: (
-      _lines: NodeListOf<HTMLElement>,
-      textParts: string[],
-      element: HTMLElement,
-    ) => {
-      const text = normalizeText(element.textContent || '');
-      if (text) textParts.push(text);
-    },
-    getUserAttachmentCandidates: () => [],
-    extractAssistantImage: () => undefined,
-    extractFormula: () => undefined,
-    extractCodeBlock: () => undefined,
-    extractInlineFormula: () => undefined,
-  } as unknown as ExportContentDialect);
 });
 
 afterEach(() => {
@@ -66,15 +41,14 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('prepareChatGptExportWithProgress', () => {
+describe('ChatGPT source crawl progress', () => {
   it('counts the turns it reads in the export progress, then gives the export its text back', async () => {
     const turns = makeTurns(5);
     mountThreadFixture({ turns });
     const exportProgress = showExportProgress({ title: 'Export...', message: 'Loading' });
     const shown: string[] = [];
 
-    const session = await prepareChatGptExportWithProgress(preparer, {
-      extractor,
+    const session = await preparer.prepare({
       timing: FAST,
       onProgress: () => {
         shown.push(progressText());
@@ -84,7 +58,7 @@ describe('prepareChatGptExportWithProgress', () => {
     expect(shown.at(-1)).toBe('Reading conversation… Turns read: 5');
     expect(progressText()).toBe('Export... Loading');
     expect(toastDriver.all()).toMatchObject([{ pending: true }]);
-    expect(session?.containers()).toHaveLength(10);
+    expect(session?.messages()).toHaveLength(10);
     exportProgress.hide();
     expect(toastDriver.all()).toEqual([]);
   });
@@ -98,9 +72,9 @@ describe('prepareChatGptExportWithProgress', () => {
       if (count === 2) toastDriver.press(toastDriver.all()[0], 'Cancel');
     };
 
-    await expect(
-      prepareChatGptExportWithProgress(preparer, { extractor, timing: FAST, onProgress }),
-    ).rejects.toMatchObject({ name: 'AbortError' });
+    await expect(preparer.prepare({ timing: FAST, onProgress })).rejects.toMatchObject({
+      name: 'AbortError',
+    });
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     expect(toastDriver.all()).toEqual([]);
@@ -116,8 +90,7 @@ describe('prepareChatGptExportWithProgress', () => {
     };
 
     await expect(
-      prepareChatGptExportWithProgress(preparer, {
-        extractor,
+      preparer.prepare({
         signal: controller.signal,
         timing: FAST,
         onProgress,
@@ -129,9 +102,7 @@ describe('prepareChatGptExportWithProgress', () => {
   it('shows nothing on the earlier DOM, which has no crawl', async () => {
     document.body.innerHTML = '<main><div data-turn-id-container="a"></div></main>';
 
-    await expect(
-      prepareChatGptExportWithProgress(preparer, { extractor, timing: FAST }),
-    ).resolves.toBeNull();
+    await expect(preparer.prepare({ timing: FAST })).resolves.toBeNull();
     expect(toastDriver.all()).toEqual([]);
   });
 });

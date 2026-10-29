@@ -1,0 +1,92 @@
+<div id="gv-pdf-print-container" class="gv-print-only">
+      <div class="gv-print-document">
+        
+      <div class="gv-print-header gv-print-cover-page">
+        <div class="gv-print-cover-content">
+          <h1 class="gv-print-cover-title">Voyager 测试</h1>
+          <div class="gv-print-meta">
+            <p>January 2, 2026 at 03:04 AM</p>
+            <p><a href="https://chatgpt.com/c/abc">ChatGPT Conversation abc</a></p>
+            <p>3 conversation turns</p>
+          </div>
+        </div>
+      </div>
+    
+        
+      <div class="gv-print-content">
+        
+      <div class="gv-print-turn ">
+        <div class="gv-print-turn-header">
+          <span class="gv-print-turn-number">Turn 1</span>
+          
+        </div>
+
+        
+        <div class="gv-print-turn-user">
+          <div class="gv-print-turn-label">👤 User</div>
+          <div class="gv-print-turn-text"><p>What is energy?</p></div>
+        </div>
+        
+
+        
+          <div class="gv-print-turn-assistant">
+            <div class="gv-print-turn-label">🤖 Assistant</div>
+            <div class="gv-print-turn-text"><p>Energy is work.</p></div>
+          </div>
+        
+      </div>
+    
+
+      <div class="gv-print-turn ">
+        <div class="gv-print-turn-header">
+          <span class="gv-print-turn-number">Turn 2</span>
+          
+        </div>
+
+        
+        <div class="gv-print-turn-user">
+          <div class="gv-print-turn-label">👤 User</div>
+          <div class="gv-print-turn-text"><p>First line<br>Second line</p></div>
+        </div>
+        
+
+        
+          <div class="gv-print-turn-assistant">
+            <div class="gv-print-turn-label">🤖 Assistant</div>
+            <div class="gv-print-turn-text"><p>Two lines noted.</p></div>
+          </div>
+        
+      </div>
+    
+
+      <div class="gv-print-turn ">
+        <div class="gv-print-turn-header">
+          <span class="gv-print-turn-number">Turn 3</span>
+          
+        </div>
+
+        
+        <div class="gv-print-turn-user">
+          <div class="gv-print-turn-label">👤 User</div>
+          <div class="gv-print-turn-text"><p>谢谢</p></div>
+        </div>
+        
+
+        
+          <div class="gv-print-turn-assistant">
+            <div class="gv-print-turn-label">🤖 Assistant</div>
+            <div class="gv-print-turn-text"><p>You are welcome.</p></div>
+          </div>
+        
+      </div>
+    
+      </div>
+    
+        
+      <div class="gv-print-footer">
+        <p>Exported from <a href="https://github.com/voyager-crew/voyager">Voyager</a> • 3 conversation turns</p>
+        <p>Generated on January 2, 2026 at 03:04 AM</p>
+      </div>
+    
+      </div>
+    </div>

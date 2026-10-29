@@ -1,0 +1,24 @@
+{
+  "format": "gemini-voyager.chat.v1",
+  "url": "https://chatgpt.com/c/abc",
+  "exportedAt": "2026-01-02T03:04:05.000Z",
+  "count": 3,
+  "title": "Voyager 测试",
+  "items": [
+    {
+      "user": "What is energy?",
+      "assistant": "Energy is work.",
+      "starred": false
+    },
+    {
+      "user": "First line\nSecond line",
+      "assistant": "Two lines noted.",
+      "starred": false
+    },
+    {
+      "user": "谢谢",
+      "assistant": "You are welcome.",
+      "starred": false
+    }
+  ]
+}

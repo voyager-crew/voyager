@@ -6,20 +6,18 @@ import {
 } from '@/features/export/services/DOMContentExtractor';
 import type { ExportContentDialect } from '@/features/export/services/exportContentDialect';
 import { normalizeText } from '@/features/export/services/exportDomPolicy';
+import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
 
+import type { ExportTurnSession } from '../../exportSite';
 import type { ChatGptCrawlOptions, ChatGptCrawlTiming } from '../chatgptCrawl';
-import {
-  type ChatGptThreadPreparer,
-  type ChatGptThreadSession,
-  createChatGptThreadPreparer,
-  readChatGptThreadTurns,
-  uncrawledChatGptTurnContainers,
-} from '../chatgptThreadExport';
+import { readChatGptThreadTurns } from '../chatgptThreadExport';
+import { createChatGptTurnSource } from '../chatgptTurnSource';
+import { buildChatGptAdapter } from '../platform/chatgpt';
 import { chatgptIsConversationPage } from '../platform/chatgpt';
 import { type FixtureTurn, makeTurns, mountThreadFixture } from './chatgptThreadFixture';
 
 let extractor: ContentExtractor;
-let preparer: ChatGptThreadPreparer;
+let preparer: ReturnType<typeof createChatGptTurnSource>;
 
 const FAST: Partial<ChatGptCrawlTiming> = {
   pollMs: 1,
@@ -31,7 +29,7 @@ const FAST: Partial<ChatGptCrawlTiming> = {
 
 beforeEach(() => {
   document.body.replaceChildren();
-  preparer = createChatGptThreadPreparer();
+  preparer = createChatGptTurnSource(buildChatGptAdapter(chatgptAdapter));
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   extractor = createContentExtractor({
     extractUserImage: (element: HTMLElement) => element.querySelectorAll('img'),
@@ -58,8 +56,8 @@ afterEach(() => {
 /** A preparation that crawled the live thread at test speed. */
 async function prepared(
   options: Omit<ChatGptCrawlOptions, 'extractor'> = {},
-): Promise<ChatGptThreadSession> {
-  const session = await preparer.prepare({ extractor, timing: FAST, ...options });
+): Promise<ExportTurnSession> {
+  const session = await preparer.prepare({ timing: FAST, ...options });
   if (!session) throw new Error('the live thread was not crawled');
   return session;
 }
@@ -83,27 +81,26 @@ describe('ChatGPT selection export on the live thread', () => {
     ];
     mountThreadFixture({ turns });
 
-    const containers = (await prepared()).containers();
+    const containers = (await prepared()).messages();
 
-    expect(containers.map((turn) => turn.id)).toEqual(ids(turns));
-    expect(containers.map((turn) => turn.sequence)).toEqual(containers.map((_, index) => index));
+    expect(containers.map((turn) => turn.messageId)).toEqual(ids(turns));
     expect(containers.every((turn) => turn.role !== 'unknown')).toBe(true);
-    expect(containers.find((turn) => turn.id === 'turn-01:u')?.role).toBe('user');
-    expect(containers.find((turn) => turn.id === 'turn-01:a')?.role).toBe('assistant');
+    expect(containers.find((turn) => turn.messageId === 'turn-01:u')?.role).toBe('user');
+    expect(containers.find((turn) => turn.messageId === 'turn-01:a')?.role).toBe('assistant');
   });
 
   it('binds a mounted message to its live element and keeps an unmounted one stable', async () => {
     const fixture = mountThreadFixture({ turns: makeTurns(10) });
     const session = await prepared();
 
-    const first = session.containers();
-    const second = session.containers();
+    const first = session.messages();
+    const second = session.messages();
     const mounted = new Set(fixture.mountedKeys());
     for (const turn of first) {
-      const key = turn.id.slice(0, -2);
-      if (mounted.has(key)) expect(turn.container.isConnected).toBe(true);
+      const key = turn.messageId.slice(0, -2);
+      if (mounted.has(key)) expect(turn.hostElement.isConnected).toBe(true);
     }
-    expect(second.map((turn) => turn.container)).toEqual(first.map((turn) => turn.container));
+    expect(second.map((turn) => turn.hostElement)).toEqual(first.map((turn) => turn.hostElement));
   });
 
   it('offers nothing to select when the crawl cannot prove the thread complete', async () => {
@@ -111,19 +108,19 @@ describe('ChatGPT selection export on the live thread', () => {
 
     const session = await prepared();
 
-    expect(session.containers()).toEqual([]);
+    expect(session.messages()).toEqual([]);
   });
 
   it('offers nothing to select on the live thread before it has been crawled', () => {
     mountThreadFixture({ turns: makeTurns(8) });
 
-    expect(uncrawledChatGptTurnContainers()).toEqual([]);
+    expect(preparer.messages()).toEqual([]);
   });
 
   it('leaves the earlier DOM to its scroll-to-top preparation', async () => {
     document.body.innerHTML = '<main><div data-turn-id-container="a"></div></main>';
 
-    await expect(preparer.prepare({ extractor, timing: FAST })).resolves.toBeNull();
+    await expect(preparer.prepare({ timing: FAST })).resolves.toBeNull();
   });
 
   it('pairs a prompt with its reply and keeps a lone selection one-sided', async () => {
@@ -170,7 +167,7 @@ describe('ChatGPT selection export on the live thread', () => {
   it('drops the crawl once a mounted turn switches branch after it was read', async () => {
     const fixture = mountThreadFixture({ turns: makeTurns(6) });
     const session = await prepared();
-    expect(session.containers()).toHaveLength(12);
+    expect(session.messages()).toHaveLength(12);
 
     // The reader regenerates the last reply, which keeps its turn key.
     fixture.replaceTurn('turn-06', { replyId: 'turn-06-b', assistant: 'Answer 6, branch 2' });
@@ -178,7 +175,7 @@ describe('ChatGPT selection export on the live thread', () => {
     await expect(session.build(new Set(['turn-06:a']), {})).rejects.toThrow(
       'chatgpt_export_thread_changed',
     );
-    expect(session.containers()).toEqual([]);
+    expect(session.messages()).toEqual([]);
   });
 
   it("drops the crawl once the reader switches to an edited prompt's branch of the same length", async () => {
@@ -194,7 +191,7 @@ describe('ChatGPT selection export on the live thread', () => {
     await expect(session.build(new Set(['turn-05:u']), {})).rejects.toThrow(
       'chatgpt_export_thread_changed',
     );
-    expect(session.containers()).toEqual([]);
+    expect(session.messages()).toEqual([]);
   });
 
   it('drops the crawl when a turn switches branch and scrolls out of view before the export', async () => {
@@ -277,7 +274,7 @@ describe('ChatGPT selection export on the live thread', () => {
     fixture.setOffset(bottom);
     await nextTask();
 
-    expect(session.containers()).toHaveLength(20);
+    expect(session.messages()).toHaveLength(20);
     await expect(session.build(new Set(['turn-01:a']), {})).resolves.toHaveLength(1);
   });
 
@@ -297,18 +294,18 @@ describe('ChatGPT selection export on the live thread', () => {
     const session = await prepared({ onProgress });
 
     expect(switched).not.toBe('');
-    expect(session.containers()).toEqual([]);
+    expect(session.messages()).toEqual([]);
   });
 
   it('does not let a superseded preparation publish over a newer one that failed', async () => {
     mountThreadFixture({ turns: makeTurns(8) });
-    let newer = null as Promise<ChatGptThreadSession | null> | null;
+    let newer = null as Promise<ExportTurnSession | null> | null;
     const onProgress = (count: number) => {
       if (count !== 2 || newer) return;
       // A newer export starts mid-crawl on the same route and fails at once.
       const main = document.querySelector<HTMLElement>('[data-app-shell-active-page] main')!;
       main.insertAdjacentHTML('beforeend', '<button data-testid="stop-button"></button>');
-      newer = preparer.prepare({ extractor, timing: FAST });
+      newer = preparer.prepare({ timing: FAST });
       main.querySelector('[data-testid="stop-button"]')!.remove();
     };
 
@@ -316,8 +313,8 @@ describe('ChatGPT selection export on the live thread', () => {
     const newerSession = await newer;
 
     expect(newerSession).not.toBeNull();
-    expect(newerSession?.containers()).toEqual([]);
-    expect(older.containers()).toEqual([]);
+    expect(newerSession?.messages()).toEqual([]);
+    expect(older.messages()).toEqual([]);
   });
 
   it('does not publish a preparation cancelled while it restores the scroll position', async () => {
@@ -329,7 +326,7 @@ describe('ChatGPT selection export on the live thread', () => {
     };
 
     await expect(
-      preparer.prepare({ extractor, signal: controller.signal, timing: FAST, onProgress }),
+      preparer.prepare({ signal: controller.signal, timing: FAST, onProgress }),
     ).rejects.toMatchObject({ name: 'AbortError' });
   });
 
@@ -337,7 +334,7 @@ describe('ChatGPT selection export on the live thread', () => {
     mountThreadFixture({ turns: makeTurns(2) });
     const session = await prepared();
 
-    const roles = await session.roles(new Set(['turn-02:u', 'turn-02:a']), {});
+    const roles = await session.roles!(new Set(['turn-02:u', 'turn-02:a']), {});
 
     expect(Object.fromEntries(roles)).toEqual({ 'turn-02:u': 'user', 'turn-02:a': 'assistant' });
   });
