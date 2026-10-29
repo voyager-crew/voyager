@@ -2,8 +2,8 @@ import React from 'react';
 
 import { ChevronRight, Plus, X } from 'lucide-react';
 
+import { type AccessSite, BUILT_IN_SITES } from '@/features/plugins/sites/siteAccessSites';
 import type { CatalogSiteRow } from '@/pages/popup/hooks/useSiteAccess';
-import { type AccessSite, BUILT_IN_SITES } from '@/pages/popup/utils/siteAccessSites';
 import type { AppLanguage } from '@/utils/language';
 import type { TranslationKey } from '@/utils/translations';
 

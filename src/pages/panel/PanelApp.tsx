@@ -3,8 +3,8 @@ import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from '
 import { useLanguage } from '@/contexts/LanguageContext';
 import { isFolderPlatform } from '@/features/folder/platforms';
 import type { PanelSession } from '@/features/panel/protocol';
-import type { AccessSite } from '@/pages/popup/utils/siteAccessSites';
-import { BUILT_IN_SITES } from '@/pages/popup/utils/siteAccessSites';
+import type { AccessSite } from '@/features/plugins/sites/siteAccessSites';
+import { BUILT_IN_SITES } from '@/features/plugins/sites/siteAccessSites';
 import { localeFromLanguage } from '@/utils/language';
 
 import { FeaturesView } from './components/FeaturesView';

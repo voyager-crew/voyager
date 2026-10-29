@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 import { customWebsitesIncludeHost } from '@/core/utils/customWebsites';
+import { BUILT_IN_SITES, CATALOG_SITES } from '@/features/plugins/sites/siteAccessSites';
 
-import { BUILT_IN_SITES, CATALOG_SITES } from '../utils/siteAccessSites';
 import { container, en, extensionApi, local, mount, sync, unmount } from './popupHarness';
 import {
   buttonWithText,

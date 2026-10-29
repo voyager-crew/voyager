@@ -11,6 +11,7 @@ import {
 } from '@/core/utils/customWebsites';
 import { pluginsToOriginPatterns } from '@/features/plugins/runtime/siteRegistration';
 import { matchesAnyPattern, patternWithinAny } from '@/features/plugins/sites/matchPattern';
+import { promptManagerHostsCoveredBy } from '@/features/plugins/sites/siteAccessSites';
 import { withPluginStorageLock } from '@/features/plugins/storage/pluginStorageLock';
 import {
   type PromptCoverageBinding,
@@ -25,7 +26,6 @@ import {
   withEntriesRestored,
   withoutEntries,
 } from '../utils/coverageEntries';
-import { promptManagerHostsCoveredBy } from '../utils/siteAccessSites';
 import { listGrants } from '../utils/sitePermissions';
 
 export interface CustomWebsitesOptions {

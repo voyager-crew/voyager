@@ -4,9 +4,9 @@ import { type Root, createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { customWebsitesIncludeHost } from '@/core/utils/customWebsites';
+import { CATALOG_SITES } from '@/features/plugins/sites/siteAccessSites';
 import type { TranslationKey } from '@/utils/translations';
 
-import { CATALOG_SITES } from '../../utils/siteAccessSites';
 import { OtherWebsitesSection, type OtherWebsitesSectionProps } from '../OtherWebsitesSection';
 
 const translate = (key: TranslationKey): string => key;

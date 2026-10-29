@@ -7,7 +7,7 @@ import browser from 'webextension-polyfill';
 
 import { markSiteIncluded } from '@/core/services/CloudSyncScope';
 import { logger } from '@/core/services/LoggerService';
-import { CATALOG_SITES } from '@/pages/popup/utils/siteAccessSites';
+import { CATALOG_SITES } from '@/features/plugins/sites/siteAccessSites';
 
 /**
  * The supported sites this grant gave page access to, and that the browser

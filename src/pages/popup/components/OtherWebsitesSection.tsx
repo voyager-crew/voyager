@@ -4,12 +4,12 @@ import { Plus, X } from 'lucide-react';
 
 import { PLATFORM_LOGOS, type PlatformLogo } from '@/core/icons/platformLogos';
 import { customWebsitesIncludeHost } from '@/core/utils/customWebsites';
+import { catalogSiteForEntry } from '@/features/plugins/sites/siteAccessSites';
 import type { TranslationKey } from '@/utils/translations';
 
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import type { PromptManagerSettings } from '../hooks/usePromptManagerSettings';
-import { catalogSiteForEntry } from '../utils/siteAccessSites';
 import { PlatformMark } from './WebsiteLogos';
 
 /** Websites with a bundled mark of their own; no favicon is fetched for any other. */

@@ -3,8 +3,8 @@ import { useCallback, useState } from 'react';
 import browser from 'webextension-polyfill';
 
 import type { PanelSessionId } from '@/features/panel/protocol';
+import type { AccessSite } from '@/features/plugins/sites/siteAccessSites';
 import { requestPluginContentScriptSync } from '@/pages/popup/utils/pluginEnablement';
-import type { AccessSite } from '@/pages/popup/utils/siteAccessSites';
 
 import { openSiteAccessFallback } from './panelRequests';
 

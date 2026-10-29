@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { markSiteIncluded } from '@/core/services/CloudSyncScope';
 import { StorageKeys } from '@/core/types/common';
-import { CATALOG_SITES } from '@/pages/popup/utils/siteAccessSites';
+import { CATALOG_SITES } from '@/features/plugins/sites/siteAccessSites';
 import { type MemoryStorage, createMemoryStorage } from '@/tests/memoryStorage';
 
 const { contains } = vi.hoisted(() => ({ contains: vi.fn() }));

@@ -16,6 +16,7 @@ import {
   partitionPluginOriginPatterns,
   pluginToOriginPatternsForActiveUrl,
 } from '@/features/plugins/runtime/siteRegistration';
+import { catalogSiteForUrl } from '@/features/plugins/sites/siteAccessSites';
 import {
   legacyBindingFor,
   legacyEnableWrite,
@@ -25,7 +26,6 @@ import { promptCoverageBindingFor } from '@/features/plugins/storage/promptCover
 import type { PluginManifest } from '@/features/plugins/types';
 
 import { writePopupSyncStorageChecked } from './popupStorage';
-import { catalogSiteForUrl } from './siteAccessSites';
 
 /**
  * Ask the background service to reconcile dynamic plugin content scripts after

@@ -1,15 +1,15 @@
 import { useCallback, useState } from 'react';
 
-import type { TranslationKey } from '@/utils/translations';
-
-import type { PlacedEntry } from '../utils/coverageEntries';
-import { requestPluginContentScriptSync } from '../utils/pluginEnablement';
 import {
   type AccessSite,
   originsStillNeeded,
   siteCoverageEntries,
   siteGrantsToRemove,
-} from '../utils/siteAccessSites';
+} from '@/features/plugins/sites/siteAccessSites';
+import type { TranslationKey } from '@/utils/translations';
+
+import type { PlacedEntry } from '../utils/coverageEntries';
+import { requestPluginContentScriptSync } from '../utils/pluginEnablement';
 import {
   entryHostAllowed,
   holdsAny,

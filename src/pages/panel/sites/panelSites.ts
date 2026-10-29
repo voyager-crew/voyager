@@ -5,7 +5,7 @@ import {
   type AccessSite,
   BUILT_IN_SITES,
   CATALOG_SITES,
-} from '@/pages/popup/utils/siteAccessSites';
+} from '@/features/plugins/sites/siteAccessSites';
 
 /** A site the 功能 tab can show: a bundled site, or the open page's own website. */
 export interface PanelSite {

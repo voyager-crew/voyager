@@ -4,6 +4,13 @@ import browser from 'webextension-polyfill';
 
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
 import { matchesAnyPattern } from '@/features/plugins/sites/matchPattern';
+import {
+  type AccessSite,
+  CATALOG_SITES,
+  otherWebsiteEntries,
+  otherWebsiteForUrl,
+  siteCoverageOn,
+} from '@/features/plugins/sites/siteAccessSites';
 import { effectivePluginView } from '@/features/plugins/storage/effectivePluginView';
 import {
   promptCoverageBindingFor,
@@ -13,13 +20,6 @@ import type { PluginManifest } from '@/features/plugins/types';
 import type { TranslationKey } from '@/utils/translations';
 
 import { displayName, pickLocalized } from '../components/PluginIdentity';
-import {
-  type AccessSite,
-  CATALOG_SITES,
-  otherWebsiteEntries,
-  otherWebsiteForUrl,
-  siteCoverageOn,
-} from '../utils/siteAccessSites';
 import { holdsAny, holdsOrigin, pageOrigin } from '../utils/sitePermissions';
 import type { useCustomWebsites } from './useCustomWebsites';
 import type { usePopupPlugins } from './usePopupPlugins';

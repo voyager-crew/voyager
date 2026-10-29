@@ -2,13 +2,13 @@ import type { ReactNode } from 'react';
 
 import { PLATFORM_LOGOS, type PlatformLogo } from '@/core/icons/platformLogos';
 import { isRTLLanguage } from '@/core/utils/rtl';
+import { type AccessSite, BUILT_IN_SITES } from '@/features/plugins/sites/siteAccessSites';
 import type { TranslationKey } from '@/utils/translations';
 
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardTitle } from '../../../components/ui/card';
 import type { PromptManagerSettings } from '../hooks/usePromptManagerSettings';
 import type { CatalogSiteRow, SiteAccess, SiteAccessState } from '../hooks/useSiteAccess';
-import { type AccessSite, BUILT_IN_SITES } from '../utils/siteAccessSites';
 import { OtherWebsitesSection } from './OtherWebsitesSection';
 import { PlatformMark } from './WebsiteLogos';
 
