@@ -8,10 +8,11 @@ import {
   GoogleDriveSyncPayloads,
   type GoogleDriveUploadSnapshot,
 } from '../GoogleDriveSyncPayloads';
+import { noDriveHistory } from './fixtures/noDriveHistory';
 
-const scope: SyncAccountScope = { accountKey: 'gemini:person', accountId: 1, routeUserId: '1' };
+const scope: SyncAccountScope = { accountKey: 'email:person', accountId: 1, routeUserId: '1' };
 const hierarchyScope: SyncAccountScope = {
-  accountKey: 'gemini:hierarchy-person',
+  accountKey: 'email:hierarchy-person',
   accountId: 2,
   routeUserId: '2',
 };
@@ -37,10 +38,11 @@ function snapshot(overrides: Partial<GoogleDriveUploadSnapshot> = {}): GoogleDri
   };
 }
 
-function fixture() {
+async function fixture() {
   const writes: Array<{ name: string; payload: unknown }> = [];
   const remote = new Map<string, unknown>();
   const files = {
+    ...noDriveHistory,
     ensure: vi.fn(async (_token: string, name: string) => name),
     find: vi.fn(async (_token: string, _name: string): Promise<string | null> => null),
     upload: vi.fn(async (_token: string, name: string, payload: unknown) => {
@@ -51,7 +53,9 @@ function fixture() {
       (remote.get(name) as T) ?? null,
     prepareDownload: vi.fn(async (_token: string) => {}),
   };
-  return { payloads: new GoogleDriveSyncPayloads(files), files, writes, remote };
+  const payloads = new GoogleDriveSyncPayloads(files);
+  await payloads.captureScopes(scope, hierarchyScope);
+  return { payloads, files, writes, remote };
 }
 
 const upload = (payloads: GoogleDriveSyncPayloads, data: GoogleDriveUploadSnapshot) =>
@@ -68,7 +72,7 @@ afterEach(() => {
 
 describe('GoogleDriveSyncPayloads', () => {
   it('uploads scoped Gemini files in order, with a separate hierarchy scope while stars use their coordinator', async () => {
-    const { payloads, writes } = fixture();
+    const { payloads, writes } = await fixture();
     const long = {
       turnId: 'turn-long',
       content: 'x'.repeat(61),
@@ -114,7 +118,7 @@ describe('GoogleDriveSyncPayloads', () => {
   });
 
   it('omits empty aggregate prompts and Gemini-only files on AI Studio, but writes a prompts-only clear', async () => {
-    const { payloads, writes } = fixture();
+    const { payloads, writes } = await fixture();
     await expect(
       upload(
         payloads,
@@ -148,7 +152,7 @@ describe('GoogleDriveSyncPayloads', () => {
   });
 
   it('prefers scoped files, falls back only when missing, and keeps global and hierarchy scopes distinct', async () => {
-    const { payloads, files, remote } = fixture();
+    const { payloads, files, remote } = await fixture();
     const folders = {
       format: 'gemini-voyager.folders.v1',
       data: { folders: [], folderContents: {} },
@@ -192,7 +196,7 @@ describe('GoogleDriveSyncPayloads', () => {
   });
 
   it('an exact scoped v1 star file carries account authority without changing its envelope', async () => {
-    const { payloads, files, remote } = fixture();
+    const { payloads, files, remote } = await fixture();
     const item = {
       conversationId: 'gemini:conv:abc',
       turnId: 'turn',
@@ -224,7 +228,7 @@ describe('GoogleDriveSyncPayloads', () => {
   it.each(['missing', 'empty'] as const)(
     'an unscoped v1 fallback gains no scoped authority when the scoped file is %s',
     async (condition) => {
-      const { payloads, files, remote } = fixture();
+      const { payloads, files, remote } = await fixture();
       const v1 = { format: 'gemini-voyager.starred.v1', exportedAt, data: { messages: {} } };
       remote.set('gemini-voyager-starred.json', v1);
       if (condition === 'empty') remote.set(scoped('gemini-voyager-starred'), null);
@@ -237,7 +241,7 @@ describe('GoogleDriveSyncPayloads', () => {
   );
 
   it('a failed content write leaves later cloud files intact', async () => {
-    const { payloads, files, writes, remote } = fixture();
+    const { payloads, files, writes, remote } = await fixture();
     const folderName = scoped('gemini-voyager-folders');
     remote.set(folderName, { previous: 'folders' });
     remote.set('gemini-voyager-settings.json', { previous: 'settings' });

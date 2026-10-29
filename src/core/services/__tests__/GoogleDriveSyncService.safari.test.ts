@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createDriveTestClient } from './fixtures/driveTestClient';
 
 const downloadSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
+const downloadSafariGoogleDriveText = vi.hoisted(() => vi.fn());
 const ensureSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
 const findSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
 const getSafariGoogleDriveRetryDelay = vi.hoisted(() => vi.fn((): number | null => null));
@@ -10,6 +11,10 @@ const isSafariGoogleDriveAuthError = vi.hoisted(() => vi.fn(() => false));
 const requestSafariGoogleDriveSession = vi.hoisted(() => vi.fn());
 const signOutSafariGoogleDrive = vi.hoisted(() => vi.fn());
 const uploadSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
+const uploadSafariGoogleDriveText = vi.hoisted(() => vi.fn());
+const createSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
+const listSafariGoogleDriveHistory = vi.hoisted(() => vi.fn());
+const trashSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
 const checkSafariICloudAccount = vi.hoisted(() => vi.fn());
 const getSafariICloudRetryDelay = vi.hoisted(() => vi.fn((): number | null => null));
 const isSafariICloudConflictError = vi.hoisted(() => vi.fn(() => false));
@@ -25,6 +30,7 @@ vi.mock('@/core/utils/browser', () => ({
 
 vi.mock('@/core/utils/safariGoogleDrive', () => ({
   downloadSafariGoogleDriveFile,
+  downloadSafariGoogleDriveText,
   ensureSafariGoogleDriveFile,
   findSafariGoogleDriveFile,
   getSafariGoogleDriveRetryDelay,
@@ -32,6 +38,10 @@ vi.mock('@/core/utils/safariGoogleDrive', () => ({
   requestSafariGoogleDriveSession,
   signOutSafariGoogleDrive,
   uploadSafariGoogleDriveFile,
+  uploadSafariGoogleDriveText,
+  createSafariGoogleDriveFile,
+  listSafariGoogleDriveHistory,
+  trashSafariGoogleDriveFile,
 }));
 
 vi.mock('@/core/utils/safariICloudSync', () => ({
@@ -59,6 +69,15 @@ async function loadServiceClass() {
   const module = await import('../GoogleDriveSyncService');
   return module.GoogleDriveSyncService;
 }
+
+beforeEach(() => {
+  findSafariGoogleDriveFile.mockResolvedValue(null);
+  downloadSafariGoogleDriveText.mockResolvedValue(null);
+  listSafariGoogleDriveHistory.mockResolvedValue([]);
+  uploadSafariGoogleDriveText.mockResolvedValue(undefined);
+  trashSafariGoogleDriveFile.mockResolvedValue(undefined);
+  createSafariGoogleDriveFile.mockResolvedValue('history-file-id');
+});
 
 afterEach(() => {
   vi.useRealTimers();

@@ -19,10 +19,10 @@ import {
   mergeCatalogTimelineBuckets,
 } from '@/features/timeline/catalogHierarchySync';
 
-import type { GoogleDriveFiles } from './GoogleDriveFiles';
+import type { DriveFilesPort } from './GoogleDriveFiles';
 import { GoogleDriveUploadFiles } from './GoogleDriveUploadFiles';
 
-type Files = Pick<GoogleDriveFiles, 'ensure' | 'find' | 'upload' | 'download' | 'prepareDownload'>;
+type Files = DriveFilesPort;
 
 export class GoogleDriveCatalogTimeline {
   constructor(

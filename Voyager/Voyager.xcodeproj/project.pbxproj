@@ -50,6 +50,8 @@
 		D10000000000000000000014 /* NativeDiagnosticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000003 /* NativeDiagnosticsService.swift */; };
 		D10000000000000000000015 /* NativeMessaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000004 /* NativeMessaging.swift */; };
 		D10000000000000000000016 /* GoogleDriveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000005 /* GoogleDriveService.swift */; };
+		D10000000000000000000017 /* GoogleDriveService+BackupFolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000006 /* GoogleDriveService+BackupFolder.swift */; };
+		D10000000000000000000018 /* GoogleDriveService+History.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000007 /* GoogleDriveService+History.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -120,6 +122,8 @@
 		D10000000000000000000003 /* NativeDiagnosticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeDiagnosticsService.swift; sourceTree = "<group>"; };
 		D10000000000000000000004 /* NativeMessaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessaging.swift; sourceTree = "<group>"; };
 		D10000000000000000000005 /* GoogleDriveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleDriveService.swift; sourceTree = "<group>"; };
+		D10000000000000000000006 /* GoogleDriveService+BackupFolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GoogleDriveService+BackupFolder.swift"; sourceTree = "<group>"; };
+		D10000000000000000000007 /* GoogleDriveService+History.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GoogleDriveService+History.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -181,6 +185,8 @@
 				B60723D52FB752BD00F3A4FD /* Resources */,
 				B60723C92FB752BD00F3A4FD /* SafariWebExtensionHandler.swift */,
 				D10000000000000000000005 /* GoogleDriveService.swift */,
+				D10000000000000000000006 /* GoogleDriveService+BackupFolder.swift */,
+				D10000000000000000000007 /* GoogleDriveService+History.swift */,
 				C1D2E3F40516273849A5B6C8 /* ICloudSyncService.swift */,
 				D10000000000000000000002 /* NativeNotificationService.swift */,
 				B60723CB2FB752BD00F3A4FD /* Info.plist */,
@@ -390,6 +396,8 @@
 			files = (
 				B60723CA2FB752BD00F3A4FD /* SafariWebExtensionHandler.swift in Sources */,
 				D10000000000000000000016 /* GoogleDriveService.swift in Sources */,
+				D10000000000000000000017 /* GoogleDriveService+BackupFolder.swift in Sources */,
+				D10000000000000000000018 /* GoogleDriveService+History.swift in Sources */,
 				C1D2E3F40516273849A5B6C7 /* ICloudSyncService.swift in Sources */,
 				D10000000000000000000012 /* NativeSupport.swift in Sources */,
 				D10000000000000000000015 /* NativeMessaging.swift in Sources */,

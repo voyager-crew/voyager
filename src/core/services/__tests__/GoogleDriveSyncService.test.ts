@@ -4,6 +4,7 @@ import type { HighlightExportPayload, SyncAccountScope } from '@/core/types/sync
 import { hashString } from '@/core/utils/hash';
 
 import { createDriveTestClient } from './fixtures/driveTestClient';
+import { FakeSyncDrive } from './fixtures/fakeSyncDrive';
 import {
   createChromeMock,
   loadServiceClass,
@@ -66,7 +67,7 @@ describe('GoogleDriveSyncService prompts-only sync', () => {
 describe('GoogleDriveSyncService highlights-only sync', () => {
   const fetchMock = vi.fn();
   const accountScope: SyncAccountScope = {
-    accountKey: 'email:account@example.com',
+    accountKey: `email:${hashString('account@example.com')}`,
     accountId: 2,
     routeUserId: '2',
   };
@@ -95,50 +96,16 @@ describe('GoogleDriveSyncService highlights-only sync', () => {
 
     const exact = `${'0123456789'.repeat(1_000)}-exact-tail`;
     const payload = createHighlightPayload(accountScope, exact);
-    let uploadedPayload: unknown = null;
+    const drive = new FakeSyncDrive();
     const searchedFileNames: string[] = [];
-
+    drive.beforeFind = async (name) => {
+      searchedFileNames.push(name);
+    };
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = new URL(String(input));
-      if (url.origin === 'https://www.googleapis.com' && url.pathname === '/drive/v3/files') {
-        const query = url.searchParams.get('q') ?? '';
-        if (query.includes("mimeType='application/vnd.google-apps.folder'")) {
-          return responseJson({
-            files: [
-              {
-                id: 'backup-folder',
-                name: 'Voyager Data',
-                mimeType: 'application/vnd.google-apps.folder',
-                appProperties: { voyagerDataFolder: '1' },
-              },
-            ],
-          });
-        }
-        if (query.includes("name='gemini-voyager-folders.json'")) {
-          return responseJson({ files: [] });
-        }
-        const name = /name='([^']+)'/.exec(query)?.[1];
-        if (name) searchedFileNames.push(name);
-        return responseJson({ files: [{ id: 'highlight-file' }] });
-      }
-      if (url.pathname === '/drive/v3/files/highlight-file') {
-        if (url.searchParams.get('alt') === 'media') return responseJson(uploadedPayload);
-        return responseJson({ parents: ['backup-folder'], trashed: false });
-      }
-      if (url.pathname === '/drive/v3/files/backup-folder') {
-        return responseJson({
-          id: 'backup-folder',
-          name: 'Voyager Data',
-          mimeType: 'application/vnd.google-apps.folder',
-          appProperties: { voyagerDataFolder: '1' },
-        });
-      }
-      if (url.pathname === '/upload/drive/v3/files/highlight-file') {
+      if (new URL(String(input)).pathname.startsWith('/upload/drive/v3/files/')) {
         expect(init?.method).toBe('PATCH');
-        uploadedPayload = JSON.parse(String(init?.body));
-        return responseJson({ id: 'highlight-file' });
       }
-      throw new Error(`Unexpected Drive request: ${url.toString()}`);
+      return drive.fetch(input, init);
     });
 
     const GoogleDriveSyncService = await loadServiceClass();
@@ -149,10 +116,11 @@ describe('GoogleDriveSyncService highlights-only sync', () => {
     await expect(service.downloadHighlightsOnly(accountScope, true)).resolves.toEqual(payload);
 
     const scopedFileName = `gemini-voyager-highlights.acct-${hashString(accountScope.accountKey)}.json`;
-    expect(searchedFileNames).toEqual([scopedFileName, scopedFileName]);
+    expect(new Set(searchedFileNames)).toEqual(new Set([scopedFileName]));
     expect(searchedFileNames).not.toContain('gemini-voyager-highlights.json');
+    const uploadedPayload = drive.payload<HighlightExportPayload>(scopedFileName);
     expect(uploadedPayload).toEqual(payload);
-    expect((uploadedPayload as HighlightExportPayload).items[0].anchor.quote.exact).toBe(exact);
+    expect(uploadedPayload.items[0].anchor.quote.exact).toBe(exact);
   });
 
   it('does not fall back to an unscoped legacy file when the scoped file is absent', async () => {
@@ -287,19 +255,21 @@ describe('GoogleDriveSyncService plugin-state file', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('uploads plugin state as an independent global Drive file', async () => {
     const chromeMock = createChromeMock();
     (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
+    const drive = new FakeSyncDrive();
+    vi.stubGlobal('fetch', drive.fetch);
 
     const GoogleDriveSyncService = await loadServiceClass();
     const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
     const { GoogleDriveAuth } = await import('../GoogleDriveAuth');
-    const { GoogleDriveFiles } = await import('../GoogleDriveFiles');
     vi.spyOn(GoogleDriveAuth.prototype, 'getToken').mockResolvedValue('token');
-    vi.spyOn(GoogleDriveFiles.prototype, 'find').mockResolvedValue(null);
-    vi.spyOn(GoogleDriveFiles.prototype, 'ensure').mockImplementation(async (_token, name) => name);
-    const uploadSpy = vi.spyOn(GoogleDriveFiles.prototype, 'upload').mockResolvedValue(undefined);
 
     const ok = await service.upload(
       { folders: [], folderContents: {} },
@@ -322,20 +292,16 @@ describe('GoogleDriveSyncService plugin-state file', () => {
     );
 
     expect(ok).toBe(true);
-    expect(uploadSpy).toHaveBeenCalledWith(
-      'token',
-      'gemini-voyager-plugins.json',
-      expect.objectContaining({
-        format: 'gemini-voyager.plugins.v1',
-        data: {
-          'voyager.example': {
-            enabled: true,
-            installedAt: 123,
-            settings: { width: 80 },
-          },
+    expect(drive.payload('gemini-voyager-plugins.json')).toMatchObject({
+      format: 'gemini-voyager.plugins.v1',
+      data: {
+        'voyager.example': {
+          enabled: true,
+          installedAt: 123,
+          settings: { width: 80 },
         },
-      }),
-    );
+      },
+    });
   });
 
   it('downloads the independent plugin-state file with the aggregate result', async () => {

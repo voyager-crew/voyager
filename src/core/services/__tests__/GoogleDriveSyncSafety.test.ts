@@ -132,7 +132,11 @@ describe('prompts-only read safety', () => {
     drive.failReads.add(PROMPTS);
     const d = device();
     const first = d.service.downloadPromptsOnly();
-    const next = d.service.uploadPromptsOnly([prompt('next')]);
+    const next = d.service.runExclusive((port) => {
+      // The transport recovers for the next queued operation, including its history read.
+      drive.failReads.delete(PROMPTS);
+      return port.uploadPromptsOnly([prompt('next')]);
+    });
 
     await vi.runAllTimersAsync();
 

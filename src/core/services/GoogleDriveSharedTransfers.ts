@@ -32,11 +32,12 @@ export class GoogleDriveSharedTransfers {
     prompts: PromptItem[],
     accountScope: SyncAccountScope | null = null,
     interactive: boolean = true,
+    beforeWrite?: () => Promise<void>,
   ): Promise<boolean> {
     try {
       this.updateState({ isSyncing: true, error: null });
 
-      const token = await this.session.run(() => this.auth.getToken(interactive));
+      const token = await this.session.run(() => this.auth.getToken(interactive, false));
       if (!token) {
         if (!interactive) {
           this.updateState({ isSyncing: false, isAuthenticated: false });
@@ -45,6 +46,10 @@ export class GoogleDriveSharedTransfers {
         throw new Error('Not authenticated');
       }
 
+      this.payloads.beforeFirstWrite(async () => {
+        await beforeWrite?.();
+        await this.session.run(() => this.auth.getToken(interactive));
+      });
       await this.payloads.uploadPrompts(token, prompts, accountScope);
 
       this.updateState({ isSyncing: false, error: null });
@@ -122,7 +127,7 @@ export class GoogleDriveSharedTransfers {
       this.updateState({ isSyncing: true, error: null });
       assertHighlightPayloadForScope(payload, accountScope);
 
-      const token = await this.session.run(() => this.auth.getToken(interactive));
+      const token = await this.session.run(() => this.auth.getToken(interactive, false));
       if (!token) {
         if (!interactive) {
           this.updateState({ isSyncing: false, isAuthenticated: false });
@@ -131,6 +136,9 @@ export class GoogleDriveSharedTransfers {
         throw new Error('Not authenticated');
       }
 
+      this.payloads.beforeFirstWrite(async () => {
+        await this.session.run(() => this.auth.getToken(interactive));
+      });
       await this.payloads.uploadHighlights(token, payload, accountScope);
 
       this.updateState({ isSyncing: false, error: null });

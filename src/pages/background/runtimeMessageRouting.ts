@@ -157,6 +157,7 @@ const HANDLED_BACKGROUND_MESSAGE_TYPES = new Set([
   'gv.sync.download',
   'gv.sync.pullPromptsMerge',
   'gv.sync.pushPromptsMerge',
+  'gv.sync.restorePreviousVersion',
   CATALOG_TIMELINE_PUSH_MESSAGE,
   CATALOG_TIMELINE_PULL_MESSAGE,
   'gv.sync.getState',

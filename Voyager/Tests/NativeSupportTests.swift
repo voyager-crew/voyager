@@ -289,6 +289,29 @@ final class NativeSupportTests: XCTestCase {
         ["action": "googleDriveDownloadFile", "fileID": "drive-file"],
         .googleDriveDownloadFile(fileID: "drive-file")
       ),
+      (
+        [
+          "action": "googleDriveCreateFile",
+          "fileName": "history.json",
+          "appProperties": ["voyagerHistorySource": "prompts.json"],
+          "json": "{unknown media}",
+        ],
+        .googleDriveCreateFile(
+          VoyagerGoogleDriveCreateRequest(
+            fileName: "history.json",
+            appProperties: ["voyagerHistorySource": "prompts.json"],
+            json: "{unknown media}"
+          )
+        )
+      ),
+      (
+        ["action": "googleDriveListHistory", "sourceFileName": "prompts.json"],
+        .googleDriveListHistory(sourceFileName: "prompts.json")
+      ),
+      (
+        ["action": "googleDriveTrashFile", "fileID": "history-file"],
+        .googleDriveTrashFile(fileID: "history-file")
+      ),
       (["action": "iCloudAccountStatus"], .iCloudAccountStatus),
       (
         ["action": "iCloudWriteFile", "fileName": "prompts.json", "json": "{}"],
@@ -317,6 +340,87 @@ final class NativeSupportTests: XCTestCase {
         "fileName": "prompts.json",
       ])
     )
+  }
+
+  func testHistoryCreateRoundTripsUnknownMediaWithoutParsingIt() throws {
+    let raw = "\u{FEFF}  {future 🛟 format}\r\n"
+    let request = VoyagerNativeRequest.googleDriveCreateFile(
+      VoyagerGoogleDriveCreateRequest(
+        fileName: "history.json",
+        appProperties: ["voyagerHistorySource": "prompts.json"],
+        json: raw
+      )
+    )
+    let encoded = try JSONEncoder().encode(request)
+    XCTAssertEqual(try JSONDecoder().decode(VoyagerNativeRequest.self, from: encoded), request)
+    XCTAssertEqual(
+      try VoyagerNativeMessageCodec.decodeRequest(from: [
+        "action": "googleDriveCreateFile",
+        "fileName": "history.json",
+        "appProperties": ["voyagerHistorySource": "prompts.json"],
+        "json": raw,
+      ]),
+      request
+    )
+  }
+
+  func testDriveMediaDecoderPreservesBOMAndRejectsInvalidUTF8() throws {
+    let raw = Data("\u{FEFF}  {future 🛟 format}\r\n".utf8)
+    let decoded = try XCTUnwrap(VoyagerGoogleDriveMedia.decode(raw))
+    XCTAssertEqual(Data(decoded.utf8), raw)
+    XCTAssertNil(VoyagerGoogleDriveMedia.decode(Data([0xFF])))
+  }
+
+  func testHistoryCreateRequiresRawMediaAndTypedProperties() {
+    let base: [String: Any] = [
+      "action": "googleDriveCreateFile",
+      "fileName": "history.json",
+      "appProperties": ["voyagerHistorySource": "prompts.json"],
+    ]
+    XCTAssertThrowsError(try VoyagerNativeMessageCodec.decodeRequest(from: base))
+    for invalid: Any in [false, 1, ["parsed": true], ["array"]] {
+      var message = base
+      message["json"] = invalid
+      XCTAssertThrowsError(try VoyagerNativeMessageCodec.decodeRequest(from: message))
+    }
+    var message = base
+    message["json"] = "{}"
+    message["appProperties"] = ["voyagerHistorySource": 1]
+    XCTAssertThrowsError(try VoyagerNativeMessageCodec.decodeRequest(from: message))
+  }
+
+  func testHistoryMultipartCreatesMetadataAndExactMediaTogether() throws {
+    let raw = "\u{FEFF}  {future 🛟 format}\r\n"
+    let request = VoyagerGoogleDriveCreateRequest(
+      fileName: "history.json",
+      appProperties: ["voyagerHistorySource": "prompts.json"],
+      json: raw
+    )
+    let upload = try request.multipartUpload(parentID: "backup-folder")
+    let prefix = "multipart/related; boundary="
+    XCTAssertTrue(upload.contentType.hasPrefix(prefix))
+    let boundary = String(upload.contentType.dropFirst(prefix.count))
+    let metadataHeader = Data("--\(boundary)\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n".utf8)
+    let separator = Data("\r\n--\(boundary)\r\nContent-Type: application/json\r\n\r\n".utf8)
+    XCTAssertTrue(upload.body.starts(with: metadataHeader))
+    let mediaBoundary = try XCTUnwrap(upload.body.range(of: separator))
+    struct Metadata: Decodable {
+      let name: String
+      let mimeType: String
+      let parents: [String]
+      let appProperties: [String: String]
+    }
+    let metadata = try JSONDecoder().decode(
+      Metadata.self,
+      from: upload.body[metadataHeader.count..<mediaBoundary.lowerBound]
+    )
+    XCTAssertEqual(metadata.name, "history.json")
+    XCTAssertEqual(metadata.mimeType, "application/json")
+    XCTAssertEqual(metadata.parents, ["backup-folder"])
+    XCTAssertEqual(metadata.appProperties, ["voyagerHistorySource": "prompts.json"])
+    var expectedMedia = Data(raw.utf8)
+    expectedMedia.append(Data("\r\n--\(boundary)--\r\n".utf8))
+    XCTAssertEqual(upload.body[mediaBoundary.upperBound...], expectedMedia)
   }
 
   func testNativeResponseKeepsWebExtensionEnvelope() throws {

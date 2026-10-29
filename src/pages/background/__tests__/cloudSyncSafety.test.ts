@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { FakeSyncDrive } from '@/core/services/__tests__/fixtures/fakeSyncDrive';
 import { StorageKeys } from '@/core/types/common';
 import { HIGHLIGHT_EXPORT_FORMAT, HIGHLIGHT_INDEX_KEY_PREFIX } from '@/core/types/highlight';
 import type { SyncAccountScope } from '@/core/types/sync';
@@ -62,7 +63,7 @@ async function device() {
     [StorageKeys.PLUGINS_STATE]: { 'test.plugin': { enabled: true, installedAt: 1 } },
     [StorageKeys.HIGHLIGHT_CLOUD_SYNC_ENABLED]: false,
   };
-  const drive = new Map<string, string>([
+  const seedFiles = new Map<string, string>([
     [foldersFile, JSON.stringify(envelope('gemini-voyager.folders.v1', folders('Cloud folders')))],
     [promptsFile, JSON.stringify(promptEnvelope('cloud'))],
     [
@@ -100,6 +101,9 @@ async function device() {
       }),
     ],
   ]);
+  const fakeDrive = new FakeSyncDrive();
+  const drive = fakeDrive.files;
+  for (const [name, body] of seedFiles) drive.set(name, body);
   let failedLocalKey: string | null = null;
   let failedCloudFile: string | null = null;
   let driveWrites = 0;
@@ -144,43 +148,18 @@ async function device() {
       },
     },
   });
-  const backupFolder = {
-    id: 'backup-folder',
-    name: 'Voyager Data',
-    mimeType: 'application/vnd.google-apps.folder',
-    appProperties: { voyagerDataFolder: '1' },
-  };
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(String(input));
-      const query = url.searchParams.get('q') ?? '';
-      if (url.pathname === '/drive/v3/files' && init?.method === 'POST') {
-        const { name } = JSON.parse(String(init.body)) as { name: string };
-        driveWrites += 1;
-        drive.set(name, '');
-        return Response.json({ id: name });
-      }
-      if (url.pathname === '/drive/v3/files') {
-        if (query.includes("mimeType='application/vnd.google-apps.folder'"))
-          return Response.json({ files: [backupFolder] });
-        if (query.startsWith('(')) return Response.json({ files: [] });
-        const name = /name='([^']+)'/.exec(query)?.[1];
-        if (!name) throw new Error(`Unexpected Drive query: ${query}`);
-        return Response.json({ files: drive.has(name) ? [{ id: name, name }] : [] });
-      }
-      if (url.pathname === '/drive/v3/files/backup-folder') return Response.json(backupFolder);
       const name = decodeURIComponent(url.pathname.split('/').at(-1) ?? '');
-      if (url.pathname.startsWith('/upload/drive/v3/files/')) {
+      if (init?.method === 'POST' || init?.method === 'PATCH') {
         driveWrites += 1;
-        drive.set(name, String(init?.body));
-        return Response.json({ id: name });
       }
-      if (url.searchParams.get('alt') === 'media') {
-        if (name === failedCloudFile) throw new TypeError('Network unavailable');
-        return new Response(drive.get(name) ?? null, { status: drive.has(name) ? 200 : 404 });
+      if (url.searchParams.get('alt') === 'media' && name === failedCloudFile) {
+        throw new TypeError('Network unavailable');
       }
-      return Response.json({ parents: [backupFolder.id], trashed: false });
+      return fakeDrive.fetch(input, init);
     }),
   );
   vi.resetModules();

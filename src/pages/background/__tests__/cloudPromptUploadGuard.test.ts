@@ -226,7 +226,20 @@ describe('guard refusal, force and provider boundaries', () => {
 
 describe('prompts merge upload guard', () => {
   it('implicit account resolution keeps the profile map untouched on refusal and persists it after force', async () => {
-    const d = await createGuardDevice({ isolation: true });
+    const d = await createGuardDevice({
+      isolation: true,
+      pageUrl: 'https://gemini.google.com/u/2/app/one',
+    });
+    const accountKey = 'email:implicit-guard';
+    d.values[StorageKeys.GV_ACCOUNT_PROFILE_MAP] = {
+      version: 1,
+      nextId: 2,
+      profiles: {
+        [accountKey]: { id: 1, createdAt: 1, updatedAt: 1, emailHash: 'implicit-guard' },
+      },
+      routeAliases: { '2': accountKey },
+      emailAliases: { 'implicit-guard': accountKey },
+    };
     const duplicates = Array.from({ length: 24 }, (_, index) => ({
       ...guardPrompt(`cloud-${index}`),
       text: 'One merged body',
@@ -246,12 +259,12 @@ describe('prompts merge upload guard', () => {
       count: 1,
     });
     expect(d.values[StorageKeys.GV_ACCOUNT_PROFILE_MAP]).toMatchObject({
-      profiles: { default: { id: expect.any(Number) } },
+      profiles: { [accountKey]: { id: 1, routeUserId: '2', updatedAt: Date.now() } },
     });
     const scoped = scopedGuardFile(guardFiles.prompts, {
-      accountKey: 'default',
+      accountKey,
       accountId: 1,
-      routeUserId: null,
+      routeUserId: '2',
     });
     expect(d.drive.payload(scoped)).toMatchObject({ items: [duplicates[0]] });
     expect(d.values[StorageKeys.PROMPT_ITEMS]).toEqual([duplicates[0]]);

@@ -13,6 +13,7 @@ import { createForkMessagesOwner } from '../forkMessages';
 
 const mocks = vi.hoisted(() => ({
   drive: {
+    confirmAccountScope: vi.fn(),
     runExclusive: vi.fn(),
     upload: vi.fn(),
     download: vi.fn(),
@@ -134,7 +135,7 @@ describe('cloud sync messages', () => {
     ).resolves.toEqual({ ok: true, count: 3, nameConflicts: 2, state });
     const expected = [prompt('cloud'), prompt('first', 'Review'), prompt('second', 'Review')];
     expect(stored[StorageKeys.PROMPT_ITEMS]).toEqual(expected);
-    expect(mocks.drive.uploadPromptsOnly).toHaveBeenCalledWith(expected, null, false);
+    expect(mocks.drive.uploadPromptsOnly).toHaveBeenCalledWith(expected, null, false, undefined);
     expect(vi.mocked(chrome.storage.local.set).mock.invocationCallOrder[0]).toBeLessThan(
       mocks.drive.uploadPromptsOnly.mock.invocationCallOrder[0],
     );

@@ -8,6 +8,7 @@ import type { StarredMessage } from '@/features/savedLibrary/starTypes';
 import { CATALOG_OUTLINE_WRITE_MESSAGE } from '@/features/timeline/catalogOutlineMessages';
 
 import { createDriveTestClient } from './fixtures/driveTestClient';
+import { FakeSyncDrive } from './fixtures/fakeSyncDrive';
 
 const EXTENSION_ID = 'test-extension';
 const CHATGPT_FILE = 'gemini-voyager-timeline-hierarchy.site-chatgpt.json';
@@ -15,7 +16,11 @@ const CLAUDE_FILE = 'gemini-voyager-timeline-hierarchy.site-claude.json';
 const CHATGPT_KEY = `${StorageKeys.CATALOG_TIMELINE_HIERARCHY_PREFIX}chatgpt:acct:1abc`;
 const CLAUDE_KEY = `${StorageKeys.CATALOG_TIMELINE_HIERARCHY_PREFIX}claude`;
 const CHATGPT_STARS = 'gemini-voyager-stars.site-chatgpt.json';
-const scope: SyncAccountScope = { accountKey: 'person', accountId: 2, routeUserId: '2' };
+const scope: SyncAccountScope = {
+  accountKey: `email:${hashString('person@example.com')}`,
+  accountId: 2,
+  routeUserId: '2',
+};
 const scoped = (base: string) => `${base}.acct-${hashString(scope.accountKey)}.json`;
 
 const geminiStar: StarredMessage = {
@@ -53,45 +58,22 @@ const page = (url: string): chrome.runtime.MessageSender => ({
 });
 
 /** Drive files by name, shared by every simulated device. */
-const drive = new Map<string, string>();
+const fakeDrive = new FakeSyncDrive();
+const drive = fakeDrive.files;
 const uploadedNames: string[] = [];
 
 function stubDrive() {
-  const folder = {
-    id: 'backup-folder',
-    name: 'Voyager Data',
-    mimeType: 'application/vnd.google-apps.folder',
-    appProperties: { voyagerDataFolder: '1' },
-  };
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(String(input));
-      const query = url.searchParams.get('q') ?? '';
-      if (url.pathname === '/drive/v3/files' && init?.method === 'POST') {
-        const { name } = JSON.parse(String(init.body)) as { name: string };
-        return Response.json({ id: name });
-      }
-      if (url.pathname === '/drive/v3/files') {
-        if (query.includes("mimeType='application/vnd.google-apps.folder'")) {
-          return Response.json({ files: [folder] });
-        }
-        if (query.startsWith('(')) return Response.json({ files: [] });
-        const name = /name='([^']+)'/.exec(query)?.[1];
-        if (!name) throw new Error(`Unexpected Drive query: ${query}`);
-        return Response.json({ files: drive.has(name) ? [{ id: name, name }] : [] });
-      }
-      if (url.pathname === '/drive/v3/files/backup-folder') return Response.json(folder);
-      const name = url.pathname.split('/').at(-1)!;
-      if (url.pathname.startsWith('/upload/drive/v3/files/')) {
-        uploadedNames.push(name);
-        drive.set(name, String(init?.body));
-        return Response.json({ id: name });
-      }
-      if (url.searchParams.get('alt') === 'media') {
-        return new Response(drive.get(name), { headers: { 'Content-Type': 'application/json' } });
-      }
-      return Response.json({ parents: [folder.id], trashed: false });
+      const id = url.pathname.split('/').at(-1)!;
+      if (
+        url.pathname.startsWith('/upload/drive/v3/files/') &&
+        !fakeDrive.metadata.get(id)?.appProperties?.voyagerHistorySource
+      )
+        uploadedNames.push(id);
+      return fakeDrive.fetch(input, init);
     }),
   );
 }
@@ -184,6 +166,9 @@ function driveFile(name: string) {
 
 beforeEach(() => {
   drive.clear();
+  fakeDrive.metadata.clear();
+  fakeDrive.trashed.clear();
+  fakeDrive.writes.length = 0;
   uploadedNames.length = 0;
   stubDrive();
 });

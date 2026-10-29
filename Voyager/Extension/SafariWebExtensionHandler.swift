@@ -45,6 +45,12 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
       uploadGoogleDriveFile(request: request, context: context)
     case .googleDriveDownloadFile(let fileID):
       downloadGoogleDriveFile(fileID: fileID, context: context)
+    case .googleDriveCreateFile(let request):
+      createGoogleDriveFile(request: request, context: context)
+    case .googleDriveListHistory(let sourceFileName):
+      listGoogleDriveHistory(sourceFileName: sourceFileName, context: context)
+    case .googleDriveTrashFile(let fileID):
+      trashGoogleDriveFile(fileID: fileID, context: context)
     case .iCloudAccountStatus:
       handleICloudAccountStatus(context: context)
     case .iCloudWriteFile(let request):
@@ -271,6 +277,52 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
         self.respondWithSuccess(
           context: context,
           data: VoyagerGoogleDriveDownloadResponse(json: json, found: json != nil)
+        )
+      case .failure(let error):
+        self.respondWithGoogleDriveError(context: context, error: error)
+      }
+    }
+  }
+
+  private func createGoogleDriveFile(
+    request: VoyagerGoogleDriveCreateRequest,
+    context: NSExtensionContext
+  ) {
+    GoogleDriveService.shared.createFile(
+      named: request.fileName,
+      appProperties: request.appProperties,
+      json: request.json
+    ) { result in
+      switch result {
+      case .success(let file):
+        self.respondWithSuccess(context: context, data: file)
+      case .failure(let error):
+        self.respondWithGoogleDriveError(context: context, error: error)
+      }
+    }
+  }
+
+  private func listGoogleDriveHistory(sourceFileName: String, context: NSExtensionContext) {
+    GoogleDriveService.shared.listHistory(sourceFileName: sourceFileName) { result in
+      switch result {
+      case .success(let files):
+        self.respondWithSuccess(
+          context: context,
+          data: VoyagerGoogleDriveHistoryResponse(files: files)
+        )
+      case .failure(let error):
+        self.respondWithGoogleDriveError(context: context, error: error)
+      }
+    }
+  }
+
+  private func trashGoogleDriveFile(fileID: String, context: NSExtensionContext) {
+    GoogleDriveService.shared.trashFile(fileID: fileID) { result in
+      switch result {
+      case .success:
+        self.respondWithSuccess(
+          context: context,
+          data: VoyagerGoogleDriveTrashResponse(trashed: true)
         )
       case .failure(let error):
         self.respondWithGoogleDriveError(context: context, error: error)

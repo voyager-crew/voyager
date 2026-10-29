@@ -1,0 +1,80 @@
+import type { DriveHistoryRestoreFile, DriveHistoryRestoreTarget } from '@/core/types/driveHistory';
+import type { SyncPlatform } from '@/core/types/sync';
+import {
+  FOLDER_PLATFORMS,
+  FOLDER_PLATFORM_IDS,
+  supportsAccountIsolation,
+  type AccountScopedFolderPlatform,
+} from '@/features/folder/platforms';
+
+import type { GoogleDriveAuth } from './GoogleDriveAuth';
+import { isDriveSyncFileName } from './GoogleDriveHistoryPayload';
+import { AccountUnconfirmedError, GoogleDriveIdentity } from './GoogleDriveIdentity';
+import {
+  HIGHLIGHTS_FILE_NAME,
+  PLUGINS_FILE_NAME,
+  PROMPTS_FILE_NAME,
+  SETTINGS_FILE_NAME,
+} from './GoogleDriveSyncFileNames';
+import type { GoogleDriveSyncSession } from './GoogleDriveSyncSession';
+import type { GoogleDriveUploadFiles } from './GoogleDriveUploadFiles';
+
+export function driveHistoryBaseName(name: string): string {
+  return name.replace(/\.acct-[a-z0-9]+(?=\.json$)/, '');
+}
+
+/** Restore uses the same global files and account-capable owners as upload naming. */
+export function driveHistoryAccountPlatform(
+  name: string,
+  requestedPlatform: SyncPlatform = 'gemini',
+): AccountScopedFolderPlatform | null {
+  const base = driveHistoryBaseName(name);
+  const folderPlatform = FOLDER_PLATFORM_IDS.find(
+    (candidate) => FOLDER_PLATFORMS[candidate].driveFoldersFileName === base,
+  );
+  if (folderPlatform) return supportsAccountIsolation(folderPlatform) ? folderPlatform : null;
+  if (
+    base === SETTINGS_FILE_NAME ||
+    base === PLUGINS_FILE_NAME ||
+    /^gemini-voyager-(?:timeline-hierarchy|stars)\.site-/.test(base)
+  )
+    return null;
+  if (
+    base === PROMPTS_FILE_NAME &&
+    FOLDER_PLATFORMS[requestedPlatform].syncsSharedData &&
+    supportsAccountIsolation(requestedPlatform)
+  )
+    return requestedPlatform;
+  return 'gemini';
+}
+
+export async function restoreDrivePreviousVersion(
+  options: {
+    auth: Pick<GoogleDriveAuth, 'getToken'>;
+    session: GoogleDriveSyncSession;
+    identity: GoogleDriveIdentity;
+    uploads: GoogleDriveUploadFiles;
+  },
+  targets: readonly DriveHistoryRestoreTarget[],
+  interactive = true,
+): Promise<DriveHistoryRestoreFile[]> {
+  const names = targets.map(({ name }) => name);
+  if (names.some((name) => !isDriveSyncFileName(name))) throw new Error('invalid_sync_files');
+  const authorities = targets.map(({ name, accountScope }) => ({
+    name,
+    scope: driveHistoryAccountPlatform(name) ? accountScope : null,
+  }));
+  await options.identity.capture(...authorities.map(({ scope }) => scope));
+  for (const { name, scope } of authorities) {
+    const base = driveHistoryBaseName(name);
+    // A base or legacy route file must never replace the account's canonical email file.
+    if ((base === HIGHLIGHTS_FILE_NAME && !scope) || options.identity.name(base, scope) !== name)
+      throw new AccountUnconfirmedError();
+  }
+  const token = await options.session.run(() => options.auth.getToken(interactive, false));
+  if (!token) return names.map((name) => ({ name, status: 'read_failed' }));
+  options.uploads.setBeforeFirstWrite(async () => {
+    await options.session.run(() => options.auth.getToken(interactive));
+  });
+  return options.session.run(() => options.uploads.restoreHistory(token, names));
+}

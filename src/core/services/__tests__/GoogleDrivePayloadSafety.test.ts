@@ -15,7 +15,11 @@ vi.mock('@/core/utils/browser', () => ({
   isBrave: () => false,
 }));
 
-const scope: SyncAccountScope = { accountKey: 'legacy-person', accountId: 2, routeUserId: '2' };
+const scope: SyncAccountScope = {
+  accountKey: 'email:legacy-person',
+  accountId: 2,
+  routeUserId: '2',
+};
 const scoped = (name: string) =>
   name.replace(/\.json$/, `.acct-${hashString(scope.accountKey)}.json`);
 const exportedAt = '2026-10-29T00:00:00.000Z';

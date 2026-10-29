@@ -14,7 +14,7 @@ import { createDriveTestClient } from './fixtures/driveTestClient';
 
 const native = vi.hoisted(() => vi.fn());
 vi.mock('webextension-polyfill', () => ({ default: { runtime: { sendNativeMessage: native } } }));
-const scope: SyncAccountScope = { accountKey: 'person', accountId: 2, routeUserId: '2' };
+const scope: SyncAccountScope = { accountKey: 'email:person', accountId: 2, routeUserId: '2' };
 const item: StarredMessage = {
   conversationId: 'gemini:conv:abc',
   conversationUrl: 'https://gemini.google.com/u/2/app/abc',

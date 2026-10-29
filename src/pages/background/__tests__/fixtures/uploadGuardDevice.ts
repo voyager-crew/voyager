@@ -158,12 +158,14 @@ export async function createGuardDevice(
     platform?: SyncPlatform;
     scope?: SyncAccountScope;
     isolation?: boolean;
+    pageUrl?: string;
+    safari?: boolean;
   } = {},
 ) {
   const provider = options.provider ?? 'googleDrive';
   const platform = options.platform ?? 'gemini';
   const scope = options.scope;
-  build.target = provider === 'icloud' ? 'safari' : 'chrome';
+  build.target = provider === 'icloud' || options.safari ? 'safari' : 'chrome';
   native.mockReset();
   const values: Record<string, unknown> = {
     gvSyncMode: 'disabled',
@@ -234,8 +236,86 @@ export async function createGuardDevice(
   const drive = new FakeSyncDrive();
   vi.stubGlobal('fetch', drive.fetch);
   native.mockImplementation(async (_app: string, message: Record<string, unknown>) => {
-    const name = String(message.fileName ?? '');
+    const name = String(message.fileName ?? message.fileID ?? '');
     switch (message.action) {
+      case 'googleDriveGetSession':
+        return { success: true, data: { signedIn: true } };
+      case 'googleDriveFindFile': {
+        const metadata = [...drive.metadata.values()].find(
+          (file) => file.name === name && !drive.trashed.has(file.id),
+        );
+        return {
+          success: true,
+          data: {
+            fileID:
+              metadata?.id ?? (drive.files.has(name) && !drive.trashed.has(name) ? name : null),
+          },
+        };
+      }
+      case 'googleDriveEnsureFile':
+      case 'googleDriveCreateFile': {
+        if (message.action === 'googleDriveEnsureFile' && drive.files.has(name))
+          return { success: true, data: { fileID: name } };
+        const response = await drive.createFile(
+          {
+            name,
+            mimeType: 'application/json',
+            parents: ['sync-test-folder'],
+            ...(message.appProperties
+              ? { appProperties: message.appProperties as Record<string, string> }
+              : {}),
+          },
+          message.action === 'googleDriveCreateFile' && typeof message.json === 'string'
+            ? message.json
+            : undefined,
+        );
+        if (!response.ok) return { success: false, error: 'Google Drive write failed' };
+        const metadata = (await response.json()) as {
+          id: string;
+          name: string;
+          createdTime: string;
+        };
+        return {
+          success: true,
+          data: {
+            fileID: metadata.id,
+            ...(message.action === 'googleDriveCreateFile'
+              ? { name: metadata.name, createdTime: metadata.createdTime }
+              : {}),
+          },
+        };
+      }
+      case 'googleDriveListHistory':
+        return {
+          success: true,
+          data: {
+            files: drive.histories(String(message.sourceFileName)).map((file) => ({
+              fileID: file.id,
+              name: file.name,
+              createdTime: file.createdTime,
+            })),
+          },
+        };
+      case 'googleDriveTrashFile':
+        drive.trashed.add(name);
+        return { success: true, data: { trashed: true } };
+      case 'googleDriveDownloadFile':
+        await drive.beforeRead?.(name);
+        if (drive.failReads.has(name)) return { success: false, error: 'Google Drive read failed' };
+        return {
+          success: true,
+          data: {
+            found: drive.files.has(name) && !drive.trashed.has(name),
+            json: drive.files.get(name),
+          },
+        };
+      case 'googleDriveUploadFile':
+        await drive.beforeWrite?.(name, String(message.json));
+        if (drive.failWrites.has(name))
+          return { success: false, error: 'Google Drive write failed' };
+        drive.files.set(name, String(message.json));
+        drive.writes.push(name);
+        return { success: true, data: { saved: true } };
       case 'iCloudAccountStatus':
         return { success: true, data: { available: true } };
       case 'iCloudReadFile':
@@ -270,7 +350,8 @@ export async function createGuardDevice(
   await service.getState();
   const sender: chrome.runtime.MessageSender = {
     id: extensionId,
-    url: `chrome-extension://${extensionId}/src/pages/popup/index.html`,
+    url: options.pageUrl ?? `chrome-extension://${extensionId}/src/pages/popup/index.html`,
+    ...(options.pageUrl ? { tab: { id: 7, url: options.pageUrl } as chrome.tabs.Tab } : {}),
   };
   return {
     drive,

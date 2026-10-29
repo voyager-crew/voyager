@@ -52,6 +52,9 @@ it.each(['provider switch', 'sign-out'] as const)(
     const captured = deferred();
     const tokenRequests: string[] = [];
     const contentWrites: string[] = [];
+    let nativeReadFailure = true;
+    const histories = new Map<string, { source: string; createdTime: string }>();
+    const trashed = new Set<string>();
     native.mockImplementation(async (_app: string, message: Record<string, unknown>) => {
       switch (message.action) {
         case 'googleDriveGetSession':
@@ -66,7 +69,39 @@ it.each(['provider switch', 'sign-out'] as const)(
           return { success: true, data: { fileID: message.fileName } };
         case 'googleDriveEnsureFile':
           return { success: true, data: { fileID: message.fileName } };
+        case 'googleDriveCreateFile': {
+          const fileID = String(message.fileName);
+          const properties = message.appProperties as Record<string, string>;
+          const createdTime = new Date().toISOString();
+          drive.set(fileID, JSON.parse(String(message.json)));
+          histories.set(fileID, {
+            source: properties.voyagerHistorySource,
+            createdTime,
+          });
+          return { success: true, data: { fileID, name: fileID, createdTime } };
+        }
+        case 'googleDriveListHistory':
+          return {
+            success: true,
+            data: {
+              files: [...histories]
+                .filter(
+                  ([id, entry]) => entry.source === message.sourceFileName && !trashed.has(id),
+                )
+                .map(([id, entry]) => ({ fileID: id, name: id, createdTime: entry.createdTime })),
+            },
+          };
+        case 'googleDriveTrashFile':
+          trashed.add(String(message.fileID));
+          return { success: true, data: { trashed: true } };
         case 'googleDriveDownloadFile':
+          if (!nativeReadFailure) {
+            const value = drive.get(String(message.fileID));
+            return {
+              success: true,
+              data: { found: value !== undefined, json: JSON.stringify(value) },
+            };
+          }
           reading.resolve();
           await releaseRead.promise;
           return {
@@ -130,6 +165,7 @@ it.each(['provider switch', 'sign-out'] as const)(
     expect(drive.get(PROMPTS)).toEqual({ items: [prompt('cloud')] });
     expect(cloud.size).toBe(0);
 
+    nativeReadFailure = false;
     await expect(
       service.runExclusive((port) => port.uploadPromptsOnly([prompt('fresh')], null, false)),
     ).resolves.toBe(true);

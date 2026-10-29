@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { SyncPlatform } from '@/core/types/sync';
 
 import { createDriveTestClient } from './fixtures/driveTestClient';
+import { FakeSyncDrive } from './fixtures/fakeSyncDrive';
 
 function installChrome(): void {
   const area = () => ({
@@ -21,6 +22,8 @@ function installChrome(): void {
 }
 
 async function createService() {
+  const drive = new FakeSyncDrive();
+  vi.stubGlobal('fetch', drive.fetch);
   vi.resetModules();
   const { GoogleDriveSyncService } = await import('../GoogleDriveSyncService');
   const service = createDriveTestClient(new GoogleDriveSyncService());
@@ -28,7 +31,7 @@ async function createService() {
   const { GoogleDriveAuth } = await import('../GoogleDriveAuth');
   const { GoogleDriveFiles } = await import('../GoogleDriveFiles');
   vi.spyOn(GoogleDriveAuth.prototype, 'getToken').mockResolvedValue('token');
-  return { service, files: GoogleDriveFiles.prototype };
+  return { service, files: GoogleDriveFiles.prototype, drive };
 }
 
 const EMPTY_FOLDERS = { folders: [], folderContents: {} };
@@ -39,27 +42,25 @@ describe('GoogleDriveSyncService folder platform files', () => {
     installChrome();
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it.each([
     ['gemini', 'gemini-voyager-folders.json', 'lastUploadTime'],
     ['aistudio', 'gemini-voyager-aistudio-folders.json', 'lastUploadTimeAIStudio'],
   ] as const)(
     'uploads %s folders to its own Drive file and timestamp',
     async (platform: SyncPlatform, fileName, timeField) => {
-      const { service, files } = await createService();
-      vi.spyOn(files, 'find').mockResolvedValue(null);
-      vi.spyOn(files, 'ensure').mockImplementation(async (_token, name) => name);
-      vi.spyOn(files, 'upload').mockResolvedValue(undefined);
+      const { service, drive } = await createService();
 
       await expect(service.upload(EMPTY_FOLDERS, [], null, true, platform)).resolves.toBe(true);
 
-      expect(files.upload).toHaveBeenCalledExactlyOnceWith(
-        'token',
-        fileName,
-        expect.objectContaining({
-          format: 'gemini-voyager.folders.v1',
-          data: EMPTY_FOLDERS,
-        }),
-      );
+      expect(drive.payload(fileName)).toMatchObject({
+        format: 'gemini-voyager.folders.v1',
+        data: EMPTY_FOLDERS,
+      });
+      expect(drive.writes).toEqual([fileName]);
       const state = await service.getState();
       expect(state[timeField]).toEqual(expect.any(Number));
       const otherFields = ['lastUploadTime', 'lastUploadTimeAIStudio'].filter(

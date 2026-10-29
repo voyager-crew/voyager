@@ -3,16 +3,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StorageKeys } from '@/core/types/common';
 import type { FolderData } from '@/core/types/folder';
 import type { SyncAccountScope } from '@/core/types/sync';
+import { hashString } from '@/core/utils/hash';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 import { createStarStore } from '@/features/savedLibrary/starStore';
 
 import { createDriveTestClient } from './fixtures/driveTestClient';
+import { FakeSyncDrive } from './fixtures/fakeSyncDrive';
 
 const EXPORTED_AT = '2026-10-03T12:00:00.000Z';
 const NOW = Date.parse(EXPORTED_AT);
 const CHATGPT_FILE = 'gemini-voyager-chatgpt-folders.json';
 const accountScope: SyncAccountScope = {
-  accountKey: 'email:example@example.com',
+  accountKey: `email:${hashString('example@example.com')}`,
   accountId: 2,
   routeUserId: '2',
 };
@@ -57,17 +59,11 @@ function createBoundaries(
   const syncStorage = { ...initialSyncStorage };
   const localReadKeys: string[] = [];
   const syncReadKeys: string[] = [];
-  const mediaByName = new Map<string, string>();
+  const drive = new FakeSyncDrive();
+  const mediaByName = drive.files;
   const uploadedNames: string[] = [];
   const downloadedNames: string[] = [];
   const searchedNames: string[] = [];
-  const folder = {
-    id: 'backup-folder',
-    name: 'Voyager Data',
-    mimeType: 'application/vnd.google-apps.folder',
-    appProperties: { voyagerDataFolder: '1' },
-  };
-
   function storageArea(values: Record<string, unknown>, readKeys: string[]) {
     return {
       get: vi.fn(async (keys: string | string[] | Record<string, unknown> | null) => {
@@ -114,37 +110,21 @@ function createBoundaries(
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(String(input));
       const query = url.searchParams.get('q') ?? '';
-      if (url.pathname === '/drive/v3/files' && init?.method === 'POST') {
-        const metadata = JSON.parse(String(init.body)) as { name: string };
-        return Response.json({ id: metadata.name });
-      }
-      if (url.pathname === '/drive/v3/files') {
-        if (query.includes("mimeType='application/vnd.google-apps.folder'")) {
-          return Response.json({ files: [folder] });
-        }
-        if (query.startsWith('(')) return Response.json({ files: [] });
-        const name = /name='([^']+)'/.exec(query)?.[1];
-        if (!name) throw new Error(`Unexpected Drive query: ${query}`);
+      const name = /name='([^']+)'/.exec(query)?.[1];
+      if (url.pathname === '/drive/v3/files' && !query.startsWith('(') && name)
         searchedNames.push(name);
-        return Response.json({ files: mediaByName.has(name) ? [{ id: name, name }] : [] });
-      }
-      if (url.pathname === '/drive/v3/files/backup-folder') return Response.json(folder);
-      const name = url.pathname.split('/').at(-1)!;
-      if (url.pathname.startsWith('/upload/drive/v3/files/')) {
-        uploadedNames.push(name);
-        mediaByName.set(name, String(init?.body));
-        return Response.json({ id: name });
-      }
-      if (url.pathname.startsWith('/drive/v3/files/')) {
-        if (url.searchParams.get('alt') === 'media') {
-          downloadedNames.push(name);
-          return new Response(mediaByName.get(name), {
-            headers: { 'Content-Type': 'application/json' },
-          });
-        }
-        return Response.json({ parents: [folder.id], trashed: false });
-      }
-      throw new Error(`Unexpected Drive request: ${url}`);
+      const id = url.pathname.split('/').at(-1)!;
+      if (
+        url.pathname.startsWith('/upload/drive/v3/files/') &&
+        !drive.metadata.get(id)?.appProperties?.voyagerHistorySource
+      )
+        uploadedNames.push(id);
+      if (
+        url.searchParams.get('alt') === 'media' &&
+        !drive.metadata.get(id)?.appProperties?.voyagerHistorySource
+      )
+        downloadedNames.push(id);
+      return drive.fetch(input, init);
     }),
   );
   return {

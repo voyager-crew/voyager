@@ -79,7 +79,7 @@ export class GoogleDriveFolderTransfers {
       const { syncsConversationExtras } = FOLDER_PLATFORMS[platform];
       if (syncsConversationExtras && starred && !starStore)
         throw new Error('Star uploads require the queued store');
-      const snapshot = {
+      const snapshot = await payloads.prepareSnapshot(token, {
         folders,
         prompts,
         starred,
@@ -90,16 +90,18 @@ export class GoogleDriveFolderTransfers {
         timelineHierarchyAccountScope: capturedHierarchyScope,
         settings,
         plugins,
-      };
+      });
       const plan = payloads.planUpload(snapshot);
       const guard = await payloads.guardUpload(token, snapshot, options);
       if (guard.kind === 'refused') {
         this.updateState({ isSyncing: false });
         return guard;
       }
-      await onGuardAllowed?.();
-      this.session.assertActive();
-      await this.session.run(() => this.auth.getToken(interactive));
+      payloads.beforeFirstWrite(async () => {
+        await onGuardAllowed?.();
+        this.session.assertActive();
+        await this.session.run(() => this.auth.getToken(interactive));
+      });
       let commitStars: (() => Promise<void>) | undefined;
       if (syncsConversationExtras && starStore) {
         const remote = await port.read();
@@ -113,6 +115,7 @@ export class GoogleDriveFolderTransfers {
         ]);
       }
       // All required reads and payloads are ready before any file can be created or replaced.
+      await payloads.prepareUpload(token);
       const fileCount = await payloads.uploadPlan(token, plan);
       await commitStars?.();
       port.assertActive();

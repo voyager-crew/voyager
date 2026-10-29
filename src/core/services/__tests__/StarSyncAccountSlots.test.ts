@@ -8,8 +8,13 @@ import type { StarredMessage } from '@/features/savedLibrary/starTypes';
 
 import { GoogleDriveSyncPayloads } from '../GoogleDriveSyncPayloads';
 import { StarDriveSyncCoordinator } from '../StarDriveSyncCoordinator';
+import { noDriveHistory } from './fixtures/noDriveHistory';
 
-const source: SyncAccountScope = { accountKey: 'same-person', accountId: 2, routeUserId: '0' };
+const source: SyncAccountScope = {
+  accountKey: 'email:same-person',
+  accountId: 2,
+  routeUserId: '0',
+};
 const destination = { ...source, routeUserId: '2' };
 const remoteStar: StarredMessage = {
   conversationId: 'gemini:conv:abc',
@@ -29,7 +34,7 @@ const backup = (items = [remoteStar]) =>
     source,
     'test',
   );
-function fixture() {
+async function fixture() {
   const values: Record<string, unknown> = {};
   const store = createStarStore({
     get: async () => structuredClone(values),
@@ -40,6 +45,7 @@ function fixture() {
   const remote = new Map<string, unknown>();
   const writes: string[] = [];
   const payloads = new GoogleDriveSyncPayloads({
+    ...noDriveHistory,
     ensure: async (_token, name) => name,
     find: async (_token, name) => (remote.has(name) ? name : null),
     upload: async (_token, name, payload) => {
@@ -50,12 +56,13 @@ function fixture() {
       (remote.get(name) as T) ?? null,
     prepareDownload: async () => {},
   });
+  await payloads.captureScopes(source, destination);
   return { store, remote, writes, payloads };
 }
 afterEach(() => vi.restoreAllMocks());
 
 it('a backup from the same account on another /u/ slot restores its stars', async () => {
-  const { store } = fixture();
+  const { store } = await fixture();
   const noSlot = {
     ...remoteStar,
     turnId: 's-no-slot',
@@ -66,7 +73,7 @@ it('a backup from the same account on another /u/ slot restores its stars', asyn
 });
 
 it('a deletion from the same account on another /u/ slot removes the local star', async () => {
-  const { store } = fixture();
+  const { store } = await fixture();
   const now = 1_800_000_000_000;
   vi.spyOn(Date, 'now').mockReturnValue(now);
   await store.add(localStar);
@@ -90,7 +97,7 @@ it('a deletion from the same account on another /u/ slot removes the local star'
 });
 
 it('a following push does not empty a same-account backup from another /u/ slot', async () => {
-  const { store, remote, payloads, writes } = fixture();
+  const { store, remote, payloads, writes } = await fixture();
   await payloads.writeStars('token', backup(), source, true);
   const { text: _text, ...preview } = remoteStar;
   await payloads.writeStars(
@@ -131,14 +138,14 @@ it('a following push does not empty a same-account backup from another /u/ slot'
 });
 
 it('restoring a same-account star repairs its cached navigation slot without changing its identity', async () => {
-  const { store } = fixture();
+  const { store } = await fixture();
   await store.add(remoteStar);
   await store.mergeSync({ v2: backup() }, destination);
   expect((await store.getAll()).messages[remoteStar.conversationId]).toEqual([localStar]);
 });
 
 it('a newer legacy re-star survives a canonical deletion import and the following push', async () => {
-  const { store, payloads } = fixture();
+  const { store, payloads } = await fixture();
   const now = 1_800_000_000_000;
   vi.spyOn(Date, 'now').mockReturnValue(now);
   const newer = {
@@ -180,7 +187,7 @@ it('a newer legacy re-star survives a canonical deletion import and the followin
 });
 
 it('a newer legacy deletion keeps both aliases when its backup uses the canonical id', async () => {
-  const { store } = fixture();
+  const { store } = await fixture();
   const now = 1_800_000_000_000;
   vi.spyOn(Date, 'now').mockReturnValue(now + 100);
   const legacy = {
@@ -221,7 +228,7 @@ it('a newer legacy deletion keeps both aliases when its backup uses the canonica
 it.each(['live', 'deleted'] as const)(
   'a newer re-star from an old version on another /u/ slot survives the v2 merge (%s)',
   async (mode) => {
-    const { store, payloads, writes } = fixture();
+    const { store, payloads, writes } = await fixture();
     const now = 1_800_000_000_000;
     vi.spyOn(Date, 'now').mockReturnValue(now);
     await payloads.writeStars(

@@ -1,4 +1,5 @@
 import { accountIsolationService } from '@/core/services/AccountIsolationService';
+import { AccountUnconfirmedError } from '@/core/services/GoogleDriveIdentity';
 import { googleDriveSyncService } from '@/core/services/GoogleDriveSyncService';
 import type { GoogleDriveSyncTransfer } from '@/core/services/GoogleDriveSyncTransfer';
 import { HighlightDriveSyncCoordinator } from '@/core/services/HighlightDriveSyncCoordinator';
@@ -25,6 +26,7 @@ import {
   filterForkNodesByRouteScope,
   retargetForkNodesToRoute,
 } from './cloudSyncLocalData';
+import { handleDriveHistoryMessage } from './driveHistoryMessages';
 import { isHighlightCloudSyncRequested, notifyHighlightChanged } from './highlightMessages';
 import { mergeCloudPrompts, mergeCloudPromptsForUpload } from './promptDriveMerge';
 import { promptLibraryOwner } from './queueOwners';
@@ -88,6 +90,8 @@ export function createCloudSyncMessageHandler(readers: {
     drive: GoogleDriveSyncTransfer,
   ): Promise<unknown> {
     const payload = message.payload as SyncPayload | undefined;
+    if (message.type === 'gv.sync.restorePreviousVersion')
+      return handleDriveHistoryMessage(message.payload, sender, drive);
     if (isCatalogTimelineSyncMessage(message.type)) {
       return handleCatalogTimelineSyncMessage(
         message.type,
@@ -128,6 +132,7 @@ export function createCloudSyncMessageHandler(readers: {
           isSyncAccountScope(rawScope) ? rawScope : undefined,
           false,
         );
+        await drive.confirmAccountScope(accountScope);
         const { folders, prompts } = await loadAuthoritativeSyncPayload(platform, accountScope);
         const timelineHierarchyAccountScope =
           syncsConversationExtras && isSyncAccountScope(rawTimelineHierarchyScope)
@@ -138,6 +143,8 @@ export function createCloudSyncMessageHandler(readers: {
             ? rawHighlightScope
             : (timelineHierarchyAccountScope ?? (isSyncAccountScope(rawScope) ? rawScope : null));
         const shouldSyncHighlights = syncHighlights && highlightAccountScope !== null;
+        await drive.confirmAccountScope(timelineHierarchyAccountScope);
+        if (shouldSyncHighlights) await drive.confirmAccountScope(highlightAccountScope);
         // Also get the conversation extras (stars, forks, timeline hierarchy) from local storage
         // The queued store reads/reconciles stars after the upload guard passes.
         const starredDataRaw =
@@ -245,7 +252,9 @@ export function createCloudSyncMessageHandler(readers: {
           sender,
           platform,
           isSyncAccountScope(rawScope) ? rawScope : undefined,
+          false,
         );
+        await drive.confirmAccountScope(accountScope);
         const timelineHierarchyAccountScope =
           syncsConversationExtras && isSyncAccountScope(rawTimelineHierarchyScope)
             ? rawTimelineHierarchyScope
@@ -255,6 +264,8 @@ export function createCloudSyncMessageHandler(readers: {
             ? rawHighlightScope
             : (timelineHierarchyAccountScope ?? (isSyncAccountScope(rawScope) ? rawScope : null));
         const shouldSyncHighlights = syncHighlights && highlightAccountScope !== null;
+        await drive.confirmAccountScope(timelineHierarchyAccountScope);
+        if (shouldSyncHighlights) await drive.confirmAccountScope(highlightAccountScope);
         const data = await drive.download(
           interactive,
           platform,
@@ -327,7 +338,9 @@ export function createCloudSyncMessageHandler(readers: {
           sender,
           'gemini',
           isSyncAccountScope(rawScope) ? rawScope : undefined,
+          false,
         );
+        await drive.confirmAccountScope(accountScope);
         const cloudRead = await drive.downloadPromptsOnly(accountScope, interactive !== false);
         if (cloudRead.kind === 'failed' || cloudRead.kind === 'unrecognized') {
           return { ok: false, state: await drive.getState() };
@@ -349,6 +362,7 @@ export function createCloudSyncMessageHandler(readers: {
           isSyncAccountScope(rawScope) ? rawScope : undefined,
           false,
         );
+        await drive.confirmAccountScope(accountScope);
         // Guard the merged list in the prompt-owner turn, before it writes locally.
         const cloudRead = await drive.downloadPromptsOnly(
           accountScope,
@@ -378,14 +392,16 @@ export function createCloudSyncMessageHandler(readers: {
         if (merged.kind === 'failed') {
           return { ok: false, state: await drive.getState() };
         }
-        if (accountScope && !isSyncAccountScope(rawScope)) {
-          await resolveAccountScopeForMessage(sender, platform);
-        }
         const localPrompts = merged.items;
         const uploaded = await drive.uploadPromptsOnly(
           localPrompts,
           accountScope,
           interactive !== false,
+          accountScope && !isSyncAccountScope(rawScope)
+            ? async () => {
+                await resolveAccountScopeForMessage(sender, platform);
+              }
+            : undefined,
         );
         return {
           ok: uploaded,
@@ -431,6 +447,15 @@ export function createCloudSyncMessageHandler(readers: {
     ].includes(message.type);
     return configuration
       ? configure(message)
-      : googleDriveSyncService.runExclusive((drive) => handle(message, sender, drive));
+      : googleDriveSyncService
+          .runExclusive((drive) => handle(message, sender, drive))
+          .catch((error: unknown) => {
+            if (
+              error instanceof AccountUnconfirmedError ||
+              (error instanceof Error && error.message === 'account_unconfirmed')
+            )
+              return { ok: false, error: 'account_unconfirmed' };
+            throw error;
+          });
   };
 }

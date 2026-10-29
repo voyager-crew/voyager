@@ -10,6 +10,9 @@ enum VoyagerNativeRequest: Codable, Equatable {
   case googleDriveEnsureFile(VoyagerGoogleDriveEnsureRequest)
   case googleDriveUploadFile(VoyagerGoogleDriveFileRequest)
   case googleDriveDownloadFile(fileID: String)
+  case googleDriveCreateFile(VoyagerGoogleDriveCreateRequest)
+  case googleDriveListHistory(sourceFileName: String)
+  case googleDriveTrashFile(fileID: String)
   case iCloudAccountStatus
   case iCloudWriteFile(VoyagerICloudWriteRequest)
   case iCloudReadFile(fileName: String)
@@ -27,6 +30,9 @@ enum VoyagerNativeRequest: Codable, Equatable {
     case .googleDriveEnsureFile: return Action.googleDriveEnsureFile.rawValue
     case .googleDriveUploadFile: return Action.googleDriveUploadFile.rawValue
     case .googleDriveDownloadFile: return Action.googleDriveDownloadFile.rawValue
+    case .googleDriveCreateFile: return Action.googleDriveCreateFile.rawValue
+    case .googleDriveListHistory: return Action.googleDriveListHistory.rawValue
+    case .googleDriveTrashFile: return Action.googleDriveTrashFile.rawValue
     case .iCloudAccountStatus: return Action.iCloudAccountStatus.rawValue
     case .iCloudWriteFile: return Action.iCloudWriteFile.rawValue
     case .iCloudReadFile: return Action.iCloudReadFile.rawValue
@@ -45,6 +51,9 @@ enum VoyagerNativeRequest: Codable, Equatable {
     case googleDriveEnsureFile
     case googleDriveUploadFile
     case googleDriveDownloadFile
+    case googleDriveCreateFile
+    case googleDriveListHistory
+    case googleDriveTrashFile
     case iCloudAccountStatus
     case iCloudWriteFile
     case iCloudReadFile
@@ -54,6 +63,7 @@ enum VoyagerNativeRequest: Codable, Equatable {
 
   private enum CodingKeys: String, CodingKey {
     case action
+    case appProperties
     case body
     case cachedFileID
     case fileID
@@ -62,6 +72,7 @@ enum VoyagerNativeRequest: Codable, Equatable {
     case interactive
     case json
     case pngBase64
+    case sourceFileName
     case title
     case url
   }
@@ -112,6 +123,20 @@ enum VoyagerNativeRequest: Codable, Equatable {
       self = .googleDriveDownloadFile(
         fileID: try container.decode(String.self, forKey: .fileID)
       )
+    case .googleDriveCreateFile:
+      self = .googleDriveCreateFile(
+        VoyagerGoogleDriveCreateRequest(
+          fileName: try container.decode(String.self, forKey: .fileName),
+          appProperties: try container.decode([String: String].self, forKey: .appProperties),
+          json: try container.decode(String.self, forKey: .json)
+        )
+      )
+    case .googleDriveListHistory:
+      self = .googleDriveListHistory(
+        sourceFileName: try container.decode(String.self, forKey: .sourceFileName)
+      )
+    case .googleDriveTrashFile:
+      self = .googleDriveTrashFile(fileID: try container.decode(String.self, forKey: .fileID))
     case .iCloudAccountStatus:
       self = .iCloudAccountStatus
     case .iCloudWriteFile:
@@ -169,6 +194,17 @@ enum VoyagerNativeRequest: Codable, Equatable {
     case .googleDriveDownloadFile(let fileID):
       try container.encode(Action.googleDriveDownloadFile, forKey: .action)
       try container.encode(fileID, forKey: .fileID)
+    case .googleDriveCreateFile(let request):
+      try container.encode(Action.googleDriveCreateFile, forKey: .action)
+      try container.encode(request.fileName, forKey: .fileName)
+      try container.encode(request.appProperties, forKey: .appProperties)
+      try container.encode(request.json, forKey: .json)
+    case .googleDriveListHistory(let sourceFileName):
+      try container.encode(Action.googleDriveListHistory, forKey: .action)
+      try container.encode(sourceFileName, forKey: .sourceFileName)
+    case .googleDriveTrashFile(let fileID):
+      try container.encode(Action.googleDriveTrashFile, forKey: .action)
+      try container.encode(fileID, forKey: .fileID)
     case .iCloudAccountStatus:
       try container.encode(Action.iCloudAccountStatus, forKey: .action)
     case .iCloudWriteFile(let request):
@@ -208,9 +244,57 @@ struct VoyagerGoogleDriveEnsureRequest: Codable, Equatable {
   let cachedFileID: String?
 }
 
+struct VoyagerGoogleDriveCreateRequest: Codable, Equatable {
+  let fileName: String
+  let appProperties: [String: String]
+  let json: String
+
+  func multipartUpload(parentID: String) throws -> (contentType: String, body: Data) {
+    struct Metadata: Encodable {
+      let name: String
+      let mimeType = "application/json"
+      let parents: [String]
+      let appProperties: [String: String]
+    }
+    let boundary = "voyager-history-\(UUID().uuidString)"
+    let metadata = try JSONEncoder().encode(
+      Metadata(name: fileName, parents: [parentID], appProperties: appProperties)
+    )
+    var body = Data("--\(boundary)\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n".utf8)
+    body.append(metadata)
+    body.append(Data("\r\n--\(boundary)\r\nContent-Type: application/json\r\n\r\n".utf8))
+    // Keep unknown formats and a UTF-8 BOM byte-for-byte; history is not a parsed backup.
+    body.append(Data(json.utf8))
+    body.append(Data("\r\n--\(boundary)--\r\n".utf8))
+    return ("multipart/related; boundary=\(boundary)", body)
+  }
+}
+
+struct VoyagerGoogleDriveHistoryFile: Codable, Equatable {
+  let fileID: String
+  let name: String
+  let createdTime: String
+}
+
+struct VoyagerGoogleDriveHistoryResponse: Codable {
+  let files: [VoyagerGoogleDriveHistoryFile]
+}
+
+struct VoyagerGoogleDriveTrashResponse: Codable {
+  let trashed: Bool
+}
+
 struct VoyagerGoogleDriveFileRequest: Codable, Equatable {
   let fileID: String
   let json: String
+}
+
+enum VoyagerGoogleDriveMedia {
+  static func decode(_ data: Data) -> String? {
+    guard String(data: data, encoding: .utf8) != nil else { return nil }
+    // Foundation validates UTF-8 but strips a BOM; Swift decoding preserves the validated bytes.
+    return String(decoding: data, as: UTF8.self)
+  }
 }
 
 struct VoyagerNativeFailure: Codable, Equatable {

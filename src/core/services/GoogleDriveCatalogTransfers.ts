@@ -18,6 +18,7 @@ type RunCatalogTransfer = <T>(
   interactive: boolean,
   fallback: T,
   run: (token: string, session: CatalogSession) => Promise<T>,
+  purpose?: 'upload' | 'download',
 ) => Promise<T>;
 
 export class GoogleDriveCatalogTransfers {
@@ -30,6 +31,7 @@ export class GoogleDriveCatalogTransfers {
       token: string,
       session: CatalogSession,
     ) => (site: string) => StarTransferPort,
+    private readonly persistAuth: (interactive: boolean) => Promise<void>,
   ) {}
 
   /** Catalog outlines and stars are one upload: prepare both before writing either kind. */
@@ -39,19 +41,26 @@ export class GoogleDriveCatalogTransfers {
     starSites: readonly string[],
     interactive: boolean = true,
   ): Promise<boolean> {
-    return this.run('Timeline outline upload', interactive, false, async (token, session) => {
-      const timeline = await this.timeline.planUpload(token, bySite);
-      const catalogPort = this.catalogPortFor(token, session);
-      const commitStars = store
-        ? await this.stars.prepare(
-            store,
-            starSites.map((site) => ({ port: catalogPort(site), scope: null })),
-          )
-        : undefined;
-      await this.timeline.uploadPlan(token, timeline, () => session.assertActive());
-      await commitStars?.();
-      return true;
-    });
+    return this.run(
+      'Timeline outline upload',
+      interactive,
+      false,
+      async (token, session) => {
+        const timeline = await this.timeline.planUpload(token, bySite);
+        const catalogPort = this.catalogPortFor(token, session);
+        const commitStars = store
+          ? await this.stars.prepare(
+              store,
+              starSites.map((site) => ({ port: catalogPort(site), scope: null })),
+            )
+          : undefined;
+        this.payloads.beforeFirstWrite(() => this.persistAuth(interactive));
+        await this.timeline.uploadPlan(token, timeline, () => session.assertActive());
+        await commitStars?.();
+        return true;
+      },
+      'upload',
+    );
   }
 
   /** The cloud timeline outlines of the listed catalog sites, or null when the download failed. */
@@ -81,7 +90,7 @@ export class GoogleDriveCatalogTransfers {
 
 interface CatalogTransferOptions {
   getSession(): CatalogSession;
-  getToken(interactive: boolean): Promise<string | null>;
+  getToken(interactive: boolean, persist: boolean): Promise<string | null>;
   updateState(state: Partial<SyncState>): void;
 }
 
@@ -92,11 +101,12 @@ export function createCatalogTransferRunner(options: CatalogTransferOptions): Ru
     interactive: boolean,
     fallback: T,
     run: (token: string, session: CatalogSession) => Promise<T>,
+    purpose: 'upload' | 'download' = 'download',
   ): Promise<T> => {
     try {
       options.updateState({ isSyncing: true, error: null });
       const session = options.getSession();
-      const token = await options.getToken(interactive);
+      const token = await options.getToken(interactive, purpose !== 'upload');
       if (!token) {
         if (!interactive) {
           options.updateState({ isSyncing: false, isAuthenticated: false });

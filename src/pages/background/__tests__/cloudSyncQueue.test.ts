@@ -111,6 +111,41 @@ async function device() {
       case 'googleDriveEnsureFile':
         if (!drive.files.has(name)) drive.files.set(name, '');
         return { success: true, data: { fileID: name } };
+      case 'googleDriveCreateFile': {
+        const response = await drive.createFile(
+          {
+            name,
+            mimeType: 'application/json',
+            parents: ['sync-test-folder'],
+            appProperties: message.appProperties as Record<string, string>,
+          },
+          typeof message.json === 'string' ? message.json : undefined,
+        );
+        if (!response.ok) return { success: false, error: 'Google Drive write failed' };
+        const metadata = (await response.json()) as {
+          id: string;
+          name: string;
+          createdTime: string;
+        };
+        return {
+          success: true,
+          data: { fileID: metadata.id, name: metadata.name, createdTime: metadata.createdTime },
+        };
+      }
+      case 'googleDriveListHistory':
+        return {
+          success: true,
+          data: {
+            files: drive.histories(String(message.sourceFileName)).map((file) => ({
+              fileID: file.id,
+              name: file.name,
+              createdTime: file.createdTime,
+            })),
+          },
+        };
+      case 'googleDriveTrashFile':
+        drive.trashed.add(name);
+        return { success: true, data: { trashed: true } };
       case 'googleDriveDownloadFile':
         await drive.beforeRead?.(name);
         if (nativeAuthLost)

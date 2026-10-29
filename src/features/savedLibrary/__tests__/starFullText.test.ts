@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { GoogleDriveSyncPayloads } from '@/core/services/GoogleDriveSyncPayloads';
 import { StarDriveSyncCoordinator } from '@/core/services/StarDriveSyncCoordinator';
+import { noDriveHistory } from '@/core/services/__tests__/fixtures/noDriveHistory';
 import { StorageKeys } from '@/core/types/common';
 import { createStarredMessagesHandler } from '@/pages/background/starredMessages';
 
@@ -271,6 +272,7 @@ describe('Saved Library full prompt text', () => {
     await store.add(item);
     const remote = new Map<string, unknown>();
     const payloads = new GoogleDriveSyncPayloads({
+      ...noDriveHistory,
       ensure: async (_token, name) => name,
       find: async (_token, name) => (remote.has(name) ? name : null),
       upload: async (_token, name, payload) => {

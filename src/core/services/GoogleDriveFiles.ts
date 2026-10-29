@@ -1,12 +1,15 @@
+import type { DriveHistoryFile } from '@/core/types/driveHistory';
 import type { SyncProvider } from '@/core/types/sync';
 import { UnrecognizedDriveFileError, parseDriveJson } from '@/core/utils/driveReadResult';
 import {
   downloadSafariGoogleDriveFile,
+  downloadSafariGoogleDriveText,
   ensureSafariGoogleDriveFile,
   findSafariGoogleDriveFile,
   getSafariGoogleDriveRetryDelay,
   isSafariGoogleDriveAuthError,
   uploadSafariGoogleDriveFile,
+  uploadSafariGoogleDriveText,
 } from '@/core/utils/safariGoogleDrive';
 import {
   getSafariICloudRetryDelay,
@@ -17,26 +20,60 @@ import {
 
 import { isSafariRuntime } from './GoogleDriveAuth';
 import type { GoogleDriveBackupFolder } from './GoogleDriveBackupFolder';
+import { GoogleDriveHistoryFiles } from './GoogleDriveHistoryFiles';
 import { logger } from './LoggerService';
 
 export const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
-const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3';
+export const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3';
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY_MS = 1000;
 
 /** Owns file discovery/cache, relocation and provider-specific media retry policy. */
 export class GoogleDriveFiles {
   private fileIdByName: Record<string, string> = {};
+  private readonly history: GoogleDriveHistoryFiles;
   constructor(
     private readonly folder: GoogleDriveBackupFolder,
     private readonly options: {
       getProvider: () => SyncProvider;
       onAuthLost: (error: unknown) => void;
     },
-  ) {}
+  ) {
+    this.history = new GoogleDriveHistoryFiles(folder, options.getProvider);
+  }
   reset(): void {
     this.folder.reset();
     this.fileIdByName = {};
+  }
+
+  supportsHistory(): boolean {
+    return this.history.supported();
+  }
+
+  async createHistory(
+    token: string,
+    name: string,
+    sourceName: string,
+    text: string,
+  ): Promise<DriveHistoryFile> {
+    return this.historyOperation(() => this.history.create(token, name, sourceName, text));
+  }
+
+  async listHistory(token: string, sourceName: string): Promise<DriveHistoryFile[]> {
+    return this.historyOperation(() => this.history.list(token, sourceName));
+  }
+
+  async trash(token: string, id: string): Promise<void> {
+    return this.historyOperation(() => this.history.trash(token, id));
+  }
+
+  private async historyOperation<T>(operation: () => Promise<T>): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      this.markAuthLostIfNeeded(error);
+      throw error;
+    }
   }
 
   async find(token: string, fileName: string): Promise<string | null> {
@@ -314,6 +351,51 @@ export class GoogleDriveFiles {
     return null;
   }
 
+  /** History preserves the old media bytes, even when the current build cannot decode them. */
+  async downloadText(token: string, fileId: string): Promise<string | null> {
+    return this.retryMedia(async () => {
+      if (this.options.getProvider() === 'icloud') throw new Error('Download failed');
+      if (isSafariRuntime()) return downloadSafariGoogleDriveText(fileId);
+      const response = await fetch(`${DRIVE_API_BASE}/files/${fileId}?alt=media`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error(`Download failed: ${response.status}`);
+      // Preserve a UTF-8 BOM; invalid bytes must abort rather than become replacement text.
+      return new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(
+        await response.arrayBuffer(),
+      );
+    });
+  }
+
+  async uploadText(token: string, fileId: string, text: string): Promise<void> {
+    await this.retryMedia(async () => {
+      if (this.options.getProvider() === 'icloud') throw new Error('Upload failed');
+      if (isSafariRuntime()) return uploadSafariGoogleDriveText(fileId, text);
+      const response = await fetch(`${DRIVE_UPLOAD_BASE}/files/${fileId}?uploadType=media`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: text,
+      });
+      if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
+    });
+  }
+
+  private async retryMedia<T>(operation: () => Promise<T>): Promise<T> {
+    let delay = INITIAL_RETRY_DELAY_MS;
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        if (isSafariICloudConflictError(error)) throw error;
+        if (this.markAuthLostIfNeeded(error)) throw error;
+        if (attempt === MAX_RETRIES) throw error;
+        await this.sleep(Math.max(delay, getSafariGoogleDriveRetryDelay(error) ?? 0));
+        delay *= 2;
+      }
+    }
+  }
+
   /**
    * Safari native bridge signals a permanently revoked/expired Google session
    * with a structured code; retrying it is pointless, so surface it at once
@@ -333,3 +415,19 @@ export class GoogleDriveFiles {
     return value.replaceAll('\\', '\\\\').replaceAll("'", "\\'");
   }
 }
+
+/** Only a session-bound turn exposes this port to transfer planners. */
+export type DriveFilesPort = Pick<
+  GoogleDriveFiles,
+  | 'find'
+  | 'ensure'
+  | 'upload'
+  | 'download'
+  | 'prepareDownload'
+  | 'supportsHistory'
+  | 'downloadText'
+  | 'uploadText'
+  | 'createHistory'
+  | 'listHistory'
+  | 'trash'
+>;
