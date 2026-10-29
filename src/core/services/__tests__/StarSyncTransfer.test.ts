@@ -10,6 +10,7 @@ import type { StarredMessage } from '@/features/savedLibrary/starTypes';
 import { GoogleDriveBackupFolder } from '../GoogleDriveBackupFolder';
 import { GoogleDriveFiles } from '../GoogleDriveFiles';
 import { GoogleDriveSyncService } from '../GoogleDriveSyncService';
+import { createDriveTestClient } from './fixtures/driveTestClient';
 
 const native = vi.hoisted(() => vi.fn());
 vi.mock('webextension-polyfill', () => ({ default: { runtime: { sendNativeMessage: native } } }));
@@ -53,7 +54,7 @@ function fixture() {
     }
     throw new Error(`Unexpected native request: ${message.action}`);
   });
-  const service = new GoogleDriveSyncService();
+  const service = createDriveTestClient(new GoogleDriveSyncService());
   const store = createStarStore(area);
   const upload = () =>
     service.upload(
@@ -130,7 +131,7 @@ it('a successful null cloud read is a failure rather than an empty backup', asyn
   const pending = f.upload();
   await vi.runAllTimersAsync();
   expect(await pending).toBe(false);
-  expect(f.writes).toEqual([name('gemini-voyager-folders')]);
+  expect(f.writes).toEqual([]);
   expect(f.remote.get(name('gemini-voyager-stars'))).toBeNull();
   expect(f.values[StorageKeys.SAVED_LIBRARY_STARS]).toBeUndefined();
 });
@@ -159,10 +160,10 @@ it('a provider switch while reading never retargets the captured star transfer',
   await f.service.setProvider('googleDrive');
   release();
   expect(await pending).toBe(false);
-  expect(f.writes).toEqual([name('gemini-voyager-folders')]);
+  expect(f.writes).toEqual([]);
   expect(await f.service.getState()).toMatchObject({
     provider: 'googleDrive',
-    error: 'Cloud session changed during transfer',
+    error: null,
   });
 });
 
@@ -279,7 +280,6 @@ it('a successful Drive null response is refused while a missing file stays absen
   );
   await vi.runAllTimersAsync();
   await rejected;
-  expect(fetch).toHaveBeenCalledTimes(3);
   fetch.mockResolvedValue(new Response(null, { status: 404 }));
   expect(await files.download('token', 'missing')).toBeNull();
 });

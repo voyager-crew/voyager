@@ -2,12 +2,14 @@
  * The prompts-only Drive merges, run through the prompt-library owner so a
  * template or prompt saved while Drive answers is merged with, not dropped.
  */
-import { PromptImportExportService } from '@/features/backup/services/PromptImportExportService';
+import { decodePromptDrivePayload } from '@/core/services/drivePromptPayload';
 import type { PromptItem } from '@/features/backup/types/backup';
 import {
   type PromptLibraryOwner,
   applyPromptLibraryOp,
 } from '@/features/prompt/library/promptLibraryOwner';
+
+import { normalizeLocalPromptsForSync } from './localPromptSyncData';
 
 export type PromptPullOutcome =
   | { ok: true; empty: true }
@@ -18,10 +20,12 @@ export async function mergeCloudPrompts(
   owner: PromptLibraryOwner,
   cloudPayload: unknown,
 ): Promise<PromptPullOutcome> {
-  const validated = PromptImportExportService.validatePayload(cloudPayload);
-  if (!validated.success) return { ok: true, empty: true };
+  if (cloudPayload === null) return { ok: true, empty: true };
+  const payload = decodePromptDrivePayload(cloudPayload);
+  if (!payload) return { ok: false, imported: 0, duplicates: 0, nameConflicts: 0 };
+  if (payload.items.length === 0) return { ok: true, empty: true };
   try {
-    const result = await owner.apply({ kind: 'import', items: validated.data.items });
+    const result = await owner.apply({ kind: 'import', items: payload.items });
     return {
       ok: true,
       imported: result.added,
@@ -41,15 +45,18 @@ export async function mergeCloudPromptsForUpload(
   owner: PromptLibraryOwner,
   cloudPayload: unknown,
 ): Promise<PromptItem[] | null> {
-  const validated = PromptImportExportService.validatePayload(cloudPayload);
+  const payload = cloudPayload === null ? null : decodePromptDrivePayload(cloudPayload);
+  // An unreadable cloud file must never be replaced by this device's library alone.
+  if (cloudPayload !== null && !payload) return null;
   try {
     return await owner.transact((stored) => {
-      if (!validated.success) return { items: null, result: stored as PromptItem[] };
-      const merged = applyPromptLibraryOp(stored, {
+      const local = normalizeLocalPromptsForSync(stored);
+      if (!payload || payload.items.length === 0) return { items: null, result: local };
+      const merged = applyPromptLibraryOp(local, {
         kind: 'import',
-        items: validated.data.items,
+        items: payload.items,
       });
-      const items = (merged.items ?? stored) as PromptItem[];
+      const items = normalizeLocalPromptsForSync(merged.items ?? local);
       return { items, result: items };
     });
   } catch {

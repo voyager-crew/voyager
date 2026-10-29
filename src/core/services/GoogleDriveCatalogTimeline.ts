@@ -1,3 +1,4 @@
+import { UnrecognizedDriveFileError } from '@/core/utils/driveReadResult';
 /**
  * One additive Drive file per catalog site for its timeline outlines; see
  * `features/timeline/catalogHierarchySync.ts` for the payload. Uploads merge into the file
@@ -19,20 +20,27 @@ import {
 } from '@/features/timeline/catalogHierarchySync';
 
 import type { GoogleDriveFiles } from './GoogleDriveFiles';
+import { GoogleDriveUploadFiles } from './GoogleDriveUploadFiles';
 
 type Files = Pick<GoogleDriveFiles, 'ensure' | 'find' | 'upload' | 'download' | 'prepareDownload'>;
 
 export class GoogleDriveCatalogTimeline {
-  private uploads: Promise<unknown> = Promise.resolve();
-
-  constructor(private readonly files: Files) {}
+  constructor(
+    private readonly files: Files,
+    private readonly uploads = new GoogleDriveUploadFiles(files),
+  ) {}
 
   /** The site's cloud buckets, or null when it has no file yet. */
   async read(token: string, site: string): Promise<CatalogTimelineBuckets | null> {
     const id = await this.files.find(token, catalogTimelineFileName(site));
     if (!id) return null;
     const payload = await this.files.download<unknown>(token, id);
-    return payload === null ? null : decodeCatalogTimelinePayload(payload, site);
+    if (payload === null) return null;
+    try {
+      return decodeCatalogTimelinePayload(payload, site);
+    } catch {
+      throw new UnrecognizedDriveFileError();
+    }
   }
 
   /** Every listed site's cloud buckets, in one map keyed by storage key. */
@@ -43,27 +51,13 @@ export class GoogleDriveCatalogTimeline {
     return buckets;
   }
 
-  /** Merges each site's local buckets into its cloud file; `assertActive` guards every write. */
-  upload(
+  /** Read and materialize every site before the first ensure/upload can mutate Drive. */
+  async planUpload(
     token: string,
     bySite: Record<string, CatalogTimelineBuckets>,
-    assertActive: () => void,
-  ): Promise<void> {
-    // Two uploads that read the file before either wrote would each drop the other's outlines.
-    const run = this.uploads.then(
-      () => this.uploadNow(token, bySite, assertActive),
-      () => this.uploadNow(token, bySite, assertActive),
-    );
-    this.uploads = run.catch(() => undefined);
-    return run;
-  }
-
-  private async uploadNow(
-    token: string,
-    bySite: Record<string, CatalogTimelineBuckets>,
-    assertActive: () => void,
-  ): Promise<void> {
+  ): Promise<Array<{ name: string; payload: CatalogTimelineHierarchyExportPayload }>> {
     await this.files.prepareDownload(token);
+    const plan: Array<{ name: string; payload: CatalogTimelineHierarchyExportPayload }> = [];
     for (const [site, local] of Object.entries(bySite)) {
       const remote = await this.read(token, site);
       const payload: CatalogTimelineHierarchyExportPayload = {
@@ -73,10 +67,24 @@ export class GoogleDriveCatalogTimeline {
         site,
         data: mergeCatalogTimelineBuckets(local, remote ?? {}),
       };
+      JSON.stringify(payload);
+      const name = catalogTimelineFileName(site);
+      this.uploads.register(name);
+      plan.push({ name, payload });
+    }
+    return plan;
+  }
+
+  async uploadPlan(
+    token: string,
+    plan: Awaited<ReturnType<GoogleDriveCatalogTimeline['planUpload']>>,
+    assertActive: () => void,
+  ): Promise<void> {
+    this.uploads.register(...plan.map(({ name }) => name));
+    await this.uploads.prepare(token);
+    for (const { name, payload } of plan) {
       assertActive();
-      const id = await this.files.ensure(token, catalogTimelineFileName(site));
-      assertActive();
-      await this.files.upload(token, id, payload);
+      await this.uploads.write(token, name, payload);
     }
   }
 }

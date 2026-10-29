@@ -9,10 +9,6 @@ import { HighlightDriveSyncCoordinator } from '@/core/services/HighlightDriveSyn
 import type { HighlightExportPayloadV1, HighlightRecordV1 } from '@/core/types/highlight';
 import type { SyncAccountScope } from '@/core/types/sync';
 
-vi.mock('@/core/services/GoogleDriveSyncService', () => ({
-  googleDriveSyncService: {},
-}));
-
 const accountScope: SyncAccountScope = {
   accountKey: 'route:1',
   accountId: 1,
@@ -57,6 +53,7 @@ function createPorts(remote: HighlightExportPayloadV1 | null = remotePayload): {
   };
   return {
     drive: {
+      kind: 'sync-turn',
       downloadHighlightsOnly: vi.fn().mockResolvedValue(remote),
       uploadHighlightsOnly: vi.fn().mockResolvedValue(true),
       getState: vi.fn().mockResolvedValue({ error: null }),
@@ -74,6 +71,11 @@ function createPorts(remote: HighlightExportPayloadV1 | null = remotePayload): {
   };
 }
 
+async function drivePush(coordinator: HighlightDriveSyncCoordinator, scope: SyncAccountScope) {
+  const plan = await coordinator.preparePush(scope);
+  return plan.ok ? plan.commit() : plan.result;
+}
+
 describe('HighlightDriveSyncCoordinator', () => {
   it('pulls and merges a strict account-scoped payload', async () => {
     const { drive, local } = createPorts();
@@ -89,7 +91,7 @@ describe('HighlightDriveSyncCoordinator', () => {
 
   it('downloads and merges before uploading the converged payload', async () => {
     const { drive, local } = createPorts();
-    const result = await new HighlightDriveSyncCoordinator(drive, local).push(accountScope);
+    const result = await drivePush(new HighlightDriveSyncCoordinator(drive, local), accountScope);
 
     expect(result).toMatchObject({ ok: true, count: 1 });
     expect(local.importMerge).toHaveBeenCalledTimes(2);
@@ -118,7 +120,10 @@ describe('HighlightDriveSyncCoordinator', () => {
       ok: true,
       empty: true,
     });
-    await expect(coordinator.push(accountScope)).resolves.toMatchObject({ ok: true, count: 1 });
+    await expect(drivePush(coordinator, accountScope)).resolves.toMatchObject({
+      ok: true,
+      count: 1,
+    });
     expect(local.importMerge).toHaveBeenCalledOnce();
     expect(drive.uploadHighlightsOnly).toHaveBeenCalledOnce();
   });
@@ -131,7 +136,7 @@ describe('HighlightDriveSyncCoordinator', () => {
       .mockResolvedValueOnce(emptyPayload)
       .mockResolvedValueOnce(remotePayload);
 
-    const result = await new HighlightDriveSyncCoordinator(drive, local).push(accountScope);
+    const result = await drivePush(new HighlightDriveSyncCoordinator(drive, local), accountScope);
 
     expect(result).toMatchObject({ ok: true, count: 1 });
     expect(drive.uploadHighlightsOnly).toHaveBeenCalledTimes(2);
@@ -142,7 +147,7 @@ describe('HighlightDriveSyncCoordinator', () => {
     const { drive, local } = createPorts(null);
     vi.mocked(drive.getState).mockResolvedValue({ error: 'Drive unavailable' });
 
-    const result = await new HighlightDriveSyncCoordinator(drive, local).push(accountScope);
+    const result = await drivePush(new HighlightDriveSyncCoordinator(drive, local), accountScope);
     expect(result).toEqual({ ok: false, count: 0, error: 'Drive unavailable' });
     expect(drive.uploadHighlightsOnly).not.toHaveBeenCalled();
   });

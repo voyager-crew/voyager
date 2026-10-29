@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { createDriveTestClient } from './fixtures/driveTestClient';
+
 const downloadSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
 const ensureSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
 const findSafariGoogleDriveFile = vi.hoisted(() => vi.fn());
@@ -80,7 +82,7 @@ describe('GoogleDriveSyncService Safari authentication', () => {
     });
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
 
     await expect(service.authenticate(true)).resolves.toBe(true);
@@ -98,7 +100,7 @@ describe('GoogleDriveSyncService Safari authentication', () => {
     });
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
 
     await expect(service.authenticate(false)).resolves.toBe(false);
@@ -113,7 +115,7 @@ describe('GoogleDriveSyncService Safari authentication', () => {
     });
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
 
     await expect(service.authenticate(true)).resolves.toBe(false);
@@ -130,7 +132,7 @@ describe('GoogleDriveSyncService Safari authentication', () => {
     });
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
     await service.authenticate(true);
     await service.signOut();
@@ -151,7 +153,7 @@ describe('GoogleDriveSyncService Safari authentication', () => {
     uploadSafariGoogleDriveFile.mockResolvedValue(undefined);
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
 
     await expect(
@@ -178,7 +180,7 @@ describe('GoogleDriveSyncService Safari authentication', () => {
     isSafariGoogleDriveAuthError.mockReturnValue(true);
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
 
     await expect(
@@ -205,7 +207,7 @@ describe('GoogleDriveSyncService Safari authentication', () => {
     getSafariGoogleDriveRetryDelay.mockReturnValue(2_500);
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
 
     const upload = service.uploadPromptsOnly([{ id: '1', text: 'Hi', tags: [], createdAt: 1 }]);
@@ -236,15 +238,48 @@ describe('GoogleDriveSyncService Safari authentication', () => {
     });
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
 
     await expect(service.downloadPromptsOnly()).resolves.toMatchObject({
-      items: [{ id: '1', text: 'Hi' }],
+      kind: 'found',
+      value: {
+        format: 'gemini-voyager.prompts.v1',
+        items: [{ id: '1', text: 'Hi', tags: [], createdAt: 1 }],
+      },
     });
     expect(findSafariGoogleDriveFile).toHaveBeenCalledWith('gemini-voyager-prompts.json');
     expect(downloadSafariGoogleDriveFile).toHaveBeenCalledWith('native-file-id');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('reports an unreadable native Drive file as failed rather than an absent prompts file', async () => {
+    vi.useFakeTimers();
+    (globalThis as { chrome: typeof chrome }).chrome = createChromeMock();
+    requestSafariGoogleDriveSession.mockResolvedValue({ signedIn: true, requiresAppLaunch: false });
+    findSafariGoogleDriveFile.mockResolvedValue('native-file-id');
+    const error = new Error('Safari Google Drive download failed');
+    downloadSafariGoogleDriveFile.mockRejectedValue(error);
+    const GoogleDriveSyncService = await loadServiceClass();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
+
+    const pending = service.downloadPromptsOnly();
+    await vi.runAllTimersAsync();
+
+    await expect(pending).resolves.toEqual({ kind: 'failed', error });
+    await expect(service.getState()).resolves.toMatchObject({ error: error.message });
+  });
+
+  it('reports a native file in an unrelated format as unrecognized instead of empty prompts', async () => {
+    (globalThis as { chrome: typeof chrome }).chrome = createChromeMock();
+    requestSafariGoogleDriveSession.mockResolvedValue({ signedIn: true, requiresAppLaunch: false });
+    findSafariGoogleDriveFile.mockResolvedValue('native-file-id');
+    downloadSafariGoogleDriveFile.mockResolvedValue({ format: 'unrelated', items: [] });
+    const GoogleDriveSyncService = await loadServiceClass();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
+
+    await expect(service.downloadPromptsOnly()).resolves.toEqual({ kind: 'unrecognized' });
+    await expect(service.getState()).resolves.toMatchObject({ error: 'Download failed' });
   });
 });
 
@@ -256,7 +291,7 @@ describe('GoogleDriveSyncService Safari iCloud provider', () => {
     checkSafariICloudAccount.mockResolvedValue(undefined);
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
 
     await expect(service.getState()).resolves.toMatchObject({ provider: 'icloud' });
   });
@@ -268,7 +303,7 @@ describe('GoogleDriveSyncService Safari iCloud provider', () => {
     writeSafariICloudFile.mockResolvedValue(undefined);
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
     await service.setProvider('icloud');
 
@@ -294,7 +329,7 @@ describe('GoogleDriveSyncService Safari iCloud provider', () => {
     isSafariICloudConflictError.mockReturnValue(true);
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
     await service.setProvider('icloud');
 
@@ -317,7 +352,7 @@ describe('GoogleDriveSyncService Safari iCloud provider', () => {
     getSafariICloudRetryDelay.mockReturnValue(2_500);
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
     await service.setProvider('icloud');
 
@@ -332,17 +367,18 @@ describe('GoogleDriveSyncService Safari iCloud provider', () => {
     expect(writeSafariICloudFile).toHaveBeenCalledTimes(2);
   });
 
-  it('reads missing CloudKit files as an empty cloud copy', async () => {
+  it('reports missing CloudKit files without a read failure', async () => {
     (globalThis as { chrome: typeof chrome }).chrome = createChromeMock();
     checkSafariICloudAccount.mockResolvedValue(undefined);
     readSafariICloudFile.mockResolvedValue(null);
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
     await service.setProvider('icloud');
 
-    await expect(service.downloadPromptsOnly()).resolves.toBeNull();
+    await expect(service.downloadPromptsOnly()).resolves.toEqual({ kind: 'missing' });
+    await expect(service.getState()).resolves.toMatchObject({ error: null });
     expect(readSafariICloudFile).toHaveBeenCalledWith('gemini-voyager-prompts.json');
   });
 });

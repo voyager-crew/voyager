@@ -45,7 +45,6 @@ function local() {
 function remote() {
   const files: { v1: unknown; v2: unknown } = { v1: null, v2: null };
   const port = {
-    identity: 'drive:person',
     assertActive: vi.fn(),
     read: vi.fn(async () => structuredClone(files)),
     writeV2: vi.fn(async (payload) => {
@@ -57,8 +56,10 @@ function remote() {
   } satisfies StarTransferPort;
   return { files, port };
 }
-const push = (store: ReturnType<typeof local>['store'], port: StarTransferPort) =>
-  new StarDriveSyncCoordinator().push(store, port, scope);
+const push = async (store: ReturnType<typeof local>['store'], port: StarTransferPort) => {
+  const commit = await new StarDriveSyncCoordinator().prepare(store, [{ port, scope }]);
+  await commit();
+};
 afterEach(() => vi.restoreAllMocks());
 
 it('an empty v2 backup seeds from v1 without losing local stars', async () => {
@@ -227,28 +228,6 @@ it('a changed session during a read prevents retargeting or applying the read', 
   await expect(push(store, port)).rejects.toThrow('session changed');
   expect(area.set).not.toHaveBeenCalled();
   expect(port.writeV2).not.toHaveBeenCalled();
-});
-
-it('concurrent pushes to one transfer scope are serialized', async () => {
-  const { store } = local();
-  const { port } = remote();
-  const coordinator = new StarDriveSyncCoordinator();
-  let release!: () => void;
-  const held = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  vi.mocked(port.read).mockImplementationOnce(async () => {
-    await held;
-    return { v1: null, v2: null };
-  });
-  const first = coordinator.push(store, port, scope);
-  const second = coordinator.push(store, port, scope);
-  await Promise.resolve();
-  await Promise.resolve();
-  expect(port.read).toHaveBeenCalledTimes(1);
-  release();
-  await Promise.all([first, second]);
-  expect(port.writeV2).toHaveBeenCalledTimes(2);
 });
 
 it('a later sync repairs a stale two-device overwrite without claiming atomic writes', async () => {

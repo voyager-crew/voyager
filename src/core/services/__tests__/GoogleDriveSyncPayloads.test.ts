@@ -45,6 +45,7 @@ function fixture() {
     find: vi.fn(async (_token: string, _name: string): Promise<string | null> => null),
     upload: vi.fn(async (_token: string, name: string, payload: unknown) => {
       writes.push({ name, payload });
+      remote.set(name, structuredClone(payload));
     }),
     download: async <T>(_token: string, name: string): Promise<T | null> =>
       (remote.get(name) as T) ?? null,
@@ -52,6 +53,9 @@ function fixture() {
   };
   return { payloads: new GoogleDriveSyncPayloads(files), files, writes, remote };
 }
+
+const upload = (payloads: GoogleDriveSyncPayloads, data: GoogleDriveUploadSnapshot) =>
+  payloads.uploadPlan('token', payloads.planUpload(data));
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -86,7 +90,7 @@ describe('GoogleDriveSyncPayloads', () => {
       plugins: {},
     });
 
-    await expect(payloads.upload('token', data)).resolves.toBe(6);
+    await expect(upload(payloads, data)).resolves.toBe(6);
 
     expect(writes.map(({ name }) => name)).toEqual([
       scoped('gemini-voyager-folders'),
@@ -112,8 +116,8 @@ describe('GoogleDriveSyncPayloads', () => {
   it('omits empty aggregate prompts and Gemini-only files on AI Studio, but writes a prompts-only clear', async () => {
     const { payloads, writes } = fixture();
     await expect(
-      payloads.upload(
-        'token',
+      upload(
+        payloads,
         snapshot({
           platform: 'aistudio',
           starred: { messages: {} },
@@ -232,21 +236,27 @@ describe('GoogleDriveSyncPayloads', () => {
     },
   );
 
-  it('stops uploading after a failed file without attempting later payloads', async () => {
-    const { payloads, files, writes } = fixture();
+  it('a failed content write leaves later cloud files intact', async () => {
+    const { payloads, files, writes, remote } = fixture();
+    const folderName = scoped('gemini-voyager-folders');
+    remote.set(folderName, { previous: 'folders' });
+    remote.set('gemini-voyager-settings.json', { previous: 'settings' });
+    remote.set('gemini-voyager-plugins.json', { previous: 'plugins' });
     files.upload.mockImplementation(async (_token, name, payload) => {
       if (name === 'gemini-voyager-settings.json') throw new Error('write failed');
       writes.push({ name, payload });
+      remote.set(name, structuredClone(payload));
     });
 
-    await expect(payloads.upload('token', snapshot({ settings: {}, plugins: {} }))).rejects.toThrow(
+    await expect(upload(payloads, snapshot({ settings: {}, plugins: {} }))).rejects.toThrow(
       'write failed',
     );
 
-    expect(writes.map(({ name }) => name)).toEqual([scoped('gemini-voyager-folders')]);
-    expect(files.ensure.mock.calls.map(([, name]) => name)).toEqual([
-      scoped('gemini-voyager-folders'),
-      'gemini-voyager-settings.json',
-    ]);
+    expect(remote.get(folderName)).toMatchObject({
+      format: 'gemini-voyager.folders.v1',
+      data: { folders: [], folderContents: {} },
+    });
+    expect(remote.get('gemini-voyager-settings.json')).toEqual({ previous: 'settings' });
+    expect(remote.get('gemini-voyager-plugins.json')).toEqual({ previous: 'plugins' });
   });
 });

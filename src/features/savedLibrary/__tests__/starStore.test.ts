@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { GoogleDriveSyncPayloads } from '@/core/services/GoogleDriveSyncPayloads';
-import { StarDriveSyncCoordinator } from '@/core/services/StarDriveSyncCoordinator';
 import { StorageKeys } from '@/core/types/common';
 
 import { createStarStore } from '../starStore';
@@ -208,42 +206,6 @@ describe('Saved Library dual projections', () => {
       expectProjections(values, { messages: {} });
     },
   );
-
-  it('the unchanged v1 Drive reader accepts a legacy projection with opaque account metadata', async () => {
-    const saved = { ...star('account-star'), account: 'opaque-account' };
-    const { store, values } = setup();
-    await store.add(saved);
-    const remote = new Map<string, unknown>();
-    const payloads = new GoogleDriveSyncPayloads({
-      ensure: async (_token, name) => name,
-      find: async (_token, name) => (remote.has(name) ? name : null),
-      upload: async (_token, name, payload) => {
-        remote.set(name, structuredClone(payload));
-      },
-      download: async <T>(_token: string, name: string): Promise<T | null> =>
-        (remote.get(name) as T) ?? null,
-      prepareDownload: async () => {},
-    });
-    await new StarDriveSyncCoordinator().push(
-      store,
-      {
-        identity: 'test',
-        assertActive: () => {},
-        read: () => payloads.readStars('token', null),
-        writeV2: (payload) => payloads.writeStars('token', payload, null, true),
-        writeV1: (payload) => payloads.writeStars('token', payload, null, false),
-      },
-      null,
-    );
-    const downloaded = await payloads.download('token', 'gemini', null, null);
-    expect(downloaded?.starred).toEqual(
-      expect.objectContaining({
-        format: 'gemini-voyager.starred.v1',
-        data: data(saved),
-      }),
-    );
-    expect(Object.keys(values[legacy] as object)).toEqual(['messages']);
-  });
 });
 
 describe('Saved Library deletion persistence', () => {

@@ -13,6 +13,7 @@ import { createForkMessagesOwner } from '../forkMessages';
 
 const mocks = vi.hoisted(() => ({
   drive: {
+    runExclusive: vi.fn(),
     upload: vi.fn(),
     download: vi.fn(),
     downloadPromptsOnly: vi.fn(),
@@ -32,7 +33,11 @@ vi.mock('@/core/services/AccountIsolationService', async (importOriginal) => ({
   accountIsolationService: mocks.isolation,
 }));
 vi.mock('@/core/services/HighlightDriveSyncCoordinator', () => ({
-  highlightDriveSyncCoordinator: mocks.highlights,
+  HighlightDriveSyncCoordinator: class {
+    preparePush = async () => ({ ok: true, commit: mocks.highlights.push });
+    push = mocks.highlights.push;
+    pull = mocks.highlights.pull;
+  },
 }));
 vi.mock('@/core/services/HighlightAnnotationService', () => ({
   getHighlightAccountHash: () => 'highlight-hash',
@@ -43,9 +48,6 @@ vi.mock('../highlightMessages', () => ({
 }));
 vi.mock('@/core/services/SettingsBackupService', () => ({
   exportBackupableSyncSettings: async () => ({ data: { gvTheme: 'dark' } }),
-}));
-vi.mock('@/features/plugins/storage/pluginState', () => ({
-  loadPluginState: async () => ({ enabled: { 'voyager.test': true } }),
 }));
 vi.mock('../queueOwners', async () => {
   const { createPromptLibraryOwner } = await import('@/features/prompt/library/promptLibraryOwner');
@@ -95,6 +97,7 @@ const readers = () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   stored = {
+    [StorageKeys.PLUGINS_STATE]: { 'voyager.test': { enabled: true, installedAt: 1 } },
     [StorageKeys.FOLDER_DATA]: folder('Gemini'),
     [StorageKeys.PROMPT_ITEMS]: [prompt('local')],
   };
@@ -111,6 +114,7 @@ beforeEach(() => {
   mocks.isolation.isIsolationEnabled.mockResolvedValue(false);
   mocks.isolation.resolveAccountScope.mockResolvedValue(scope);
   mocks.highlights.requested.mockResolvedValue(false);
+  mocks.drive.runExclusive.mockImplementation((run) => run(mocks.drive));
   mocks.drive.upload.mockResolvedValue(true);
   mocks.drive.download.mockResolvedValue({ folders: folder('Cloud') });
   mocks.drive.uploadPromptsOnly.mockResolvedValue(true);
@@ -120,9 +124,10 @@ beforeEach(() => {
 describe('cloud sync messages', () => {
   it('uploads the entire prompt union, including duplicate names, after merging it into durable local storage', async () => {
     stored[StorageKeys.PROMPT_ITEMS] = [prompt('first', 'Review'), prompt('second', 'Review')];
-    mocks.drive.downloadPromptsOnly.mockResolvedValue(
-      PromptImportExportService.exportToPayload([prompt('cloud')]),
-    );
+    mocks.drive.downloadPromptsOnly.mockResolvedValue({
+      kind: 'found',
+      value: PromptImportExportService.exportToPayload([prompt('cloud')]),
+    });
     const handle = createCloudSyncMessageHandler(readers());
     await expect(
       handle({ type: 'gv.sync.pushPromptsMerge', payload: { interactive: false } }, sender()),
@@ -171,7 +176,7 @@ describe('cloud sync messages', () => {
         null,
         null,
         { gvTheme: 'dark' },
-        { enabled: { 'voyager.test': true } },
+        { 'voyager.test': { enabled: true, installedAt: 1 } },
       );
       if (platform === 'aistudio') {
         expect(snapshots.getAllStarredMessages).not.toHaveBeenCalled();
@@ -252,7 +257,7 @@ describe('cloud sync messages', () => {
       scope,
       scope,
       { gvTheme: 'dark' },
-      { enabled: { 'voyager.test': true } },
+      { 'voyager.test': { enabled: true, installedAt: 1 } },
     );
     expect(mocks.isolation.resolveAccountScope).not.toHaveBeenCalled();
   });

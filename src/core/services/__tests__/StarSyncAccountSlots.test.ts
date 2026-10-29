@@ -105,17 +105,18 @@ it('a following push does not empty a same-account backup from another /u/ slot'
   const initial = await payloads.readStars('token', destination);
   await store.mergeSync(initial, destination);
   writes.length = 0;
-  await new StarDriveSyncCoordinator().push(
-    store,
+  const commit = await new StarDriveSyncCoordinator().prepare(store, [
     {
-      identity: 'same-person',
-      assertActive: () => {},
-      read: () => payloads.readStars('token', destination),
-      writeV2: (payload) => payloads.writeStars('token', payload, destination, true),
-      writeV1: (payload) => payloads.writeStars('token', payload, destination, false),
+      port: {
+        assertActive: () => {},
+        read: () => payloads.readStars('token', destination),
+        writeV2: (payload) => payloads.writeStars('token', payload, destination, true),
+        writeV1: (payload) => payloads.writeStars('token', payload, destination, false),
+      },
+      scope: destination,
     },
-    destination,
-  );
+  ]);
+  await commit();
   const restored = await payloads.readStars('token', destination);
   expect(restored.v2).toMatchObject({ items: [localStar] });
   expect(restored.v1).toMatchObject({
@@ -159,17 +160,18 @@ it('a newer legacy re-star survives a canonical deletion import and the followin
     ],
   };
   await payloads.writeStars('token', payload, source, true);
-  await new StarDriveSyncCoordinator().push(
-    store,
+  const commit = await new StarDriveSyncCoordinator().prepare(store, [
     {
-      identity: 'same-person',
-      assertActive: () => {},
-      read: () => payloads.readStars('token', destination),
-      writeV2: (value) => payloads.writeStars('token', value, destination, true),
-      writeV1: (value) => payloads.writeStars('token', value, destination, false),
+      port: {
+        assertActive: () => {},
+        read: () => payloads.readStars('token', destination),
+        writeV2: (value) => payloads.writeStars('token', value, destination, true),
+        writeV1: (value) => payloads.writeStars('token', value, destination, false),
+      },
+      scope: destination,
     },
-    destination,
-  );
+  ]);
+  await commit();
   const expected = { ...newer, conversationUrl: localStar.conversationUrl };
   expect((await store.getSyncSnapshot(destination)).data.messages[newer.conversationId]).toEqual([
     expected,
@@ -261,17 +263,18 @@ it.each(['live', 'deleted'] as const)(
     };
     expect((await store.getAll()).messages[remoteStar.conversationId]).toEqual([expected]);
     writes.length = 0;
-    await new StarDriveSyncCoordinator().push(
-      store,
+    const commit = await new StarDriveSyncCoordinator().prepare(store, [
       {
-        identity: 'same-person',
-        assertActive: () => {},
-        read: () => payloads.readStars('token', destination),
-        writeV2: (value) => payloads.writeStars('token', value, destination, true),
-        writeV1: (value) => payloads.writeStars('token', value, destination, false),
+        port: {
+          assertActive: () => {},
+          read: () => payloads.readStars('token', destination),
+          writeV2: (value) => payloads.writeStars('token', value, destination, true),
+          writeV1: (value) => payloads.writeStars('token', value, destination, false),
+        },
+        scope: destination,
       },
-      destination,
-    );
+    ]);
+    await commit();
     const after = await payloads.readStars('token', destination);
     expect(after.v2).toMatchObject({ items: [expected] });
     expect(after.v1).toMatchObject({

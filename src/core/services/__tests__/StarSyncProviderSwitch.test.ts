@@ -3,6 +3,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { createStarStore } from '@/features/savedLibrary/starStore';
 
 import { GoogleDriveSyncService } from '../GoogleDriveSyncService';
+import { createDriveTestClient } from './fixtures/driveTestClient';
 
 const native = vi.hoisted(() => vi.fn());
 vi.mock('webextension-polyfill', () => ({ default: { runtime: { sendNativeMessage: native } } }));
@@ -23,14 +24,7 @@ it('an upload started during a provider switch writes nothing to the new provide
   const heldClear = new Promise<void>((resolve) => {
     releaseClear = resolve;
   });
-  let tokenStarted!: () => void;
-  const authenticating = new Promise<void>((resolve) => {
-    tokenStarted = resolve;
-  });
-  let releaseToken!: () => void;
-  const heldToken = new Promise<void>((resolve) => {
-    releaseToken = resolve;
-  });
+  const tokenRequests: string[] = [];
 
   const values: Record<string, unknown> = {};
   const area = {
@@ -48,8 +42,7 @@ it('an upload started during a provider switch writes nothing to the new provide
   const writes: string[] = [];
   native.mockImplementation(async (_app: string, message: Record<string, unknown>) => {
     if (message.action === 'googleDriveGetSession') {
-      tokenStarted();
-      await heldToken;
+      tokenRequests.push(String(message.action));
       return { success: true, data: { signedIn: true } };
     }
     const fileName = String(message.fileName);
@@ -67,7 +60,7 @@ it('an upload started during a provider switch writes nothing to the new provide
     throw new Error(`Unexpected action ${message.action}`);
   });
 
-  const service = new GoogleDriveSyncService();
+  const service = createDriveTestClient(new GoogleDriveSyncService());
   await service.getState();
   const store = createStarStore(area);
   await store.add({
@@ -94,17 +87,16 @@ it('an upload started during a provider switch writes nothing to the new provide
     null,
     store,
   );
-  await authenticating;
   releaseClear();
   await change;
-  releaseToken();
 
   expect(await transfer).toBe(false);
+  expect(tokenRequests).toEqual([]);
   expect(writes).toEqual([]);
   expect(remote.size).toBe(0);
   expect(await service.getState()).toMatchObject({
     provider: 'icloud',
-    error: 'Cloud session changed during transfer',
+    error: null,
   });
   expect((await store.getAll()).messages['gemini:conv:abc'][0].text).toBe('Private full prompt');
 });

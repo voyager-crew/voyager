@@ -6,6 +6,8 @@ import type { SyncAccountScope } from '@/core/types/sync';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 import { createStarStore } from '@/features/savedLibrary/starStore';
 
+import { createDriveTestClient } from './fixtures/driveTestClient';
+
 const EXPORTED_AT = '2026-10-03T12:00:00.000Z';
 const NOW = Date.parse(EXPORTED_AT);
 const CHATGPT_FILE = 'gemini-voyager-chatgpt-folders.json';
@@ -159,7 +161,7 @@ function createBoundaries(
 async function createService() {
   vi.resetModules();
   const { GoogleDriveSyncService } = await import('../GoogleDriveSyncService');
-  const service = new GoogleDriveSyncService();
+  const service = createDriveTestClient(new GoogleDriveSyncService());
   await service.getState();
   return service;
 }

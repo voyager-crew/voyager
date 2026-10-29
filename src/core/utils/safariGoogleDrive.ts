@@ -1,5 +1,7 @@
 import browser from 'webextension-polyfill';
 
+import { parseDriveJson } from '@/core/utils/driveReadResult';
+
 const SAFARI_NATIVE_APP_ID = 'com.yourCompany.Gemini-Voyager';
 
 type NativeResponse<Data> = {
@@ -98,7 +100,11 @@ export async function findSafariGoogleDriveFile(fileName: string): Promise<strin
     fileName,
   });
   const data = requireSuccess(response, 'Safari Google Drive file search failed');
-  return typeof data.fileID === 'string' ? data.fileID : null;
+  if (data.fileID === undefined || data.fileID === null) return null;
+  if (typeof data.fileID !== 'string' || data.fileID.length === 0) {
+    throw new Error('Safari Google Drive file search failed');
+  }
+  return data.fileID;
 }
 
 export async function ensureSafariGoogleDriveFile(
@@ -132,11 +138,9 @@ export async function downloadSafariGoogleDriveFile<T>(fileID: string): Promise<
     fileID,
   });
   const data = requireSuccess(response, 'Safari Google Drive download failed');
-  if (data.found !== true) return null;
-  if (typeof data.json !== 'string') {
+  if (data.found === false) return null;
+  if (data.found !== true || typeof data.json !== 'string') {
     throw new Error('Safari Google Drive returned an invalid download');
   }
-  const payload: unknown = JSON.parse(data.json);
-  if (payload === null) throw new Error('The cloud sync file contains invalid null data');
-  return payload as T;
+  return parseDriveJson(data.json) as T | null;
 }

@@ -73,7 +73,7 @@ export const CORE_SITE_KNOWLEDGE_EXCEPTIONS: readonly SiteKnowledgeException[] =
     reason: 'Host-to-site fallback table for diagnostic reports when no bundled adapter matches.',
   },
   {
-    file: 'src/core/services/GoogleDriveSyncService.ts',
+    file: 'src/core/services/GoogleDriveFolderTransfers.ts',
     kind: 'platform-branch',
     values: {
       gemini: 2,

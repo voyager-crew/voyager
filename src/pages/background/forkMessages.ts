@@ -6,15 +6,15 @@ interface StorageArea {
   set(items: Record<string, unknown>): Promise<void>;
 }
 
-function isForkNodesData(value: unknown): value is ForkNodesData {
-  if (typeof value !== 'object' || value === null) return false;
-  const data = value as { nodes?: unknown; groups?: unknown };
-  return (
-    typeof data.nodes === 'object' &&
-    data.nodes !== null &&
-    typeof data.groups === 'object' &&
-    data.groups !== null
-  );
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isForkNodesContainer(value: unknown): value is {
+  nodes: Record<string, unknown>;
+  groups: Record<string, unknown>;
+} {
+  return isRecord(value) && isRecord(value.nodes) && isRecord(value.groups);
 }
 
 function isForkNode(value: unknown): value is ForkNode {
@@ -28,6 +28,39 @@ function isForkNode(value: unknown): value is ForkNode {
     typeof node.forkIndex === 'number' &&
     typeof node.createdAt === 'number'
   );
+}
+
+/** Preserve valid records while refusing an unreadable base for every fork operation. */
+function normalizeStoredForkNodes(value: unknown): ForkNodesData {
+  if (value === undefined) return { nodes: {}, groups: {} };
+  if (!isForkNodesContainer(value)) throw new Error('Invalid fork nodes envelope');
+  const nodes = Object.fromEntries(
+    Object.entries(value.nodes).flatMap(([id, entries]) => {
+      const valid = Array.isArray(entries) ? entries.filter(isForkNode) : [];
+      return valid.length > 0 ? [[id, valid]] : [];
+    }),
+  );
+  const hadNodes = Object.values(value.nodes).some(
+    (entries) => !Array.isArray(entries) || entries.length > 0,
+  );
+  const groups = Object.fromEntries(
+    Object.entries(value.groups).flatMap(([id, entries]) => {
+      const valid = Array.isArray(entries)
+        ? entries.filter((entry): entry is string => typeof entry === 'string')
+        : [];
+      return valid.length > 0 ? [[id, valid]] : [];
+    }),
+  );
+  const hadGroups = Object.values(value.groups).some(
+    (entries) => !Array.isArray(entries) || entries.length > 0,
+  );
+  if (
+    (hadNodes && Object.keys(nodes).length === 0) ||
+    (!hadNodes && hadGroups && Object.keys(groups).length === 0)
+  ) {
+    throw new Error('Invalid fork nodes envelope');
+  }
+  return { nodes, groups };
 }
 
 /** Add `node` and its group index entry unless the same fork is already recorded. */
@@ -57,8 +90,7 @@ class ForkNodesManager {
   // Writes read strictly: saving over an empty read-error fallback would erase the stored forks.
   private async readStored(): Promise<ForkNodesData> {
     const result = await this.area.get([StorageKeys.FORK_NODES]);
-    const forkNodes = result[StorageKeys.FORK_NODES];
-    return isForkNodesData(forkNodes) ? forkNodes : { nodes: {}, groups: {} };
+    return normalizeStoredForkNodes(result[StorageKeys.FORK_NODES]);
   }
 
   private async getFromStorage(): Promise<ForkNodesData> {
@@ -90,7 +122,7 @@ class ForkNodesManager {
       const cloud = 'data' in envelope ? envelope.data : undefined;
       if (
         ('format' in envelope && envelope.format !== 'gemini-voyager.forks.v1') ||
-        !isForkNodesData(cloud)
+        !isForkNodesContainer(cloud)
       ) {
         throw new Error('Invalid fork nodes envelope');
       }
@@ -144,7 +176,8 @@ class ForkNodesManager {
   }
 
   async getAllForkNodes(): Promise<ForkNodesData> {
-    return this.getFromStorage();
+    // Cloud uploads must never replace existing forks with a read-error fallback.
+    return this.serialize(() => this.readStored());
   }
 
   async getForConversation(conversationId: string): Promise<ForkNode[]> {

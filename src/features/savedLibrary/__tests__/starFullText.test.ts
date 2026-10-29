@@ -280,17 +280,18 @@ describe('Saved Library full prompt text', () => {
         (remote.get(name) as T) ?? null,
       prepareDownload: async () => {},
     });
-    await new StarDriveSyncCoordinator().push(
-      store,
+    const commit = await new StarDriveSyncCoordinator().prepare(store, [
       {
-        identity: 'test',
-        assertActive: () => {},
-        read: () => payloads.readStars('token', null),
-        writeV2: (payload) => payloads.writeStars('token', payload, null, true),
-        writeV1: (payload) => payloads.writeStars('token', payload, null, false),
+        port: {
+          assertActive: () => {},
+          read: () => payloads.readStars('token', null),
+          writeV2: (payload) => payloads.writeStars('token', payload, null, true),
+          writeV1: (payload) => payloads.writeStars('token', payload, null, false),
+        },
+        scope: null,
       },
-      null,
-    );
+    ]);
+    await commit();
     const { text: _text, ...oldRecord } = item;
     expect(remote.get('gemini-voyager-starred.json')).toMatchObject({
       format: 'gemini-voyager.starred.v1',

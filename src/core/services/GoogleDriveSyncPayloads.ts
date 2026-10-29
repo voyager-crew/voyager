@@ -16,6 +16,11 @@ import type {
   TimelineHierarchyDataSync,
   TimelineHierarchyExportPayload,
 } from '@/core/types/sync';
+import {
+  type DriveReadResult,
+  readDriveValue,
+  UnrecognizedDriveFileError,
+} from '@/core/utils/driveReadResult';
 import { hashString } from '@/core/utils/hash';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 import { FOLDER_PLATFORMS, FOLDER_PLATFORM_IDS } from '@/features/folder/platforms';
@@ -28,7 +33,9 @@ import {
 } from '@/features/savedLibrary/starSyncPayload';
 
 import type { GoogleDriveFiles } from './GoogleDriveFiles';
+import { GoogleDriveUploadFiles } from './GoogleDriveUploadFiles';
 import { logger } from './LoggerService';
+import { decodePromptDrivePayload } from './drivePromptPayload';
 
 const PROMPTS_FILE_NAME = 'gemini-voyager-prompts.json';
 const SETTINGS_FILE_NAME = 'gemini-voyager-settings.json';
@@ -47,6 +54,11 @@ export const BACKUP_FOLDER_RECOVERY_FILE_NAMES = [
   STARRED_FILE_NAME,
   STARS_FILE_NAME,
 ] as const;
+
+export interface DriveUploadFile {
+  name: string;
+  payload: unknown;
+}
 
 export interface GoogleDriveUploadSnapshot {
   folders: FolderData;
@@ -100,75 +112,65 @@ export class GoogleDriveSyncPayloads {
       GoogleDriveFiles,
       'ensure' | 'find' | 'upload' | 'download' | 'prepareDownload'
     >,
+    private readonly uploads = new GoogleDriveUploadFiles(files),
   ) {}
 
-  async upload(token: string, snapshot: GoogleDriveUploadSnapshot): Promise<number> {
+  /** Materialize every file before ensure/upload can mutate Drive. */
+  planUpload(snapshot: GoogleDriveUploadSnapshot): DriveUploadFile[] {
     const {
-      prompts,
       platform,
+      prompts,
       forks,
       timelineHierarchy,
       accountScope,
       timelineHierarchyAccountScope,
     } = snapshot;
     const now = new Date();
-
-    const { folderPayload, promptPayload, settingsPayload, pluginsPayload } = this.initialPayloads(
-      snapshot,
-      now,
-    );
-
-    // Upload folders file (platform-specific)
+    const initial = this.initialPayloads(snapshot, now);
     const definition = FOLDER_PLATFORMS[platform];
-    const foldersFileName = this.getFileNameForScope(
+    const plan: DriveUploadFile[] = [];
+    const add = (baseName: string, payload: unknown, scope: SyncAccountScope | null = null) => {
+      // A later payload that cannot serialize must not leave earlier files overwritten.
+      JSON.stringify(payload);
+      const name = this.getFileNameForScope(baseName, scope);
+      this.uploads.register(name);
+      plan.push({ name, payload });
+    };
+    add(
       definition.driveFoldersFileName,
+      initial.folderPayload,
       definition.accountIsolationStorageKey === null ? null : accountScope,
     );
-    const foldersFileIdToUse = await this.files.ensure(token, foldersFileName);
-    await this.files.upload(token, foldersFileIdToUse, folderPayload);
-    logger.info(`[GoogleDriveSyncService] ${platform} folders uploaded successfully`);
-    if (!definition.syncsSharedData) return 1;
-
-    // Upload prompts file (shared between Gemini and AI Studio)
-    if (prompts.length > 0) {
-      const promptsFileName = this.getFileNameForScope(PROMPTS_FILE_NAME, accountScope);
-      const promptsFileId = await this.files.ensure(token, promptsFileName);
-      await this.files.upload(token, promptsFileId, promptPayload);
-      logger.info('[GoogleDriveSyncService] Prompts uploaded successfully');
+    if (!definition.syncsSharedData) return plan;
+    if (prompts.length > 0) add(PROMPTS_FILE_NAME, initial.promptPayload, accountScope);
+    if (initial.settingsPayload) add(SETTINGS_FILE_NAME, initial.settingsPayload);
+    if (initial.pluginsPayload) add(PLUGINS_FILE_NAME, initial.pluginsPayload);
+    if (definition.syncsConversationExtras && forks) {
+      const payload: ForkExportPayload = {
+        format: 'gemini-voyager.forks.v1',
+        exportedAt: now.toISOString(),
+        version: EXTENSION_VERSION,
+        data: forks,
+      };
+      add(FORKS_FILE_NAME, payload, accountScope);
     }
-
-    if (settingsPayload) {
-      const settingsFileId = await this.files.ensure(token, SETTINGS_FILE_NAME);
-      await this.files.upload(token, settingsFileId, settingsPayload);
-      logger.info('[GoogleDriveSyncService] Settings uploaded successfully');
+    if (definition.syncsConversationExtras && timelineHierarchy) {
+      const payload: TimelineHierarchyExportPayload = {
+        format: 'gemini-voyager.timeline-hierarchy.v1',
+        exportedAt: now.toISOString(),
+        version: EXTENSION_VERSION,
+        data: timelineHierarchy,
+      };
+      add(TIMELINE_HIERARCHY_FILE_NAME, payload, timelineHierarchyAccountScope ?? accountScope);
     }
+    return plan;
+  }
 
-    if (pluginsPayload) {
-      const pluginsFileId = await this.files.ensure(token, PLUGINS_FILE_NAME);
-      await this.files.upload(token, pluginsFileId, pluginsPayload);
-    }
-
-    const extras = definition.syncsConversationExtras;
-    if (extras && forks) {
-      await this.uploadForks(token, forks, accountScope, now);
-    }
-    if (extras && timelineHierarchy) {
-      await this.uploadHierarchy(
-        token,
-        timelineHierarchy,
-        timelineHierarchyAccountScope ?? accountScope,
-        now,
-      );
-    }
-
-    const fileCount =
-      1 +
-      (prompts.length > 0 ? 1 : 0) +
-      (settingsPayload ? 1 : 0) +
-      (pluginsPayload ? 1 : 0) +
-      (extras && forks ? 1 : 0) +
-      (extras && timelineHierarchy ? 1 : 0);
-    return fileCount;
+  async uploadPlan(token: string, plan: readonly DriveUploadFile[]): Promise<number> {
+    this.uploads.register(...plan.map(({ name }) => name));
+    await this.uploads.prepare(token);
+    for (const { name, payload } of plan) await this.uploads.write(token, name, payload);
+    return plan.length;
   }
 
   async download(
@@ -278,17 +280,21 @@ export class GoogleDriveSyncPayloads {
       items: prompts,
     };
     const promptsFileName = this.getFileNameForScope(PROMPTS_FILE_NAME, accountScope);
-    const promptsFileId = await this.files.ensure(token, promptsFileName);
-    await this.files.upload(token, promptsFileId, promptPayload);
+    await this.uploads.write(token, promptsFileName, promptPayload);
   }
 
   async downloadPrompts(
     token: string,
     accountScope: SyncAccountScope | null,
-  ): Promise<PromptExportPayload | null> {
-    await this.files.prepareDownload(token);
-    const promptsFileId = await this.findFileForScope(token, PROMPTS_FILE_NAME, accountScope);
-    return promptsFileId ? this.files.download<PromptExportPayload>(token, promptsFileId) : null;
+  ): Promise<DriveReadResult<PromptExportPayload>> {
+    return readDriveValue(async () => {
+      await this.files.prepareDownload(token);
+      const raw = await this.readScopedFile<unknown>(token, PROMPTS_FILE_NAME, accountScope);
+      if (raw === null) return null;
+      const payload = decodePromptDrivePayload(raw);
+      if (!payload) throw new UnrecognizedDriveFileError();
+      return payload;
+    });
   }
 
   async uploadHighlights(
@@ -297,9 +303,8 @@ export class GoogleDriveSyncPayloads {
     accountScope: SyncAccountScope,
   ): Promise<void> {
     const fileName = this.getFileNameForScope(HIGHLIGHTS_FILE_NAME, accountScope);
-    const fileId = await this.files.ensure(token, fileName);
     // Exact quotes are needed for anchor recovery; upload the canonical payload verbatim.
-    await this.files.upload(token, fileId, payload);
+    await this.uploads.write(token, fileName, payload);
   }
 
   /** Highlights have always been isolated; never read an unscoped legacy file. */
@@ -309,6 +314,7 @@ export class GoogleDriveSyncPayloads {
   ): Promise<HighlightExportPayload | null> {
     await this.files.prepareDownload(token);
     const fileName = this.getFileNameForScope(HIGHLIGHTS_FILE_NAME, accountScope);
+    this.uploads.register(fileName);
     const fileId = await this.files.find(token, fileName);
     if (!fileId) return null;
     const downloaded = await this.files.download<unknown>(token, fileId);
@@ -373,6 +379,10 @@ export class GoogleDriveSyncPayloads {
   }
 
   async readStars(token: string, scope: SyncAccountScope | null): Promise<StarSyncSources> {
+    this.uploads.register(
+      this.getFileNameForScope(STARS_FILE_NAME, scope),
+      this.getFileNameForScope(STARRED_FILE_NAME, scope),
+    );
     await this.files.prepareDownload(token);
     const v2 = await this.downloadStarsV2(token, scope);
     const source = await this.readStarred(token, scope);
@@ -386,19 +396,18 @@ export class GoogleDriveSyncPayloads {
     v2: boolean,
   ): Promise<void> {
     const name = this.getFileNameForScope(v2 ? STARS_FILE_NAME : STARRED_FILE_NAME, scope);
-    const id = await this.files.ensure(token, name);
-    await this.files.upload(token, id, payload);
+    await this.uploads.write(token, name, payload);
   }
 
   /** A catalog site's own star file, which has no account scope and no legacy v1 twin. */
   async readCatalogStars(token: string, site: string): Promise<StarSyncSources> {
+    this.uploads.register(catalogStarsFileName(site));
     await this.files.prepareDownload(token);
     return { v2: await this.downloadCatalogStarsV2(token, site) };
   }
 
   async writeCatalogStars(token: string, site: string, payload: unknown): Promise<void> {
-    const id = await this.files.ensure(token, catalogStarsFileName(site));
-    await this.files.upload(token, id, payload);
+    await this.uploads.write(token, catalogStarsFileName(site), payload);
   }
 
   /** The star files of the listed catalog sites that exist, by site. */
@@ -437,54 +446,13 @@ export class GoogleDriveSyncPayloads {
     return payload;
   }
 
-  private async uploadForks(
-    token: string,
-    forks: ForkNodesDataSync,
-    accountScope: SyncAccountScope | null,
-    now: Date,
-  ): Promise<void> {
-    const forksPayload: ForkExportPayload = {
-      format: 'gemini-voyager.forks.v1',
-      exportedAt: now.toISOString(),
-      version: EXTENSION_VERSION,
-      data: forks,
-    };
-    const forksFileName = this.getFileNameForScope(FORKS_FILE_NAME, accountScope);
-    const forksFileId = await this.files.ensure(token, forksFileName);
-    await this.files.upload(token, forksFileId, forksPayload);
-    logger.info('[GoogleDriveSyncService] Fork nodes uploaded successfully');
-  }
-
-  private async uploadHierarchy(
-    token: string,
-    timelineHierarchy: TimelineHierarchyDataSync,
-    accountScope: SyncAccountScope | null,
-    now: Date,
-  ): Promise<void> {
-    const timelineHierarchyPayload: TimelineHierarchyExportPayload = {
-      format: 'gemini-voyager.timeline-hierarchy.v1',
-      exportedAt: now.toISOString(),
-      version: EXTENSION_VERSION,
-      data: timelineHierarchy,
-    };
-    const timelineHierarchyFileName = this.getFileNameForScope(
-      TIMELINE_HIERARCHY_FILE_NAME,
-      accountScope,
-    );
-    const timelineHierarchyFileId = await this.files.ensure(token, timelineHierarchyFileName);
-    await this.files.upload(token, timelineHierarchyFileId, timelineHierarchyPayload);
-    logger.info('[GoogleDriveSyncService] Timeline hierarchy uploaded successfully');
-  }
-
   private async readFile<T>(
     token: string,
     baseFileName: string,
     accountScope: SyncAccountScope | null,
     message?: string,
   ): Promise<T | null> {
-    const fileId = await this.findFileForScope(token, baseFileName, accountScope);
-    if (!fileId) return null;
-    const payload = await this.files.download<T>(token, fileId);
+    const payload = await this.readScopedFile<T>(token, baseFileName, accountScope);
     if (message) logger.info(message);
     return payload;
   }
@@ -500,20 +468,18 @@ export class GoogleDriveSyncPayloads {
     return `${baseFileName.slice(0, dotIndex)}.${suffix}${baseFileName.slice(dotIndex)}`;
   }
 
-  private async findFileForScope(
+  /** An empty scoped body has exactly the same legacy fallback as a missing scoped id. */
+  private async readScopedFile<T>(
     token: string,
     baseFileName: string,
-    accountScope: SyncAccountScope | null,
-  ): Promise<string | null> {
-    if (!accountScope) {
-      return this.files.find(token, baseFileName);
+    scope: SyncAccountScope | null,
+  ): Promise<T | null> {
+    if (scope) {
+      const id = await this.files.find(token, this.getFileNameForScope(baseFileName, scope));
+      const value = id ? await this.files.download<T>(token, id) : null;
+      if (value !== null) return value;
     }
-
-    const scopedFileName = this.getFileNameForScope(baseFileName, accountScope);
-    const scopedFileId = await this.files.find(token, scopedFileName);
-    if (scopedFileId) return scopedFileId;
-
-    // Backward compatibility: allow reading legacy shared file before user uploads scoped data.
-    return this.files.find(token, baseFileName);
+    const id = await this.files.find(token, baseFileName);
+    return id ? this.files.download<T>(token, id) : null;
   }
 }

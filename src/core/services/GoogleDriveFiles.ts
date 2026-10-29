@@ -1,4 +1,5 @@
 import type { SyncProvider } from '@/core/types/sync';
+import { UnrecognizedDriveFileError, parseDriveJson } from '@/core/utils/driveReadResult';
 import {
   downloadSafariGoogleDriveFile,
   ensureSafariGoogleDriveFile,
@@ -28,7 +29,10 @@ export class GoogleDriveFiles {
   private fileIdByName: Record<string, string> = {};
   constructor(
     private readonly folder: GoogleDriveBackupFolder,
-    private readonly options: { getProvider: () => SyncProvider; onAuthLost: () => void },
+    private readonly options: {
+      getProvider: () => SyncProvider;
+      onAuthLost: (error: unknown) => void;
+    },
   ) {}
   reset(): void {
     this.folder.reset();
@@ -71,11 +75,35 @@ export class GoogleDriveFiles {
     if (!response.ok) {
       throw new Error(`Failed to search files: ${response.status}`);
     }
-    const result = await response.json();
-    return result.files?.[0]?.id || null;
+    const result: unknown = await response.json().catch(() => {
+      throw new Error(`Failed to search files: ${response.status}`);
+    });
+    if (
+      !result ||
+      typeof result !== 'object' ||
+      !('files' in result) ||
+      !Array.isArray(result.files)
+    ) {
+      throw new Error(`Failed to search files: ${response.status}`);
+    }
+    let firstId: string | null = null;
+    const candidates: unknown[] = result.files;
+    for (const file of candidates) {
+      if (
+        !file ||
+        typeof file !== 'object' ||
+        !('id' in file) ||
+        typeof file.id !== 'string' ||
+        file.id.length === 0
+      ) {
+        throw new Error(`Failed to search files: ${response.status}`);
+      }
+      firstId ??= file.id;
+    }
+    return firstId;
   }
 
-  async ensure(token: string, fileName: string): Promise<string> {
+  async ensure(token: string, fileName: string, knownFileId?: string | null): Promise<string> {
     if (this.options.getProvider() === 'icloud') {
       return fileName;
     }
@@ -83,7 +111,7 @@ export class GoogleDriveFiles {
     if (isSafariRuntime()) {
       const fileId = await ensureSafariGoogleDriveFile(
         fileName,
-        this.fileIdByName[fileName] ?? null,
+        knownFileId === undefined ? (this.fileIdByName[fileName] ?? null) : knownFileId,
       );
       this.fileIdByName[fileName] = fileId;
       return fileId;
@@ -92,8 +120,16 @@ export class GoogleDriveFiles {
     // 1. Ensure backup folder exists
     const folderId = await this.ensureBackupFolder(token);
 
+    if (knownFileId) {
+      this.fileIdByName[fileName] = knownFileId;
+      const parents = await this.getFileParents(token, knownFileId);
+      if (parents && !parents.includes(folderId))
+        await this.moveFile(token, knownFileId, folderId, parents);
+      return knownFileId;
+    }
+
     // 2. Check if we have a valid cached file ID
-    const currentId = this.fileIdByName[fileName] ?? null;
+    const currentId = knownFileId === null ? null : (this.fileIdByName[fileName] ?? null);
 
     if (currentId) {
       const parents = await this.getFileParents(token, currentId);
@@ -110,7 +146,7 @@ export class GoogleDriveFiles {
     }
 
     // 3. Search for the file globally (in case it was created before but we lost the ID reference)
-    const existingId = await this.find(token, fileName);
+    const existingId = knownFileId === undefined ? await this.find(token, fileName) : null;
     if (existingId) {
       // Found existing file
       this.fileIdByName[fileName] = existingId;
@@ -266,10 +302,9 @@ export class GoogleDriveFiles {
           if (response.status === 404) return null;
           throw new Error(`Download failed: ${response.status}`);
         }
-        const payload: unknown = await response.json();
-        if (payload === null) throw new Error('The cloud sync file contains invalid null data');
-        return payload as T;
+        return parseDriveJson(await response.text()) as T | null;
       } catch (error) {
+        if (error instanceof UnrecognizedDriveFileError) throw error;
         if (this.markAuthLostIfNeeded(error)) throw error;
         if (attempt === MAX_RETRIES) throw error;
         await this.sleep(Math.max(delay, getSafariGoogleDriveRetryDelay(error) ?? 0));
@@ -286,7 +321,7 @@ export class GoogleDriveFiles {
    */
   private markAuthLostIfNeeded(error: unknown): boolean {
     if (!isSafariGoogleDriveAuthError(error)) return false;
-    this.options.onAuthLost();
+    this.options.onAuthLost(error);
     return true;
   }
 

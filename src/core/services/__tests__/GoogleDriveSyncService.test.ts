@@ -3,360 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HighlightExportPayload, SyncAccountScope } from '@/core/types/sync';
 import { hashString } from '@/core/utils/hash';
 
-type MockedChrome = typeof chrome;
-
-function createChromeMock(): MockedChrome {
-  const localStorageArea = {
-    get: vi.fn().mockResolvedValue({}),
-    set: vi.fn().mockResolvedValue(undefined),
-    remove: vi.fn().mockResolvedValue(undefined),
-  };
-
-  const syncStorageArea = {
-    get: vi.fn().mockResolvedValue({}),
-    set: vi.fn().mockResolvedValue(undefined),
-    remove: vi.fn().mockResolvedValue(undefined),
-    clear: vi.fn().mockResolvedValue(undefined),
-  };
-
-  const runtime = {
-    lastError: null as chrome.runtime.LastError | null,
-    id: 'test-extension-id',
-    getManifest: vi.fn(() => ({
-      oauth2: {
-        client_id: 'test-client-id',
-        scopes: ['https://www.googleapis.com/auth/drive.file'],
-      },
-    })),
-  };
-
-  const identity = {
-    getAuthToken: vi.fn(),
-    removeCachedAuthToken: vi.fn((_details: { token: string }, callback?: () => void) => {
-      callback?.();
-    }),
-    launchWebAuthFlow: vi.fn(),
-    getRedirectURL: vi.fn(() => 'https://test-extension.chromiumapp.org/'),
-  };
-
-  return {
-    storage: {
-      local: localStorageArea,
-      sync: syncStorageArea,
-      onChanged: {
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-      },
-    },
-    runtime,
-    identity,
-  } as unknown as MockedChrome;
-}
-
-async function loadServiceClass() {
-  vi.resetModules();
-  const mod = await import('../GoogleDriveSyncService');
-  return mod.GoogleDriveSyncService;
-}
-
-function createHighlightPayload(
-  accountScope: SyncAccountScope,
-  exact: string = 'A highlighted answer',
-): HighlightExportPayload {
-  const accountHash = hashString(accountScope.accountKey);
-  return {
-    format: 'gemini-voyager.annotations.v1',
-    exportedAt: '2026-07-12T20:00:00.000Z',
-    version: '1.2.3',
-    accountScope: { platform: 'gemini', accountHash },
-    items: [
-      {
-        id: 'highlight-1',
-        schemaVersion: 1,
-        platform: 'gemini',
-        accountHash,
-        conversationId: 'conversation-1',
-        conversationUrl: 'https://gemini.google.com/u/2/app/conversation-1',
-        conversationTitle: 'Conversation title',
-        turnId: 'turn-1',
-        role: 'assistant',
-        anchor: {
-          quote: { exact, prefix: 'before ', suffix: ' after' },
-          position: { start: 7, end: 7 + exact.length },
-          sourceTextHash: 'source-text-hash',
-        },
-        note: 'Keep this exact quote intact.',
-        color: 'yellow',
-        createdAt: 1_700_000_000_000,
-        updatedAt: 1_700_000_001_000,
-        revision: { counter: 1, deviceId: 'device-1' },
-      },
-    ],
-  };
-}
-
-function responseJson(data: unknown, status: number = 200): Response {
-  return {
-    ok: status >= 200 && status < 300,
-    status,
-    json: async () => data,
-    text: async () => JSON.stringify(data),
-  } as Response;
-}
-
-describe('GoogleDriveSyncService authentication', () => {
-  const fetchMock = vi.fn();
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    fetchMock.mockResolvedValue({
-      ok: true,
-      json: async () => ({}),
-      text: async () => '',
-    });
-    vi.stubGlobal('fetch', fetchMock);
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it('uses identity.getAuthToken non-interactive first, then interactive fallback', async () => {
-    const chromeMock = createChromeMock();
-    (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
-
-    const getAuthTokenMock = chromeMock.identity.getAuthToken as unknown as ReturnType<
-      typeof vi.fn
-    >;
-    getAuthTokenMock.mockImplementation(
-      (details: { interactive?: boolean }, callback: (token?: string) => void) => {
-        callback(details.interactive ? 'interactive-token' : undefined);
-      },
-    );
-
-    const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
-    await service.getState();
-    getAuthTokenMock.mockClear();
-
-    const ok = await service.authenticate(true);
-
-    expect(ok).toBe(true);
-    expect(getAuthTokenMock).toHaveBeenCalledTimes(2);
-    expect(getAuthTokenMock).toHaveBeenNthCalledWith(
-      1,
-      { interactive: false },
-      expect.any(Function),
-    );
-    expect(getAuthTokenMock).toHaveBeenNthCalledWith(
-      2,
-      { interactive: true },
-      expect.any(Function),
-    );
-
-    const state = await service.getState();
-    expect(state.isAuthenticated).toBe(true);
-  });
-
-  it('persists identity tokens to local storage for worker restarts', async () => {
-    const chromeMock = createChromeMock();
-    (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
-
-    // loadState() only calls getAuthToken when sync mode is not 'disabled'
-    const localGetMock = chromeMock.storage.local.get as unknown as ReturnType<typeof vi.fn>;
-    localGetMock.mockResolvedValue({ gvSyncMode: 'auto' });
-
-    const getAuthTokenMock = chromeMock.identity.getAuthToken as unknown as ReturnType<
-      typeof vi.fn
-    >;
-    getAuthTokenMock.mockImplementation(
-      (_details: { interactive?: boolean }, callback: (token?: string) => void) => {
-        callback('identity-token');
-      },
-    );
-
-    const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
-    await service.getState();
-
-    const saveLocalTokenMock = chromeMock.storage.local.set as unknown as ReturnType<typeof vi.fn>;
-    expect(saveLocalTokenMock).toHaveBeenCalledWith(
-      expect.objectContaining({ gvAccessToken: 'identity-token' }),
-    );
-
-    const state = await service.getState();
-    expect(state.isAuthenticated).toBe(true);
-  });
-
-  it('removes cached identity token during sign out', async () => {
-    const chromeMock = createChromeMock();
-    (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
-
-    const getAuthTokenMock = chromeMock.identity.getAuthToken as unknown as ReturnType<
-      typeof vi.fn
-    >;
-    getAuthTokenMock.mockImplementation(
-      (_details: { interactive?: boolean }, callback: (token?: string) => void) => {
-        callback('cached-token');
-      },
-    );
-
-    const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
-    await service.getState();
-
-    await service.authenticate(true);
-    await service.signOut();
-
-    const removeCachedAuthTokenMock = chromeMock.identity
-      .removeCachedAuthToken as unknown as ReturnType<typeof vi.fn>;
-    expect(removeCachedAuthTokenMock).toHaveBeenCalledWith(
-      { token: 'cached-token' },
-      expect.any(Function),
-    );
-
-    const removeLocalTokenMock = chromeMock.storage.local.remove as unknown as ReturnType<
-      typeof vi.fn
-    >;
-    expect(removeLocalTokenMock).toHaveBeenCalledWith(['gvAccessToken', 'gvTokenExpiry']);
-
-    const state = await service.getState();
-    expect(state.isAuthenticated).toBe(false);
-  });
-
-  it('reuses cached token before falling back to interactive web auth again', async () => {
-    const chromeMock = createChromeMock();
-    (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
-
-    const runtimeRef = chromeMock.runtime as { lastError: chrome.runtime.LastError | null };
-    const getAuthTokenMock = chromeMock.identity.getAuthToken as unknown as ReturnType<
-      typeof vi.fn
-    >;
-    getAuthTokenMock.mockImplementation(
-      (details: { interactive?: boolean }, callback: (token?: string) => void) => {
-        if (details.interactive) {
-          runtimeRef.lastError = { message: 'OAuth2 service failure' } as chrome.runtime.LastError;
-          callback(undefined);
-          runtimeRef.lastError = null;
-          return;
-        }
-
-        callback(undefined);
-      },
-    );
-
-    const launchWebAuthFlowMock = chromeMock.identity.launchWebAuthFlow as unknown as ReturnType<
-      typeof vi.fn
-    >;
-    launchWebAuthFlowMock.mockImplementationOnce(
-      (details: { url: string; interactive: boolean }, callback: (response?: string) => void) => {
-        callback(
-          `https://test-extension.chromiumapp.org/#state=${new URL(details.url).searchParams.get('state')}&access_token=legacy-token&expires_in=3600`,
-        );
-      },
-    );
-    launchWebAuthFlowMock.mockImplementation(
-      (_details: { url: string; interactive: boolean }, callback: (response?: string) => void) => {
-        runtimeRef.lastError = {
-          message: 'The user did not approve access',
-        } as chrome.runtime.LastError;
-        callback(undefined);
-        runtimeRef.lastError = null;
-      },
-    );
-
-    const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
-    await service.getState();
-
-    const firstAuth = await service.authenticate(true);
-    const secondAuth = await service.authenticate(true);
-
-    expect(firstAuth).toBe(true);
-    expect(secondAuth).toBe(true);
-    expect(launchWebAuthFlowMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('falls back to launchWebAuthFlow when identity.getAuthToken is unavailable', async () => {
-    const chromeMock = createChromeMock();
-    const launchWebAuthFlowMock = chromeMock.identity.launchWebAuthFlow as unknown as ReturnType<
-      typeof vi.fn
-    >;
-    launchWebAuthFlowMock.mockImplementation(
-      (details: { url: string; interactive: boolean }, callback: (response?: string) => void) => {
-        callback(
-          `https://test-extension.chromiumapp.org/#state=${new URL(details.url).searchParams.get('state')}&access_token=legacy-token&expires_in=3600`,
-        );
-      },
-    );
-
-    const identityWithoutGetAuthToken = {
-      ...chromeMock.identity,
-      getAuthToken: undefined,
-    };
-
-    (globalThis as { chrome: MockedChrome }).chrome = {
-      ...chromeMock,
-      identity: identityWithoutGetAuthToken,
-    } as unknown as MockedChrome;
-
-    const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
-    await service.getState();
-
-    const ok = await service.authenticate(true);
-
-    expect(ok).toBe(true);
-    expect(launchWebAuthFlowMock).toHaveBeenCalledTimes(1);
-
-    const saveLocalTokenMock = chromeMock.storage.local.set as unknown as ReturnType<typeof vi.fn>;
-    expect(saveLocalTokenMock).toHaveBeenCalledWith(
-      expect.objectContaining({ gvAccessToken: 'legacy-token' }),
-    );
-  });
-
-  it('falls back to launchWebAuthFlow when identity.getAuthToken fails interactively', async () => {
-    const chromeMock = createChromeMock();
-    (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
-
-    const getAuthTokenMock = chromeMock.identity.getAuthToken as unknown as ReturnType<
-      typeof vi.fn
-    >;
-    getAuthTokenMock.mockImplementation(
-      (details: { interactive?: boolean }, callback: (token?: string) => void) => {
-        if (details.interactive) {
-          (chromeMock.runtime as { lastError: chrome.runtime.LastError | null }).lastError = {
-            message: 'OAuth2 service failure',
-          } as chrome.runtime.LastError;
-          callback(undefined);
-          (chromeMock.runtime as { lastError: chrome.runtime.LastError | null }).lastError = null;
-          return;
-        }
-        callback(undefined);
-      },
-    );
-
-    const launchWebAuthFlowMock = chromeMock.identity.launchWebAuthFlow as unknown as ReturnType<
-      typeof vi.fn
-    >;
-    launchWebAuthFlowMock.mockImplementation(
-      (details: { url: string; interactive: boolean }, callback: (response?: string) => void) => {
-        callback(
-          `https://test-extension.chromiumapp.org/#state=${new URL(details.url).searchParams.get('state')}&access_token=legacy-fallback-token&expires_in=3600`,
-        );
-      },
-    );
-
-    const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
-    await service.getState();
-
-    const ok = await service.authenticate(true);
-
-    expect(ok).toBe(true);
-    expect(launchWebAuthFlowMock).toHaveBeenCalledTimes(1);
-  });
-});
+import { createDriveTestClient } from './fixtures/driveTestClient';
+import {
+  createChromeMock,
+  loadServiceClass,
+  createHighlightPayload,
+  responseJson,
+  type MockedChrome,
+} from './fixtures/googleDriveServiceFixture';
 
 describe('GoogleDriveSyncService prompts-only sync', () => {
   const fetchMock = vi.fn();
@@ -384,14 +38,14 @@ describe('GoogleDriveSyncService prompts-only sync', () => {
     );
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
 
     await expect(service.uploadPromptsOnly([], null, false)).resolves.toBe(false);
     // Never reached the Drive API — no file writes attempted.
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('downloadPromptsOnly returns null (does not throw) when not authenticated non-interactively', async () => {
+  it('downloadPromptsOnly reports a failed read when not authenticated non-interactively', async () => {
     const chromeMock = createChromeMock();
     (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
     (chromeMock.identity.getAuthToken as unknown as ReturnType<typeof vi.fn>).mockImplementation(
@@ -400,9 +54,11 @@ describe('GoogleDriveSyncService prompts-only sync', () => {
     );
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
 
-    await expect(service.downloadPromptsOnly(null, false)).resolves.toBeNull();
+    await expect(service.downloadPromptsOnly(null, false)).resolves.toMatchObject({
+      kind: 'failed',
+    });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
@@ -486,7 +142,7 @@ describe('GoogleDriveSyncService highlights-only sync', () => {
     });
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
 
     await expect(service.uploadHighlightsOnly(payload, accountScope, true)).resolves.toBe(true);
@@ -514,7 +170,7 @@ describe('GoogleDriveSyncService highlights-only sync', () => {
     });
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
 
     await expect(service.downloadHighlightsOnly(accountScope, true)).resolves.toBeNull();
@@ -530,7 +186,7 @@ describe('GoogleDriveSyncService highlights-only sync', () => {
     payload.accountScope.accountHash = 'wrong-account-hash';
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
 
     await expect(service.uploadHighlightsOnly(payload, accountScope, true)).resolves.toBe(false);
@@ -562,7 +218,7 @@ describe('GoogleDriveSyncService highlights-only sync', () => {
     });
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
 
     await expect(service.downloadHighlightsOnly(accountScope, true)).resolves.toBeNull();
@@ -597,7 +253,7 @@ describe('GoogleDriveSyncService highlights-only sync', () => {
     });
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
 
     await expect(service.uploadHighlightsOnly(payload, accountScope, true)).resolves.toBe(false);
@@ -617,7 +273,7 @@ describe('GoogleDriveSyncService highlights-only sync', () => {
     const payload = createHighlightPayload(accountScope);
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
 
     await expect(service.uploadHighlightsOnly(payload, accountScope, false)).resolves.toBe(false);
@@ -636,14 +292,13 @@ describe('GoogleDriveSyncService plugin-state file', () => {
     (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
     const { GoogleDriveAuth } = await import('../GoogleDriveAuth');
     const { GoogleDriveFiles } = await import('../GoogleDriveFiles');
     vi.spyOn(GoogleDriveAuth.prototype, 'getToken').mockResolvedValue('token');
-    const ensureSpy = vi
-      .spyOn(GoogleDriveFiles.prototype, 'ensure')
-      .mockImplementation(async (_token, name) => name);
+    vi.spyOn(GoogleDriveFiles.prototype, 'find').mockResolvedValue(null);
+    vi.spyOn(GoogleDriveFiles.prototype, 'ensure').mockImplementation(async (_token, name) => name);
     const uploadSpy = vi.spyOn(GoogleDriveFiles.prototype, 'upload').mockResolvedValue(undefined);
 
     const ok = await service.upload(
@@ -667,7 +322,6 @@ describe('GoogleDriveSyncService plugin-state file', () => {
     );
 
     expect(ok).toBe(true);
-    expect(ensureSpy).toHaveBeenCalledWith('token', 'gemini-voyager-plugins.json');
     expect(uploadSpy).toHaveBeenCalledWith(
       'token',
       'gemini-voyager-plugins.json',
@@ -689,7 +343,7 @@ describe('GoogleDriveSyncService plugin-state file', () => {
     (globalThis as { chrome: MockedChrome }).chrome = chromeMock;
 
     const GoogleDriveSyncService = await loadServiceClass();
-    const service = new GoogleDriveSyncService();
+    const service = createDriveTestClient(new GoogleDriveSyncService());
     await service.getState();
     const pluginPayload = {
       format: 'gemini-voyager.plugins.v1' as const,

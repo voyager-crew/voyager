@@ -464,7 +464,19 @@ describe('GoogleDriveBackupFolder migration', () => {
     const service = new GoogleDriveSyncService();
     await service.getState();
 
-    await expect(service.downloadPromptsOnly()).resolves.toMatchObject({ items: [] });
+    await expect(service.runExclusive((port) => port.downloadPromptsOnly())).resolves.toMatchObject(
+      {
+        kind: 'found',
+        value: { items: [] },
+      },
+    );
     expect(fetchMock.mock.calls.filter(([, init]) => init?.method === 'POST')).toHaveLength(0);
+    expect(
+      fetchMock.mock.calls.some(
+        ([input, init]) =>
+          new URL(String(input)).pathname === '/drive/v3/files/legacy-folder' &&
+          init?.method === 'PATCH',
+      ),
+    ).toBe(true);
   });
 });

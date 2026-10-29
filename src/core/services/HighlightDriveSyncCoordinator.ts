@@ -1,4 +1,3 @@
-import { googleDriveSyncService } from '@/core/services/GoogleDriveSyncService';
 import {
   type HighlightAccountSnapshot,
   type HighlightImportMergeOptions,
@@ -18,6 +17,7 @@ import type { SyncAccountScope } from '@/core/types/sync';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 
 export interface HighlightDrivePort {
+  readonly kind: 'sync-turn';
   downloadHighlightsOnly(
     accountScope: SyncAccountScope,
     interactive?: boolean,
@@ -38,6 +38,10 @@ export interface HighlightLocalPort {
     options?: HighlightImportMergeOptions,
   ): Promise<HighlightImportStats>;
 }
+
+export type HighlightPushPlan =
+  | { ok: true; commit(): Promise<HighlightDriveSyncResult> }
+  | { ok: false; result: HighlightDriveSyncResult };
 
 export interface HighlightDriveSyncResult {
   ok: boolean;
@@ -93,7 +97,7 @@ function payloadCovers(
  */
 export class HighlightDriveSyncCoordinator {
   constructor(
-    private readonly drive: HighlightDrivePort = googleDriveSyncService,
+    private readonly drive: HighlightDrivePort,
     private readonly local: HighlightLocalPort = highlightAnnotationService,
   ) {}
 
@@ -123,17 +127,41 @@ export class HighlightDriveSyncCoordinator {
     }
   }
 
-  async push(
+  /** Called with an unqueued port so a larger upload can prepare every kind first. */
+  async preparePush(
     accountScope: SyncAccountScope,
     interactive: boolean = true,
+  ): Promise<HighlightPushPlan> {
+    try {
+      const remote = await this.drive.downloadHighlightsOnly(accountScope, interactive);
+      const remoteState = await this.drive.getState();
+      if (!remote && remoteState.error) {
+        return { ok: false, result: { ok: false, count: 0, error: remoteState.error } };
+      }
+      // Planning must not apply cloud records or a clear marker before the main upload succeeds.
+      const initial = payloadFromSnapshot(
+        await this.local.getAccountSnapshot(toHighlightScope(accountScope)),
+      );
+      JSON.stringify(initial);
+      return { ok: true, commit: () => this.commitPush(accountScope, interactive, remote) };
+    } catch (error) {
+      return {
+        ok: false,
+        result: {
+          ok: false,
+          count: 0,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      };
+    }
+  }
+
+  private async commitPush(
+    accountScope: SyncAccountScope,
+    interactive: boolean,
+    remote: HighlightExportPayloadV1 | null,
   ): Promise<HighlightDriveSyncResult> {
     const highlightScope = toHighlightScope(accountScope);
-    const remote = await this.drive.downloadHighlightsOnly(accountScope, interactive);
-    const remoteState = await this.drive.getState();
-    if (!remote && remoteState.error) {
-      return { ok: false, count: 0, error: remoteState.error };
-    }
-
     try {
       let stats: HighlightImportStats | undefined;
       if (remote) {
@@ -143,8 +171,8 @@ export class HighlightDriveSyncCoordinator {
       }
       const maximumAttempts = 3;
       for (let attempt = 0; attempt < maximumAttempts; attempt += 1) {
-        const snapshot = await this.local.getAccountSnapshot(highlightScope);
-        const payload = payloadFromSnapshot(snapshot);
+        // Include edits made while the main upload was transferring its other files.
+        const payload = payloadFromSnapshot(await this.local.getAccountSnapshot(highlightScope));
         const uploaded = await this.drive.uploadHighlightsOnly(payload, accountScope, interactive);
         if (!uploaded) {
           const state = await this.drive.getState();
@@ -153,10 +181,9 @@ export class HighlightDriveSyncCoordinator {
 
         const verified = await this.drive.downloadHighlightsOnly(accountScope, interactive);
         if (verified) {
-          const verifyStats = await this.local.importMerge(highlightScope, verified.items, {
+          stats = await this.local.importMerge(highlightScope, verified.items, {
             clearMarker: verified.clearMarker,
           });
-          stats = verifyStats;
           if (payloadCovers(verified, payload)) {
             return {
               ok: true,
@@ -175,13 +202,7 @@ export class HighlightDriveSyncCoordinator {
         error: 'Highlight upload could not be verified after 3 merge attempts',
       };
     } catch (error) {
-      return {
-        ok: false,
-        count: 0,
-        error: error instanceof Error ? error.message : String(error),
-      };
+      return { ok: false, count: 0, error: error instanceof Error ? error.message : String(error) };
     }
   }
 }
-
-export const highlightDriveSyncCoordinator = new HighlightDriveSyncCoordinator();

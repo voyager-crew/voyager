@@ -99,23 +99,40 @@ describe('fork messages owner', () => {
     expect(stored()).toEqual({ nodes: { b: [node('b', '2')] }, groups: { group: ['b:2'] } });
   });
 
-  it('ignores dangling index entries and retains empty fallback on malformed storage or read errors', async () => {
+  it('keeps display reads tolerant while failed or malformed sync reads refuse an empty backup', async () => {
     const a = node('a', '1');
     const { owner, area } = setup({ nodes: { a: [a] }, groups: { group: ['missing:1', 'a:1'] } });
     await expect(
       owner.handle({ type: 'gv.fork.getGroup', payload: { forkGroupId: 'group' } }),
     ).resolves.toEqual({ ok: true, nodes: [a] });
     area.get.mockResolvedValueOnce({ [key]: { nodes: {} } });
-    await expect(owner.getAllForkNodes()).resolves.toEqual({ nodes: {}, groups: {} });
-    area.get.mockRejectedValueOnce(new Error('unavailable'));
+    await expect(owner.getAllForkNodes()).rejects.toThrow('Invalid fork nodes envelope');
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
-    await expect(owner.handle({ type: 'gv.fork.getAll' })).resolves.toEqual({
+    area.get.mockRejectedValueOnce(new Error('unavailable'));
+    await expect(
+      owner.handle({ type: 'gv.fork.getForConversation', payload: { conversationId: 'a' } }),
+    ).resolves.toEqual({
       ok: true,
-      data: { nodes: {}, groups: {} },
+      nodes: [],
     });
     log.mockRestore();
+    area.get.mockRejectedValueOnce(new Error('unavailable'));
+    await expect(owner.handle({ type: 'gv.fork.getAll' })).rejects.toThrow('unavailable');
+    await expect(owner.getAllForkNodes()).resolves.toEqual({
+      nodes: { a: [a] },
+      groups: { group: ['missing:1', 'a:1'] },
+    });
+    expect(area.set).not.toHaveBeenCalled();
     expect(owner.handle({ type: 'gv.starred.getAll' })).toBeNull();
     expect(owner.handle(null)).toBeNull();
+  });
+
+  it('does not write over malformed existing forks when recording a new fork', async () => {
+    const malformed = { nodes: { a: 'unreadable' }, groups: { group: ['a:1'] } };
+    const { owner, area, stored } = setup(malformed);
+    await expect(owner.handle(add(node('b', '1')))).rejects.toThrow('Invalid fork nodes envelope');
+    expect(stored()).toEqual(malformed);
+    expect(area.set).not.toHaveBeenCalled();
   });
   it('adding a fork when storage cannot be read keeps the existing forks', async () => {
     const existing = node('a', '1');
@@ -135,7 +152,7 @@ describe('fork messages owner', () => {
     const shared = node('b', '1', 'cloud', 0);
     const cloudOnly = node('b', '2', 'cloud', 1);
     const { owner, stored } = setup({
-      nodes: { a: [local], b: [shared] },
+      nodes: { a: [local, { turnId: 'broken' }], b: [shared] },
       groups: { group: ['a:1'], cloud: ['b:1'] },
     });
     const envelope = {
@@ -169,4 +186,28 @@ describe('fork messages owner', () => {
     expect(area.set).not.toHaveBeenCalled();
     expect(stored()).toEqual({ nodes: { a: [local] }, groups: { group: ['a:1'] } });
   });
+  it('adding a fork repairs malformed nodes without dropping the valid forks', async () => {
+    const existing = node('a', '1');
+    const added = node('b', '2');
+    const { owner, stored } = setup({
+      nodes: { a: [existing, { turnId: 'broken' }], unreadable: 'not a node list' },
+      groups: { group: ['a:1', 7] },
+    });
+    await expect(owner.handle(add(added))).resolves.toEqual({ ok: true, added: true });
+    expect(stored()).toEqual({
+      nodes: { a: [existing], b: [added] },
+      groups: { group: ['a:1', 'b:2'] },
+    });
+  });
+
+  it.each([null, 'unreadable', { nodes: [], groups: {} }, { nodes: {}, groups: { group: [1] } }])(
+    'a fork add refuses an unreadable existing value (%j)',
+    async (raw) => {
+      const { owner, stored } = setup(raw);
+      await expect(owner.handle(add(node('new', '1')))).rejects.toThrow(
+        'Invalid fork nodes envelope',
+      );
+      expect(stored()).toEqual(raw);
+    },
+  );
 });

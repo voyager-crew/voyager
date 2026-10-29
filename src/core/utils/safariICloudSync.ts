@@ -1,5 +1,7 @@
 import browser from 'webextension-polyfill';
 
+import { parseDriveJson } from '@/core/utils/driveReadResult';
+
 const SAFARI_NATIVE_APP_ID = 'com.yourCompany.Gemini-Voyager';
 
 type NativeICloudResponse = {
@@ -75,13 +77,11 @@ export async function readSafariICloudFile<T>(fileName: string): Promise<T | nul
   if (response.success !== true) {
     throw responseError(response, 'iCloud download failed');
   }
-  if (response.data?.found !== true) return null;
-  if (typeof response.data.json !== 'string') {
+  if (response.data?.found === false) return null;
+  if (response.data?.found !== true || typeof response.data.json !== 'string') {
     throw new Error('The iCloud sync file is invalid');
   }
-  const payload: unknown = JSON.parse(response.data.json);
-  if (payload === null) throw new Error('The cloud sync file contains invalid null data');
-  return payload as T;
+  return parseDriveJson(response.data.json) as T | null;
 }
 
 export async function deleteSafariICloudBackup(): Promise<number> {

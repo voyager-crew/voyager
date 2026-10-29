@@ -7,6 +7,8 @@ import { buildStarsV2 } from '@/features/savedLibrary/starSyncPayload';
 import type { StarredMessage } from '@/features/savedLibrary/starTypes';
 import { CATALOG_OUTLINE_WRITE_MESSAGE } from '@/features/timeline/catalogOutlineMessages';
 
+import { createDriveTestClient } from './fixtures/driveTestClient';
+
 const EXTENSION_ID = 'test-extension';
 const CHATGPT_FILE = 'gemini-voyager-timeline-hierarchy.site-chatgpt.json';
 const CLAUDE_FILE = 'gemini-voyager-timeline-hierarchy.site-claude.json';
@@ -130,7 +132,8 @@ async function device(initial: Record<string, unknown> = {}) {
   const { createCatalogOutlineMessageHandler } =
     await import('@/pages/background/catalogOutlineMessages');
   const { createStarStore } = await import('@/features/savedLibrary/starStore');
-  const { googleDriveSyncService: service } = await import('../GoogleDriveSyncService');
+  const { googleDriveSyncService } = await import('../GoogleDriveSyncService');
+  const service = createDriveTestClient(googleDriveSyncService);
   const cloud = await import('@/features/timeline/catalogTimelineCloud');
   const store = createStarStore(chrome.storage.local as never);
   const handler = createCloudSyncMessageHandler({
