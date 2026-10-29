@@ -934,10 +934,6 @@
     "message": "Untitled",
     "description": "Fallback title for conversations without a name"
   },
-  "geminiOnlyNotice": {
-    "message": "Runs on Gemini (including Enterprise) & AI Studio by default. Add other sites below to enable the Prompt Manager there.",
-    "description": "Notice that defaults are limited to Gemini/AI Studio"
-  },
   "folderManager_dataLossWarning": {
     "message": "Warning: Failed to load folder data. Your folders may have been corrupted. Please check the browser console for details and try restoring from backup if available.",
     "description": "Warning shown when folder data fails to load"
@@ -1015,7 +1011,7 @@
     "description": "Custom websites for prompt manager"
   },
   "customWebsitesPlaceholder": {
-    "message": "Enter website URL (e.g., chatgpt.com)",
+    "message": "Website, e.g. example.com",
     "description": "Custom websites input placeholder"
   },
   "addWebsite": {
@@ -1039,8 +1035,60 @@
     "description": "Permission request failure message"
   },
   "customWebsitesNote": {
-    "message": "Tip: You'll be asked to allow access when adding a site. After granting permission, reload that site so the Prompt Manager can start.",
-    "description": "Custom websites reload/permission note"
+    "message": "Adding a site asks your browser for access to that site only.",
+    "description": "Note under the add-website field: only that site is asked for"
+  },
+  "siteAccessTitle": {
+    "message": "Site access",
+    "description": "Site access card title"
+  },
+  "siteAccessDescription": {
+    "message": "Voyager runs only on the sites listed here. Turning on a site's first feature asks your browser for access once; later features share it.",
+    "description": "Site access card description: where Voyager runs and how access is asked once per site"
+  },
+  "siteAccessBuiltIn": {
+    "message": "Built in",
+    "description": "Badge on Gemini and AI Studio, where Voyager runs without asking for access"
+  },
+  "siteAccessAllFeatures": {
+    "message": "All features",
+    "description": "Detail under a built-in site: every Voyager feature runs there"
+  },
+  "siteAccessAllowed": {
+    "message": "Allowed",
+    "description": "Badge: the browser has granted Voyager access to this site"
+  },
+  "siteAccessNotAllowed": {
+    "message": "Not allowed",
+    "description": "Badge: Voyager has no access to this site yet"
+  },
+  "siteAccessOpenToStart": {
+    "message": "Open {site} and turn on a feature there",
+    "description": "Detail under a supported site without access. {site} is the site name"
+  },
+  "siteAccessNothingOn": {
+    "message": "No features on",
+    "description": "Detail under a site Voyager can access while none of its features is on"
+  },
+  "siteAccessRemove": {
+    "message": "Remove access",
+    "description": "Button that removes Voyager's access to a site"
+  },
+  "siteAccessRemoved": {
+    "message": "Access to {site} removed",
+    "description": "Undo toast after access to a site was removed. {site} is the site name or address"
+  },
+  "siteAccessOtherWebsites": {
+    "message": "Other websites",
+    "description": "Heading for the websites outside the supported list"
+  },
+  "siteAccessOtherWebsitesHint": {
+    "message": "On other websites, Voyager offers only Prompt Manager.",
+    "description": "Hint under Other websites"
+  },
+  "promptManagerSitesNote": {
+    "message": "Choose where it runs in Site access.",
+    "description": "Note in the Prompt Manager card pointing to the Site access card"
   },
   "starredHistory": {
     "message": "Saved Library",
@@ -3229,13 +3277,9 @@
     "message": "Cloud sync failed. Make sure you're signed in to Google Drive.",
     "description": "Toast: cloud prompt sync failed / not signed in"
   },
-  "enablePromptManagerOnSite": {
-    "message": "Enable Prompt Manager on {site}",
-    "description": "Top toggle label: enable Prompt Manager on the current plugin site ({site})"
-  },
   "enablePromptManagerOnSiteHint": {
-    "message": "Use your saved prompts on this site. You'll be asked to grant access.",
-    "description": "Top toggle hint for enabling Prompt Manager on a third-party site"
+    "message": "Use your saved prompts on this site.",
+    "description": "Hint under Prompt Manager's row in an open site's feature list"
   },
   "storageQuotaTitle": {
     "message": "Storage"

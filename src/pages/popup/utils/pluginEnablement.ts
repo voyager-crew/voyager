@@ -10,7 +10,10 @@ import { CHATGPT_RESPONSE_NOTIFICATION_PLUGIN_ID } from '@/features/plugins/buil
 import { isLocalPluginId } from '@/features/plugins/local/localPluginId';
 import { enableLocalPluginIfUnchanged } from '@/features/plugins/local/localPluginStore';
 import { PLUGIN_CONTENT_SCRIPT_SYNC_MESSAGE } from '@/features/plugins/runtime/messages';
-import { pluginToOriginPatternsForActiveUrl } from '@/features/plugins/runtime/siteRegistration';
+import {
+  partitionPluginOriginPatterns,
+  pluginToOriginPatternsForActiveUrl,
+} from '@/features/plugins/runtime/siteRegistration';
 import {
   legacyBindingFor,
   legacyEnableWrite,
@@ -65,6 +68,26 @@ export async function hasPluginSiteAccess(
     return await browser.permissions.contains({ origins });
   } catch {
     return true;
+  }
+}
+
+/**
+ * A later switch on a site reuses the grant an earlier one made: when only a
+ * companion frame's origin is missing (Claude's artifacts), the plugin turns on
+ * without a prompt and its row offers the repair, as after a plugin update.
+ */
+async function reusesSiteGrant(
+  origins: readonly string[],
+  permissions: readonly Manifest.OptionalPermission[],
+): Promise<boolean> {
+  const { topFrameOrigins, embeddedFrameOrigins } = partitionPluginOriginPatterns(origins);
+  if (permissions.length > 0 || embeddedFrameOrigins.length === 0 || !topFrameOrigins.length) {
+    return false;
+  }
+  try {
+    return await browser.permissions.contains({ origins: topFrameOrigins });
+  } catch {
+    return false;
   }
 }
 
@@ -153,7 +176,7 @@ export async function setPluginEnabledWithSiteAccess(
         // user gesture, so skip the contains() pre-check there.
         if (!isFirefox() && browser.permissions.contains) {
           const alreadyGranted = await browser.permissions.contains(access);
-          if (!alreadyGranted) {
+          if (!alreadyGranted && !(await reusesSiteGrant(origins, permissions))) {
             // Chrome closes extension popups while showing an optional-host
             // prompt. Persist the user's intent BEFORE opening it so a
             // successful grant can be completed by the background even if

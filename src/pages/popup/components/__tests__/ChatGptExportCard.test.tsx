@@ -204,10 +204,7 @@ describe('PluginSiteSettings export entry', () => {
     await act(async () => {
       root.render(
         React.createElement(PluginSiteSettings, {
-          siteDomain: 'chatgpt.com',
-          siteLabel: 'ChatGPT',
-          promptEnabled: false,
-          onTogglePrompt: () => {},
+          prompt: null,
           promptDataTransfer: {} as never,
           plugins: { manifests, activeUrl: CHATGPT_URL },
           exportEntry: { enabled: false, activeTabId: 7 },

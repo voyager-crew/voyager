@@ -934,10 +934,6 @@
     "message": "未命名",
     "description": "无标题对话的回退标题"
   },
-  "geminiOnlyNotice": {
-    "message": "默认仅在 Gemini（含企业版）和 AI Studio 生效。想在其他网站用提示词管理器，请在下方添加并授权。",
-    "description": "提示默认范围为 Gemini/AI Studio"
-  },
   "folderManager_dataLossWarning": {
     "message": "警告：无法加载文件夹数据。您的文件夹可能已损坏。请检查浏览器控制台以获取详细信息，并在可用时尝试从备份恢复。",
     "description": "文件夹数据加载失败时显示的警告"
@@ -1015,7 +1011,7 @@
     "description": "提示词管理器的自定义网站"
   },
   "customWebsitesPlaceholder": {
-    "message": "输入网站 URL（例如：chatgpt.com）",
+    "message": "网站地址，例如 example.com",
     "description": "自定义网站输入占位符"
   },
   "addWebsite": {
@@ -1039,8 +1035,60 @@
     "description": "请求权限失败消息"
   },
   "customWebsitesNote": {
-    "message": "提示：添加网站时会弹出授权，请先允许，再刷新该站点即可启用提示词管理器。",
+    "message": "添加时浏览器只会请求这一个网站的访问权限。",
     "description": "自定义网站重新加载/权限提示"
+  },
+  "siteAccessTitle": {
+    "message": "网站访问",
+    "description": "Site access card title"
+  },
+  "siteAccessDescription": {
+    "message": "Voyager 只在这里列出的网站上运行。在某个网站上打开第一个功能时，浏览器会请求一次访问权限，之后的功能共用。",
+    "description": "Site access card description: where Voyager runs and how access is asked once per site"
+  },
+  "siteAccessBuiltIn": {
+    "message": "内置",
+    "description": "Badge on Gemini and AI Studio, where Voyager runs without asking for access"
+  },
+  "siteAccessAllFeatures": {
+    "message": "全部功能",
+    "description": "Detail under a built-in site: every Voyager feature runs there"
+  },
+  "siteAccessAllowed": {
+    "message": "已授权",
+    "description": "Badge: the browser has granted Voyager access to this site"
+  },
+  "siteAccessNotAllowed": {
+    "message": "未授权",
+    "description": "Badge: Voyager has no access to this site yet"
+  },
+  "siteAccessOpenToStart": {
+    "message": "打开 {site} 后在那里开启功能",
+    "description": "Detail under a supported site without access. {site} is the site name"
+  },
+  "siteAccessNothingOn": {
+    "message": "暂无开启的功能",
+    "description": "Detail under a site Voyager can access while none of its features is on"
+  },
+  "siteAccessRemove": {
+    "message": "取消授权",
+    "description": "Button that removes Voyager's access to a site"
+  },
+  "siteAccessRemoved": {
+    "message": "已取消 {site} 的访问授权",
+    "description": "Undo toast after access to a site was removed. {site} is the site name or address"
+  },
+  "siteAccessOtherWebsites": {
+    "message": "其他网站",
+    "description": "Heading for the websites outside the supported list"
+  },
+  "siteAccessOtherWebsitesHint": {
+    "message": "在其他网站上，Voyager 只提供提示词管理器。",
+    "description": "Hint under Other websites"
+  },
+  "promptManagerSitesNote": {
+    "message": "在哪些网站上使用，见「网站访问」。",
+    "description": "Note in the Prompt Manager card pointing to the Site access card"
   },
   "starredHistory": {
     "message": "收藏库",
@@ -3229,12 +3277,8 @@
     "message": "云端同步失败，请确认已登录 Google Drive。",
     "description": "Toast: cloud prompt sync failed / not signed in"
   },
-  "enablePromptManagerOnSite": {
-    "message": "在 {site} 上开启提示词管理器",
-    "description": "Top toggle label: enable Prompt Manager on the current plugin site ({site})"
-  },
   "enablePromptManagerOnSiteHint": {
-    "message": "在此站点使用你保存的提示词。开启时需要授权访问该站点。",
+    "message": "在此站点使用你保存的提示词。",
     "description": "Top toggle hint for enabling Prompt Manager on a third-party site"
   },
   "storageQuotaTitle": {

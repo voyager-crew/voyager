@@ -26,7 +26,14 @@ const extensionApi = vi.hoisted(() => ({
     sendMessage: vi.fn(),
     onMessage: { addListener: vi.fn(), removeListener: vi.fn() },
   },
-  permissions: { contains: vi.fn(), request: vi.fn() },
+  permissions: {
+    contains: vi.fn(),
+    request: vi.fn(),
+    remove: vi.fn(),
+    getAll: vi.fn(),
+    onAdded: { addListener: vi.fn(), removeListener: vi.fn() },
+    onRemoved: { addListener: vi.fn(), removeListener: vi.fn() },
+  },
   notifications: { create: vi.fn() },
   i18n: { getUILanguage: vi.fn(() => 'en'), getMessage: vi.fn((key: string) => key) },
 }));
@@ -94,6 +101,8 @@ beforeEach(() => {
   extensionApi.tabs.sendMessage.mockResolvedValue(undefined);
   extensionApi.permissions.contains.mockResolvedValue(false);
   extensionApi.permissions.request.mockResolvedValue(true);
+  extensionApi.permissions.remove.mockResolvedValue(true);
+  extensionApi.permissions.getAll.mockResolvedValue({ origins: [], permissions: [] });
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);

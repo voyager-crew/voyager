@@ -103,6 +103,8 @@ export interface PluginManagerProps {
   readonly timelineRail?: TimelineRailOptions;
   /** Official plugin rows that also cover this site, listed ahead of its plugins. */
   readonly officialRows?: ReactNode;
+  /** Prompt Manager's row for this site, first in the list. */
+  readonly promptRow?: ReactNode;
 }
 
 /**
@@ -122,6 +124,7 @@ export function PluginManager({
   nameSources,
   timelineRail,
   officialRows,
+  promptRow,
 }: PluginManagerProps) {
   const { t, language } = useLanguage();
   const { currentSiteId, currentSiteLabel } = usePluginSite(activeUrl);
@@ -196,11 +199,14 @@ export function PluginManager({
       <CardContent className="space-y-3 p-0">
         <p className="text-muted-foreground text-xs">{t('pluginsDescription')}</p>
 
-        {manifests.length === 0 && (
+        {/* Prompt Manager's row is a feature of its own, so the list is not empty. */}
+        {manifests.length === 0 && (loading || !promptRow) && (
           <p className="text-muted-foreground text-xs">
             {loading ? t('pluginsLoading') : t('pluginsEmpty')}
           </p>
         )}
+
+        {promptRow}
 
         {officialRows}
 

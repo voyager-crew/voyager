@@ -934,10 +934,6 @@
     "message": "Без названия",
     "description": "Fallback title for conversations without a name"
   },
-  "geminiOnlyNotice": {
-    "message": "Работает по умолчанию в Gemini (включая Enterprise) и AI Studio. Добавьте другие сайты ниже, чтобы включить там Менеджер промптов.",
-    "description": "Notice that defaults are limited to Gemini/AI Studio"
-  },
   "folderManager_dataLossWarning": {
     "message": "Внимание: не удалось загрузить данные папок. Ваши папки могут быть повреждены. Пожалуйста, проверьте консоль браузера для получения подробной информации и попробуйте восстановить из резервной копии, если она доступна.",
     "description": "Warning shown when folder data fails to load"
@@ -1015,7 +1011,7 @@
     "description": "Custom websites for prompt manager"
   },
   "customWebsitesPlaceholder": {
-    "message": "Введите URL сайта (например, chatgpt.com)",
+    "message": "Например, example.com",
     "description": "Custom websites input placeholder"
   },
   "addWebsite": {
@@ -1039,8 +1035,60 @@
     "description": "Permission request failure message"
   },
   "customWebsitesNote": {
-    "message": "Совет: Вас попросят разрешить доступ при добавлении сайта. После предоставления разрешения перезагрузите этот сайт, чтобы Менеджер промптов мог запуститься.",
+    "message": "При добавлении сайта браузер запросит доступ только к нему.",
     "description": "Custom websites reload/permission note"
+  },
+  "siteAccessTitle": {
+    "message": "Доступ к сайтам",
+    "description": "Site access card title"
+  },
+  "siteAccessDescription": {
+    "message": "Voyager работает только на сайтах из этого списка. Когда вы включаете первую функцию на сайте, браузер один раз запрашивает доступ, и остальные функции используют его.",
+    "description": "Site access card description: where Voyager runs and how access is asked once per site"
+  },
+  "siteAccessBuiltIn": {
+    "message": "Встроено",
+    "description": "Badge on Gemini and AI Studio, where Voyager runs without asking for access"
+  },
+  "siteAccessAllFeatures": {
+    "message": "Все функции",
+    "description": "Detail under a built-in site: every Voyager feature runs there"
+  },
+  "siteAccessAllowed": {
+    "message": "Разрешено",
+    "description": "Badge: the browser has granted Voyager access to this site"
+  },
+  "siteAccessNotAllowed": {
+    "message": "Не разрешено",
+    "description": "Badge: Voyager has no access to this site yet"
+  },
+  "siteAccessOpenToStart": {
+    "message": "Откройте {site} и включите там функцию",
+    "description": "Detail under a supported site without access. {site} is the site name"
+  },
+  "siteAccessNothingOn": {
+    "message": "Нет включённых функций",
+    "description": "Detail under a site Voyager can access while none of its features is on"
+  },
+  "siteAccessRemove": {
+    "message": "Отозвать доступ",
+    "description": "Button that removes Voyager's access to a site"
+  },
+  "siteAccessRemoved": {
+    "message": "Доступ к {site} отозван",
+    "description": "Undo toast after access to a site was removed. {site} is the site name or address"
+  },
+  "siteAccessOtherWebsites": {
+    "message": "Другие сайты",
+    "description": "Heading for the websites outside the supported list"
+  },
+  "siteAccessOtherWebsitesHint": {
+    "message": "На других сайтах Voyager предлагает только менеджер промптов.",
+    "description": "Hint under Other websites"
+  },
+  "promptManagerSitesNote": {
+    "message": "Где он работает, выбирается в разделе «Доступ к сайтам».",
+    "description": "Note in the Prompt Manager card pointing to the Site access card"
   },
   "starredHistory": {
     "message": "Библиотека сохранённого",
@@ -3229,12 +3277,8 @@
     "message": "Не удалось синхронизировать с облаком. Убедитесь, что вы вошли в Google Drive.",
     "description": "Toast: cloud prompt sync failed / not signed in"
   },
-  "enablePromptManagerOnSite": {
-    "message": "Включить менеджер промптов на {site}",
-    "description": "Top toggle label: enable Prompt Manager on the current plugin site ({site})"
-  },
   "enablePromptManagerOnSiteHint": {
-    "message": "Используйте сохранённые промпты на этом сайте. Потребуется разрешение на доступ.",
+    "message": "Используйте сохранённые промпты на этом сайте.",
     "description": "Top toggle hint for enabling Prompt Manager on a third-party site"
   },
   "storageQuotaTitle": {

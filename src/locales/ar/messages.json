@@ -934,10 +934,6 @@
     "message": "بدون عنوان",
     "description": "Fallback title for conversations without a name"
   },
-  "geminiOnlyNotice": {
-    "message": "يعمل على Gemini (بما في ذلك Enterprise) و AI Studio بشكل افتراضي. أضف مواقع أخرى أدناه لتمكين مدير المطالبات هناك.",
-    "description": "Notice that defaults are limited to Gemini/AI Studio"
-  },
   "folderManager_dataLossWarning": {
     "message": "تحذير: فشل تحميل بيانات المجلد. ربما تكون مجلداتك تالفة. يرجى التحقق من وحدة تحكم المتصفح للحصول على التفاصيل ومحاولة الاستعادة من النسخة الاحتياطية إذا كانت متوفرة.",
     "description": "Warning shown when folder data fails to load"
@@ -1015,7 +1011,7 @@
     "description": "Custom websites for prompt manager"
   },
   "customWebsitesPlaceholder": {
-    "message": "أدخل عنوان URL للموقع (مثل chatgpt.com)",
+    "message": "عنوان الموقع، مثل example.com",
     "description": "Custom websites input placeholder"
   },
   "addWebsite": {
@@ -1039,8 +1035,60 @@
     "description": "Permission request failure message"
   },
   "customWebsitesNote": {
-    "message": "نصيحة: سيُطلب منك السماح بالوصول عند إضافة موقع. بعد منح الإذن، قم بإعادة تحميل هذا الموقع حتى يتمكن مدير المطالبات من البدء.",
+    "message": "عند إضافة موقع، يطلب المتصفح إذن الوصول إلى هذا الموقع فقط.",
     "description": "Custom websites reload/permission note"
+  },
+  "siteAccessTitle": {
+    "message": "الوصول إلى المواقع",
+    "description": "Site access card title"
+  },
+  "siteAccessDescription": {
+    "message": "يعمل Voyager على المواقع المدرجة هنا فقط. عند تفعيل أول ميزة على موقع ما، يطلب المتصفح إذن الوصول مرة واحدة، وتتشاركه الميزات التالية.",
+    "description": "Site access card description: where Voyager runs and how access is asked once per site"
+  },
+  "siteAccessBuiltIn": {
+    "message": "مدمج",
+    "description": "Badge on Gemini and AI Studio, where Voyager runs without asking for access"
+  },
+  "siteAccessAllFeatures": {
+    "message": "جميع الميزات",
+    "description": "Detail under a built-in site: every Voyager feature runs there"
+  },
+  "siteAccessAllowed": {
+    "message": "مسموح",
+    "description": "Badge: the browser has granted Voyager access to this site"
+  },
+  "siteAccessNotAllowed": {
+    "message": "غير مسموح",
+    "description": "Badge: Voyager has no access to this site yet"
+  },
+  "siteAccessOpenToStart": {
+    "message": "افتح {site} وفعّل ميزة هناك",
+    "description": "Detail under a supported site without access. {site} is the site name"
+  },
+  "siteAccessNothingOn": {
+    "message": "لا توجد ميزات مفعّلة",
+    "description": "Detail under a site Voyager can access while none of its features is on"
+  },
+  "siteAccessRemove": {
+    "message": "إلغاء الوصول",
+    "description": "Button that removes Voyager's access to a site"
+  },
+  "siteAccessRemoved": {
+    "message": "تم إلغاء الوصول إلى {site}",
+    "description": "Undo toast after access to a site was removed. {site} is the site name or address"
+  },
+  "siteAccessOtherWebsites": {
+    "message": "مواقع أخرى",
+    "description": "Heading for the websites outside the supported list"
+  },
+  "siteAccessOtherWebsitesHint": {
+    "message": "على المواقع الأخرى، يوفّر Voyager مدير المطالبات فقط.",
+    "description": "Hint under Other websites"
+  },
+  "promptManagerSitesNote": {
+    "message": "اختر أين يعمل من قسم «الوصول إلى المواقع».",
+    "description": "Note in the Prompt Manager card pointing to the Site access card"
   },
   "starredHistory": {
     "message": "مكتبة العناصر المحفوظة",
@@ -3229,12 +3277,8 @@
     "message": "فشلت المزامنة السحابية. تأكد من تسجيل الدخول إلى Google Drive.",
     "description": "Toast: cloud prompt sync failed / not signed in"
   },
-  "enablePromptManagerOnSite": {
-    "message": "تفعيل مدير الموجّهات على {site}",
-    "description": "Top toggle label: enable Prompt Manager on the current plugin site ({site})"
-  },
   "enablePromptManagerOnSiteHint": {
-    "message": "استخدم موجّهاتك المحفوظة على هذا الموقع. سيُطلب منك منح الإذن بالوصول.",
+    "message": "استخدم موجّهاتك المحفوظة على هذا الموقع.",
     "description": "Top toggle hint for enabling Prompt Manager on a third-party site"
   },
   "storageQuotaTitle": {

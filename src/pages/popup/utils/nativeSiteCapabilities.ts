@@ -32,6 +32,8 @@ export const NATIVE_POPUP_SECTION_IDS = [
   'folderSpacing',
   'folderTreeIndent',
   'keyboardShortcuts',
+  // Above Prompt Manager, where its website list used to sit.
+  'siteAccess',
   'promptManager',
   'general',
 ] as const;
@@ -59,13 +61,13 @@ const AI_STUDIO_CAPABILITIES = {
   localPlugins: true,
   folder: ['enableFolderFeature', 'hideArchivedConversations', 'enableAccountIsolation'],
   folderSpacing: true,
+  siteAccess: true,
   promptManager: [
     'hidePromptManager',
     'promptTriggerMascotLogo',
     'slashPromptEnabled',
     'promptInsertOnClick',
     'promptDataMigration',
-    'customWebsites',
   ],
   general: ['remoteAnnouncementNotification', 'changelogBadgeMode', 'onlineUpdates'],
 } as const satisfies Partial<Record<NativePopupSectionId, SectionCapability>>;

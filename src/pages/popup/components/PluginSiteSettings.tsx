@@ -1,33 +1,28 @@
 import type { ComponentProps } from 'react';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { CHATGPT_EXPORT_PLUGIN_ID } from '@/features/plugins/builtin/chatgptExport/openMessage';
 import type { TranslationKey } from '@/utils/translations';
 
 import { CHATGPT_LOCAL_BRIDGE_PLUGIN_ID } from '../hooks/useBridgeStatus';
 import type { PromptDataTransferController } from '../hooks/usePromptDataTransfer';
+import type { ActiveSitePrompt } from '../hooks/useSiteAccess';
 import { ChatGptBridgeCard } from './ChatGptBridgeCard';
 import { ChatGptExportCard } from './ChatGptExportCard';
 import { LocalPluginsPanel } from './LocalPluginsPanel';
 import { PluginManager } from './PluginManager';
 import { PromptDataTransfer } from './PromptDataTransfer';
+import { PromptManagerSiteRow } from './PromptManagerSiteRow';
 
 export function PluginSiteSettings({
-  siteDomain,
-  siteLabel,
-  promptEnabled,
-  onTogglePrompt,
+  prompt,
   promptDataTransfer,
   plugins,
   exportEntry,
   t,
 }: {
-  siteDomain: string;
-  siteLabel: string;
-  promptEnabled: boolean;
-  onTogglePrompt: () => void;
+  /** Prompt Manager on the open page; null where the page has no host to cover. */
+  prompt: ActiveSitePrompt | null;
   promptDataTransfer: PromptDataTransferController;
   plugins: ComponentProps<typeof PluginManager>;
   /** Enabled state and target tab for the ChatGPT export card. */
@@ -57,30 +52,6 @@ export function PluginSiteSettings({
           t={t}
         />
       )}
-      {siteDomain && (
-        <Card style={{ order: -2 }} className="p-4">
-          <CardContent className="p-0">
-            <div className="group flex items-center justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <Label
-                  htmlFor="prompt-manager-site-enabled"
-                  className="cursor-pointer text-sm font-medium"
-                >
-                  {t('enablePromptManagerOnSite').replace('{site}', siteLabel || siteDomain)}
-                </Label>
-                <p className="text-muted-foreground mt-1 text-xs">
-                  {t('enablePromptManagerOnSiteHint')}
-                </p>
-              </div>
-              <Switch
-                id="prompt-manager-site-enabled"
-                checked={promptEnabled}
-                onChange={onTogglePrompt}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
       {/* The shared prompt library remains available on third-party sites. */}
       <Card style={{ order: -2 }} className="p-4">
         <CardContent className="p-0">
@@ -88,7 +59,10 @@ export function PluginSiteSettings({
         </CardContent>
       </Card>
       <div style={{ order: -1 }} className="flex flex-col gap-4">
-        <PluginManager {...plugins} />
+        <PluginManager
+          {...plugins}
+          promptRow={prompt && <PromptManagerSiteRow prompt={prompt} t={t} />}
+        />
         <LocalPluginsPanel t={t} activeUrl={plugins.activeUrl} />
       </div>
     </>

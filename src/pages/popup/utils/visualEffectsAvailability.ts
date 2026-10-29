@@ -1,4 +1,6 @@
 import { customWebsitesIncludeHost } from '@/core/utils/customWebsites';
+import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
+import type { PluginManifest } from '@/features/plugins/types';
 
 interface VisualEffectsAvailabilityInput {
   isPluginSite: boolean;
@@ -31,4 +33,19 @@ export function canUseVisualEffects({
   if (pageRunsEffect) return true;
   if (customWebsitesIncludeHost(customWebsites, activeSiteDomain)) return true;
   return sitePluginRuns;
+}
+
+/**
+ * The manifests the official list shows for the page. A page no manifest can
+ * match (chrome://, file://) still lists the effect: it is one shared choice,
+ * and applies on the next page that can show it.
+ */
+export function withVisualEffectsManifest(
+  siteScoped: readonly PluginManifest[],
+  catalog: readonly PluginManifest[],
+): readonly PluginManifest[] {
+  const isEffects = (plugin: PluginManifest) => plugin.id === OFFICIAL_PLUGIN_IDS.visualEffects;
+  if (siteScoped.some(isEffects)) return siteScoped;
+  const effects = catalog.find(isEffects);
+  return effects ? [...siteScoped, effects] : siteScoped;
 }

@@ -26,6 +26,18 @@ export function usePluginAccess(
     key: 'localPluginChangedBeforeEnable' | 'watermarkNotice_error';
   } | null>(null);
   const [missingPermissionIds, setMissingPermissionIds] = useState<Set<string>>(new Set());
+  // A site revoked from the site access card, or granted elsewhere, rechecks the rows below.
+  const [permissionChanges, setPermissionChanges] = useState(0);
+  useEffect(() => {
+    const permissions = browser.permissions;
+    const recheck = () => setPermissionChanges((count) => count + 1);
+    permissions?.onAdded?.addListener(recheck);
+    permissions?.onRemoved?.addListener(recheck);
+    return () => {
+      permissions?.onAdded?.removeListener(recheck);
+      permissions?.onRemoved?.removeListener(recheck);
+    };
+  }, []);
   // Plugin updates can add a narrowly-scoped companion origin after a user has
   // already enabled the plugin. Chrome cannot grant that new optional origin in
   // the background, so surface an explicit user-gesture repair instead of
@@ -52,7 +64,7 @@ export function usePluginAccess(
     return () => {
       active = false;
     };
-  }, [activeUrl, enabledMap, manifests]);
+  }, [activeUrl, enabledMap, manifests, permissionChanges]);
 
   const handleToggle = useCallback(
     async (plugin: PluginManifest, next: boolean) => {

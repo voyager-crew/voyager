@@ -934,10 +934,6 @@
     "message": "無題",
     "description": "Fallback title for conversations without a name"
   },
-  "geminiOnlyNotice": {
-    "message": "デフォルトでは Gemini（Enterprise 版含む）と AI Studio で動作します。他のサイトでプロンプトマネージャーを使用するには、以下で追加してください。",
-    "description": "Notice that defaults are limited to Gemini/AI Studio"
-  },
   "folderManager_dataLossWarning": {
     "message": "警告：フォルダデータの読み込みに失敗しました。データが破損している可能性があります。ブラウザのコンソールで詳細を確認し、可能であればバックアップから復元してください。",
     "description": "Warning shown when folder data fails to load"
@@ -1015,7 +1011,7 @@
     "description": "Custom websites for prompt manager"
   },
   "customWebsitesPlaceholder": {
-    "message": "ウェブサイトの URL を入力 (例：chatgpt.com)",
+    "message": "例：example.com",
     "description": "Custom websites input placeholder"
   },
   "addWebsite": {
@@ -1039,8 +1035,60 @@
     "description": "Permission request failure message"
   },
   "customWebsitesNote": {
-    "message": "ヒント：サイトを追加するとアクセスの許可を求められます。許可した後、プロンプトマネージャーを開始するにはそのサイトを再読み込みしてください。",
+    "message": "追加すると、ブラウザはそのサイトへのアクセス許可だけを求めます。",
     "description": "Custom websites reload/permission note"
+  },
+  "siteAccessTitle": {
+    "message": "サイトへのアクセス",
+    "description": "Site access card title"
+  },
+  "siteAccessDescription": {
+    "message": "Voyager はここに表示されたサイトでのみ動作します。サイトで最初の機能をオンにしたときにブラウザが一度だけアクセス許可を求め、以降の機能はその許可を共有します。",
+    "description": "Site access card description: where Voyager runs and how access is asked once per site"
+  },
+  "siteAccessBuiltIn": {
+    "message": "組み込み",
+    "description": "Badge on Gemini and AI Studio, where Voyager runs without asking for access"
+  },
+  "siteAccessAllFeatures": {
+    "message": "すべての機能",
+    "description": "Detail under a built-in site: every Voyager feature runs there"
+  },
+  "siteAccessAllowed": {
+    "message": "許可済み",
+    "description": "Badge: the browser has granted Voyager access to this site"
+  },
+  "siteAccessNotAllowed": {
+    "message": "未許可",
+    "description": "Badge: Voyager has no access to this site yet"
+  },
+  "siteAccessOpenToStart": {
+    "message": "{site} を開いて、そこで機能をオンにしてください",
+    "description": "Detail under a supported site without access. {site} is the site name"
+  },
+  "siteAccessNothingOn": {
+    "message": "オンの機能はありません",
+    "description": "Detail under a site Voyager can access while none of its features is on"
+  },
+  "siteAccessRemove": {
+    "message": "アクセスを解除",
+    "description": "Button that removes Voyager's access to a site"
+  },
+  "siteAccessRemoved": {
+    "message": "{site} へのアクセスを解除しました",
+    "description": "Undo toast after access to a site was removed. {site} is the site name or address"
+  },
+  "siteAccessOtherWebsites": {
+    "message": "その他のウェブサイト",
+    "description": "Heading for the websites outside the supported list"
+  },
+  "siteAccessOtherWebsitesHint": {
+    "message": "その他のウェブサイトでは、Voyager はプロンプトマネージャーのみを提供します。",
+    "description": "Hint under Other websites"
+  },
+  "promptManagerSitesNote": {
+    "message": "使うサイトは「サイトへのアクセス」で選べます。",
+    "description": "Note in the Prompt Manager card pointing to the Site access card"
   },
   "starredHistory": {
     "message": "保存済みライブラリ",
@@ -3229,12 +3277,8 @@
     "message": "クラウド同期に失敗しました。Google Drive にログインしているか確認してください。",
     "description": "Toast: cloud prompt sync failed / not signed in"
   },
-  "enablePromptManagerOnSite": {
-    "message": "{site} でプロンプトマネージャーを有効化",
-    "description": "Top toggle label: enable Prompt Manager on the current plugin site ({site})"
-  },
   "enablePromptManagerOnSiteHint": {
-    "message": "保存したプロンプトをこのサイトで使えます。有効化時にアクセス許可を求められます。",
+    "message": "保存したプロンプトをこのサイトで使えます。",
     "description": "Top toggle hint for enabling Prompt Manager on a third-party site"
   },
   "storageQuotaTitle": {

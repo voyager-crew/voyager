@@ -98,7 +98,27 @@ export const POPUP_SETTINGS_SEARCH_ITEMS = [
     ['enableShortcuts', 'previousNode', 'nextNode', 'firstNode', 'lastNode', 'resetShortcuts'],
     ['hotkey keybinding vim navigation keyboard 快捷键 键盘 热键'],
   ),
-  popupSectionSearchTarget('promptManager', ['promptManagerOptions']),
+  popupSectionSearchTarget('siteAccess', ['siteAccessTitle']),
+  popupSearchTarget(
+    'siteAccess',
+    'controls',
+    [
+      'siteAccessDescription',
+      'siteAccessOtherWebsites',
+      'customWebsites',
+      'customWebsitesPlaceholder',
+      'addWebsite',
+      'siteAccessRemove',
+    ],
+    [
+      'site access permission websites custom domain revoke 网站 访问 权限 授权 自定义网站 取消授权',
+    ],
+  ),
+  popupSectionSearchTarget(
+    'promptManager',
+    ['promptManagerOptions'],
+    ['prompt library vault snippets templates 提示词 指令 宝库 模板'],
+  ),
   popupSearchTarget('promptManager', 'hidePromptManager', [
     'hidePromptManager',
     'hidePromptManagerHint',
@@ -124,18 +144,6 @@ export const POPUP_SETTINGS_SEARCH_ITEMS = [
     'promptDataMigration',
     ['promptDataMigration', 'promptDataMigrationHint', 'pm_import', 'pm_export'],
     ['prompt import export backup migrate 提示词 导入 导出 迁移 备份'],
-  ),
-  popupSearchTarget(
-    'promptManager',
-    'customWebsites',
-    [
-      'customWebsites',
-      'customWebsitesPlaceholder',
-      'geminiOnlyNotice',
-      'addWebsite',
-      'removeWebsite',
-    ],
-    ['prompt library vault snippets templates websites 提示词 指令 宝库 网站 模板'],
   ),
   // Each topic card and each listed plugin is its own target, built from what the list shows
   // (officialPluginSearch.ts).

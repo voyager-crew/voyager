@@ -85,7 +85,8 @@ vi.mock('@/core/utils/browser', () => ({
   supportsOptionalHostPermissions: () => true,
 }));
 
-vi.mock('@/features/plugins/runtime/siteRegistration', () => ({
+vi.mock('@/features/plugins/runtime/siteRegistration', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/plugins/runtime/siteRegistration')>()),
   pluginToOriginPatternsForActiveUrl: permissionOrigins,
 }));
 

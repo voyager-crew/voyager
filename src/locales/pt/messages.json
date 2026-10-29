@@ -934,10 +934,6 @@
     "message": "Sem título",
     "description": "Fallback title for conversations without a name"
   },
-  "geminiOnlyNotice": {
-    "message": "Funciona no Gemini (incluindo Enterprise) e AI Studio por padrão. Adicione outros sites abaixo para habilitar o Gerenciador de Prompts lá.",
-    "description": "Notice that defaults are limited to Gemini/AI Studio"
-  },
   "folderManager_dataLossWarning": {
     "message": "Aviso: Falha ao carregar dados da pasta. Suas pastas podem ter sido corrompidas. Verifique o console do navegador para detalhes e tente restaurar do backup, se disponível.",
     "description": "Warning shown when folder data fails to load"
@@ -1015,7 +1011,7 @@
     "description": "Custom websites for prompt manager"
   },
   "customWebsitesPlaceholder": {
-    "message": "Digite a URL do site (ex: chatgpt.com)",
+    "message": "Site, ex.: example.com",
     "description": "Custom websites input placeholder"
   },
   "addWebsite": {
@@ -1039,8 +1035,60 @@
     "description": "Permission request failure message"
   },
   "customWebsitesNote": {
-    "message": "Dica: Você será solicitado a permitir o acesso ao adicionar um site. Após conceder permissão, recarregue esse site para que o Gerenciador de Prompts possa iniciar.",
+    "message": "Ao adicionar um site, o navegador pede acesso apenas a esse site.",
     "description": "Custom websites reload/permission note"
+  },
+  "siteAccessTitle": {
+    "message": "Acesso a sites",
+    "description": "Site access card title"
+  },
+  "siteAccessDescription": {
+    "message": "O Voyager só funciona nos sites listados aqui. Ao ativar o primeiro recurso de um site, o navegador pede acesso uma vez; os demais recursos o compartilham.",
+    "description": "Site access card description: where Voyager runs and how access is asked once per site"
+  },
+  "siteAccessBuiltIn": {
+    "message": "Integrado",
+    "description": "Badge on Gemini and AI Studio, where Voyager runs without asking for access"
+  },
+  "siteAccessAllFeatures": {
+    "message": "Todos os recursos",
+    "description": "Detail under a built-in site: every Voyager feature runs there"
+  },
+  "siteAccessAllowed": {
+    "message": "Permitido",
+    "description": "Badge: the browser has granted Voyager access to this site"
+  },
+  "siteAccessNotAllowed": {
+    "message": "Não permitido",
+    "description": "Badge: Voyager has no access to this site yet"
+  },
+  "siteAccessOpenToStart": {
+    "message": "Abra {site} e ative um recurso lá",
+    "description": "Detail under a supported site without access. {site} is the site name"
+  },
+  "siteAccessNothingOn": {
+    "message": "Nenhum recurso ativado",
+    "description": "Detail under a site Voyager can access while none of its features is on"
+  },
+  "siteAccessRemove": {
+    "message": "Remover acesso",
+    "description": "Button that removes Voyager's access to a site"
+  },
+  "siteAccessRemoved": {
+    "message": "Acesso a {site} removido",
+    "description": "Undo toast after access to a site was removed. {site} is the site name or address"
+  },
+  "siteAccessOtherWebsites": {
+    "message": "Outros sites",
+    "description": "Heading for the websites outside the supported list"
+  },
+  "siteAccessOtherWebsitesHint": {
+    "message": "Em outros sites, o Voyager oferece apenas o Gerenciador de Prompts.",
+    "description": "Hint under Other websites"
+  },
+  "promptManagerSitesNote": {
+    "message": "Escolha onde ele funciona em Acesso a sites.",
+    "description": "Note in the Prompt Manager card pointing to the Site access card"
   },
   "starredHistory": {
     "message": "Biblioteca salva",
@@ -3229,12 +3277,8 @@
     "message": "Falha na sincronização na nuvem. Verifique se você entrou no Google Drive.",
     "description": "Toast: cloud prompt sync failed / not signed in"
   },
-  "enablePromptManagerOnSite": {
-    "message": "Ativar o Gerenciador de prompts no {site}",
-    "description": "Top toggle label: enable Prompt Manager on the current plugin site ({site})"
-  },
   "enablePromptManagerOnSiteHint": {
-    "message": "Use seus prompts salvos neste site. Será solicitado acesso ao site.",
+    "message": "Use seus prompts salvos neste site.",
     "description": "Top toggle hint for enabling Prompt Manager on a third-party site"
   },
   "storageQuotaTitle": {

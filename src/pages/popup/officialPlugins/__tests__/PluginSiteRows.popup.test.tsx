@@ -125,8 +125,11 @@ describe.each(['en', 'ar'] as const)('the plugin card on a plugin site (%s)', (l
       await mount(CHATGPT);
       expect(row(id)).toBeNull();
       extensionApi.permissions.contains.mockResolvedValue(true);
-      const [onGranted] = extensionApi.permissions.onAdded.addListener.mock.calls.at(-1)!;
-      await act(async () => (onGranted as () => void)());
+      // The browser tells every listener about the grant.
+      const listeners = extensionApi.permissions.onAdded.addListener.mock.calls.map(
+        ([listener]) => listener as () => void,
+      );
+      await act(async () => listeners.forEach((onGranted) => onGranted()));
       expect(toggle(id)).toBeTruthy();
     });
 

@@ -15,6 +15,7 @@ const TOC_LABELS: Readonly<Partial<Record<PopupSectionId, TranslationKey>>> = {
   localPlugins: 'localPluginsTitle',
   folder: 'folder_title',
   keyboardShortcuts: 'popupTocShortcuts',
+  siteAccess: 'siteAccessTitle',
   promptManager: 'popupTocPrompts',
   general: 'popupTocGeneral',
 };

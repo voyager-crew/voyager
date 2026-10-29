@@ -32,6 +32,7 @@ import { PopupSection } from './components/PopupSection';
 import { PopupToc } from './components/PopupToc';
 import { PopupUpdateBanner } from './components/PopupUpdateBanner';
 import { PromptManagerSettingsCard } from './components/PromptManagerSettingsCard';
+import { SiteAccessCard } from './components/SiteAccessCard';
 import { StarredHistory } from './components/StarredHistory';
 import { StorageManager } from './components/StorageManager';
 import { StorageQuotaCard } from './components/StorageQuotaCard';
@@ -59,6 +60,7 @@ import {
 import { usePopupSettingsHydration } from './hooks/usePopupSettingsHydration';
 import { usePromptDataTransfer } from './hooks/usePromptDataTransfer';
 import { usePromptManagerSettings } from './hooks/usePromptManagerSettings';
+import { useSiteAccess } from './hooks/useSiteAccess';
 import { useSitePluginRuns } from './hooks/useSitePluginRuns';
 import { useUndoToast } from './hooks/useUndoToast';
 import { OfficialPluginCards } from './officialPlugins/OfficialPluginCards';
@@ -67,7 +69,7 @@ import { useContextSyncRequest } from './officialPlugins/useContextSyncRequest';
 import { useOfficialPluginList } from './officialPlugins/useOfficialPluginList';
 import { writePopupSyncStorage } from './utils/popupStorage';
 import { isPluginPopupSite } from './utils/siteMode';
-import { canUseVisualEffects } from './utils/visualEffectsAvailability';
+import { canUseVisualEffects, withVisualEffectsManifest } from './utils/visualEffectsAvailability';
 
 interface PopupProps {
   sourceTabId?: number;
@@ -80,16 +82,10 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
   const [aiStudioEnabled, setAiStudioEnabled] = useState(true);
   const tab = useActivePopupTab(sourceTabId);
   const plugins = usePopupPlugins(tab);
-  // A page no manifest can match (chrome://, file://) still lists the effect: it is one shared
-  // choice, and applies on the next page that can show it.
-  const officialManifests = useMemo(() => {
-    const scoped = plugins.siteScopedManifests;
-    if (scoped.some((plugin) => plugin.id === OFFICIAL_PLUGIN_IDS.visualEffects)) return scoped;
-    const effects = plugins.pluginManifests.find(
-      (plugin) => plugin.id === OFFICIAL_PLUGIN_IDS.visualEffects,
-    );
-    return effects ? [...scoped, effects] : scoped;
-  }, [plugins.siteScopedManifests, plugins.pluginManifests]);
+  const officialManifests = useMemo(
+    () => withVisualEffectsManifest(plugins.siteScopedManifests, plugins.pluginManifests),
+    [plugins.siteScopedManifests, plugins.pluginManifests],
+  );
   const nativeHealth = useNativeHealth(tab.activeTabId, tab.activeUrl);
   const isAIStudio = tab.activeAccountPlatform === 'aistudio';
   const isSafariBrowser = getVoyagerBuildTarget() === 'safari' || isSafari();
@@ -198,6 +194,14 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
     showStorageManager,
   });
   const undoToast = useUndoToast();
+  const siteAccess = useSiteAccess({
+    activeUrl: tab.activeUrl,
+    coverage: promptManager,
+    plugins,
+    language,
+    t,
+    onUndoOffer: undoToast.show,
+  });
   const rtl = isRTLLanguage(language) ? 'rtl' : undefined;
   const wrapSection = (id: PopupSectionId, content: ReactNode, options?: PopupSectionOptions) => (
     <PopupSection key={id} {...sections.getSectionProps(id, options)}>
@@ -304,15 +308,7 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
         })}
         {isPluginSite && (
           <PluginSiteSettings
-            siteDomain={activeSiteDomain}
-            siteLabel={theme.picker.siteLabel}
-            promptEnabled={promptManager.customWebsites.includes(activeSiteDomain)}
-            onTogglePrompt={() => {
-              void promptManager.toggleQuickWebsite(
-                activeSiteDomain,
-                promptManager.customWebsites.includes(activeSiteDomain),
-              );
-            }}
+            prompt={siteAccess.activeSite}
             promptDataTransfer={promptTransfer}
             plugins={{
               manifests: plugins.siteScopedManifests,
@@ -373,12 +369,17 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
           allowPluginSite: catalogTimeline !== null,
         })}
 
+        {/* Every site's access, also below a plugin site's own features. */}
+        {wrapSection(
+          'siteAccess',
+          <SiteAccessCard access={siteAccess} coverage={promptManager} language={language} t={t} />,
+          { allowPluginSite: true },
+        )}
         {wrapSection(
           'promptManager',
           <PromptManagerSettingsCard
             settings={promptManager}
             transfer={promptTransfer}
-            isPluginSite={isPluginSite}
             isVisible={(id) => sections.shouldShowSetting('promptManager', id)}
             t={t}
           />,

@@ -934,10 +934,6 @@
     "message": "제목 없음",
     "description": "Fallback title for conversations without a name"
   },
-  "geminiOnlyNotice": {
-    "message": "기본적으로 Gemini (Enterprise 포함) 및 AI Studio 에서 실행됩니다. 다른 사이트에서 프롬프트 관리자를 활성화하려면 아래에 추가하세요.",
-    "description": "Notice that defaults are limited to Gemini/AI Studio"
-  },
   "folderManager_dataLossWarning": {
     "message": "경고: 폴더 데이터를 로드하지 못했습니다. 폴더가 손상되었을 수 있습니다. 브라우저 콘솔에서 자세한 내용을 확인하고 가능한 경우 백업에서 복원을 시도하십시오.",
     "description": "Warning shown when folder data fails to load"
@@ -1015,7 +1011,7 @@
     "description": "Custom websites for prompt manager"
   },
   "customWebsitesPlaceholder": {
-    "message": "웹사이트 URL 입력 (예: chatgpt.com)",
+    "message": "예: example.com",
     "description": "Custom websites input placeholder"
   },
   "addWebsite": {
@@ -1039,8 +1035,60 @@
     "description": "Permission request failure message"
   },
   "customWebsitesNote": {
-    "message": "팁: 사이트를 추가할 때 액세스 허용 요청을 받게 됩니다. 권한 부여 후 사이트를 새로 고침하면 프롬프트 관리자가 시작됩니다.",
+    "message": "추가하면 브라우저가 해당 사이트에 대한 접근 권한만 요청합니다.",
     "description": "Custom websites reload/permission note"
+  },
+  "siteAccessTitle": {
+    "message": "사이트 접근",
+    "description": "Site access card title"
+  },
+  "siteAccessDescription": {
+    "message": "Voyager는 여기에 표시된 사이트에서만 작동합니다. 사이트에서 첫 기능을 켤 때 브라우저가 한 번 접근 권한을 요청하며, 이후 기능은 이 권한을 함께 씁니다.",
+    "description": "Site access card description: where Voyager runs and how access is asked once per site"
+  },
+  "siteAccessBuiltIn": {
+    "message": "기본 제공",
+    "description": "Badge on Gemini and AI Studio, where Voyager runs without asking for access"
+  },
+  "siteAccessAllFeatures": {
+    "message": "모든 기능",
+    "description": "Detail under a built-in site: every Voyager feature runs there"
+  },
+  "siteAccessAllowed": {
+    "message": "허용됨",
+    "description": "Badge: the browser has granted Voyager access to this site"
+  },
+  "siteAccessNotAllowed": {
+    "message": "허용 안 됨",
+    "description": "Badge: Voyager has no access to this site yet"
+  },
+  "siteAccessOpenToStart": {
+    "message": "{site}에 접속해 기능을 켜세요",
+    "description": "Detail under a supported site without access. {site} is the site name"
+  },
+  "siteAccessNothingOn": {
+    "message": "켜진 기능 없음",
+    "description": "Detail under a site Voyager can access while none of its features is on"
+  },
+  "siteAccessRemove": {
+    "message": "접근 해제",
+    "description": "Button that removes Voyager's access to a site"
+  },
+  "siteAccessRemoved": {
+    "message": "{site} 접근을 해제했습니다",
+    "description": "Undo toast after access to a site was removed. {site} is the site name or address"
+  },
+  "siteAccessOtherWebsites": {
+    "message": "기타 웹사이트",
+    "description": "Heading for the websites outside the supported list"
+  },
+  "siteAccessOtherWebsitesHint": {
+    "message": "기타 웹사이트에서는 Voyager가 프롬프트 관리자만 제공합니다.",
+    "description": "Hint under Other websites"
+  },
+  "promptManagerSitesNote": {
+    "message": "사용할 사이트는 '사이트 접근'에서 고를 수 있습니다.",
+    "description": "Note in the Prompt Manager card pointing to the Site access card"
   },
   "starredHistory": {
     "message": "저장 보관함",
@@ -3229,12 +3277,8 @@
     "message": "클라우드 동기화에 실패했습니다. Google Drive에 로그인했는지 확인하세요.",
     "description": "Toast: cloud prompt sync failed / not signed in"
   },
-  "enablePromptManagerOnSite": {
-    "message": "{site}에서 프롬프트 관리자 사용",
-    "description": "Top toggle label: enable Prompt Manager on the current plugin site ({site})"
-  },
   "enablePromptManagerOnSiteHint": {
-    "message": "이 사이트에서 저장한 프롬프트를 사용합니다. 사용 시 접근 권한을 요청합니다.",
+    "message": "이 사이트에서 저장한 프롬프트를 사용합니다.",
     "description": "Top toggle hint for enabling Prompt Manager on a third-party site"
   },
   "storageQuotaTitle": {

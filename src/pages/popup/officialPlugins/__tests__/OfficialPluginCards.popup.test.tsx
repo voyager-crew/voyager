@@ -107,6 +107,7 @@ describe('the official plugin topic cards', () => {
         en.pluginTopicConversationsShort,
         en.folder_title,
         en.popupTocShortcuts,
+        en.siteAccessTitle,
         en.popupTocPrompts,
         en.popupTocGeneral,
       ]);
@@ -145,6 +146,7 @@ describe('the official plugin topic cards', () => {
         en.pluginTopicInputShort,
         en.pluginTopicConversationsShort,
         en.folder_title,
+        en.siteAccessTitle,
         en.popupTocPrompts,
         en.popupTocGeneral,
       ]);
