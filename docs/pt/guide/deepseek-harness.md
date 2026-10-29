@@ -27,7 +27,7 @@ Abra `http://localhost:3080` no navegador.
 
 ### 2. Adicione-o no popup
 
-![Clique no ícone de puzzle da barra de ferramentas, clique em Voyager e ligue o Gestor de Prompts em localhost:3080](/assets/dsh-enable-steps-en.png)
+![Clique no ícone de puzzle da barra de ferramentas e depois em Voyager para abrir o popup](/assets/dsh-enable-steps-en.png)
 
 No cartão **Acesso a sites** do popup, em **Outros sites**, introduza `localhost:3080`. Clique em **Adicionar site** e conceda o acesso.
 

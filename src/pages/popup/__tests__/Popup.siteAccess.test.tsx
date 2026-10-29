@@ -3,8 +3,10 @@ import { act } from 'react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import { customWebsitesIncludeHost } from '@/core/utils/customWebsites';
 
-import { container, en, extensionApi, local, mount, sync } from './popupHarness';
+import { BUILT_IN_SITES, CATALOG_SITES } from '../utils/siteAccessSites';
+import { container, en, extensionApi, local, mount, sync, unmount } from './popupHarness';
 import {
   buttonWithText,
   coverage,
@@ -147,6 +149,68 @@ describe('Popup site access', () => {
       const rows = Array.from(container.querySelectorAll<HTMLElement>('[data-site-access]'));
       expect(rows.some((row) => row.textContent?.includes('example.org'))).toBe(false);
       expect(siteRow('claude').textContent).toContain(en.promptManagerOptions);
+    });
+  });
+
+  describe('on another website', () => {
+    /** The websites the add group offers, by address. */
+    const offered = () =>
+      Array.from(
+        container.querySelectorAll<HTMLButtonElement>(
+          `[role="group"][aria-label="${en.addWebsite}"] button`,
+        ),
+        (chip) => chip.title,
+      );
+    const pageChip = (website: string) =>
+      container.querySelector<HTMLButtonElement>(
+        `[role="group"][aria-label="${en.addWebsite}"] button[title="${website}"]`,
+      );
+    const openTab = async (url: string) => {
+      await unmount();
+      extensionApi.tabs.query.mockResolvedValue([{ id: 9, url }]);
+      await mount();
+    };
+
+    it('offers the open page once, then lists it like any added website', async () => {
+      sync[StorageKeys.PROMPT_CUSTOM_WEBSITES] = ['qwen.ai'];
+      grant(...coverageGrants('qwen.ai'));
+      await openTab('https://www.poe.com/chat/1');
+
+      expect(offered().filter((website) => website === 'poe.com')).toHaveLength(1);
+      expect(offered().filter((website) => customWebsitesIncludeHost(coverage(), website))).toEqual(
+        [],
+      );
+
+      await act(async () => pageChip('poe.com')!.click());
+
+      expect(extensionApi.permissions.request).toHaveBeenCalledExactlyOnceWith({
+        origins: coverageGrants('poe.com'),
+      });
+      expect(coverage()).toEqual(['qwen.ai', 'poe.com']);
+      expect(otherWebsites()).toEqual(['qwen.ai', 'poe.com']);
+      expect(offered()).not.toContain('poe.com');
+    });
+
+    it('offers a local web UI with its port, and a page that only shares a supported site’s domain', async () => {
+      for (const [url, website] of [
+        ['http://localhost:3080/', 'localhost:3080'],
+        ['https://console.claude.ai/settings', 'console.claude.ai'],
+        ['https://claude.ai:8443/', 'claude.ai:8443'],
+      ]) {
+        await openTab(url);
+        await act(async () => pageChip(website)!.click());
+        expect(otherWebsites()).toContain(website);
+      }
+      expect(coverage()).toEqual(['localhost:3080', 'console.claude.ai', 'claude.ai:8443']);
+    });
+
+    it('never offers a supported or built-in site, the open one included', async () => {
+      for (const url of [CLAUDE_URL, 'https://gemini.google.com/app']) {
+        await openTab(url);
+        for (const host of [...CATALOG_SITES, ...BUILT_IN_SITES].flatMap((site) => site.hosts)) {
+          expect(customWebsitesIncludeHost(offered(), host)).toBe(false);
+        }
+      }
     });
   });
 });

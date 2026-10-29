@@ -27,7 +27,7 @@ dsh web
 
 ### 2. 在弹窗里添加
 
-![点工具栏拼图图标，点 Voyager，打开「在 localhost:3080 上开启提示词管理器」](/assets/dsh-enable-steps-zh.png)
+![点工具栏拼图图标，再点 Voyager 打开弹窗](/assets/dsh-enable-steps-zh.png)
 
 在弹窗的 **网站访问** 卡片里，找到 **其他网站**，输入 `localhost:3080`，点 **添加网站**，授权访问。
 

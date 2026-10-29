@@ -9,7 +9,8 @@ import { container, extensionApi, sync } from './popupHarness';
  * itself and every subdomain, a `*` scheme both schemes, `<all_urls>` all.
  */
 export const granted = new Set<string>();
-const listeners = { added: [] as (() => void)[], removed: [] as (() => void)[] };
+type PermissionsListener = (permissions: { origins: string[]; permissions: string[] }) => void;
+const listeners = { added: [] as PermissionsListener[], removed: [] as PermissionsListener[] };
 
 function covers(grant: string, wanted: string): boolean {
   if (grant === '<all_urls>') return true;
@@ -69,19 +70,19 @@ beforeEach(() => {
   );
   permissions.request.mockImplementation(async ({ origins }: { origins: string[] }) => {
     for (const origin of origins) granted.add(origin);
-    for (const listener of listeners.added) listener();
+    for (const listener of listeners.added) listener({ origins, permissions: [] });
     return true;
   });
   permissions.remove.mockImplementation(async ({ origins }: { origins: string[] }) => {
     for (const origin of origins) granted.delete(origin);
-    for (const listener of listeners.removed) listener();
+    for (const listener of listeners.removed) listener({ origins, permissions: [] });
     return true;
   });
   permissions.getAll.mockImplementation(async () => ({ origins: [...granted], permissions: [] }));
-  permissions.onAdded.addListener.mockImplementation((listener: () => void) =>
+  permissions.onAdded.addListener.mockImplementation((listener: PermissionsListener) =>
     listeners.added.push(listener),
   );
-  permissions.onRemoved.addListener.mockImplementation((listener: () => void) =>
+  permissions.onRemoved.addListener.mockImplementation((listener: PermissionsListener) =>
     listeners.removed.push(listener),
   );
 });

@@ -27,7 +27,7 @@ dsh web
 
 ### 2. 팝업에서 추가하기
 
-![도구 모음의 퍼즐 아이콘을 클릭하고, Voyager를 클릭한 다음, localhost:3080에서 프롬프트 관리자 켜기](/assets/dsh-enable-steps-en.png)
+![도구 모음의 퍼즐 아이콘을 클릭한 다음 Voyager를 클릭해 팝업 열기](/assets/dsh-enable-steps-en.png)
 
 팝업의 **사이트 접근** 카드에 있는 **기타 웹사이트**에 `localhost:3080`을 입력하고 **웹사이트 추가**를 클릭한 뒤 접근을 허용하세요.
 

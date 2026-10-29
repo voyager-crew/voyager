@@ -1,6 +1,7 @@
 import {
   customWebsiteOriginPatterns,
   customWebsitesIncludeHost,
+  normalizeCustomWebsite,
 } from '@/core/utils/customWebsites';
 import {
   partitionPluginOriginPatterns,
@@ -8,6 +9,7 @@ import {
 } from '@/features/plugins/runtime/siteRegistration';
 import { matchesAnyPattern } from '@/features/plugins/sites/matchPattern';
 import { DEFAULT_ADAPTERS, NATIVE_SITE_IDS, SiteRegistry } from '@/features/plugins/sites/registry';
+import { promptCoverageBindingForUrl } from '@/features/plugins/storage/promptCoverageBinding';
 import type { PluginManifest, SiteAdapter } from '@/features/plugins/types';
 
 /** A site the site access card lists, read from its bundled site data. */
@@ -56,17 +58,33 @@ export const CATALOG_SITES: readonly AccessSite[] = DEFAULT_ADAPTERS.filter(
 ).map(toAccessSite);
 
 /**
- * The catalog site a stored Prompt Manager entry belongs to: one that covers a
- * site host (`deepseek.com` covers `chat.deepseek.com`), or one a site host
- * covers. Every other entry is an "other website".
+ * The catalog site a stored Prompt Manager entry belongs to: the one whose page
+ * host it covers, as the page decides it (`deepseek.com` covers
+ * `chat.deepseek.com`). Every other entry is an "other website", including one
+ * that only shares a site's domain (`console.claude.ai`, `claude.ai:8443`).
  */
 export function catalogSiteForEntry(entry: string): AccessSite | undefined {
   return CATALOG_SITES.find((site) =>
-    site.hosts.some(
-      (host) =>
-        customWebsitesIncludeHost([entry], host) || customWebsitesIncludeHost([host], entry),
-    ),
+    site.hosts.some((host) => customWebsitesIncludeHost([entry], host)),
   );
+}
+
+/**
+ * The open page's entry when it is an other website: an http(s) page that no
+ * bundled site claims (Gemini, AI Studio and the supported sites have rows of
+ * their own), so the card can offer it in one click. Null for any other page.
+ */
+export function otherWebsiteForUrl(url: string): string | null {
+  let page: URL;
+  try {
+    page = new URL(url);
+  } catch {
+    return null;
+  }
+  if (page.protocol !== 'http:' && page.protocol !== 'https:') return null;
+  if (SiteRegistry.createDefault().resolveByUrl(url)) return null;
+  const entry = normalizeCustomWebsite(page.host);
+  return entry && !catalogSiteForEntry(entry) ? entry : null;
 }
 
 export function catalogSiteForUrl(url: string): AccessSite | undefined {
@@ -87,10 +105,16 @@ export function otherWebsiteEntries(entries: readonly string[]): string[] {
   return entries.filter((entry) => !catalogSiteForEntry(entry));
 }
 
-/** The supported sites' page hosts a stored entry covers (`deepseek.com` covers `chat.deepseek.com`). */
-export function catalogHostsCoveredBy(entry: string): string[] {
-  return CATALOG_SITES.flatMap((site) => site.hosts).filter((host) =>
-    customWebsitesIncludeHost([entry], host),
+/**
+ * The supported pages where a stored entry runs Prompt Manager's catalog plugin
+ * (`deepseek.com` covers `chat.deepseek.com`). The background registers that
+ * plugin on such a page whenever the browser has granted the page itself.
+ */
+export function promptManagerHostsCoveredBy(entry: string): string[] {
+  return CATALOG_SITES.flatMap((site) => site.hosts).filter(
+    (host) =>
+      promptCoverageBindingForUrl(`https://${host}/`) !== null &&
+      customWebsitesIncludeHost([entry], host),
   );
 }
 

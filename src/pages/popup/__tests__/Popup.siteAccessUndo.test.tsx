@@ -1,6 +1,6 @@
 import { act } from 'react';
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PLATFORM_LOGOS } from '@/core/icons/platformLogos';
 import { StorageKeys } from '@/core/types/common';
@@ -163,7 +163,90 @@ describe('Removing site access', () => {
   });
 });
 
+describe.each([
+  ['Chrome', null],
+  ['Firefox', 'Mozilla/5.0 (Macintosh; rv:128.0) Gecko/20100101 Firefox/128.0'],
+])('An undo the background hears the grant of, on %s', (_, userAgent) => {
+  const stored = ['qwen.ai', 'example.org:3000'];
+  /** The background's own permission listener, beside the popup, with its work kept to wait on. */
+  let backgroundWork: Promise<void>[];
+  let agent: { mockRestore: () => void } | undefined;
+
+  beforeEach(async () => {
+    if (userAgent) agent = vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(userAgent);
+    // Loaded after the popup harness, so the background shares its browser stand-in.
+    const { createSiteAccessRegistration } =
+      await import('@/pages/background/siteAccessRegistration');
+    const { registerBackgroundSettingListeners } =
+      await import('@/pages/background/registrationSettings');
+    backgroundWork = [];
+    const siteAccess = createSiteAccessRegistration();
+    registerBackgroundSettingListeners({
+      siteAccess: {
+        ...siteAccess,
+        permissionAdded: (origins) => {
+          const work = siteAccess.permissionAdded(origins);
+          backgroundWork.push(work);
+          return work;
+        },
+      },
+      mainWorld: {
+        registerFetchInterceptor: vi.fn(),
+        syncResponseCompleteObserverRegistration: vi.fn(),
+      } as unknown as Parameters<typeof registerBackgroundSettingListeners>[0]['mainWorld'],
+    });
+    sync[StorageKeys.PROMPT_CUSTOM_WEBSITES] = [...stored];
+    // A port cannot be granted on its own: the entry runs on the whole host's grant.
+    grant(...coverageGrants('qwen.ai'), ...coverageGrants('example.org'));
+  });
+  afterEach(() => agent?.mockRestore());
+
+  const removeThenUndo = async () => {
+    await mount();
+    await removeWebsite('example.org:3000');
+    expect(coverage()).toEqual(['qwen.ai']);
+    expect([...granted]).toEqual(coverageGrants('qwen.ai'));
+    await clickUndo();
+    expect(backgroundWork).toHaveLength(1);
+    await act(async () => Promise.all(backgroundWork));
+  };
+
+  it('gives back exactly the port-pinned entry, not its whole domain', async () => {
+    await removeThenUndo();
+
+    expect(coverage()).toEqual(stored);
+    expect(otherWebsites()).toEqual(stored);
+  });
+
+  it('saves the entry before the browser answers, so a prompt that closes the popup still restores it exactly', async () => {
+    const answer = extensionApi.permissions.request.getMockImplementation()!;
+    extensionApi.permissions.request.mockImplementationOnce((permissions) => {
+      void answer(permissions); // The browser grants, and the background hears of it.
+      return new Promise<boolean>(() => {}); // The popup is gone before the answer.
+    });
+
+    await removeThenUndo();
+
+    expect(coverage()).toEqual(stored);
+  });
+});
+
 describe('Other websites', () => {
+  it('lists an entry that only shares a supported site’s domain, so it can be removed', async () => {
+    sync[StorageKeys.PROMPT_CUSTOM_WEBSITES] = ['claude.ai:8443', 'console.claude.ai', 'qwen.ai'];
+    grant(...coverageGrants('claude.ai'), ...coverageGrants('qwen.ai'));
+    await mount();
+
+    // Neither runs Prompt Manager on claude.ai itself, so neither is Claude's.
+    expect(otherWebsites()).toEqual(['claude.ai:8443', 'console.claude.ai', 'qwen.ai']);
+    expect(siteRow('claude').textContent).not.toContain(en.promptManagerOptions);
+
+    await removeWebsite('console.claude.ai');
+
+    expect(coverage()).toEqual(['claude.ai:8443', 'qwen.ai']);
+    expect(otherWebsites()).toEqual(['claude.ai:8443', 'qwen.ai']);
+  });
+
   it('shows a website’s bundled logo, or else its initial, and fetches no icon', async () => {
     sync[StorageKeys.PROMPT_CUSTOM_WEBSITES] = ['qwen.ai', 'example.org'];
     grant(...coverageGrants('qwen.ai'), ...coverageGrants('example.org'));

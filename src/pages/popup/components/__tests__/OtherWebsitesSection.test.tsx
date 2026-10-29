@@ -3,8 +3,10 @@ import { type Root, createRoot } from 'react-dom/client';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { customWebsitesIncludeHost } from '@/core/utils/customWebsites';
 import type { TranslationKey } from '@/utils/translations';
 
+import { CATALOG_SITES } from '../../utils/siteAccessSites';
 import { OtherWebsitesSection, type OtherWebsitesSectionProps } from '../OtherWebsitesSection';
 
 const translate = (key: TranslationKey): string => key;
@@ -17,15 +19,21 @@ describe('OtherWebsitesSection', () => {
     props = { ...props, ...overrides };
     act(() => root.render(<OtherWebsitesSection {...props} />));
   };
-  const quickChoices = () =>
-    Array.from(container.querySelectorAll<HTMLButtonElement>('[role="group"] button')).map(
-      (button) => button.textContent,
+  /** The websites the add group offers, by address, in order. */
+  const offered = () =>
+    Array.from(
+      container.querySelectorAll<HTMLButtonElement>('[role="group"] button'),
+      (button) => button.title,
     );
+  const offer = (website: string) =>
+    container.querySelector<HTMLButtonElement>(`[role="group"] button[title="${website}"]`)!;
+  const withCoverage = (customWebsites: string[]) => ({ ...props.coverage, customWebsites });
 
   beforeEach(() => {
     (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
     props = {
       websites: ['example.org'],
+      pageWebsite: null,
       onRemove: vi.fn(async () => {}),
       coverage: {
         customWebsites: ['claude.ai', 'example.org'],
@@ -48,18 +56,45 @@ describe('OtherWebsitesSection', () => {
     container.remove();
   });
 
-  it('offers quick choices only for sites outside the catalog that are not added yet', () => {
-    expect(quickChoices().sort()).toEqual(['Midjourney', 'NotebookLM', 'Qwen']);
-    act(() =>
-      Array.from(container.querySelectorAll<HTMLButtonElement>('[role="group"] button'))
-        .find((button) => button.textContent === 'Qwen')!
-        .click(),
-    );
-    expect(props.coverage.toggleQuickWebsite).toHaveBeenCalledWith('qwen.ai', false);
+  it('offers only sites outside the catalog that are not added yet, and adds one in a click', () => {
+    expect(offered().length).toBeGreaterThan(0);
+    // A supported site has a row of its own; an added website is in the list.
+    for (const host of CATALOG_SITES.flatMap((site) => site.hosts)) {
+      expect(customWebsitesIncludeHost(offered(), host)).toBe(false);
+    }
+    expect(
+      offered().filter((website) =>
+        customWebsitesIncludeHost(props.coverage.customWebsites, website),
+      ),
+    ).toEqual([]);
 
-    // A broader entry already covers NotebookLM.
-    render({ coverage: { ...props.coverage, customWebsites: ['qwen.ai', 'google.com'] } });
-    expect(quickChoices()).toEqual(['Midjourney']);
+    const [first] = offered();
+    act(() => offer(first).click());
+    expect(props.coverage.toggleQuickWebsite).toHaveBeenCalledWith(first, false);
+
+    // Added, directly or through a parent domain, each one drops out.
+    const parentOrSelf = (website: string) =>
+      website.split('.').length > 2 ? website.slice(website.indexOf('.') + 1) : website;
+    render({ coverage: withCoverage(offered().map(parentOrSelf)) });
+    expect(offered()).toEqual([]);
+  });
+
+  it('offers the open page first and once, until the list or a quick choice covers it', () => {
+    render({ pageWebsite: 'chat.example.net' });
+    expect(offered()[0]).toBe('chat.example.net');
+    expect(offered().filter((website) => website === 'chat.example.net')).toHaveLength(1);
+    act(() => offer('chat.example.net').click());
+    expect(props.coverage.toggleQuickWebsite).toHaveBeenCalledWith('chat.example.net', false);
+
+    render({ coverage: withCoverage(['example.net']) });
+    expect(offered()).not.toContain('chat.example.net');
+
+    // A page under a quick choice keeps that one chip instead of a second.
+    const [quick] = offered();
+    render({ pageWebsite: `chat.${quick}` });
+    expect(
+      offered().filter((website) => customWebsitesIncludeHost([website], `chat.${quick}`)),
+    ).toEqual([quick]);
   });
 
   it('keeps removal, input editing, Enter and the error on the website controller', () => {

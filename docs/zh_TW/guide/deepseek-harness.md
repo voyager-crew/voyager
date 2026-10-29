@@ -27,7 +27,7 @@ dsh web
 
 ### 2. 在彈窗裡新增
 
-![點工具列的拼圖圖標，點 Voyager，打開「在 localhost:3080 上開啟提示詞管理器」](/assets/dsh-enable-steps-zh.png)
+![點工具列的拼圖圖標，再點 Voyager 打開彈窗](/assets/dsh-enable-steps-zh.png)
 
 在彈窗的 **網站存取** 卡片裡，找到 **其他網站**，輸入 `localhost:3080`，點 **新增網站**，授權存取。
 

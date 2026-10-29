@@ -17,6 +17,7 @@ import {
   type AccessSite,
   CATALOG_SITES,
   otherWebsiteEntries,
+  otherWebsiteForUrl,
   siteCoverageOn,
 } from '../utils/siteAccessSites';
 import { holdsAny, holdsOrigin, pageOrigin } from '../utils/sitePermissions';
@@ -160,6 +161,7 @@ export function useSiteAccess({
     () => otherWebsiteEntries(coverage.customWebsites),
     [coverage.customWebsites],
   );
+  const pageWebsite = useMemo(() => otherWebsiteForUrl(activeUrl), [activeUrl]);
 
   const promptPlugin = useMemo(() => {
     const id = promptCoverageBindingForUrl(activeUrl)?.pluginId;
@@ -183,7 +185,7 @@ export function useSiteAccess({
     onSettled: recheck,
   });
 
-  return { rows, otherWebsites, promptSwitch, ...actions };
+  return { rows, otherWebsites, pageWebsite, promptSwitch, ...actions };
 }
 
 export type SiteAccess = ReturnType<typeof useSiteAccess>;

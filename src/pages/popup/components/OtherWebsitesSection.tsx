@@ -22,14 +22,21 @@ const KNOWN_WEBSITES: readonly { domain: string; label: string; logo: PlatformLo
 /** One-click additions; a site that joins the catalog drops out on its own. */
 const QUICK_SITES = KNOWN_WEBSITES.filter(({ domain }) => !catalogSiteForEntry(domain));
 
-/** The website's bundled mark, or else the first letter of its address on a plain tile. */
-function WebsiteMark({ website }: { website: string }) {
+const CHIP_CLASS =
+  'text-muted-foreground hover:bg-secondary/60 hover:text-foreground border-border/70 focus-visible:ring-ring/60 inline-flex h-7 min-w-0 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none';
+
+/**
+ * The website's bundled mark, or else the first letter of its address on a
+ * plain tile. In a chip it takes the chip's color and the quick chips' size.
+ */
+function WebsiteMark({ website, chip = false }: { website: string; chip?: boolean }) {
   const known = KNOWN_WEBSITES.find(({ domain }) => customWebsitesIncludeHost([domain], website));
+  const size = chip ? 'size-3.5' : 'size-4';
   if (known) {
     return (
       <span
-        className="flex size-4 shrink-0 items-center justify-center"
-        style={{ color: known.logo.brand }}
+        className={`flex ${size} shrink-0 items-center justify-center`}
+        style={chip ? undefined : { color: known.logo.brand }}
         aria-hidden="true"
       >
         <PlatformMark logo={known.logo} />
@@ -38,7 +45,7 @@ function WebsiteMark({ website }: { website: string }) {
   }
   return (
     <span
-      className="bg-background text-muted-foreground border-border/70 flex size-4 shrink-0 items-center justify-center rounded-[4px] border text-[9px] leading-none font-semibold"
+      className={`${chip ? 'size-3.5 text-[8px]' : 'bg-background text-muted-foreground size-4 text-[9px]'} border-border/70 flex shrink-0 items-center justify-center rounded-[4px] border leading-none font-semibold`}
       aria-hidden="true"
     >
       {/[a-z0-9]/i.exec(website)?.[0]?.toUpperCase() ?? '?'}
@@ -49,6 +56,8 @@ function WebsiteMark({ website }: { website: string }) {
 export interface OtherWebsitesSectionProps {
   /** The coverage entries outside every supported site. */
   readonly websites: readonly string[];
+  /** The open page, when it is an other website; offered first until it is added. */
+  readonly pageWebsite: string | null;
   readonly onRemove: (website: string, returnFocus: () => HTMLElement | null) => Promise<void>;
   readonly coverage: Pick<
     PromptManagerSettings,
@@ -65,6 +74,7 @@ export interface OtherWebsitesSectionProps {
 /** Websites outside the catalog, where Voyager runs only Prompt Manager. */
 export function OtherWebsitesSection({
   websites,
+  pageWebsite,
   onRemove,
   coverage,
   t,
@@ -74,6 +84,13 @@ export function OtherWebsitesSection({
   const suggestions = QUICK_SITES.filter(
     ({ domain }) => !customWebsitesIncludeHost(coverage.customWebsites, domain),
   );
+  // A page a quick chip already covers (chat.qwen.ai under Qwen) keeps that chip instead.
+  const page =
+    pageWebsite &&
+    !customWebsitesIncludeHost(coverage.customWebsites, pageWebsite) &&
+    !QUICK_SITES.some(({ domain }) => customWebsitesIncludeHost([domain], pageWebsite))
+      ? pageWebsite
+      : null;
   return (
     <section aria-labelledby={headingId} className="space-y-2.5">
       <div>
@@ -84,8 +101,22 @@ export function OtherWebsitesSection({
           {t('siteAccessOtherWebsitesHint')}
         </p>
       </div>
-      {suggestions.length > 0 && (
+      {(page || suggestions.length > 0) && (
         <div role="group" aria-label={t('addWebsite')} className="flex flex-wrap gap-1.5">
+          {page && (
+            <button
+              type="button"
+              onClick={() => {
+                void coverage.toggleQuickWebsite(page, false);
+              }}
+              className={CHIP_CLASS}
+              title={page}
+            >
+              <Plus className="size-3 shrink-0" strokeWidth={2.5} aria-hidden="true" />
+              <WebsiteMark website={page} chip />
+              <bdi className="truncate">{page}</bdi>
+            </button>
+          )}
           {suggestions.map(({ domain, label, logo }) => (
             <button
               key={domain}
@@ -93,7 +124,7 @@ export function OtherWebsitesSection({
               onClick={() => {
                 void coverage.toggleQuickWebsite(domain, false);
               }}
-              className="text-muted-foreground hover:bg-secondary/60 hover:text-foreground border-border/70 focus-visible:ring-ring/60 inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              className={CHIP_CLASS}
               title={domain}
             >
               <Plus className="size-3 shrink-0" strokeWidth={2.5} aria-hidden="true" />

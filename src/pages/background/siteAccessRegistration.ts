@@ -2,7 +2,11 @@ import browser from 'webextension-polyfill';
 
 import { logger } from '@/core/services/LoggerService';
 import { isFirefox } from '@/core/utils/browser';
-import { customWebsiteOriginPatterns } from '@/core/utils/customWebsites';
+import {
+  customWebsiteOriginPatterns,
+  customWebsitesIncludeHost,
+  sanitizeCustomWebsites,
+} from '@/core/utils/customWebsites';
 import { isChatGptProUsageSupported } from '@/features/plugins/builtin/chatgptProUsage/manifest';
 import {
   partitionPluginOriginPatterns,
@@ -32,6 +36,14 @@ const PLUGIN_EMBEDDED_CONTENT_SCRIPT_ID = 'gv-plugin-embedded-content-script';
 const CLAUDE_USAGE_MAIN_SCRIPT_ID = 'gv-plugin-claude-usage-main';
 const CUSTOM_WEBSITE_KEY = 'gvPromptCustomWebsites';
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
+
+/** Whether the list has an entry for `host` already: the host on any port, or a parent domain. */
+function hasEntryForHost(entries: readonly unknown[], host: string): boolean {
+  return (
+    customWebsitesIncludeHost(entries, host) ||
+    sanitizeCustomWebsites(entries).some((entry) => entry.replace(/:\d+$/, '') === host)
+  );
+}
 
 export function createSiteAccessRegistration() {
   const MANIFEST_DEFAULT_DOMAINS = new Set(
@@ -416,7 +428,14 @@ export function createSiteAccessRegistration() {
         const existing = Array.isArray(current[CUSTOM_WEBSITE_KEY])
           ? current[CUSTOM_WEBSITE_KEY]
           : [];
-        const merged = Array.from(new Set([...existing, ...domains]));
+        // A grant never repeats or widens an entry for its host: `example.org:3000`
+        // keeps its port, and a parent domain already covers a subdomain. The
+        // popup saves what it adds back before the browser answers, so an entry
+        // it is restoring is already here.
+        const merged = [...existing];
+        for (const domain of domains) {
+          if (!hasEntryForHost(merged, domain)) merged.push(domain);
+        }
         if (merged.length !== existing.length) {
           await browser.storage.sync.set({ [CUSTOM_WEBSITE_KEY]: merged });
         }

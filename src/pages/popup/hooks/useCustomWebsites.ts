@@ -24,7 +24,7 @@ import {
   withEntriesRestored,
   withoutEntries,
 } from '../utils/coverageEntries';
-import { catalogHostsCoveredBy } from '../utils/siteAccessSites';
+import { promptManagerHostsCoveredBy } from '../utils/siteAccessSites';
 import { listGrants } from '../utils/sitePermissions';
 
 export interface CustomWebsitesOptions {
@@ -156,9 +156,10 @@ export function useCustomWebsites({
             const origins = customWebsiteOriginPatterns(domain);
             if (!origins) return false;
             for (const origin of origins) if (await holds(origin)) return true;
-            // A supported site's page grant, made by one of its plugins, also
-            // runs Prompt Manager there, but only on the page it grants.
-            for (const host of catalogHostsCoveredBy(domain)) {
+            // A supported page's own grant, as a plugin there asks for it, runs
+            // Prompt Manager's catalog plugin on that page (the background
+            // registers it by coverage); a grant for another page does not.
+            for (const host of promptManagerHostsCoveredBy(domain)) {
               if (await holds(`https://${host}/*`)) return true;
             }
             return false;
@@ -371,9 +372,11 @@ export function useCustomWebsites({
   );
 
   /**
-   * Gives back removed entries and exactly the grants removed with them, in
-   * each browser's order; false when the browser refused or failed the grant,
-   * in which case the entries stay out.
+   * Gives back removed entries and exactly the grants removed with them; false
+   * when the browser refused or failed the grant, in which case the entries
+   * stay out. The entries are saved before the browser answers: its prompt may
+   * close the popup, and the background, hearing of the grant, must find them
+   * rather than add a broader entry of its own (`example.org` for `example.org:3000`).
    */
   const restoreAccess = useCallback(
     async (origins: readonly string[], entries: readonly PlacedEntry[]): Promise<boolean> => {
@@ -389,17 +392,12 @@ export function useCustomWebsites({
           return false;
         }
       };
-      if (isFirefox()) {
-        // Firefox keeps the gesture only for a request made before any other await.
-        if (!(await ask())) return false;
-        await restoreEntries(entries);
-      } else {
-        // Saved first: the browser's prompt may close the popup before it answers.
-        await restoreEntries(entries);
-        if (!(await ask())) {
-          await removeEntries(entries.map(({ entry }) => entry));
-          return false;
-        }
+      // Firefox keeps the gesture only for a request made before any other await.
+      const answer = isFirefox() ? ask() : null;
+      await restoreEntries(entries);
+      if (!(await (answer ?? ask()))) {
+        await removeEntries(entries.map(({ entry }) => entry));
+        return false;
       }
       await refreshActiveTabContext();
       return true;

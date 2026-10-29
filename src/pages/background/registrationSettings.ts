@@ -25,7 +25,9 @@ export function registerBackgroundSettingListeners(owners: {
     if (Object.prototype.hasOwnProperty.call(changes, CUSTOM_WEBSITE_KEY)) {
       const newValue = changes[CUSTOM_WEBSITE_KEY]?.newValue;
       const domains = Array.isArray(newValue) ? newValue : [];
-      void owners.siteAccess.syncCustom(domains);
+      // The plugins too: Prompt Manager's catalog plugin is on wherever the list
+      // covers its host. One after the other, so both never inject one open tab.
+      void owners.siteAccess.syncCustom(domains).finally(() => owners.siteAccess.syncPlugins());
       // Enabling/disabling a site flips whether it should still show the nudge dot.
       void owners.siteAccess.syncPromptNudgeIcon();
     }

@@ -25,7 +25,7 @@ const PILLS: Readonly<Record<Pill, { label: TranslationKey; className: string }>
 export interface SiteAccessCardProps {
   readonly access: Pick<
     SiteAccess,
-    'rows' | 'otherWebsites' | 'revoking' | 'revoke' | 'removeWebsite'
+    'rows' | 'otherWebsites' | 'pageWebsite' | 'revoking' | 'revoke' | 'removeWebsite'
   >;
   readonly coverage: Pick<
     PromptManagerSettings,
@@ -174,6 +174,7 @@ export function SiteAccessCard({ access, coverage, language, t }: SiteAccessCard
         </ul>
         <OtherWebsitesSection
           websites={access.otherWebsites}
+          pageWebsite={access.pageWebsite}
           onRemove={access.removeWebsite}
           coverage={coverage}
           t={t}
