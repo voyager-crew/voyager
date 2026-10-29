@@ -9,6 +9,7 @@ import { packOf } from '../researchPack/__tests__/fixtures';
 import { type ResearchPackPanel, createResearchPackPanel } from '../researchPack/panel';
 
 vi.mock('webextension-polyfill', () => ({ default: globalThis.chrome }));
+vi.mock('@/core/utils/userEvent', () => import('../prompt/__tests__/ballClicks'));
 
 let manager: Awaited<ReturnType<typeof startPromptManager>> | undefined;
 let researchPack: ResearchPackPanel | undefined;

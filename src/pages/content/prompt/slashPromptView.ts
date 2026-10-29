@@ -4,7 +4,7 @@
  */
 import type { PromptScheme } from '@/features/prompt/PromptSiteAdapter';
 
-import { type PromptQuery, createQueryRange } from './slashComposerText';
+import { type PromptQuery, createQueryRange, getQueryAnchorRect } from './slashComposerText';
 import { syncMarkerTypography } from './slashMarkers';
 import { ghostSuffix } from './slashMatch';
 
@@ -51,4 +51,28 @@ export function showGhost(query: PromptQuery, name: string, scheme: PromptScheme
 
 export function removeGhost(): void {
   document.getElementById(GHOST_ID)?.remove();
+}
+
+/** The result list under the typed query, or above it when there is more room there. */
+export function placeResultList(
+  root: HTMLElement,
+  list: HTMLElement,
+  query: PromptQuery,
+  input: HTMLElement,
+): void {
+  const rect = input.getBoundingClientRect();
+  const anchorRect = getQueryAnchorRect(query, rect);
+  const width = Math.max(120, Math.min(380, rect.width || 320, window.innerWidth - 16));
+  root.style.width = `${Math.round(width)}px`;
+  root.style.left = `${Math.round(
+    Math.max(8, Math.min(anchorRect.left, window.innerWidth - width - 8)),
+  )}px`;
+  const listHeight = list.getBoundingClientRect().height || 240;
+  const below = anchorRect.bottom + 6;
+  const above = anchorRect.top - listHeight - 6;
+  const spaceBelow = window.innerHeight - below - 8;
+  const spaceAbove = anchorRect.top - 14;
+  const preferredTop = spaceBelow >= listHeight || spaceBelow >= spaceAbove ? below : above;
+  const maxTop = Math.max(8, window.innerHeight - listHeight - 8);
+  root.style.top = `${Math.round(Math.max(8, Math.min(preferredTop, maxTop)))}px`;
 }

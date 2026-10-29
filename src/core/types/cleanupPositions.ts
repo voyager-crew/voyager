@@ -25,6 +25,8 @@ export enum CleanupPositions {
   CleanupForkLinkFinisher,
   /** After every send-key registrant: the send plugins dispose first. */
   CleanupSendKeyCoordinator,
+  /** The panel window, its satellites and its shortcut lease; the ball's other holder stops on its own. */
+  CleanupPanelShell,
   CleanupBrandTheme,
   CleanupRemoteAnnouncements,
   CleanupStorageQuotaWarning,

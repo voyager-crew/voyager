@@ -8,6 +8,7 @@ import { renderPromptMarkdown } from '../promptMarkdownLoader';
 import { resolvePromptSiteAdapter } from '../resolvePromptSiteAdapter';
 
 vi.mock('webextension-polyfill', () => ({ default: globalThis.chrome }));
+vi.mock('@/core/utils/userEvent', () => import('./ballClicks'));
 
 let manager: Awaited<ReturnType<typeof startPromptManager>> | undefined;
 

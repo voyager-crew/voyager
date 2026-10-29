@@ -1186,6 +1186,18 @@
     "message": "Esc でキャンセル",
     "description": "Shown under the keyboard-shortcut buttons while one is recording a key press"
   },
+  "shortcutPanelToggle": {
+    "message": "Voyager パネル",
+    "description": "Keyboard-shortcut label for opening and closing the Voyager panel on the page"
+  },
+  "shortcutPanelVv": {
+    "message": "代わりに vv を使う（入力欄の外）",
+    "description": "Switch under the Voyager panel shortcut: two v presses replace Alt+V, outside text fields only"
+  },
+  "shortcutInUse": {
+    "message": "このキーは使用中です。別のキーを押してください",
+    "description": "Shown under the keyboard-shortcut buttons when the pressed key is taken by another shortcut"
+  },
   "resetShortcuts": {
     "message": "デフォルトに戻す",
     "description": "Reset shortcuts button"

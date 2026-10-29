@@ -1186,6 +1186,18 @@
     "message": "Pulsa Esc para cancelar",
     "description": "Shown under the keyboard-shortcut buttons while one is recording a key press"
   },
+  "shortcutPanelToggle": {
+    "message": "Panel de Voyager",
+    "description": "Keyboard-shortcut label for opening and closing the Voyager panel on the page"
+  },
+  "shortcutPanelVv": {
+    "message": "Usar vv en su lugar (fuera de los campos de texto)",
+    "description": "Switch under the Voyager panel shortcut: two v presses replace Alt+V, outside text fields only"
+  },
+  "shortcutInUse": {
+    "message": "Esa tecla ya está en uso. Prueba con otra.",
+    "description": "Shown under the keyboard-shortcut buttons when the pressed key is taken by another shortcut"
+  },
   "resetShortcuts": {
     "message": "Restablecer a valores predeterminados",
     "description": "Reset shortcuts button"

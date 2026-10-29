@@ -1186,6 +1186,18 @@
     "message": "Appuyez sur Échap pour annuler",
     "description": "Shown under the keyboard-shortcut buttons while one is recording a key press"
   },
+  "shortcutPanelToggle": {
+    "message": "Panneau Voyager",
+    "description": "Keyboard-shortcut label for opening and closing the Voyager panel on the page"
+  },
+  "shortcutPanelVv": {
+    "message": "Utiliser vv à la place (hors des champs de texte)",
+    "description": "Switch under the Voyager panel shortcut: two v presses replace Alt+V, outside text fields only"
+  },
+  "shortcutInUse": {
+    "message": "Cette touche est déjà utilisée. Essayez-en une autre.",
+    "description": "Shown under the keyboard-shortcut buttons when the pressed key is taken by another shortcut"
+  },
   "resetShortcuts": {
     "message": "Réinitialiser",
     "description": "Reset shortcuts button"

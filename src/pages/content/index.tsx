@@ -349,6 +349,9 @@ function handleVisibilityChange(): void {
     // on Gemini / AI Studio.
     if (!isPluginSubframe) void mountForPage(NATIVE_FEATURES.brandTheme);
 
+    // The Voyager panel's floating entry, window and shortcut, with every plugin on or off.
+    if (!isPluginSubframe) void mountForPage(NATIVE_FEATURES.panelShell);
+
     registerPageErrorHandlers(cleanupManager);
     const onStorageChanged = (
       changes: Record<string, chrome.storage.StorageChange>,

@@ -9,6 +9,7 @@ import { type PromptTrigger, mountPromptTrigger } from '../promptTrigger';
 import { resolvePromptSiteAdapter } from '../resolvePromptSiteAdapter';
 
 vi.mock('webextension-polyfill', () => ({ default: globalThis.chrome }));
+vi.mock('@/core/utils/userEvent', () => import('./ballClicks'));
 vi.mock('../../changelog/index', () => ({
   hasUnreadChangelog: vi.fn(async () => false),
   showChangelogModalDirect: vi.fn(async () => true),

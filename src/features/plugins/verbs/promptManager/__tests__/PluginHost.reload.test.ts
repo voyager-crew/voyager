@@ -28,6 +28,7 @@ import {
 } from './acceptanceHarness';
 
 vi.mock('webextension-polyfill', () => ({ default: globalThis.chrome }));
+vi.mock('@/core/utils/userEvent', () => import('@/pages/content/prompt/__tests__/ballClicks'));
 setupAcceptance();
 
 const marker: PluginManifest = {

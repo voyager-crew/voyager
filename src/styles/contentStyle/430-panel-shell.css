@@ -1,0 +1,461 @@
+/* ── Voyager panel shell: the floating entry's satellites, the panel window and
+   the shell toast (src/pages/content/panelShell/). Values follow the panel
+   prototype; colours follow Voyager's brand and the root's data-gv-scheme. ── */
+
+/* Motion: damped springs sampled into linear() curves, the same values as
+   panelShell/motion.ts; engines without linear() get the nearest bezier. */
+.gv-pm-trigger.gv-ps-ball,
+.gv-ps-entry,
+.gv-ps-panel,
+.gv-ps-toast {
+  --gv-ps-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --gv-ps-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --gv-ps-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --gv-ps-brand: var(--gv-pm-brand, var(--gv-pm-brand-default));
+  --gv-ps-brand-fg: var(--gv-pm-brand-fg, var(--gv-pm-brand-fg-default));
+  --gv-ps-tip: oklch(0.22 0.005 285);
+  --gv-ps-tip-ink: #fff;
+  --gv-ps-panel: oklch(0.975 0.002 250);
+  --gv-ps-shadow:
+    0 24px 64px rgb(15 20 30 / 0.16), 0 4px 16px rgb(15 20 30 / 0.06),
+    0 0 0 1px rgb(15 20 30 / 0.06);
+  --gv-ps-shadow-drag:
+    0 32px 80px rgb(15 20 30 / 0.22), 0 6px 20px rgb(15 20 30 / 0.08),
+    0 0 0 1px rgb(15 20 30 / 0.07);
+}
+
+@supports (transition-timing-function: linear(0, 1)) {
+  .gv-pm-trigger.gv-ps-ball,
+  .gv-ps-entry,
+  .gv-ps-panel,
+  .gv-ps-toast {
+    --gv-ps-spring: linear(
+      0,
+      0.066,
+      0.226,
+      0.429,
+      0.635,
+      0.819,
+      0.964,
+      1.066,
+      1.126,
+      1.151,
+      1.149,
+      1.129,
+      1.1,
+      1.068,
+      1.038,
+      1.013,
+      0.995,
+      0.984,
+      0.978,
+      0.977,
+      0.979,
+      0.983,
+      0.988,
+      0.992,
+      0.997,
+      1,
+      1.002,
+      1.003,
+      1.004,
+      1.003,
+      1.003
+    );
+    --gv-ps-soft: linear(
+      0,
+      0.045,
+      0.153,
+      0.294,
+      0.443,
+      0.586,
+      0.712,
+      0.818,
+      0.901,
+      0.963,
+      1.006,
+      1.033,
+      1.047,
+      1.053,
+      1.052,
+      1.047,
+      1.04,
+      1.032,
+      1.024,
+      1.017,
+      1.011,
+      1.007,
+      1.003,
+      1,
+      0.999,
+      0.998,
+      0.997,
+      0.997,
+      0.997,
+      0.998,
+      0.998
+    );
+  }
+}
+
+html[data-gv-scheme='dark'] :is(.gv-ps-entry, .gv-ps-panel, .gv-ps-toast) {
+  --gv-ps-tip: oklch(0.93 0.003 250);
+  --gv-ps-tip-ink: oklch(0.2 0.004 270);
+  --gv-ps-panel: oklch(0.205 0.004 270);
+  --gv-ps-shadow:
+    0 24px 64px rgb(0 0 0 / 0.5), 0 4px 16px rgb(0 0 0 / 0.3), 0 0 0 1px rgb(255 255 255 / 0.06);
+  --gv-ps-shadow-drag:
+    0 32px 80px rgb(0 0 0 / 0.6), 0 6px 20px rgb(0 0 0 / 0.36), 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+
+/* ── The ball while the shell decorates it ── */
+.gv-pm-trigger.gv-ps-ball {
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.2s ease,
+    transform 0.5s var(--gv-ps-spring);
+}
+
+/* The satellites' liquid necks are the brand colour, so the ball keeps it on hover. */
+.gv-pm-trigger.gv-ps-ball:hover,
+:root.gv-platform-themed .gv-pm-trigger.gv-ps-ball:hover {
+  background: var(--gv-ps-brand) !important;
+}
+
+.gv-pm-trigger.gv-ps-ball.gv-ps-open {
+  transform: scale(1.06);
+  box-shadow:
+    0 10px 32px color-mix(in srgb, var(--gv-ps-brand) 45%, transparent),
+    0 4px 12px color-mix(in srgb, var(--gv-ps-brand) 30%, transparent);
+}
+
+:root.gv-platform-themed .gv-pm-trigger.gv-ps-ball.gv-ps-open {
+  box-shadow:
+    0 10px 32px rgb(0 0 0 / 0.22),
+    0 4px 12px rgb(0 0 0 / 0.16) !important;
+}
+
+.gv-pm-trigger.gv-ps-ball:active,
+.gv-pm-trigger.gv-ps-ball.gv-ps-open:active {
+  transform: scale(0.94);
+  transition-duration: 0.12s;
+}
+
+/* ── Satellites ── */
+.gv-ps-entry {
+  --gv-ps-fx: -1;
+  --gv-ps-fy: -1;
+  position: fixed;
+  /* Just under the ball (2147483100), which stays the top of its own stack. */
+  z-index: 2147483099;
+  pointer-events: none;
+}
+
+.gv-ps-entry[data-fan-x='right'] {
+  --gv-ps-fx: 1;
+}
+
+.gv-ps-entry[data-fan-y='down'] {
+  --gv-ps-fy: 1;
+}
+
+.gv-ps-entry[hidden],
+.gv-ps-entry .gv-ps-hit[hidden] {
+  display: none;
+}
+
+.gv-ps-goo-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.gv-ps-goo {
+  position: absolute;
+  inset: -110px;
+}
+
+.gv-ps-entry.gv-ps-liquid .gv-ps-goo {
+  filter: url(#gv-ps-goo);
+}
+
+.gv-ps-blob {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--gv-ps-brand);
+}
+
+.gv-ps-blob-ball {
+  left: 110px;
+  top: 110px;
+  width: calc(100% - 220px);
+  height: calc(100% - 220px);
+  transition: transform 0.5s var(--gv-ps-spring);
+}
+
+.gv-ps-entry.gv-ps-open .gv-ps-blob-ball {
+  transform: scale(1.06);
+}
+
+.gv-ps-sat[data-slot='panel'] {
+  --gv-ps-dx: 72px;
+  --gv-ps-dy: 24px;
+  --gv-ps-i: 0;
+  --gv-ps-o: 1;
+}
+
+.gv-ps-sat[data-slot='hide'] {
+  --gv-ps-dx: 24px;
+  --gv-ps-dy: 72px;
+  --gv-ps-i: 1;
+  --gv-ps-o: 0;
+}
+
+.gv-ps-entry.gv-ps-hide-only .gv-ps-sat[data-slot='hide'] {
+  --gv-ps-i: 0;
+}
+
+.gv-ps-entry.gv-ps-hide-only .gv-ps-sat[data-slot='panel'] {
+  display: none;
+}
+
+.gv-ps-sat {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  transform: translate(0, 0) scale(0.5);
+  transition:
+    transform 0.18s cubic-bezier(0.4, 0, 1, 1) calc(0.22s + var(--gv-ps-o) * 30ms),
+    opacity 0.1s linear calc(0.22s + var(--gv-ps-o) * 30ms);
+}
+
+.gv-ps-blob.gv-ps-sat {
+  left: 116px;
+  top: 116px;
+}
+
+.gv-ps-entry.gv-ps-open .gv-ps-sat {
+  transform: translate(
+      calc(var(--gv-ps-dx) * var(--gv-ps-fx)),
+      calc(var(--gv-ps-dy) * var(--gv-ps-fy))
+    )
+    scale(1);
+  transition:
+    transform 0.62s var(--gv-ps-spring) calc(var(--gv-ps-i) * 55ms),
+    opacity 0.16s linear calc(var(--gv-ps-i) * 55ms + 60ms);
+}
+
+.gv-ps-hit {
+  left: 6px;
+  top: 6px;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--gv-ps-brand-fg);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gv-ps-entry.gv-ps-open .gv-ps-hit {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.gv-ps-hit:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--gv-ps-brand) 70%, transparent);
+  outline-offset: 2px;
+}
+
+.gv-ps-hit svg {
+  transition: transform 0.25s var(--gv-ps-spring);
+}
+
+.gv-ps-hit:hover svg {
+  transform: scale(1.14);
+}
+
+/* Keeps hover while the pointer crosses from the ball to a satellite. */
+.gv-ps-bridge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 130px;
+  height: 130px;
+  border-radius: 130px 0 0;
+  pointer-events: none;
+}
+
+.gv-ps-entry[data-fan-x='right'] .gv-ps-bridge {
+  right: auto;
+  left: 0;
+  border-radius: 0 130px 0 0;
+}
+
+.gv-ps-entry[data-fan-y='down'] .gv-ps-bridge {
+  top: 0;
+  bottom: auto;
+  border-radius: 0 0 0 130px;
+}
+
+.gv-ps-entry[data-fan-x='right'][data-fan-y='down'] .gv-ps-bridge {
+  border-radius: 0 0 130px;
+}
+
+.gv-ps-entry.gv-ps-open .gv-ps-bridge {
+  pointer-events: auto;
+}
+
+.gv-ps-tip {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 10px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: var(--gv-ps-tip);
+  color: var(--gv-ps-tip-ink);
+  font: 400 12.5px/1 var(--gv-ui-font);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(6px, -50%);
+  pointer-events: none;
+  transition:
+    opacity 0.12s ease,
+    transform 0.25s var(--gv-ps-out);
+}
+
+.gv-ps-entry[data-fan-x='right'] .gv-ps-tip {
+  right: auto;
+  left: calc(100% + 10px);
+  transform: translate(-6px, -50%);
+}
+
+.gv-ps-entry .gv-ps-hit:is(:hover, :focus-visible) .gv-ps-tip {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+.gv-ps-tip kbd,
+.gv-ps-toast kbd {
+  padding: 3px 5px;
+  border-radius: 5px;
+  background: color-mix(in oklch, var(--gv-ps-tip-ink) 16%, transparent);
+  color: inherit;
+  font: 600 11px/1 var(--gv-ui-font);
+}
+
+/* ── The panel window ── */
+.gv-ps-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  /* Above host UI, Prompt Manager and the ball. */
+  z-index: 2147483300;
+  width: min(880px, calc(100vw - 24px));
+  height: min(560px, calc(100vh - 24px));
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--gv-ps-panel);
+  box-shadow: var(--gv-ps-shadow);
+  transition:
+    opacity 0.28s var(--gv-ps-out),
+    box-shadow 0.3s ease;
+}
+
+.gv-ps-panel.gv-ps-glide {
+  transition:
+    left 0.5s var(--gv-ps-soft),
+    top 0.5s var(--gv-ps-soft),
+    opacity 0.28s var(--gv-ps-out);
+}
+
+.gv-ps-panel.gv-ps-peek {
+  opacity: 0.22;
+}
+
+.gv-ps-panel.gv-ps-dragging {
+  box-shadow: var(--gv-ps-shadow-drag);
+}
+
+.gv-ps-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+}
+
+/* ── The shell toast ── */
+.gv-ps-toast {
+  position: fixed;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  padding-block: 0;
+  padding-inline: 14px 6px;
+  border-radius: 12px;
+  background: var(--gv-ps-tip);
+  color: var(--gv-ps-tip-ink);
+  font: 400 13px/1.2 var(--gv-ui-font);
+  white-space: nowrap;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.2);
+  opacity: 0;
+  transform: translate(-50%, 12px) scale(0.96);
+  pointer-events: none;
+  transition:
+    opacity 0.16s ease,
+    transform 0.2s ease;
+}
+
+.gv-ps-toast.gv-ps-toast-open {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+  transition:
+    opacity 0.2s ease,
+    transform 0.5s var(--gv-ps-spring);
+}
+
+.gv-ps-toast-undo {
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: color-mix(in oklch, var(--gv-ps-tip-ink) 12%, transparent);
+  color: inherit;
+  font: 500 13px/1 var(--gv-ui-font);
+  cursor: pointer;
+}
+
+.gv-ps-toast-undo[hidden] {
+  display: none;
+}
+
+/* A slider held in the panel previews on the page: its own transitions would lag behind. */
+html.gv-ps-live *:not(.gv-ps-panel),
+html.gv-ps-live *::before,
+html.gv-ps-live *::after {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gv-pm-trigger.gv-ps-ball,
+  .gv-ps-entry *,
+  .gv-ps-panel,
+  .gv-ps-toast {
+    transition: none !important;
+  }
+}

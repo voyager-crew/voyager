@@ -12,6 +12,7 @@ import { startPromptManager } from '../index';
 import { resolvePromptSiteAdapter } from '../resolvePromptSiteAdapter';
 
 vi.mock('webextension-polyfill', () => ({ default: globalThis.chrome }));
+vi.mock('@/core/utils/userEvent', () => import('./ballClicks'));
 
 const prompts = [
   { id: 'a', name: 'Alpha', text: 'Alpha body', tags: [], createdAt: 2 },

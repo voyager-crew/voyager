@@ -1186,6 +1186,18 @@
     "message": "اضغط Esc للإلغاء",
     "description": "Shown under the keyboard-shortcut buttons while one is recording a key press"
   },
+  "shortcutPanelToggle": {
+    "message": "لوحة Voyager",
+    "description": "Keyboard-shortcut label for opening and closing the Voyager panel on the page"
+  },
+  "shortcutPanelVv": {
+    "message": "استخدام vv بدلًا منه (خارج حقول النص)",
+    "description": "Switch under the Voyager panel shortcut: two v presses replace Alt+V, outside text fields only"
+  },
+  "shortcutInUse": {
+    "message": "هذا المفتاح مستخدم بالفعل. جرّب مفتاحًا آخر.",
+    "description": "Shown under the keyboard-shortcut buttons when the pressed key is taken by another shortcut"
+  },
   "resetShortcuts": {
     "message": "إعادة التعيين إلى الافتراضيات",
     "description": "Reset shortcuts button"

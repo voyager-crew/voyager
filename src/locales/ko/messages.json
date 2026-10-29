@@ -1186,6 +1186,18 @@
     "message": "취소하려면 Esc를 누르세요",
     "description": "Shown under the keyboard-shortcut buttons while one is recording a key press"
   },
+  "shortcutPanelToggle": {
+    "message": "Voyager 패널",
+    "description": "Keyboard-shortcut label for opening and closing the Voyager panel on the page"
+  },
+  "shortcutPanelVv": {
+    "message": "대신 vv 사용(입력란 밖에서)",
+    "description": "Switch under the Voyager panel shortcut: two v presses replace Alt+V, outside text fields only"
+  },
+  "shortcutInUse": {
+    "message": "이미 사용 중인 키입니다. 다른 키를 눌러 주세요",
+    "description": "Shown under the keyboard-shortcut buttons when the pressed key is taken by another shortcut"
+  },
   "resetShortcuts": {
     "message": "기본값으로 초기화",
     "description": "Reset shortcuts button"

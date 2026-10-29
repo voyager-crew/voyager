@@ -75,6 +75,7 @@ import { reloadWithPromptManager } from './promptManagerReload';
 import type { PluginBlock, WishVerdict } from './reconcileArbitration';
 import { ReleaseLedger } from './releaseLedger';
 import { arbitrate, nextHolders } from './resourceArbiter';
+import { settingsPreview } from './settingsPreview';
 import { type SurfaceSwitch, surfaceSwitchForUrl } from './surfaceSwitch';
 
 export type { PluginHostOptions };
@@ -111,6 +112,7 @@ export class PluginHost {
   private readonly admission: OfficialAdmission;
   private readonly legacySettings: LegacySettingsSource;
   private unsubscribeAdmission: (() => void) | null = null;
+  private unsubscribePreview: (() => void) | null = null;
   /** Legacy switches of bound official plugins, narrowed to shared keys off native surfaces. */
   private legacy: LegacySnapshotFeed | null = null;
   /** Whether the site's master switch lets plugins run (always true without one). */
@@ -210,6 +212,7 @@ export class PluginHost {
       // initial reconcile below.
       let stateFromListener: PluginStateMap | null = null;
       this.unsubscribeAdmission = this.admission.subscribe(requeue);
+      this.unsubscribePreview = settingsPreview.subscribe(requeue);
       this.unsubscribeState = subscribePluginState((next) => {
         if (this.generation !== gen) return;
         stateFromListener = next;
@@ -272,6 +275,8 @@ export class PluginHost {
     this.unsubscribeSurface = null;
     this.unsubscribeAdmission?.();
     this.unsubscribeAdmission = null;
+    this.unsubscribePreview?.();
+    this.unsubscribePreview = null;
     this.legacy?.stop();
     this.legacy = null;
     this.engine?.unmountAll();
@@ -410,7 +415,7 @@ export class PluginHost {
     }
     for (const manifest of wanted) {
       if (!granted.has(manifest.id)) continue;
-      const settings = resolveRunSettings(manifest, state, legacy);
+      const settings = settingsPreview.apply(manifest, resolveRunSettings(manifest, state, legacy));
       mountOrUpdate(engine, this.pushedSettings, manifest, settings);
     }
     this.holders = nextHolders({ granted, blocked }, this.holders, (id) => engine.isActive(id));

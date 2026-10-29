@@ -1,1 +1,30 @@
-{}
+{
+  "panelShellPanel": {
+    "message": "Painel do Voyager",
+    "description": "Floating button satellite and its tooltip: opens the Voyager panel on the page. Keep \"Voyager\" untranslated."
+  },
+  "panelShellHide": {
+    "message": "Ocultar",
+    "description": "Tooltip of the floating button satellite that hides the floating button"
+  },
+  "panelShellHideButton": {
+    "message": "Ocultar botão flutuante",
+    "description": "Accessible name of the satellite that hides Voyager's floating button"
+  },
+  "panelShellHiddenToast": {
+    "message": "Botão flutuante oculto. Pressione {shortcut} para abrir o painel",
+    "description": "Toast after hiding the floating button; {shortcut} is the keyboard shortcut, such as ⌥V or Alt+V"
+  },
+  "panelShellUndo": {
+    "message": "Desfazer",
+    "description": "Toast button that shows the floating button again"
+  },
+  "panelShellManagePrompts": {
+    "message": "Gerenciar prompts…",
+    "description": "Last-but-one entry of the slash (/) prompt menu: opens the Prompt Manager"
+  },
+  "panelShellOpenPanel": {
+    "message": "Painel do Voyager…",
+    "description": "Last entry of the slash (/) prompt menu: opens the Voyager panel. Keep \"Voyager\" untranslated."
+  }
+}

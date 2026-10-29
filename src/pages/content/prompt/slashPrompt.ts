@@ -23,11 +23,16 @@ import { type TemplateFillHandle } from './PromptTemplateFill';
 import { createPromptSendReplay } from './promptPageScope';
 import { openScopedTemplateFill } from './scopedTemplateFill';
 import {
+  type SlashAction,
+  renderSlashAction,
+  runSlashAction,
+  slashActionsFor,
+} from './slashActions';
+import {
   type PromptQuery,
   TOKEN_CLASS,
   completeQuery,
   getPromptQuery,
-  getQueryAnchorRect,
   placeCaretAtInputStart,
   readText,
 } from './slashComposerText';
@@ -40,7 +45,7 @@ import {
 import { ghostSuffix, isPromptItem, matchSlashPrompts } from './slashMatch';
 import { createPromptPlacements, syncEditedPromptText } from './slashPlacements';
 import { SLASH_PREVIEW_ID, createSlashPreview } from './slashPreview';
-import { hideGhost, removeGhost, showGhost } from './slashPromptView';
+import { hideGhost, placeResultList, removeGhost, showGhost } from './slashPromptView';
 
 const ROOT_ID = 'gv-pm-slash-root';
 const LIST_ID = 'gv-pm-slash-list';
@@ -64,6 +69,9 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
   let activeQuery: PromptQuery | null = null;
   let selectedIndex = 0;
   let results: PromptItem[] = [];
+  /** "Manage prompts…" and "Voyager panel…", listed after `results`. */
+  let actions: SlashAction[] = [];
+  const count = () => results.length + actions.length;
   let ctrlEnterSendEnabled = options.initialCtrlEnterSend === true;
   const effectiveSendKey = followGeminiSendKey((key) => {
     ctrlEnterSendEnabled = key === 'ctrlEnter';
@@ -118,21 +126,7 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
   function position(): void {
     root.dataset.gvTheme = scheme();
     if (activeInput && activeQuery && !root.hidden) {
-      const rect = activeInput.getBoundingClientRect();
-      const anchorRect = getQueryAnchorRect(activeQuery, rect);
-      const width = Math.max(120, Math.min(380, rect.width || 320, window.innerWidth - 16));
-      root.style.width = `${Math.round(width)}px`;
-      root.style.left = `${Math.round(
-        Math.max(8, Math.min(anchorRect.left, window.innerWidth - width - 8)),
-      )}px`;
-      const listHeight = list.getBoundingClientRect().height || 240;
-      const below = anchorRect.bottom + 6;
-      const above = anchorRect.top - listHeight - 6;
-      const spaceBelow = window.innerHeight - below - 8;
-      const spaceAbove = anchorRect.top - 14;
-      const preferredTop = spaceBelow >= listHeight || spaceBelow >= spaceAbove ? below : above;
-      const maxTop = Math.max(8, window.innerHeight - listHeight - 8);
-      root.style.top = `${Math.round(Math.max(8, Math.min(preferredTop, maxTop)))}px`;
+      placeResultList(root, list, activeQuery, activeInput);
     }
     placements.position();
   }
@@ -180,6 +174,13 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
   }
 
   function confirm(index: number): boolean {
+    const action = actions[index - results.length];
+    if (activeQuery && action) {
+      const query = activeQuery;
+      close();
+      runSlashAction(action, query);
+      return true;
+    }
     if (!activeQuery || !results[index]) return false;
     const prompt = results[index];
     const query = activeQuery;
@@ -214,9 +215,10 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
 
   function render(nextResults: PromptItem[]): void {
     results = nextResults;
-    selectedIndex = Math.min(selectedIndex, Math.max(0, results.length - 1));
+    actions = slashActionsFor(activeQuery?.query ?? '', results.length > 0);
+    selectedIndex = Math.min(selectedIndex, Math.max(0, count() - 1));
     list.replaceChildren();
-    if (results.length === 0) {
+    if (count() === 0) {
       close();
       return;
     }
@@ -252,6 +254,17 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
         event.preventDefault();
         event.stopPropagation();
         confirm(index);
+      });
+      list.appendChild(row);
+    });
+    actions.forEach((action, i) => {
+      const index = results.length + i;
+      const row = renderSlashAction(action, index === selectedIndex, () => confirm(index));
+      preview.bindRow(row, () => {
+        root.dataset.gvInteraction = 'pointer';
+        selectedIndex = index;
+        renderSelectionState();
+        preview.hide();
       });
       list.appendChild(row);
     });
@@ -335,14 +348,13 @@ export function startPromptSlashCommand(options: SlashPromptOptions): SlashPromp
       return;
     }
 
-    if (!root.hidden && activeInput === input && results.length > 0) {
+    if (!root.hidden && activeInput === input && count() > 0) {
       if (['ArrowDown', 'ArrowUp', 'Tab', 'Enter'].includes(event.key)) preview.cancelAim();
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
         event.stopPropagation();
         root.dataset.gvInteraction = 'keyboard';
-        selectedIndex =
-          (selectedIndex + (event.key === 'ArrowDown' ? 1 : results.length - 1)) % results.length;
+        selectedIndex = (selectedIndex + (event.key === 'ArrowDown' ? 1 : count() - 1)) % count();
         renderSelectionState();
         return;
       }

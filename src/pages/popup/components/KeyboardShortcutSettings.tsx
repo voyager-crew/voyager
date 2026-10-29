@@ -5,58 +5,75 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { keyboardShortcutService } from '@/core/services/KeyboardShortcutService';
-import type {
-  KeyboardShortcutConfig,
-  ModifierKey,
-  ShortcutKey,
+import {
+  DEFAULT_KEYBOARD_SHORTCUTS,
+  type KeyboardShortcut,
+  type ModifierKey,
+  type ResolvedKeyboardShortcutConfig,
+  type ShortcutKey,
+  keyboardShortcutBindingsEqual,
+  keyboardShortcutFromEvent,
 } from '@/core/types/keyboardShortcut';
+import type { TranslationKey } from '@/utils/translations';
+
+type ShortcutSlot = keyof ResolvedKeyboardShortcutConfig;
 
 interface RecordingState {
-  action: keyof KeyboardShortcutConfig | null;
+  action: ShortcutSlot | null;
   modifiers: ModifierKey[];
   key: ShortcutKey | null;
 }
 
-function shortcutsEqual(
-  a: KeyboardShortcutConfig[keyof KeyboardShortcutConfig],
-  b: KeyboardShortcutConfig[keyof KeyboardShortcutConfig],
-): boolean {
-  return (
-    a.key === b.key &&
-    (a.sequenceLength ?? 1) === (b.sequenceLength ?? 1) &&
-    a.modifiers.length === b.modifiers.length &&
-    a.modifiers.every((modifier, index) => modifier === b.modifiers[index])
-  );
-}
+/** The optional `vv` alternative to the panel's ⌥V / Alt+V, outside text fields only. */
+const PANEL_VV: KeyboardShortcut = {
+  action: 'panel:toggle',
+  modifiers: [],
+  key: 'v',
+  sequenceLength: 2,
+};
 
+/** `slot` takes `nextShortcut`; a slot that already had it takes `slot`'s old binding. */
 function buildUpdatedConfig(
-  currentConfig: KeyboardShortcutConfig,
-  action: keyof KeyboardShortcutConfig,
-  nextShortcut: KeyboardShortcutConfig[keyof KeyboardShortcutConfig],
-): KeyboardShortcutConfig {
-  const nextConfig: KeyboardShortcutConfig = {
+  currentConfig: ResolvedKeyboardShortcutConfig,
+  slot: ShortcutSlot,
+  nextShortcut: KeyboardShortcut,
+): ResolvedKeyboardShortcutConfig {
+  const nextConfig: ResolvedKeyboardShortcutConfig = {
     ...currentConfig,
-    [action]: nextShortcut,
+    [slot]: nextShortcut,
   };
-  const currentShortcut = currentConfig[action];
+  const currentShortcut = currentConfig[slot];
 
-  (Object.keys(currentConfig) as Array<keyof KeyboardShortcutConfig>).forEach((candidateAction) => {
-    if (candidateAction === action) return;
-    if (!shortcutsEqual(currentConfig[candidateAction], nextShortcut)) return;
+  (Object.keys(currentConfig) as ShortcutSlot[]).forEach((candidateAction) => {
+    if (candidateAction === slot) return;
+    if (!keyboardShortcutBindingsEqual(currentConfig[candidateAction], nextShortcut)) return;
 
+    // Each slot keeps its own action: the binding moves, the action does not.
     nextConfig[candidateAction] = {
       ...currentShortcut,
-      action: `timeline:${candidateAction}` as const,
+      action: currentConfig[candidateAction].action,
     };
   });
 
   return nextConfig;
 }
 
+const TIMELINE_SLOTS = [
+  { slot: 'previous', label: 'previousNode' },
+  { slot: 'next', label: 'nextNode' },
+  { slot: 'first', label: 'firstNode' },
+  { slot: 'last', label: 'lastNode' },
+] as const satisfies ReadonlyArray<{ slot: ShortcutSlot; label: TranslationKey }>;
+
+const RECORDER_CLASS =
+  'focus-visible:ring-ring/60 flex h-9 w-full items-center justify-center rounded-lg border px-3 font-mono text-[13px] font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none';
+
 export function KeyboardShortcutSettings() {
   const { t } = useLanguage();
   const [enabled, setEnabled] = useState<boolean>(true);
-  const [config, setConfig] = useState<KeyboardShortcutConfig | null>(null);
+  const [config, setConfig] = useState<ResolvedKeyboardShortcutConfig | null>(null);
+  /** The last save was refused (the key is taken); recording stays open for another key. */
+  const [refused, setRefused] = useState<boolean>(false);
   const [recording, setRecording] = useState<RecordingState>({
     action: null,
     modifiers: [],
@@ -65,7 +82,7 @@ export function KeyboardShortcutSettings() {
   const [loading, setLoading] = useState<boolean>(true);
 
   // Use refs to avoid stale closures in event handlers
-  const configRef = useRef<KeyboardShortcutConfig | null>(null);
+  const configRef = useRef<ResolvedKeyboardShortcutConfig | null>(null);
   const enabledRef = useRef<boolean>(true);
   const recordingRef = useRef<RecordingState>({ action: null, modifiers: [], key: null });
 
@@ -115,74 +132,76 @@ export function KeyboardShortcutSettings() {
   }, []);
 
   // Start recording shortcut
-  const startRecording = useCallback((action: keyof KeyboardShortcutConfig) => {
+  const startRecording = useCallback((action: ShortcutSlot) => {
+    setRefused(false);
     setRecording({ action, modifiers: [], key: null });
   }, []);
 
+  /** Saves `slot` = `nextShortcut`; a refusal keeps the editor where it was and says so. */
+  const saveSlot = useCallback(
+    async (slot: ShortcutSlot, nextShortcut: KeyboardShortcut): Promise<boolean> => {
+      const currentConfig = configRef.current;
+      if (!currentConfig) return false;
+      const updatedConfig = buildUpdatedConfig(currentConfig, slot, nextShortcut);
+      try {
+        await keyboardShortcutService.saveConfig(updatedConfig, enabledRef.current);
+        setConfig(updatedConfig);
+        setRefused(false);
+        return true;
+      } catch (error) {
+        console.error('[KeyboardShortcut] Failed to save shortcut:', error);
+        setRefused(true);
+        return false;
+      }
+    },
+    [],
+  );
+
   // Handle key press during recording
-  const handleKeyDown = useCallback(async (e: KeyboardEvent) => {
-    const currentRecording = recordingRef.current;
-    const currentConfig = configRef.current;
-    const currentEnabled = enabledRef.current;
+  const handleKeyDown = useCallback(
+    async (e: KeyboardEvent) => {
+      const currentRecording = recordingRef.current;
+      const currentConfig = configRef.current;
 
-    if (!currentRecording.action) return;
+      if (!currentRecording.action) return;
 
-    e.preventDefault();
-    e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
 
-    // Escape cancels recording
-    if (e.key === 'Escape') {
-      setRecording({ action: null, modifiers: [], key: null });
-      return;
-    }
+      // Escape cancels recording
+      if (e.key === 'Escape') {
+        setRefused(false);
+        setRecording({ action: null, modifiers: [], key: null });
+        return;
+      }
 
-    // Ignore modifier keys alone (they can't be shortcuts by themselves)
-    if (['Alt', 'Control', 'Shift', 'Meta', 'AltGraph'].includes(e.key)) {
-      return;
-    }
+      // Ignore modifier keys alone (they can't be shortcuts by themselves)
+      if (['Alt', 'Control', 'Shift', 'Meta', 'AltGraph'].includes(e.key)) {
+        return;
+      }
 
-    // Accept any key! Normalize arrow keys for consistency
-    let key: ShortcutKey;
-    if (e.key === 'Up') {
-      key = 'ArrowUp';
-    } else if (e.key === 'Down') {
-      key = 'ArrowDown';
-    } else if (e.key === 'Left') {
-      key = 'ArrowLeft';
-    } else if (e.key === 'Right') {
-      key = 'ArrowRight';
-    } else {
-      key = e.key;
-    }
+      // Accept any key; the slot keeps its action and its sequence length (gg / GG).
+      if (!currentConfig) return;
+      const slot = currentRecording.action;
+      const nextShortcut = keyboardShortcutFromEvent({
+        event: e,
+        action: currentConfig[slot].action,
+        sequenceLength: slot === 'first' || slot === 'last' ? 2 : 1,
+      });
 
-    // Extract modifiers
-    const modifiers: ModifierKey[] = [];
-    if (e.altKey) modifiers.push('Alt');
-    if (e.ctrlKey) modifiers.push('Ctrl');
-    if (e.shiftKey) modifiers.push('Shift');
-    if (e.metaKey) modifiers.push('Meta');
+      if (await saveSlot(slot, nextShortcut)) {
+        setRecording({ action: null, modifiers: [], key: null });
+      }
+    },
+    [saveSlot],
+  );
 
-    // Update config
-    if (!currentConfig) return;
-
-    const nextShortcut: KeyboardShortcutConfig[keyof KeyboardShortcutConfig] = {
-      action: `timeline:${currentRecording.action}` as const,
-      modifiers,
-      key,
-      sequenceLength:
-        currentRecording.action === 'first' || currentRecording.action === 'last' ? 2 : 1,
-    };
-
-    const updatedConfig = buildUpdatedConfig(currentConfig, currentRecording.action, nextShortcut);
-
-    try {
-      await keyboardShortcutService.saveConfig(updatedConfig, currentEnabled);
-      setConfig(updatedConfig);
-      setRecording({ action: null, modifiers: [], key: null });
-    } catch (error) {
-      console.error('[KeyboardShortcut] Failed to save shortcut:', error);
-    }
-  }, []);
+  const handlePanelVv = useCallback(
+    async (checked: boolean) => {
+      await saveSlot('panelToggle', checked ? PANEL_VV : DEFAULT_KEYBOARD_SHORTCUTS.panelToggle);
+    },
+    [saveSlot],
+  );
 
   // Attach/detach keydown listener
   useEffect(() => {
@@ -204,6 +223,24 @@ export function KeyboardShortcutSettings() {
       console.error('[KeyboardShortcut] Failed to reset shortcuts:', error);
     }
   }, []);
+
+  const recorder = (slot: ShortcutSlot) => (
+    <button
+      type="button"
+      onClick={() => startRecording(slot)}
+      className={`${RECORDER_CLASS} ${
+        recording.action === slot
+          ? 'border-primary text-primary bg-card'
+          : 'border-border bg-secondary/40 text-foreground hover:bg-secondary'
+      } `}
+    >
+      {recording.action === slot
+        ? t('shortcutPressKey')
+        : config
+          ? keyboardShortcutService.formatShortcut(config[slot])
+          : ''}
+    </button>
+  );
 
   if (loading || !config) {
     return (
@@ -232,105 +269,65 @@ export function KeyboardShortcutSettings() {
           />
         </div>
 
-        {/* Shortcut Configuration */}
+        {/* Timeline shortcuts */}
         {enabled && (
-          <>
-            <div className="grid grid-cols-2 gap-3">
-              {/* Previous Node */}
-              <div className="space-y-2">
-                <Label className="text-muted-foreground text-xs font-medium">
-                  {t('previousNode')}
-                </Label>
-                <button
-                  type="button"
-                  onClick={() => startRecording('previous')}
-                  className={`focus-visible:ring-ring/60 flex h-9 w-full items-center justify-center rounded-lg border px-3 font-mono text-[13px] font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none ${
-                    recording.action === 'previous'
-                      ? 'border-primary text-primary bg-card'
-                      : 'border-border bg-secondary/40 text-foreground hover:bg-secondary'
-                  } `}
-                >
-                  {recording.action === 'previous'
-                    ? t('shortcutPressKey')
-                    : keyboardShortcutService.formatShortcut(config.previous)}
-                </button>
+          <div className="grid grid-cols-2 gap-3">
+            {TIMELINE_SLOTS.map(({ slot, label }) => (
+              <div key={slot} className="space-y-2">
+                <Label className="text-muted-foreground text-xs font-medium">{t(label)}</Label>
+                {recorder(slot)}
               </div>
+            ))}
+          </div>
+        )}
 
-              {/* Next Node */}
-              <div className="space-y-2">
-                <Label className="text-muted-foreground text-xs font-medium">{t('nextNode')}</Label>
-                <button
-                  type="button"
-                  onClick={() => startRecording('next')}
-                  className={`focus-visible:ring-ring/60 flex h-9 w-full items-center justify-center rounded-lg border px-3 font-mono text-[13px] font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none ${
-                    recording.action === 'next'
-                      ? 'border-primary text-primary bg-card'
-                      : 'border-border bg-secondary/40 text-foreground hover:bg-secondary'
-                  } `}
-                >
-                  {recording.action === 'next'
-                    ? t('shortcutPressKey')
-                    : keyboardShortcutService.formatShortcut(config.next)}
-                </button>
-              </div>
-
-              {/* First Turn (gg) */}
-              <div className="space-y-2">
-                <Label className="text-muted-foreground text-xs font-medium">
-                  {t('firstNode')}
-                </Label>
-                <button
-                  type="button"
-                  onClick={() => startRecording('first')}
-                  className={`focus-visible:ring-ring/60 flex h-9 w-full items-center justify-center rounded-lg border px-3 font-mono text-[13px] font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none ${
-                    recording.action === 'first'
-                      ? 'border-primary text-primary bg-card'
-                      : 'border-border bg-secondary/40 text-foreground hover:bg-secondary'
-                  } `}
-                >
-                  {recording.action === 'first'
-                    ? t('shortcutPressKey')
-                    : keyboardShortcutService.formatShortcut(config.first)}
-                </button>
-              </div>
-
-              {/* Last Turn (GG) */}
-              <div className="space-y-2">
-                <Label className="text-muted-foreground text-xs font-medium">{t('lastNode')}</Label>
-                <button
-                  type="button"
-                  onClick={() => startRecording('last')}
-                  className={`focus-visible:ring-ring/60 flex h-9 w-full items-center justify-center rounded-lg border px-3 font-mono text-[13px] font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none ${
-                    recording.action === 'last'
-                      ? 'border-primary text-primary bg-card'
-                      : 'border-border bg-secondary/40 text-foreground hover:bg-secondary'
-                  } `}
-                >
-                  {recording.action === 'last'
-                    ? t('shortcutPressKey')
-                    : keyboardShortcutService.formatShortcut(config.last)}
-                </button>
-              </div>
+        {/* The panel shortcut works whether or not the timeline shortcuts are on. */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label className="text-muted-foreground text-xs font-medium">
+              {t('shortcutPanelToggle')}
+            </Label>
+            {recorder('panelToggle')}
+          </div>
+          <div className="space-y-2">
+            <Label
+              htmlFor="shortcuts-panel-vv"
+              className="text-muted-foreground cursor-pointer text-xs font-medium"
+            >
+              {t('shortcutPanelVv')}
+            </Label>
+            <div className="flex h-9 items-center">
+              <Switch
+                id="shortcuts-panel-vv"
+                checked={keyboardShortcutBindingsEqual(config.panelToggle, PANEL_VV)}
+                onChange={(e) => handlePanelVv(e.target.checked)}
+              />
             </div>
+          </div>
+        </div>
 
-            {/* Hint text */}
-            {recording.action && (
-              <p className="text-muted-foreground text-center text-xs">
-                {t('shortcutEscToCancel')}
-              </p>
-            )}
+        {refused && (
+          <p role="alert" className="text-destructive text-center text-xs">
+            {t('shortcutInUse')}
+          </p>
+        )}
 
-            {/* Reset button */}
-            <div className="flex justify-center pt-2">
-              <button
-                type="button"
-                onClick={handleReset}
-                className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 transition-colors hover:underline"
-              >
-                {t('resetShortcuts')}
-              </button>
-            </div>
-          </>
+        {/* Hint text */}
+        {recording.action && (
+          <p className="text-muted-foreground text-center text-xs">{t('shortcutEscToCancel')}</p>
+        )}
+
+        {/* Reset button */}
+        {enabled && (
+          <div className="flex justify-center pt-2">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 transition-colors hover:underline"
+            >
+              {t('resetShortcuts')}
+            </button>
+          </div>
         )}
       </CardContent>
     </Card>

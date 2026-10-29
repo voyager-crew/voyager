@@ -30,7 +30,7 @@ import type { PromptSiteAdapter } from '@/features/prompt/PromptSiteAdapter';
 import { createRuntimePromptLibraryClient } from '@/features/prompt/library/promptLibraryMessages';
 import { initI18n, onCachedLanguageChange } from '@/utils/i18n';
 
-import { onOtherSurfaceOpened } from '../floatingSurfaces';
+import { announceSurfaceOpened, onOtherSurfaceOpened } from '../floatingSurfaces';
 import { createPromptEditForm } from './promptEditForm';
 import { createLanguageSelect, createPromptI18n } from './promptI18n';
 import { createPromptLibraryState, readPromptLibrary } from './promptLibraryState';
@@ -109,8 +109,8 @@ export async function startPromptManager(
     await initI18n();
     const i18n = createPromptI18n();
 
-    // Prevent duplicate injection
-    if (lifetime?.aborted || document.getElementById(ID.trigger)) {
+    // Prevent duplicate injection; the ball itself may already be the panel shell's
+    if (lifetime?.aborted || document.getElementById(ID.panel)) {
       return { destroy: () => {} };
     }
 
@@ -120,6 +120,8 @@ export async function startPromptManager(
       hiddenByUser: startup.hiddenByUser,
       attention: startup.changelogBadgeActive,
       onAttentionChange: (active) => versionBadge.setAttention(active),
+      // The trigger is gone, so the panel goes with it
+      onHiddenChange: (hidden) => hidden && closePanel(),
       defaultSpot: (ballHeight) => site.defaultTriggerSpot(ballHeight),
     });
     if (lifetime?.aborted) {
@@ -342,6 +344,7 @@ export async function startPromptManager(
 
     function openPanel(): void {
       open = true;
+      announceSurfaceOpened('prompt-manager');
       void library.retry();
       panel.classList.remove('gv-hidden');
       placement.place();
@@ -371,7 +374,7 @@ export async function startPromptManager(
     }
 
     // Events
-    trigger.enable(() => {
+    const togglePanel = () => {
       if (open) closePanel();
       else {
         openPanel();
@@ -381,7 +384,8 @@ export async function startPromptManager(
           listView.render();
         }
       }
-    });
+    };
+    trigger.enable(togglePanel, () => open || togglePanel());
 
     // Handle window resize - constrain trigger and reposition panel. The trigger
     // moves first: an unlocked panel is anchored to where it ends up.
@@ -434,20 +438,10 @@ export async function startPromptManager(
       changes: Record<string, browser.Storage.StorageChange>,
       area: string,
     ) => {
-      // Handle hide prompt manager setting changes
-      if (area === 'sync' && changes?.gvHidePromptManager) {
-        const shouldHide = changes.gvHidePromptManager.newValue === true;
-        pmLogger.info('Hide prompt manager setting changed', { shouldHide });
-        if (trigger.setHiddenByUser(shouldHide)) {
-          // The trigger is gone, so the panel goes with it
-          closePanel();
-        }
-      }
+      // The ball follows the hide, logo and release-notes settings itself.
       if (area === 'sync' && changes[StorageKeys.PROMPT_INSERT_ON_CLICK]) {
         listSettings.insertOnClick = changes[StorageKeys.PROMPT_INSERT_ON_CLICK].newValue === true;
       }
-      // Trigger logo and release-notes announcement
-      trigger.applyStorageChange(area, changes);
       if (area === 'sync' && changes[StorageKeys.PROMPT_ROW_DRAG]) {
         listSettings.rowDrag = changes[StorageKeys.PROMPT_ROW_DRAG].newValue === true;
         renderActiveList();

@@ -7,6 +7,7 @@ import { startEdgeFinalVersionNotice } from './edgeFinalVersionNotice';
 import type { NativeFeature } from './featureLifecycle';
 import { startForkLinkFinisher } from './fork/linkFinisher';
 import { startNativeHealth } from './nativeHealth/index';
+import { startPanelShell } from './panelShell/index';
 import { startBrandTheme } from './platformTheme';
 import { startPreventAutoScrollBridge } from './preventAutoScroll/index';
 import { startRenderedQuoteStyling } from './quoteReply/renderedQuotes';
@@ -107,6 +108,12 @@ export const NATIVE_FEATURES = {
     position: CleanupPositions.CleanupResearchPackReceiver,
     start: () => startResearchPackReceiver(),
     inertReason: 'Receives a research pack only on ChatGPT and Claude, never on Gemini.',
+  },
+  /** The Voyager panel's host side: it must exist with every plugin off, so it is no plugin. */
+  panelShell: {
+    id: 'panel-shell',
+    position: CleanupPositions.CleanupPanelShell,
+    start: startPanelShell,
   },
 } as const satisfies Record<string, NativeFeature>;
 

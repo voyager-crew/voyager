@@ -15,6 +15,7 @@ import {
 } from './promptManagerHarness';
 
 vi.mock('webextension-polyfill', () => ({ default: globalThis.chrome }));
+vi.mock('@/core/utils/userEvent', () => import('./ballClicks'));
 
 setupPromptManagerTests();
 

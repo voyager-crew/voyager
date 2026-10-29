@@ -24,6 +24,19 @@ const SEQUENCE_TIMEOUT_MS = 500;
 const EDITABLE_MODIFIER_ACTIONS: ReadonlySet<ShortcutAction> = new Set(['panel:toggle']);
 
 /**
+ * For a modifier binding whose character is no ASCII letter or digit (a macOS
+ * Option composition such as "∫" or "√"), the letter or digit its code names
+ * ("B", "V"); null for any other binding, so other layouts keep their key's label.
+ */
+export function printedShortcutKey(
+  shortcut: Pick<KeyboardShortcut, 'key' | 'code' | 'modifiers'>,
+): string | null {
+  if (shortcut.modifiers.length === 0 || /^[A-Za-z0-9]$/.test(shortcut.key)) return null;
+  const printed = /^(?:Key([A-Z])|Digit([0-9]))$/.exec(shortcut.code ?? '');
+  return printed ? (printed[1] ?? printed[2]) : null;
+}
+
+/**
  * Callback type for shortcut actions
  */
 export type ShortcutCallback = (action: ShortcutAction, event: KeyboardEvent) => void;
@@ -478,7 +491,7 @@ export class KeyboardShortcutService {
         : { Meta: 'Win', Alt: 'Alt', Ctrl: 'Ctrl', Shift: 'Shift' };
 
       const modifiers = singleShortcut.modifiers.map((m) => modifierSymbols[m] || m);
-      const parts = [...modifiers, key];
+      const parts = [...modifiers, printedShortcutKey(singleShortcut) ?? key];
       return parts.join(mac ? '' : ' + ');
     };
 
