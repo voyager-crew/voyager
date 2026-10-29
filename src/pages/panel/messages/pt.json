@@ -82,5 +82,181 @@
   "panelRemoveWebsite": {
     "message": "Remover {site}",
     "description": "Accessible name of the remove button of an added website; {site} is its host"
+  },
+  "panelSyncShared": {
+    "message": "Comum",
+    "description": "Sync sheet row for data shared by every site"
+  },
+  "panelSyncSharedDetail": {
+    "message": "Prompts · Configurações · Plugins",
+    "description": "Sub-line under the Shared row: what it contains"
+  },
+  "panelSyncStatusSynced": {
+    "message": "Sincronizado",
+    "description": "Sync row status: cloud and this device match"
+  },
+  "panelSyncStatusNewerHere": {
+    "message": "Mais recente aqui",
+    "description": "Sync row status: this device has changes the cloud lacks"
+  },
+  "panelSyncStatusNewerInCloud": {
+    "message": "Mais recente na nuvem",
+    "description": "Sync row status: the cloud has changes this device lacks"
+  },
+  "panelSyncStatusNotUploaded": {
+    "message": "Não enviado",
+    "description": "Sync row status: never uploaded"
+  },
+  "panelSyncStatusToMerge": {
+    "message": "A mesclar",
+    "description": "Sync row status after first connecting: cloud and local need a merge"
+  },
+  "panelSyncStatusSyncing": {
+    "message": "Sincronizando",
+    "description": "Sync row status and primary button while a sync runs"
+  },
+  "panelSyncStatusFailed": {
+    "message": "Não foi possível verificar",
+    "description": "Sync row status when its state could not be read"
+  },
+  "panelSyncInCloud": {
+    "message": "Na nuvem",
+    "description": "Status of a site that is off here but has data in the cloud"
+  },
+  "panelSyncEnable": {
+    "message": "Ativar",
+    "description": "Button beside such a site: opens the Sites tab to turn it on"
+  },
+  "panelSyncRun_one": {
+    "message": "Sincronizar {count}",
+    "description": "Primary button: run every pending row"
+  },
+  "panelSyncRun_few": {
+    "message": "Sincronizar {count}",
+    "description": "Primary button: run every pending row"
+  },
+  "panelSyncRun_many": {
+    "message": "Sincronizar {count}",
+    "description": "Primary button: run every pending row"
+  },
+  "panelSyncRun_other": {
+    "message": "Sincronizar {count}",
+    "description": "Primary button: run every pending row"
+  },
+  "panelSyncMerge_one": {
+    "message": "Mesclar {count}",
+    "description": "Primary button after first connecting: merge every pending row"
+  },
+  "panelSyncMerge_few": {
+    "message": "Mesclar {count}",
+    "description": "Primary button after first connecting: merge every pending row"
+  },
+  "panelSyncMerge_many": {
+    "message": "Mesclar {count}",
+    "description": "Primary button after first connecting: merge every pending row"
+  },
+  "panelSyncMerge_other": {
+    "message": "Mesclar {count}",
+    "description": "Primary button after first connecting: merge every pending row"
+  },
+  "panelSyncUpToDate": {
+    "message": "Em dia",
+    "description": "Disabled primary button when nothing is pending"
+  },
+  "panelSyncMore": {
+    "message": "Mais",
+    "description": "Accessible name of the sheet's more-actions button"
+  },
+  "panelSyncUploadAll": {
+    "message": "Enviar tudo",
+    "description": "Menu item: upload every row to the cloud"
+  },
+  "panelSyncMergeAll": {
+    "message": "Mesclar tudo da nuvem",
+    "description": "Menu item: merge every row from the cloud into this device"
+  },
+  "panelSyncRestorePrevious": {
+    "message": "Restaurar versão anterior",
+    "description": "Menu item and confirm button: put the cloud files back to their previous version"
+  },
+  "panelSyncRestoreAsk": {
+    "message": "Voltar à versão anterior na nuvem?",
+    "description": "Inline question before restoring the previous cloud version"
+  },
+  "panelSyncDisconnect": {
+    "message": "Desconectar o Google Drive",
+    "description": "Menu item: sign out of Google Drive"
+  },
+  "panelSyncDone_one": {
+    "message": "{count} sincronizado",
+    "description": "Toast after a sync: how many rows were synced"
+  },
+  "panelSyncDone_few": {
+    "message": "{count} sincronizados",
+    "description": "Toast after a sync: how many rows were synced"
+  },
+  "panelSyncDone_many": {
+    "message": "{count} sincronizados",
+    "description": "Toast after a sync: how many rows were synced"
+  },
+  "panelSyncDone_other": {
+    "message": "{count} sincronizados",
+    "description": "Toast after a sync: how many rows were synced"
+  },
+  "panelSyncRestored": {
+    "message": "Versão anterior restaurada",
+    "description": "Toast after restoring the previous cloud version"
+  },
+  "panelSyncRestoredPartial": {
+    "message": "Parte da versão anterior restaurada",
+    "description": "Toast when only some files had a previous version"
+  },
+  "panelSyncRestoreNone": {
+    "message": "Não há versão anterior na nuvem",
+    "description": "Toast when the cloud has no previous version to restore"
+  },
+  "panelSyncConnectLine": {
+    "message": "Sincronize pastas, prompts e configurações entre dispositivos",
+    "description": "Line in the sheet before Google Drive is connected"
+  },
+  "panelSyncConnecting": {
+    "message": "Conectando…",
+    "description": "Connect button while the sign-in is open"
+  },
+  "panelSyncFirstHint": {
+    "message": "Primeiro mescla a nuvem e este dispositivo. Nada é sobrescrito",
+    "description": "Hint after first connecting, above the rows"
+  },
+  "panelSyncSiteAdded": {
+    "message": "{site} agora sincroniza",
+    "description": "Toast after turning a site on: {site} is the site name"
+  },
+  "panelSyncAgo": {
+    "message": "Sincronizado {time}",
+    "description": "Footer: when the last sync happened; {time} is a relative time such as \"12 min ago\""
+  },
+  "panelSyncJustNow": {
+    "message": "Sincronizado agora",
+    "description": "Footer right after a sync"
+  },
+  "panelSyncNever": {
+    "message": "Ainda não sincronizado",
+    "description": "Footer before anything was synced"
+  },
+  "panelSyncRowSwitch": {
+    "message": "Sincronizar {site}",
+    "description": "Accessible name of a row's sync switch; {site} is the row name"
+  },
+  "panelSyncRestoreFailed": {
+    "message": "Não foi possível restaurar a versão anterior",
+    "description": "Toast: restoring the previous cloud version failed for every file"
+  },
+  "panelSyncUndone": {
+    "message": "Sincronização desfeita",
+    "description": "Toast after undoing a sync"
+  },
+  "panelSyncUndonePartial": {
+    "message": "Desfeito. O que mudou depois foi mantido",
+    "description": "Toast after undo when items changed since the sync were kept"
   }
 }

@@ -82,5 +82,181 @@
   "panelRemoveWebsite": {
     "message": "移除 {site}",
     "description": "Accessible name of the remove button of an added website; {site} is its host"
+  },
+  "panelSyncShared": {
+    "message": "通用",
+    "description": "Sync sheet row for data shared by every site"
+  },
+  "panelSyncSharedDetail": {
+    "message": "提示词 · 设置 · 插件",
+    "description": "Sub-line under the Shared row: what it contains"
+  },
+  "panelSyncStatusSynced": {
+    "message": "已同步",
+    "description": "Sync row status: cloud and this device match"
+  },
+  "panelSyncStatusNewerHere": {
+    "message": "本地较新",
+    "description": "Sync row status: this device has changes the cloud lacks"
+  },
+  "panelSyncStatusNewerInCloud": {
+    "message": "云端较新",
+    "description": "Sync row status: the cloud has changes this device lacks"
+  },
+  "panelSyncStatusNotUploaded": {
+    "message": "未上传",
+    "description": "Sync row status: never uploaded"
+  },
+  "panelSyncStatusToMerge": {
+    "message": "待合并",
+    "description": "Sync row status after first connecting: cloud and local need a merge"
+  },
+  "panelSyncStatusSyncing": {
+    "message": "同步中",
+    "description": "Sync row status and primary button while a sync runs"
+  },
+  "panelSyncStatusFailed": {
+    "message": "无法读取",
+    "description": "Sync row status when its state could not be read"
+  },
+  "panelSyncInCloud": {
+    "message": "云端有数据",
+    "description": "Status of a site that is off here but has data in the cloud"
+  },
+  "panelSyncEnable": {
+    "message": "启用",
+    "description": "Button beside such a site: opens the Sites tab to turn it on"
+  },
+  "panelSyncRun_one": {
+    "message": "同步 {count} 项",
+    "description": "Primary button: run every pending row"
+  },
+  "panelSyncRun_few": {
+    "message": "同步 {count} 项",
+    "description": "Primary button: run every pending row"
+  },
+  "panelSyncRun_many": {
+    "message": "同步 {count} 项",
+    "description": "Primary button: run every pending row"
+  },
+  "panelSyncRun_other": {
+    "message": "同步 {count} 项",
+    "description": "Primary button: run every pending row"
+  },
+  "panelSyncMerge_one": {
+    "message": "合并 {count} 项",
+    "description": "Primary button after first connecting: merge every pending row"
+  },
+  "panelSyncMerge_few": {
+    "message": "合并 {count} 项",
+    "description": "Primary button after first connecting: merge every pending row"
+  },
+  "panelSyncMerge_many": {
+    "message": "合并 {count} 项",
+    "description": "Primary button after first connecting: merge every pending row"
+  },
+  "panelSyncMerge_other": {
+    "message": "合并 {count} 项",
+    "description": "Primary button after first connecting: merge every pending row"
+  },
+  "panelSyncUpToDate": {
+    "message": "已是最新",
+    "description": "Disabled primary button when nothing is pending"
+  },
+  "panelSyncMore": {
+    "message": "更多",
+    "description": "Accessible name of the sheet's more-actions button"
+  },
+  "panelSyncUploadAll": {
+    "message": "全部上传到云端",
+    "description": "Menu item: upload every row to the cloud"
+  },
+  "panelSyncMergeAll": {
+    "message": "全部从云端合并",
+    "description": "Menu item: merge every row from the cloud into this device"
+  },
+  "panelSyncRestorePrevious": {
+    "message": "恢复上一版",
+    "description": "Menu item and confirm button: put the cloud files back to their previous version"
+  },
+  "panelSyncRestoreAsk": {
+    "message": "把云端恢复到上一版？",
+    "description": "Inline question before restoring the previous cloud version"
+  },
+  "panelSyncDisconnect": {
+    "message": "断开 Google Drive",
+    "description": "Menu item: sign out of Google Drive"
+  },
+  "panelSyncDone_one": {
+    "message": "已同步 {count} 项",
+    "description": "Toast after a sync: how many rows were synced"
+  },
+  "panelSyncDone_few": {
+    "message": "已同步 {count} 项",
+    "description": "Toast after a sync: how many rows were synced"
+  },
+  "panelSyncDone_many": {
+    "message": "已同步 {count} 项",
+    "description": "Toast after a sync: how many rows were synced"
+  },
+  "panelSyncDone_other": {
+    "message": "已同步 {count} 项",
+    "description": "Toast after a sync: how many rows were synced"
+  },
+  "panelSyncRestored": {
+    "message": "已恢复到上一版",
+    "description": "Toast after restoring the previous cloud version"
+  },
+  "panelSyncRestoredPartial": {
+    "message": "已恢复部分上一版",
+    "description": "Toast when only some files had a previous version"
+  },
+  "panelSyncRestoreNone": {
+    "message": "云端没有上一版",
+    "description": "Toast when the cloud has no previous version to restore"
+  },
+  "panelSyncConnectLine": {
+    "message": "文件夹、提示词和设置在多台设备间同步",
+    "description": "Line in the sheet before Google Drive is connected"
+  },
+  "panelSyncConnecting": {
+    "message": "连接中…",
+    "description": "Connect button while the sign-in is open"
+  },
+  "panelSyncFirstHint": {
+    "message": "先合并云端和本地，不会覆盖任何一边",
+    "description": "Hint after first connecting, above the rows"
+  },
+  "panelSyncSiteAdded": {
+    "message": "{site} 已加入云同步",
+    "description": "Toast after turning a site on: {site} is the site name"
+  },
+  "panelSyncAgo": {
+    "message": "{time}同步",
+    "description": "Footer: when the last sync happened; {time} is a relative time such as \"12 min ago\""
+  },
+  "panelSyncJustNow": {
+    "message": "刚刚同步",
+    "description": "Footer right after a sync"
+  },
+  "panelSyncNever": {
+    "message": "尚未同步",
+    "description": "Footer before anything was synced"
+  },
+  "panelSyncRowSwitch": {
+    "message": "同步{site}",
+    "description": "Accessible name of a row's sync switch; {site} is the row name"
+  },
+  "panelSyncRestoreFailed": {
+    "message": "无法恢复上一版",
+    "description": "Toast: restoring the previous cloud version failed for every file"
+  },
+  "panelSyncUndone": {
+    "message": "已撤销同步",
+    "description": "Toast after undoing a sync"
+  },
+  "panelSyncUndonePartial": {
+    "message": "已撤销，之后改过的内容已保留",
+    "description": "Toast after undo when items changed since the sync were kept"
   }
 }

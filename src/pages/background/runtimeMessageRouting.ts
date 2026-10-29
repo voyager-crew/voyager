@@ -24,6 +24,9 @@ import {
 } from '@/features/timeline/catalogHierarchySync';
 import { CATALOG_OUTLINE_WRITE_MESSAGE } from '@/features/timeline/catalogOutlineMessages';
 
+import type { PanelSender } from './panelStorage';
+import { isRedeemedPanelFrame, redeemedPanelPageUrl } from './panelTrust';
+
 function parseHttpsUrl(rawUrl: string | undefined): URL | null {
   if (!rawUrl) return null;
   try {
@@ -48,8 +51,12 @@ export function isTrustedExtensionPageSender(sender: chrome.runtime.MessageSende
   if (sender.id !== chrome.runtime.id || typeof sender.url !== 'string') return false;
   try {
     const origin = chrome.runtime.getURL('');
-    // Pages opened as tabs (Library, options fallback) carry a tab; a web page framing ours does not pass.
-    return sender.url.startsWith(origin) && (!sender.tab || !!sender.tab.url?.startsWith(origin));
+    // Pages opened as tabs (Library, options fallback) carry a tab; a web page framing ours does not
+    // pass, except the Voyager panel in the frame its one-time token was redeemed in.
+    return (
+      sender.url.startsWith(origin) &&
+      (!sender.tab || !!sender.tab.url?.startsWith(origin) || isRedeemedPanelFrame(sender))
+    );
   } catch {
     return false;
   }
@@ -82,13 +89,11 @@ export function parseSyncPlatform(value: unknown): SyncPlatform | null {
 
 /**
  * The page a sync request came from: the tab URL, or the frame URL when a browser omits the tab
- * URL (Firefox/Safari without tab access), so a web page cannot pass as an extension page.
+ * URL (Firefox/Safari without tab access), so a web page cannot pass as an extension page. A
+ * redeemed panel speaks for the page under it, never for its own extension URL.
  */
-export function getSenderPageUrl(sender: {
-  tab?: { url?: string };
-  url?: string;
-}): string | undefined {
-  return sender.tab?.url || sender.url;
+export function getSenderPageUrl(sender: PanelSender): string | undefined {
+  return sender.tab?.url || redeemedPanelPageUrl(sender) || sender.url;
 }
 
 /**

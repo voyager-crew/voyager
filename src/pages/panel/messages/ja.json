@@ -82,5 +82,181 @@
   "panelRemoveWebsite": {
     "message": "{site} を削除",
     "description": "Accessible name of the remove button of an added website; {site} is its host"
+  },
+  "panelSyncShared": {
+    "message": "共通",
+    "description": "Sync sheet row for data shared by every site"
+  },
+  "panelSyncSharedDetail": {
+    "message": "プロンプト · 設定 · プラグイン",
+    "description": "Sub-line under the Shared row: what it contains"
+  },
+  "panelSyncStatusSynced": {
+    "message": "同期済み",
+    "description": "Sync row status: cloud and this device match"
+  },
+  "panelSyncStatusNewerHere": {
+    "message": "この端末が新しい",
+    "description": "Sync row status: this device has changes the cloud lacks"
+  },
+  "panelSyncStatusNewerInCloud": {
+    "message": "クラウドが新しい",
+    "description": "Sync row status: the cloud has changes this device lacks"
+  },
+  "panelSyncStatusNotUploaded": {
+    "message": "未アップロード",
+    "description": "Sync row status: never uploaded"
+  },
+  "panelSyncStatusToMerge": {
+    "message": "統合待ち",
+    "description": "Sync row status after first connecting: cloud and local need a merge"
+  },
+  "panelSyncStatusSyncing": {
+    "message": "同期中",
+    "description": "Sync row status and primary button while a sync runs"
+  },
+  "panelSyncStatusFailed": {
+    "message": "確認できません",
+    "description": "Sync row status when its state could not be read"
+  },
+  "panelSyncInCloud": {
+    "message": "クラウドにデータあり",
+    "description": "Status of a site that is off here but has data in the cloud"
+  },
+  "panelSyncEnable": {
+    "message": "有効にする",
+    "description": "Button beside such a site: opens the Sites tab to turn it on"
+  },
+  "panelSyncRun_one": {
+    "message": "{count} 件を同期",
+    "description": "Primary button: run every pending row"
+  },
+  "panelSyncRun_few": {
+    "message": "{count} 件を同期",
+    "description": "Primary button: run every pending row"
+  },
+  "panelSyncRun_many": {
+    "message": "{count} 件を同期",
+    "description": "Primary button: run every pending row"
+  },
+  "panelSyncRun_other": {
+    "message": "{count} 件を同期",
+    "description": "Primary button: run every pending row"
+  },
+  "panelSyncMerge_one": {
+    "message": "{count} 件を統合",
+    "description": "Primary button after first connecting: merge every pending row"
+  },
+  "panelSyncMerge_few": {
+    "message": "{count} 件を統合",
+    "description": "Primary button after first connecting: merge every pending row"
+  },
+  "panelSyncMerge_many": {
+    "message": "{count} 件を統合",
+    "description": "Primary button after first connecting: merge every pending row"
+  },
+  "panelSyncMerge_other": {
+    "message": "{count} 件を統合",
+    "description": "Primary button after first connecting: merge every pending row"
+  },
+  "panelSyncUpToDate": {
+    "message": "最新です",
+    "description": "Disabled primary button when nothing is pending"
+  },
+  "panelSyncMore": {
+    "message": "その他",
+    "description": "Accessible name of the sheet's more-actions button"
+  },
+  "panelSyncUploadAll": {
+    "message": "すべてクラウドへアップロード",
+    "description": "Menu item: upload every row to the cloud"
+  },
+  "panelSyncMergeAll": {
+    "message": "すべてクラウドから統合",
+    "description": "Menu item: merge every row from the cloud into this device"
+  },
+  "panelSyncRestorePrevious": {
+    "message": "前のバージョンに戻す",
+    "description": "Menu item and confirm button: put the cloud files back to their previous version"
+  },
+  "panelSyncRestoreAsk": {
+    "message": "クラウドを前のバージョンに戻しますか？",
+    "description": "Inline question before restoring the previous cloud version"
+  },
+  "panelSyncDisconnect": {
+    "message": "Google Drive との接続を解除",
+    "description": "Menu item: sign out of Google Drive"
+  },
+  "panelSyncDone_one": {
+    "message": "{count} 件を同期しました",
+    "description": "Toast after a sync: how many rows were synced"
+  },
+  "panelSyncDone_few": {
+    "message": "{count} 件を同期しました",
+    "description": "Toast after a sync: how many rows were synced"
+  },
+  "panelSyncDone_many": {
+    "message": "{count} 件を同期しました",
+    "description": "Toast after a sync: how many rows were synced"
+  },
+  "panelSyncDone_other": {
+    "message": "{count} 件を同期しました",
+    "description": "Toast after a sync: how many rows were synced"
+  },
+  "panelSyncRestored": {
+    "message": "前のバージョンに戻しました",
+    "description": "Toast after restoring the previous cloud version"
+  },
+  "panelSyncRestoredPartial": {
+    "message": "一部を前のバージョンに戻しました",
+    "description": "Toast when only some files had a previous version"
+  },
+  "panelSyncRestoreNone": {
+    "message": "クラウドに前のバージョンがありません",
+    "description": "Toast when the cloud has no previous version to restore"
+  },
+  "panelSyncConnectLine": {
+    "message": "フォルダ、プロンプト、設定を複数の端末で同期",
+    "description": "Line in the sheet before Google Drive is connected"
+  },
+  "panelSyncConnecting": {
+    "message": "接続中…",
+    "description": "Connect button while the sign-in is open"
+  },
+  "panelSyncFirstHint": {
+    "message": "まずクラウドとこの端末を統合します。どちらも上書きされません",
+    "description": "Hint after first connecting, above the rows"
+  },
+  "panelSyncSiteAdded": {
+    "message": "{site} をクラウド同期に追加しました",
+    "description": "Toast after turning a site on: {site} is the site name"
+  },
+  "panelSyncAgo": {
+    "message": "{time}に同期",
+    "description": "Footer: when the last sync happened; {time} is a relative time such as \"12 min ago\""
+  },
+  "panelSyncJustNow": {
+    "message": "たった今同期",
+    "description": "Footer right after a sync"
+  },
+  "panelSyncNever": {
+    "message": "まだ同期していません",
+    "description": "Footer before anything was synced"
+  },
+  "panelSyncRowSwitch": {
+    "message": "{site} を同期",
+    "description": "Accessible name of a row's sync switch; {site} is the row name"
+  },
+  "panelSyncRestoreFailed": {
+    "message": "以前のバージョンに戻せませんでした",
+    "description": "Toast: restoring the previous cloud version failed for every file"
+  },
+  "panelSyncUndone": {
+    "message": "同期を元に戻しました",
+    "description": "Toast after undoing a sync"
+  },
+  "panelSyncUndonePartial": {
+    "message": "元に戻しました。その後に変更された項目はそのままです",
+    "description": "Toast after undo when items changed since the sync were kept"
   }
 }

@@ -2,8 +2,6 @@ import { useCallback, useState } from 'react';
 
 import browser from 'webextension-polyfill';
 
-import { markSiteIncluded } from '@/core/services/CloudSyncScope';
-import { logger } from '@/core/services/LoggerService';
 import type { PanelSessionId } from '@/features/panel/protocol';
 import { requestPluginContentScriptSync } from '@/pages/popup/utils/pluginEnablement';
 import type { AccessSite } from '@/pages/popup/utils/siteAccessSites';
@@ -15,9 +13,15 @@ import { openSiteAccessFallback } from './panelRequests';
  * request is the first thing the handler does, with nothing awaited before it.
  * Where the browser refuses to ask from this frame (it throws, or reports no
  * gesture), the popup opens on its site access card instead. A site turned on
- * joins cloud sync, even one turned off there before.
+ * joins cloud sync, even one turned off there before: `onAsked` starts as the
+ * browser asks, and the call it returns runs once the browser granted the site
+ * here (not through the popup fallback).
  */
-export function useSiteGrant(sessionId: PanelSessionId, onFailed: () => void) {
+export function useSiteGrant(
+  sessionId: PanelSessionId,
+  onFailed: () => void,
+  onAsked: (site: AccessSite) => () => void,
+) {
   /** The site whose browser prompt is up. */
   const [waiting, setWaiting] = useState<string | null>(null);
 
@@ -34,6 +38,7 @@ export function useSiteGrant(sessionId: PanelSessionId, onFailed: () => void) {
         void fallback();
         return;
       }
+      const included = onAsked(site);
       setWaiting(site.id);
       void answer
         .then(
@@ -41,18 +46,13 @@ export function useSiteGrant(sessionId: PanelSessionId, onFailed: () => void) {
             // The site's row follows the browser's permission events; this only starts the scripts.
             if (!granted) return;
             void requestPluginContentScriptSync();
-            void markSiteIncluded(site.id).catch((error: unknown) =>
-              logger.warn('Could not include the site in sync', {
-                site: site.id,
-                error: String(error),
-              }),
-            );
+            included();
           },
           () => fallback(),
         )
         .finally(() => setWaiting((current) => (current === site.id ? null : current)));
     },
-    [fallback],
+    [fallback, onAsked],
   );
 
   return { waiting, grant };

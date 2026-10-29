@@ -179,9 +179,15 @@ describe('panel handshake through the registered background listener', () => {
     expect(await isRegisteredPanelFrame(second.sender)).toBe(false);
   });
 
-  it('does not grant a web-framed panel the existing shared sync trust', async () => {
-    const current = await api.redeem();
+  it('grants shared sync trust to the redeemed frame only, and only until it is revoked', async () => {
+    const issued = await api.issue();
     const { isTrustedSharedDataSyncSender } = await import('../runtimeMessageRouting');
+    // Any page can frame the panel page; before redemption it is just a web-framed page.
+    expect(isTrustedSharedDataSyncSender(api.frameSender(issued.panelUrl))).toBe(false);
+    const current = await api.redeem();
+    expect(isTrustedSharedDataSyncSender(current.sender)).toBe(true);
+    expect(isTrustedSharedDataSyncSender(api.frameSender(current.panelUrl, 7, 5))).toBe(false);
+    api.onRemoved.emit(7, { windowId: 1, isWindowClosing: false });
     expect(isTrustedSharedDataSyncSender(current.sender)).toBe(false);
   });
 

@@ -2,6 +2,15 @@ import type { SiteKnowledgeException } from '../siteKnowledgeTypes';
 
 export const POPUP_SITE_KNOWLEDGE_EXCEPTIONS: readonly SiteKnowledgeException[] = [
   {
+    file: 'src/pages/panel/sync/syncScopes.ts',
+    kind: 'platform-branch',
+    values: {
+      gemini: 1,
+    },
+    reason:
+      "The sync sheet's shared row travels with Gemini's platform when the open page's own platform carries no shared data, as the popup's does.",
+  },
+  {
     file: 'src/pages/popup/Popup.tsx',
     kind: 'platform-branch',
     values: {

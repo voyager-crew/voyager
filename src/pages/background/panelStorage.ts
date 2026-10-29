@@ -128,10 +128,15 @@ export function isPanelPageUrl(value: unknown, token?: PanelToken): boolean {
   }
 }
 
-export function matchesPanelFrame(
-  sender: chrome.runtime.MessageSender,
-  frame: PanelFrameRecord,
-): boolean {
+/** The sender fields a frame match reads; any `chrome.runtime.MessageSender` is one. */
+export type PanelSender = Pick<
+  chrome.runtime.MessageSender,
+  'id' | 'frameId' | 'url' | 'documentId'
+> & {
+  tab?: { id?: number; url?: string };
+};
+
+export function matchesPanelFrame(sender: PanelSender, frame: PanelFrameRecord): boolean {
   return (
     sender.id === chrome.runtime.id &&
     sender.tab?.id === frame.tabId &&

@@ -36,6 +36,7 @@ import {
   panelTabHasOrigin,
   readPanelState,
 } from './panelStorage';
+import { redeemedPanelFrames } from './panelTrust';
 
 export { isRegisteredPanelFrame } from './panelStorage';
 
@@ -94,6 +95,8 @@ export function createPanelBackground() {
       if (state.tokens.length || state.frames.length)
         await area.set({ [PANEL_STATE_SESSION_KEY]: state });
       else await area.remove(PANEL_STATE_SESSION_KEY);
+      // Sender checks trust only what is persisted; a revocation already left the mirror.
+      redeemedPanelFrames.replace(state.frames);
       return result;
     });
     chain = run.catch(() => undefined);
@@ -102,6 +105,7 @@ export function createPanelBackground() {
 
   function revoke(state: PanelState, tabId: number): void {
     revokeRelays(tabId);
+    redeemedPanelFrames.forget(tabId);
     state.tokens = state.tokens.filter((token) => token.tabId !== tabId);
     state.frames = state.frames.filter((frame) => frame.tabId !== tabId);
     ports.get(tabId)?.close();
@@ -312,9 +316,14 @@ export function createPanelBackground() {
       });
     });
     if (!area) return;
+    // A restarted worker trusts no panel frame until it has read the persisted registry.
+    void serial(async () => undefined).catch((error: unknown) =>
+      logger.warn('Panel session restore failed', { error: String(error) }),
+    );
     const discard = (tabId: number, nextUrl?: string) => {
       // Retire in-flight effects now; persisted revocation may be waiting behind a storage write.
       revokeRelays(tabId, nextUrl);
+      redeemedPanelFrames.forget(tabId, nextUrl);
       void serial(async (state) => {
         const nextOrigin = nextUrl === undefined ? null : panelHostOrigin(nextUrl);
         const changed =

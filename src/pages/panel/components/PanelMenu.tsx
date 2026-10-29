@@ -25,6 +25,8 @@ export interface PanelMenuProps {
   readonly label: string;
   readonly onPick: (value: string) => void;
   readonly onClose: () => void;
+  /** Actions (the sync sheet's ⋯ menu) have no check column and no checked state. */
+  readonly kind?: 'choice' | 'action';
 }
 
 interface Placement {
@@ -55,7 +57,16 @@ function place(anchor: HTMLElement, menu: HTMLElement, align: 'start' | 'end'): 
  * keys, closes on Esc (before search and the panel), a pick or a click outside,
  * and hands focus back to its anchor.
  */
-export function PanelMenu({ open, anchor, items, align, label, onPick, onClose }: PanelMenuProps) {
+export function PanelMenu({
+  open,
+  anchor,
+  items,
+  align,
+  label,
+  onPick,
+  onClose,
+  kind = 'choice',
+}: PanelMenuProps) {
   const menu = useRef<HTMLDivElement | null>(null);
   const [placement, setPlacement] = useState<Placement | null>(null);
   const [shown, setShown] = useState(false);
@@ -133,17 +144,19 @@ export function PanelMenu({ open, anchor, items, align, label, onPick, onClose }
         <button
           key={item.value}
           type="button"
-          role="menuitemradio"
-          aria-checked={item.checked}
+          role={kind === 'action' ? 'menuitem' : 'menuitemradio'}
+          aria-checked={kind === 'action' ? undefined : item.checked}
           disabled={item.disabled}
           onClick={() => {
             closeToAnchor();
             onPick(item.value);
           }}
         >
-          <span className="ck" aria-hidden="true">
-            {item.checked && <Check size={15} strokeWidth={2.2} />}
-          </span>
+          {kind === 'choice' && (
+            <span className="ck" aria-hidden="true">
+              {item.checked && <Check size={15} strokeWidth={2.2} />}
+            </span>
+          )}
           {item.leading}
           <span className="ml">{item.label}</span>
           {item.trailing}

@@ -13,6 +13,7 @@ import { prepareExtensionPageLanguage } from '@/utils/extensionPageLanguage';
 import { PanelApp } from './PanelApp';
 import './styles/panel.css';
 import './styles/rows.css';
+import './styles/sync.css';
 
 async function init() {
   const token = new URL(window.location.href).searchParams.get(PANEL_TOKEN_QUERY_PARAM);

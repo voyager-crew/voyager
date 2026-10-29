@@ -55,6 +55,13 @@ export interface TopBarProps {
   readonly searchInputRef: React.RefObject<HTMLInputElement | null>;
   readonly searchButtonRef: React.RefObject<HTMLButtonElement | null>;
   readonly cloudButtonRef: React.RefObject<HTMLButtonElement | null>;
+  /** The sync sheet's state on its button: open, lifting while a sync runs, green when done. */
+  readonly cloud: {
+    readonly open: boolean;
+    readonly mark: 'idle' | 'busy' | 'done';
+    readonly title: string;
+  };
+  readonly onCloud: () => void;
   readonly onFullSettings: () => void;
   readonly shell: PanelShell;
   readonly language: string;
@@ -113,6 +120,8 @@ export function TopBar({
   searchInputRef,
   searchButtonRef,
   cloudButtonRef,
+  cloud,
+  onCloud,
   onFullSettings,
   shell,
   language,
@@ -232,11 +241,13 @@ export function TopBar({
         <button
           ref={cloudButtonRef}
           type="button"
-          className="ib cloud"
+          className={cloud.mark === 'idle' ? 'ib cloud' : `ib cloud ${cloud.mark}`}
           aria-haspopup="dialog"
-          aria-expanded={false}
+          aria-expanded={cloud.open}
+          aria-controls="panel-sync-sheet"
           aria-label={t('cloudSync')}
-          title={t('cloudSync')}
+          title={cloud.title}
+          onClick={onCloud}
         >
           <Cloud size={17} strokeWidth={1.75} aria-hidden="true" />
         </button>

@@ -1,0 +1,369 @@
+/* The cloud sync sheet and its button, from the spec #1077 prototype; logical sides for RTL. */
+.panel {
+  position: relative;
+}
+
+.cloud svg {
+  transition: transform 0.3s var(--spring);
+}
+
+.cloud.busy svg {
+  animation: lift 0.9s ease-in-out infinite;
+}
+
+@keyframes lift {
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+.cloud.done {
+  color: var(--ok);
+}
+
+.sync {
+  position: absolute;
+  top: 52px;
+  inset-inline-end: 12px;
+  z-index: 35;
+  width: 328px;
+  max-width: calc(100% - 24px);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--menu-shadow);
+  transform-origin: top right;
+  opacity: 0;
+  transform: scale(0.95) translateY(-4px);
+  pointer-events: none;
+  transition:
+    opacity 0.12s ease,
+    transform 0.14s ease;
+  overflow: hidden;
+}
+
+[dir='rtl'] .sync {
+  transform-origin: top left;
+}
+
+.sync.open {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  transition:
+    opacity 0.18s ease,
+    transform 0.46s var(--spring);
+}
+
+.sh {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 14px 16px 4px;
+}
+
+.sh b {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sh span {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.sync .hint {
+  margin: 0;
+  padding: 0 16px 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.sl {
+  padding: 2px 6px;
+}
+
+.sr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  transition: background-color 0.15s ease;
+}
+
+.sr:hover {
+  background: var(--hover);
+}
+
+.sr .lg {
+  width: 20px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--ink-2);
+  transition:
+    opacity 0.2s ease,
+    filter 0.2s ease;
+}
+
+.sr .nm {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 13.5px;
+  transition: opacity 0.2s ease;
+}
+
+.sr .nt,
+.sr .nm small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sr .nm small {
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.st {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+.st.up,
+.st.down,
+.st.new,
+.st.merge {
+  color: var(--ink);
+}
+
+.st.ok svg {
+  color: var(--ok);
+}
+
+.st.run svg {
+  animation: spin 0.9s linear infinite;
+}
+
+.st.pop {
+  animation: pop 0.45s var(--spring);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sr.off .lg,
+.sr.off .nm {
+  opacity: 0.4;
+}
+
+.sr.off .st {
+  opacity: 0;
+}
+
+.sr.idle .lg {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
+.sr.idle .nm {
+  color: var(--ink-3);
+}
+
+.sync.enter .sr {
+  animation: rise 0.45s var(--soft) both;
+  animation-delay: calc(40ms + var(--d, 0) * 22ms);
+}
+
+.link {
+  flex: none;
+  border: 0;
+  background: transparent;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.link:hover {
+  background: var(--chip);
+}
+
+.sdiv {
+  height: 1px;
+  margin: 4px 16px;
+  background: var(--hair);
+}
+
+.sf {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding-block: 10px;
+  padding-inline: 16px 10px;
+  border-top: 1px solid var(--hair);
+}
+
+.sf .ago {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.pri,
+.sec {
+  flex: none;
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    transform 0.25s var(--spring),
+    background-color 0.15s ease;
+}
+
+.pri {
+  background: var(--sw-on);
+  color: var(--panel);
+}
+
+.pri:active:not(:disabled),
+.sec:active {
+  transform: scale(0.96);
+}
+
+.pri:disabled {
+  background: var(--chip);
+  color: var(--ink-3);
+  cursor: default;
+}
+
+.sec {
+  background: var(--chip);
+}
+
+.sec:hover {
+  background: var(--chip-hover);
+}
+
+.sec.risk {
+  color: var(--danger);
+}
+
+.warn {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+  padding-block: 12px 10px;
+  padding-inline: 16px 10px;
+  border-top: 1px solid var(--hair);
+  animation: grow 0.4s var(--soft) both;
+}
+
+@keyframes grow {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.warn .wl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.warn .wl svg {
+  flex: none;
+  color: var(--wait);
+}
+
+/* One sentence of the shared guard copy; the counts stand out, a zero in red. */
+.warn .num {
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-2);
+}
+
+.warn .num b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.warn .num b.z {
+  color: var(--danger);
+}
+
+.warn p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+/* When the two buttons don't fit on one line, the safe one (the primary) stacks on top. */
+.warn .bt {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.connect {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 20px 20px;
+  text-align: center;
+}
+
+.connect .tile {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--tile);
+  color: var(--ink-2);
+}
+
+.connect p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.row.flash {
+  animation: flash 1.4s ease;
+}
+
+@keyframes flash {
+  25% {
+    background: var(--chip-hover);
+  }
+}
