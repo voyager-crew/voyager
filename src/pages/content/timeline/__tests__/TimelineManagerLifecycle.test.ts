@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { TimelineEngine } from '@/features/timeline/TimelineEngine';
 import type { TimelineNavigation } from '@/features/timeline/TimelineNavigation';
 import type { TimelineState } from '@/features/timeline/TimelineState';
 import type { TimelineView } from '@/features/timeline/TimelineView';
 import type { SyncSettingsListener } from '@/features/timeline/types';
 
-import { TimelineManager } from '../manager';
+import { GeminiTimelineAdapter } from '../GeminiTimelineAdapter';
 
 vi.mock('../../../../utils/i18n', () => ({
   onCachedLanguageChange: () => () => {},
@@ -22,10 +23,10 @@ type TimelineOwners = {
   mountUI(): void;
 };
 
-const managers: TimelineManager[] = [];
+const managers: TimelineEngine[] = [];
 
 function fixture() {
-  const manager = new TimelineManager();
+  const manager = new TimelineEngine(new GeminiTimelineAdapter());
   managers.push(manager);
   return { manager, owners: manager as unknown as TimelineOwners };
 }

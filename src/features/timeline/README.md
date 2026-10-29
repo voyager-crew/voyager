@@ -36,11 +36,14 @@ legacy hierarchy keys and serialized formats, and verifies stored turn aliases. 
 can include an opaque account annotation captured at the press; this annotation does not filter
 Library reads. All sites use the same `TimelineState` and hierarchy owner.
 
-Local consumer-Gemini `turnNavigator` selects this native policy with literal
-`dataBackend: "shared"`; it cannot override conversation, account or turn identity.
+The fixed Gemini plugin and local consumer-Gemini plugins start through the same `turnNavigator`
+entry, selecting this native policy with literal `dataBackend: "shared"`; they cannot override
+conversation, account or turn identity. The official rail keeps its existing sync settings;
+local replacements use their own plugin settings.
 `adapters/gemini/activateSharedGeminiTimeline.ts` waits for the existing history and message
-page services before creating a data session. It shares the route lifetime with the official
-rail, while the plugin scope owns its switch and immediate abort. The public primitive and
+page services before creating a data session. Its startup machine retires pending readiness on
+scope abort, and the shared route owner stops the rail immediately. PluginHost owns each switch.
+The public primitive and
 fixed builtin arbitrate one `timeline-rail` resource. Catalog sites keep their adapter and
 storage policy.
 

@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { PluginScope } from '@/features/plugins/runtime/pluginScope';
+import { geminiAdapter } from '@/features/plugins/sites/adapters/gemini';
+
 import { FolderStore } from '../../folder/FolderStore';
 import type { IFolderStorageAdapter } from '../../folder/storage/FolderStorageAdapter';
 import { resolveStoredHighlightTurnId } from '../../highlight/dom';
-import { startTimeline } from '../../timeline/index';
-import { TimelineManager } from '../../timeline/manager';
+import { activateGeminiTimeline } from '../../timeline/pluginHandler';
 import { TimestampService } from '../TimestampService';
 import {
   startHistoryTimestampPageService,
@@ -110,10 +112,10 @@ describe('history timestamp page service', () => {
   it('keeps folder and highlight alias lookups working after the timeline stops', async () => {
     stopService = startHistoryTimestampPageService();
     await whenHistoryTimestampsReady();
-    vi.spyOn(TimelineManager.prototype, 'init').mockResolvedValue(undefined);
     document.body.innerHTML = '<main></main>';
-    const stopTimeline = startTimeline();
-    stopTimeline();
+    const scope = new PluginScope();
+    activateGeminiTimeline(scope, {}, geminiAdapter);
+    await scope.dispose();
 
     postCapture();
 

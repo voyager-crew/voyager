@@ -206,7 +206,7 @@ describe('Gemini timeline through its registered official plugin', () => {
     expect(bytes()).toBe(saved);
   });
 
-  it('off during the rail initial read prevents a late rail from appearing', async () => {
+  it('off during the initial switch read prevents a late rail from appearing', async () => {
     const get = chrome.storage.sync.get as unknown as Mock;
     const normalGet =
       get.getMockImplementation?.() ?? chrome.storage.sync.get.bind(chrome.storage.sync);
@@ -217,14 +217,7 @@ describe('Gemini timeline through its registered official plugin', () => {
       keys: unknown,
       callback?: unknown,
     ) => {
-      if (
-        !held &&
-        typeof keys === 'object' &&
-        keys !== null &&
-        !Array.isArray(keys) &&
-        Object.keys(keys).length === 1 &&
-        StorageKeys.GV_TIMELINE_ENABLED in keys
-      ) {
+      if (!held && Array.isArray(keys) && keys.includes(StorageKeys.GV_TIMELINE_ENABLED)) {
         held = true;
         return initial;
       }
@@ -280,7 +273,8 @@ describe('Gemini timeline through its registered official plugin', () => {
     const old = new PluginScope();
     const newer = new PluginScope();
     scopes.push(old, newer);
-    activateGeminiTimeline(old);
+    const { geminiAdapter } = await import('@/features/plugins/sites/adapters/gemini');
+    activateGeminiTimeline(old, {}, geminiAdapter);
     await settle();
     expect(document.querySelectorAll(SURFACE.bar)).toHaveLength(1);
     const label = document.querySelector('.gv-timestamp');
@@ -291,7 +285,7 @@ describe('Gemini timeline through its registered official plugin', () => {
       expect(document.querySelector(SURFACE.bar)).toBeNull();
       expect(keyJ()).toBe(false);
       expect(document.querySelector('.gv-timestamp')).toBe(label);
-      activateGeminiTimeline(newer);
+      activateGeminiTimeline(newer, {}, geminiAdapter);
       await settle();
       expect(document.querySelectorAll(SURFACE.bar)).toHaveLength(1);
     } finally {

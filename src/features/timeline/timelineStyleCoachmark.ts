@@ -19,7 +19,7 @@ import type { TranslationKey } from '@/utils/translations';
 import { type TimelineStylePreview, mountTimelineStylePreview } from './timelineStylePreview';
 
 export const TIMELINE_STYLE_COACHMARK_ID = 'timeline-compact-style-intro-v2';
-export const TIMELINE_STYLE_COACHMARK_DEBUG_EVENT = 'gv:debug:timelineStyleCoachmark';
+export { TIMELINE_STYLE_COACHMARK_DEBUG_EVENT } from './timelineStyleCoachmarkDebug';
 
 const TIMELINE_ICON =
   '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6.5h12M6 10.2h12M6 13.8h12M6 17.5h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
@@ -165,16 +165,4 @@ export async function maybeShowTimelineStyleCoachmark(
       signal,
     });
   }, opts.signal);
-}
-
-const showDebugTimelineStyleCoachmark = () => void maybeShowTimelineStyleCoachmark({ force: true });
-
-// Debug from the normal page console:
-// document.dispatchEvent(new Event('gv:debug:timelineStyleCoachmark'))
-try {
-  (window as unknown as Record<string, unknown>).__gvTimelineStyleCoachmark =
-    showDebugTimelineStyleCoachmark;
-  document.addEventListener(TIMELINE_STYLE_COACHMARK_DEBUG_EVENT, showDebugTimelineStyleCoachmark);
-} catch {
-  /* ignore */
 }

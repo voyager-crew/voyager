@@ -160,10 +160,20 @@ describe('compact timeline coachmark', () => {
   });
 
   it('can be forced from the normal page console via a DOM event', async () => {
-    const { TIMELINE_STYLE_COACHMARK_DEBUG_EVENT } = await import('../timelineStyleCoachmark');
-
-    document.dispatchEvent(new Event(TIMELINE_STYLE_COACHMARK_DEBUG_EVENT));
-
-    await vi.waitFor(() => expect(mocks.showCoachmark).toHaveBeenCalled());
+    const { TIMELINE_STYLE_COACHMARK_DEBUG_EVENT, startTimelineStyleCoachmarkDebug } =
+      await import('../timelineStyleCoachmarkDebug');
+    const scope = new AbortController();
+    const stop = startTimelineStyleCoachmarkDebug(scope.signal);
+    try {
+      document.dispatchEvent(new Event(TIMELINE_STYLE_COACHMARK_DEBUG_EVENT));
+      await vi.waitFor(() => expect(mocks.showCoachmark).toHaveBeenCalled());
+      scope.abort();
+      mocks.showCoachmark.mockClear();
+      document.dispatchEvent(new Event(TIMELINE_STYLE_COACHMARK_DEBUG_EVENT));
+      await Promise.resolve();
+      expect(mocks.showCoachmark).not.toHaveBeenCalled();
+    } finally {
+      stop();
+    }
   });
 });

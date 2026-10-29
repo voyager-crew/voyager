@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { TimelineEngine } from '@/features/timeline/TimelineEngine';
 import type { TimelineHierarchyGeometry } from '@/features/timeline/TimelineHierarchyGeometry';
 import type { TimelineNavigation } from '@/features/timeline/TimelineNavigation';
 import type { TimelineState } from '@/features/timeline/TimelineState';
 import type { TimelineView } from '@/features/timeline/TimelineView';
 
-import { TimelineManager } from '../manager';
+import { GeminiTimelineAdapter } from '../GeminiTimelineAdapter';
 
 type TimelineOwners = {
   state: TimelineState;
@@ -18,7 +19,7 @@ type TimelineOwners = {
   recalculateAndRenderMarkers(): void;
 };
 
-const managers: TimelineManager[] = [];
+const managers: TimelineEngine[] = [];
 
 async function fixture(count = 2) {
   const main = document.createElement('main');
@@ -40,7 +41,7 @@ async function fixture(count = 2) {
     viewport.appendChild(target);
     return target;
   });
-  const manager = new TimelineManager();
+  const manager = new TimelineEngine(new GeminiTimelineAdapter());
   managers.push(manager);
   const owners = manager as unknown as TimelineOwners;
   localStorage.setItem('geminiTimelineUserTurnSelectorAuto', '.user');

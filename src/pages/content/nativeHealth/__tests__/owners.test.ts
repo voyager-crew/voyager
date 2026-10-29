@@ -3,6 +3,7 @@
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PluginScope } from '@/features/plugins/runtime/pluginScope';
+import { TimelineEngine } from '@/features/timeline/TimelineEngine';
 
 import { insertTextIntoChatInput } from '../../chatInput';
 import { activateGeminiChatWidth } from '../../chatWidth/pluginHandler';
@@ -10,7 +11,7 @@ import {
   createSidebarRuntimeHarness,
   mountSidebar,
 } from '../../folder/__tests__/sidebarRuntimeHarness';
-import { TimelineManager } from '../../timeline/manager';
+import { GeminiTimelineAdapter } from '../../timeline/GeminiTimelineAdapter';
 import { NATIVE_HEALTH_GRACE_MS, nativeHealthReporter } from '../index';
 
 vi.mock('@/utils/i18n', () => ({
@@ -66,8 +67,8 @@ afterEach(() => {
 });
 
 describe('timeline', () => {
-  /** Starts the timeline through its production entry point, detection timeout included. */
-  async function detect(html: string): Promise<TimelineManager> {
+  /** Starts the timeline with its production adapter, detection timeout included. */
+  async function detect(html: string): Promise<TimelineEngine> {
     class InertObserver {
       observe() {}
       unobserve() {}
@@ -79,7 +80,7 @@ describe('timeline', () => {
     vi.stubGlobal('ResizeObserver', InertObserver);
     vi.stubGlobal('IntersectionObserver', InertObserver);
     document.body.innerHTML = html;
-    const manager = new TimelineManager();
+    const manager = new TimelineEngine(new GeminiTimelineAdapter());
     // Starred messages and timestamps load from storage; they do not decide turn detection.
     const owners = manager as unknown as {
       state: { init(): Promise<void> };

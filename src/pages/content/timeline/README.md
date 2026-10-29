@@ -1,17 +1,20 @@
 # Timeline ownership
 
 Start with the owner of the behavior being changed. The fixed builtin `voyager.gemini-timeline`
-starts `index.ts` through `pluginHandler.ts` at the original heavy-feature start point, after the
-history and message timestamp page services. `index.ts` owns the native master setting, while
-`startGeminiTimelineRail.ts` owns the shared route/DOM lifetime and synchronous stop. Scope abort
+starts the shared `turnNavigator` entry through `pluginHandler.ts` at the original heavy-feature
+start point, after the history and message timestamp page services. PluginHost owns the native
+master setting through its existing legacy binding. The Gemini backend in
+`features/timeline/adapters/gemini/activateSharedGeminiTimeline.ts` waits for both page caches and
+retains native sync settings, storage and identity. `startGeminiTimelineRail.ts` owns Gemini's
+route/DOM lifetime and synchronous stop. Scope abort
 stops the rail before the plugin cleanup ledger drains. The migrated native registry entry is retired in stage 7. Rolling back to the native rail means
 reverting both stage 7 retirement commits (9c2161df, 0ae260c1) and the commit that removed the
 `legacy` owner option. The official handler continues to use this module. Local `turnNavigator` with literal `dataBackend: "shared"`
 uses this rail and native data policy after both page caches are ready. It inherits the official
 admission but follows its own plugin switch. Both rails claim the same exclusive resource;
 turn off the current holder to hand over. Shared identity overrides, Business, Enterprise and
-custom-website coverage are refused. `manager.ts` creates a Gemini adapter for the
-[shared timeline engine and view](../../../features/timeline/README.md). `GeminiTimelineAdapter.ts`
+custom-website coverage are refused. Both official and local activations create a Gemini adapter
+for the [shared timeline engine and view](../../../features/timeline/README.md). `GeminiTimelineAdapter.ts`
 supplies native storage, the time reader and scroll viewport discovery. `GeminiTimelineTurnSource.ts`
 owns selector discovery and turn collection; only the rail's source reports native health.
 
@@ -79,7 +82,8 @@ Keep these less obvious boundaries intact:
 - Keep setup and cleanup together when moving UI behavior. Closing a surface must cancel its pending
   work, including callbacks that have not yet made anything visible.
 
-Owner tests exercise DOM behavior and data invariants. The `TimelineManager*` tests cover composition:
+Owner tests exercise DOM behavior and data invariants. The `TimelineManager*` tests now compose the
+shared engine with the Gemini adapter and cover composition:
 viewport replacement, real navigation surfaces, initialization and teardown. Migrate those assertions
 with their owner instead of retaining private manager forwarding methods for old tests.
 

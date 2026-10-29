@@ -6,6 +6,7 @@
 import { withGuardedPageAdapter } from '@/core/selectors/semanticSnapshot';
 import { logger } from '@/core/services/LoggerService';
 import { isGeminiEnterpriseEnvironment } from '@/core/utils/gemini';
+import type { PluginSettings } from '@/features/plugins/types';
 import { activateCatalogTimeline } from '@/features/timeline/adapters/catalog/activateCatalogTimeline';
 import {
   TIMELINE_STYLE_COACHMARK_ID,
@@ -13,13 +14,14 @@ import {
 } from '@/features/timeline/adapters/catalog/config';
 import { siteConversationConfig } from '@/features/timeline/adapters/catalog/conversationId';
 import { activateSharedGeminiTimeline } from '@/features/timeline/adapters/gemini/activateSharedGeminiTimeline';
+import { startTimelineStyleCoachmarkDebug } from '@/features/timeline/timelineStyleCoachmarkDebug';
 
 import type { ManifestIssue } from '../../manifest/validate';
 import { sendSiteOf } from '../../sends/trackUserSends';
 import { isSafeRegexSource } from '../../sites/safeRegex';
 import { SHARED_TIMELINE_IDENTITY_PARAMS } from '../../sites/sharedTimelinePolicy';
 import { getPrimitiveContract } from '../contracts';
-import type { Primitive } from '../types';
+import type { Primitive, PrimitiveContext, PrimitiveHandle } from '../types';
 
 export interface TurnNavigatorParams {
   readonly dataBackend?: 'shared';
@@ -139,84 +141,92 @@ export const turnNavigatorPrimitive: Primitive<TurnNavigatorParams> = {
     return issues.length > 0 ? { success: false, error: issues } : { success: true, data: params };
   },
 
-  activate(scope, params, context) {
-    const adapter = withGuardedPageAdapter(context.adapter, context.doc);
-    if (!adapter) {
-      // Stars, outlines and placement are keyed by the site id; without one, every such
-      // site would share a single namespace, so stay inert instead.
-      logger.warn('turnNavigator: no site adapter for this page', { id: context.pluginId });
-      context.setTargetCounter(() => 0);
-      return;
-    }
-    const turnSelector = params.turn ?? adapter.selectors.userTurn;
-    if (!turnSelector) {
-      // The status machine reports needs-semantic before this can happen;
-      // stay inert rather than index nothing.
-      logger.warn('turnNavigator: no turn selector for this site', { id: context.pluginId });
-      context.setTargetCounter(() => 0);
-      return;
-    }
-    if (
-      params.dataBackend === 'shared' &&
-      (adapter.id !== 'gemini' ||
-        location.hostname !== 'gemini.google.com' ||
-        isGeminiEnterpriseEnvironment(location, context.doc) ||
-        SHARED_TIMELINE_IDENTITY_PARAMS.some((key) => Object.hasOwn(params, key)))
-    ) {
-      logger.warn('turnNavigator: shared data requires the native Gemini consumer surface', {
-        id: context.pluginId,
-      });
-      context.setTargetCounter(() => 0);
-      return;
-    }
-    if (adapter.id === 'gemini' && params.dataBackend !== 'shared') {
-      // Native identities and stars must never enter the catalog's Gemini-looking namespace.
-      logger.warn('turnNavigator: Gemini requires the shared data backend', {
-        id: context.pluginId,
-      });
-      context.setTargetCounter(() => 0);
-      return;
-    }
-    context.setTargetCounter(() => {
-      try {
-        return context.doc.querySelectorAll(
-          params.turn ?? adapter.selectors.userTurn ?? turnSelector,
-        ).length;
-      } catch {
-        return 0;
-      }
-    });
-    if (params.dataBackend === 'shared') {
-      return activateSharedGeminiTimeline(
-        scope,
-        {
-          position: params.position,
-          scrollContainer: params.scrollContainer,
-        },
-        context.settings,
-      );
-    }
-    const config: CatalogTimelineConfig = {
-      ...siteConversationConfig(adapter, params.conversationIdPattern),
-      siteLabel: adapter.label,
-      get turnSelector() {
-        return params.turn ?? adapter.selectors.userTurn ?? turnSelector;
-      },
-      get assistantTurnSelector() {
-        return adapter.selectors.assistantTurn;
-      },
-      conversationIdAttribute: params.conversationIdAttribute,
-      accountIdAttributes: params.accountIdAttributes,
-      turnItemSelector: params.turnItem,
-      get scrollContainerSelector() {
-        return params.scrollContainer ?? adapter.selectors.scrollContainer;
-      },
-      yieldWhenSelector: params.yieldWhen,
-      position: params.position ?? 'right',
-      pluginId: context.pluginId,
-      coachmarkId: TIMELINE_STYLE_COACHMARK_ID,
-      sendSite: sendSiteOf(adapter),
-    };
-    return activateCatalogTimeline(scope, config, context.settings);
-  },
+  activate: activateTurnNavigator,
 };
+
+/** Official and declarative rails enter here; null settings preserve the native sync controls. */
+export function activateTurnNavigator(
+  scope: Parameters<Primitive<TurnNavigatorParams>['activate']>[0],
+  params: TurnNavigatorParams,
+  context: PrimitiveContext,
+  settings: PluginSettings | null = context.settings,
+): PrimitiveHandle | void {
+  const adapter = withGuardedPageAdapter(context.adapter, context.doc);
+  if (!adapter) {
+    // Stars, outlines and placement are keyed by the site id; without one, every such
+    // site would share a single namespace, so stay inert instead.
+    logger.warn('turnNavigator: no site adapter for this page', { id: context.pluginId });
+    context.setTargetCounter(() => 0);
+    return;
+  }
+  const turnSelector = params.turn ?? adapter.selectors.userTurn;
+  if (!turnSelector) {
+    // The status machine reports needs-semantic before this can happen;
+    // stay inert rather than index nothing.
+    logger.warn('turnNavigator: no turn selector for this site', { id: context.pluginId });
+    context.setTargetCounter(() => 0);
+    return;
+  }
+  if (
+    params.dataBackend === 'shared' &&
+    (adapter.id !== 'gemini' ||
+      location.hostname !== 'gemini.google.com' ||
+      isGeminiEnterpriseEnvironment(location, context.doc) ||
+      SHARED_TIMELINE_IDENTITY_PARAMS.some((key) => Object.hasOwn(params, key)))
+  ) {
+    logger.warn('turnNavigator: shared data requires the native Gemini consumer surface', {
+      id: context.pluginId,
+    });
+    context.setTargetCounter(() => 0);
+    return;
+  }
+  if (adapter.id === 'gemini' && params.dataBackend !== 'shared') {
+    // Native identities and stars must never enter the catalog's Gemini-looking namespace.
+    logger.warn('turnNavigator: Gemini requires the shared data backend', {
+      id: context.pluginId,
+    });
+    context.setTargetCounter(() => 0);
+    return;
+  }
+  context.setTargetCounter(() => {
+    try {
+      return context.doc.querySelectorAll(params.turn ?? adapter.selectors.userTurn ?? turnSelector)
+        .length;
+    } catch {
+      return 0;
+    }
+  });
+  scope.effect(() => startTimelineStyleCoachmarkDebug(scope.signal), 'timeline-style-debug');
+  if (params.dataBackend === 'shared') {
+    return activateSharedGeminiTimeline(
+      scope,
+      {
+        position: params.position,
+        scrollContainer: params.scrollContainer,
+      },
+      settings,
+    );
+  }
+  const config: CatalogTimelineConfig = {
+    ...siteConversationConfig(adapter, params.conversationIdPattern),
+    siteLabel: adapter.label,
+    get turnSelector() {
+      return params.turn ?? adapter.selectors.userTurn ?? turnSelector;
+    },
+    get assistantTurnSelector() {
+      return adapter.selectors.assistantTurn;
+    },
+    conversationIdAttribute: params.conversationIdAttribute,
+    accountIdAttributes: params.accountIdAttributes,
+    turnItemSelector: params.turnItem,
+    get scrollContainerSelector() {
+      return params.scrollContainer ?? adapter.selectors.scrollContainer;
+    },
+    yieldWhenSelector: params.yieldWhen,
+    position: params.position ?? 'right',
+    pluginId: context.pluginId,
+    coachmarkId: TIMELINE_STYLE_COACHMARK_ID,
+    sendSite: sendSiteOf(adapter),
+  };
+  return activateCatalogTimeline(scope, config, settings ?? {});
+}

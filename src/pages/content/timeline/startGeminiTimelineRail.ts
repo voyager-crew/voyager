@@ -2,7 +2,6 @@ import type { TimelineEngine } from '@/features/timeline/TimelineEngine';
 import { type RouteTimeline, runRouteTimeline } from '@/features/timeline/runRouteTimeline';
 
 import { isGeminiConversationRoute } from './conversationRoute';
-import { TimelineManager } from './manager';
 
 /** Gemini renders a conversation after its router settles; rebuilding sooner reads the old DOM. */
 const ROUTE_SETTLE_MS = 500;
@@ -13,13 +12,11 @@ export interface GeminiTimelineRail {
 }
 
 /** Route/DOM lifetime only: each caller owns its enable setting and data readiness. */
-export function startGeminiTimelineRail(
-  options: {
-    readonly signal?: AbortSignal;
-    createEngine?(previousUrl: string | null): TimelineEngine;
-    start?(engine: TimelineEngine): void;
-  } = {},
-): GeminiTimelineRail {
+export function startGeminiTimelineRail(options: {
+  readonly signal?: AbortSignal;
+  createEngine(previousUrl: string | null): TimelineEngine;
+  start?(engine: TimelineEngine): void;
+}): GeminiTimelineRail {
   const lifetime = new AbortController();
   let route: RouteTimeline | null = null;
   let bodyObserver: MutationObserver | null = null;
@@ -44,7 +41,7 @@ export function startGeminiTimelineRail(
       signal: lifetime.signal,
       isConversationRoute: isGeminiConversationRoute,
       settleMs: ROUTE_SETTLE_MS,
-      createEngine: options.createEngine ?? ((previousUrl) => new TimelineManager({ previousUrl })),
+      createEngine: options.createEngine,
       start: options.start,
     });
   };
