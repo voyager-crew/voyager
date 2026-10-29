@@ -83,6 +83,62 @@ describe('askConfirm', () => {
     await neutral;
   });
 
+  it('lists details under the message and gives them to screen readers as its description', async () => {
+    const answer = ask({
+      details: ['Folders: cloud 24 → 0', 'Prompts: cloud copy not recognized'],
+    });
+    expect(confirmDriver.details()).toEqual([
+      'Folders: cloud 24 → 0',
+      'Prompts: cloud copy not recognized',
+    ]);
+    expect(confirmDriver.description()).toContain('Folders: cloud 24 → 0');
+    confirmDriver.answer('Cancel');
+    await answer;
+
+    const plain = ask();
+    expect(confirmDriver.details()).toEqual([]);
+    expect(confirmDriver.description()).toBeNull();
+    confirmDriver.answer('Cancel');
+    await plain;
+  });
+
+  it('keeps a safe primary out of red when a danger choice marks the destructive answer', async () => {
+    const answer = askConfirm<'merge' | 'force'>({
+      message: 'Upload replaces the cloud copy.',
+      anchor,
+      tone: 'danger',
+      choices: [
+        { id: 'merge', label: 'Merge instead' },
+        { id: 'force', label: 'Upload anyway', emphasis: 'danger' },
+      ],
+      cancelLabel: 'Cancel',
+    });
+    // Enter right after opening must not run the destructive answer.
+    expect(confirmDriver.focusedLabel()).toBe('Cancel');
+    expect(confirmDriver.emphasis('Merge instead')).toBe('primary');
+    expect(confirmDriver.emphasis('Upload anyway')).toBe('danger');
+    confirmDriver.answer('Upload anyway');
+    await expect(answer).resolves.toBe('force');
+  });
+
+  it('follows an explicit direction over the page’s', async () => {
+    const rtl = ask({ dir: 'rtl' });
+    expect(confirmDriver.direction()).toBe('rtl');
+    confirmDriver.answer('Cancel');
+    await rtl;
+
+    document.body.classList.add('gv-rtl');
+    const ltr = ask({ dir: 'ltr' });
+    expect(confirmDriver.direction()).toBe('ltr');
+    confirmDriver.answer('Cancel');
+    await ltr;
+
+    const page = ask();
+    expect(confirmDriver.direction()).toBe('rtl');
+    confirmDriver.answer('Cancel');
+    await page;
+  });
+
   it('returns focus to the anchor when it closes', async () => {
     const answer = ask();
     confirmDriver.answer('Cancel');

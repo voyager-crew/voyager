@@ -51,6 +51,14 @@ export const CORE_SITE_KNOWLEDGE_EXCEPTIONS: readonly SiteKnowledgeException[] =
     reason: 'ChatGPT turn proof and code-block ownership rules.',
   },
   {
+    file: 'src/core/services/CloudSyncTransferContext.ts',
+    kind: 'platform-branch',
+    values: {
+      gemini: 1,
+    },
+    reason: 'Gemini route-user id participates in cloud sync.',
+  },
+  {
     file: 'src/core/services/AccountIsolationService.ts',
     kind: 'platform-branch',
     values: {

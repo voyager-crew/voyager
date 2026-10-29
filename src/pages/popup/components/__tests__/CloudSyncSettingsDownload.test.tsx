@@ -13,7 +13,7 @@ import {
   createCloudSyncChromeMock as createChromeMock,
   flushMicrotasks,
 } from './cloudSyncChromeMock';
-import { waitForCloudSyncAction } from './waitForCloudSyncAction';
+import { answerConfirm, waitForCloudSyncAction } from './waitForCloudSyncAction';
 
 vi.mock('@/contexts/LanguageContext', () => ({
   useLanguage: () => ({
@@ -134,7 +134,6 @@ describe('CloudSyncSettings download', () => {
   });
 
   it('skips missing folders while applying present prompts in an overwrite', async () => {
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     const sendMessageMock = vi.fn().mockImplementation((message: { type?: string }) => {
       if (message.type === 'gv.sync.getState') {
         return Promise.resolve({ ok: true, state: baseState });
@@ -191,10 +190,12 @@ describe('CloudSyncSettings download', () => {
     await act(async () => {
       overwriteButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
+    expect(await answerConfirm('syncOverwrite')).toBe('syncOverwriteConfirm');
     await waitForCloudSyncAction(overwriteButton);
 
-    expect(confirmSpy).toHaveBeenCalledOnce();
-    expect(container.textContent).toContain('syncOverwriteMissingFolders');
+    // Prompts were replaced; the missing folders were kept and listed, not reported as a refusal.
+    expect(container.textContent).toContain('syncSuccess');
+    expect(container.textContent).toContain('syncSkippedMissing');
     const stored = await chromeMock.storage.local.get(null);
     expect(stored[StorageKeys.FOLDER_DATA]).toEqual(existingFolders);
     expect(stored[StorageKeys.PROMPT_ITEMS]).toEqual([]);

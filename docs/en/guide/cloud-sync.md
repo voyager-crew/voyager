@@ -14,6 +14,10 @@ Voyager Cloud Sync backs up your folders, prompt library, starred messages, and 
 | Plugin configuration    | Yes    | Install/enable state and plugin settings; site permissions remain per-device                                     |
 | Model answers           | No     | Star backups contain user prompts, not model answers                                                             |
 
+<!-- D4: draft wording, waiting for Jesse to confirm -->
+
+**Enable Hard Isolation** no longer travels in the cloud settings file. Your browser's own sync (Chrome sync, for example) still carries it between computers signed in to the same browser profile.
+
 ## Starred Data and Sync Limits
 
 Cloud uploads include the **full user prompts you star** (up to 16 KiB UTF-8 per prompt) in your own Google Drive or iCloud. Star backups do not store model answers. The legacy v1 backup keeps previews only; the new v2 backup includes prompt text and deletion records.
@@ -39,7 +43,7 @@ Device identifiers, access tokens, caches, viewport coordinates, and temporary r
 3. On Safari, choose **Google Drive** or **iCloud**. Other browsers use Google Drive.
 4. Set **Sync Mode** to **Manual**. It starts as **Disabled**, and the sync buttons appear only in Manual mode.
 5. For Google Drive on Safari, click **Connect Google Drive** to sign in through the Voyager app. Other browsers have no separate sign-in button: Google's authorization window opens the first time you click **Upload** or **Download & Merge**. For iCloud, make sure the Mac is signed in to iCloud.
-6. Click **Upload** to send local data to the cloud, or **Download & Merge** to merge cloud data into this browser. **Overwrite** replaces local data with the cloud copy instead of merging, so anything you haven't uploaded is lost.
+6. Click **Upload** to send local data to the cloud, or **Download & Merge** to merge cloud data into this browser. **Overwrite** asks first, then replaces only the data the cloud has and Voyager can read; anything missing or unreadable in the cloud stays as it is, and the result lists it. You can undo right after.
 
 With iCloud, **Delete iCloud backup** removes every Voyager backup from iCloud; local data on the Mac stays as it is.
 
@@ -47,7 +51,7 @@ With iCloud, **Delete iCloud backup** removes every Voyager backup from iCloud; 
 
 The quickest way is the cloud icon in the folder area's header in the left sidebar: click it, then choose **Upload to Cloud** or **Sync from Cloud**.
 
-<img src="/assets/cloud-sync.png" alt="Cloud Sync Quick Buttons" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 10px; width: 352px; max-width: 100%;"/>
+<GuideShot src="/assets/cloud-sync.png" alt="Cloud Sync Quick Buttons" :width="440" />
 
 ::: warning
 **Security Recommendation: Double Protection**  
@@ -56,6 +60,36 @@ While Cloud Sync offers great convenience, we strongly recommend that you also p
 1. **Folders**: Open the folder area's menu, choose **Import/Export folders**, then **Export folders** to save all your folders and conversation assignments.
 2. **Prompts**: In the Prompt Manager, click **Export** to save your prompt library.
    :::
+
+## Sync Safety
+
+<GuideFacts>
+<GuideFact title="Upload confirmation">
+
+If an upload would make a cloud file much smaller (this device has none of something the cloud has, or less than half when the cloud has at least 4), or Voyager can't read the cloud file, it asks first: **Merge from cloud instead**, **Upload anyway** or **Cancel**. Merging is offered only when the cloud file is readable.
+
+</GuideFact>
+<GuideFact title="Overwrite replaces only what exists">
+
+**Overwrite** keeps any kind of data the cloud lacks or Voyager can't read, and lists it in the result. An empty plugin list in the cloud never clears your plugins.
+
+</GuideFact>
+<GuideFact title="Undo right after a download">
+
+After **Download & Merge** or **Overwrite**, the popup's result line offers **Undo** while the popup stays open. The folder area's cloud notice offers it for about 10 seconds and waits while you point at it. Undo restores what that download changed and keeps anything you changed afterwards. Only the latest download can be undone.
+
+</GuideFact>
+<GuideFact title="History copies in Google Drive">
+
+Before an upload replaces a file, Voyager keeps the replaced version beside it in its Drive folder as `<file>.backup-<UTC time>.json`, for example `gemini-voyager-folders.backup-2026-10-29-031100.json`. It keeps the latest 3 per file and moves older ones to Drive's trash. iCloud keeps no history copies.
+
+</GuideFact>
+<GuideFact title="Update every device">
+
+With **Enable Hard Isolation** on, current Voyager names each account's Drive files by the account's email. A device still on Voyager 2.2.1 that first saw the account at a numbered address (gemini.google.com/u/1) won't see what newer versions upload until it updates. Chrome Web Store updates arrive within days; Safari takes longer.
+
+</GuideFact>
+</GuideFacts>
 
 ## Cloud Sync vs. Manual Backup
 

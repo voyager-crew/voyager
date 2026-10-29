@@ -16,7 +16,7 @@ import { createPromptLibraryOwner } from '@/features/prompt/library/promptLibrar
 import { loadTranslations } from '@/utils/translations';
 
 import { CloudSyncSettings } from '../CloudSyncSettings';
-import { waitForCloudSyncAction } from './waitForCloudSyncAction';
+import { answerConfirm, waitForCloudSyncAction } from './waitForCloudSyncAction';
 
 vi.mock('webextension-polyfill', () => ({
   default: {
@@ -196,6 +196,8 @@ describe('CloudSyncSettings platform routing', () => {
     );
     expect(button).toBeDefined();
     await act(async () => button!.click());
+    // Overwrite asks first; the card's own Overwrite answers it.
+    if (label === t.syncOverwrite) await answerConfirm(t.syncOverwrite);
     await waitForCloudSyncAction(button);
   };
 
@@ -238,7 +240,6 @@ describe('CloudSyncSettings platform routing', () => {
       );
       const beforeLocal = structuredClone(local);
       const beforeSync = structuredClone(sync);
-      vi.spyOn(window, 'confirm').mockReturnValue(true);
       await mount();
       await click(mode === 'merge' ? t.syncMerge : t.syncOverwrite);
       const message = sendMessage.mock.calls
@@ -351,13 +352,15 @@ describe('CloudSyncSettings platform routing', () => {
         downloadedData(malformed),
       );
       const before = structuredClone(local);
-      vi.spyOn(window, 'confirm').mockReturnValue(true);
       await mount();
       await click(t.syncOverwrite);
       expect(local).toEqual(before);
       expect(localSet).not.toHaveBeenCalled();
       expect(syncSet).not.toHaveBeenCalled();
-      expect(container.textContent).toContain(t.syncOverwriteMissingFolders);
+      // Nothing was replaced: the result names the folders it kept, not a success.
+      expect(container.textContent).toContain(
+        t.syncSkippedUnrecognized.replace('{kinds}', t.folder_title),
+      );
       expect(container.textContent).not.toContain(t.syncSuccess);
     },
   );
@@ -374,13 +377,15 @@ describe('CloudSyncSettings platform routing', () => {
         downloadedData(malformed),
       );
       const before = structuredClone(local);
-      vi.spyOn(window, 'confirm').mockReturnValue(true);
       await mount();
       await click(t.syncOverwrite);
       expect(local).toEqual(before);
       expect(localSet).not.toHaveBeenCalled();
       expect(syncSet).not.toHaveBeenCalled();
-      expect(container.textContent).toContain(t.syncOverwriteMissingFolders);
+      // Nothing was replaced: the result names the folders it kept, not a success.
+      expect(container.textContent).toContain(
+        t.syncSkippedUnrecognized.replace('{kinds}', t.folder_title),
+      );
       expect(container.textContent).not.toContain(t.syncSuccess);
     },
   );

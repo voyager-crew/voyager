@@ -9,7 +9,7 @@ import { DEFAULT_SYNC_STATE } from '@/core/types/sync';
 
 import { CloudSyncSettings } from '../CloudSyncSettings';
 import { createCloudSyncChromeMock as createChromeMock } from './cloudSyncChromeMock';
-import { waitForCloudSyncAction } from './waitForCloudSyncAction';
+import { answerConfirm, waitForCloudSyncAction } from './waitForCloudSyncAction';
 
 vi.mock('@/contexts/LanguageContext', () => ({
   useLanguage: () => ({
@@ -19,7 +19,7 @@ vi.mock('@/contexts/LanguageContext', () => ({
     // separator, so a test can read which parts it names and how they join.
     t: (key: string) =>
       key === 'syncRestorePartial'
-        ? 'Restored: {restored}. Not restored: {failed} ({error})'
+        ? 'Restored: {restored}. Not restored: {failed}'
         : key === 'syncRestoreListSeparator'
           ? '、'
           : key,
@@ -71,6 +71,7 @@ async function clickRestore(container: HTMLElement, label: string): Promise<void
   await act(async () => {
     button?.click();
   });
+  if (label === 'syncOverwrite') await answerConfirm('syncOverwrite');
   await waitForCloudSyncAction(button);
 }
 
@@ -162,7 +163,9 @@ describe('CloudSyncSettings restore failures', () => {
     expect(await chromeMock.storage.sync.get(null)).toEqual({
       [StorageKeys.MERMAID_ENABLED]: true,
     });
-    expect(container.textContent).toContain('syncError');
+    // The generic failure, never the raw diagnostic.
+    expect(container.textContent).toContain('syncDownloadFailed');
+    expect(container.textContent).not.toContain('local read failed');
   });
 
   it('names the restored and the failed parts when a later write fails', async () => {
@@ -232,7 +235,7 @@ describe('CloudSyncSettings restore failures', () => {
     });
     expect(container.textContent).toContain(
       'Restored: storageQuotaHighlights、pluginsTitle、storageQuotaSync. ' +
-        'Not restored: folder_title、promptDataMigration、savedLibraryStars (folders write failed)',
+        'Not restored: folder_title、promptDataMigration、savedLibraryStars',
     );
   });
 
@@ -268,12 +271,11 @@ describe('CloudSyncSettings restore failures', () => {
     expect(await chromeMock.storage.sync.get(null)).toEqual({});
     expect(container.textContent).toContain(
       'Restored: storageQuotaHighlights. ' +
-        'Not restored: folder_title、promptDataMigration、savedLibraryStars (folders write failed)',
+        'Not restored: folder_title、promptDataMigration、savedLibraryStars',
     );
   });
 
   it('applies settings and prompts beside restored highlights while skipping missing folders', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     const sendMessageMock = downloadResponder(
       {
         prompts: { items: [] },
@@ -313,7 +315,7 @@ describe('CloudSyncSettings restore failures', () => {
     expect(await chromeMock.storage.sync.get(null)).toEqual({
       [StorageKeys.MERMAID_ENABLED]: false,
     });
-    expect(container.textContent).toContain('syncOverwriteMissingFolders');
+    expect(container.textContent).toContain('syncSkippedMissing');
     expect(container.textContent).not.toContain('Not restored:');
   });
 
@@ -345,7 +347,7 @@ describe('CloudSyncSettings restore failures', () => {
     expect(stored[StorageKeys.FOLDER_DATA]).toEqual({ folders: [], folderContents: {} });
     expect(stored[StorageKeys.PROMPT_ITEMS]).toEqual([]);
     expect(container.textContent).toContain(
-      'Restored: folder_title、promptDataMigration. Not restored: savedLibraryStars (stars write failed)',
+      'Restored: folder_title、promptDataMigration. Not restored: savedLibraryStars',
     );
   });
 
@@ -395,12 +397,11 @@ describe('CloudSyncSettings restore failures', () => {
     expect(stored[StorageKeys.FORK_NODES]).toBeUndefined();
     expect(container.textContent).toContain(
       'Restored: folder_title、promptDataMigration、savedLibraryStars. ' +
-        'Not restored: syncRestoreForks (forks write failed)',
+        'Not restored: syncRestoreForks',
     );
   });
 
   it('keeps the missing-folders warning after a partial overwrite applies present data', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     const sendMessageMock = downloadResponder(
       {
         prompts: { items: [] },
@@ -421,7 +422,7 @@ describe('CloudSyncSettings restore failures', () => {
     expect(
       (await chromeMock.storage.local.get(StorageKeys.PROMPT_ITEMS))[StorageKeys.PROMPT_ITEMS],
     ).toEqual([]);
-    expect(container.textContent).toContain('syncOverwriteMissingFolders');
+    expect(container.textContent).toContain('syncSkippedMissing');
     expect(container.textContent).not.toContain('Restored:');
     expect(container.textContent).not.toContain('syncError');
   });

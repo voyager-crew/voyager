@@ -1291,8 +1291,128 @@
     "description": "同步错误消息"
   },
   "syncRestorePartial": {
-    "message": "恢复未完成。已恢复：{restored}。未恢复：{failed}（{error}）",
+    "message": "恢复未完成。已恢复：{restored}。未恢复：{failed}",
     "description": "Drive restore stopped partway: which parts were restored and which were not"
+  },
+  "syncGuardMessage": {
+    "message": "上传会用本地覆盖云端。",
+    "description": "Upload confirmation: an upload would shrink a cloud file or replace one Voyager cannot read"
+  },
+  "syncGuardCount": {
+    "message": "{kind}：云端 {cloud} → {local}",
+    "description": "Upload confirmation line: a kind whose cloud count would drop; {cloud} is the cloud count, {local} this device's count"
+  },
+  "syncGuardUnrecognized": {
+    "message": "{kind}：无法识别云端副本",
+    "description": "Upload confirmation line: a kind whose cloud file this version cannot read"
+  },
+  "syncGuardSiteKind": {
+    "message": "{site} {kind}",
+    "description": "A per-site kind inside an upload confirmation line, such as Folders (ChatGPT)"
+  },
+  "syncGuardMerge": {
+    "message": "改为从云端合并",
+    "description": "Upload confirmation choice: run a merge download instead of uploading"
+  },
+  "syncGuardForce": {
+    "message": "仍然上传",
+    "description": "Upload confirmation choice: upload and replace the cloud copy (destructive)"
+  },
+  "syncKindTimelineLevels": {
+    "message": "时间线层级",
+    "description": "Kind label: the timeline hierarchy (levels) of conversations"
+  },
+  "syncSkippedMissing": {
+    "message": "云端没有，已保留本机数据：{kinds}",
+    "description": "Sync result line: kinds the cloud has no copy of, left unchanged on this device"
+  },
+  "syncSkippedUnrecognized": {
+    "message": "无法识别云端副本，已保留本机数据：{kinds}",
+    "description": "Sync result line: kinds whose cloud copy Voyager cannot read, left unchanged on this device"
+  },
+  "syncSkippedEmptyPlugins": {
+    "message": "云端插件列表为空，已保留本机插件",
+    "description": "Sync result line: an empty cloud plugin list never clears local plugins"
+  },
+  "syncReasonAccountUnconfirmed": {
+    "message": "无法确认账号",
+    "description": "Sync failure reason: the page has not shown which account is signed in"
+  },
+  "syncReasonAccountChanged": {
+    "message": "同步期间页面或账号已变化",
+    "description": "Sync failure reason: the tab, page or account changed while the sync ran"
+  },
+  "syncReasonLocalRead": {
+    "message": "无法读取本机数据",
+    "description": "Sync failure reason: local data could not be read"
+  },
+  "syncReasonCloudRead": {
+    "message": "无法读取云端副本",
+    "description": "Sync failure reason: the cloud file could not be read"
+  },
+  "syncReasonSnapshot": {
+    "message": "无法保存撤销副本",
+    "description": "Sync failure reason: the copy that Undo restores could not be saved"
+  },
+  "syncReasonSuperseded": {
+    "message": "本机已开始另一次同步",
+    "description": "Sync failure reason: a newer sync took over this one"
+  },
+  "syncReasonSiteExcluded": {
+    "message": "{site} 未参与同步",
+    "description": "Sync failure reason: the site is turned off in what syncs"
+  },
+  "syncReasonSharedExcluded": {
+    "message": "提示词、设置和插件未参与同步",
+    "description": "Sync failure reason: shared data is turned off in what syncs"
+  },
+  "syncReasonSignIn": {
+    "message": "请先登录 Google Drive 再试",
+    "description": "Sync failure reason: Google Drive is not signed in"
+  },
+  "syncReasonHighlightsUpload": {
+    "message": "高亮内容未上传",
+    "description": "Sync result line: the highlights file failed after the other files uploaded"
+  },
+  "syncReasonStatusRecord": {
+    "message": "未能记录同步状态",
+    "description": "Sync result line: the data synced, but its status could not be recorded"
+  },
+  "syncUploadIncomplete": {
+    "message": "上传未完成",
+    "description": "Upload result headline: some files uploaded, others did not"
+  },
+  "syncLastFailed": {
+    "message": "上次同步未完成，请重试。",
+    "description": "Popup line for a previous sync that failed for an unknown reason"
+  },
+  "syncUndo": {
+    "message": "撤销",
+    "description": "Button: undo the download that just ran"
+  },
+  "syncUndoing": {
+    "message": "正在撤销…",
+    "description": "Undo button while the undo runs"
+  },
+  "syncUndoDone": {
+    "message": "已撤销，数据已恢复到下载前",
+    "description": "Undo result: the download was undone"
+  },
+  "syncUndoKept": {
+    "message": "下载后有改动，已保留：{kinds}",
+    "description": "Undo result line: kinds changed after the download, which Undo left as they are"
+  },
+  "syncUndoNothing": {
+    "message": "没有需要撤销的内容",
+    "description": "Undo result: nothing was left to undo"
+  },
+  "syncUndoReplaced": {
+    "message": "无法撤销：之后的下载已替换这次结果",
+    "description": "Undo result: a later download replaced the one this Undo was for"
+  },
+  "syncUndoFailed": {
+    "message": "撤销失败，请重试。",
+    "description": "Undo result: the undo failed; Undo stays offered"
   },
   "syncRestoreForks": {
     "message": "对话分叉",
@@ -1335,8 +1455,8 @@
     "description": "覆盖下载按钮"
   },
   "syncOverwriteConfirm": {
-    "message": "确定要用云端数据覆盖本地数据吗？未上传的本地更改会丢失。",
-    "description": "覆盖本地同步数据前的确认"
+    "message": "用云端副本替换本机数据？只替换云端有且能读取的数据，完成后可立即撤销。",
+    "description": "Confirm before an overwrite download: only data the cloud has and Voyager can read is replaced, with Undo after"
   },
   "syncDeleteICloudBackup": {
     "message": "删除 iCloud 备份"
@@ -1364,10 +1484,6 @@
   "syncNoData": {
     "message": "未在云端找到同步数据",
     "description": "Error message when no data is found in Drive"
-  },
-  "syncOverwriteMissingFolders": {
-    "message": "云端没有可用于覆盖的文件夹备份。本地文件夹已保持不变。",
-    "description": "Error message when overwrite is blocked because Drive has no folders payload"
   },
   "syncUploadFailed": {
     "message": "上传失败",

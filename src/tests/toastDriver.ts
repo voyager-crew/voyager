@@ -58,6 +58,17 @@ export const toastDriver = {
       (button) => button.getAttribute('aria-label') ?? button.textContent ?? '',
     );
   },
+  /** Puts the pointer on the toast, or takes it away. */
+  hover(toast: ToastSnapshot): void {
+    toast.element.dispatchEvent(new PointerEvent('pointerenter'));
+  },
+  leave(toast: ToastSnapshot): void {
+    toast.element.dispatchEvent(new PointerEvent('pointerleave'));
+  },
+  /** Moves keyboard focus onto the toast's first button. */
+  focusInside(toast: ToastSnapshot): void {
+    buttons(toast.element)[0]?.focus();
+  },
   press(toast: ToastSnapshot, label: string): void {
     const button = buttons(toast.element).find(
       (candidate) =>

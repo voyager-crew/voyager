@@ -29,6 +29,7 @@ import { unregisterRegisteredContentScripts } from './contentScriptRegistration'
 import { loadEnabledPlugins } from './enabledPlugins';
 import { createPromptNudgeRegistration } from './promptNudgeRegistration';
 import { syncShadowKeyGuardRegistration } from './shadowKeyGuardRegistration';
+import { includeGrantedSites } from './siteGrantSyncScope';
 
 const CUSTOM_CONTENT_SCRIPT_ID = 'gv-custom-content-script';
 const PLUGIN_CONTENT_SCRIPT_ID = 'gv-plugin-content-script';
@@ -443,6 +444,9 @@ export function createSiteAccessRegistration() {
         console.warn('[Background] Failed to persist domains from permissions.onAdded:', error);
       }
     }
+
+    // A supported site joins cloud sync here too, when the page that asked has closed.
+    await includeGrantedSites(origins);
 
     // A granted origin may belong to an enabled plugin — (re)register both the
     // custom-website and the plugin content scripts for newly-granted origins.

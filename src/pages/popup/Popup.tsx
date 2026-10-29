@@ -150,7 +150,7 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
     refreshActiveTabContext: tab.refreshActiveTabContext,
     writeSyncStorage: writePopupSyncStorage,
   });
-  const promptTransfer = usePromptDataTransfer(t);
+  const promptTransfer = usePromptDataTransfer(t, language);
   const folderStructureCopy = useFolderStructureCopy(language, sourceTabId);
   // Above every early return and section: a sync in flight outlives its card.
   const contextSync = useContextSyncRequest(tab);

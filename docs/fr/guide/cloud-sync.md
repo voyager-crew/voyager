@@ -14,6 +14,10 @@ La Synchro Cloud de Voyager sauvegarde vos dossiers, votre bibliothèque de prom
 | Configuration des extensions | Oui         | État d'installation et d'activation, et réglages des extensions ; les autorisations de site restent propres à chaque appareil |
 | Réponses du modèle           | Non         | Les sauvegardes des favoris contiennent les prompts utilisateur, pas les réponses du modèle                                   |
 
+<!-- D4: draft wording, waiting for Jesse to confirm -->
+
+**Enable Hard Isolation** ne fait plus partie du fichier de réglages du cloud. La synchronisation propre à votre navigateur (celle de Chrome, par exemple) le transmet toujours entre les ordinateurs connectés au même profil de navigateur.
+
 ## Données favorites et limites de synchronisation
 
 Les sauvegardes cloud incluent le **texte complet des prompts utilisateur marqués d’une étoile** (jusqu’à 16 KiB UTF-8 par prompt) dans votre propre Google Drive ou iCloud. Les sauvegardes des favoris ne stockent pas les réponses du modèle. La sauvegarde v1 conserve seulement les aperçus ; la nouvelle v2 inclut le texte et les enregistrements de suppression.
@@ -39,7 +43,7 @@ Les identifiants d'appareil, les jetons d'accès, les caches, les coordonnées d
 3. Sur Safari, choisissez **Google Drive** ou **iCloud**. Les autres navigateurs utilisent Google Drive.
 4. Réglez **Mode** sur **Manuel**. Il est sur **Désactivé** par défaut, et les boutons de synchronisation n'apparaissent qu'en mode Manuel.
 5. Pour Google Drive sur Safari, cliquez sur **Connecter Google Drive** pour vous connecter via l'app Voyager. Les autres navigateurs n'ont pas de bouton de connexion distinct : la fenêtre d'autorisation Google s'ouvre la première fois que vous cliquez sur **Envoyer** ou **Récupérer**. Pour iCloud, vérifiez que le Mac est connecté à iCloud.
-6. Cliquez sur **Envoyer** pour transférer vos données locales vers le cloud, ou sur **Récupérer** pour fusionner les données du cloud dans ce navigateur. **Remplacer** remplace les données locales par la copie du cloud au lieu de les fusionner : tout ce que vous n'avez pas encore envoyé sera perdu.
+6. Cliquez sur **Envoyer** pour transférer vos données locales vers le cloud, ou sur **Récupérer** pour fusionner les données du cloud dans ce navigateur. **Remplacer** demande d'abord confirmation, puis ne remplace que les données que le cloud contient et que Voyager sait lire ; ce qui manque ou reste illisible dans le cloud est conservé, et le résultat le signale. Vous pouvez annuler juste après.
 
 Avec iCloud, **Supprimer la sauvegarde iCloud** retire toutes les sauvegardes Voyager d'iCloud ; les données locales du Mac restent intactes.
 
@@ -47,7 +51,7 @@ Avec iCloud, **Supprimer la sauvegarde iCloud** retire toutes les sauvegardes Vo
 
 La façon la plus simple est de cliquer sur l'icône de nuage dans l'en-tête de la zone des dossiers, dans la barre latérale gauche, puis de choisir **"Téléverser vers le cloud"** ou **"Synchroniser depuis le cloud"** dans le menu.
 
-<img src="/assets/cloud-sync.png" alt="Boutons de synchronisation rapide Cloud" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 10px; width: 352px; max-width: 100%;"/>
+<GuideShot src="/assets/cloud-sync.png" alt="Boutons de synchronisation rapide Cloud" :width="440" />
 
 ::: warning
 **Recommandation de sécurité : Double protection**\
@@ -56,6 +60,36 @@ Bien que la synchronisation Cloud offre une grande commodité, nous vous recomma
 1. **Dossiers** : ouvrez le menu de la zone des dossiers, choisissez **Importer/Exporter dossiers**, puis **Exporter dossiers** pour enregistrer tous vos dossiers et leurs conversations.
 2. **Prompts** : dans le Gestionnaire de prompts, cliquez sur **Exporter** pour enregistrer votre bibliothèque de prompts.
    :::
+
+## Sécurité de la synchronisation
+
+<GuideFacts>
+<GuideFact title="Confirmation avant l'envoi">
+
+Si un envoi rendait un fichier du cloud beaucoup plus petit (cet appareil n'a rien d'un type de données que le cloud contient, ou moins de la moitié quand le cloud en a au moins 4), ou si Voyager ne sait pas lire le fichier du cloud, il demande d'abord : **Fusionner depuis le cloud**, **Envoyer quand même** ou **Annuler**. La fusion n'est proposée que si le fichier du cloud est lisible.
+
+</GuideFact>
+<GuideFact title="Remplacer ne touche que ce qui existe">
+
+**Remplacer** conserve tout type de données absent du cloud ou illisible pour Voyager, et le signale dans le résultat. Une liste de plugins vide dans le cloud ne supprime jamais vos plugins.
+
+</GuideFact>
+<GuideFact title="Annuler juste après un téléchargement">
+
+Après **Récupérer** ou **Remplacer**, la ligne de résultat du popup propose **Annuler** tant que le popup reste ouvert. L'avis cloud de la zone des dossiers le propose pendant environ 10 secondes et attend tant que le pointeur est dessus. Annuler rétablit ce que ce téléchargement a modifié et garde ce que vous avez changé ensuite. Seul le dernier téléchargement peut être annulé.
+
+</GuideFact>
+<GuideFact title="Copies d'historique dans Google Drive">
+
+Avant qu'un envoi remplace un fichier, Voyager garde la version remplacée à côté, dans son dossier Drive, sous le nom `<fichier>.backup-<heure UTC>.json`, par exemple `gemini-voyager-folders.backup-2026-10-29-031100.json`. Il garde les 3 plus récentes par fichier et place les plus anciennes dans la corbeille de Drive. iCloud ne garde pas de copies d'historique.
+
+</GuideFact>
+<GuideFact title="Mettez à jour tous vos appareils">
+
+Avec **Enable Hard Isolation** activé, Voyager nomme désormais les fichiers Drive de chaque compte d'après son adresse e-mail. Un appareil encore sous Voyager 2.2.1 qui a d'abord vu le compte à une adresse numérotée (gemini.google.com/u/1) ne verra pas ce que les nouvelles versions envoient avant sa mise à jour. Les mises à jour du Chrome Web Store arrivent en quelques jours ; Safari prend plus de temps.
+
+</GuideFact>
+</GuideFacts>
 
 ## Synchro Cloud ou sauvegarde manuelle
 

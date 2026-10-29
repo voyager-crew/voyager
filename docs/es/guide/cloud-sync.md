@@ -14,6 +14,10 @@ La sincronización en la nube de Voyager guarda una copia de seguridad de tus ca
 | Configuración de plugins        | Sí           | Estado de instalación y activación, y ajustes del plugin; los permisos del sitio siguen siendo por dispositivo   |
 | Respuestas del modelo           | No           | Las copias de destacados contienen los prompts del usuario, no las respuestas del modelo                         |
 
+<!-- D4: draft wording, waiting for Jesse to confirm -->
+
+**Enable Hard Isolation** ya no viaja en el archivo de ajustes de la nube. La sincronización propia de tu navegador (por ejemplo, la de Chrome) sigue llevándolo entre ordenadores con el mismo perfil del navegador.
+
 ## Datos destacados y límites de sincronización
 
 Las copias en la nube incluyen el **texto completo de los prompts de usuario que marcas con estrella** (hasta 16 KiB UTF-8 por prompt) en tu propio Google Drive o iCloud. Las copias de estrellas no almacenan respuestas del modelo. La copia v1 conserva solo vistas previas; la nueva v2 incluye el texto y los registros de eliminación.
@@ -39,7 +43,7 @@ Los identificadores de dispositivo, los tokens de acceso, las cachés, las coord
 3. En Safari, elige **Google Drive** o **iCloud**. Los demás navegadores usan Google Drive.
 4. Cambia **Modo sinc.** a **Manual**. Empieza en **Desactivado**, y los botones de sincronización solo aparecen en modo Manual.
 5. Con Google Drive en Safari, haz clic en **Conectar Google Drive** para iniciar sesión desde la app de Voyager. Los demás navegadores no tienen un botón de inicio de sesión aparte: la ventana de autorización de Google se abre la primera vez que haces clic en **Subir** o **Fusionar**. En iCloud, asegúrate de que el Mac tenga la sesión de iCloud iniciada.
-6. Haz clic en **Subir** para sincronizar tus datos locales con la nube, o en **Fusionar** para traer los datos de la nube a este navegador. **Sobrescribir** sustituye los datos locales por la copia de la nube en lugar de fusionarlos, así que se pierde todo lo que no hayas subido.
+6. Haz clic en **Subir** para sincronizar tus datos locales con la nube, o en **Fusionar** para traer los datos de la nube a este navegador. **Sobrescribir** pide confirmación y luego sustituye solo los datos que la nube tiene y Voyager puede leer; lo que falte o no se pueda leer en la nube se queda como está, y el resultado lo indica. Puedes deshacerlo justo después.
 
 Con iCloud, **Eliminar copia de iCloud** elimina de iCloud todas las copias de seguridad de Voyager; los datos locales del Mac no cambian.
 
@@ -47,7 +51,7 @@ Con iCloud, **Eliminar copia de iCloud** elimina de iCloud todas las copias de s
 
 La forma más sencilla es hacer clic en el icono de nube del encabezado del área de carpetas, en la barra lateral izquierda, y elegir **"Subir a la nube"** o **"Sincronizar desde la nube"** en el menú.
 
-<img src="/assets/cloud-sync.png" alt="Botones de sincronización rápida en la nube" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 10px; width: 352px; max-width: 100%;"/>
+<GuideShot src="/assets/cloud-sync.png" alt="Botones de sincronización rápida en la nube" :width="440" />
 
 ::: warning
 **Recomendación de seguridad: Protección doble**\
@@ -56,6 +60,36 @@ Si bien la sincronización en la nube ofrece una gran comodidad, le recomendamos
 1. **Carpetas**: Abre el menú del área de carpetas, elige **Importar/Exportar carpetas** y, después, **Exportar carpetas** para guardar todas tus carpetas y las asignaciones de conversaciones.
 2. **Prompts**: En el **Gestor de prompts**, haz clic en **Exportar** para guardar tu biblioteca de prompts.
    :::
+
+## Protección de la sincronización
+
+<GuideFacts>
+<GuideFact title="Confirmación al subir">
+
+Si una subida dejaría un archivo de la nube mucho más pequeño (este dispositivo no tiene nada de algo que la nube sí tiene, o tiene menos de la mitad cuando la nube tiene al menos 4) o Voyager no puede leer el archivo de la nube, primero pregunta: **Fusionar desde la nube**, **Subir de todos modos** o **Cancelar**. Fusionar solo se ofrece cuando el archivo de la nube se puede leer.
+
+</GuideFact>
+<GuideFact title="Sobrescribir solo sustituye lo que existe">
+
+**Sobrescribir** conserva cualquier tipo de datos que falte en la nube o que Voyager no pueda leer, y lo indica en el resultado. Una lista de plugins vacía en la nube nunca borra tus plugins.
+
+</GuideFact>
+<GuideFact title="Deshacer justo después de descargar">
+
+Después de **Fusionar** o **Sobrescribir**, la línea de resultado del popup ofrece **Deshacer** mientras el popup siga abierto. El aviso de la nube en el área de carpetas lo ofrece durante unos 10 segundos y espera mientras tengas el puntero encima. Deshacer restaura lo que cambió esa descarga y conserva lo que hayas cambiado después. Solo se puede deshacer la última descarga.
+
+</GuideFact>
+<GuideFact title="Copias de historial en Google Drive">
+
+Antes de que una subida sustituya un archivo, Voyager guarda la versión sustituida a su lado en su carpeta de Drive como `<archivo>.backup-<hora UTC>.json`, por ejemplo `gemini-voyager-folders.backup-2026-10-29-031100.json`. Conserva las 3 más recientes de cada archivo y mueve las anteriores a la papelera de Drive. iCloud no guarda copias de historial.
+
+</GuideFact>
+<GuideFact title="Actualiza todos los dispositivos">
+
+Con **Enable Hard Isolation** activado, Voyager nombra ahora los archivos de Drive de cada cuenta con el correo de la cuenta. Un dispositivo que siga en Voyager 2.2.1 y que conoció la cuenta en una dirección numerada (gemini.google.com/u/1) no verá lo que suban las versiones nuevas hasta que se actualice. Las actualizaciones de Chrome Web Store llegan en pocos días; Safari tarda más.
+
+</GuideFact>
+</GuideFacts>
 
 ## Sincronización en la nube frente a copia de seguridad manual
 

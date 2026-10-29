@@ -8,6 +8,7 @@ import {
   detectAccountContextFromDocument,
 } from '@/core/services/AccountIsolationService';
 import { isCloudRecord, readCloudApplyPayloads } from '@/core/services/CloudSyncApplyPlan';
+import { CloudRestoreError, type CloudRestorePart } from '@/core/services/CloudSyncApplyService';
 import { STAR_RESTORE_KEYS, planForkRestore } from '@/core/services/CloudSyncRestoreKeys';
 import {
   recordCloudSyncWrites,
@@ -88,8 +89,10 @@ async function readLocalTimelineHierarchy(
 }
 
 /**
- * Saves the merged timeline hierarchy, then asks the serialized
- * owners to merge stars and forks. False when the run went stale or a part failed.
+ * Saves the merged timeline hierarchy, then asks the serialized owners to
+ * merge stars and forks. False when the run went stale. A part that fails
+ * throws a `CloudRestoreError` naming what landed (the folders saved first)
+ * and what did not, so the result is partial and keeps its Undo.
  */
 async function restoreBeyondFolders(
   host: FolderTransferHost,
@@ -99,26 +102,13 @@ async function restoreBeyondFolders(
   snapshotId: string,
 ): Promise<boolean> {
   const current = () => isCurrentTransfer(host, context);
-  const hierarchy = readCloudApplyPayloads(download).timelineHierarchy;
-  if (hierarchy.status === 'found') {
-    const hierarchyScope = scopes.timelineHierarchyAccountScope;
-    const localHierarchy = await readLocalTimelineHierarchy(hierarchyScope);
-    if (!current()) return false;
-    const key = getTimelineHierarchyStorageKey(hierarchyScope?.accountKey);
-    const value = mergeTimelineHierarchy(localHierarchy, hierarchy.value);
-    await recordCloudSyncWrites(snapshotId, [{ area: 'local', key, value, kind: 'hierarchy' }]);
-    if (!current()) return false;
-    await chrome.storage.local.set({ [key]: value });
-    if (!current()) return false;
-  }
-
   const { starred, starredAccountHash, stars, forks } = download;
-  const restored = [t('folder_title')];
+  const restored: CloudRestorePart[] = ['folders'];
   // Only parts the backup has can fail, so an absent fork file is not reported as unrestored.
   const merges = [
     {
       payload: [starred, stars].find((value) => value !== null && typeof value === 'object'),
-      label: t('savedLibraryStars'),
+      kind: 'starred' as const,
       run: async () =>
         (
           await StarredMessagesService.mergeSync(
@@ -130,29 +120,49 @@ async function restoreBeyondFolders(
     },
     {
       payload: forks,
-      label: t('syncRestoreForks'),
+      kind: 'forks' as const,
       run: () =>
         ForkNodesService.mergeCloud(
           isCloudRecord(forks) ? { ...forks, cloudSyncSnapshotId: snapshotId } : forks,
         ),
     },
   ].filter((merge) => merge.payload !== null && typeof merge.payload === 'object');
+
+  const hierarchy = readCloudApplyPayloads(download).timelineHierarchy;
+  if (hierarchy.status === 'found') {
+    try {
+      const hierarchyScope = scopes.timelineHierarchyAccountScope;
+      const localHierarchy = await readLocalTimelineHierarchy(hierarchyScope);
+      if (!current()) return false;
+      const key = getTimelineHierarchyStorageKey(hierarchyScope?.accountKey);
+      const value = mergeTimelineHierarchy(localHierarchy, hierarchy.value);
+      await recordCloudSyncWrites(snapshotId, [{ area: 'local', key, value, kind: 'hierarchy' }]);
+      if (!current()) return false;
+      await chrome.storage.local.set({ [key]: value });
+      if (!current()) return false;
+      restored.push('hierarchy');
+    } catch (error) {
+      if (!current()) return false;
+      throw new CloudRestoreError(
+        restored,
+        ['hierarchy', ...merges.map(({ kind }) => kind)],
+        error,
+      );
+    }
+  }
+
   for (const [index, merge] of merges.entries()) {
     try {
       const status = await merge.run();
       if (!current()) return false;
-      if (status === 'merged') restored.push(merge.label);
+      if (status === 'merged') restored.push(merge.kind);
     } catch (error) {
       if (!current()) return false;
-      const failed = merges.slice(index).map((pending) => pending.label);
-      host.notify(
-        t('syncRestorePartial')
-          .replace('{restored}', restored.join(t('syncRestoreListSeparator')))
-          .replace('{failed}', failed.join(t('syncRestoreListSeparator')))
-          .replace('{error}', () => (error instanceof Error ? error.message : 'Unknown error')),
-        'error',
+      throw new CloudRestoreError(
+        restored,
+        merges.slice(index).map(({ kind }) => kind),
+        error,
       );
-      return false;
     }
   }
 
@@ -165,6 +175,13 @@ function geminiCloudSite(host: FolderTransferHost): CloudSyncSite {
     platform: 'gemini',
     t,
     notify: (message, tone) => host.notify(message, tone),
+    // The host's transfer notice, completed in place with its title, action and timing.
+    notice: ({ title, message, tone, ...rest }) => {
+      const handle = host.notify(title ? `${title} · ${message}` : message, tone);
+      if (!handle) return null;
+      handle.update({ title, message, tone, ...rest });
+      return handle;
+    },
     begin: () => {
       const context = host.getContext();
       const { session } = context;

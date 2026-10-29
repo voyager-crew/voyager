@@ -1,3 +1,5 @@
+import type { ToastHandle, ToastTone } from '@/core/ui/toast/types';
+
 import type { FolderDataSession } from './FolderDataSession';
 import type { FolderWriteReceipt } from './storage/FolderStorageAdapter';
 import type { FolderData } from './types';
@@ -14,7 +16,12 @@ export interface FolderTransferHost {
   getContext(): TransferContext;
   applyData(data: FolderData, beforeWrite?: FolderWriteReceipt): Promise<boolean>;
   refresh(): void;
-  notify(message: string, type?: 'success' | 'error' | 'info'): void;
+  /**
+   * Shows a transfer notice. A host that returns its toast's handle lets a
+   * cloud result complete it with a title, Undo and timing; one that does not
+   * shows results without Undo.
+   */
+  notify(message: string, type?: ToastTone): ToastHandle | void;
 }
 
 export type ImportSource = { text: string } | { file: File | null };

@@ -279,6 +279,7 @@ describe('Drive folder sync', () => {
         return true;
       },
       notify: vi.fn(),
+      notice: () => null,
     });
 
     try {

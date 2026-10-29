@@ -48,8 +48,15 @@ export async function setSyncScopeRow(row: SyncScopeRow, included: boolean): Pro
   await chrome.storage.local.set({ [StorageKeys.CLOUD_SYNC_SCOPE]: next });
 }
 
+/**
+ * Puts a site back in what syncs. A site already in it is left as it is, with
+ * no write, so the page that asked and the background can both call this.
+ */
 export async function markSiteIncluded(siteId: string): Promise<void> {
-  await setSyncScopeRow({ kind: 'site', siteId }, true);
+  const scope = await readCloudSyncScope();
+  if (isSyncScopeIncluded(scope, { kind: 'site', siteId })) return;
+  const next: CloudSyncScope = { ...scope, sites: { ...scope.sites, [siteId]: true } };
+  await chrome.storage.local.set({ [StorageKeys.CLOUD_SYNC_SCOPE]: next });
 }
 
 export class SyncScopeExcludedError extends Error {

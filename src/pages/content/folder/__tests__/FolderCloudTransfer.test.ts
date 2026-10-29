@@ -21,7 +21,7 @@ vi.mock('@/utils/i18n', () => ({
   getTranslationSync: (key: string) => key,
   getTranslationSyncUnsafe: (key: string) =>
     key === 'syncRestorePartial'
-      ? 'Restored: {restored}. Not restored: {failed} ({error})'
+      ? 'Restored: {restored}. Not restored: {failed}'
       : key === 'syncRestoreListSeparator'
         ? '、'
         : key,
@@ -147,10 +147,11 @@ describe('folder cloud transfer commands', () => {
 
       await h.transfer.sync();
 
-      expect(h.notify).toHaveBeenLastCalledWith(
-        part === 'folders' ? 'folder_save_error' : 'syncError',
-        'error',
-      );
+      const [message, tone] = h.notify.mock.lastCall!;
+      expect(tone).toBe('error');
+      // The generic failure (with a reason line when one is known), never the raw diagnostic.
+      expect(message).toMatch(part === 'folders' ? /^folder_save_error$/ : /^syncDownloadFailed/);
+      expect(message).not.toContain('Quota exceeded');
       expect(h.notify).not.toHaveBeenCalledWith('downloadMergeSuccess', 'success');
       expect(h.refresh).not.toHaveBeenCalled();
     },
@@ -348,7 +349,7 @@ describe('folder cloud transfer commands', () => {
     expect(h.session.data).toEqual(importedData());
     expect(stored[StorageKeys.PROMPT_ITEMS]).toBeUndefined();
     expect(h.notify).toHaveBeenLastCalledWith(
-      'Restored: folder_title. Not restored: savedLibraryStars (stars write failed)',
+      'Restored: folder_title. Not restored: savedLibraryStars',
       'error',
     );
     expect(h.refresh).not.toHaveBeenCalled();
@@ -421,8 +422,7 @@ describe('folder cloud transfer commands', () => {
     });
     await h.transfer.sync();
     expect(h.notify).toHaveBeenLastCalledWith(
-      'Restored: folder_title、savedLibraryStars. ' +
-        'Not restored: syncRestoreForks (forks write failed)',
+      'Restored: folder_title、savedLibraryStars. Not restored: syncRestoreForks',
       'error',
     );
     expect(h.refresh).not.toHaveBeenCalled();

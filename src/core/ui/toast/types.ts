@@ -15,6 +15,12 @@ export type ToastInput = {
   readonly pending?: boolean;
   /** `null` keeps the toast until it is dismissed: such a toast is never evicted either. */
   readonly durationMs: number | null;
+  /**
+   * While the pointer is on the toast or focus is inside it, its timer waits and
+   * it is not evicted; leaving resumes the time left. For a toast whose action
+   * the person needs time to reach, such as Undo.
+   */
+  readonly pauseOnHover?: boolean;
   /** Text that changes while the toast is open, such as a countdown. It is its own live region. */
   readonly detail?: string;
   readonly action?: ToastAction;

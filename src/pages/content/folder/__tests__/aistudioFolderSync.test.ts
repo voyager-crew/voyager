@@ -93,7 +93,8 @@ describe('AI Studio folder sync across contexts', () => {
     mockBrowser.runtime.sendMessage.mockResolvedValue({ ok: false, error: 'offline' });
     await manager.transfer.sync();
     expect(toastDriver.all()).toMatchObject([{ tone: 'error' }]);
-    expect(toastDriver.messages()[0]).toContain('offline');
+    // The generic failure: the provider's raw text goes to the log only.
+    expect(toastDriver.messages()[0]).not.toContain('offline');
   });
 
   it("shows AI Studio's own last upload and sync times in the cloud tooltip, not Gemini's", async () => {

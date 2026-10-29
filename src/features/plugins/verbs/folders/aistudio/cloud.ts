@@ -7,7 +7,7 @@
  * and drops its result (and its feedback) once either has changed.
  */
 import type { PromptItem } from '@/core/types/sync';
-import type { ToastTone } from '@/core/ui/toast/types';
+import type { ToastHandle, ToastInput, ToastTone } from '@/core/ui/toast/types';
 import { toSyncAccountScope } from '@/core/utils/syncAccountScope';
 import {
   mergeAIStudioImport,
@@ -37,6 +37,8 @@ export type AIStudioTransferHost = {
     beforeWrite?: FolderWriteReceipt,
   ) => Promise<boolean>;
   notify: (message: string, tone: ToastTone, channel?: string) => void;
+  /** A full notice (title, action, timing) on `channel`, for a result with Undo. */
+  notice: (input: ToastInput) => ToastHandle | null;
 };
 
 /** One transfer notice at a time: a result replaces its "in progress" notice. */
@@ -75,6 +77,7 @@ export class AIStudioTransfer {
     platform: 'aistudio',
     t: (key) => this.host.t(key),
     notify: (message, tone) => this.report(message, tone),
+    notice: (input) => this.host.notice({ ...input, channel: TRANSFER_CHANNEL }),
     begin: () => {
       const started = this.begin();
       if (!started) return null;

@@ -21,6 +21,8 @@ export class FolderFeedback {
   private readonly toaster = createToaster();
   private batchDeleteProgress: ToastHandle | null = null;
   private readonly timers = new Set<number>();
+  /** Bumped by each notice on a channel, so only its latest handle can change it. */
+  private readonly channelTurns = new Map<string, number>();
 
   constructor() {
     this.createTooltip();
@@ -74,9 +76,32 @@ export class FolderFeedback {
     this.toaster.show({ message, tone: level, durationMs: LEVEL_MS[level] });
   }
 
-  /** A notice on an open `channel` replaces it, so a transfer's result takes its progress's place. */
-  showNotification(message: string, tone: ToastTone = 'info', channel?: string): void {
-    this.toaster.show({ message, tone, durationMs: NOTICE_MS, channel });
+  /**
+   * A notice on an open `channel` replaces it, so a transfer's result takes its
+   * progress's place. The handle goes quiet once a later notice takes the channel.
+   * Typed `| void` so a stand-in that only shows the message still fits.
+   */
+  showNotification(
+    message: string,
+    tone: ToastTone = 'info',
+    channel?: string,
+  ): ToastHandle | void {
+    const handle = this.toaster.show({ message, tone, durationMs: NOTICE_MS, channel });
+    if (!channel) return handle;
+    const turn = (this.channelTurns.get(channel) ?? 0) + 1;
+    this.channelTurns.set(channel, turn);
+    const latest = () => this.channelTurns.get(channel) === turn;
+    return {
+      get isOpen() {
+        return latest() && handle.isOpen;
+      },
+      update: (patch) => {
+        if (latest()) handle.update(patch);
+      },
+      dismiss: () => {
+        if (latest()) handle.dismiss();
+      },
+    };
   }
 
   private createTooltip(): void {

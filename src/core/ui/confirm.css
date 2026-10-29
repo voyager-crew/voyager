@@ -60,6 +60,21 @@
   text-align: right;
 }
 
+.gv-confirm-details {
+  margin: -4px 0 10px;
+  padding-inline-start: 18px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.gv-confirm-details li + li {
+  margin-top: 2px;
+}
+
+:host([data-gv-rtl]) .gv-confirm-details li {
+  text-align: right;
+}
+
 .gv-confirm-actions {
   display: flex;
   flex-wrap: wrap;
@@ -96,7 +111,8 @@
   color: var(--gv-ui-primary-fg, #ffffff);
 }
 
-.gv-confirm[data-tone='danger'] .gv-confirm-button[data-emphasis='primary'] {
+.gv-confirm[data-tone='danger']:not([data-destructive='choice'])
+  .gv-confirm-button[data-emphasis='primary'] {
   background: var(--gv-ui-danger, oklch(0.55 0.19 25));
   color: var(--gv-ui-danger-fg, oklch(1 0 0));
 }
@@ -107,4 +123,9 @@
 
 .gv-confirm-button[data-emphasis='secondary'] {
   color: var(--gv-ui-primary, oklch(0.601 0.1 140));
+}
+
+/* The destructive answer beside a safe primary: red text, no fill. */
+.gv-confirm-button[data-emphasis='danger'] {
+  color: var(--gv-ui-danger, oklch(0.55 0.19 25));
 }

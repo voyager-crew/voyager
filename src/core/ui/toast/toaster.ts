@@ -30,6 +30,11 @@ type ToastRecord = {
   readonly handle: ToastHandle;
   input: ToastInput;
   timer: number | null;
+  /** Time left to show, and when the running countdown started. */
+  remaining: number | null;
+  startedAt: number;
+  /** The pointer is over the toast, or focus is inside it. */
+  engaged: { pointer: boolean; focus: boolean };
 };
 
 let layer: { mount: LayerHost; stack: HTMLElement } | null = null;
@@ -58,8 +63,13 @@ function closeRecord(record: ToastRecord): void {
   record.view.element.remove();
 }
 
+/** A `pauseOnHover` toast the person is on waits for them. */
+function isHeld(record: ToastRecord): boolean {
+  return record.input.pauseOnHover === true && (record.engaged.pointer || record.engaged.focus);
+}
+
 function isEvictable(record: ToastRecord): boolean {
-  return record.input.durationMs !== null && record.input.pending !== true;
+  return record.input.durationMs !== null && record.input.pending !== true && !isHeld(record);
 }
 
 function anchorRect(owner: OwnerState): DOMRect | null {
@@ -135,10 +145,42 @@ function remove(record: ToastRecord): void {
   }
 }
 
-function startTimer(record: ToastRecord): void {
+/** Counts down the time left, unless the toast is held. */
+function runTimer(record: ToastRecord): void {
   if (record.timer !== null) window.clearTimeout(record.timer);
-  const duration = record.input.durationMs;
-  record.timer = duration === null ? null : window.setTimeout(() => remove(record), duration);
+  record.timer = null;
+  if (record.remaining === null || isHeld(record)) return;
+  record.startedAt = Date.now();
+  record.timer = window.setTimeout(() => remove(record), record.remaining);
+}
+
+function startTimer(record: ToastRecord): void {
+  record.remaining = record.input.durationMs;
+  runTimer(record);
+}
+
+function holdTimer(record: ToastRecord): void {
+  if (record.timer === null || !isHeld(record) || record.remaining === null) return;
+  record.remaining = Math.max(0, record.remaining - (Date.now() - record.startedAt));
+  window.clearTimeout(record.timer);
+  record.timer = null;
+}
+
+/** Hover and focus hold a `pauseOnHover` toast; the listeners leave with its element. */
+function watchEngagement(record: ToastRecord): void {
+  const element = record.view.element;
+  const engage = (kind: 'pointer' | 'focus', engaged: boolean) => {
+    record.engaged[kind] = engaged;
+    if (engaged) holdTimer(record);
+    else if (record.timer === null && records.includes(record)) runTimer(record);
+  };
+  element.addEventListener('pointerenter', () => engage('pointer', true));
+  element.addEventListener('pointerleave', () => engage('pointer', false));
+  element.addEventListener('focusin', () => engage('focus', true));
+  element.addEventListener('focusout', (event) => {
+    if (event.relatedTarget instanceof Node && element.contains(event.relatedTarget)) return;
+    engage('focus', false);
+  });
 }
 
 function open(owner: OwnerState, input: ToastInput): ToastRecord {
@@ -170,9 +212,19 @@ function open(owner: OwnerState, input: ToastInput): ToastRecord {
     },
     dismiss: () => remove(record),
   };
-  record = { owner, view, handle, input, timer: null };
+  record = {
+    owner,
+    view,
+    handle,
+    input,
+    timer: null,
+    remaining: null,
+    startedAt: 0,
+    engaged: { pointer: false, focus: false },
+  };
   view.apply(input);
   records.push(record);
+  watchEngagement(record);
   startTimer(record);
   placeOwner(owner);
 

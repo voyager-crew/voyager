@@ -1291,8 +1291,128 @@
     "description": "Sync error message"
   },
   "syncRestorePartial": {
-    "message": "복원이 완료되지 않았습니다. 복원됨: {restored}. 복원되지 않음: {failed} ({error})",
+    "message": "복원이 완료되지 않았습니다. 복원됨: {restored}. 복원되지 않음: {failed}",
     "description": "Drive restore stopped partway: which parts were restored and which were not"
+  },
+  "syncGuardMessage": {
+    "message": "업로드하면 클라우드 사본이 이 기기의 데이터로 바뀝니다.",
+    "description": "Upload confirmation: an upload would shrink a cloud file or replace one Voyager cannot read"
+  },
+  "syncGuardCount": {
+    "message": "{kind}: 클라우드 {cloud} → {local}",
+    "description": "Upload confirmation line: a kind whose cloud count would drop; {cloud} is the cloud count, {local} this device's count"
+  },
+  "syncGuardUnrecognized": {
+    "message": "{kind}: 클라우드 사본을 인식할 수 없음",
+    "description": "Upload confirmation line: a kind whose cloud file this version cannot read"
+  },
+  "syncGuardSiteKind": {
+    "message": "{site} {kind}",
+    "description": "A per-site kind inside an upload confirmation line, such as Folders (ChatGPT)"
+  },
+  "syncGuardMerge": {
+    "message": "대신 클라우드에서 병합",
+    "description": "Upload confirmation choice: run a merge download instead of uploading"
+  },
+  "syncGuardForce": {
+    "message": "그래도 업로드",
+    "description": "Upload confirmation choice: upload and replace the cloud copy (destructive)"
+  },
+  "syncKindTimelineLevels": {
+    "message": "타임라인 레벨",
+    "description": "Kind label: the timeline hierarchy (levels) of conversations"
+  },
+  "syncSkippedMissing": {
+    "message": "클라우드에 없어 이 기기의 데이터를 유지했습니다: {kinds}",
+    "description": "Sync result line: kinds the cloud has no copy of, left unchanged on this device"
+  },
+  "syncSkippedUnrecognized": {
+    "message": "클라우드 사본을 인식할 수 없어 이 기기의 데이터를 유지했습니다: {kinds}",
+    "description": "Sync result line: kinds whose cloud copy Voyager cannot read, left unchanged on this device"
+  },
+  "syncSkippedEmptyPlugins": {
+    "message": "클라우드 플러그인 목록이 비어 있어 이 기기의 플러그인을 유지했습니다",
+    "description": "Sync result line: an empty cloud plugin list never clears local plugins"
+  },
+  "syncReasonAccountUnconfirmed": {
+    "message": "이 계정을 확인할 수 없습니다",
+    "description": "Sync failure reason: the page has not shown which account is signed in"
+  },
+  "syncReasonAccountChanged": {
+    "message": "동기화 중에 페이지나 계정이 바뀌었습니다",
+    "description": "Sync failure reason: the tab, page or account changed while the sync ran"
+  },
+  "syncReasonLocalRead": {
+    "message": "이 기기의 데이터를 읽지 못했습니다",
+    "description": "Sync failure reason: local data could not be read"
+  },
+  "syncReasonCloudRead": {
+    "message": "클라우드 사본을 읽지 못했습니다",
+    "description": "Sync failure reason: the cloud file could not be read"
+  },
+  "syncReasonSnapshot": {
+    "message": "실행 취소용 사본을 저장하지 못했습니다",
+    "description": "Sync failure reason: the copy that Undo restores could not be saved"
+  },
+  "syncReasonSuperseded": {
+    "message": "이 기기에서 다른 동기화가 시작되었습니다",
+    "description": "Sync failure reason: a newer sync took over this one"
+  },
+  "syncReasonSiteExcluded": {
+    "message": "{site}은(는) 동기화 대상이 아닙니다",
+    "description": "Sync failure reason: the site is turned off in what syncs"
+  },
+  "syncReasonSharedExcluded": {
+    "message": "프롬프트, 설정, 플러그인은 동기화 대상이 아닙니다",
+    "description": "Sync failure reason: shared data is turned off in what syncs"
+  },
+  "syncReasonSignIn": {
+    "message": "Google Drive에 로그인한 후 다시 시도하세요",
+    "description": "Sync failure reason: Google Drive is not signed in"
+  },
+  "syncReasonHighlightsUpload": {
+    "message": "하이라이트가 업로드되지 않았습니다",
+    "description": "Sync result line: the highlights file failed after the other files uploaded"
+  },
+  "syncReasonStatusRecord": {
+    "message": "동기화 상태를 기록하지 못했습니다",
+    "description": "Sync result line: the data synced, but its status could not be recorded"
+  },
+  "syncUploadIncomplete": {
+    "message": "업로드가 완료되지 않았습니다",
+    "description": "Upload result headline: some files uploaded, others did not"
+  },
+  "syncLastFailed": {
+    "message": "지난 동기화가 완료되지 않았습니다. 다시 시도하세요.",
+    "description": "Popup line for a previous sync that failed for an unknown reason"
+  },
+  "syncUndo": {
+    "message": "실행 취소",
+    "description": "Button: undo the download that just ran"
+  },
+  "syncUndoing": {
+    "message": "실행 취소 중…",
+    "description": "Undo button while the undo runs"
+  },
+  "syncUndoDone": {
+    "message": "실행 취소됨: 데이터가 다운로드 전으로 돌아갔습니다",
+    "description": "Undo result: the download was undone"
+  },
+  "syncUndoKept": {
+    "message": "다운로드 후 변경되어 유지됨: {kinds}",
+    "description": "Undo result line: kinds changed after the download, which Undo left as they are"
+  },
+  "syncUndoNothing": {
+    "message": "실행 취소할 내용이 없습니다",
+    "description": "Undo result: nothing was left to undo"
+  },
+  "syncUndoReplaced": {
+    "message": "실행 취소할 수 없음: 이후 다운로드가 이 결과를 대체했습니다",
+    "description": "Undo result: a later download replaced the one this Undo was for"
+  },
+  "syncUndoFailed": {
+    "message": "실행 취소하지 못했습니다. 다시 시도하세요.",
+    "description": "Undo result: the undo failed; Undo stays offered"
   },
   "syncRestoreForks": {
     "message": "대화 분기",
@@ -1335,8 +1455,8 @@
     "description": "Overwrite download button label"
   },
   "syncOverwriteConfirm": {
-    "message": "클라우드 사본으로 로컬 데이터를 덮어쓸까요? 업로드하지 않은 로컬 변경사항은 손실됩니다.",
-    "description": "Confirmation before overwriting local sync data"
+    "message": "이 기기의 데이터를 클라우드 사본으로 바꿀까요? 클라우드에 있고 Voyager가 읽을 수 있는 데이터만 바뀝니다. 완료 후 바로 실행 취소할 수 있습니다.",
+    "description": "Confirm before an overwrite download: only data the cloud has and Voyager can read is replaced, with Undo after"
   },
   "syncDeleteICloudBackup": {
     "message": "iCloud 백업 삭제"
@@ -1364,10 +1484,6 @@
   "syncNoData": {
     "message": "Drive 에서 동기화 데이터를 찾을 수 없습니다",
     "description": "Error message when no data is found in Drive"
-  },
-  "syncOverwriteMissingFolders": {
-    "message": "Drive에 덮어쓸 폴더 백업이 없습니다. 로컬 폴더는 변경되지 않았습니다.",
-    "description": "Error message when overwrite is blocked because Drive has no folders payload"
   },
   "syncUploadFailed": {
     "message": "업로드 실패",

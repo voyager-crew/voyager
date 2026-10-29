@@ -1291,8 +1291,128 @@
     "description": "Sync error message"
   },
   "syncRestorePartial": {
-    "message": "Restauração incompleta. Restaurado: {restored}. Não restaurado: {failed} ({error})",
+    "message": "Restauração incompleta. Restaurado: {restored}. Não restaurado: {failed}",
     "description": "Drive restore stopped partway: which parts were restored and which were not"
+  },
+  "syncGuardMessage": {
+    "message": "Enviar substitui a cópia da nuvem pelos dados deste dispositivo.",
+    "description": "Upload confirmation: an upload would shrink a cloud file or replace one Voyager cannot read"
+  },
+  "syncGuardCount": {
+    "message": "{kind}: nuvem {cloud} → {local}",
+    "description": "Upload confirmation line: a kind whose cloud count would drop; {cloud} is the cloud count, {local} this device's count"
+  },
+  "syncGuardUnrecognized": {
+    "message": "{kind}: cópia da nuvem não reconhecida",
+    "description": "Upload confirmation line: a kind whose cloud file this version cannot read"
+  },
+  "syncGuardSiteKind": {
+    "message": "{kind} ({site})",
+    "description": "A per-site kind inside an upload confirmation line, such as Folders (ChatGPT)"
+  },
+  "syncGuardMerge": {
+    "message": "Mesclar da nuvem",
+    "description": "Upload confirmation choice: run a merge download instead of uploading"
+  },
+  "syncGuardForce": {
+    "message": "Enviar mesmo assim",
+    "description": "Upload confirmation choice: upload and replace the cloud copy (destructive)"
+  },
+  "syncKindTimelineLevels": {
+    "message": "Níveis da linha do tempo",
+    "description": "Kind label: the timeline hierarchy (levels) of conversations"
+  },
+  "syncSkippedMissing": {
+    "message": "Não está na nuvem, mantido neste dispositivo: {kinds}",
+    "description": "Sync result line: kinds the cloud has no copy of, left unchanged on this device"
+  },
+  "syncSkippedUnrecognized": {
+    "message": "Cópia da nuvem não reconhecida, mantido neste dispositivo: {kinds}",
+    "description": "Sync result line: kinds whose cloud copy Voyager cannot read, left unchanged on this device"
+  },
+  "syncSkippedEmptyPlugins": {
+    "message": "A lista de plugins da nuvem está vazia, então os plugins deste dispositivo foram mantidos",
+    "description": "Sync result line: an empty cloud plugin list never clears local plugins"
+  },
+  "syncReasonAccountUnconfirmed": {
+    "message": "Não foi possível confirmar esta conta",
+    "description": "Sync failure reason: the page has not shown which account is signed in"
+  },
+  "syncReasonAccountChanged": {
+    "message": "A página ou a conta mudou durante a sincronização",
+    "description": "Sync failure reason: the tab, page or account changed while the sync ran"
+  },
+  "syncReasonLocalRead": {
+    "message": "Não foi possível ler os dados deste dispositivo",
+    "description": "Sync failure reason: local data could not be read"
+  },
+  "syncReasonCloudRead": {
+    "message": "Não foi possível ler a cópia da nuvem",
+    "description": "Sync failure reason: the cloud file could not be read"
+  },
+  "syncReasonSnapshot": {
+    "message": "Não foi possível salvar uma cópia para desfazer",
+    "description": "Sync failure reason: the copy that Undo restores could not be saved"
+  },
+  "syncReasonSuperseded": {
+    "message": "Outra sincronização começou neste dispositivo",
+    "description": "Sync failure reason: a newer sync took over this one"
+  },
+  "syncReasonSiteExcluded": {
+    "message": "{site} não está incluído na sincronização",
+    "description": "Sync failure reason: the site is turned off in what syncs"
+  },
+  "syncReasonSharedExcluded": {
+    "message": "Prompts, configurações e plugins não estão incluídos na sincronização",
+    "description": "Sync failure reason: shared data is turned off in what syncs"
+  },
+  "syncReasonSignIn": {
+    "message": "Entre no Google Drive e tente novamente",
+    "description": "Sync failure reason: Google Drive is not signed in"
+  },
+  "syncReasonHighlightsUpload": {
+    "message": "Os destaques não foram enviados",
+    "description": "Sync result line: the highlights file failed after the other files uploaded"
+  },
+  "syncReasonStatusRecord": {
+    "message": "Não foi possível registrar o status da sincronização",
+    "description": "Sync result line: the data synced, but its status could not be recorded"
+  },
+  "syncUploadIncomplete": {
+    "message": "Envio incompleto",
+    "description": "Upload result headline: some files uploaded, others did not"
+  },
+  "syncLastFailed": {
+    "message": "A última sincronização não terminou. Tente novamente.",
+    "description": "Popup line for a previous sync that failed for an unknown reason"
+  },
+  "syncUndo": {
+    "message": "Desfazer",
+    "description": "Button: undo the download that just ran"
+  },
+  "syncUndoing": {
+    "message": "Desfazendo…",
+    "description": "Undo button while the undo runs"
+  },
+  "syncUndoDone": {
+    "message": "Desfeito: os dados voltaram ao estado de antes do download",
+    "description": "Undo result: the download was undone"
+  },
+  "syncUndoKept": {
+    "message": "Alterado depois do download, mantido: {kinds}",
+    "description": "Undo result line: kinds changed after the download, which Undo left as they are"
+  },
+  "syncUndoNothing": {
+    "message": "Nada para desfazer",
+    "description": "Undo result: nothing was left to undo"
+  },
+  "syncUndoReplaced": {
+    "message": "Não é possível desfazer: um download posterior substituiu este",
+    "description": "Undo result: a later download replaced the one this Undo was for"
+  },
+  "syncUndoFailed": {
+    "message": "Não foi possível desfazer. Tente novamente.",
+    "description": "Undo result: the undo failed; Undo stays offered"
   },
   "syncRestoreForks": {
     "message": "Ramificações de conversa",
@@ -1335,8 +1455,8 @@
     "description": "Overwrite download button label"
   },
   "syncOverwriteConfirm": {
-    "message": "Sobrescrever os dados locais com a cópia da nuvem? Alterações locais que não foram enviadas serão perdidas.",
-    "description": "Confirmation before overwriting local sync data"
+    "message": "Substituir os dados deste dispositivo pela cópia da nuvem? Só são substituídos os dados que a nuvem tem e o Voyager consegue ler. Você pode desfazer logo em seguida.",
+    "description": "Confirm before an overwrite download: only data the cloud has and Voyager can read is replaced, with Undo after"
   },
   "syncDeleteICloudBackup": {
     "message": "Excluir backup do iCloud"
@@ -1364,10 +1484,6 @@
   "syncNoData": {
     "message": "Nenhum dado de sincronização encontrado no Drive",
     "description": "Error message when no data is found in Drive"
-  },
-  "syncOverwriteMissingFolders": {
-    "message": "O Drive não tem um backup de pastas para sobrescrever. Suas pastas locais não foram alteradas.",
-    "description": "Error message when overwrite is blocked because Drive has no folders payload"
   },
   "syncUploadFailed": {
     "message": "Falha no envio",

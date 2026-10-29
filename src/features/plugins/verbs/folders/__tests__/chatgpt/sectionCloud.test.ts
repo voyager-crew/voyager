@@ -219,14 +219,14 @@ describe('ChatGPT folder section: cloud', () => {
     ]);
   });
 
-  it('reports a failed upload with the provider’s error', async () => {
+  it('reports a failed upload generically, keeping the provider’s raw error out of it', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     sendMessage.mockResolvedValue({ ok: false, error: 'iCloud unavailable' });
 
     await choose(t('folder_cloud_upload'));
 
-    expect(toastDriver.all()).toMatchObject([
-      { message: t('syncError').replace('{error}', 'iCloud unavailable'), tone: 'error' },
-    ]);
+    expect(toastDriver.all()).toMatchObject([{ message: t('syncUploadFailed'), tone: 'error' }]);
+    expect(toastDriver.messages().join(' ')).not.toContain('iCloud unavailable');
   });
 
   it('a cloud merge that cannot be saved says so once and keeps the local folders', async () => {

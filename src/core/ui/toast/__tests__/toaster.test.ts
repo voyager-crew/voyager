@@ -121,6 +121,55 @@ describe('createToaster', () => {
     expect(toastDriver.all()).toEqual([]);
   });
 
+  describe('pauseOnHover', () => {
+    it('waits while the pointer is on it and closes after the time left once it leaves', () => {
+      const owner = toaster();
+      owner.show({ message: 'Downloaded', durationMs: 10_000, pauseOnHover: true });
+      vi.advanceTimersByTime(4000);
+      toastDriver.hover(toastDriver.find('Downloaded')!);
+
+      vi.advanceTimersByTime(30_000);
+      expect(toastDriver.messages()).toEqual(['Downloaded']);
+
+      toastDriver.leave(toastDriver.find('Downloaded')!);
+      vi.advanceTimersByTime(5999);
+      expect(toastDriver.messages()).toEqual(['Downloaded']);
+      vi.advanceTimersByTime(1);
+      expect(toastDriver.all()).toEqual([]);
+    });
+
+    it('waits while focus is inside it', () => {
+      const owner = toaster();
+      owner.show({
+        message: 'Downloaded',
+        action: { label: 'Undo', run: () => {} },
+        durationMs: 10_000,
+        pauseOnHover: true,
+      });
+      toastDriver.focusInside(toastDriver.find('Downloaded')!);
+      vi.advanceTimersByTime(20_000);
+      expect(toastDriver.messages()).toEqual(['Downloaded']);
+    });
+
+    it('leaves a toast without it to close on time under the pointer', () => {
+      const owner = toaster();
+      owner.show({ message: 'Saved', durationMs: 3000 });
+      toastDriver.hover(toastDriver.find('Saved')!);
+      vi.advanceTimersByTime(3000);
+      expect(toastDriver.all()).toEqual([]);
+    });
+
+    it('is not evicted for newer toasts while the person is on it', () => {
+      const owner = toaster();
+      owner.show({ message: 'Undo me', durationMs: 10_000, pauseOnHover: true });
+      toastDriver.hover(toastDriver.find('Undo me')!);
+      for (const n of [1, 2, 3, 4, 5]) owner.show({ message: `Note ${n}`, durationMs: 5000 });
+
+      expect(toastDriver.messages()).toContain('Undo me');
+      expect(toastDriver.messages()).not.toContain('Note 1');
+    });
+  });
+
   it('keeps a changing detail in its own live region', () => {
     const owner = toaster();
     const handle = owner.show({ message: 'Upload the file', detail: '02:00', durationMs: null });

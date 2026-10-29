@@ -1291,8 +1291,128 @@
     "description": "Sync error message"
   },
   "syncRestorePartial": {
-    "message": "لم تكتمل الاستعادة. تمت استعادة: {restored}. لم تتم استعادة: {failed} ({error})",
+    "message": "لم تكتمل الاستعادة. تمت استعادة: {restored}. لم تتم استعادة: {failed}",
     "description": "Drive restore stopped partway: which parts were restored and which were not"
+  },
+  "syncGuardMessage": {
+    "message": "يستبدل الرفع النسخة السحابية ببيانات هذا الجهاز.",
+    "description": "Upload confirmation: an upload would shrink a cloud file or replace one Voyager cannot read"
+  },
+  "syncGuardCount": {
+    "message": "{kind}: السحابة {cloud} ← {local}",
+    "description": "Upload confirmation line: a kind whose cloud count would drop; {cloud} is the cloud count, {local} this device's count"
+  },
+  "syncGuardUnrecognized": {
+    "message": "{kind}: لم يتم التعرف على النسخة السحابية",
+    "description": "Upload confirmation line: a kind whose cloud file this version cannot read"
+  },
+  "syncGuardSiteKind": {
+    "message": "{kind} ({site})",
+    "description": "A per-site kind inside an upload confirmation line, such as Folders (ChatGPT)"
+  },
+  "syncGuardMerge": {
+    "message": "الدمج من السحابة بدلاً من ذلك",
+    "description": "Upload confirmation choice: run a merge download instead of uploading"
+  },
+  "syncGuardForce": {
+    "message": "الرفع على أي حال",
+    "description": "Upload confirmation choice: upload and replace the cloud copy (destructive)"
+  },
+  "syncKindTimelineLevels": {
+    "message": "مستويات الجدول الزمني",
+    "description": "Kind label: the timeline hierarchy (levels) of conversations"
+  },
+  "syncSkippedMissing": {
+    "message": "غير موجودة في السحابة، وتم الاحتفاظ بها على هذا الجهاز: {kinds}",
+    "description": "Sync result line: kinds the cloud has no copy of, left unchanged on this device"
+  },
+  "syncSkippedUnrecognized": {
+    "message": "لم يتم التعرف على النسخة السحابية، وتم الاحتفاظ بالبيانات على هذا الجهاز: {kinds}",
+    "description": "Sync result line: kinds whose cloud copy Voyager cannot read, left unchanged on this device"
+  },
+  "syncSkippedEmptyPlugins": {
+    "message": "قائمة الإضافات في السحابة فارغة، لذا تم الاحتفاظ بإضافات هذا الجهاز",
+    "description": "Sync result line: an empty cloud plugin list never clears local plugins"
+  },
+  "syncReasonAccountUnconfirmed": {
+    "message": "تعذّر تأكيد هذا الحساب",
+    "description": "Sync failure reason: the page has not shown which account is signed in"
+  },
+  "syncReasonAccountChanged": {
+    "message": "تغيّرت الصفحة أو الحساب أثناء المزامنة",
+    "description": "Sync failure reason: the tab, page or account changed while the sync ran"
+  },
+  "syncReasonLocalRead": {
+    "message": "تعذّرت قراءة بيانات هذا الجهاز",
+    "description": "Sync failure reason: local data could not be read"
+  },
+  "syncReasonCloudRead": {
+    "message": "تعذّرت قراءة النسخة السحابية",
+    "description": "Sync failure reason: the cloud file could not be read"
+  },
+  "syncReasonSnapshot": {
+    "message": "تعذّر حفظ نسخة للتراجع",
+    "description": "Sync failure reason: the copy that Undo restores could not be saved"
+  },
+  "syncReasonSuperseded": {
+    "message": "بدأت مزامنة أخرى على هذا الجهاز",
+    "description": "Sync failure reason: a newer sync took over this one"
+  },
+  "syncReasonSiteExcluded": {
+    "message": "{site} غير مُضمَّن في المزامنة",
+    "description": "Sync failure reason: the site is turned off in what syncs"
+  },
+  "syncReasonSharedExcluded": {
+    "message": "المطالبات والإعدادات والإضافات غير مُضمَّنة في المزامنة",
+    "description": "Sync failure reason: shared data is turned off in what syncs"
+  },
+  "syncReasonSignIn": {
+    "message": "سجّل الدخول إلى Google Drive، ثم حاول مرة أخرى",
+    "description": "Sync failure reason: Google Drive is not signed in"
+  },
+  "syncReasonHighlightsUpload": {
+    "message": "لم يتم رفع النصوص المميزة",
+    "description": "Sync result line: the highlights file failed after the other files uploaded"
+  },
+  "syncReasonStatusRecord": {
+    "message": "تعذّر تسجيل حالة المزامنة",
+    "description": "Sync result line: the data synced, but its status could not be recorded"
+  },
+  "syncUploadIncomplete": {
+    "message": "لم يكتمل الرفع",
+    "description": "Upload result headline: some files uploaded, others did not"
+  },
+  "syncLastFailed": {
+    "message": "لم تكتمل المزامنة الأخيرة. حاول مرة أخرى.",
+    "description": "Popup line for a previous sync that failed for an unknown reason"
+  },
+  "syncUndo": {
+    "message": "تراجع",
+    "description": "Button: undo the download that just ran"
+  },
+  "syncUndoing": {
+    "message": "جارٍ التراجع…",
+    "description": "Undo button while the undo runs"
+  },
+  "syncUndoDone": {
+    "message": "تم التراجع: عادت البيانات إلى ما كانت عليه قبل التنزيل",
+    "description": "Undo result: the download was undone"
+  },
+  "syncUndoKept": {
+    "message": "تغيّرت بعد التنزيل، وتم الاحتفاظ بها: {kinds}",
+    "description": "Undo result line: kinds changed after the download, which Undo left as they are"
+  },
+  "syncUndoNothing": {
+    "message": "لا يوجد ما يمكن التراجع عنه",
+    "description": "Undo result: nothing was left to undo"
+  },
+  "syncUndoReplaced": {
+    "message": "لا يمكن التراجع: استبدل تنزيل لاحق هذا التنزيل",
+    "description": "Undo result: a later download replaced the one this Undo was for"
+  },
+  "syncUndoFailed": {
+    "message": "تعذّر التراجع. حاول مرة أخرى.",
+    "description": "Undo result: the undo failed; Undo stays offered"
   },
   "syncRestoreForks": {
     "message": "تفريعات المحادثات",
@@ -1335,8 +1455,8 @@
     "description": "Overwrite download button label"
   },
   "syncOverwriteConfirm": {
-    "message": "هل تريد استبدال البيانات المحلية بنسخة السحابة؟ ستُفقد التغييرات المحلية التي لم يتم رفعها.",
-    "description": "Confirmation before overwriting local sync data"
+    "message": "هل تريد استبدال بيانات هذا الجهاز بالنسخة السحابية؟ يتم استبدال البيانات الموجودة في السحابة والتي يستطيع Voyager قراءتها فقط. يمكنك التراجع مباشرة بعد ذلك.",
+    "description": "Confirm before an overwrite download: only data the cloud has and Voyager can read is replaced, with Undo after"
   },
   "syncDeleteICloudBackup": {
     "message": "حذف نسخة iCloud الاحتياطية"
@@ -1364,10 +1484,6 @@
   "syncNoData": {
     "message": "لم يتم العثور على بيانات مزامنة في Drive",
     "description": "Error message when no data is found in Drive"
-  },
-  "syncOverwriteMissingFolders": {
-    "message": "لا يحتوي Drive على نسخة احتياطية للمجلدات يمكن استخدامها للاستبدال. لم يتم تغيير المجلدات المحلية.",
-    "description": "Error message when overwrite is blocked because Drive has no folders payload"
   },
   "syncUploadFailed": {
     "message": "فشل الرفع",

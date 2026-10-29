@@ -1,5 +1,7 @@
 import browser, { type Manifest } from 'webextension-polyfill';
 
+import { markSiteIncluded } from '@/core/services/CloudSyncScope';
+import { logger } from '@/core/services/LoggerService';
 import {
   getVoyagerBuildTarget,
   isFirefox,
@@ -23,6 +25,7 @@ import { promptCoverageBindingFor } from '@/features/plugins/storage/promptCover
 import type { PluginManifest } from '@/features/plugins/types';
 
 import { writePopupSyncStorageChecked } from './popupStorage';
+import { catalogSiteForUrl } from './siteAccessSites';
 
 /**
  * Ask the background service to reconcile dynamic plugin content scripts after
@@ -42,6 +45,21 @@ export async function requestPluginContentScriptSync(): Promise<boolean> {
     // background permissions.onAdded listener remains the fallback in that case.
     return false;
   }
+}
+
+/**
+ * A site the person just granted access to joins cloud sync, even one turned
+ * off there before, as when the panel turns it on. The background does the
+ * same on `permissions.onAdded`, which covers a popup closed by the prompt;
+ * this covers Edge, which may not deliver that event. Best-effort and
+ * idempotent: the grant stands whether or not the sync row could be written.
+ */
+function includeGrantedSite(activeUrl: string | undefined): void {
+  const site = activeUrl ? catalogSiteForUrl(activeUrl) : undefined;
+  if (!site) return;
+  void markSiteIncluded(site.id).catch((error: unknown) =>
+    logger.warn('Could not include the site in sync', { site: site.id, error: String(error) }),
+  );
 }
 
 /** Whether this browser can grant and inject the optional host access plugins need. */
@@ -218,6 +236,7 @@ export async function setPluginEnabledWithSiteAccess(
               await writeEnabled(plugin, false);
               return 'denied';
             }
+            includeGrantedSite(activeUrl);
             // Edge can resolve the request without reliably delivering the
             // permissions.onAdded event that normally performs registration.
             // Reconcile explicitly while retaining onAdded as Chrome's
@@ -225,11 +244,9 @@ export async function setPluginEnabledWithSiteAccess(
             await requestPluginContentScriptSync();
             return 'enabled';
           }
-        } else if (
-          !reusesKnownSiteGrant(origins, permissions, hint) &&
-          !(await browser.permissions.request(access))
-        ) {
-          return 'denied';
+        } else if (!reusesKnownSiteGrant(origins, permissions, hint)) {
+          if (!(await browser.permissions.request(access))) return 'denied';
+          includeGrantedSite(activeUrl);
         }
       } catch {
         onEnabledChange(false);

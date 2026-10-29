@@ -14,6 +14,10 @@ A Sincronização na Nuvem do Voyager faz backup das suas pastas, da biblioteca 
 | Configuração de plugins        | Sim          | Estado de instalação/ativação e configurações do plugin; as permissões de sites continuam por dispositivo    |
 | Respostas do modelo            | Não          | Os backups de estrelas contêm prompts do usuário, não respostas do modelo                                    |
 
+<!-- D4: draft wording, waiting for Jesse to confirm -->
+
+**Enable Hard Isolation** não vai mais no arquivo de configurações da nuvem. A sincronização do próprio navegador (a do Chrome, por exemplo) continua levando essa opção entre computadores conectados ao mesmo perfil do navegador.
+
 ## Dados com estrela e limites de sincronização
 
 Os backups na nuvem incluem o **texto completo dos prompts de usuário que você marca com estrela** (até 16 KiB UTF-8 por prompt) no seu próprio Google Drive ou iCloud. Os backups de estrelas não armazenam respostas do modelo. O backup v1 mantém apenas prévias; o novo v2 inclui o texto e os registros de exclusão.
@@ -39,7 +43,7 @@ Identificadores de dispositivo, tokens de acesso, caches, coordenadas da janela 
 3. No Safari, escolha **Google Drive** ou **iCloud**. Os outros navegadores usam o Google Drive.
 4. Defina **Modo Sincr.** como **Manual**. O padrão é **Desativado**, e os botões de sincronização só aparecem no modo Manual.
 5. Para o Google Drive no Safari, clique em **Conectar ao Google Drive** para entrar pelo app Voyager. Nos outros navegadores não há um botão de login separado: a janela de autorização do Google abre na primeira vez que você clica em **Enviar** ou **Mesclar**. Para o iCloud, verifique se o Mac está conectado ao iCloud.
-6. Clique em **Enviar** para sincronizar seus dados locais com a nuvem, ou em **Mesclar** para trazer os dados da nuvem para este navegador. **Sobrescrever** substitui os dados locais pela cópia da nuvem em vez de mesclar, então tudo o que você ainda não enviou será perdido.
+6. Clique em **Enviar** para sincronizar seus dados locais com a nuvem, ou em **Mesclar** para trazer os dados da nuvem para este navegador. **Sobrescrever** pede confirmação e depois substitui só os dados que a nuvem tem e o Voyager consegue ler; o que estiver faltando ou ilegível na nuvem fica como está, e o resultado mostra isso. Você pode desfazer logo em seguida.
 
 No iCloud, **Excluir backup do iCloud** remove todos os backups do Voyager no iCloud; os dados locais no Mac permanecem como estão.
 
@@ -47,7 +51,7 @@ No iCloud, **Excluir backup do iCloud** remove todos os backups do Voyager no iC
 
 A maneira mais fácil é clicar no ícone de nuvem no cabeçalho da área de pastas, na barra lateral esquerda, e escolher **"Enviar para nuvem"** ou **"Sincronizar da nuvem"** no menu.
 
-<img src="/assets/cloud-sync.png" alt="Botões de sincronização rápida na nuvem" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 10px; width: 352px; max-width: 100%;"/>
+<GuideShot src="/assets/cloud-sync.png" alt="Botões de sincronização rápida na nuvem" :width="440" />
 
 ::: warning
 **Recomendação de segurança: Proteção dupla**\
@@ -56,6 +60,36 @@ Embora a sincronização na nuvem ofereça grande conveniência, recomendamos en
 1. **Pastas**: Abra o menu da área de pastas, escolha **Importar/Exportar pastas** e depois **Exportar pastas** para salvar todas as suas pastas e as atribuições de conversas.
 2. **Prompts**: No Gerenciador de Prompts, clique em **Exportar** para salvar a sua biblioteca de prompts.
    :::
+
+## Proteção da sincronização
+
+<GuideFacts>
+<GuideFact title="Confirmação antes de enviar">
+
+Se um envio deixaria um arquivo da nuvem bem menor (este dispositivo não tem nada de algo que a nuvem tem, ou tem menos da metade quando a nuvem tem pelo menos 4) ou o Voyager não consegue ler o arquivo da nuvem, ele pergunta antes: **Mesclar da nuvem**, **Enviar mesmo assim** ou **Cancelar**. Mesclar só é oferecido quando o arquivo da nuvem pode ser lido.
+
+</GuideFact>
+<GuideFact title="Sobrescrever só substitui o que existe">
+
+**Sobrescrever** mantém qualquer tipo de dado que falte na nuvem ou que o Voyager não consiga ler, e mostra isso no resultado. Uma lista de plugins vazia na nuvem nunca apaga seus plugins.
+
+</GuideFact>
+<GuideFact title="Desfazer logo após baixar">
+
+Depois de **Mesclar** ou **Sobrescrever**, a linha de resultado do popup oferece **Desfazer** enquanto o popup estiver aberto. O aviso da nuvem na área de pastas oferece isso por cerca de 10 segundos e espera enquanto o ponteiro estiver sobre ele. Desfazer restaura o que aquele download mudou e mantém o que você mudou depois. Só o download mais recente pode ser desfeito.
+
+</GuideFact>
+<GuideFact title="Cópias de histórico no Google Drive">
+
+Antes de um envio substituir um arquivo, o Voyager guarda a versão substituída ao lado dele, na pasta do Drive, como `<arquivo>.backup-<hora UTC>.json`, por exemplo `gemini-voyager-folders.backup-2026-10-29-031100.json`. Ele mantém as 3 mais recentes de cada arquivo e move as mais antigas para a lixeira do Drive. O iCloud não guarda cópias de histórico.
+
+</GuideFact>
+<GuideFact title="Atualize todos os dispositivos">
+
+Com **Enable Hard Isolation** ativado, o Voyager atual nomeia os arquivos do Drive de cada conta pelo e-mail da conta. Um dispositivo ainda no Voyager 2.2.1 que viu a conta pela primeira vez em um endereço numerado (gemini.google.com/u/1) não verá o que as versões novas enviarem até ser atualizado. As atualizações da Chrome Web Store chegam em poucos dias; o Safari demora mais.
+
+</GuideFact>
+</GuideFacts>
 
 ## Sincronização na nuvem versus backup manual
 

@@ -8,6 +8,7 @@ import { StorageKeys } from '@/core/types/common';
 import { useCloudSyncSettings } from '../useCloudSyncSettings';
 import { baseState, createCloudSyncChromeMock, flushMicrotasks } from './cloudSyncChromeMock';
 import { emptyFolders, folders } from './cloudSyncTransferHarness';
+import { answerConfirm } from './waitForCloudSyncAction';
 
 vi.mock('@/contexts/LanguageContext', () => ({
   useLanguage: () => ({ language: 'en', setLanguage: vi.fn(), t: (key: string) => key }),
@@ -31,7 +32,6 @@ describe('popup completion after download interruption', () => {
     'sends success false after a %s apply settles',
     async (interruption) => {
       vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-      vi.spyOn(window, 'confirm').mockReturnValue(true);
       const send = vi.fn(async (message: { type?: string }) => {
         if (message.type === 'gv.sync.getState') return { ok: true, state: baseState };
         if (message.type === 'gv.sync.download')
@@ -78,6 +78,9 @@ describe('popup completion after download interruption', () => {
       let applying!: Promise<void>;
       await act(async () => {
         applying = settings.handleDownloadFromDrive('overwrite');
+      });
+      await answerConfirm('syncOverwrite');
+      await act(async () => {
         await entered.promise;
       });
       if (interruption === 'closed') await act(async () => root?.unmount());

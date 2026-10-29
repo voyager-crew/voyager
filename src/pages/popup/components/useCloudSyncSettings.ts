@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { completeCloudSyncDownload } from '@/core/services/CloudSyncDownloadCompletion';
 import { StorageKeys } from '@/core/types/common';
 import type { SyncMode, SyncPlatform, SyncProvider, SyncState } from '@/core/types/sync';
 import { DEFAULT_SYNC_STATE } from '@/core/types/sync';
@@ -8,13 +7,12 @@ import { getVoyagerBuildTarget, isSafari } from '@/core/utils/browser';
 import { googleDriveUnavailableOn } from '@/core/utils/googleDriveSignIn';
 import { deleteSafariICloudBackup } from '@/core/utils/safariICloudSync';
 import { FOLDER_PLATFORMS, getFolderPlatformForHost } from '@/features/folder/platforms';
-import type { PulledCatalogTimeline } from '@/features/timeline/catalogTimelineCloud';
 import type { TranslationKey } from '@/utils/translations';
 
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { usePopupFormFactor } from '../hooks/usePopupFormFactor';
-import { type CloudRestoreMode, cloudRestoreFailureText } from './cloudRestore';
-import { type CloudDownloadData, useCloudSyncTransfer } from './useCloudSyncTransfer';
+import { type CloudSyncStatus, useCloudSyncActions } from './useCloudSyncActions';
+import { useCloudSyncTransfer } from './useCloudSyncTransfer';
 
 function formatSyncTime(
   timestamp: number | null,
@@ -44,20 +42,14 @@ function formatSyncTime(
 
 /** Own popup sync state and user actions; Drive work stays in background messages. */
 export function useCloudSyncSettings(sourceTabId?: number) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const supportsICloud = getVoyagerBuildTarget() === 'safari' || isSafari();
   // Firefox for Android has no identity.launchWebAuthFlow, so Drive cannot sign in there.
   const googleDriveUnavailable = googleDriveUnavailableOn(usePopupFormFactor());
 
   const [syncState, setSyncState] = useState<SyncState>(DEFAULT_SYNC_STATE);
-  const [statusMessage, setStatusMessage] = useState<{
-    text: string;
-    kind: 'ok' | 'warn' | 'err';
-  } | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<CloudSyncStatus | null>(null);
   const [isDeletingICloudBackup, setIsDeletingICloudBackup] = useState(false);
-  const [downloadMode, setDownloadMode] = useState<CloudRestoreMode | null>(null);
   const [platform, setPlatform] = useState<SyncPlatform>('gemini');
   // Tabs without a folder bucket render no sync controls.
   const [hasFolderPlatform, setHasFolderPlatform] = useState(true);
@@ -74,11 +66,9 @@ export function useCloudSyncSettings(sourceTabId?: number) {
     return tab;
   }, [sourceTabId]);
 
-  const { prepareUpload, prepareDownload } = useCloudSyncTransfer(
-    platform,
-    highlightSyncEnabled,
-    getTargetTab,
-  );
+  const transfer = useCloudSyncTransfer(platform, highlightSyncEnabled, getTargetTab);
+  const { isUploading, isDownloading, downloadMode, undo, handleSyncNow, handleDownloadFromDrive } =
+    useCloudSyncActions({ t, language, platform, transfer, setSyncState, setStatusMessage });
 
   // Detect current platform from active tab URL
   const detectPlatform = useCallback(async (): Promise<SyncPlatform | null> => {
@@ -197,170 +187,13 @@ export function useCloudSyncSettings(sourceTabId?: number) {
     }
   }, [t]);
 
-  // Handle sync now (upload current data)
-  const handleSyncNow = useCallback(async () => {
-    setStatusMessage(null);
-    setIsUploading(true);
-
-    try {
-      const payload = await prepareUpload();
-
-      const response = (await chrome.runtime.sendMessage({
-        type: 'gv.sync.upload',
-        payload,
-      })) as
-        | {
-            ok?: boolean;
-            error?: string;
-            state?: SyncState;
-            highlights?: { synced?: boolean; skipped?: boolean };
-          }
-        | undefined;
-
-      if (response?.state) {
-        setSyncState(response.state);
-      }
-
-      if (response?.ok) {
-        setStatusMessage({
-          text: t(response.highlights?.skipped ? 'syncSuccessHighlightsSkipped' : 'syncSuccess'),
-          kind: response.highlights?.skipped ? 'warn' : 'ok',
-        });
-      } else {
-        throw new Error(response?.error || response?.state?.error || t('syncUploadFailed'));
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Sync failed';
-      console.error('[CloudSyncSettings] Sync failed:', error);
-      setStatusMessage({ text: t('syncError').replace('{error}', errorMessage), kind: 'err' });
-    } finally {
-      setIsUploading(false);
-    }
-  }, [prepareUpload, t]);
-
-  // Handle download from Drive (restore data) with merge as the default safe path.
-  const handleDownloadFromDrive = useCallback(
-    async (mode: CloudRestoreMode = 'merge') => {
-      if (mode === 'overwrite' && !window.confirm(t('syncOverwriteConfirm'))) {
-        return;
-      }
-
-      setStatusMessage(null);
-      setIsDownloading(true);
-      setDownloadMode(mode);
-
-      let operationId: string | undefined;
-      let completed = false;
-      try {
-        const download = await prepareDownload();
-
-        const response = (await chrome.runtime.sendMessage({
-          type: 'gv.sync.download',
-          payload: download.payload,
-        })) as
-          | {
-              ok?: boolean;
-              error?: string;
-              state?: SyncState;
-              highlights?: {
-                synced?: boolean;
-                skipped?: boolean;
-                count?: number;
-                empty?: boolean;
-              };
-              data?: CloudDownloadData | null;
-              snapshotId?: string;
-              operationId?: string;
-              catalog?: PulledCatalogTimeline | null;
-              selection?: CloudDownloadData['selection'];
-              kindStatus?: CloudDownloadData['kindStatus'];
-            }
-          | undefined;
-
-        operationId = response?.operationId;
-        if (response?.state) {
-          setSyncState(response.state);
-        }
-
-        if (!response?.ok) {
-          throw new Error(response?.error || response?.state?.error || t('syncDownloadFailed'));
-        }
-
-        if (!response.data) {
-          // Catalog outlines and stars have files of their own; restore them without folders too.
-          const { restored } = await download.restoreCatalogTimeline(
-            response.snapshotId,
-            response.catalog,
-          );
-          completed = true;
-          if (restored || response.highlights?.synced) {
-            setStatusMessage({ text: t('syncSuccess'), kind: 'ok' });
-            return;
-          }
-          setStatusMessage({ text: t('syncNoData'), kind: 'err' });
-          return;
-        }
-
-        const { foldersMissing, nameConflicts, skipped } = await download.restore(
-          {
-            ...response.data,
-            selection: response.selection ?? response.data.selection,
-            kindStatus: response.kindStatus ?? response.data.kindStatus,
-          },
-          mode,
-          response.highlights?.synced === true,
-          response.snapshotId,
-          response.catalog,
-        );
-        completed = true;
-        setStatusMessage({
-          text:
-            mode === 'overwrite' && skipped.length > 0
-              ? t('syncOverwriteMissingFolders')
-              : nameConflicts > 0
-                ? t('promptNameConflictsDetected').replace('{count}', String(nameConflicts))
-                : t(
-                    foldersMissing
-                      ? 'syncSuccessFoldersMissing'
-                      : response.highlights?.skipped
-                        ? 'syncSuccessHighlightsSkipped'
-                        : 'syncSuccess',
-                  ),
-          kind:
-            skipped.length > 0 ||
-            foldersMissing ||
-            response.highlights?.skipped ||
-            nameConflicts > 0
-              ? 'warn'
-              : 'ok',
-        });
-      } catch (error) {
-        console.error('[CloudSyncSettings] Download failed:', error);
-        setStatusMessage({ text: cloudRestoreFailureText(t, error), kind: 'err' });
-      } finally {
-        try {
-          await completeCloudSyncDownload(
-            (message) => chrome.runtime.sendMessage(message),
-            operationId,
-            completed,
-          );
-        } catch (error) {
-          setStatusMessage({ text: cloudRestoreFailureText(t, error), kind: 'err' });
-        }
-        setIsDownloading(false);
-        setDownloadMode(null);
-      }
-    },
-    [prepareDownload, t],
-  );
-
-  // Clear status message after 3 seconds
+  // A plain success clears after 3 seconds; reasons, warnings and an Undo stay until the next action.
+  const transient = statusMessage?.kind === 'ok' && !statusMessage.lines && !undo.offered;
   useEffect(() => {
-    if (statusMessage) {
-      const timer = setTimeout(() => setStatusMessage(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [statusMessage]);
+    if (!transient) return;
+    const timer = setTimeout(() => setStatusMessage(null), 3000);
+    return () => clearTimeout(timer);
+  }, [statusMessage, transient]);
 
   return {
     syncState,
@@ -374,6 +207,7 @@ export function useCloudSyncSettings(sourceTabId?: number) {
     isDownloading,
     isDeletingICloudBackup,
     downloadMode,
+    undo,
     lastUploadText: formatSyncTime(
       syncState[FOLDER_PLATFORMS[platform].lastUploadTimeField] ?? null,
       'upload',

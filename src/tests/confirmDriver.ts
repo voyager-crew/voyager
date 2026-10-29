@@ -2,6 +2,8 @@
  * Drives the shared confirm the way a user does, through its role and labels,
  * so call-site tests do not depend on how the card is built.
  */
+import { vi } from 'vitest';
+
 const POPOVER = '[data-gv-layer="popover"]';
 
 function dialog(): HTMLElement | null {
@@ -16,6 +18,27 @@ export const confirmDriver = {
   isOpen: (): boolean => dialog() !== null,
   message: (): string | null =>
     dialog()?.querySelector<HTMLElement>('#gv-confirm-message')?.textContent ?? null,
+  /** The lines listed under the message, in order. */
+  details: (): string[] =>
+    Array.from(dialog()?.querySelectorAll('.gv-confirm-details li') ?? []).map(
+      (item) => item.textContent ?? '',
+    ),
+  /** The description a screen reader reads with the message. */
+  description: (): string | null => {
+    const card = dialog();
+    const id = card?.getAttribute('aria-describedby');
+    return id ? (card?.querySelector(`#${id}`)?.textContent ?? null) : null;
+  },
+  /** `rtl` when the card is mirrored. */
+  direction(): 'ltr' | 'rtl' {
+    const host = (dialog()?.getRootNode() as ShadowRoot | undefined)?.host;
+    return host?.hasAttribute('data-gv-rtl') ? 'rtl' : 'ltr';
+  },
+  /** How a choice is drawn: `primary`, `secondary`, `danger` or `cancel`. */
+  emphasis: (label: string): string | null =>
+    Array.from(dialog()?.querySelectorAll<HTMLElement>('button') ?? []).find(
+      (button) => button.textContent === label,
+    )?.dataset.emphasis ?? null,
   labels: (): string[] =>
     Array.from(dialog()?.querySelectorAll('button') ?? []).map(
       (button) => button.textContent ?? '',
@@ -40,6 +63,18 @@ export const confirmDriver = {
     );
     if (!button) throw new Error(`No confirm button labelled "${label}"`);
     button.click();
+  },
+  /**
+   * Runs `action`, answers its confirm with `label` once the card is open, and
+   * resolves with what the action returns.
+   */
+  async answering<T>(label: string, action: () => Promise<T>): Promise<T> {
+    const pending = action();
+    await vi.waitFor(() => {
+      if (!dialog()) throw new Error('The confirm has not opened');
+    });
+    confirmDriver.answer(label);
+    return pending;
   },
   pressOutside(target: Element = document.body): void {
     target.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, composed: true }));

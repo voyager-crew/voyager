@@ -6,12 +6,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StorageKeys } from '@/core/types/common';
 import { DEFAULT_SYNC_STATE } from '@/core/types/sync';
 import { routeCatalogOutlineWrites } from '@/features/timeline/__tests__/catalogOutlineBackground';
+import { confirmDriver } from '@/tests/confirmDriver';
 import { type MemoryStorage, createMemoryStorage } from '@/tests/memoryStorage';
 
 import { useCloudSyncSettings } from '../useCloudSyncSettings';
 
 vi.mock('@/contexts/LanguageContext', () => ({
-  useLanguage: () => ({ t: (key: string) => key }),
+  useLanguage: () => ({ language: 'en', t: (key: string) => key }),
 }));
 vi.mock('@/core/utils/browser', () => ({
   getVoyagerBuildTarget: () => 'chrome',
@@ -94,9 +95,14 @@ describe('cloud sync popup state owner', () => {
   });
 
   it('cancels overwrite before requesting cloud data or entering a busy state', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
     sendMessage.mockClear();
-    await act(async () => settings.handleDownloadFromDrive('overwrite'));
+    let overwrite!: Promise<void>;
+    await act(async () => {
+      overwrite = settings.handleDownloadFromDrive('overwrite');
+    });
+    expect(confirmDriver.focusedLabel()).toBe('pm_cancel');
+    await act(async () => confirmDriver.answer('pm_cancel'));
+    await act(async () => overwrite);
     expect(sendMessage).not.toHaveBeenCalled();
     expect(localSet).not.toHaveBeenCalled();
     expect(settings.isDownloading).toBe(false);

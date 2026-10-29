@@ -8,6 +8,7 @@ import type { TranslationKey } from '@/utils/translations';
 import { Button } from '../../../components/ui/button';
 import { Label } from '../../../components/ui/label';
 import type { PromptDataTransferController } from '../hooks/usePromptDataTransfer';
+import { CloudSyncResultLine } from './CloudSyncResultLine';
 
 export interface PromptDataTransferProps {
   transfer: PromptDataTransferController;
@@ -25,8 +26,18 @@ function MaterialGlyphIcon({ path, className }: { path: string; className?: stri
 
 /** Shared prompt-library transfer controls for native and plugin platform popups. */
 export function PromptDataTransfer({ transfer, t }: PromptDataTransferProps) {
-  const { status, busy, cloudUnavailable, inputRef, onExport, onImport, onCloudPull, onCloudPush } =
-    transfer;
+  const {
+    status,
+    busy,
+    undo,
+    cloudUnavailable,
+    inputRef,
+    onExport,
+    onImport,
+    onCloudPull,
+    onCloudPush,
+  } = transfer;
+  const locked = busy || undo.busy;
 
   return (
     <div className="space-y-2">
@@ -39,7 +50,7 @@ export function PromptDataTransfer({ transfer, t }: PromptDataTransferProps) {
           variant="outline"
           size="sm"
           className="w-full"
-          disabled={busy}
+          disabled={locked}
           onClick={() => {
             void onExport();
           }}
@@ -53,7 +64,7 @@ export function PromptDataTransfer({ transfer, t }: PromptDataTransferProps) {
           variant="outline"
           size="sm"
           className="w-full"
-          disabled={busy}
+          disabled={locked}
           onClick={() => inputRef.current?.click()}
         >
           <span className="inline-flex items-center gap-1.5">
@@ -70,7 +81,7 @@ export function PromptDataTransfer({ transfer, t }: PromptDataTransferProps) {
           variant="outline"
           size="sm"
           className="w-full"
-          disabled={busy || cloudUnavailable}
+          disabled={locked || cloudUnavailable}
           onClick={() => {
             void onCloudPull();
           }}
@@ -84,9 +95,9 @@ export function PromptDataTransfer({ transfer, t }: PromptDataTransferProps) {
           variant="outline"
           size="sm"
           className="w-full"
-          disabled={busy || cloudUnavailable}
-          onClick={() => {
-            void onCloudPush();
+          disabled={locked || cloudUnavailable}
+          onClick={(event) => {
+            void onCloudPush(event.currentTarget);
           }}
         >
           <span className="inline-flex items-center gap-1.5">
@@ -106,17 +117,12 @@ export function PromptDataTransfer({ transfer, t }: PromptDataTransferProps) {
         }}
       />
       {status && (
-        <p
-          className={`text-xs ${
-            status.kind === 'ok'
-              ? 'text-success'
-              : status.kind === 'warn'
-                ? 'text-warning'
-                : 'text-destructive'
-          }`}
-        >
-          {status.text}
-        </p>
+        <CloudSyncResultLine
+          {...status}
+          align="start"
+          undo={undo.offered || undo.busy ? { busy: undo.busy, run: undo.undo } : null}
+          t={t}
+        />
       )}
     </div>
   );

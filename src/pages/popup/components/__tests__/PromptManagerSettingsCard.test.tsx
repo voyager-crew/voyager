@@ -35,6 +35,7 @@ describe('PromptManagerSettingsCard', () => {
       },
       transfer: {
         busy: false,
+        undo: { offered: false, busy: false, offer: vi.fn(), withdraw: vi.fn(), undo: vi.fn() },
         cloudUnavailable: false,
         status: null,
         inputRef: createRef<HTMLInputElement>(),

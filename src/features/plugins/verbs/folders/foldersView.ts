@@ -68,6 +68,9 @@ export class SiteFoldersView {
       platform: site.platform,
       t,
       notify: (message, tone) => this.notify(message, tone),
+      // A result completes the transfer notice in place, with Undo for a download.
+      notice: (input) =>
+        this.scope.isDisposed ? null : this.toaster.show({ ...input, channel: this.site.key }),
       begin: () => {
         if (!this.store.ready) return null;
         return {

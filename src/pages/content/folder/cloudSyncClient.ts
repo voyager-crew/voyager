@@ -7,6 +7,10 @@
  * Each site says how a run starts, saves and what else it restores; the order
  * of the steps, their notices and the stale-run checks are shared. A run drops
  * its result, and its feedback, once the account activation it started in is gone.
+ *
+ * An upload the background refuses (it would shrink a cloud file, or replace
+ * one this build cannot read) asks first; a download's result offers Undo.
+ * Results are shown after the completion handshake, with reasons, never raw text.
  */
 import browser from 'webextension-polyfill';
 
@@ -14,15 +18,33 @@ import { buildScopedStorageKey } from '@/core/services/AccountIsolationService';
 import type { CloudApplyDownload } from '@/core/services/CloudSyncApplyPlan';
 import { completeCloudSyncDownload } from '@/core/services/CloudSyncDownloadCompletion';
 import { planCatalogRestore } from '@/core/services/CloudSyncRestoreKeys';
-import { readCloudSyncScope, isSyncScopeIncluded } from '@/core/services/CloudSyncScope';
+import {
+  readCloudSyncScope,
+  isSyncScopeIncluded,
+  type SyncScopeRow,
+} from '@/core/services/CloudSyncScope';
 import {
   recordCloudSyncWrites,
   type StorageWriteKey,
 } from '@/core/services/CloudSyncSnapshotService';
+import {
+  type CloudSyncNotice,
+  downloadFailureNotice,
+  reasonLines,
+  uploadFailureNotice,
+  withStatusRecordWarning,
+} from '@/core/services/cloudSyncNotices';
+import { canUndoCloudSync } from '@/core/services/cloudSyncUndoOffer';
 import type { FolderData } from '@/core/types/folder';
 import type { SyncAccountScope } from '@/core/types/sync';
+import type { UploadGuardRefusedFile } from '@/core/types/syncUploadGuard';
+import { askUploadGuard } from '@/core/ui/cloudSyncGuardConfirm';
+import type { ToastHandle, ToastInput, ToastTone } from '@/core/ui/toast/types';
 import { FOLDER_PLATFORMS, type FolderPlatform } from '@/features/folder/platforms';
-import { applyFolderCloudDownload } from '@/features/folder/services/cloudDownloadApply';
+import {
+  applyFolderCloudDownload,
+  FolderCloudApplyError,
+} from '@/features/folder/services/cloudDownloadApply';
 import {
   pullCatalogTimeline,
   restorePulledCatalogTimeline,
@@ -30,6 +52,7 @@ import {
 } from '@/features/timeline/catalogTimelineCloud';
 import { mergeFolderData } from '@/utils/merge';
 
+import { folderApplyFailure, showCloudResult } from './cloudSyncClientNotices';
 import type { FolderWriteReceipt } from './storage/FolderStorageAdapter';
 
 /** A downloaded cloud copy: the site's folder file and site-specific parts. */
@@ -48,6 +71,11 @@ type SyncResponse =
       operationId?: string;
       kindStatus?: CloudApplyDownload['kindStatus'];
       catalog?: PulledCatalogTimeline | null;
+      refusedFiles?: UploadGuardRefusedFile[];
+      /** Binds a forced retry to the refusal it answers. */
+      guardToken?: string;
+      excludedRows?: SyncScopeRow[];
+      partial?: boolean;
     }
   | undefined;
 
@@ -57,7 +85,7 @@ export type CloudSyncScopes = {
   timelineHierarchyAccountScope?: SyncAccountScope;
 };
 
-export type CloudSyncTone = 'info' | 'success' | 'error';
+export type CloudSyncTone = ToastTone;
 
 export interface CloudSyncRun {
   /** False once the account activation, or the page view, the run started in is gone. */
@@ -87,6 +115,12 @@ export interface CloudSyncSite {
   platform: FolderPlatform;
   t(key: string): string;
   notify(message: string, tone: CloudSyncTone): void;
+  /**
+   * A full notice on the transfer channel (title, action, timing), whose
+   * handle goes quiet once a later notice takes the channel. `null` when the
+   * site showed the message alone. Without it, a result offers no Undo.
+   */
+  notice?(input: Omit<ToastInput, 'channel' | 'onActivate'>): ToastHandle | null;
   /** Starts a run, or `null` while the folders cannot be edited. */
   begin(): CloudSyncRun | null;
 }
@@ -96,15 +130,12 @@ const EMPTY_FOLDERS: FolderData = { folders: [], folderContents: {} };
 const sendRuntimeMessage = (message: { type: string; payload?: unknown }) =>
   browser.runtime.sendMessage(message);
 
-function errorText(error: unknown): string {
-  return error instanceof Error ? error.message : 'Unknown error';
-}
-
-function notifySyncError(site: CloudSyncSite, message: string): void {
-  site.notify(
-    site.t('syncError').replace('{error}', () => message),
-    'error',
-  );
+/** A site turned off in what syncs says so, instead of doing nothing. */
+function notifyExcluded(site: CloudSyncSite): void {
+  const [line] = reasonLines(site.t, 'sync_scope_excluded', [
+    { kind: 'site', siteId: site.platform },
+  ]);
+  site.notify(line, 'info');
 }
 
 /** The cloud folders, or the notice that explains why there are none to merge. */
@@ -140,24 +171,65 @@ export async function uploadSiteFolders(site: CloudSyncSite): Promise<void> {
   try {
     const scope = await readCloudSyncScope();
     if (!run.current()) return;
-    if (!isSyncScopeIncluded(scope, { kind: 'site', siteId: site.platform })) return;
+    if (!isSyncScopeIncluded(scope, { kind: 'site', siteId: site.platform })) {
+      notifyExcluded(site);
+      return;
+    }
     site.notify(site.t('uploadInProgress'), 'info');
     const scopes = (await run.scopes?.()) ?? {};
     if (!run.current()) return;
-    const response = (await browser.runtime.sendMessage({
+    const payload = { folders: run.folders, platform: site.platform, selection: 'site', ...scopes };
+    let response = (await browser.runtime.sendMessage({
       type: 'gv.sync.upload',
-      payload: { folders: run.folders, platform: site.platform, selection: 'site', ...scopes },
+      payload,
     })) as SyncResponse;
     if (!run.current()) return;
-    if (!response?.ok) {
-      notifySyncError(site, response?.error || 'Unknown error');
+    // A token that no longer matches (another account, other files) brings a new refusal: ask again.
+    while (response?.error === 'upload_guard_refused' && response.refusedFiles?.length) {
+      // The menu item that asked has closed, so the confirm sits centred.
+      const answer = await askUploadGuard({
+        t: site.t,
+        platform: site.platform,
+        refusedFiles: response.refusedFiles,
+        allowMerge: true,
+      });
+      if (!answer) return;
+      if (!run.current()) {
+        showCloudResult(site, uploadFailureNotice(site.t, 'account_changed'));
+        return;
+      }
+      if (answer === 'merge') {
+        await syncSiteFolders(site);
+        return;
+      }
+      site.notify(site.t('uploadInProgress'), 'info');
+      // The refused payload, so the retry keeps the scope the refusal was computed for.
+      response = (await browser.runtime.sendMessage({
+        type: 'gv.sync.upload',
+        payload: {
+          ...payload,
+          force: true,
+          ...(response.guardToken ? { guardToken: response.guardToken } : {}),
+        },
+      })) as SyncResponse;
+      if (!run.current()) return;
+    }
+    if (response?.ok) {
+      showCloudResult(site, { tone: 'ok', headline: site.t('uploadSuccess'), lines: [] });
       return;
     }
-    site.notify(site.t('uploadSuccess'), 'success');
+    console.error('[FolderCloudSync] Cloud upload failed:', response?.error);
+    showCloudResult(
+      site,
+      uploadFailureNotice(site.t, response?.error ?? null, {
+        excludedRows: response?.excludedRows,
+        partial: response?.partial,
+      }),
+    );
   } catch (error) {
     if (!run.current()) return;
     console.error('[FolderCloudSync] Cloud upload failed:', error);
-    notifySyncError(site, errorText(error));
+    showCloudResult(site, uploadFailureNotice(site.t, error));
   }
 }
 
@@ -170,10 +242,16 @@ export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
   if (!run) return;
   let operationId: string | undefined;
   let completed = false;
+  // Shown after the completion handshake; `undoFor` is the download's snapshot.
+  let outcome: { notice: CloudSyncNotice; undoFor?: string } | { info: string } | null = null;
+  let catalogPlanned = false;
   try {
     const scope = await readCloudSyncScope();
     if (!run.current()) return;
-    if (!isSyncScopeIncluded(scope, { kind: 'site', siteId: site.platform })) return;
+    if (!isSyncScopeIncluded(scope, { kind: 'site', siteId: site.platform })) {
+      notifyExcluded(site);
+      return;
+    }
     site.notify(site.t('downloadInProgress'), 'info');
     const scopes = (await run.scopes?.()) ?? {};
     if (!run.current()) return;
@@ -184,7 +262,14 @@ export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
     operationId = response?.operationId;
     if (!run.current()) return;
     if (!response?.ok) {
-      notifySyncError(site, response?.error || 'Download failed');
+      console.error('[FolderCloudSync] Cloud download failed:', response?.error);
+      outcome = {
+        notice: downloadFailureNotice(site.t, {
+          cause: response?.error ?? null,
+          excludedRows: response?.excludedRows,
+        }),
+        undoFor: response?.snapshotId,
+      };
       return;
     }
     const download: CloudDownload | null | undefined = response.data
@@ -225,6 +310,7 @@ export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
       platform: site.platform,
       accountScope: scopes.accountScope ?? null,
     };
+    catalogPlanned = !!catalogPlan.pulled;
     const restoreCatalog = catalogPlan.pulled
       ? async (snapshotId: string) => {
           const restored = catalogPlan.pulled
@@ -251,9 +337,13 @@ export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
       if (!run.current() || result.status === 'cancelled') return;
       completed = true;
       // Highlights may sync on their own when there is no folder copy yet.
-      if (result.catalogRestored || response.highlights?.synced || extraOwner?.keys.length)
-        site.notify(site.t('syncSuccess'), 'success');
-      else site.notify(site.t('syncNoData') || 'No data in cloud', 'info');
+      outcome =
+        result.catalogRestored || response.highlights?.synced || extraOwner?.keys.length
+          ? {
+              notice: { tone: 'ok', headline: site.t('syncSuccess'), lines: [] },
+              undoFor: result.snapshotId,
+            }
+          : { info: site.t('syncNoData') || 'No data in cloud' };
       return;
     }
     const definition = FOLDER_PLATFORMS[site.platform];
@@ -288,16 +378,40 @@ export async function syncSiteFolders(site: CloudSyncSite): Promise<void> {
     });
     if (!run.current() || result.status === 'cancelled') return;
     completed = true;
-    site.notify(site.t('downloadMergeSuccess'), 'success');
+    outcome = {
+      notice: { tone: 'ok', headline: site.t('downloadMergeSuccess'), lines: [] },
+      undoFor: result.snapshotId,
+    };
   } catch (error) {
     if (!run.current()) return;
     console.error('[FolderCloudSync] Cloud sync failed:', error);
-    notifySyncError(site, errorText(error));
+    outcome =
+      error instanceof FolderCloudApplyError
+        ? {
+            notice: downloadFailureNotice(
+              site.t,
+              folderApplyFailure(error, { catalog: catalogPlanned }),
+            ),
+            undoFor: error.snapshotId,
+          }
+        : { notice: downloadFailureNotice(site.t, { cause: error }) };
   } finally {
     try {
       await completeCloudSyncDownload(sendRuntimeMessage, operationId, completed);
     } catch (error) {
-      if (run.current()) notifySyncError(site, errorText(error));
+      console.error('[FolderCloudSync] Cloud sync completion failed:', error);
+      // The data landed: its result and Undo stay, with a line that the status was not recorded.
+      if (outcome && 'notice' in outcome && completed)
+        outcome = { ...outcome, notice: withStatusRecordWarning(site.t, outcome.notice) };
+      else if (!outcome && run.current())
+        outcome = { notice: downloadFailureNotice(site.t, { cause: error }) };
+    }
+    if (outcome && run.current()) {
+      if ('info' in outcome) site.notify(outcome.info, 'info');
+      else {
+        const undoFor = (await canUndoCloudSync(outcome.undoFor)) ? outcome.undoFor : undefined;
+        if (run.current()) showCloudResult(site, outcome.notice, undoFor);
+      }
     }
   }
 }

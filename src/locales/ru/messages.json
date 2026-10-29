@@ -1291,8 +1291,128 @@
     "description": "Sync error message"
   },
   "syncRestorePartial": {
-    "message": "Восстановление не завершено. Восстановлено: {restored}. Не восстановлено: {failed} ({error})",
+    "message": "Восстановление не завершено. Восстановлено: {restored}. Не восстановлено: {failed}",
     "description": "Drive restore stopped partway: which parts were restored and which were not"
+  },
+  "syncGuardMessage": {
+    "message": "Загрузка заменит облачную копию данными с этого устройства.",
+    "description": "Upload confirmation: an upload would shrink a cloud file or replace one Voyager cannot read"
+  },
+  "syncGuardCount": {
+    "message": "{kind}: в облаке {cloud} → {local}",
+    "description": "Upload confirmation line: a kind whose cloud count would drop; {cloud} is the cloud count, {local} this device's count"
+  },
+  "syncGuardUnrecognized": {
+    "message": "{kind}: облачная копия не распознана",
+    "description": "Upload confirmation line: a kind whose cloud file this version cannot read"
+  },
+  "syncGuardSiteKind": {
+    "message": "{kind} ({site})",
+    "description": "A per-site kind inside an upload confirmation line, such as Folders (ChatGPT)"
+  },
+  "syncGuardMerge": {
+    "message": "Объединить из облака",
+    "description": "Upload confirmation choice: run a merge download instead of uploading"
+  },
+  "syncGuardForce": {
+    "message": "Всё равно загрузить",
+    "description": "Upload confirmation choice: upload and replace the cloud copy (destructive)"
+  },
+  "syncKindTimelineLevels": {
+    "message": "Уровни таймлайна",
+    "description": "Kind label: the timeline hierarchy (levels) of conversations"
+  },
+  "syncSkippedMissing": {
+    "message": "Нет в облаке, оставлено на устройстве: {kinds}",
+    "description": "Sync result line: kinds the cloud has no copy of, left unchanged on this device"
+  },
+  "syncSkippedUnrecognized": {
+    "message": "Облачная копия не распознана, оставлено на устройстве: {kinds}",
+    "description": "Sync result line: kinds whose cloud copy Voyager cannot read, left unchanged on this device"
+  },
+  "syncSkippedEmptyPlugins": {
+    "message": "Список плагинов в облаке пуст, поэтому плагины на этом устройстве сохранены",
+    "description": "Sync result line: an empty cloud plugin list never clears local plugins"
+  },
+  "syncReasonAccountUnconfirmed": {
+    "message": "Не удаётся подтвердить аккаунт",
+    "description": "Sync failure reason: the page has not shown which account is signed in"
+  },
+  "syncReasonAccountChanged": {
+    "message": "Во время синхронизации сменилась страница или аккаунт",
+    "description": "Sync failure reason: the tab, page or account changed while the sync ran"
+  },
+  "syncReasonLocalRead": {
+    "message": "Не удалось прочитать данные на этом устройстве",
+    "description": "Sync failure reason: local data could not be read"
+  },
+  "syncReasonCloudRead": {
+    "message": "Не удалось прочитать облачную копию",
+    "description": "Sync failure reason: the cloud file could not be read"
+  },
+  "syncReasonSnapshot": {
+    "message": "Не удалось сохранить копию для отмены",
+    "description": "Sync failure reason: the copy that Undo restores could not be saved"
+  },
+  "syncReasonSuperseded": {
+    "message": "На этом устройстве началась другая синхронизация",
+    "description": "Sync failure reason: a newer sync took over this one"
+  },
+  "syncReasonSiteExcluded": {
+    "message": "{site} не участвует в синхронизации",
+    "description": "Sync failure reason: the site is turned off in what syncs"
+  },
+  "syncReasonSharedExcluded": {
+    "message": "Промпты, настройки и плагины не участвуют в синхронизации",
+    "description": "Sync failure reason: shared data is turned off in what syncs"
+  },
+  "syncReasonSignIn": {
+    "message": "Войдите в Google Drive и повторите попытку",
+    "description": "Sync failure reason: Google Drive is not signed in"
+  },
+  "syncReasonHighlightsUpload": {
+    "message": "Выделения не загружены",
+    "description": "Sync result line: the highlights file failed after the other files uploaded"
+  },
+  "syncReasonStatusRecord": {
+    "message": "Не удалось записать состояние синхронизации",
+    "description": "Sync result line: the data synced, but its status could not be recorded"
+  },
+  "syncUploadIncomplete": {
+    "message": "Загрузка не завершена",
+    "description": "Upload result headline: some files uploaded, others did not"
+  },
+  "syncLastFailed": {
+    "message": "Последняя синхронизация не завершилась. Повторите попытку.",
+    "description": "Popup line for a previous sync that failed for an unknown reason"
+  },
+  "syncUndo": {
+    "message": "Отменить",
+    "description": "Button: undo the download that just ran"
+  },
+  "syncUndoing": {
+    "message": "Отмена…",
+    "description": "Undo button while the undo runs"
+  },
+  "syncUndoDone": {
+    "message": "Отменено: данные вернулись к состоянию до скачивания",
+    "description": "Undo result: the download was undone"
+  },
+  "syncUndoKept": {
+    "message": "Изменено после скачивания, сохранено: {kinds}",
+    "description": "Undo result line: kinds changed after the download, which Undo left as they are"
+  },
+  "syncUndoNothing": {
+    "message": "Нечего отменять",
+    "description": "Undo result: nothing was left to undo"
+  },
+  "syncUndoReplaced": {
+    "message": "Нельзя отменить: более позднее скачивание заменило это",
+    "description": "Undo result: a later download replaced the one this Undo was for"
+  },
+  "syncUndoFailed": {
+    "message": "Не удалось отменить. Повторите попытку.",
+    "description": "Undo result: the undo failed; Undo stays offered"
   },
   "syncRestoreForks": {
     "message": "Ветки диалогов",
@@ -1335,8 +1455,8 @@
     "description": "Overwrite download button label"
   },
   "syncOverwriteConfirm": {
-    "message": "Перезаписать локальные данные облачной копией? Локальные изменения, которые не были загружены, будут потеряны.",
-    "description": "Confirmation before overwriting local sync data"
+    "message": "Заменить данные на этом устройстве облачной копией? Заменяются только данные, которые есть в облаке и которые Voyager может прочитать. Сразу после этого можно отменить.",
+    "description": "Confirm before an overwrite download: only data the cloud has and Voyager can read is replaced, with Undo after"
   },
   "syncDeleteICloudBackup": {
     "message": "Удалить резервную копию iCloud"
@@ -1364,10 +1484,6 @@
   "syncNoData": {
     "message": "Данные синхронизации не найдены в Drive",
     "description": "Error message when no data is found in Drive"
-  },
-  "syncOverwriteMissingFolders": {
-    "message": "В Drive нет резервной копии папок для перезаписи. Локальные папки не были изменены.",
-    "description": "Error message when overwrite is blocked because Drive has no folders payload"
   },
   "syncUploadFailed": {
     "message": "Загрузка не удалась",

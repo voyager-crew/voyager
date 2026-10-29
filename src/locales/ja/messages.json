@@ -1291,8 +1291,128 @@
     "description": "Sync error message"
   },
   "syncRestorePartial": {
-    "message": "復元が完了しませんでした。復元済み：{restored}。未復元：{failed}（{error}）",
+    "message": "復元が完了しませんでした。復元済み：{restored}。未復元：{failed}",
     "description": "Drive restore stopped partway: which parts were restored and which were not"
+  },
+  "syncGuardMessage": {
+    "message": "アップロードすると、クラウドのコピーがこの端末のデータで置き換えられます。",
+    "description": "Upload confirmation: an upload would shrink a cloud file or replace one Voyager cannot read"
+  },
+  "syncGuardCount": {
+    "message": "{kind}：クラウド {cloud} → {local}",
+    "description": "Upload confirmation line: a kind whose cloud count would drop; {cloud} is the cloud count, {local} this device's count"
+  },
+  "syncGuardUnrecognized": {
+    "message": "{kind}：クラウドのコピーを認識できません",
+    "description": "Upload confirmation line: a kind whose cloud file this version cannot read"
+  },
+  "syncGuardSiteKind": {
+    "message": "{kind}（{site}）",
+    "description": "A per-site kind inside an upload confirmation line, such as Folders (ChatGPT)"
+  },
+  "syncGuardMerge": {
+    "message": "代わりにクラウドからマージ",
+    "description": "Upload confirmation choice: run a merge download instead of uploading"
+  },
+  "syncGuardForce": {
+    "message": "それでもアップロード",
+    "description": "Upload confirmation choice: upload and replace the cloud copy (destructive)"
+  },
+  "syncKindTimelineLevels": {
+    "message": "タイムラインの階層",
+    "description": "Kind label: the timeline hierarchy (levels) of conversations"
+  },
+  "syncSkippedMissing": {
+    "message": "クラウドにないため、この端末のデータを保持しました：{kinds}",
+    "description": "Sync result line: kinds the cloud has no copy of, left unchanged on this device"
+  },
+  "syncSkippedUnrecognized": {
+    "message": "クラウドのコピーを認識できないため、この端末のデータを保持しました：{kinds}",
+    "description": "Sync result line: kinds whose cloud copy Voyager cannot read, left unchanged on this device"
+  },
+  "syncSkippedEmptyPlugins": {
+    "message": "クラウドのプラグイン一覧が空のため、この端末のプラグインを保持しました",
+    "description": "Sync result line: an empty cloud plugin list never clears local plugins"
+  },
+  "syncReasonAccountUnconfirmed": {
+    "message": "このアカウントを確認できません",
+    "description": "Sync failure reason: the page has not shown which account is signed in"
+  },
+  "syncReasonAccountChanged": {
+    "message": "同期中にページまたはアカウントが変わりました",
+    "description": "Sync failure reason: the tab, page or account changed while the sync ran"
+  },
+  "syncReasonLocalRead": {
+    "message": "この端末のデータを読み取れませんでした",
+    "description": "Sync failure reason: local data could not be read"
+  },
+  "syncReasonCloudRead": {
+    "message": "クラウドのコピーを読み取れませんでした",
+    "description": "Sync failure reason: the cloud file could not be read"
+  },
+  "syncReasonSnapshot": {
+    "message": "元に戻すためのコピーを保存できませんでした",
+    "description": "Sync failure reason: the copy that Undo restores could not be saved"
+  },
+  "syncReasonSuperseded": {
+    "message": "この端末で別の同期が始まりました",
+    "description": "Sync failure reason: a newer sync took over this one"
+  },
+  "syncReasonSiteExcluded": {
+    "message": "{site} は同期の対象外です",
+    "description": "Sync failure reason: the site is turned off in what syncs"
+  },
+  "syncReasonSharedExcluded": {
+    "message": "プロンプト、設定、プラグインは同期の対象外です",
+    "description": "Sync failure reason: shared data is turned off in what syncs"
+  },
+  "syncReasonSignIn": {
+    "message": "Google ドライブにログインしてから、もう一度お試しください",
+    "description": "Sync failure reason: Google Drive is not signed in"
+  },
+  "syncReasonHighlightsUpload": {
+    "message": "ハイライトはアップロードされませんでした",
+    "description": "Sync result line: the highlights file failed after the other files uploaded"
+  },
+  "syncReasonStatusRecord": {
+    "message": "同期状態を記録できませんでした",
+    "description": "Sync result line: the data synced, but its status could not be recorded"
+  },
+  "syncUploadIncomplete": {
+    "message": "アップロードが完了しませんでした",
+    "description": "Upload result headline: some files uploaded, others did not"
+  },
+  "syncLastFailed": {
+    "message": "前回の同期が完了していません。もう一度お試しください。",
+    "description": "Popup line for a previous sync that failed for an unknown reason"
+  },
+  "syncUndo": {
+    "message": "元に戻す",
+    "description": "Button: undo the download that just ran"
+  },
+  "syncUndoing": {
+    "message": "元に戻しています…",
+    "description": "Undo button while the undo runs"
+  },
+  "syncUndoDone": {
+    "message": "元に戻しました。データはダウンロード前の状態です",
+    "description": "Undo result: the download was undone"
+  },
+  "syncUndoKept": {
+    "message": "ダウンロード後に変更されたため保持しました：{kinds}",
+    "description": "Undo result line: kinds changed after the download, which Undo left as they are"
+  },
+  "syncUndoNothing": {
+    "message": "元に戻す内容はありません",
+    "description": "Undo result: nothing was left to undo"
+  },
+  "syncUndoReplaced": {
+    "message": "元に戻せません：後のダウンロードで置き換えられました",
+    "description": "Undo result: a later download replaced the one this Undo was for"
+  },
+  "syncUndoFailed": {
+    "message": "元に戻せませんでした。もう一度お試しください。",
+    "description": "Undo result: the undo failed; Undo stays offered"
   },
   "syncRestoreForks": {
     "message": "会話の分岐",
@@ -1335,8 +1455,8 @@
     "description": "Overwrite download button label"
   },
   "syncOverwriteConfirm": {
-    "message": "クラウドのコピーでローカルデータを上書きしますか？アップロードしていないローカル変更は失われます。",
-    "description": "Confirmation before overwriting local sync data"
+    "message": "この端末のデータをクラウドのコピーで置き換えますか？クラウドにあり、Voyager が読み取れるデータだけを置き換えます。完了後すぐに元に戻せます。",
+    "description": "Confirm before an overwrite download: only data the cloud has and Voyager can read is replaced, with Undo after"
   },
   "syncDeleteICloudBackup": {
     "message": "iCloud バックアップを削除"
@@ -1364,10 +1484,6 @@
   "syncNoData": {
     "message": "ドライブに同期データが見つかりません",
     "description": "Error message when no data is found in Drive"
-  },
-  "syncOverwriteMissingFolders": {
-    "message": "ドライブに上書き元のフォルダーバックアップがありません。ローカルフォルダーは変更されませんでした。",
-    "description": "Error message when overwrite is blocked because Drive has no folders payload"
   },
   "syncUploadFailed": {
     "message": "アップロードに失敗しました",

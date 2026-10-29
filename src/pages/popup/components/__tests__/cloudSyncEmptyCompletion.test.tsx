@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useCloudSyncSettings } from '../useCloudSyncSettings';
 import { baseState, createCloudSyncChromeMock, flushMicrotasks } from './cloudSyncChromeMock';
+import { answerConfirm } from './waitForCloudSyncAction';
 
 vi.mock('@/contexts/LanguageContext', () => ({
   useLanguage: () => ({ language: 'en', setLanguage: vi.fn(), t: (key: string) => key }),
@@ -26,7 +27,6 @@ describe('popup completion after an empty download', () => {
 
   it('reports cancellation when the popup closes before a no-data reply with no snapshot', async () => {
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     const entered = Promise.withResolvers<void>();
     const release = Promise.withResolvers<void>();
     const send = vi.fn(async (message: { type?: string }) => {
@@ -58,6 +58,9 @@ describe('popup completion after an empty download', () => {
     let downloading!: Promise<void>;
     await act(async () => {
       downloading = settings.handleDownloadFromDrive('overwrite');
+    });
+    await answerConfirm('syncOverwrite');
+    await act(async () => {
       await entered.promise;
     });
     await act(async () => root?.unmount());

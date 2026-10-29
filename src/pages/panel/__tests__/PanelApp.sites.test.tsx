@@ -71,6 +71,28 @@ describe('turning a supported site on', () => {
   });
 
   it.each([
+    ['joins cloud sync, even after being turned off there', true],
+    ['leaves cloud sync alone when the browser says no', false],
+  ])('%s', async (_, allow) => {
+    vi.mocked(chrome.storage.local.get).mockResolvedValue({
+      [StorageKeys.CLOUD_SYNC_SCOPE]: { version: 1, shared: true, sites: { claude: false } },
+    } as never);
+    extensionApi.permissions.request.mockResolvedValueOnce(allow);
+    await openSites();
+    act(() => claudeSwitch().click());
+    await act(flush);
+
+    const scopes = vi
+      .mocked(chrome.storage.local.set)
+      .mock.calls.flatMap(([items]) =>
+        StorageKeys.CLOUD_SYNC_SCOPE in items ? [items[StorageKeys.CLOUD_SYNC_SCOPE]] : [],
+      );
+    expect(scopes).toEqual(
+      allow ? [expect.objectContaining({ sites: expect.objectContaining({ claude: true }) })] : [],
+    );
+  });
+
+  it.each([
     [
       'throws',
       () => {

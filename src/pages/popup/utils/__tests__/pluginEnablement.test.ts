@@ -10,9 +10,10 @@ import type { PluginManifest } from '@/features/plugins/types';
 
 import { setPluginEnabledWithSiteAccess } from '../pluginEnablement';
 
-const { containsMock, requestMock } = vi.hoisted(() => ({
+const { containsMock, requestMock, browserKind } = vi.hoisted(() => ({
   containsMock: vi.fn(),
   requestMock: vi.fn(),
+  browserKind: { firefox: false },
 }));
 
 vi.mock('webextension-polyfill', () => ({
@@ -24,7 +25,7 @@ vi.mock('webextension-polyfill', () => ({
 
 vi.mock('@/core/utils/browser', () => ({
   getVoyagerBuildTarget: () => 'chrome',
-  isFirefox: () => false,
+  isFirefox: () => browserKind.firefox,
   supportsOptionalHostPermissions: () => true,
   supportsDynamicContentScriptRegistration: () => true,
 }));
@@ -78,6 +79,7 @@ afterEach(() => {
   (chrome.storage.local.set as unknown as Mock).mockReset();
   containsMock.mockReset();
   requestMock.mockReset();
+  browserKind.firefox = false;
 });
 
 /** The manifest the popup renders, listed the way `usePopupPlugins` lists it. */
@@ -169,6 +171,57 @@ describe('enabling a local plugin from the popup', () => {
 
     expect(await setPluginEnabledWithSiteAccess(seen, true, CLAUDE, vi.fn())).toBe('write_failed');
     expect(requestMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('a site granted from a plugin switch joins cloud sync', () => {
+  const SCOPE = StorageKeys.CLOUD_SYNC_SCOPE;
+  beforeEach(() => {
+    // Turned off in what syncs before; the scope is read by its key alone.
+    memory[SCOPE] = { version: 1, shared: true, sites: { claude: false } };
+    (chrome.storage.local.get as unknown as Mock).mockImplementation(async (keys: unknown) =>
+      typeof keys === 'string'
+        ? keys in memory
+          ? { [keys]: structuredClone(memory[keys]) }
+          : {}
+        : Object.fromEntries(
+            Object.entries(keys as Record<string, unknown>).map(([key, fallback]) => [
+              key,
+              key in memory ? structuredClone(memory[key]) : fallback,
+            ]),
+          ),
+    );
+  });
+  /** Once the best-effort scope write after the grant has run. */
+  const claudeIncluded = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    return (memory[SCOPE] as { sites: Record<string, boolean> }).sites.claude;
+  };
+
+  it.each([
+    ['grants access', true, true, false],
+    ['refuses access', false, false, false],
+    ['grants access in Firefox, asked first', true, true, true],
+  ])('puts Claude back in sync only when the browser %s', async (_, grant, included, firefox) => {
+    browserKind.firefox = firefox;
+    await importLocalPlugin(authored('.gv-wide{max-width:none}'));
+    containsMock.mockResolvedValue(false);
+    requestMock.mockResolvedValue(grant);
+
+    await setPluginEnabledWithSiteAccess(await shownManifest(), true, CLAUDE, vi.fn());
+
+    expect(requestMock).toHaveBeenCalledOnce();
+    expect(await claudeIncluded()).toBe(included);
+  });
+
+  it('leaves what syncs alone when the access was already there', async () => {
+    await importLocalPlugin(authored('.gv-wide{max-width:none}'));
+    containsMock.mockResolvedValue(true);
+
+    await setPluginEnabledWithSiteAccess(await shownManifest(), true, CLAUDE, vi.fn());
+
+    expect(requestMock).not.toHaveBeenCalled();
+    expect(await claudeIncluded()).toBe(false);
   });
 });
 

@@ -3,6 +3,7 @@
  * to the control that asked, or centred when none did. It answers the question
  * and nothing more; what happened afterwards is reported through the toast.
  */
+import { SHADOW_RTL_ATTR } from '@/pages/content/folder/shadowHost';
 import { getTranslationSync } from '@/utils/i18n';
 
 import confirmCss from './confirm.css?raw';
@@ -17,12 +18,18 @@ export const CONFIRM_ANCHOR_ATTR = 'data-gv-confirm-anchor';
 export type ConfirmChoice<C extends string> = {
   readonly id: C;
   readonly label: string;
-  /** Default `primary`. A danger confirm paints its primary choice red. */
-  readonly emphasis?: 'primary' | 'secondary';
+  /**
+   * Default `primary`. A danger confirm paints its primary choice red, unless a
+   * choice is `danger` itself: that one is then the destructive answer, in red
+   * text, and the primary stays the safe one.
+   */
+  readonly emphasis?: 'primary' | 'secondary' | 'danger';
 };
 
 export type ConfirmRequest<C extends string> = {
   readonly message: string;
+  /** Lines listed under the message, such as each kind an upload would shrink. */
+  readonly details?: readonly string[];
   /**
    * The control that asked. Leave it out only when no control did, such as a
    * step of a running export: the card then sits centred in the viewport.
@@ -37,6 +44,11 @@ export type ConfirmRequest<C extends string> = {
   readonly align?: PopoverAlign;
   /** An owning panel may use a different theme from the page. */
   readonly scheme?: 'light' | 'dark';
+  /**
+   * Default: the page's direction (`body.gv-rtl`). An extension page that sets
+   * `dir` on its own root, such as the popup, passes it here.
+   */
+  readonly dir?: 'ltr' | 'rtl';
   /** A danger confirm focuses Cancel, so Enter right after opening it never destroys. */
   readonly tone: 'danger' | 'neutral';
   /** Rendered after Cancel, in order. */
@@ -83,10 +95,13 @@ export function askConfirm<C extends string = 'confirm'>(
 
     // Keep the panel override separate from the scheme mirrored from the page.
     if (request.scheme) popover.host.dataset.gvUiScheme = request.scheme;
+    if (request.dir) popover.host.toggleAttribute(SHADOW_RTL_ATTR, request.dir === 'rtl');
 
     const card = document.createElement('div');
     card.className = 'gv-confirm';
     card.dataset.tone = request.tone;
+    if (request.choices.some((choice) => choice.emphasis === 'danger'))
+      card.dataset.destructive = 'choice';
     card.setAttribute('role', 'alertdialog');
     card.setAttribute('aria-labelledby', 'gv-confirm-message');
     const message = document.createElement('p');
@@ -96,10 +111,22 @@ export function askConfirm<C extends string = 'confirm'>(
     message.textContent = request.message;
     const actions = document.createElement('div');
     actions.className = 'gv-confirm-actions';
+    const details = request.details?.length ? document.createElement('ul') : null;
+    if (details) {
+      details.className = 'gv-confirm-details';
+      details.id = 'gv-confirm-details';
+      for (const line of request.details ?? []) {
+        const item = document.createElement('li');
+        item.dir = 'auto';
+        item.textContent = line;
+        details.append(item);
+      }
+      card.setAttribute('aria-describedby', details.id);
+    }
 
     const button = (
       label: string,
-      emphasis: 'cancel' | 'primary' | 'secondary',
+      emphasis: 'cancel' | 'primary' | 'secondary' | 'danger',
       answer: C | null,
     ) => {
       const element = document.createElement('button');
@@ -119,7 +146,7 @@ export function askConfirm<C extends string = 'confirm'>(
     const choices = request.choices.map((choice) =>
       button(choice.label, choice.emphasis ?? 'primary', choice.id),
     );
-    card.append(message, actions);
+    card.append(...(details ? [message, details, actions] : [message, actions]));
     popover.root.append(card);
     popover.place();
     request.anchor?.setAttribute(CONFIRM_ANCHOR_ATTR, '');

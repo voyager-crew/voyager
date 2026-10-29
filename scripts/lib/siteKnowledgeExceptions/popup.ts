@@ -58,14 +58,6 @@ export const POPUP_SITE_KNOWLEDGE_EXCEPTIONS: readonly SiteKnowledgeException[] 
       'Gemini initial React state and detectPlatform fallback when no web tab can be resolved.',
   },
   {
-    file: 'src/pages/popup/components/useCloudSyncTransfer.ts',
-    kind: 'platform-branch',
-    values: {
-      gemini: 1,
-    },
-    reason: 'Gemini route-user id participates in cloud sync.',
-  },
-  {
     file: 'src/pages/popup/hooks/useActivePopupTab.ts',
     kind: 'platform-branch',
     values: {
@@ -81,6 +73,15 @@ export const POPUP_SITE_KNOWLEDGE_EXCEPTIONS: readonly SiteKnowledgeException[] 
       gemini: 5,
     },
     reason: 'existing native folder settings keys and per-site popup state.',
+  },
+  {
+    file: 'src/pages/popup/hooks/usePromptDataTransfer.ts',
+    kind: 'platform-branch',
+    values: {
+      gemini: 1,
+    },
+    reason:
+      'Prompts push refuses only the shared prompts file; its guard names no site, so it uses the Gemini platform the push travels with.',
   },
   {
     file: 'src/pages/popup/utils/nativeSiteCapabilities.ts',

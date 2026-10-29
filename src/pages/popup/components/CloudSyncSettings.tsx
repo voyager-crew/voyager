@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { PLATFORM_LOGOS, type PlatformLogo } from '@/core/icons/platformLogos';
+import { persistedErrorText } from '@/core/services/cloudSyncNotices';
 import type { SyncPlatform } from '@/core/types/sync';
 import { FOLDER_PLATFORMS } from '@/features/folder/platforms';
 import { BUNDLED_SITE_ADAPTERS } from '@/features/plugins/catalog/sites';
@@ -11,6 +12,7 @@ import { Label } from '../../../components/ui/label';
 import { SegmentedControl } from '../../../components/ui/segmented-control';
 import { Switch } from '../../../components/ui/switch';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { CloudSyncResultLine } from './CloudSyncResultLine';
 import { IconChatGPT, IconClaude, IconDeepSeek } from './WebsiteLogos';
 import { useCloudSyncSettings } from './useCloudSyncSettings';
 
@@ -70,6 +72,7 @@ export function CloudSyncSettings({ sourceTabId }: CloudSyncSettingsProps = {}) 
     isDownloading,
     isDeletingICloudBackup,
     downloadMode,
+    undo,
     lastUploadText,
     lastSyncText,
     handleModeChange,
@@ -82,6 +85,8 @@ export function CloudSyncSettings({ sourceTabId }: CloudSyncSettingsProps = {}) 
   } = useCloudSyncSettings(sourceTabId);
 
   if (!hasFolderPlatform) return null;
+  // An undo in progress keeps every transfer button off, like an upload or download.
+  const busy = isUploading || isDownloading || undo.busy;
   const label = BUNDLED_SITE_ADAPTERS.find((site) => site.id === platform)?.label || platform;
   // Derived folder sites have no preset; catalog metadata must not crash the popup.
   const Logo = Object.hasOwn(PRESET_LOGOS, platform) ? PRESET_LOGOS[platform] : undefined;
@@ -183,8 +188,8 @@ export function CloudSyncSettings({ sourceTabId }: CloudSyncSettingsProps = {}) 
                 variant="outline"
                 size="sm"
                 className="w-full"
-                onClick={handleSyncNow}
-                disabled={isUploading || isDownloading}
+                onClick={(event) => void handleSyncNow(event.currentTarget)}
+                disabled={busy}
               >
                 <span className="flex items-center gap-1 text-xs">
                   {isUploading ? (
@@ -224,8 +229,8 @@ export function CloudSyncSettings({ sourceTabId }: CloudSyncSettingsProps = {}) 
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDownloadFromDrive('merge')}
-                  disabled={isUploading || isDownloading}
+                  onClick={(event) => void handleDownloadFromDrive('merge', event.currentTarget)}
+                  disabled={busy}
                 >
                   <span className="flex items-center gap-1 text-xs">
                     {downloadMode === 'merge' ? (
@@ -266,8 +271,10 @@ export function CloudSyncSettings({ sourceTabId }: CloudSyncSettingsProps = {}) 
                   variant="outline"
                   size="sm"
                   className="hover:text-destructive"
-                  onClick={() => handleDownloadFromDrive('overwrite')}
-                  disabled={isUploading || isDownloading}
+                  onClick={(event) =>
+                    void handleDownloadFromDrive('overwrite', event.currentTarget)
+                  }
+                  disabled={busy}
                 >
                   <span className="flex items-center gap-1 text-xs">
                     {downloadMode === 'overwrite' ? (
@@ -376,7 +383,7 @@ export function CloudSyncSettings({ sourceTabId }: CloudSyncSettingsProps = {}) 
             size="sm"
             className="text-muted-foreground hover:text-destructive w-full text-xs"
             onClick={handleDeleteICloudBackup}
-            disabled={isUploading || isDownloading || isDeletingICloudBackup}
+            disabled={busy || isDeletingICloudBackup}
           >
             {isDeletingICloudBackup ? t('syncDeletingICloudBackup') : t('syncDeleteICloudBackup')}
           </Button>
@@ -384,23 +391,17 @@ export function CloudSyncSettings({ sourceTabId }: CloudSyncSettingsProps = {}) 
 
         {/* Status Message */}
         {statusMessage && (
-          <p
-            className={`text-center text-xs ${
-              statusMessage.kind === 'ok'
-                ? 'text-success'
-                : statusMessage.kind === 'warn'
-                  ? 'text-warning'
-                  : 'text-destructive'
-            }`}
-          >
-            {statusMessage.text}
-          </p>
+          <CloudSyncResultLine
+            {...statusMessage}
+            undo={undo.offered || undo.busy ? { busy: undo.busy, run: undo.undo } : null}
+            t={t}
+          />
         )}
 
-        {/* Error Display */}
+        {/* The error a previous sync left: its reason when known, never the raw text. */}
         {syncState.error && !statusMessage && (
           <p className="text-destructive text-center text-xs">
-            {t('syncError').replace('{error}', syncState.error)}
+            {persistedErrorText(t, syncState.error)}
           </p>
         )}
       </CardContent>
