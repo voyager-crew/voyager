@@ -28,13 +28,56 @@ export function createShellIcon(name: keyof typeof PATHS): SVGSVGElement {
   return svg;
 }
 
-/** The liquid filter the ball and satellites share: blur 7, alpha matrix 19 −9, composite atop. */
-export function createGooFilter(id: string): SVGSVGElement {
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('width', '0');
-  svg.setAttribute('height', '0');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('class', 'gv-ps-goo-defs');
-  svg.innerHTML = `<defs><filter id="${id}"><feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur"/><feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo"/><feComposite in="SourceGraphic" in2="goo" operator="atop"/></filter></defs>`;
-  return svg;
+export interface OrbitTrack {
+  readonly svg: SVGSVGElement;
+  readonly path: SVGPathElement;
+  readonly fade: SVGLinearGradientElement;
+}
+
+const TRACK_FADE_ID = 'gv-ps-track-fade';
+
+function svgNode<K extends keyof SVGElementTagNameMap>(
+  tag: K,
+  attributes: Record<string, string>,
+): SVGElementTagNameMap[K] {
+  const node = document.createElementNS(SVG_NS, tag);
+  for (const [attribute, value] of Object.entries(attributes)) node.setAttribute(attribute, value);
+  return node;
+}
+
+/**
+ * The orbit the satellites ride: one arc centred on the ball, faded at both
+ * ends by a gradient along its chord. Attributes are explicit so a host's
+ * global `svg` or `path` rules cannot restyle it.
+ */
+export function createOrbitTrack(): OrbitTrack {
+  const svg = svgNode('svg', {
+    class: 'gv-ps-orbit',
+    width: '200',
+    height: '200',
+    viewBox: '-100 -100 200 200',
+    'aria-hidden': 'true',
+    focusable: 'false',
+  });
+  const fade = svgNode('linearGradient', { id: TRACK_FADE_ID, gradientUnits: 'userSpaceOnUse' });
+  for (const [offset, opacity] of [
+    ['0', '0'],
+    ['0.2', '1'],
+    ['0.8', '1'],
+    ['1', '0'],
+  ]) {
+    fade.append(svgNode('stop', { offset, class: 'gv-ps-orbit-stop', 'stop-opacity': opacity }));
+  }
+  const defs = svgNode('defs', {});
+  defs.append(fade);
+  const path = svgNode('path', {
+    class: 'gv-ps-orbit-track',
+    fill: 'none',
+    stroke: `url(#${TRACK_FADE_ID})`,
+    'stroke-width': '1.5',
+    'stroke-linecap': 'butt',
+    pathLength: '1',
+  });
+  svg.append(defs, path);
+  return { svg, path, fade };
 }

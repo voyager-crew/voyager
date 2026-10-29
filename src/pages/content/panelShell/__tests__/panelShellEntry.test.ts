@@ -1,6 +1,6 @@
 /**
  * The floating entry through the running shell: Prompt Manager keeps its
- * ball, the satellites bud from it, "Hide" and its undo, and every way back.
+ * ball, the satellites fly out of it, "Hide" and its undo, and every way back.
  */
 import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 
@@ -50,6 +50,11 @@ afterEach(async () => {
 
 function entry(): HTMLElement | null {
   return document.querySelector<HTMLElement>('.gv-ps-entry');
+}
+
+/** The one label the satellites share; it names whichever one is pointed at. */
+function label(): HTMLElement | null {
+  return document.querySelector<HTMLElement>('.gv-ps-entry .gv-ps-tip');
 }
 
 /** The panel page's address: only the panel shortcut adds `#keyboard`. */
@@ -189,7 +194,7 @@ describe('floating entry', () => {
     expect(hidden()).toBe(false);
   });
 
-  it('names a macOS Option binding by its key in the tip, the toast and aria-keyshortcuts', async () => {
+  it('names a macOS Option binding by its key in the label, the toast and aria-keyshortcuts', async () => {
     vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
     // The service outlives the page; later tests expect the default ⌥V.
     onTestFinished(() => keyboardShortcutService.resetToDefaults());
@@ -204,7 +209,8 @@ describe('floating entry', () => {
     await page.start();
 
     hover(ball());
-    expect(satellite('panel')?.querySelector('kbd')?.textContent).toBe('⌥B');
+    hover(satellite('panel'));
+    expect(label()?.querySelector('kbd')?.textContent).toBe('⌥B');
     expect(satellite('panel')?.getAttribute('aria-keyshortcuts')).toBe('Alt+B');
     satellite('hide')!.click();
     await flush();
@@ -266,15 +272,17 @@ describe('floating entry', () => {
   it('follows a change of Voyager’s language without a reload', async () => {
     page = installShellPage(CLAUDE);
     await page.start();
+    hover(ball());
+    hover(satellite('hide'));
 
     try {
       await setCachedLanguage('zh');
       expect(satellite('panel')?.getAttribute('aria-label')).toBe('Voyager 面板');
-      expect(satellite('hide')?.textContent).toBe('隐藏');
+      expect(label()?.textContent).toBe('隐藏');
       expect(ball()?.getAttribute('aria-label')).toBe('Voyager 面板');
     } finally {
       await setCachedLanguage('en');
     }
-    expect(satellite('hide')?.textContent).toBe('Hide');
+    expect(label()?.textContent).toBe('Hide');
   });
 });

@@ -116,7 +116,7 @@ html[data-gv-scheme='dark'] :is(.gv-ps-entry, .gv-ps-panel, .gv-ps-toast) {
     transform 0.5s var(--gv-ps-spring);
 }
 
-/* The satellites' liquid necks are the brand colour, so the ball keeps it on hover. */
+/* The satellites are the brand colour, so the ball keeps it on hover. */
 .gv-pm-trigger.gv-ps-ball:hover,
 :root.gv-platform-themed .gv-pm-trigger.gv-ps-ball:hover {
   background: var(--gv-ps-brand) !important;
@@ -141,22 +141,12 @@ html[data-gv-scheme='dark'] :is(.gv-ps-entry, .gv-ps-panel, .gv-ps-toast) {
   transition-duration: 0.12s;
 }
 
-/* ── Satellites ── */
+/* ── Satellites: orbit.ts writes their transform and opacity every frame ── */
 .gv-ps-entry {
-  --gv-ps-fx: -1;
-  --gv-ps-fy: -1;
   position: fixed;
   /* Just under the ball (2147483100), which stays the top of its own stack. */
   z-index: 2147483099;
   pointer-events: none;
-}
-
-.gv-ps-entry[data-fan-x='right'] {
-  --gv-ps-fx: 1;
-}
-
-.gv-ps-entry[data-fan-y='down'] {
-  --gv-ps-fy: 1;
 }
 
 .gv-ps-entry[hidden],
@@ -164,106 +154,61 @@ html[data-gv-scheme='dark'] :is(.gv-ps-entry, .gv-ps-panel, .gv-ps-toast) {
   display: none;
 }
 
-.gv-ps-goo-defs {
+.gv-ps-orbit {
   position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-}
-
-.gv-ps-goo {
-  position: absolute;
-  inset: -110px;
-}
-
-.gv-ps-entry.gv-ps-liquid .gv-ps-goo {
-  filter: url(#gv-ps-goo);
-}
-
-.gv-ps-blob {
-  position: absolute;
-  border-radius: 50%;
-  background: var(--gv-ps-brand);
-}
-
-.gv-ps-blob-ball {
-  left: 110px;
-  top: 110px;
-  width: calc(100% - 220px);
-  height: calc(100% - 220px);
-  transition: transform 0.5s var(--gv-ps-spring);
-}
-
-.gv-ps-entry.gv-ps-open .gv-ps-blob-ball {
-  transform: scale(1.06);
-}
-
-.gv-ps-sat[data-slot='panel'] {
-  --gv-ps-dx: 72px;
-  --gv-ps-dy: 24px;
-  --gv-ps-i: 0;
-  --gv-ps-o: 1;
-}
-
-.gv-ps-sat[data-slot='hide'] {
-  --gv-ps-dx: 24px;
-  --gv-ps-dy: 72px;
-  --gv-ps-i: 1;
-  --gv-ps-o: 0;
-}
-
-.gv-ps-entry.gv-ps-hide-only .gv-ps-sat[data-slot='hide'] {
-  --gv-ps-i: 0;
-}
-
-.gv-ps-entry.gv-ps-hide-only .gv-ps-sat[data-slot='panel'] {
-  display: none;
-}
-
-.gv-ps-sat {
-  position: absolute;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  transform: translate(0, 0) scale(0.5);
-  transition:
-    transform 0.18s cubic-bezier(0.4, 0, 1, 1) calc(0.22s + var(--gv-ps-o) * 30ms),
-    opacity 0.1s linear calc(0.22s + var(--gv-ps-o) * 30ms);
-}
-
-.gv-ps-blob.gv-ps-sat {
-  left: 116px;
-  top: 116px;
-}
-
-.gv-ps-entry.gv-ps-open .gv-ps-sat {
-  transform: translate(
-      calc(var(--gv-ps-dx) * var(--gv-ps-fx)),
-      calc(var(--gv-ps-dy) * var(--gv-ps-fy))
-    )
-    scale(1);
-  transition:
-    transform 0.62s var(--gv-ps-spring) calc(var(--gv-ps-i) * 55ms),
-    opacity 0.16s linear calc(var(--gv-ps-i) * 55ms + 60ms);
-}
-
-.gv-ps-hit {
-  left: 6px;
-  top: 6px;
-  display: grid;
-  place-items: center;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--gv-ps-brand-fg);
-  cursor: pointer;
-  opacity: 0;
+  top: 50%;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  margin: -100px 0 0 -100px;
+  overflow: visible;
   pointer-events: none;
 }
 
+.gv-ps-orbit-track {
+  stroke-opacity: 0.46;
+  opacity: 0;
+}
+
+html[data-gv-scheme='dark'] .gv-ps-orbit-track {
+  stroke-opacity: 0.54;
+}
+
+.gv-ps-orbit-stop {
+  stop-color: var(--gv-ps-brand);
+}
+
+.gv-ps-hit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--gv-ps-brand);
+  color: var(--gv-ps-brand-fg);
+  box-shadow:
+    0 4px 12px color-mix(in srgb, var(--gv-ps-brand) 32%, transparent),
+    0 1px 3px color-mix(in srgb, var(--gv-ps-brand) 24%, transparent);
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.35);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+:root.gv-platform-themed .gv-ps-hit {
+  box-shadow:
+    0 3px 10px rgb(0 0 0 / 0.16),
+    0 1px 2px rgb(0 0 0 / 0.1);
+}
+
 .gv-ps-entry.gv-ps-open .gv-ps-hit {
-  opacity: 1;
   pointer-events: auto;
 }
 
@@ -272,49 +217,42 @@ html[data-gv-scheme='dark'] :is(.gv-ps-entry, .gv-ps-panel, .gv-ps-toast) {
   outline-offset: 2px;
 }
 
-.gv-ps-hit svg {
-  transition: transform 0.25s var(--gv-ps-spring);
-}
-
-.gv-ps-hit:hover svg {
-  transform: scale(1.14);
-}
-
 /* Keeps hover while the pointer crosses from the ball to a satellite. */
 .gv-ps-bridge {
   position: absolute;
   right: 0;
   bottom: 0;
-  width: 130px;
-  height: 130px;
-  border-radius: 130px 0 0;
+  width: 104px;
+  height: 104px;
+  border-radius: 104px 0 0;
   pointer-events: none;
 }
 
 .gv-ps-entry[data-fan-x='right'] .gv-ps-bridge {
   right: auto;
   left: 0;
-  border-radius: 0 130px 0 0;
+  border-radius: 0 104px 0 0;
 }
 
 .gv-ps-entry[data-fan-y='down'] .gv-ps-bridge {
   top: 0;
   bottom: auto;
-  border-radius: 0 0 0 130px;
+  border-radius: 0 0 0 104px;
 }
 
 .gv-ps-entry[data-fan-x='right'][data-fan-y='down'] .gv-ps-bridge {
-  border-radius: 0 0 130px;
+  border-radius: 0 0 104px;
 }
 
 .gv-ps-entry.gv-ps-open .gv-ps-bridge {
   pointer-events: auto;
 }
 
+/* One label for both satellites; orbit.ts slides it to the one in hand. */
 .gv-ps-tip {
   position: absolute;
-  top: 50%;
-  right: calc(100% + 10px);
+  top: 0;
+  left: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -326,22 +264,12 @@ html[data-gv-scheme='dark'] :is(.gv-ps-entry, .gv-ps-panel, .gv-ps-toast) {
   font: 400 12.5px/1 var(--gv-ui-font);
   white-space: nowrap;
   opacity: 0;
-  transform: translate(6px, -50%);
   pointer-events: none;
-  transition:
-    opacity 0.12s ease,
-    transform 0.25s var(--gv-ps-out);
+  transition: opacity 0.12s ease;
 }
 
-.gv-ps-entry[data-fan-x='right'] .gv-ps-tip {
-  right: auto;
-  left: calc(100% + 10px);
-  transform: translate(-6px, -50%);
-}
-
-.gv-ps-entry .gv-ps-hit:is(:hover, :focus-visible) .gv-ps-tip {
+.gv-ps-tip.gv-ps-tip-on {
   opacity: 1;
-  transform: translate(0, -50%);
 }
 
 .gv-ps-tip kbd,

@@ -50,9 +50,21 @@ export function settled(animations: readonly (Animation | null)[]): Promise<void
 
 function noop(): void {}
 
+/** How far the ball slides toward its corner as it hides, px. */
+const TUCK = 10;
+
+/** Toward the ball's own corner of the viewport: hiding tucks it in there, showing brings it out. */
+function tuckToward(ball: HTMLElement): string {
+  const rect = ball.getBoundingClientRect();
+  const x = rect.left + rect.width / 2 < window.innerWidth / 2 ? -TUCK : TUCK;
+  const y = rect.top + rect.height / 2 < window.innerHeight / 2 ? -TUCK : TUCK;
+  return `translate(${x}px, ${y}px)`;
+}
+
 /**
- * The ball's scale-and-fade and spring pop, played on the ball and the
- * decoration that sits on it (`companions`), which must move as one.
+ * The ball tucks into its corner as it hides and springs back out of it,
+ * played on the ball and the decoration that sits on it (`companions`),
+ * which must move as one.
  */
 export function createBallMotion(companions: () => readonly HTMLElement[]): BallMotion {
   let running: Animation[] = [];
@@ -63,16 +75,20 @@ export function createBallMotion(companions: () => readonly HTMLElement[]): Ball
   return {
     leave(ball) {
       cancel();
+      const corner = tuckToward(ball);
       const animations = [ball, ...companions()].flatMap((target) => [
         animate(target, [{ opacity: 1 }, { opacity: 0 }], {
-          duration: 200,
-          easing: 'ease',
+          duration: 240,
+          easing: 'cubic-bezier(.4,0,1,1)',
           fill: 'forwards',
         }),
         animate(
           target,
-          [{ transform: getComputedStyle(target).transform || 'none' }, { transform: 'scale(.6)' }],
-          { duration: 350, easing: SOFT, fill: 'forwards' },
+          [
+            { transform: getComputedStyle(target).transform || 'none' },
+            { transform: `${corner} scale(.55)` },
+          ],
+          { duration: 340, easing: SOFT, fill: 'forwards' },
         ),
       ]);
       running = animations.filter((animation): animation is Animation => animation !== null);
@@ -85,12 +101,13 @@ export function createBallMotion(companions: () => readonly HTMLElement[]): Ball
     },
     enter(ball) {
       cancel();
+      const corner = tuckToward(ball);
       running = [ball, ...companions()]
         .map((target) =>
           animate(
             target,
             [
-              { opacity: 0, transform: 'scale(.4)' },
+              { opacity: 0, transform: `${corner} scale(.4)` },
               { opacity: 1, transform: 'none' },
             ],
             { duration: 600, easing: SPRING },

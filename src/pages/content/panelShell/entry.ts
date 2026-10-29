@@ -1,21 +1,19 @@
 /**
- * The floating entry's satellites: "Voyager 面板" and "隐藏" bud out of the
- * ball on hover or keyboard focus, as liquid through one SVG goo filter.
+ * The floating entry's satellites: "Voyager 面板" and "隐藏" ride a tight
+ * orbit out of the ball on hover or keyboard focus (motion in `orbit.ts`).
  *
  * The ball stays Prompt Manager's own element (position, drag, clearance and
  * its click are untouched); this sits beside it, one layer below, and follows
- * where it is and whether it shows. The blobs under the filter carry a copy
- * of the ball's disc so the satellites' necks join the real ball. Satellites
- * fan toward the page interior from wherever the ball sits.
+ * where it is and whether it shows. Satellites fan toward the page interior
+ * from wherever the ball sits.
  */
-import { isSafari } from '@/core/utils/browser';
 import { isUserEvent } from '@/core/utils/userEvent';
 
 import { BALL_DRAGGING_CLASS } from '../prompt/promptBall';
-import { createGooFilter, createShellIcon } from './icons';
+import { createOrbitTrack, createShellIcon } from './icons';
+import { type SatelliteSlot, createOrbit } from './orbit';
 import { panelShortcutAria, panelShortcutLabel, shellText, shortcutCap } from './text';
 
-const GOO_ID = 'gv-ps-goo';
 const OPEN_CLASS = 'gv-ps-open';
 /** On the ball while it is decorated: its hover scale and glow come from the shell's stylesheet. */
 const BALL_CLASS = 'gv-ps-ball';
@@ -51,15 +49,19 @@ function span(className: string): HTMLSpanElement {
   return element;
 }
 
-function satellite(slot: 'panel' | 'hide', icon: 'sliders' | 'eyeOff'): HTMLButtonElement {
+function satellite(slot: SatelliteSlot, icon: 'sliders' | 'eyeOff'): HTMLButtonElement {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'gv-ps-hit gv-ps-sat';
   button.dataset.slot = slot;
-  const tip = span('gv-ps-tip');
-  tip.setAttribute('aria-hidden', 'true');
-  button.append(createShellIcon(icon), tip);
+  button.append(createShellIcon(icon));
   return button;
+}
+
+/** What the shared label says for a satellite; the key cap only names the panel. */
+function labelFor(slot: SatelliteSlot): Node[] {
+  if (slot === 'hide') return [document.createTextNode(shellText('panelShellHide'))];
+  return [document.createTextNode(shellText('panelShellPanel')), shortcutCap(panelShortcutLabel())];
 }
 
 function center(element: Element): { x: number; y: number } {
@@ -70,23 +72,24 @@ function center(element: Element): { x: number; y: number } {
 export function decorateBall(ball: HTMLElement, options: EntryOptions): Entry {
   const container = document.createElement('div');
   container.className = 'gv-ps-entry';
-  // Safari renders the filter wrong on HTML: drop it there and keep the spring.
-  if (!isSafari()) container.classList.add('gv-ps-liquid');
   const bridge = span('gv-ps-bridge');
-  const goo = document.createElement('div');
-  goo.className = 'gv-ps-goo';
-  goo.setAttribute('aria-hidden', 'true');
-  const panelBlob = span('gv-ps-blob gv-ps-sat');
-  panelBlob.dataset.slot = 'panel';
-  const hideBlob = span('gv-ps-blob gv-ps-sat');
-  hideBlob.dataset.slot = 'hide';
-  goo.append(span('gv-ps-blob gv-ps-blob-ball'), panelBlob, hideBlob);
+  const track = createOrbitTrack();
   const panelHit = satellite('panel', 'sliders');
   const hideHit = satellite('hide', 'eyeOff');
   panelHit.setAttribute('aria-expanded', 'false');
-  container.append(createGooFilter(GOO_ID), bridge, goo, panelHit, hideHit);
+  const label = span('gv-ps-tip');
+  label.setAttribute('aria-hidden', 'true');
+  container.append(bridge, track.svg, panelHit, hideHit, label);
   ball.after(container);
   ball.classList.add(BALL_CLASS);
+  const orbit = createOrbit({
+    layer: container,
+    satellites: { panel: panelHit, hide: hideHit },
+    track: track.path,
+    trackFade: track.fade,
+    label,
+    labelFor,
+  });
 
   const hovered = new Set<EventTarget>();
   let destroyed = false;
@@ -111,24 +114,26 @@ export function decorateBall(ball: HTMLElement, options: EntryOptions): Entry {
     const aria = panelShortcutAria();
     if (aria) panelHit.setAttribute('aria-keyshortcuts', aria);
     else panelHit.removeAttribute('aria-keyshortcuts');
-    panelHit
-      .querySelector('.gv-ps-tip')
-      ?.replaceChildren(document.createTextNode(panelLabel), shortcutCap(panelShortcutLabel()));
     hideHit.setAttribute('aria-label', shellText('panelShellHideButton'));
-    hideHit.querySelector('.gv-ps-tip')?.replaceChildren(shellText('panelShellHide'));
+    orbit.relabel();
   }
 
-  function update(): void {
+  /** `immediate` skips the pause before the satellites fold back. */
+  function apply(immediate: boolean): void {
     const next =
       !destroyed &&
       !container.hidden &&
       !ball.classList.contains(BALL_DRAGGING_CLASS) &&
       (hovered.size > 0 || keyboardFocus());
     if (next && !open) relabel();
+    if (next !== open) orbit.setOpen(next, { immediate });
     open = next;
     container.classList.toggle(OPEN_CLASS, next);
     ball.classList.toggle(OPEN_CLASS, next);
   }
+
+  // Also an event listener: the event must not reach `apply` as its flag.
+  const update = (): void => apply(false);
 
   /** Sit exactly on the ball's layout box (its hover scale is about its center). */
   function sync(): void {
@@ -137,6 +142,8 @@ export function decorateBall(ball: HTMLElement, options: EntryOptions): Entry {
     if (container.hidden) {
       hovered.clear();
       update();
+      // Nobody sees the layer: fold everything in without asking for frames.
+      orbit.rest();
       return;
     }
     const rect = ball.getBoundingClientRect();
@@ -148,8 +155,11 @@ export function decorateBall(ball: HTMLElement, options: EntryOptions): Entry {
     container.style.top = `${Math.round(top)}px`;
     container.style.width = `${width}px`;
     container.style.height = `${height}px`;
-    container.dataset.fanX = left + width / 2 < window.innerWidth / 2 ? 'right' : 'left';
-    container.dataset.fanY = top + height / 2 < window.innerHeight / 2 ? 'down' : 'up';
+    const fanRight = left + width / 2 < window.innerWidth / 2;
+    const fanDown = top + height / 2 < window.innerHeight / 2;
+    container.dataset.fanX = fanRight ? 'right' : 'left';
+    container.dataset.fanY = fanDown ? 'down' : 'up';
+    orbit.setFan(fanRight ? 1 : -1, fanDown ? 1 : -1);
     update();
   }
 
@@ -170,9 +180,9 @@ export function decorateBall(ball: HTMLElement, options: EntryOptions): Entry {
   };
   const onHide = (event: Event): void => {
     if (!isUserEvent(event)) return;
-    // The ball is leaving: let the satellites fold back with it.
+    // The ball is leaving: fold the satellites back with it, without the usual pause.
     hovered.clear();
-    update();
+    apply(true);
     options.onHide();
   };
 
@@ -208,7 +218,7 @@ export function decorateBall(ball: HTMLElement, options: EntryOptions): Entry {
     },
     contains: (node) => container.contains(node),
     setHideOnly(hideOnly) {
-      container.classList.toggle('gv-ps-hide-only', hideOnly);
+      orbit.setSingle(hideOnly);
       panelHit.hidden = hideOnly;
       if (hideOnly) hovered.delete(panelHit);
       update();
@@ -220,6 +230,7 @@ export function decorateBall(ball: HTMLElement, options: EntryOptions): Entry {
     destroy() {
       if (destroyed) return;
       destroyed = true;
+      orbit.destroy();
       observer.disconnect();
       window.removeEventListener('resize', sync);
       for (const target of hoverTargets) {
