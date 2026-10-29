@@ -1427,19 +1427,19 @@
     "description": "Separator between restored or failed part names in the partial-restore message"
   },
   "uploadInProgress": {
-    "message": "Uploading...",
+    "message": "アップロード中...",
     "description": "Upload in progress message"
   },
   "uploadSuccess": {
-    "message": "Uploaded successfully",
+    "message": "アップロードしました",
     "description": "Upload success message"
   },
   "downloadInProgress": {
-    "message": "Downloading...",
+    "message": "ダウンロード中...",
     "description": "Download in progress message"
   },
   "downloadMergeSuccess": {
-    "message": "Downloaded and merged",
+    "message": "ダウンロードしてマージしました",
     "description": "Download and merge success message"
   },
   "syncUpload": {

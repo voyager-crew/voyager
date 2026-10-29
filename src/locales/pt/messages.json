@@ -1427,19 +1427,19 @@
     "description": "Separator between restored or failed part names in the partial-restore message"
   },
   "uploadInProgress": {
-    "message": "Uploading...",
+    "message": "Enviando...",
     "description": "Upload in progress message"
   },
   "uploadSuccess": {
-    "message": "Uploaded successfully",
+    "message": "Enviado com sucesso",
     "description": "Upload success message"
   },
   "downloadInProgress": {
-    "message": "Downloading...",
+    "message": "Baixando...",
     "description": "Download in progress message"
   },
   "downloadMergeSuccess": {
-    "message": "Downloaded and merged",
+    "message": "Baixado e mesclado",
     "description": "Download and merge success message"
   },
   "syncUpload": {
