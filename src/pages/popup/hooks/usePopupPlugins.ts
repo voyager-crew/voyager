@@ -140,9 +140,9 @@ export function usePopupPlugins({
   const refresh = useCallback(async () => {
     setPluginsRefreshing(true);
     try {
-      // Manual checks bypass the interval and backoff; the background still
-      // enforces the shared online-updates switch. The popup only re-reads
-      // the cache afterwards.
+      // Manual checks bypass the interval, the backoff and the online-updates
+      // switch. On chatgpt.com this file also carries the bridge rules. The
+      // popup only re-reads the cache afterwards.
       if (pluginCatalogHost) {
         try {
           await browser.runtime.sendMessage({

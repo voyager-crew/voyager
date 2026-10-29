@@ -93,11 +93,13 @@ describe('native popup catalog updates', () => {
       );
       expect(controls).toHaveLength(online ? 1 : 0);
       if (!online) return;
-      const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find(
-        (candidate) => candidate.textContent === en.pluginsRefresh,
+      const buttons = container.querySelectorAll<HTMLButtonElement>(
+        `button[aria-label="${en.pluginsRefresh}"]`,
       );
-      expect(button).toBeDefined();
-      await act(async () => button!.click());
+      // The row's icon is the card's only manual check.
+      expect(buttons).toHaveLength(1);
+      const button = buttons[0];
+      await act(async () => button.click());
       expect(extensionApi.runtime.sendMessage).toHaveBeenCalledWith({
         type: PLUGIN_CATALOG_REFRESH_MESSAGE,
         payload: { host: new URL(url).hostname, force: true },
@@ -106,9 +108,9 @@ describe('native popup catalog updates', () => {
       expect(extensionApi.storage.sync.set).toHaveBeenCalledWith({
         [StorageKeys.PLUGIN_ONLINE_UPDATES_ENABLED]: false,
       });
-      expect(button!.disabled).toBe(false);
+      expect(button.disabled).toBe(false);
       extensionApi.runtime.sendMessage.mockClear();
-      await act(async () => button!.click());
+      await act(async () => button.click());
       expect(extensionApi.runtime.sendMessage).toHaveBeenCalledWith({
         type: PLUGIN_CATALOG_REFRESH_MESSAGE,
         payload: { host: new URL(url).hostname, force: true },

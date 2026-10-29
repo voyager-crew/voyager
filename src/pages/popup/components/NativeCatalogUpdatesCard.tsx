@@ -1,6 +1,4 @@
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 import { PluginCatalogControls, usePluginCatalog } from './PluginCatalogControls';
 
@@ -18,15 +16,17 @@ export function NativeCatalogUpdatesCard({
   onRefresh,
   visible,
 }: NativeCatalogUpdatesCardProps) {
-  const { t } = useLanguage();
   const catalog = usePluginCatalog(catalogHost, refreshing);
   if (!catalogHost || !visible) return null;
   return (
-    <Card className="space-y-3 p-4">
-      <PluginCatalogControls catalogHost={catalogHost} separator={false} {...catalog} />
-      <Button type="button" variant="secondary" size="sm" disabled={refreshing} onClick={onRefresh}>
-        {t('pluginsRefresh')}
-      </Button>
+    <Card className="p-4">
+      <PluginCatalogControls
+        catalogHost={catalogHost}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+        separator={false}
+        {...catalog}
+      />
     </Card>
   );
 }

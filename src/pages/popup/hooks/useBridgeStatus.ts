@@ -3,7 +3,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import browser from 'webextension-polyfill';
 
 import { clampParallelJobs } from '@/features/bridge/parallelJobs';
-import { type ErrorCode, type OpName, isErrorCode, isOpName } from '@/features/bridge/protocol';
+import {
+  CATALOG_REFRESH_DEFAULT_HOST,
+  type ErrorCode,
+  type OpName,
+  isErrorCode,
+  isOpName,
+} from '@/features/bridge/protocol';
 import type {
   BridgeEnableRefreshMessage,
   BridgePairIntentMessage,
@@ -13,6 +19,7 @@ import type {
   BridgeUnpairMessage,
 } from '@/features/bridge/runtimeMessages';
 import { CHATGPT_LOCAL_BRIDGE_PLUGIN_ID } from '@/features/plugins/builtin/chatgptLocalBridge/manifest';
+import { subscribeHostCatalog } from '@/features/plugins/remote/hostCatalogCache';
 import { isPluginEnabled } from '@/features/plugins/storage/pluginDefaults';
 import { loadPluginState, subscribePluginState } from '@/features/plugins/storage/pluginState';
 
@@ -224,7 +231,8 @@ export function useBridgePluginEnabled(): boolean {
 
 /**
  * The background's bridge status while `active`, asked again every few seconds
- * and whenever host access changes. `null` until the background answers.
+ * and whenever host access or the bridge rules' catalog changes. `null` until
+ * the background answers.
  */
 export function useBridgeStatus(active: boolean) {
   const [status, setStatus] = useState<BridgeStatus | null>(null);
@@ -248,15 +256,22 @@ export function useBridgeStatus(active: boolean) {
       };
     void refresh();
     const timer = setInterval(() => void refresh(), BRIDGE_STATUS_POLL_MS);
-    const onPermissionsChanged = (): void => void refresh();
+    const askAgain = (): void => void refresh();
     const permissions = browser.permissions;
-    permissions?.onAdded?.addListener(onPermissionsChanged);
-    permissions?.onRemoved?.addListener(onPermissionsChanged);
+    permissions?.onAdded?.addListener(askAgain);
+    permissions?.onRemoved?.addListener(askAgain);
+    // The rules ride in chatgpt.com's catalog (`catalog.refresh`'s default host), so a check
+    // of it, the plugin card's manual one included, can clear a stale notice at once. A
+    // renewal of unchanged rules moves only `fetchedAt`, a bookkeeping write.
+    const unsubscribeCatalog = subscribeHostCatalog(CATALOG_REFRESH_DEFAULT_HOST, askAgain, {
+      includeBookkeeping: true,
+    });
     return () => {
       mounted.current = false;
       clearInterval(timer);
-      permissions?.onAdded?.removeListener(onPermissionsChanged);
-      permissions?.onRemoved?.removeListener(onPermissionsChanged);
+      permissions?.onAdded?.removeListener(askAgain);
+      permissions?.onRemoved?.removeListener(askAgain);
+      unsubscribeCatalog();
     };
   }, [active, refresh]);
 

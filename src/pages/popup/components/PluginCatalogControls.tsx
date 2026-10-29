@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { RefreshCw } from 'lucide-react';
+
 import {
   type HostCatalogCacheEntry,
   loadHostCatalogCache,
@@ -17,8 +19,10 @@ import {
   savePluginCatalogSettings,
   subscribePluginCatalogSettings,
 } from '@/features/plugins/remote/hostCatalogSettings';
+import { cn } from '@/lib/utils';
 import type { TranslationKey } from '@/utils/translations';
 
+import { Button } from '../../../components/ui/button';
 import { Select } from '../../../components/ui/input';
 import { Switch } from '../../../components/ui/switch';
 import { useLanguage } from '../../../contexts/LanguageContext';
@@ -132,9 +136,14 @@ export function PluginCatalogControls({
   catalogStatusText,
   handleOnlineUpdatesToggle,
   handleCheckIntervalChange,
+  onRefresh,
+  refreshing = false,
   separator = true,
 }: ReturnType<typeof usePluginCatalog> & {
   readonly catalogHost?: string;
+  /** The manual check; it runs whether or not automatic updates are on. */
+  readonly onRefresh?: () => void;
+  readonly refreshing?: boolean;
   readonly separator?: boolean;
 }) {
   const { t } = useLanguage();
@@ -143,11 +152,35 @@ export function PluginCatalogControls({
     <div className={separator ? 'border-border/60 space-y-2 border-t pt-3' : 'space-y-2'}>
       <div className="flex items-center justify-between gap-3">
         <span className="text-xs font-medium">{t('pluginsOnlineUpdates')}</span>
-        <Switch
-          checked={catalogSettings.onlineUpdatesEnabled}
-          aria-label={t('pluginsOnlineUpdates')}
-          onChange={(event) => handleOnlineUpdatesToggle(event.target.checked)}
-        />
+        <div className="flex items-center gap-1.5">
+          {onRefresh && (
+            // The negative margin keeps the row at the switch's height with a 28px target.
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground -my-1 h-7 w-7"
+              onClick={onRefresh}
+              disabled={refreshing}
+              aria-busy={refreshing}
+              aria-label={t('pluginsRefresh')}
+              title={t('pluginsRefresh')}
+            >
+              <RefreshCw
+                className={cn(
+                  'h-3.5 w-3.5',
+                  refreshing && 'animate-spin motion-reduce:animate-none',
+                )}
+                aria-hidden="true"
+              />
+            </Button>
+          )}
+          <Switch
+            checked={catalogSettings.onlineUpdatesEnabled}
+            aria-label={t('pluginsOnlineUpdates')}
+            onChange={(event) => handleOnlineUpdatesToggle(event.target.checked)}
+          />
+        </div>
       </div>
       <p className="text-muted-foreground text-[11px] leading-snug">
         {t('pluginsOnlineUpdatesHint')}

@@ -334,7 +334,8 @@ export function PluginManager({
             />
           )}
         </div>
-        {onRefresh && (
+        {/* Where the online updates row shows, its own button is the card's manual check. */}
+        {onRefresh && !catalogHost && (
           <button
             type="button"
             onClick={onRefresh}
@@ -377,7 +378,12 @@ export function PluginManager({
         {manifests.map((plugin) => (plugin === promptPlugin ? null : renderRow(plugin)))}
 
         {/* Online-catalog controls require a concrete HTTPS host without a port or wildcard. */}
-        <PluginCatalogControls catalogHost={catalogHost} {...catalog} />
+        <PluginCatalogControls
+          catalogHost={catalogHost}
+          onRefresh={onRefresh}
+          refreshing={refreshing}
+          {...catalog}
+        />
       </CardContent>
     </Card>
   );
