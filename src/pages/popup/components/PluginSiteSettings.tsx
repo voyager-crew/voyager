@@ -6,23 +6,22 @@ import type { TranslationKey } from '@/utils/translations';
 
 import { CHATGPT_LOCAL_BRIDGE_PLUGIN_ID } from '../hooks/useBridgeStatus';
 import type { PromptDataTransferController } from '../hooks/usePromptDataTransfer';
-import type { ActiveSitePrompt } from '../hooks/useSiteAccess';
+import type { PromptSwitch } from '../hooks/usePromptSwitch';
 import { ChatGptBridgeCard } from './ChatGptBridgeCard';
 import { ChatGptExportCard } from './ChatGptExportCard';
 import { LocalPluginsPanel } from './LocalPluginsPanel';
 import { PluginManager } from './PluginManager';
 import { PromptDataTransfer } from './PromptDataTransfer';
-import { PromptManagerSiteRow } from './PromptManagerSiteRow';
 
 export function PluginSiteSettings({
-  prompt,
+  promptSwitch,
   promptDataTransfer,
   plugins,
   exportEntry,
   t,
 }: {
-  /** Prompt Manager on the open page; null where the page has no host to cover. */
-  prompt: ActiveSitePrompt | null;
+  /** Prompt Manager's switch on the open page; null where no catalog plugin binds its host. */
+  promptSwitch: PromptSwitch | null;
   promptDataTransfer: PromptDataTransferController;
   plugins: ComponentProps<typeof PluginManager>;
   /** Enabled state and target tab for the ChatGPT export card. */
@@ -59,10 +58,7 @@ export function PluginSiteSettings({
         </CardContent>
       </Card>
       <div style={{ order: -1 }} className="flex flex-col gap-4">
-        <PluginManager
-          {...plugins}
-          promptRow={prompt && <PromptManagerSiteRow prompt={prompt} t={t} />}
-        />
+        <PluginManager {...plugins} promptSwitch={promptSwitch} />
         <LocalPluginsPanel t={t} activeUrl={plugins.activeUrl} />
       </div>
     </>

@@ -1078,6 +1078,18 @@
     "message": "{site} へのアクセスを解除しました",
     "description": "Undo toast after access to a site was removed. {site} is the site name or address"
   },
+  "siteAccessKept": {
+    "message": "{site} は許可されたままです。このアクセス権は他のウェブサイトにも及びます",
+    "description": "Toast after removing access when the site stays allowed, because the permission left also covers other websites (or every site). {site} is the site name or address"
+  },
+  "siteAccessRemoveFailed": {
+    "message": "{site} へのアクセスを解除できませんでした。もう一度お試しください。",
+    "description": "Error toast when the browser refused or failed to remove a site's access; nothing changed. {site} is the site name or address"
+  },
+  "siteAccessRestoreFailed": {
+    "message": "{site} へのアクセスを元に戻せませんでした",
+    "description": "Error toast when undoing a removal failed: the browser refused or failed the access request, so the site stays without access. {site} is the site name or address"
+  },
   "siteAccessOtherWebsites": {
     "message": "その他のウェブサイト",
     "description": "Heading for the websites outside the supported list"
@@ -3276,10 +3288,6 @@
   "promptCloudError": {
     "message": "クラウド同期に失敗しました。Google Drive にログインしているか確認してください。",
     "description": "Toast: cloud prompt sync failed / not signed in"
-  },
-  "enablePromptManagerOnSiteHint": {
-    "message": "保存したプロンプトをこのサイトで使えます。",
-    "description": "Top toggle hint for enabling Prompt Manager on a third-party site"
   },
   "storageQuotaTitle": {
     "message": "ストレージ"

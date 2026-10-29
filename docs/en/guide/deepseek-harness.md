@@ -25,13 +25,11 @@ dsh web
 
 Open `http://localhost:3080` in your browser.
 
-### 2. Flip the switch in the popup
+### 2. Add it in the popup
 
 ![Click the toolbar puzzle icon, click Voyager, then enable Prompt Manager on localhost:3080](/assets/dsh-enable-steps-en.png)
 
-Since you're already on `localhost:3080`, the popup offers it right at the top. Turn it on and grant access.
-
-No typing the address.
+In the popup's **Site access** card, under **Other websites**, enter `localhost:3080`. Click **Add website** and grant access.
 
 ### 3. Reload the page
 

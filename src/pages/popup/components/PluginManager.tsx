@@ -1,13 +1,16 @@
-import { type ReactNode, useMemo } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 
 import type { PluginStatus } from '@/features/plugins/runtime/pluginStatus';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
 import type { BlockedPluginUpdate } from '@/features/plugins/sources/defaultSources';
 import type { PluginManifest } from '@/features/plugins/types';
+import type { TranslationKey } from '@/utils/translations';
 
 import { Card, CardContent, CardTitle } from '../../../components/ui/card';
 import { Switch } from '../../../components/ui/switch';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { COVERAGE_REFUSAL_MESSAGES } from '../hooks/useCustomWebsites';
+import { PROMPT_SWITCH_ID, type PromptSwitch } from '../hooks/usePromptSwitch';
 import { PluginCatalogControls, usePluginCatalog } from './PluginCatalogControls';
 import {
   PluginIdentity,
@@ -103,8 +106,11 @@ export interface PluginManagerProps {
   readonly timelineRail?: TimelineRailOptions;
   /** Official plugin rows that also cover this site, listed ahead of its plugins. */
   readonly officialRows?: ReactNode;
-  /** Prompt Manager's row for this site, first in the list. */
-  readonly promptRow?: ReactNode;
+  /**
+   * Prompt Manager's switch on this site. Its catalog plugin's row comes first
+   * and shows and writes the page host's coverage entry, not plugin state.
+   */
+  readonly promptSwitch?: PromptSwitch | null;
 }
 
 /**
@@ -124,10 +130,19 @@ export function PluginManager({
   nameSources,
   timelineRail,
   officialRows,
-  promptRow,
+  promptSwitch,
 }: PluginManagerProps) {
   const { t, language } = useLanguage();
   const { currentSiteId, currentSiteLabel } = usePluginSite(activeUrl);
+  const promptPlugin = promptSwitch
+    ? manifests.find((plugin) => plugin.id === promptSwitch.pluginId)
+    : undefined;
+  // Its coverage entry runs on the page's own grant, so it needs no repair of its own.
+  const accessManifests = useMemo(
+    () => (promptPlugin ? manifests.filter((plugin) => plugin !== promptPlugin) : manifests),
+    [manifests, promptPlugin],
+  );
+  const [promptRefusal, setPromptRefusal] = useState<TranslationKey | null>(null);
   // Status per plugin id. A plugin the tab said nothing about keeps today's
   // behaviour (enabled toggle, no note).
   const statusById = useMemo(() => {
@@ -152,10 +167,159 @@ export function PluginManager({
     missingPermissionIds,
     handleToggle,
     handleGrantRequiredAccess,
-  } = usePluginAccess(manifests, activeUrl, enabledMap, preferences.mirrorEnabled);
+  } = usePluginAccess(accessManifests, activeUrl, enabledMap, preferences.mirrorEnabled);
   const catalog = usePluginCatalog(catalogHost, refreshing);
 
   const hasUpdatedPlugins = manifests.some((plugin) => updatedIds.has(plugin.id));
+
+  const renderRow = (plugin: PluginManifest) => {
+    // Listed as an official row (officialRows) where the effect can run.
+    if (plugin.id === OFFICIAL_PLUGIN_IDS.visualEffects) return null;
+    const prompt = plugin === promptPlugin ? promptSwitch : null;
+    const enabled = prompt ? prompt.enabled : enabledMap[plugin.id] === true;
+    const isOpen = !collapsed.has(plugin.id);
+    const hosts = siteHostsFromMatches(plugin.matches);
+    const localizedName = pickLocalized(plugin, 'name', language);
+    const needsSiteAccess = !prompt && enabled && missingPermissionIds.has(plugin.id);
+    const isUpdated = updatedIds.has(plugin.id);
+    const status = statusById.get(plugin.id);
+    // Only the incompatibility kinds block the toggle; `no-effect`
+    // stays enabled because the plugin did run, it just found no targets,
+    // and `blocked` keeps the user's choice for when the reason clears.
+    const incompatibleNote = ((): string | null => {
+      switch (status?.kind) {
+        case 'needs-form-factor':
+          return t('pluginUnavailableOnMobile');
+        case 'needs-engine':
+          return t('pluginNeedsNewerVoyager').replace(
+            '{engine}',
+            status.requiredEngine ?? plugin.engine,
+          );
+        case 'needs-handler':
+          return t('pluginNeedsVoyagerUpdate');
+        case 'needs-semantic':
+        case 'needs-site-data':
+          return t('pluginNeedsSiteAdapterUpdate').replace('{site}', currentSiteLabel ?? hosts);
+        default:
+          return null;
+      }
+    })();
+    const railKeys = dedicatedTimelineKeys(plugin, sourceIds?.[plugin.id], timelineRail);
+    const blockedNote = blockedPluginNote({
+      status,
+      manifests: nameSources ?? manifests,
+      language,
+      t,
+    });
+    return (
+      <div key={plugin.id} className="border-border/60 rounded-lg border p-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <PluginIdentity
+              plugin={plugin}
+              isOpen={isOpen}
+              onCollapse={() => toggleCollapsed(plugin.id)}
+              isUpdated={isUpdated}
+              sourceId={sourceIds?.[plugin.id]}
+              blockedUpdate={blockedUpdates?.[plugin.id]}
+              activeUrl={activeUrl}
+              currentSiteId={currentSiteId}
+            />
+
+            {/* Status notes stay visible while the card is collapsed —
+                they explain a toggle the user cannot move, or why an
+                enabled plugin is not running on this page. */}
+            {incompatibleNote && (
+              <p className="text-destructive/80 mt-1 text-[11px] leading-snug">
+                {incompatibleNote}
+              </p>
+            )}
+
+            {blockedNote && (
+              <p
+                className={`mt-1 text-[11px] leading-snug ${BLOCKED_NOTE_TONE_CLASS[blockedNote.tone]}`}
+              >
+                {blockedNote.text}
+              </p>
+            )}
+
+            {status?.kind === 'no-effect' && (
+              <p className="text-warning mt-1 text-[11px] leading-snug">
+                {t('pluginNoEffectOnPage')}
+              </p>
+            )}
+
+            <PluginOpsNotes status={status} isOpen={isOpen} t={t} />
+
+            {status?.pendingVersion && (
+              <p className="text-muted-foreground mt-1 text-[11px] leading-snug">
+                {t('pluginUpdateAfterReload').replace('{version}', status.pendingVersion)}
+              </p>
+            )}
+
+            {needsSiteAccess && (
+              <button
+                type="button"
+                onClick={() => void handleGrantRequiredAccess(plugin)}
+                className="border-primary/25 bg-primary/5 text-primary hover:bg-primary/10 mt-2 flex w-full items-center justify-center rounded-md border px-2.5 py-2 text-xs font-medium transition-colors"
+              >
+                {t('pluginGrantRequiredAccess')}
+              </button>
+            )}
+
+            {/* Settings stay visible even when the description is collapsed, so a
+                slider-based plugin (e.g. reading width) is always adjustable. A missing
+                companion-frame grant must not disable settings that still affect the
+                already-authorized parent page. */}
+            {enabled && (
+              <PluginSettings
+                plugin={plugin}
+                values={settingsMap[plugin.id]}
+                hiddenKeys={railKeys}
+                handleSetting={handleSetting}
+                handleImmediateSettings={handleImmediateSettings}
+              />
+            )}
+
+            {timelineRail?.pluginId === plugin.id &&
+              timelineRail.render(railKeys ?? [], localizedName, enabled)}
+
+            {deniedId === plugin.id && (
+              <p className="text-destructive mt-1 text-[11px]">{t('pluginPermissionDenied')}</p>
+            )}
+
+            {unsupportedId === plugin.id && (
+              <p className="text-destructive mt-1 text-[11px]">{t('pluginUnsupportedPlatform')}</p>
+            )}
+
+            {enableRefusal?.id === plugin.id && (
+              <p className="text-destructive mt-1 text-[11px]">{t(enableRefusal.key)}</p>
+            )}
+
+            {prompt && promptRefusal && (
+              <p className="text-destructive mt-1 text-[11px]">{t(promptRefusal)}</p>
+            )}
+          </div>
+          <Switch
+            id={prompt ? PROMPT_SWITCH_ID : undefined}
+            checked={enabled}
+            disabled={!enabled && incompatibleNote !== null}
+            onChange={(e) => {
+              if (!prompt) {
+                void handleToggle(plugin, e.target.checked);
+                return;
+              }
+              setPromptRefusal(null);
+              void prompt.setEnabled(e.target.checked).then((refusal) => {
+                if (refusal) setPromptRefusal(COVERAGE_REFUSAL_MESSAGES[refusal]);
+              });
+            }}
+            aria-label={localizedName}
+          />
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Card className="p-4">
@@ -199,159 +363,18 @@ export function PluginManager({
       <CardContent className="space-y-3 p-0">
         <p className="text-muted-foreground text-xs">{t('pluginsDescription')}</p>
 
-        {/* Prompt Manager's row is a feature of its own, so the list is not empty. */}
-        {manifests.length === 0 && (loading || !promptRow) && (
+        {manifests.length === 0 && (
           <p className="text-muted-foreground text-xs">
             {loading ? t('pluginsLoading') : t('pluginsEmpty')}
           </p>
         )}
 
-        {promptRow}
+        {/* Prompt Manager leads the site's features; its row is found by binding, not by site. */}
+        {promptPlugin && renderRow(promptPlugin)}
 
         {officialRows}
 
-        {manifests.map((plugin) => {
-          // Listed as an official row (officialRows) where the effect can run.
-          if (plugin.id === OFFICIAL_PLUGIN_IDS.visualEffects) return null;
-          const enabled = enabledMap[plugin.id] === true;
-          const isOpen = !collapsed.has(plugin.id);
-          const hosts = siteHostsFromMatches(plugin.matches);
-          const localizedName = pickLocalized(plugin, 'name', language);
-          const needsSiteAccess = enabled && missingPermissionIds.has(plugin.id);
-          const isUpdated = updatedIds.has(plugin.id);
-          const status = statusById.get(plugin.id);
-          // Only the incompatibility kinds block the toggle; `no-effect`
-          // stays enabled because the plugin did run, it just found no targets,
-          // and `blocked` keeps the user's choice for when the reason clears.
-          const incompatibleNote = ((): string | null => {
-            switch (status?.kind) {
-              case 'needs-form-factor':
-                return t('pluginUnavailableOnMobile');
-              case 'needs-engine':
-                return t('pluginNeedsNewerVoyager').replace(
-                  '{engine}',
-                  status.requiredEngine ?? plugin.engine,
-                );
-              case 'needs-handler':
-                return t('pluginNeedsVoyagerUpdate');
-              case 'needs-semantic':
-              case 'needs-site-data':
-                return t('pluginNeedsSiteAdapterUpdate').replace(
-                  '{site}',
-                  currentSiteLabel ?? hosts,
-                );
-              default:
-                return null;
-            }
-          })();
-          const railKeys = dedicatedTimelineKeys(plugin, sourceIds?.[plugin.id], timelineRail);
-          const blockedNote = blockedPluginNote({
-            status,
-            manifests: nameSources ?? manifests,
-            language,
-            t,
-          });
-          return (
-            <div key={plugin.id} className="border-border/60 rounded-lg border p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <PluginIdentity
-                    plugin={plugin}
-                    isOpen={isOpen}
-                    onCollapse={() => toggleCollapsed(plugin.id)}
-                    isUpdated={isUpdated}
-                    sourceId={sourceIds?.[plugin.id]}
-                    blockedUpdate={blockedUpdates?.[plugin.id]}
-                    activeUrl={activeUrl}
-                    currentSiteId={currentSiteId}
-                  />
-
-                  {/* Status notes stay visible while the card is collapsed —
-                      they explain a toggle the user cannot move, or why an
-                      enabled plugin is not running on this page. */}
-                  {incompatibleNote && (
-                    <p className="text-destructive/80 mt-1 text-[11px] leading-snug">
-                      {incompatibleNote}
-                    </p>
-                  )}
-
-                  {blockedNote && (
-                    <p
-                      className={`mt-1 text-[11px] leading-snug ${BLOCKED_NOTE_TONE_CLASS[blockedNote.tone]}`}
-                    >
-                      {blockedNote.text}
-                    </p>
-                  )}
-
-                  {status?.kind === 'no-effect' && (
-                    <p className="text-warning mt-1 text-[11px] leading-snug">
-                      {t('pluginNoEffectOnPage')}
-                    </p>
-                  )}
-
-                  <PluginOpsNotes status={status} isOpen={isOpen} t={t} />
-
-                  {status?.pendingVersion && (
-                    <p className="text-muted-foreground mt-1 text-[11px] leading-snug">
-                      {t('pluginUpdateAfterReload').replace('{version}', status.pendingVersion)}
-                    </p>
-                  )}
-
-                  {needsSiteAccess && (
-                    <button
-                      type="button"
-                      onClick={() => void handleGrantRequiredAccess(plugin)}
-                      className="border-primary/25 bg-primary/5 text-primary hover:bg-primary/10 mt-2 flex w-full items-center justify-center rounded-md border px-2.5 py-2 text-xs font-medium transition-colors"
-                    >
-                      {t('pluginGrantRequiredAccess')}
-                    </button>
-                  )}
-
-                  {/* Settings stay visible even when the description is collapsed, so a
-                      slider-based plugin (e.g. reading width) is always adjustable. A missing
-                      companion-frame grant must not disable settings that still affect the
-                      already-authorized parent page. */}
-                  {enabled && (
-                    <PluginSettings
-                      plugin={plugin}
-                      values={settingsMap[plugin.id]}
-                      hiddenKeys={railKeys}
-                      handleSetting={handleSetting}
-                      handleImmediateSettings={handleImmediateSettings}
-                    />
-                  )}
-
-                  {timelineRail?.pluginId === plugin.id &&
-                    timelineRail.render(railKeys ?? [], localizedName, enabled)}
-
-                  {deniedId === plugin.id && (
-                    <p className="text-destructive mt-1 text-[11px]">
-                      {t('pluginPermissionDenied')}
-                    </p>
-                  )}
-
-                  {unsupportedId === plugin.id && (
-                    <p className="text-destructive mt-1 text-[11px]">
-                      {t('pluginUnsupportedPlatform')}
-                    </p>
-                  )}
-
-                  {enableRefusal?.id === plugin.id && (
-                    <p className="text-destructive mt-1 text-[11px]">{t(enableRefusal.key)}</p>
-                  )}
-                </div>
-                <Switch
-                  checked={enabled}
-                  disabled={!enabled && incompatibleNote !== null}
-                  onChange={(e) => {
-                    void handleToggle(plugin, e.target.checked);
-                  }}
-                  aria-label={localizedName}
-                />
-              </div>
-            </div>
-          );
-        })}
+        {manifests.map((plugin) => (plugin === promptPlugin ? null : renderRow(plugin)))}
 
         {/* Online-catalog controls require a concrete HTTPS host without a port or wildcard. */}
         <PluginCatalogControls catalogHost={catalogHost} {...catalog} />

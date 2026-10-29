@@ -19,6 +19,7 @@ import {
   legacyEnableWrite,
 } from '@/features/plugins/storage/legacySettingBindings';
 import { setPluginEnabled } from '@/features/plugins/storage/pluginState';
+import { promptCoverageBindingFor } from '@/features/plugins/storage/promptCoverageBinding';
 import type { PluginManifest } from '@/features/plugins/types';
 
 import { writePopupSyncStorageChecked } from './popupStorage';
@@ -91,6 +92,26 @@ async function reusesSiteGrant(
   }
 }
 
+/** What the caller already knows about the site's grant, for a browser that cannot ask first. */
+export interface SiteGrantHint {
+  /** The plugin's page origin was granted when last looked up. */
+  readonly pageGranted?: boolean;
+}
+
+/**
+ * Firefox's form of the same reuse. Its prompt must be the gesture's first
+ * await, so the grant is the one looked up before the click: with the page
+ * origin held, a missing companion is left to the row's repair.
+ */
+function reusesKnownSiteGrant(
+  origins: readonly string[],
+  permissions: readonly Manifest.OptionalPermission[],
+  hint: SiteGrantHint | undefined,
+): boolean {
+  if (hint?.pageGranted !== true || permissions.length > 0) return false;
+  return partitionPluginOriginPatterns(origins).embeddedFrameOrigins.length > 0;
+}
+
 /**
  * Optional API permissions a builtin plugin needs beyond host access, asked in
  * the same gesture: Firefox allows one prompt as the gesture's first await.
@@ -159,7 +180,11 @@ export async function setPluginEnabledWithSiteAccess(
   next: boolean,
   activeUrl: string | undefined,
   onEnabledChange: (enabled: boolean) => void,
+  hint?: SiteGrantHint,
 ): Promise<PluginToggleOutcome> {
+  // Prompt Manager's catalog switch is the page host's coverage entry, which the
+  // popup writes in one place only (useCustomWebsites, through usePromptSwitch).
+  if (promptCoverageBindingFor(plugin.id)) return 'write_failed';
   if (next) {
     const origins = pluginToOriginPatternsForActiveUrl(plugin, activeUrl);
     const permissions = pluginApiPermissions(plugin);
@@ -200,7 +225,10 @@ export async function setPluginEnabledWithSiteAccess(
             await requestPluginContentScriptSync();
             return 'enabled';
           }
-        } else if (!(await browser.permissions.request(access))) {
+        } else if (
+          !reusesKnownSiteGrant(origins, permissions, hint) &&
+          !(await browser.permissions.request(access))
+        ) {
           return 'denied';
         }
       } catch {

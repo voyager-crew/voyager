@@ -108,17 +108,19 @@ export function usePopupPlugins({
         // switch derivation) is not visible here, and the page reports no effective
         // values, so these are labelled storage-derived rather than passed off as the page's.
         const bound = legacyBoundSettings(plugin.id, legacySettings);
+        // A coverage-bound switch reads the open page's own host there (an alias keeps its own).
+        const url = matchesAnyPattern(activeUrl, plugin.matches) ? activeUrl : undefined;
         return {
           id: plugin.id,
           version: plugin.version,
           source: diagnosticPluginSourceFromId(pluginSourceIds[plugin.id]),
-          enabled: effectivePluginView(plugin, pluginState, legacySettings).enabled,
+          enabled: effectivePluginView(plugin, pluginState, legacySettings, url).enabled,
           settingsSchema: plugin.contributes.settings,
           settings: bound ?? state?.settings,
           ...(bound ? { basis: STORAGE_DERIVED_BASIS } : {}),
         };
       }),
-    [legacySettings, pluginManifests, pluginSourceIds, pluginState],
+    [activeUrl, legacySettings, pluginManifests, pluginSourceIds, pluginState],
   );
   // Host of the active tab for the per-host remote plugin catalog; undefined
   // until the tab is known and for hosts that can never have a catalog file.

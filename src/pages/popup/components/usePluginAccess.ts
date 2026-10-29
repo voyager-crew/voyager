@@ -2,7 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 
 import browser from 'webextension-polyfill';
 
-import { pluginToOriginPatternsForActiveUrl } from '@/features/plugins/runtime/siteRegistration';
+import { isFirefox } from '@/core/utils/browser';
+import {
+  partitionPluginOriginPatterns,
+  pluginToOriginPatternsForActiveUrl,
+} from '@/features/plugins/runtime/siteRegistration';
 import type { PluginManifest } from '@/features/plugins/types';
 
 import {
@@ -66,13 +70,46 @@ export function usePluginAccess(
     };
   }, [activeUrl, enabledMap, manifests, permissionChanges]);
 
+  // Firefox shows a prompt only as the gesture's first await, so the site
+  // grant a later switch reuses is looked up beforehand: plugins whose page
+  // origin is held while a companion frame's may still be missing.
+  const [pageGrantedIds, setPageGrantedIds] = useState<ReadonlySet<string>>(new Set());
+  useEffect(() => {
+    let active = true;
+    if (!isFirefox() || !browser.permissions?.contains) return;
+    void Promise.all(
+      manifests.map(async (plugin): Promise<string | null> => {
+        const { topFrameOrigins, embeddedFrameOrigins } = partitionPluginOriginPatterns(
+          pluginToOriginPatternsForActiveUrl(plugin, activeUrl),
+        );
+        if (!topFrameOrigins.length || !embeddedFrameOrigins.length) return null;
+        try {
+          return (await browser.permissions.contains({ origins: topFrameOrigins }))
+            ? plugin.id
+            : null;
+        } catch {
+          return null;
+        }
+      }),
+    ).then((ids) => {
+      if (active) setPageGrantedIds(new Set(ids.filter((id): id is string => !!id)));
+    });
+    return () => {
+      active = false;
+    };
+  }, [activeUrl, manifests, permissionChanges]);
+
   const handleToggle = useCallback(
     async (plugin: PluginManifest, next: boolean) => {
       setDeniedId(null);
       setUnsupportedId(null);
       setEnableRefusal(null);
-      const outcome = await setPluginEnabledWithSiteAccess(plugin, next, activeUrl, (enabled) =>
-        onEnabledChange(plugin.id, enabled),
+      const outcome = await setPluginEnabledWithSiteAccess(
+        plugin,
+        next,
+        activeUrl,
+        (enabled) => onEnabledChange(plugin.id, enabled),
+        { pageGranted: pageGrantedIds.has(plugin.id) },
       );
       if (outcome === 'denied') setDeniedId(plugin.id);
       else if (outcome === 'unsupported') setUnsupportedId(plugin.id);
@@ -82,7 +119,7 @@ export function usePluginAccess(
       else if (outcome === 'write_failed')
         setEnableRefusal({ id: plugin.id, key: 'watermarkNotice_error' });
     },
-    [activeUrl, onEnabledChange],
+    [activeUrl, onEnabledChange, pageGrantedIds],
   );
 
   const handleGrantRequiredAccess = useCallback(

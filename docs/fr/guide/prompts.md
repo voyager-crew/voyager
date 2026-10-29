@@ -57,20 +57,18 @@ Le Gestionnaire de Prompts peut désormais être utilisé sur n'importe quel sit
 
 ### Comment l'Activer
 
-Sur Claude, ChatGPT, DeepSeek et Kimi, ouvrez la popup de Voyager pendant que vous êtes sur le site et activez l'interrupteur du site (par exemple **Activer le gestionnaire de prompts sur Claude**). Il vous sera demandé d'accorder l'accès.
+Sur Claude, ChatGPT, DeepSeek et Kimi, le gestionnaire de prompts est une ligne de la carte **Extensions** du site. Ouvrez la popup de Voyager pendant que vous êtes sur le site et activez **Prompts**. Si c'est la première fonctionnalité que vous y activez, le navigateur demande l'accès au site une seule fois.
 
 Pour tout autre site :
 
 1. Cliquez sur l'icône Voyager dans la barre d'outils de votre navigateur.
-2. Faites défiler jusqu'à la section **Gestionnaire de Prompts**.
-3. Entrez l'URL du site web (ex : `chatgpt.com` ou `claude.ai`).
+2. Dans la carte **Accès aux sites**, allez à **Autres sites**.
+3. Entrez l'adresse du site (ex : `poe.com`).
 4. Cliquez sur **Ajouter** et accordez la permission.
 5. **Rechargez la page cible** pour voir le bouton flottant.
 
 ### Sites IA Populaires
 
-- `chatgpt.com` - ChatGPT
-- `claude.ai` - Claude
 - `copilot.microsoft.com` - Microsoft Copilot
 - `poe.com` - Poe
 

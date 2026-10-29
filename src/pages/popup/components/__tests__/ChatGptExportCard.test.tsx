@@ -204,7 +204,7 @@ describe('PluginSiteSettings export entry', () => {
     await act(async () => {
       root.render(
         React.createElement(PluginSiteSettings, {
-          prompt: null,
+          promptSwitch: null,
           promptDataTransfer: {} as never,
           plugins: { manifests, activeUrl: CHATGPT_URL },
           exportEntry: { enabled: false, activeTabId: 7 },

@@ -6,16 +6,26 @@ import { StorageKeys } from '@/core/types/common';
 import { isFirefox, supportsOptionalHostPermissions } from '@/core/utils/browser';
 import {
   customWebsiteOriginPatterns,
-  customWebsitesIncludeHost,
   normalizeCustomWebsite,
   sanitizeCustomWebsites,
 } from '@/core/utils/customWebsites';
 import { pluginsToOriginPatterns } from '@/features/plugins/runtime/siteRegistration';
 import { matchesAnyPattern, patternWithinAny } from '@/features/plugins/sites/matchPattern';
+import {
+  type PromptCoverageBinding,
+  setPromptCoverageEnabled,
+} from '@/features/plugins/storage/promptCoverageBinding';
 import type { PluginManifest } from '@/features/plugins/types';
 import type { TranslationKey } from '@/utils/translations';
 
-import { catalogSiteForEntry } from '../utils/siteAccessSites';
+import {
+  type PlacedEntry,
+  removedEntries,
+  withEntriesRestored,
+  withoutEntries,
+} from '../utils/coverageEntries';
+import { catalogHostsCoveredBy } from '../utils/siteAccessSites';
+import { listGrants } from '../utils/sitePermissions';
 
 export interface CustomWebsitesOptions {
   t: (key: TranslationKey) => string;
@@ -25,15 +35,31 @@ export interface CustomWebsitesOptions {
   writeSyncStorage: (payload: Record<string, unknown>) => Promise<void>;
 }
 
-/** Why a site's coverage entry was not added: the browser refused or could not grant access. */
-export type CoverageRefusal = 'invalid' | 'failed' | 'unsupported' | 'denied';
+/** Why coverage did not change: the browser refused or could not grant access, or storage failed. */
+export type CoverageRefusal = 'invalid' | 'failed' | 'unsupported' | 'denied' | 'unsaved';
 
 export const COVERAGE_REFUSAL_MESSAGES: Readonly<Record<CoverageRefusal, TranslationKey>> = {
   invalid: 'invalidUrl',
   failed: 'permissionRequestFailed',
   unsupported: 'pluginUnsupportedPlatform',
   denied: 'permissionDenied',
+  unsaved: 'watermarkNotice_error',
 };
+
+/** What removing an added website took away, so its undo gives back exactly that. */
+export interface RemovedWebsite {
+  readonly entries: readonly PlacedEntry[];
+  /** The grants removed with it: none when another website or a plugin still uses them. */
+  readonly origins: readonly string[];
+  /** The browser kept a grant it was asked to remove, so the website stays listed. */
+  readonly failed: boolean;
+}
+
+export interface PromptCoverageResult {
+  readonly refusal: CoverageRefusal | null;
+  /** What switching off removed, at the positions it held. */
+  readonly removed: readonly PlacedEntry[];
+}
 
 function originPatternsForDomain(domain: string): string[] | null {
   try {
@@ -43,9 +69,26 @@ function originPatternsForDomain(domain: string): string[] | null {
   }
 }
 
+/** The patterns of `origins` the browser holds as such, so an undo asks for exactly those again. */
+async function heldPatterns(origins: readonly string[]): Promise<string[]> {
+  const listed = await listGrants();
+  if (listed) return origins.filter((origin) => listed.includes(origin));
+  const held = await Promise.all(
+    origins.map(async (origin) => {
+      try {
+        return await browser.permissions.contains({ origins: [origin] });
+      } catch {
+        return true;
+      }
+    }),
+  );
+  return origins.filter((_, index) => held[index]);
+}
+
 /**
  * Prompt Manager website coverage (`gvPromptCustomWebsites`) and its shared
- * optional host permissions. Every coverage read and write goes through here.
+ * optional host permissions. Every coverage read and write in the popup goes
+ * through here; a supported site's switch writes through its coverage binding.
  */
 export function useCustomWebsites({
   t,
@@ -72,6 +115,25 @@ export function useCustomWebsites({
     [show, writeSyncStorage],
   );
 
+  /** Takes entries out, leaving access alone, and says where each one stood. */
+  const removeEntries = useCallback(
+    async (entries: readonly string[]): Promise<PlacedEntry[]> => {
+      const { next, removed } = withoutEntries(current.current, entries);
+      if (removed.length) await commit(next);
+      return removed;
+    },
+    [commit],
+  );
+
+  /** Puts removed entries back where they stood. */
+  const restoreEntries = useCallback(
+    async (entries: readonly PlacedEntry[]): Promise<void> => {
+      const next = withEntriesRestored(current.current, entries);
+      if (next.length !== current.current.length) await commit(next);
+    },
+    [commit],
+  );
+
   const hydrateFromStorage = useCallback(
     (raw: Record<string, unknown>): void => {
       const storedWebsites = raw[StorageKeys.PROMPT_CUSTOM_WEBSITES];
@@ -88,30 +150,28 @@ export function useCustomWebsites({
       // A denied prompt may close the popup before its optimistic write is rolled back.
       void (async () => {
         if (!loaded.length || !browser.permissions?.contains) return;
+        const holds = async (origin: string) => browser.permissions.contains({ origins: [origin] });
         const hasAnyPermission = async (domain: string) => {
           try {
             const origins = customWebsiteOriginPatterns(domain);
             if (!origins) return false;
-            // A supported site's own grant (made by one of its plugins) runs Prompt Manager too.
-            for (const origin of [...origins, ...(catalogSiteForEntry(domain)?.origins ?? [])]) {
-              if (await browser.permissions.contains({ origins: [origin] })) return true;
+            for (const origin of origins) if (await holds(origin)) return true;
+            // A supported site's page grant, made by one of its plugins, also
+            // runs Prompt Manager there, but only on the page it grants.
+            for (const host of catalogHostsCoveredBy(domain)) {
+              if (await holds(`https://${host}/*`)) return true;
             }
             return false;
           } catch {
             return true; // Avoid destructive cleanup on unexpected permission API errors.
           }
         };
-        const filtered = (
-          await Promise.all(
-            loaded.map(async (domain) => ({ domain, ok: await hasAnyPermission(domain) })),
-          )
-        )
-          .filter((item) => item.ok)
-          .map((item) => item.domain);
-        if (filtered.length !== loaded.length) await commit(filtered);
+        const answers = await Promise.all(loaded.map(hasAnyPermission));
+        const unreachable = loaded.filter((_, index) => !answers[index]);
+        if (unreachable.length) await removeEntries(unreachable);
       })();
     },
-    [commit, show, writeSyncStorage],
+    [removeEntries, show, writeSyncStorage],
   );
 
   const requestAccess = useCallback(
@@ -142,56 +202,80 @@ export function useCustomWebsites({
   );
 
   /**
-   * Adds one entry and asks for its access in the order each browser needs:
+   * Saves an entry and asks for its access in the order each browser needs:
    * Firefox asks first, inside the gesture; the others save first because the
-   * prompt may close the popup, and take the entry back out if access is refused.
+   * prompt may close the popup, and take the entry back if access is refused.
    */
   const addWithAccess = useCallback(
-    async (domain: string, onSaved?: () => void): Promise<CoverageRefusal | null> => {
+    async (
+      domain: string,
+      save: () => Promise<unknown>,
+      takeBack: () => Promise<unknown>,
+      onSaved?: () => void,
+    ): Promise<CoverageRefusal | null> => {
       if (isFirefox()) {
         const refusal = await requestAccess(domain);
         if (refusal) return refusal;
-        await commit([...current.current, domain]);
+        await save();
         onSaved?.();
         return null;
       }
-      const previous = current.current;
-      await commit([...previous, domain]);
+      await save();
       onSaved?.();
       const refusal = await requestAccess(domain);
-      if (refusal) await commit(previous);
+      if (refusal) await takeBack();
       return refusal;
     },
-    [commit, requestAccess],
+    [requestAccess],
   );
 
+  const addEntry = useCallback(
+    (domain: string, onSaved?: () => void) =>
+      addWithAccess(
+        domain,
+        () => commit([...current.current, domain]),
+        () => removeEntries([domain]),
+        onSaved,
+      ),
+    [addWithAccess, commit, removeEntries],
+  );
+
+  /** Removes the grants only this entry used; `failed` when the browser kept them. */
   const revokeCustomWebsitePermission = useCallback(
-    async (domain: string, remainingWebsites: readonly string[]): Promise<void> => {
+    async (
+      domain: string,
+      remainingWebsites: readonly string[],
+    ): Promise<{ origins: string[]; failed: boolean }> => {
+      const kept = { origins: [], failed: false };
       const origins = originPatternsForDomain(domain);
-      if (!origins || !browser.permissions?.remove) return;
+      if (!origins || !browser.permissions?.remove) return kept;
       const normalized = domain
         .trim()
         .toLowerCase()
         .replace(/^www\./, '');
-      // Shared domains keep their grant even if the matching plugin is disabled.
+      // A host a plugin asks a grant for keeps it, even while that plugin is off.
+      // A plugin for every website (`<all_urls>`, Visual effects) asks for none.
       if (
         normalized &&
-        pluginManifests.some((plugin) =>
-          matchesAnyPattern(`https://${normalized}/`, plugin.matches),
-        )
+        matchesAnyPattern(`https://${normalized}/`, pluginsToOriginPatterns(pluginManifests))
       )
-        return;
+        return kept;
       // A `*.deepseek.com` grant also serves `chat.deepseek.com` plugins and remaining subdomain sites.
       const stillNeeded = [
         ...pluginsToOriginPatterns(pluginManifests),
         ...remainingWebsites.flatMap((website) => originPatternsForDomain(website) ?? []),
       ];
-      if (stillNeeded.some((pattern) => patternWithinAny(pattern, origins))) return;
+      if (stillNeeded.some((pattern) => patternWithinAny(pattern, origins))) return kept;
+      const held = await heldPatterns(origins);
+      if (!held.length) return kept;
       try {
-        await browser.permissions.remove({ origins });
+        if ((await browser.permissions.remove({ origins: held })) !== false) {
+          return { origins: held, failed: false };
+        }
       } catch (error) {
         console.warn('[Gemini Voyager] Failed to revoke permission for', domain, error);
       }
+      return { origins: [], failed: true };
     },
     [pluginManifests],
   );
@@ -209,17 +293,20 @@ export function useCustomWebsites({
       setWebsiteError(t('invalidUrl'));
       return;
     }
-    const refusal = await addWithAccess(normalized, () => setNewWebsiteInput(''));
+    const refusal = await addEntry(normalized, () => setNewWebsiteInput(''));
     if (refusal) setWebsiteError(t(COVERAGE_REFUSAL_MESSAGES[refusal]));
-  }, [newWebsiteInput, t, addWithAccess]);
+  }, [newWebsiteInput, t, addEntry]);
 
   const handleRemoveWebsite = useCallback(
-    async (website: string): Promise<void> => {
-      const updated = current.current.filter((entry) => entry !== website);
-      await commit(updated);
-      await revokeCustomWebsitePermission(website, updated);
+    async (website: string): Promise<RemovedWebsite> => {
+      const removed = await removeEntries([website]);
+      const revoked = await revokeCustomWebsitePermission(website, current.current);
+      if (!revoked.failed) return { entries: removed, origins: revoked.origins, failed: false };
+      // The browser kept the access, so the website stays listed, as before.
+      await restoreEntries(removed);
+      return { entries: [], origins: [], failed: true };
     },
-    [commit, revokeCustomWebsitePermission],
+    [removeEntries, restoreEntries, revokeCustomWebsitePermission],
   );
 
   const toggleQuickWebsite = useCallback(
@@ -228,60 +315,96 @@ export function useCustomWebsites({
         await handleRemoveWebsite(domain);
         return;
       }
-      const refusal = await addWithAccess(domain);
+      const refusal = await addEntry(domain);
       if (refusal) setWebsiteError(t(COVERAGE_REFUSAL_MESSAGES[refusal]));
     },
-    [addWithAccess, handleRemoveWebsite, t],
+    [addEntry, handleRemoveWebsite, t],
+  );
+
+  /** Writes a supported site's switch through its binding, and shows the stored result. */
+  const writeBinding = useCallback(
+    async (binding: PromptCoverageBinding, enabled: boolean) => {
+      const change = await setPromptCoverageEnabled(binding, enabled);
+      show(change.after);
+      return change;
+    },
+    [show],
   );
 
   /**
-   * Prompt Manager on the open site's host, as its row switches it: on while
-   * any entry covers the host, and off by removing every entry that does. A
-   * site Voyager can already reach (`accessGranted`) is not asked again.
+   * Prompt Manager on a supported site's page, as its plugin row switches it:
+   * the binding of that page's own host (an alias keeps its own entry). On
+   * asks for the host's coverage access unless the page is already granted
+   * (`accessGranted`); off removes every entry covering the host and returns
+   * them, so an undo can restore a parent domain's entry exactly.
    */
-  const setHostCoverage = useCallback(
+  const setPromptCoverage = useCallback(
     async (
-      host: string,
+      binding: PromptCoverageBinding,
       enabled: boolean,
       accessGranted: boolean,
-    ): Promise<CoverageRefusal | null> => {
-      if (!enabled) {
-        const covering = current.current.filter((entry) =>
-          customWebsitesIncludeHost([entry], host),
+    ): Promise<PromptCoverageResult> => {
+      try {
+        if (!enabled) {
+          const { before, after } = await writeBinding(binding, false);
+          return { refusal: null, removed: removedEntries(before, after) };
+        }
+        if (binding.read(current.current)) return { refusal: null, removed: [] };
+        const entry = normalizeCustomWebsite(binding.host);
+        if (!entry) return { refusal: 'invalid', removed: [] };
+        if (accessGranted) {
+          await writeBinding(binding, true);
+          await refreshActiveTabContext();
+          return { refusal: null, removed: [] };
+        }
+        const refusal = await addWithAccess(
+          entry,
+          () => writeBinding(binding, true),
+          () => writeBinding(binding, false),
         );
-        if (covering.length === 0) return null;
-        const updated = current.current.filter((entry) => !covering.includes(entry));
-        await commit(updated);
-        for (const entry of covering) await revokeCustomWebsitePermission(entry, updated);
-        return null;
+        return { refusal, removed: [] };
+      } catch {
+        return { refusal: 'unsaved', removed: [] };
       }
-      if (customWebsitesIncludeHost(current.current, host)) return null;
-      const entry = normalizeCustomWebsite(host);
-      if (!entry) return 'invalid';
-      if (!accessGranted) return addWithAccess(entry);
-      await commit([...current.current, entry]);
+    },
+    [addWithAccess, refreshActiveTabContext, writeBinding],
+  );
+
+  /**
+   * Gives back removed entries and exactly the grants removed with them, in
+   * each browser's order; false when the browser refused or failed the grant,
+   * in which case the entries stay out.
+   */
+  const restoreAccess = useCallback(
+    async (origins: readonly string[], entries: readonly PlacedEntry[]): Promise<boolean> => {
+      if (origins.length === 0) {
+        await restoreEntries(entries);
+        return true;
+      }
+      if (!browser.permissions?.request) return false;
+      const ask = async (): Promise<boolean> => {
+        try {
+          return (await browser.permissions.request({ origins: [...origins] })) === true;
+        } catch {
+          return false;
+        }
+      };
+      if (isFirefox()) {
+        // Firefox keeps the gesture only for a request made before any other await.
+        if (!(await ask())) return false;
+        await restoreEntries(entries);
+      } else {
+        // Saved first: the browser's prompt may close the popup before it answers.
+        await restoreEntries(entries);
+        if (!(await ask())) {
+          await removeEntries(entries.map(({ entry }) => entry));
+          return false;
+        }
+      }
       await refreshActiveTabContext();
-      return null;
+      return true;
     },
-    [addWithAccess, commit, refreshActiveTabContext, revokeCustomWebsitePermission],
-  );
-
-  /** Takes entries out and leaves access alone: revoking a site removes its grants itself. */
-  const removeEntries = useCallback(
-    async (entries: readonly string[]): Promise<void> => {
-      const updated = current.current.filter((entry) => !entries.includes(entry));
-      if (updated.length !== current.current.length) await commit(updated);
-    },
-    [commit],
-  );
-
-  /** Puts entries back, as an undone revoke does around its own access request. */
-  const restoreEntries = useCallback(
-    async (entries: readonly string[]): Promise<void> => {
-      const missing = entries.filter((entry) => !current.current.includes(entry));
-      if (missing.length) await commit([...current.current, ...missing]);
-    },
-    [commit],
+    [refreshActiveTabContext, removeEntries, restoreEntries],
   );
 
   return {
@@ -293,8 +416,9 @@ export function useCustomWebsites({
     handleAddWebsite,
     handleRemoveWebsite,
     toggleQuickWebsite,
-    setHostCoverage,
+    setPromptCoverage,
     removeEntries,
     restoreEntries,
+    restoreAccess,
   };
 }

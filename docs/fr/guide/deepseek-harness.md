@@ -25,13 +25,11 @@ dsh web
 
 Ouvrez `http://localhost:3080` dans votre navigateur.
 
-### 2. Activer l'interrupteur dans la popup
+### 2. L'ajouter dans la popup
 
 ![Cliquez sur l'icône puzzle de la barre d'outils, cliquez sur Voyager, puis activez le Gestionnaire de Prompts sur localhost:3080](/assets/dsh-enable-steps-en.png)
 
-Comme vous êtes déjà sur `localhost:3080`, la popup vous le propose tout en haut. Activez-le et accordez l'accès.
-
-Rien à taper.
+Dans la carte **Accès aux sites** de la popup, sous **Autres sites**, entrez `localhost:3080`. Cliquez sur **Ajouter** et accordez l'accès.
 
 ### 3. Recharger la page
 

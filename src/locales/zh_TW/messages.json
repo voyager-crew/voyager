@@ -1046,6 +1046,18 @@
     "message": "已取消 {site} 的存取授權",
     "description": "Undo toast after access to a site was removed. {site} is the site name or address"
   },
+  "siteAccessKept": {
+    "message": "{site} 仍為已授權：這項授權也涵蓋其他網站",
+    "description": "Toast after removing access when the site stays allowed, because the permission left also covers other websites (or every site). {site} is the site name or address"
+  },
+  "siteAccessRemoveFailed": {
+    "message": "無法取消 {site} 的存取授權，請再試一次。",
+    "description": "Error toast when the browser refused or failed to remove a site's access; nothing changed. {site} is the site name or address"
+  },
+  "siteAccessRestoreFailed": {
+    "message": "無法恢復 {site} 的存取授權",
+    "description": "Error toast when undoing a removal failed: the browser refused or failed the access request, so the site stays without access. {site} is the site name or address"
+  },
   "siteAccessOtherWebsites": {
     "message": "其他網站",
     "description": "Heading for the websites outside the supported list"
@@ -3276,10 +3288,6 @@
   "promptCloudError": {
     "message": "雲端同步失敗，請確認已登入 Google Drive。",
     "description": "Toast: cloud prompt sync failed / not signed in"
-  },
-  "enablePromptManagerOnSiteHint": {
-    "message": "在此網站使用你儲存的提示詞。",
-    "description": "Top toggle hint for enabling Prompt Manager on a third-party site"
   },
   "storageQuotaTitle": {
     "message": "儲存空間"

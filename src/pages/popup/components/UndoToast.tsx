@@ -15,7 +15,8 @@ export interface UndoToastProps {
 }
 
 /**
- * The popup's undo offer, pinned to the bottom of whatever scrolls the popup
+ * The popup's undo offer (or a notice with nothing to undo, such as an access
+ * change the browser refused), pinned to the bottom of whatever scrolls the popup
  * (the toolbar popup or the options page tab). The page toaster is not used
  * here: it sits where a host page's controls leave room and follows the host
  * page's theme, not the popup's. The status region stays mounted so a screen
@@ -45,15 +46,20 @@ export function UndoToast({
             // The page toast's face: surface card, hairline border, tone dot.
             className="border-border bg-card text-card-foreground pointer-events-auto flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-[13px] leading-snug shadow-[0_6px_20px_oklch(0_0_0/0.16)] dark:shadow-[0_6px_20px_oklch(0_0_0/0.4)]"
           >
-            <span aria-hidden="true" className="bg-primary size-2 shrink-0 rounded-full" />
+            <span
+              aria-hidden="true"
+              className={`size-2 shrink-0 rounded-full ${offer.tone === 'error' ? 'bg-destructive' : 'bg-primary'}`}
+            />
             <span className="min-w-0 flex-1">{offer.message}</span>
-            <button
-              type="button"
-              onClick={onUndo}
-              className="text-primary hover:bg-primary/10 focus-visible:ring-ring/60 -my-1 shrink-0 rounded-md px-2 py-1 font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
-            >
-              {undoLabel}
-            </button>
+            {offer.undo && (
+              <button
+                type="button"
+                onClick={onUndo}
+                className="text-primary hover:bg-primary/10 focus-visible:ring-ring/60 -my-1 shrink-0 rounded-md px-2 py-1 font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              >
+                {undoLabel}
+              </button>
+            )}
           </div>
         )}
       </div>

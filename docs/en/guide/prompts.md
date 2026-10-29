@@ -57,20 +57,18 @@ The Prompt Manager can now be used on any website you choose, not just Gemini™
 
 ### How to Enable
 
-On Claude, ChatGPT, DeepSeek, and Kimi, open the Voyager popup while you're on the site and turn on the site's switch (for example, **Enable Prompt Manager on Claude**). You'll be asked to grant access.
+On Claude, ChatGPT, DeepSeek, and Kimi, Prompt Manager is a row in the site's **Plugins** card. Open the Voyager popup while you're on the site and turn on **Prompt Manager**. If it's the first feature you turn on there, your browser asks for access to the site once.
 
 For any other site:
 
 1. Click the Voyager icon in your browser's extension toolbar.
-2. Scroll to the **Prompt Manager** section.
-3. Enter the website URL (e.g., `chatgpt.com` or `claude.ai`).
+2. In the **Site access** card, find **Other websites**.
+3. Enter the website address (e.g., `poe.com`).
 4. Click **Add website** and grant permission.
 5. **Reload the target page** to see the floating button.
 
 ### Popular AI Websites
 
-- `chatgpt.com` - ChatGPT
-- `claude.ai` - Claude
 - `copilot.microsoft.com` - Microsoft Copilot
 - `poe.com` - Poe
 

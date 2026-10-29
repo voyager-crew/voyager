@@ -1078,6 +1078,18 @@
     "message": "{site} 접근을 해제했습니다",
     "description": "Undo toast after access to a site was removed. {site} is the site name or address"
   },
+  "siteAccessKept": {
+    "message": "{site}은(는) 여전히 허용됩니다. 이 접근 권한은 다른 웹사이트에도 적용됩니다",
+    "description": "Toast after removing access when the site stays allowed, because the permission left also covers other websites (or every site). {site} is the site name or address"
+  },
+  "siteAccessRemoveFailed": {
+    "message": "{site} 접근을 해제하지 못했습니다. 다시 시도하세요.",
+    "description": "Error toast when the browser refused or failed to remove a site's access; nothing changed. {site} is the site name or address"
+  },
+  "siteAccessRestoreFailed": {
+    "message": "{site} 접근을 복원하지 못했습니다",
+    "description": "Error toast when undoing a removal failed: the browser refused or failed the access request, so the site stays without access. {site} is the site name or address"
+  },
   "siteAccessOtherWebsites": {
     "message": "기타 웹사이트",
     "description": "Heading for the websites outside the supported list"
@@ -3276,10 +3288,6 @@
   "promptCloudError": {
     "message": "클라우드 동기화에 실패했습니다. Google Drive에 로그인했는지 확인하세요.",
     "description": "Toast: cloud prompt sync failed / not signed in"
-  },
-  "enablePromptManagerOnSiteHint": {
-    "message": "이 사이트에서 저장한 프롬프트를 사용합니다.",
-    "description": "Top toggle hint for enabling Prompt Manager on a third-party site"
   },
   "storageQuotaTitle": {
     "message": "저장 공간"

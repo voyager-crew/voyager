@@ -5,8 +5,13 @@ export const UNDO_TOAST_MS = 4000;
 
 export interface UndoOffer {
   readonly message: string;
-  /** Puts back what the change replaced, through the same write the change used. */
-  readonly undo: () => void;
+  /**
+   * Puts back what the change replaced, through the same write the change used.
+   * Left out, the toast only reports what happened.
+   */
+  readonly undo?: () => void;
+  /** `error` when it reports something that did not happen. */
+  readonly tone?: 'error';
   /** Where focus goes when the offer closes while it holds focus: the control that changed. */
   readonly returnFocus?: () => HTMLElement | null;
 }
@@ -73,7 +78,7 @@ export function useUndoToast(durationMs: number = UNDO_TOAST_MS) {
   const undo = useCallback(() => {
     const current = offerRef.current;
     dismiss();
-    current?.undo();
+    current?.undo?.();
   }, [dismiss]);
 
   const setHovered = useCallback(

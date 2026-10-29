@@ -2,6 +2,7 @@ import { useId, useRef } from 'react';
 
 import { Plus, X } from 'lucide-react';
 
+import { PLATFORM_LOGOS, type PlatformLogo } from '@/core/icons/platformLogos';
 import { customWebsitesIncludeHost } from '@/core/utils/customWebsites';
 import type { TranslationKey } from '@/utils/translations';
 
@@ -9,14 +10,41 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import type { PromptManagerSettings } from '../hooks/usePromptManagerSettings';
 import { catalogSiteForEntry } from '../utils/siteAccessSites';
-import { IconMidjourney, IconNotebookLM, IconQwen } from './WebsiteLogos';
+import { PlatformMark } from './WebsiteLogos';
+
+/** Websites with a bundled mark of their own; no favicon is fetched for any other. */
+const KNOWN_WEBSITES: readonly { domain: string; label: string; logo: PlatformLogo }[] = [
+  { domain: 'qwen.ai', label: 'Qwen', logo: PLATFORM_LOGOS.qwen },
+  { domain: 'notebooklm.google.com', label: 'NotebookLM', logo: PLATFORM_LOGOS.notebooklm },
+  { domain: 'midjourney.com', label: 'Midjourney', logo: PLATFORM_LOGOS.midjourney },
+];
 
 /** One-click additions; a site that joins the catalog drops out on its own. */
-const QUICK_SITES = [
-  { domain: 'qwen.ai', label: 'Qwen', Icon: IconQwen },
-  { domain: 'notebooklm.google.com', label: 'NotebookLM', Icon: IconNotebookLM },
-  { domain: 'midjourney.com', label: 'Midjourney', Icon: IconMidjourney },
-].filter(({ domain }) => !catalogSiteForEntry(domain));
+const QUICK_SITES = KNOWN_WEBSITES.filter(({ domain }) => !catalogSiteForEntry(domain));
+
+/** The website's bundled mark, or else the first letter of its address on a plain tile. */
+function WebsiteMark({ website }: { website: string }) {
+  const known = KNOWN_WEBSITES.find(({ domain }) => customWebsitesIncludeHost([domain], website));
+  if (known) {
+    return (
+      <span
+        className="flex size-4 shrink-0 items-center justify-center"
+        style={{ color: known.logo.brand }}
+        aria-hidden="true"
+      >
+        <PlatformMark logo={known.logo} />
+      </span>
+    );
+  }
+  return (
+    <span
+      className="bg-background text-muted-foreground border-border/70 flex size-4 shrink-0 items-center justify-center rounded-[4px] border text-[9px] leading-none font-semibold"
+      aria-hidden="true"
+    >
+      {/[a-z0-9]/i.exec(website)?.[0]?.toUpperCase() ?? '?'}
+    </span>
+  );
+}
 
 export interface OtherWebsitesSectionProps {
   /** The coverage entries outside every supported site. */
@@ -58,7 +86,7 @@ export function OtherWebsitesSection({
       </div>
       {suggestions.length > 0 && (
         <div role="group" aria-label={t('addWebsite')} className="flex flex-wrap gap-1.5">
-          {suggestions.map(({ domain, label, Icon }) => (
+          {suggestions.map(({ domain, label, logo }) => (
             <button
               key={domain}
               type="button"
@@ -73,7 +101,7 @@ export function OtherWebsitesSection({
                 className="flex h-3.5 w-3.5 shrink-0 items-center justify-center"
                 aria-hidden="true"
               >
-                <Icon />
+                <PlatformMark logo={logo} />
               </span>
               <span className="truncate">{label}</span>
             </button>
@@ -85,9 +113,12 @@ export function OtherWebsitesSection({
           {websites.map((website) => (
             <li
               key={website}
-              className="bg-secondary/40 flex items-center justify-between gap-2 rounded-lg py-1 ps-2.5 pe-1"
+              className="bg-secondary/40 flex items-center gap-2 rounded-lg py-1 ps-2 pe-1"
             >
-              <bdi className="text-foreground/90 min-w-0 truncate text-[13px]">{website}</bdi>
+              <WebsiteMark website={website} />
+              <bdi className="text-foreground/90 min-w-0 flex-1 truncate text-[13px]">
+                {website}
+              </bdi>
               <button
                 type="button"
                 onClick={() => {

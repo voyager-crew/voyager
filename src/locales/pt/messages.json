@@ -1078,6 +1078,18 @@
     "message": "Acesso a {site} removido",
     "description": "Undo toast after access to a site was removed. {site} is the site name or address"
   },
+  "siteAccessKept": {
+    "message": "{site} continua permitido: o acesso também abrange outros sites",
+    "description": "Toast after removing access when the site stays allowed, because the permission left also covers other websites (or every site). {site} is the site name or address"
+  },
+  "siteAccessRemoveFailed": {
+    "message": "Não foi possível remover o acesso a {site}. Tente novamente.",
+    "description": "Error toast when the browser refused or failed to remove a site's access; nothing changed. {site} is the site name or address"
+  },
+  "siteAccessRestoreFailed": {
+    "message": "Não foi possível restaurar o acesso a {site}",
+    "description": "Error toast when undoing a removal failed: the browser refused or failed the access request, so the site stays without access. {site} is the site name or address"
+  },
   "siteAccessOtherWebsites": {
     "message": "Outros sites",
     "description": "Heading for the websites outside the supported list"
@@ -3276,10 +3288,6 @@
   "promptCloudError": {
     "message": "Falha na sincronização na nuvem. Verifique se você entrou no Google Drive.",
     "description": "Toast: cloud prompt sync failed / not signed in"
-  },
-  "enablePromptManagerOnSiteHint": {
-    "message": "Use seus prompts salvos neste site.",
-    "description": "Top toggle hint for enabling Prompt Manager on a third-party site"
   },
   "storageQuotaTitle": {
     "message": "Armazenamento"

@@ -234,14 +234,19 @@ describe('coverage write boundaries', () => {
     expect(memory.writes.every(({ area, key }) => area === 'sync' && key === COVERAGE)).toBe(true);
   });
 
-  it('does not remove a parent entry that also covers other custom hosts', async () => {
+  it('turns off a host covered through a parent domain by removing every entry that covers it', async () => {
     const original = ['keep.example', 'deepseek.com', 'chat.deepseek.com', 'api.deepseek.com'];
     memory.values.sync.set(COVERAGE, original);
+    const binding = bindingFor('voyager.deepseek-prompt-manager', 'https://chat.deepseek.com/a');
 
-    await expect(setPluginEnabled('voyager.deepseek-prompt-manager', false)).rejects.toThrow();
+    // The caller gets both lists, so an undo can put the removed entries back where they were.
+    await expect(setPromptCoverageEnabled(binding, false)).resolves.toEqual({
+      before: original,
+      after: ['keep.example', 'api.deepseek.com'],
+    });
 
-    expect(memory.values.sync.get(COVERAGE)).toEqual(original);
-    expect(memory.writes).toEqual([]);
+    expect(memory.values.sync.get(COVERAGE)).toEqual(['keep.example', 'api.deepseek.com']);
+    expect(binding.read(memory.values.sync.get(COVERAGE))).toBe(false);
     expect(memory.values.local.get(PLUGINS)).toEqual(INITIAL_PLUGINS);
   });
 

@@ -6,8 +6,9 @@ import {
   partitionPluginOriginPatterns,
   pluginsToOriginPatterns,
 } from '@/features/plugins/runtime/siteRegistration';
+import { matchesAnyPattern } from '@/features/plugins/sites/matchPattern';
 import { DEFAULT_ADAPTERS, NATIVE_SITE_IDS, SiteRegistry } from '@/features/plugins/sites/registry';
-import type { SiteAdapter } from '@/features/plugins/types';
+import type { PluginManifest, SiteAdapter } from '@/features/plugins/types';
 
 /** A site the site access card lists, read from its bundled site data. */
 export interface AccessSite {
@@ -86,6 +87,50 @@ export function otherWebsiteEntries(entries: readonly string[]): string[] {
   return entries.filter((entry) => !catalogSiteForEntry(entry));
 }
 
+/** The supported sites' page hosts a stored entry covers (`deepseek.com` covers `chat.deepseek.com`). */
+export function catalogHostsCoveredBy(entry: string): string[] {
+  return CATALOG_SITES.flatMap((site) => site.hosts).filter((host) =>
+    customWebsitesIncludeHost([entry], host),
+  );
+}
+
+/**
+ * Whether a granted pattern covers `wanted`, with the browser's meaning of a
+ * grant: `*.x` covers x itself and every subdomain, a `*` scheme both schemes,
+ * a `*` host or `<all_urls>` everything.
+ */
+export function grantCovers(grant: string, wanted: string): boolean {
+  if (grant === '<all_urls>') return true;
+  const parse = (pattern: string) => /^(\*|https?):\/\/([^/]+)\//i.exec(pattern);
+  const [have, want] = [parse(grant), parse(wanted)];
+  if (!have || !want) return grant === wanted;
+  if (have[1] !== '*' && have[1].toLowerCase() !== want[1].toLowerCase()) return false;
+  const [grantHost, wantedHost] = [have[2].toLowerCase(), want[2].toLowerCase()];
+  if (grantHost === '*' || grantHost === wantedHost) return true;
+  if (!grantHost.startsWith('*.')) return false;
+  const domain = grantHost.slice(2);
+  const host = wantedHost.replace(/^\*\./, '');
+  return host === domain || host.endsWith(`.${domain}`);
+}
+
+/**
+ * The grants Voyager still relies on once a site's own entries are gone: what
+ * the remaining entries ask for, and what the plugins that are on elsewhere do.
+ */
+export function originsStillNeeded(
+  site: AccessSite,
+  remainingEntries: readonly string[],
+  enabledPlugins: readonly Pick<PluginManifest, 'matches'>[],
+): string[] {
+  const elsewhere = enabledPlugins.filter(
+    (plugin) => !site.hosts.some((host) => matchesAnyPattern(`https://${host}/`, plugin.matches)),
+  );
+  return [
+    ...remainingEntries.flatMap((entry) => customWebsiteOriginPatterns(entry) ?? []),
+    ...pluginsToOriginPatterns(elsewhere),
+  ];
+}
+
 /**
  * Whether a granted pattern reaches one of the site's hosts, with the
  * browser's meaning of `*.` (the bare domain included). A grant for every host
@@ -109,19 +154,24 @@ function grantReachesSite(pattern: string, site: AccessSite): boolean {
 /**
  * The origins to remove when access to the site is revoked: every grant that
  * reaches it, whether a plugin, Prompt Manager or the browser's own site menu
- * made it. Without the browser's list, the grants Voyager itself asks for.
+ * made it, except one that something else still needs (`stillNeeded`): an
+ * `*.openai.com` grant that `platform.openai.com` also runs on stays. Without
+ * the browser's list, the grants Voyager itself asks for.
  */
 export function siteGrantsToRemove(
   site: AccessSite,
   granted: readonly string[] | null,
   entries: readonly string[],
+  stillNeeded: readonly string[],
 ): string[] {
-  if (granted) return granted.filter((pattern) => grantReachesSite(pattern, site));
-  return [
-    ...new Set([
-      ...site.origins,
-      ...site.companionOrigins,
-      ...entries.flatMap((entry) => customWebsiteOriginPatterns(entry) ?? []),
-    ]),
-  ];
+  const reaching = granted
+    ? granted.filter((pattern) => grantReachesSite(pattern, site))
+    : [
+        ...new Set([
+          ...site.origins,
+          ...site.companionOrigins,
+          ...entries.flatMap((entry) => customWebsiteOriginPatterns(entry) ?? []),
+        ]),
+      ];
+  return reaching.filter((grant) => !stillNeeded.some((pattern) => grantCovers(grant, pattern)));
 }

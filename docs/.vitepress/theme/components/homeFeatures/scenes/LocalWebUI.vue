@@ -12,24 +12,23 @@ const stage = useStage();
 stage.focus('timeline');
 
 const HOST = 'localhost:3080';
-/* The popup's own top toggle for the page you are on: enablePromptManagerOnSite in src/locales.
-   On a site you add yourself only the prompt manager loads (docs/guide/prompts.md), so the
-   local skin fades the timeline out and the ball appears after a reload. */
-const enableLabel: Record<string, string> = {
-  'en-US': 'Enable Prompt Manager on {site}',
-  'zh-CN': '在 {site} 上开启提示词管理器',
-  'zh-TW': '在 {site} 上開啟提示詞管理器',
-  'ja-JP': '{site} でプロンプトマネージャーを有効化',
-  'ko-KR': '{site}에서 프롬프트 관리자 사용',
-  'fr-FR': 'Activer le gestionnaire de prompts sur {site}',
-  'es-ES': 'Activar el Gestor de prompts en {site}',
-  'pt-PT': 'Ativar o Gerenciador de prompts no {site}',
-  'ar-SA': 'تفعيل مدير الموجّهات على {site}',
-  'ru-RU': 'Включить менеджер промптов на {site}',
+/* The popup's site access card adds a site of your own under Other websites
+   (siteAccessOtherWebsites, addWebsite and removeWebsite in src/locales). There only the
+   prompt manager loads (docs/guide/prompts.md), so the local skin fades the timeline out
+   and the ball appears after a reload. */
+const popupCopy: Record<string, { heading: string; add: string; remove: string }> = {
+  'en-US': { heading: 'Other websites', add: 'Add website', remove: 'Remove' },
+  'zh-CN': { heading: '其他网站', add: '添加网站', remove: '移除' },
+  'zh-TW': { heading: '其他網站', add: '新增網站', remove: '移除' },
+  'ja-JP': { heading: 'その他のウェブサイト', add: 'ウェブサイトを追加', remove: '削除' },
+  'ko-KR': { heading: '기타 웹사이트', add: '웹사이트 추가', remove: '제거' },
+  'fr-FR': { heading: 'Autres sites', add: 'Ajouter', remove: 'Retirer' },
+  'es-ES': { heading: 'Otros sitios web', add: 'Añadir sitio web', remove: 'Eliminar' },
+  'pt-PT': { heading: 'Outros sites', add: 'Adicionar site', remove: 'Remover' },
+  'ar-SA': { heading: 'مواقع أخرى', add: 'إضافة موقع ويب', remove: 'إزالة' },
+  'ru-RU': { heading: 'Другие сайты', add: 'Добавить сайт', remove: 'Удалить' },
 };
-const label = computed(() =>
-  (enableLabel[props.lang] ?? enableLabel['en-US']).replace('{site}', HOST),
-);
+const copy = computed(() => popupCopy[props.lang] ?? popupCopy['en-US']);
 const content = computed(() => homeFeaturesContent[props.lang] ?? homeFeaturesContent['en-US']);
 const prompts = computed(() => content.value.promptList.slice(0, 4));
 
@@ -53,7 +52,7 @@ const sent = ref<{ q: string; a: Answer }[]>([]);
 const root = ref<HTMLElement | null>(null);
 const extBtn = ref<HTMLElement | null>(null);
 const reloadBtn = ref<HTMLElement | null>(null);
-const switchEl = ref<HTMLElement | null>(null);
+const addBtn = ref<HTMLElement | null>(null);
 const items = ref<HTMLElement[]>([]);
 const cursor = reactive({ x: 0, y: 0, show: false, down: false });
 
@@ -154,7 +153,7 @@ onMounted(() => {
   at(220, () => (cursor.show = true));
   at(400, () => aim(extBtn.value));
   at(950, () => press(() => (popOpen.value = true)));
-  at(1350, () => aim(switchEl.value));
+  at(1350, () => aim(addBtn.value));
   at(1900, () => press(() => (enabled.value = true)));
   at(2250, () => aim(reloadBtn.value));
   at(2800, () => press(reload));
@@ -216,18 +215,32 @@ onBeforeUnmount(() => {
           <img src="/logo.png" alt="" width="16" height="16" draggable="false" />
           <b>Voyager</b>
         </div>
-        <div class="gvf-lw-pop-row">
-          <span>{{ label }}</span>
-          <button
-            ref="switchEl"
-            type="button"
-            role="switch"
-            class="gvf-lw-switch"
-            :aria-checked="enabled"
-            :aria-label="label"
-            :tabindex="popOpen ? 0 : -1"
-            @click="enabled = !enabled"
-          />
+        <div class="gvf-lw-pop-sites">
+          <span class="gvf-lw-pop-title">{{ copy.heading }}</span>
+          <div v-if="enabled" class="gvf-lw-site">
+            <span class="gvf-lw-mark" aria-hidden="true">L</span>
+            <bdi>{{ HOST }}</bdi>
+            <button
+              type="button"
+              class="gvf-lw-x"
+              :aria-label="`${copy.remove} ${HOST}`"
+              :tabindex="popOpen ? 0 : -1"
+              @click="enabled = false"
+              v-html="icon('x', 14)"
+            />
+          </div>
+          <div v-else class="gvf-lw-add">
+            <span class="gvf-lw-input" dir="ltr">{{ HOST }}</span>
+            <button
+              ref="addBtn"
+              type="button"
+              class="gvf-lw-add-btn"
+              :tabindex="popOpen ? 0 : -1"
+              @click="enabled = true"
+            >
+              {{ copy.add }}
+            </button>
+          </div>
         </div>
         <i class="gvf-lw-bar" style="width: 82%" />
         <i class="gvf-lw-bar" style="width: 58%" />
@@ -386,20 +399,92 @@ onBeforeUnmount(() => {
 .gvf-lw-pop-head b {
   font-weight: 700;
 }
-.gvf-lw-pop-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.gvf-lw-pop-sites {
+  display: grid;
+  gap: 7px;
   padding: 9px 10px;
   border-radius: 10px;
   background: var(--gv-brand-soft);
   font-size: 12.5px;
-  font-weight: 600;
   line-height: 1.35;
 }
-.gvf-lw-pop-row span {
+.gvf-lw-pop-title {
+  font-weight: 600;
+}
+.gvf-lw-add,
+.gvf-lw-site {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+}
+.gvf-lw-input {
   flex: 1;
   min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--gv-ctrl-border);
+  border-radius: 7px;
+  background: var(--gv-ctrl-bg);
+  color: var(--gv-ctrl-fg);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gvf-lw-add-btn {
+  flex: none;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--gv-add-bg);
+  color: var(--gv-add-fg);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.gvf-lw-site {
+  padding-block: 2px;
+  padding-inline: 8px 2px;
+  border-radius: 8px;
+  background: var(--gv-row);
+  animation: gvf-lw-fade 0.25s ease both;
+}
+.gvf-lw-mark {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--gv-ctrl-border);
+  border-radius: 4px;
+  background: var(--gv-ctrl-bg);
+  color: var(--gv-ctrl-fg);
+  font-size: 9px;
+  font-weight: 600;
+}
+.gvf-lw-site bdi {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+}
+.gvf-lw-x {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--gv-ctrl-fg);
+  cursor: pointer;
+}
+.gvf-lw-add-btn:focus-visible,
+.gvf-lw-x:focus-visible {
+  outline: 2px solid var(--gv-brand);
+  outline-offset: 2px;
 }
 .gvf-lw-bar {
   display: block;
@@ -408,44 +493,6 @@ onBeforeUnmount(() => {
   border-radius: 3px;
   background: color-mix(in srgb, var(--gv-text) 10%, transparent);
 }
-.gvf-lw-switch {
-  flex: none;
-  position: relative;
-  width: 32px;
-  height: 18px;
-  padding: 0;
-  border: 0;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--gv-text) 18%, transparent);
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-.gvf-lw-switch::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  inset-inline-start: 2px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 2px oklch(0 0 0 / 0.25);
-  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.gvf-lw-switch[aria-checked='true'] {
-  background: var(--gv-brand);
-}
-.gvf-lw-switch[aria-checked='true']::after {
-  transform: translateX(14px);
-}
-[dir='rtl'] .gvf-lw-switch[aria-checked='true']::after {
-  transform: translateX(-14px);
-}
-.gvf-lw-switch:focus-visible {
-  outline: 2px solid var(--gv-brand);
-  outline-offset: 2px;
-}
-
 /* Prompt manager panel beside the ball */
 .gvf-lw-pm {
   position: absolute;

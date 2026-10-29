@@ -57,20 +57,18 @@ El Gestor de Prompts ahora se puede utilizar en cualquier sitio web que elijas, 
 
 ### Cómo Habilitarlo
 
-En Claude, ChatGPT, DeepSeek y Kimi, abre el popup de Voyager mientras estás en el sitio y activa el interruptor de ese sitio (por ejemplo, **Activar el Gestor de prompts en Claude**). Se te pedirá que concedas acceso.
+En Claude, ChatGPT, DeepSeek y Kimi, el Gestor de Prompts es una fila de la tarjeta **Complementos** del sitio. Abre el popup de Voyager mientras estás en el sitio y activa **Gestor de Prompts**. Si es la primera función que activas allí, el navegador pide acceso al sitio una sola vez.
 
 Para cualquier otro sitio:
 
 1. Haz clic en el icono de Voyager en la barra de herramientas de tu navegador.
-2. Desplázate hasta la sección **Gestor de Prompts**.
-3. Ingresa la URL del sitio web (por ejemplo: `chatgpt.com` o `claude.ai`).
+2. En la tarjeta **Acceso a sitios**, ve a **Otros sitios web**.
+3. Escribe la dirección del sitio (por ejemplo: `poe.com`).
 4. Haz clic en **Añadir sitio web** y concede el permiso.
 5. **Recarga la página de destino** para ver el botón flotante.
 
 ### Sitios Web de IA Populares
 
-- `chatgpt.com` - ChatGPT
-- `claude.ai` - Claude
 - `copilot.microsoft.com` - Microsoft Copilot
 - `poe.com` - Poe
 

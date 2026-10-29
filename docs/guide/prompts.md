@@ -57,20 +57,18 @@
 
 ### 如何启用
 
-在 Claude、ChatGPT、DeepSeek 和 Kimi 上，打开该网站时点开 Voyager 弹窗，打开对应网站的开关（例如 **在 Claude 上开启提示词管理器**），按提示授予访问权限即可。
+在 Claude、ChatGPT、DeepSeek 和 Kimi 上，提示词管理器是该网站 **插件** 卡片里的一行。打开该网站时点开 Voyager 弹窗，打开 **提示词管理器** 即可；如果这是在该网站上开启的第一个功能，浏览器会请求一次该网站的访问权限。
 
 其他网站：
 
 1. 点击浏览器扩展栏的 Voyager 图标。
-2. 滚动到 **提示词管理器** 部分。
-3. 输入网站 URL（例如：`chatgpt.com` 或 `claude.ai`）。
+2. 在 **网站访问** 卡片中找到 **其他网站**。
+3. 输入网站地址（例如：`poe.com`）。
 4. 点击 **添加网站** 并授予权限。
 5. **刷新目标网页**，即可看到悬浮球。
 
 ### 常见 AI 网站示例
 
-- `chatgpt.com` - ChatGPT
-- `claude.ai` - Claude
 - `copilot.microsoft.com` - Microsoft Copilot
 - `poe.com` - Poe
 

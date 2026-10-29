@@ -19,8 +19,18 @@ export interface PromptCoverageBinding {
   readonly area: 'sync';
   readonly key: typeof StorageKeys.PROMPT_CUSTOM_WEBSITES;
   read(stored: unknown): boolean;
-  /** Preserve unrelated entries and the current string-array format. */
+  /**
+   * Preserve unrelated entries and the current string-array format. Off removes
+   * every entry that covers the host, its own and a parent domain's alike: the
+   * format has no exclusions, and the old quick choice stored `deepseek.com`.
+   */
   write(stored: unknown, enabled: boolean): string[];
+}
+
+/** The coverage list read and the list written, so a caller can put removed entries back. */
+export interface PromptCoverageChange {
+  readonly before: string[];
+  readonly after: string[];
 }
 
 const declarations = listBundledPluginEntries().filter(
@@ -58,12 +68,7 @@ export function promptCoverageBindingFor(
       const current = sanitizeCustomWebsites(stored);
       if (enabled)
         return customWebsitesIncludeHost(current, host) ? current : [...current, website];
-      // The old format has no exclusions: deleting inherited coverage would
-      // also switch off other custom hosts or ports. Leave that entry intact.
-      if (current.some((item) => item !== website && customWebsitesIncludeHost([item], host))) {
-        throw new Error(`Prompt Manager coverage for ${host} is inherited from a broader entry`);
-      }
-      return current.filter((item) => item !== website);
+      return current.filter((item) => !customWebsitesIncludeHost([item], host));
     },
   };
 }
@@ -84,9 +89,11 @@ export function promptCoverageBindingForUrl(url: string): PromptCoverageBinding 
 export async function setPromptCoverageEnabled(
   binding: PromptCoverageBinding,
   enabled: boolean,
-): Promise<void> {
-  await withPluginStorageLock(async () => {
+): Promise<PromptCoverageChange> {
+  return withPluginStorageLock(async () => {
     const stored = await chrome.storage.sync.get(binding.key);
-    await chrome.storage.sync.set({ [binding.key]: binding.write(stored[binding.key], enabled) });
+    const after = binding.write(stored[binding.key], enabled);
+    await chrome.storage.sync.set({ [binding.key]: after });
+    return { before: sanitizeCustomWebsites(stored[binding.key]), after };
   });
 }

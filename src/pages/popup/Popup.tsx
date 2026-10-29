@@ -308,7 +308,7 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
         })}
         {isPluginSite && (
           <PluginSiteSettings
-            prompt={siteAccess.activeSite}
+            promptSwitch={siteAccess.promptSwitch}
             promptDataTransfer={promptTransfer}
             plugins={{
               manifests: plugins.siteScopedManifests,
