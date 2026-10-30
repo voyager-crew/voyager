@@ -53,7 +53,10 @@ export async function beginExport(format: ExportFormat): Promise<void> {
 
 export async function confirmSelection(selectAll = true): Promise<void> {
   await until(() => !!document.querySelector('.gv-export-select-bar'));
-  if (selectAll) button('[data-gv-export-action="selectAll"]').click();
+  // The run read the whole conversation, so every message starts selected.
+  if (selectAll) {
+    await until(() => button('[data-gv-export-action="selectAll"]').dataset.checked === 'true');
+  }
   vi.setSystemTime(FIXED_TIME);
   button('[data-gv-export-action="export"]').click();
 }

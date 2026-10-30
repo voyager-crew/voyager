@@ -156,7 +156,12 @@ describe('createExportRunner', () => {
       prepare,
     );
     await until(() => selectionBar() !== null);
-    clickBarAction('selectAll');
+    // A whole-thread read starts with everything selected.
+    await until(
+      () =>
+        document.querySelector<HTMLElement>('[data-gv-export-action="selectAll"]')?.dataset
+          .checked === 'true',
+    );
     clickBarAction('export');
     await settle(running);
 

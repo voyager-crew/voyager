@@ -463,6 +463,9 @@ export function createExportRunner(deps: ExportRunnerDeps): ExportRunner {
       abortExport: () => activeExportController?.abort(),
       readMessages: () => reader.messages(),
       initialSelectedMessageId: state.initialSelectedMessageId || null,
+      // A prepared session that read the whole thread offers all of it.
+      selectAllInitially:
+        reader !== site.turns && (reader.completeness ?? 'complete') === 'complete',
       anchors: collector,
       isSameConversation: () => exportRouteKey(location.href) === exportRouteKey(selectionUrl),
       resolveRoles: resolveRoles

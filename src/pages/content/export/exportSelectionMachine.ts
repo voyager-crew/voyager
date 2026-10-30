@@ -76,12 +76,16 @@ export type ExportSelectionEvent =
 /** Statuses during which the selection UI is on the page. */
 export type SelectionUiState = Extract<ExportSelectionState, SelectionData>;
 
-export function initialSelectionState(initialSelectedId: string | null): ExportSelectionState {
+/** `selectAll` starts with every message selected, unless one message was asked for. */
+export function initialSelectionState(
+  initialSelectedId: string | null,
+  selectAll = false,
+): ExportSelectionState {
   return {
     status: 'selecting',
     messages: [],
     selected: new Set(),
-    autoSelectAll: false,
+    autoSelectAll: selectAll && initialSelectedId === null,
     pendingInitialId: initialSelectedId,
   };
 }

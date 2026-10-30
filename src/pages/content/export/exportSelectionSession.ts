@@ -47,6 +47,8 @@ export interface ExportSelectionSessionOptions {
   readMessages: () => ExportMessage[];
   /** Message to preselect once it appears (e.g. from a response menu). */
   initialSelectedMessageId: string | null;
+  /** Start with every message selected: the source read the whole conversation. */
+  selectAllInitially?: boolean;
   /** Conversation landmarks: the bar is centred on them and the root is observed. */
   anchors: ConversationAnchors;
   /** False once the page shows another conversation; the session then cancels itself. */
@@ -418,7 +420,7 @@ export function startExportSelectionSession(
       abortExport: options.abortExport,
       ended: () => resolveDone(),
     }),
-    initialSelectionState(options.initialSelectedMessageId),
+    initialSelectionState(options.initialSelectedMessageId, options.selectAllInitially),
   );
   machine.subscribe((state) => {
     if (hasSelectionUi(state)) view.render(state);

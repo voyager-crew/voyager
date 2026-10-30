@@ -37,6 +37,13 @@ describe('exportSelectionTransition', () => {
     expect(selectedOf(run(state, { type: 'toggle', id: '1:a' }))).toEqual([]);
   });
 
+  it('starts with everything selected after a whole-thread read, unless one message was asked for', () => {
+    expect(selectedOf(run(initialSelectionState(null, true), refresh(known)))).toEqual(
+      known.map((m) => m.id).sort(),
+    );
+    expect(selectedOf(run(initialSelectionState('1:a', true), refresh(known)))).toEqual(['1:a']);
+  });
+
   it('select all keeps selecting messages that load later until it is turned off', () => {
     const all = run(selecting(known.slice(0, 1)), { type: 'selectAll' });
     const grown = run(all, refresh(known));

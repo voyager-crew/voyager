@@ -48,7 +48,8 @@ export async function beginExport(format: ExportFormat): Promise<void> {
 
 export async function confirmAll(): Promise<void> {
   await until(() => !!document.querySelector('.gv-export-select-bar'));
-  button('[data-gv-export-action="selectAll"]').click();
+  // The crawl read the whole thread, so every message starts selected.
+  await until(() => button('[data-gv-export-action="selectAll"]').dataset.checked === 'true');
   expect(button('[data-gv-export-action="export"]').disabled).toBe(false);
   // Fix the serialization clock after the crawl; elapsed polling time is intentionally irrelevant.
   vi.setSystemTime(FIXED_TIME);
