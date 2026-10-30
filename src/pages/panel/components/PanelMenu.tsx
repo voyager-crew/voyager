@@ -10,9 +10,9 @@ export interface PanelMenuItem {
   readonly label: React.ReactNode;
   readonly checked: boolean;
   readonly disabled?: boolean;
-  /** Before the label, after the check column (a site logo). */
+  /** Before the label (a site logo). */
   readonly leading?: React.ReactNode;
-  /** At the inline end (the "This page" mark). */
+  /** After the label, before the check (the "This page" mark). */
   readonly trailing?: React.ReactNode;
 }
 
@@ -152,14 +152,14 @@ export function PanelMenu({
             onPick(item.value);
           }}
         >
+          {item.leading}
+          <span className="ml">{item.label}</span>
+          {item.trailing}
           {kind === 'choice' && (
             <span className="ck" aria-hidden="true">
               {item.checked && <Check size={15} strokeWidth={2.2} />}
             </span>
           )}
-          {item.leading}
-          <span className="ml">{item.label}</span>
-          {item.trailing}
         </button>
       ))}
     </div>,

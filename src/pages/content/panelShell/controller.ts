@@ -51,14 +51,9 @@ export interface PanelControllerDeps {
   onOpenChange(open: boolean): void;
 }
 
-export interface PanelOpenOptions {
-  /** The panel shortcut asked: the panel page draws focus rings (`#keyboard`). */
-  readonly keyboard?: boolean;
-}
-
 export interface PanelController {
-  open(anchor: PanelAnchor, options?: PanelOpenOptions): void;
-  toggle(anchor: PanelAnchor, options?: PanelOpenOptions): void;
+  open(anchor: PanelAnchor): void;
+  toggle(anchor: PanelAnchor): void;
   close(): void;
   isOpen(): boolean;
   /** A press on the entry began: remember the page's focus before it can move. */
@@ -146,8 +141,7 @@ export function createPanelController(deps: PanelControllerDeps): PanelControlle
         position = saved;
         const reply = parsePanelTokenIssueReply(raw);
         if (reply?.ok && origin && reply.panelUrl === `${origin}/${PANEL_PAGE_PATH}`) {
-          const url = stay.state().keyboard ? `${reply.panelUrl}#keyboard` : reply.panelUrl;
-          stay.send({ type: 'issued', url, token: reply.token });
+          stay.send({ type: 'issued', url: reply.panelUrl, token: reply.token });
           return;
         }
       } catch (error) {
@@ -309,21 +303,18 @@ export function createPanelController(deps: PanelControllerDeps): PanelControlle
     if (isPanelOpen(machine.state)) machine.send({ type: 'close' });
   });
 
-  const open = (anchor: PanelAnchor, toggle: boolean, options: PanelOpenOptions = {}): void => {
+  const open = (anchor: PanelAnchor, toggle: boolean): void => {
     if (!isPanelOpen(machine.state)) {
       const recent = press && Date.now() - press.at < PRESS_MS ? press.snapshot : undefined;
       focus = recent === undefined ? captureFocus() : recent;
     }
     press = null;
-    const keyboard = options.keyboard === true;
-    machine.send(
-      toggle ? { type: 'toggle', anchor, keyboard } : { type: 'open', anchor, keyboard },
-    );
+    machine.send(toggle ? { type: 'toggle', anchor } : { type: 'open', anchor });
   };
 
   return {
-    open: (anchor, options) => open(anchor, false, options),
-    toggle: (anchor, options) => open(anchor, true, options),
+    open: (anchor) => open(anchor, false),
+    toggle: (anchor) => open(anchor, true),
     close: () => machine.send({ type: 'close' }),
     isOpen: () => isPanelOpen(machine.state),
     notePress() {

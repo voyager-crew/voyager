@@ -68,7 +68,7 @@ export function startPanelShell(): StopNativeFeature {
       // A page script's synthetic ⌥V must neither open the panel nor write the hide setting.
       if (!isUserEvent(event)) return;
       const opening = !controller.isOpen();
-      controller.toggle(null, { keyboard: true });
+      controller.toggle(null);
       // The shortcut brings a hidden ball back: hiding it is never a dead end.
       if (opening) hideSetting.show();
     },

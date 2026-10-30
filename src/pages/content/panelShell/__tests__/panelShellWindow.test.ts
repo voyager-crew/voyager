@@ -83,10 +83,7 @@ describe('panel window', () => {
         },
       },
     ]);
-    // The keyboard opened it, so the panel page draws focus rings.
-    expect(document.querySelector<HTMLIFrameElement>('.gv-ps-frame')?.src).toBe(
-      `${PANEL_URL}#keyboard`,
-    );
+    expect(document.querySelector<HTMLIFrameElement>('.gv-ps-frame')?.src).toBe(PANEL_URL);
     expect(panel()?.getAttribute('role')).toBe('dialog');
     // 880 × 560 in jsdom's 1024 × 768 viewport.
     expect(at()).toEqual({ left: '72px', top: '104px' });

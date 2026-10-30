@@ -79,8 +79,9 @@
   --chip: oklch(0.955 0.003 250);
   --chip-hover: oklch(0.93 0.004 250);
   --sw-off: oklch(0.88 0.004 250);
-  --sw-on: oklch(0.21 0.005 270);
+  --sw-on: var(--brand);
   --knob: #fff;
+  --knob-off: #fff;
   --knob-on: #fff;
   --seg: oklch(0.935 0.003 250);
   --seg-on: #fff;
@@ -112,8 +113,9 @@ html[data-gv-scheme='dark'] {
   --chip: oklch(0.29 0.004 270);
   --chip-hover: oklch(0.33 0.005 270);
   --sw-off: oklch(0.36 0.005 270);
-  --sw-on: oklch(0.93 0.003 250);
+  --sw-on: oklch(0.773 0.091 126);
   --knob: oklch(0.98 0 0);
+  --knob-off: oklch(0.72 0.005 260);
   --knob-on: oklch(0.2 0.004 270);
   --seg: oklch(0.27 0.004 270);
   --seg-on: oklch(0.36 0.005 270);
@@ -175,7 +177,7 @@ input:focus-visible {
   outline-offset: 2px;
 }
 
-/* The active tab's focus after a pointer open, until a key is pressed (useOpeningFocus). */
+/* The active tab's focus as the panel opens, until a key is pressed (useOpeningFocus). */
 [data-quiet-focus]:focus-visible {
   outline: none;
 }
@@ -483,7 +485,7 @@ input:focus-visible {
   gap: 8px;
   width: 100%;
   height: 32px;
-  padding-inline: 8px 10px;
+  padding-inline: 10px 8px;
   border: 0;
   border-radius: 7px;
   background: transparent;
@@ -518,12 +520,13 @@ input:focus-visible {
 }
 
 .menu .ml {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .menu .here {
-  margin-inline-start: auto;
   padding-inline-start: 12px;
   font-size: 12px;
   color: var(--ink-3);

@@ -309,7 +309,7 @@ label.rn {
   width: 18px;
   height: 18px;
   border-radius: 9px;
-  background: var(--knob);
+  background: var(--knob-off);
   box-shadow:
     0 1px 2px rgb(0 0 0 / 0.18),
     0 0 0 0.5px rgb(0 0 0 / 0.04);

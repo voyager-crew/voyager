@@ -57,7 +57,7 @@ function label(): HTMLElement | null {
   return document.querySelector<HTMLElement>('.gv-ps-entry .gv-ps-tip');
 }
 
-/** The panel page's address: only the panel shortcut adds `#keyboard`. */
+/** The panel frame's address. */
 function frameSrc(): string | undefined {
   return document.querySelector<HTMLIFrameElement>('.gv-ps-frame')?.src;
 }

@@ -117,7 +117,7 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
   });
   const groups = filterPanelGroups(groupPanelRows(model.rows, t), search.state.query);
 
-  // The active tab takes focus as the panel opens, with a ring only after a keyboard open.
+  // The active tab takes focus as the panel opens; its ring waits for a key press.
   useOpeningFocus(useCallback(() => tabButtons.current.features, []));
 
   const changeView = useCallback(

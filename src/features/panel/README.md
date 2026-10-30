@@ -37,4 +37,4 @@ acknowledgment leaves the lifetime observer active.
 Mouse confirmation of slash action rows and keyboard confirmation of those
 actions require `isUserEvent`. Synthetic input may show the menu, but cannot
 open Prompt Manager or the Voyager panel. Existing prompt completion remains
-unchanged. The `#keyboard` hash chooses initial focus-ring presentation only.
+unchanged.

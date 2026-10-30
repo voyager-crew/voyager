@@ -13,8 +13,7 @@ export type PanelAnchor = 'satellite' | 'ball' | null;
 
 export type PanelState =
   | { readonly status: 'closed' }
-  /** `keyboard`: the panel shortcut asked, so the panel page draws focus rings. */
-  | { readonly status: 'requesting'; readonly anchor: PanelAnchor; readonly keyboard: boolean }
+  | { readonly status: 'requesting'; readonly anchor: PanelAnchor }
   | {
       readonly status: 'shown';
       readonly anchor: PanelAnchor;
@@ -29,8 +28,8 @@ export type PanelState =
     };
 
 export type PanelEvent =
-  | { readonly type: 'open'; readonly anchor: PanelAnchor; readonly keyboard: boolean }
-  | { readonly type: 'toggle'; readonly anchor: PanelAnchor; readonly keyboard: boolean }
+  | { readonly type: 'open'; readonly anchor: PanelAnchor }
+  | { readonly type: 'toggle'; readonly anchor: PanelAnchor }
   | { readonly type: 'close' }
   /** The secret stays in the content-script world; `url` has no redeemable authority. */
   | { readonly type: 'issued'; readonly url: string; readonly token: PanelToken }
@@ -50,7 +49,7 @@ export function transitionPanel(state: PanelState, event: PanelEvent): PanelStat
   switch (event.type) {
     case 'open':
       if (state.status === 'closed') {
-        return { status: 'requesting', anchor: event.anchor, keyboard: event.keyboard };
+        return { status: 'requesting', anchor: event.anchor };
       }
       if (state.status === 'closing') {
         return { status: 'shown', anchor: event.anchor, url: state.url, token: state.token };
@@ -59,9 +58,7 @@ export function transitionPanel(state: PanelState, event: PanelEvent): PanelStat
     case 'toggle':
       return transitionPanel(
         state,
-        isPanelOpen(state)
-          ? { type: 'close' }
-          : { type: 'open', anchor: event.anchor, keyboard: event.keyboard },
+        isPanelOpen(state) ? { type: 'close' } : { type: 'open', anchor: event.anchor },
       );
     case 'close':
       if (state.status === 'requesting') return PANEL_CLOSED;

@@ -54,7 +54,7 @@ async function type(text: string): Promise<void> {
 const quiet = (element: Element) => element.hasAttribute(QUIET_FOCUS_ATTRIBUTE);
 
 describe('keyboard', () => {
-  it('opened with the pointer, focuses the active tab without a ring until a key is pressed', async () => {
+  it('focuses the active tab without a ring until a key is pressed', async () => {
     await mount();
     await frame();
     expect(document.activeElement).toBe(tab('features'));
@@ -62,18 +62,6 @@ describe('keyboard', () => {
 
     await press('Shift');
     expect(quiet(tab('features'))).toBe(false);
-  });
-
-  it('opened with ⌥V, focuses the active tab with its ring', async () => {
-    window.history.replaceState(null, '', '#keyboard');
-    try {
-      await mount();
-      await frame();
-      expect(document.activeElement).toBe(tab('features'));
-      expect(quiet(tab('features'))).toBe(false);
-    } finally {
-      window.history.replaceState(null, '', window.location.pathname);
-    }
   });
 
   it('Esc closes an open menu, then search, then asks the shell to close the panel', async () => {
