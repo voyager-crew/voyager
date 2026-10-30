@@ -1,8 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { Check } from 'lucide-react';
-
 import { ESCAPE_PRIORITY, useEscapeLayer } from '../hooks/escapeLayers';
 
 export interface PanelMenuItem {
@@ -12,7 +10,7 @@ export interface PanelMenuItem {
   readonly disabled?: boolean;
   /** Before the label (a site logo). */
   readonly leading?: React.ReactNode;
-  /** After the label, before the check (the "This page" mark). */
+  /** At the inline end (the "This page" mark). */
   readonly trailing?: React.ReactNode;
 }
 
@@ -25,7 +23,7 @@ export interface PanelMenuProps {
   readonly label: string;
   readonly onPick: (value: string) => void;
   readonly onClose: () => void;
-  /** Actions (the sync sheet's ⋯ menu) have no check column and no checked state. */
+  /** Actions (the sync sheet's ⋯ menu) have no checked state. */
   readonly kind?: 'choice' | 'action';
 }
 
@@ -155,11 +153,6 @@ export function PanelMenu({
           {item.leading}
           <span className="ml">{item.label}</span>
           {item.trailing}
-          {kind === 'choice' && (
-            <span className="ck" aria-hidden="true">
-              {item.checked && <Check size={15} strokeWidth={2.2} />}
-            </span>
-          )}
         </button>
       ))}
     </div>,

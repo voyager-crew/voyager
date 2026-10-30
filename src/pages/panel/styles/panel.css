@@ -485,7 +485,7 @@ input:focus-visible {
   gap: 8px;
   width: 100%;
   height: 32px;
-  padding-inline: 10px 8px;
+  padding-inline: 10px;
   border: 0;
   border-radius: 7px;
   background: transparent;
@@ -504,12 +504,15 @@ input:focus-visible {
   color: var(--ink-3);
 }
 
-.menu .ck {
-  width: 16px;
-  display: grid;
-  place-items: center;
-  color: var(--ink);
-  flex: none;
+/* The current choice: the switches' on color as a tint, and weight so it is not color alone. */
+.menu button[aria-checked='true'] {
+  background: color-mix(in oklch, var(--sw-on) 16%, transparent);
+  font-weight: 600;
+}
+
+.menu button[aria-checked='true']:hover,
+.menu button[aria-checked='true']:focus-visible {
+  background: color-mix(in oklch, var(--sw-on) 24%, transparent);
 }
 
 .menu .lg {
