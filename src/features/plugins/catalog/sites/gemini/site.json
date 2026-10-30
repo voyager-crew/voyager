@@ -8,7 +8,7 @@
     "assistantTurn": "[aria-label=\"Gemini response\"], [data-message-author-role=\"assistant\"], [data-message-author-role=\"model\"], article[data-author=\"assistant\"], article[data-turn=\"assistant\"], article[data-turn=\"model\"], model-response, .model-response, response-container, .response-container, .presented-response-container, div[role=\"listitem\"]:not([data-user=\"true\"])",
     "composer": "input-area-v2, rich-textarea, .text-input-field",
     "sidebar": "bard-sidenav, .gv-folder-container",
-    "scrollContainer": ".chat-history-scroll-container",
+    "scrollContainer": "#chat-history, infinite-scroller.chat-history, .chat-history-scroll-container",
     "codeBlock": "code-block",
     "composerRoot": ".text-input-field, .user-query-container.edit-mode, [role=\"dialog\"]",
     "sendButton": ".send-button.submit button, .update-button button"
