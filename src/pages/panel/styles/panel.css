@@ -79,10 +79,11 @@
   --chip: oklch(0.955 0.003 250);
   --chip-hover: oklch(0.93 0.004 250);
   --sw-off: oklch(0.88 0.004 250);
-  --sw-on: var(--brand);
+  /* The page's site accent (usePanelAccent), else Voyager's sage. */
+  --sw-on: var(--site-accent, var(--brand));
   --knob: #fff;
   --knob-off: #fff;
-  --knob-on: #fff;
+  --knob-on: var(--site-accent-ink, #fff);
   --seg: oklch(0.935 0.003 250);
   --seg-on: #fff;
   --tile: oklch(0.965 0.003 250);
@@ -113,10 +114,10 @@ html[data-gv-scheme='dark'] {
   --chip: oklch(0.29 0.004 270);
   --chip-hover: oklch(0.33 0.005 270);
   --sw-off: oklch(0.36 0.005 270);
-  --sw-on: oklch(0.773 0.091 126);
+  --sw-on: var(--site-accent, oklch(0.773 0.091 126));
   --knob: oklch(0.98 0 0);
   --knob-off: oklch(0.72 0.005 260);
-  --knob-on: oklch(0.2 0.004 270);
+  --knob-on: var(--site-accent-ink, oklch(0.2 0.004 270));
   --seg: oklch(0.27 0.004 270);
   --seg-on: oklch(0.36 0.005 270);
   --tile: oklch(0.29 0.004 270);

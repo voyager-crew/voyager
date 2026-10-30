@@ -17,6 +17,7 @@ import { EscapeLayers } from './hooks/escapeLayers';
 import { openFullSettings } from './hooks/panelRequests';
 import { type PanelShell, createPanelShell } from './hooks/panelShell';
 import { useOpeningFocus } from './hooks/useOpeningFocus';
+import { usePanelAccent } from './hooks/usePanelAccent';
 import { usePanelCurrentTab } from './hooks/usePanelCurrentTab';
 import { usePanelSearch } from './hooks/usePanelSearch';
 import { usePanelShortcut } from './hooks/usePanelShortcut';
@@ -42,6 +43,7 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
     root.dir = context.direction;
     root.lang = localeFromLanguage(language);
   }, [context.direction, context.scheme, language]);
+  usePanelAccent(context.pageUrl);
 
   const toast = usePanelToast();
   const { show } = toast;

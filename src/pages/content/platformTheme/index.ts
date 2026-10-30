@@ -211,23 +211,29 @@ async function loadAccentColors(): Promise<AccentColorMap> {
   }
 }
 
+/** What `resolveBrandColor` reads for one URL, once storage and the catalog have answered. */
+export interface BrandSources {
+  /** Enabled plugins that declare `theme.brand`. */
+  readonly manifests: readonly PluginManifest[];
+  readonly customColors: AccentColorMap;
+  /** The site's adapter, with a published site override applied. */
+  readonly adapter: SiteAdapter | null;
+}
+
 /**
- * Start live platform theming for the content script: apply the adapter's
- * built-in accent immediately, then re-resolve whenever the plugin catalog or
- * enable-state changes so an enabled plugin's declared `theme.brand` can take
- * over (or step back when disabled). Returns a cleanup that detaches the
- * subscriptions. Used by the content entry; `applyBrandTheme` stays the pure,
- * one-shot primitive for tests and the immediate first paint.
+ * Resolve the brand sources for `url` now and again whenever the plugin
+ * catalog, enable-state or per-site accent changes, so an enabled plugin's
+ * declared `theme.brand` can take over (or step back when disabled). Returns a
+ * cleanup that detaches the subscriptions. The content script paints the page
+ * from it; the Voyager panel paints its own frame for the page it opened on.
  */
-export function startBrandTheme(url: string = location.href, doc: Document = document): () => void {
-  applyBrandTheme(url, [], doc); // immediate: adapter built-in colour (pre-storage)
+export function watchBrandSources(
+  url: string,
+  onChange: (sources: BrandSources) => void,
+): () => void {
   let cancelled = false;
   const host = catalogHostFromUrl(url);
   const registry = SiteRegistry.createDefault();
-  // Light/dark rides the same adapter but NOT this lifetime. The content entry
-  // stamps it before any UI mounts; this feature can be toggled off from the
-  // popup and must leave the page's theme alone, so it only corrects the
-  // descriptor once the override-aware adapter resolves, and creates nothing.
   const recompute = async (): Promise<void> => {
     const [manifests, state, customColors, override] = await Promise.all([
       listPluginManifests(undefined, { url, host }),
@@ -236,12 +242,12 @@ export function startBrandTheme(url: string = location.href, doc: Document = doc
       loadSiteOverrideForHost(host),
     ]);
     if (cancelled) return;
-    const active = manifests.filter((m) => m.theme?.brand && isPluginEnabled(state, m.id));
-    // A published site override can change the brand colour without a release.
-    const adapter = resolveSiteAdapterForUrl(url, registry, override);
-    applyBrandTheme(url, active, doc, customColors, adapter);
-    // A published site override can also correct a wrong dark selector.
-    getSchemeBridge()?.setTheme(adapter?.theme ?? null);
+    onChange({
+      manifests: manifests.filter((m) => m.theme?.brand && isPluginEnabled(state, m.id)),
+      customColors,
+      // A published site override can change the brand colour without a release.
+      adapter: resolveSiteAdapterForUrl(url, registry, override),
+    });
   };
   void recompute();
   const unState = subscribePluginState(() => void recompute());
@@ -258,4 +264,23 @@ export function startBrandTheme(url: string = location.href, doc: Document = doc
     unCatalog();
     chrome.storage?.onChanged?.removeListener(onStorage);
   };
+}
+
+/**
+ * Start live platform theming for the content script: apply the adapter's
+ * built-in accent immediately, then repaint from `watchBrandSources`.
+ * `applyBrandTheme` stays the pure, one-shot primitive for tests and the
+ * immediate first paint.
+ */
+export function startBrandTheme(url: string = location.href, doc: Document = document): () => void {
+  applyBrandTheme(url, [], doc); // immediate: adapter built-in colour (pre-storage)
+  // Light/dark rides the same adapter but NOT this lifetime. The content entry
+  // stamps it before any UI mounts; this feature can be toggled off from the
+  // popup and must leave the page's theme alone, so it only corrects the
+  // descriptor once the override-aware adapter resolves, and creates nothing.
+  return watchBrandSources(url, ({ manifests, customColors, adapter }) => {
+    applyBrandTheme(url, manifests, doc, customColors, adapter);
+    // A published site override can also correct a wrong dark selector.
+    getSchemeBridge()?.setTheme(adapter?.theme ?? null);
+  });
 }
