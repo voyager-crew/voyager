@@ -80,6 +80,7 @@ enum VoyagerGoogleDriveFailureCode: String, Codable {
   case notFound = "drive_not_found"
   case rateLimited = "drive_rate_limited"
   case temporarilyUnavailable = "drive_temporarily_unavailable"
+  case accountChanged = "drive_account_changed"
 }
 
 enum VoyagerGoogleDriveFolderIdentity {
@@ -112,6 +113,13 @@ struct VoyagerGoogleDriveFailure: LocalizedError, Equatable {
   static let notFound = VoyagerGoogleDriveFailure(
     code: .notFound,
     message: "The Google Drive file no longer exists.",
+    retryAfterMilliseconds: nil
+  )
+
+  /// The transfer began under another Google account than the one the app stores now.
+  static let accountChanged = VoyagerGoogleDriveFailure(
+    code: .accountChanged,
+    message: "The Google account changed during this sync.",
     retryAfterMilliseconds: nil
   )
 

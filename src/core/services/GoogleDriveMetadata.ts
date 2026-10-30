@@ -1,4 +1,8 @@
-import { SafariGoogleDriveError } from '@/core/utils/safariGoogleDrive';
+import {
+  type SafariDriveAccountBinding,
+  SafariGoogleDriveError,
+  sendSafariDriveMessage,
+} from '@/core/utils/safariGoogleDrive';
 
 import {
   parseDriveFileMetadata,
@@ -7,8 +11,14 @@ import {
 } from './CloudSyncBookkeeping';
 
 /** Native keeps the OAuth token; this action returns only public file metadata. */
-export async function readSafariDriveMetadata(id: string): Promise<DriveFileMetadata | null> {
-  const data = await sendMetadataMessage({ action: 'googleDriveGetFileMetadata', fileID: id });
+export async function readSafariDriveMetadata(
+  id: string,
+  account?: SafariDriveAccountBinding,
+): Promise<DriveFileMetadata | null> {
+  const data = await sendMetadataMessage(
+    { action: 'googleDriveGetFileMetadata', fileID: id },
+    account,
+  );
   if ('found' in data && data.found === false) return null;
   return parseDriveFileMetadata(data);
 }
@@ -17,20 +27,23 @@ export async function readSafariDriveMetadata(id: string): Promise<DriveFileMeta
 export async function uploadSafariDriveWithMetadata(
   id: string,
   value: unknown,
+  account?: SafariDriveAccountBinding,
 ): Promise<DriveFileMetadata> {
   const json = JSON.stringify(value);
   if (json === undefined) throw new Error('invalid_sync_payload');
-  const data = await sendMetadataMessage({ action: 'googleDriveUploadFile', fileID: id, json });
+  const data = await sendMetadataMessage(
+    { action: 'googleDriveUploadFile', fileID: id, json },
+    account,
+  );
   if (!('saved' in data) || data.saved !== true) throw new DriveMetadataError();
   return parseDriveFileMetadata(data);
 }
 
-async function sendMetadataMessage(message: Record<string, unknown>): Promise<object> {
-  const { default: browser } = await import('webextension-polyfill');
-  const response: unknown = await browser.runtime.sendNativeMessage(
-    'com.yourCompany.Gemini-Voyager',
-    message,
-  );
+async function sendMetadataMessage(
+  message: Record<string, unknown>,
+  account?: SafariDriveAccountBinding,
+): Promise<object> {
+  const response = await sendSafariDriveMessage(message, account);
   if (
     !response ||
     typeof response !== 'object' ||

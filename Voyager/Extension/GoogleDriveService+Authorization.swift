@@ -52,10 +52,17 @@ extension GoogleDriveService {
     }
   }
 
+  /// The account the app stores now, as the web extension names it; nil while signed out.
+  func currentDriveAccount() -> String? {
+    Self.storedAuthorization().map { VoyagerDriveAccount.name(forIdentity: $0.identity) }
+  }
+
   /// This process can outlive a sign-in the app completes later, such as a changed account, and
   /// GoogleSignIn would keep answering with the user it restored first. Each request therefore
   /// starts from the authorization the app stored, so Drive never keeps the account left behind.
+  /// With `expectedAccount`, a token of any other account is refused instead of used.
   func withAccessToken(
+    expectedAccount: String? = nil,
     completion: @escaping (Result<String, Error>) -> Void
   ) {
     guard configureGoogleSignIn() else {
@@ -63,7 +70,14 @@ extension GoogleDriveService {
       return
     }
 
-    switch authorizations.lookup(Self.storedAuthorization()) {
+    let stored = Self.storedAuthorization()
+    if let expectedAccount, let stored,
+      VoyagerDriveAccount.name(forIdentity: stored.identity) != expectedAccount
+    {
+      completion(.failure(VoyagerGoogleDriveFailure.accountChanged))
+      return
+    }
+    switch authorizations.lookup(stored) {
     case .signedOut:
       completion(.failure(VoyagerGoogleDriveFailure.authRequired))
     case .replaced(let authState):

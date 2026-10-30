@@ -8,7 +8,9 @@ import {
   ensureSafariGoogleDriveFile,
   findSafariGoogleDriveFile,
   getSafariGoogleDriveRetryDelay,
+  isSafariGoogleDriveAccountChangedError,
   isSafariGoogleDriveAuthError,
+  type SafariDriveAccountBinding,
   uploadSafariGoogleDriveText,
 } from '@/core/utils/safariGoogleDrive';
 import {
@@ -49,9 +51,17 @@ export class GoogleDriveFiles {
     private readonly options: {
       getProvider: () => SyncProvider;
       onAuthLost: (error: unknown) => void;
+      /** Safari: the account the running transfer's session is bound to. */
+      getDriveAccount?: () => SafariDriveAccountBinding | undefined;
     },
   ) {
-    this.history = new GoogleDriveHistoryFiles(folder, options.getProvider);
+    this.history = new GoogleDriveHistoryFiles(folder, options.getProvider, () =>
+      this.driveAccount(),
+    );
+  }
+
+  private driveAccount(): SafariDriveAccountBinding | undefined {
+    return this.options.getDriveAccount?.();
   }
   reset(): void {
     this.folder.reset();
@@ -66,7 +76,7 @@ export class GoogleDriveFiles {
   async metadata(token: string, id: string): Promise<DriveFileMetadata | null> {
     return this.retryMedia(async () => {
       if (this.options.getProvider() === 'icloud') throw new Error('unsupported_provider');
-      if (isSafariRuntime()) return readSafariDriveMetadata(id);
+      if (isSafariRuntime()) return readSafariDriveMetadata(id, this.driveAccount());
       const response = await fetch(
         `${DRIVE_API_BASE}/files/${encodeURIComponent(id)}?fields=id,md5Checksum,modifiedTime,trashed`,
         { headers: { Authorization: `Bearer ${token}` } },
@@ -115,7 +125,7 @@ export class GoogleDriveFiles {
     }
 
     if (isSafariRuntime()) {
-      return findSafariGoogleDriveFile(fileName);
+      return findSafariGoogleDriveFile(fileName, this.driveAccount());
     }
 
     if (this.folder.id) {
@@ -182,6 +192,7 @@ export class GoogleDriveFiles {
       const fileId = await ensureSafariGoogleDriveFile(
         fileName,
         knownFileId === undefined ? (this.fileIdByName[fileName] ?? null) : knownFileId,
+        this.driveAccount(),
       );
       this.fileIdByName[fileName] = fileId;
       return fileId;
@@ -343,7 +354,7 @@ export class GoogleDriveFiles {
         }
 
         if (isSafariRuntime()) {
-          return await uploadSafariDriveWithMetadata(fileId, data);
+          return await uploadSafariDriveWithMetadata(fileId, data, this.driveAccount());
         }
 
         const url = `${DRIVE_UPLOAD_BASE}/files/${fileId}?uploadType=media&fields=id,md5Checksum,modifiedTime`;
@@ -367,6 +378,7 @@ export class GoogleDriveFiles {
           throw error;
         if (error instanceof DriveVersionChangedError) throw error;
         if (isSafariICloudConflictError(error)) throw error;
+        if (isSafariGoogleDriveAccountChangedError(error)) throw error;
         if (this.markAuthLostIfNeeded(error)) throw error;
         if (attempt === MAX_RETRIES) throw error;
         await this.sleep(
@@ -390,7 +402,7 @@ export class GoogleDriveFiles {
         }
 
         if (isSafariRuntime()) {
-          return await downloadSafariGoogleDriveFile<T>(fileId);
+          return await downloadSafariGoogleDriveFile<T>(fileId, this.driveAccount());
         }
 
         const url = `${DRIVE_API_BASE}/files/${fileId}?alt=media`;
@@ -402,6 +414,7 @@ export class GoogleDriveFiles {
         return parseDriveJson(await response.text()) as T | null;
       } catch (error) {
         if (error instanceof UnrecognizedDriveFileError) throw error;
+        if (isSafariGoogleDriveAccountChangedError(error)) throw error;
         if (this.markAuthLostIfNeeded(error)) throw error;
         if (attempt === MAX_RETRIES) throw error;
         await this.sleep(Math.max(delay, getSafariGoogleDriveRetryDelay(error) ?? 0));
@@ -415,7 +428,7 @@ export class GoogleDriveFiles {
   async downloadText(token: string, fileId: string): Promise<string | null> {
     return this.retryMedia(async () => {
       if (this.options.getProvider() === 'icloud') throw new Error('Download failed');
-      if (isSafariRuntime()) return downloadSafariGoogleDriveText(fileId);
+      if (isSafariRuntime()) return downloadSafariGoogleDriveText(fileId, this.driveAccount());
       const response = await fetch(`${DRIVE_API_BASE}/files/${fileId}?alt=media`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -437,7 +450,7 @@ export class GoogleDriveFiles {
     await this.retryMedia(async () => {
       await beforeWrite?.();
       if (this.options.getProvider() === 'icloud') throw new Error('Upload failed');
-      if (isSafariRuntime()) return uploadSafariGoogleDriveText(fileId, text);
+      if (isSafariRuntime()) return uploadSafariGoogleDriveText(fileId, text, this.driveAccount());
       const response = await fetch(`${DRIVE_UPLOAD_BASE}/files/${fileId}?uploadType=media`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -455,6 +468,7 @@ export class GoogleDriveFiles {
       } catch (error) {
         if (error instanceof DriveVersionChangedError) throw error;
         if (isSafariICloudConflictError(error)) throw error;
+        if (isSafariGoogleDriveAccountChangedError(error)) throw error;
         if (this.markAuthLostIfNeeded(error)) throw error;
         if (attempt === MAX_RETRIES) throw error;
         await this.sleep(Math.max(delay, getSafariGoogleDriveRetryDelay(error) ?? 0));

@@ -1,6 +1,7 @@
 import type { DriveHistoryFile } from '@/core/types/driveHistory';
 import type { SyncProvider } from '@/core/types/sync';
 import {
+  type SafariDriveAccountBinding,
   createSafariGoogleDriveFile,
   listSafariGoogleDriveHistory,
   trashSafariGoogleDriveFile,
@@ -25,6 +26,7 @@ export class GoogleDriveHistoryFiles {
   constructor(
     private readonly folder: Pick<GoogleDriveBackupFolder, 'resolve'>,
     private readonly getProvider: () => SyncProvider,
+    private readonly getDriveAccount: () => SafariDriveAccountBinding | undefined = () => undefined,
   ) {}
 
   supported(): boolean {
@@ -39,7 +41,7 @@ export class GoogleDriveHistoryFiles {
   ): Promise<DriveHistoryFile> {
     const appProperties = { [DRIVE_HISTORY_SOURCE_PROPERTY]: sourceName };
     if (isSafariRuntime()) {
-      return createSafariGoogleDriveFile(name, appProperties, text);
+      return createSafariGoogleDriveFile(name, appProperties, text, this.getDriveAccount());
     }
     const folderId = await this.folder.resolve(token, true);
     if (!folderId) throw new Error('Upload failed');
@@ -87,7 +89,7 @@ export class GoogleDriveHistoryFiles {
   }
 
   async list(token: string, sourceName: string): Promise<DriveHistoryFile[]> {
-    if (isSafariRuntime()) return listSafariGoogleDriveHistory(sourceName);
+    if (isSafariRuntime()) return listSafariGoogleDriveHistory(sourceName, this.getDriveAccount());
     const folderId = await this.folder.resolve(token, false);
     if (!folderId) return [];
     const files: DriveHistoryFile[] = [];
@@ -132,7 +134,7 @@ export class GoogleDriveHistoryFiles {
   }
 
   async trash(token: string, id: string): Promise<void> {
-    if (isSafariRuntime()) return trashSafariGoogleDriveFile(id);
+    if (isSafariRuntime()) return trashSafariGoogleDriveFile(id, this.getDriveAccount());
     const response = await fetch(`${DRIVE_API_BASE}/files/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },

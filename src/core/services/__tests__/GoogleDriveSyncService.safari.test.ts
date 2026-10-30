@@ -198,7 +198,12 @@ describe('GoogleDriveSyncService Safari authentication', () => {
     await expect(
       service.uploadPromptsOnly([{ id: '1', text: 'Hi', tags: [], createdAt: 1 }]),
     ).resolves.toBe(true);
-    expect(ensureSafariGoogleDriveFile).toHaveBeenCalledWith('gemini-voyager-prompts.json', null);
+    // The third argument binds the request to the transfer's Drive account.
+    expect(ensureSafariGoogleDriveFile).toHaveBeenCalledWith(
+      'gemini-voyager-prompts.json',
+      null,
+      expect.anything(),
+    );
     expect(sendNativeMessage).toHaveBeenCalledWith('com.yourCompany.Gemini-Voyager', {
       action: 'googleDriveUploadFile',
       fileID: 'native-file-id',
@@ -316,8 +321,11 @@ describe('GoogleDriveSyncService Safari authentication', () => {
         items: [{ id: '1', text: 'Hi', tags: [], createdAt: 1 }],
       },
     });
-    expect(findSafariGoogleDriveFile).toHaveBeenCalledWith('gemini-voyager-prompts.json');
-    expect(downloadSafariGoogleDriveFile).toHaveBeenCalledWith('native-file-id');
+    expect(findSafariGoogleDriveFile).toHaveBeenCalledWith(
+      'gemini-voyager-prompts.json',
+      expect.anything(),
+    );
+    expect(downloadSafariGoogleDriveFile).toHaveBeenCalledWith('native-file-id', expect.anything());
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

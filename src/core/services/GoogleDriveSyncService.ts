@@ -30,6 +30,7 @@ export class GoogleDriveSyncService {
     {
       getProvider: () =>
         this.transferSession ? this.transferSession.provider : this.state.provider,
+      getDriveAccount: () => this.transferSession ?? undefined,
       onAuthLost: (error) => {
         const ended = this.transferSession;
         if (!ended || ended !== this.session || !ended.isActive) return;
@@ -71,6 +72,7 @@ export class GoogleDriveSyncService {
         return await session.run(() => run(port));
       } finally {
         this.transferSession = null;
+        if (session.endedForDriveAccountChange) this.replaceSessionForDriveAccount(session);
         this.updateState({ isSyncing: false });
       }
     });
@@ -172,6 +174,15 @@ export class GoogleDriveSyncService {
       return;
     }
     if (!answersCurrentDrive()) return;
+    if (native.driveAccount) {
+      // The app signed in another account since this session's transfers began: end them, and
+      // let a new session describe the new account.
+      session.bindDriveAccount(native.driveAccount);
+      if (session.endedForDriveAccountChange) {
+        session = this.replaceSessionForDriveAccount(session);
+        session.bindDriveAccount(native.driveAccount);
+      }
+    }
     this.updateState({ isAuthenticated: native.signedIn });
     const connected = await settleGoogleDriveConnect(native.signedIn ? native.signedInAt : null);
     if (connected && answersCurrentDrive() && this.state.mode === 'disabled') {
@@ -196,6 +207,15 @@ export class GoogleDriveSyncService {
     this.updateState({ isAuthenticated: false, isSyncing: false, lastSyncTime: null, error: null });
     this.replaceSession(this.state.provider);
     await this.saveState();
+  }
+
+  /** A session ended by a change of Drive account gives way to one for the new account. */
+  private replaceSessionForDriveAccount(ended: GoogleDriveSyncSession): GoogleDriveSyncSession {
+    if (ended === this.session) {
+      this.files.reset();
+      this.replaceSession(this.state.provider);
+    }
+    return this.session;
   }
 
   /** Publishing a replacement always retires the prior session, including overlapping cleanup. */

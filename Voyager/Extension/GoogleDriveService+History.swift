@@ -66,6 +66,7 @@ extension GoogleDriveService {
     named fileName: String,
     appProperties: [String: String],
     json: String,
+    expectedAccount: String? = nil,
     completion: @escaping (Result<VoyagerGoogleDriveHistoryFile, Error>) -> Void
   ) {
     guard !fileName.isEmpty,
@@ -87,6 +88,7 @@ extension GoogleDriveService {
             json: json
           ),
           parentID: folderID,
+          expectedAccount: expectedAccount,
           completion: completion
         )
       }
@@ -96,6 +98,7 @@ extension GoogleDriveService {
   private func createHistoryItem(
     request: VoyagerGoogleDriveCreateRequest,
     parentID: String,
+    expectedAccount: String?,
     completion: @escaping (Result<VoyagerGoogleDriveHistoryFile, Error>) -> Void
   ) {
     let upload: (contentType: String, body: Data)
@@ -115,7 +118,8 @@ extension GoogleDriveService {
         URLQueryItem(name: "fields", value: "id,name,createdTime"),
       ],
       contentType: upload.contentType,
-      body: upload.body
+      body: upload.body,
+      expectedAccount: expectedAccount
     ) { result in
       completion(
         result.flatMap { response in
@@ -222,7 +226,11 @@ extension GoogleDriveService {
     }
   }
 
-  func trashFile(fileID: String, completion: @escaping (Result<Void, Error>) -> Void) {
+  func trashFile(
+    fileID: String,
+    expectedAccount: String? = nil,
+    completion: @escaping (Result<Void, Error>) -> Void
+  ) {
     guard !fileID.isEmpty else {
       completion(.failure(GoogleDriveServiceError.invalidResponse))
       return
@@ -231,7 +239,8 @@ extension GoogleDriveService {
       method: "PATCH",
       path: "/drive/v3/files/\(fileID)",
       contentType: "application/json",
-      body: Data("{\"trashed\":true}".utf8)
+      body: Data("{\"trashed\":true}".utf8),
+      expectedAccount: expectedAccount
     ) { result in
       completion(result.flatMap { response in
         response.isSuccessful ? .success(()) : .failure(self.requestFailure(response))

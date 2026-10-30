@@ -40,6 +40,7 @@ describe('Safari Google Drive native transport', () => {
       signedIn: true,
       requiresAppLaunch: false,
       signedInAt: 1_761_700_000_000,
+      driveAccount: null,
     });
     expect(sendNativeMessage).toHaveBeenCalledWith('com.yourCompany.Gemini-Voyager', {
       action: 'googleDriveGetSession',

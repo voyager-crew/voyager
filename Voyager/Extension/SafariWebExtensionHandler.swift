@@ -33,26 +33,11 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
       deliverNotification(request: request, context: context)
     case .requestNotificationPermission:
       requestNotificationPermission(context: context)
-    case .googleDriveGetSession(let interactive):
-      getGoogleDriveSession(interactive: interactive, context: context)
-    case .googleDriveSignOut:
-      signOutGoogleDrive(context: context)
-    case .googleDriveFindFile(let fileName):
-      findGoogleDriveFile(fileName: fileName, context: context)
-    case .googleDriveEnsureFile(let request):
-      ensureGoogleDriveFile(request: request, context: context)
-    case .googleDriveUploadFile(let request):
-      uploadGoogleDriveFile(request: request, context: context)
-    case .googleDriveDownloadFile(let fileID):
-      downloadGoogleDriveFile(fileID: fileID, context: context)
-    case .googleDriveGetFileMetadata(let fileID):
-      getGoogleDriveFileMetadata(fileID: fileID, context: context)
-    case .googleDriveCreateFile(let request):
-      createGoogleDriveFile(request: request, context: context)
-    case .googleDriveListHistory(let sourceFileName):
-      listGoogleDriveHistory(sourceFileName: sourceFileName, context: context)
-    case .googleDriveTrashFile(let fileID):
-      trashGoogleDriveFile(fileID: fileID, context: context)
+    case .googleDriveGetSession, .googleDriveSignOut, .googleDriveFindFile,
+      .googleDriveEnsureFile, .googleDriveUploadFile, .googleDriveDownloadFile,
+      .googleDriveGetFileMetadata, .googleDriveCreateFile, .googleDriveListHistory,
+      .googleDriveTrashFile:
+      handleGoogleDrive(nativeRequest, message: message, context: context)
     case .iCloudAccountStatus:
       handleICloudAccountStatus(context: context)
     case .iCloudReadFile(let fileName):
@@ -196,191 +181,6 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     )
   }
 
-  private func respondWithGoogleDriveError(context: NSExtensionContext, error: Error) {
-    guard let failure = error as? VoyagerGoogleDriveFailure else {
-      respondWithError(context: context, message: error.localizedDescription)
-      return
-    }
-
-    respondWithError(
-      context: context,
-      failure: VoyagerNativeFailure(
-        error: failure.localizedDescription,
-        code: failure.code.rawValue,
-        retryAfterMs: failure.retryAfterMilliseconds
-      )
-    )
-  }
-
-  private func getGoogleDriveSession(
-    interactive: Bool,
-    context: NSExtensionContext
-  ) {
-    GoogleDriveService.shared.authorizationState(interactive: interactive) { result in
-      switch result {
-      case .failure(let error):
-        self.respondWithGoogleDriveError(context: context, error: error)
-      case .success(.signedIn):
-        self.respondWithSuccess(
-          context: context,
-          data: VoyagerGoogleDriveSessionResponse(
-            signedIn: true,
-            signedInAt: VoyagerSharedState.keychain.googleDriveSignedInAt
-          )
-        )
-      case .success(.signedOut):
-        self.respondWithSuccess(
-          context: context,
-          data: VoyagerGoogleDriveSessionResponse(signedIn: false)
-        )
-      case .success(.requiresAppLaunch):
-        self.respondWithSuccess(
-          context: context,
-          data: VoyagerGoogleDriveSessionResponse(
-            signedIn: false,
-            requiresAppLaunch: true
-          )
-        )
-      }
-    }
-  }
-
-  private func signOutGoogleDrive(context: NSExtensionContext) {
-    GoogleDriveService.shared.signOut { result in
-      switch result {
-      case .success:
-        self.respondWithSuccess(
-          context: context,
-          data: VoyagerGoogleDriveSignOutResponse(signedOut: true)
-        )
-      case .failure(let error):
-        self.respondWithGoogleDriveError(context: context, error: error)
-      }
-    }
-  }
-
-  private func findGoogleDriveFile(fileName: String, context: NSExtensionContext) {
-    GoogleDriveService.shared.findFile(named: fileName) { result in
-      switch result {
-      case .success(let fileID):
-        self.respondWithSuccess(
-          context: context,
-          data: VoyagerGoogleDriveFileResponse(fileID: fileID)
-        )
-      case .failure(let error):
-        self.respondWithGoogleDriveError(context: context, error: error)
-      }
-    }
-  }
-
-  private func ensureGoogleDriveFile(
-    request: VoyagerGoogleDriveEnsureRequest,
-    context: NSExtensionContext
-  ) {
-    GoogleDriveService.shared.ensureFile(
-      named: request.fileName,
-      cachedFileID: request.cachedFileID
-    ) { result in
-      switch result {
-      case .success(let fileID):
-        self.respondWithSuccess(
-          context: context,
-          data: VoyagerGoogleDriveFileResponse(fileID: fileID)
-        )
-      case .failure(let error):
-        self.respondWithGoogleDriveError(context: context, error: error)
-      }
-    }
-  }
-
-  private func uploadGoogleDriveFile(
-    request: VoyagerGoogleDriveFileRequest,
-    context: NSExtensionContext
-  ) {
-    GoogleDriveService.shared.upload(fileID: request.fileID, json: request.json) { result in
-      switch result {
-      case .success(let metadata):
-        self.respondWithSuccess(
-          context: context,
-          data: VoyagerGoogleDriveUploadMetadataResponse(metadata)
-        )
-      case .failure(let error):
-        self.respondWithGoogleDriveError(context: context, error: error)
-      }
-    }
-  }
-
-  private func downloadGoogleDriveFile(fileID: String, context: NSExtensionContext) {
-    GoogleDriveService.shared.download(fileID: fileID) { result in
-      switch result {
-      case .success(let json):
-        self.respondWithSuccess(
-          context: context,
-          data: VoyagerGoogleDriveDownloadResponse(json: json, found: json != nil)
-        )
-      case .failure(let error):
-        self.respondWithGoogleDriveError(context: context, error: error)
-      }
-    }
-  }
-
-  private func getGoogleDriveFileMetadata(fileID: String, context: NSExtensionContext) {
-    GoogleDriveService.shared.fileMetadata(fileID: fileID) { result in
-      switch result {
-      case .success(let metadata):
-        self.respondWithSuccess(context: context, data: metadata)
-      case .failure(let error):
-        self.respondWithGoogleDriveError(context: context, error: error)
-      }
-    }
-  }
-
-  private func createGoogleDriveFile(
-    request: VoyagerGoogleDriveCreateRequest,
-    context: NSExtensionContext
-  ) {
-    GoogleDriveService.shared.createFile(
-      named: request.fileName,
-      appProperties: request.appProperties,
-      json: request.json
-    ) { result in
-      switch result {
-      case .success(let file):
-        self.respondWithSuccess(context: context, data: file)
-      case .failure(let error):
-        self.respondWithGoogleDriveError(context: context, error: error)
-      }
-    }
-  }
-
-  private func listGoogleDriveHistory(sourceFileName: String, context: NSExtensionContext) {
-    GoogleDriveService.shared.listHistory(sourceFileName: sourceFileName) { result in
-      switch result {
-      case .success(let files):
-        self.respondWithSuccess(
-          context: context,
-          data: VoyagerGoogleDriveHistoryResponse(files: files)
-        )
-      case .failure(let error):
-        self.respondWithGoogleDriveError(context: context, error: error)
-      }
-    }
-  }
-
-  private func trashGoogleDriveFile(fileID: String, context: NSExtensionContext) {
-    GoogleDriveService.shared.trashFile(fileID: fileID) { result in
-      switch result {
-      case .success:
-        self.respondWithSuccess(
-          context: context,
-          data: VoyagerGoogleDriveTrashResponse(trashed: true)
-        )
-      case .failure(let error):
-        self.respondWithGoogleDriveError(context: context, error: error)
-      }
-    }
-  }
-
   private func deliverNotification(
     request: VoyagerNotificationRequest,
     context: NSExtensionContext
@@ -426,18 +226,21 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     return request.userInfo?["message"] as? [String: Any]
   }
 
-  private func respondWithSuccess<Payload: Codable>(
+  /// `driveAccount` names the Google account that served a Drive request.
+  func respondWithSuccess<Payload: Codable>(
     context: NSExtensionContext,
-    data: Payload
+    data: Payload,
+    driveAccount: String? = nil
   ) {
-    respond(context: context, response: VoyagerNativeResponse.success(data))
+    respond(
+      context: context, response: VoyagerNativeResponse.success(data), driveAccount: driveAccount)
   }
 
-  private func respondWithError(context: NSExtensionContext, message: String) {
+  func respondWithError(context: NSExtensionContext, message: String) {
     respondWithError(context: context, failure: VoyagerNativeFailure(error: message))
   }
 
-  private func respondWithError(context: NSExtensionContext, failure: VoyagerNativeFailure) {
+  func respondWithError(context: NSExtensionContext, failure: VoyagerNativeFailure) {
     respond(
       context: context,
       response: VoyagerNativeResponse<VoyagerEmptyResponse>.failure(failure)
@@ -446,12 +249,14 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
 
   private func respond<Payload: Codable>(
     context: NSExtensionContext,
-    response nativeResponse: VoyagerNativeResponse<Payload>
+    response nativeResponse: VoyagerNativeResponse<Payload>,
+    driveAccount: String? = nil
   ) {
-    guard let message = try? VoyagerNativeMessageCodec.encodeResponse(nativeResponse) else {
+    guard var message = try? VoyagerNativeMessageCodec.encodeResponse(nativeResponse) else {
       context.cancelRequest(withError: VoyagerNativeHandlerError.responseEncodingFailed)
       return
     }
+    if let driveAccount { message[VoyagerDriveAccount.responseKey] = driveAccount }
 
     let response = NSExtensionItem()
     if #available(macOS 11.0, *) {

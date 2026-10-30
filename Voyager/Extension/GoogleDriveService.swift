@@ -95,6 +95,7 @@ final class GoogleDriveService {
   func upload(
     fileID: String,
     json: String,
+    expectedAccount: String? = nil,
     completion: @escaping (Result<VoyagerGoogleDriveMetadataResponse, Error>) -> Void
   ) {
     performRequest(
@@ -105,7 +106,8 @@ final class GoogleDriveService {
         URLQueryItem(name: "fields", value: "id,md5Checksum,modifiedTime"),
       ],
       contentType: "application/json",
-      body: Data(json.utf8)
+      body: Data(json.utf8),
+      expectedAccount: expectedAccount
     ) { result in
       switch result {
       case .failure(let error):
@@ -429,9 +431,10 @@ final class GoogleDriveService {
     queryItems: [URLQueryItem] = [],
     contentType: String? = nil,
     body: Data? = nil,
+    expectedAccount: String? = nil,
     completion: @escaping (Result<DriveHTTPResponse, Error>) -> Void
   ) {
-    withAccessToken { tokenResult in
+    withAccessToken(expectedAccount: expectedAccount) { tokenResult in
       switch tokenResult {
       case .failure(let error):
         completion(.failure(error))
