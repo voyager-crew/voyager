@@ -24,6 +24,7 @@ enum VoyagerNativeRequest: Codable, Equatable {
   case iCloudRestoreHistory(VoyagerICloudRestoreHistoryRequest)
   case iCloudPruneHistory(VoyagerICloudPruneHistoryRequest)
   case copyImageToPasteboard(VoyagerClipboardImageRequest)
+  case setAppLanguage(VoyagerAppLanguage)
 
   var actionName: String {
     switch self {
@@ -50,6 +51,7 @@ enum VoyagerNativeRequest: Codable, Equatable {
     case .iCloudRestoreHistory: return Action.iCloudRestoreHistory.rawValue
     case .iCloudPruneHistory: return Action.iCloudPruneHistory.rawValue
     case .copyImageToPasteboard: return Action.copyImageToPasteboard.rawValue
+    case .setAppLanguage: return Action.setAppLanguage.rawValue
     }
   }
 
@@ -77,6 +79,7 @@ enum VoyagerNativeRequest: Codable, Equatable {
     case iCloudRestoreHistory
     case iCloudPruneHistory
     case copyImageToPasteboard
+    case setAppLanguage
   }
 
   private enum CodingKeys: String, CodingKey {
@@ -89,6 +92,7 @@ enum VoyagerNativeRequest: Codable, Equatable {
     case id
     case interactive
     case json
+    case language
     case expectedVersion
     case receipt
     case includingHistoryId
@@ -209,6 +213,8 @@ enum VoyagerNativeRequest: Codable, Equatable {
           pngBase64: try container.decode(String.self, forKey: .pngBase64)
         )
       )
+    case .setAppLanguage:
+      self = .setAppLanguage(try container.decode(VoyagerAppLanguage.self, forKey: .language))
     }
   }
 
@@ -294,6 +300,9 @@ enum VoyagerNativeRequest: Codable, Equatable {
     case .copyImageToPasteboard(let request):
       try container.encode(Action.copyImageToPasteboard, forKey: .action)
       try container.encode(request.pngBase64, forKey: .pngBase64)
+    case .setAppLanguage(let language):
+      try container.encode(Action.setAppLanguage, forKey: .action)
+      try container.encode(language, forKey: .language)
     }
   }
 }
@@ -495,6 +504,10 @@ struct VoyagerICloudAccountResponse: Codable {
 
 struct VoyagerClipboardWriteResponse: Codable {
   let copied: Bool
+}
+
+struct VoyagerAppLanguageResponse: Codable {
+  let saved: Bool
 }
 
 struct VoyagerICloudReadResponse: Codable {

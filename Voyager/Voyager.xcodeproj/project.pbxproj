@@ -12,6 +12,7 @@
 		F1A2B3C4D5E60718293A4B5C /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F1A2B3C4D5E60718293A4B5E /* Sparkle */; };
 		B60723AD2FB752BC00F3A4FD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60723AC2FB752BC00F3A4FD /* AppDelegate.swift */; };
 		B60723B92FB752BC00F3A4FD /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60723B82FB752BC00F3A4FD /* ViewController.swift */; };
+		D30000000000000000000031 /* GroupedListViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000003 /* GroupedListViews.swift */; };
 		B60723BC2FB752BC00F3A4FD /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B60723BA2FB752BC00F3A4FD /* Main.storyboard */; };
 		B60723BE2FB752BD00F3A4FD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B60723BD2FB752BD00F3A4FD /* Assets.xcassets */; };
 		B60723C52FB752BD00F3A4FD /* Voyager Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B60723C42FB752BD00F3A4FD /* Voyager Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -60,6 +61,9 @@
 		D20000000000000000000016 /* ICloudHistoryOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000006 /* ICloudHistoryOperations.swift */; };
 		D30000000000000000000011 /* VoyagerSharedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000001 /* VoyagerSharedState.swift */; };
 		D30000000000000000000012 /* VoyagerSharedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000001 /* VoyagerSharedState.swift */; };
+		D30000000000000000000021 /* VoyagerAppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000002 /* VoyagerAppLanguage.swift */; };
+		D30000000000000000000022 /* VoyagerAppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000002 /* VoyagerAppLanguage.swift */; };
+		E10000000000000000000002 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000001 /* Localizable.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -90,6 +94,7 @@
 		B60723A92FB752BC00F3A4FD /* Voyager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Voyager.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B60723AC2FB752BC00F3A4FD /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B60723B82FB752BC00F3A4FD /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		D30000000000000000000003 /* GroupedListViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupedListViews.swift; sourceTree = "<group>"; };
 		B60723BB2FB752BC00F3A4FD /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		B60723BD2FB752BD00F3A4FD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B60723BF2FB752BD00F3A4FD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -139,6 +144,26 @@
 		D20000000000000000000005 /* ICloudBackupDeletion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudBackupDeletion.swift; sourceTree = "<group>"; };
 		D20000000000000000000006 /* ICloudHistoryOperations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudHistoryOperations.swift; sourceTree = "<group>"; };
 		D30000000000000000000001 /* VoyagerSharedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoyagerSharedState.swift; sourceTree = "<group>"; };
+		D30000000000000000000002 /* VoyagerAppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoyagerAppLanguage.swift; sourceTree = "<group>"; };
+		E10000000000000000000010 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		E10000000000000000000011 /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/Localizable.strings; sourceTree = "<group>"; };
+		E10000000000000000000012 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		E10000000000000000000013 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		E10000000000000000000014 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
+		E10000000000000000000015 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Localizable.strings; sourceTree = "<group>"; };
+		E10000000000000000000016 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/Localizable.strings; sourceTree = "<group>"; };
+		E10000000000000000000017 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
+		E10000000000000000000018 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		E10000000000000000000019 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		E10000000000000000000030 /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = ar.lproj/Main.strings; sourceTree = "<group>"; };
+		E10000000000000000000031 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Main.strings; sourceTree = "<group>"; };
+		E10000000000000000000032 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Main.strings; sourceTree = "<group>"; };
+		E10000000000000000000033 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Main.strings; sourceTree = "<group>"; };
+		E10000000000000000000034 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Main.strings; sourceTree = "<group>"; };
+		E10000000000000000000035 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/Main.strings; sourceTree = "<group>"; };
+		E10000000000000000000036 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Main.strings; sourceTree = "<group>"; };
+		E10000000000000000000037 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Main.strings"; sourceTree = "<group>"; };
+		E10000000000000000000038 /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "zh-Hant.lproj/Main.strings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -186,8 +211,10 @@
 			children = (
 				B60723AC2FB752BC00F3A4FD /* AppDelegate.swift */,
 				B60723B82FB752BC00F3A4FD /* ViewController.swift */,
+				D30000000000000000000003 /* GroupedListViews.swift */,
 				D10000000000000000000003 /* NativeDiagnosticsService.swift */,
 				B60723BA2FB752BC00F3A4FD /* Main.storyboard */,
+				E10000000000000000000001 /* Localizable.strings */,
 				B60723BD2FB752BD00F3A4FD /* Assets.xcassets */,
 				B60723BF2FB752BD00F3A4FD /* Info.plist */,
 			);
@@ -257,6 +284,7 @@
 				D20000000000000000000005 /* ICloudBackupDeletion.swift */,
 				D20000000000000000000006 /* ICloudHistoryOperations.swift */,
 				D30000000000000000000001 /* VoyagerSharedState.swift */,
+				D30000000000000000000002 /* VoyagerAppLanguage.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -336,6 +364,15 @@
 			knownRegions = (
 				en,
 				Base,
+				ar,
+				es,
+				fr,
+				ja,
+				ko,
+				pt,
+				ru,
+				"zh-Hans",
+				"zh-Hant",
 			);
 			mainGroup = B60723A02FB752BC00F3A4FD;
 			minimizedProjectReferenceProxies = 1;
@@ -360,6 +397,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B60723BC2FB752BC00F3A4FD /* Main.storyboard in Resources */,
+				E10000000000000000000002 /* Localizable.strings in Resources */,
 				B60723BE2FB752BD00F3A4FD /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -406,10 +444,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				B60723B92FB752BC00F3A4FD /* ViewController.swift in Sources */,
+				D30000000000000000000031 /* GroupedListViews.swift in Sources */,
 				B60723AD2FB752BC00F3A4FD /* AppDelegate.swift in Sources */,
 				D10000000000000000000011 /* NativeSupport.swift in Sources */,
 				D10000000000000000000014 /* NativeDiagnosticsService.swift in Sources */,
 				D30000000000000000000011 /* VoyagerSharedState.swift in Sources */,
+				D30000000000000000000021 /* VoyagerAppLanguage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -432,6 +472,7 @@
 				D20000000000000000000016 /* ICloudHistoryOperations.swift in Sources */,
 				D10000000000000000000013 /* NativeNotificationService.swift in Sources */,
 				D30000000000000000000012 /* VoyagerSharedState.swift in Sources */,
+				D30000000000000000000022 /* VoyagerAppLanguage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -450,8 +491,34 @@
 			isa = PBXVariantGroup;
 			children = (
 				B60723BB2FB752BC00F3A4FD /* Base */,
+				E10000000000000000000030 /* ar */,
+				E10000000000000000000031 /* es */,
+				E10000000000000000000032 /* fr */,
+				E10000000000000000000033 /* ja */,
+				E10000000000000000000034 /* ko */,
+				E10000000000000000000035 /* pt */,
+				E10000000000000000000036 /* ru */,
+				E10000000000000000000037 /* zh-Hans */,
+				E10000000000000000000038 /* zh-Hant */,
 			);
 			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		E10000000000000000000001 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E10000000000000000000010 /* en */,
+				E10000000000000000000011 /* ar */,
+				E10000000000000000000012 /* es */,
+				E10000000000000000000013 /* fr */,
+				E10000000000000000000014 /* ja */,
+				E10000000000000000000015 /* ko */,
+				E10000000000000000000016 /* pt */,
+				E10000000000000000000017 /* ru */,
+				E10000000000000000000018 /* zh-Hans */,
+				E10000000000000000000019 /* zh-Hant */,
+			);
+			name = Localizable.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

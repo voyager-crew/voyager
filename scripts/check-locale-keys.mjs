@@ -108,6 +108,62 @@ for (const directory of fragmentDirectories) {
   }
 }
 
+// The Voyager macOS app (Safari): one .lproj per locale, holding exactly the keys its Swift code
+// reads through voyagerLocalized(key, english), with the same %@ count, and English matching code.
+const appDirectory = 'Voyager/App';
+// Checkouts without the Safari app (such as test fixtures) have only the web locales to check.
+const swiftDirectories = existsSync(appDirectory) ? [appDirectory, 'Voyager/Shared'] : [];
+const appleLocalization = (locale) =>
+  ({ zh: 'zh-Hans', zh_TW: 'zh-Hant' })[locale] ?? locale.replace('_', '-');
+const unescape = (text) => text.replace(/\\(["\\n])/g, (_, c) => (c === 'n' ? '\n' : c));
+const readStrings = (path) => {
+  const entries = new Map();
+  for (const line of readFileSync(path, 'utf8').split('\n')) {
+    const match = line.match(/^"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)";$/);
+    if (match) entries.set(unescape(match[1]), unescape(match[2]));
+  }
+  return entries;
+};
+const swiftEnglish = new Map();
+for (const directory of swiftDirectories) {
+  for (const file of readdirSync(directory).filter((name) => name.endsWith('.swift'))) {
+    const source = readFileSync(join(directory, file), 'utf8');
+    for (const match of source.matchAll(
+      /voyagerLocalized\(\s*"([\w.]+)",\s*"((?:[^"\\]|\\.)*)"\s*\)/g,
+    )) {
+      swiftEnglish.set(match[1], unescape(match[2]));
+    }
+  }
+}
+const formatCount = (text) => (text.match(/%@/g) ?? []).length;
+let mainStringKeys = null;
+for (const locale of swiftDirectories.length > 0 ? keysByLocale.keys() : []) {
+  const fail = (message) => {
+    failed = true;
+    console.error(`${appDirectory}/${appleLocalization(locale)}.lproj: ${message}`);
+  };
+  const lproj = join(appDirectory, `${appleLocalization(locale)}.lproj`);
+  if (!existsSync(join(lproj, 'Localizable.strings'))) {
+    fail('missing Localizable.strings');
+    continue;
+  }
+  const strings = readStrings(join(lproj, 'Localizable.strings'));
+  for (const [key, english] of swiftEnglish) {
+    if (!strings.has(key)) fail(`missing key ${key}`);
+    else if (locale === 'en' && strings.get(key) !== english) fail(`${key} differs from Swift`);
+    else if (formatCount(strings.get(key)) !== formatCount(english)) fail(`${key} has other %@`);
+  }
+  for (const key of strings.keys()) if (!swiftEnglish.has(key)) fail(`unused key ${key}`);
+  if (locale === 'en') continue;
+  // Base.lproj/Main.storyboard is English; every other locale translates the same menu items.
+  const menu = existsSync(join(lproj, 'Main.strings'))
+    ? readStrings(join(lproj, 'Main.strings'))
+    : null;
+  const keys = menu ? [...menu.keys()].sort().join(',') : '';
+  mainStringKeys ??= keys;
+  if (!menu || keys !== mainStringKeys) fail('Main.strings differs from the other locales');
+}
+
 if (failed) {
   console.error('\nFAILED: locale keys are inconsistent');
   process.exit(1);
@@ -115,5 +171,6 @@ if (failed) {
 
 console.log(
   `OK: all ${keysByLocale.size} locales are consistent (${referenceKeys.size} keys, ` +
-    `${fragmentKeyCount} more in ${fragmentDirectories.length} message fragments)`,
+    `${fragmentKeyCount} more in ${fragmentDirectories.length} message fragments, ` +
+    `${swiftEnglish.size} in the Safari app)`,
 );

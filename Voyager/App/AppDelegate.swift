@@ -22,7 +22,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   /// The pre-rename host app. If it lingers in /Applications alongside the new
   /// "Voyager.app", both Safari extensions coexist and conflict.
   private let legacyAppPath = "/Applications/Gemini Voyager.app"
-  private let migrationGuideURL = URL(string: "https://voyager.nagi.fun/en/guide/safari-migration")
+  private var migrationGuideURL: URL? {
+    URL(
+      string: voyagerLocalized(
+        "legacy.guideURL", "https://voyager.nagi.fun/en/guide/safari-migration"))
+  }
   /// Set when this launch is a background notification/URL handoff, so the
   /// leftover-app prompt never pops a modal over a silent hand-off launch.
   private var launchedForHandoff = false
@@ -45,10 +49,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     updaterController.updater.lastUpdateCheckDate
   }
 
+  /// Chooses the window's language before AppKit loads the storyboard: the one picked
+  /// in Voyager when the extension has handed it over, otherwise the system's.
+  static func main() {
+    VoyagerAppLanguageLaunch.apply(VoyagerSharedState.keychain.appLanguage, to: .standard)
+    _ = NSApplicationMain(CommandLine.argc, CommandLine.unsafeArgv)
+  }
+
   func applicationWillFinishLaunching(_ notification: Notification) {
     let center = UNUserNotificationCenter.current()
     center.delegate = self
-    center.setNotificationCategories([VoyagerNotificationDestination.notificationCategory()])
+    center.setNotificationCategories([
+      VoyagerNotificationDestination.notificationCategory(
+        openActionTitle: voyagerLocalized("notification.openConversation", "Open Conversation")
+      )
+    ])
     NSAppleEventManager.shared().setEventHandler(
       self,
       andSelector: #selector(handleGetURLEvent(_:withReplyEvent:)),
@@ -226,15 +241,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     let alert = NSAlert()
     alert.alertStyle = .warning
-    alert.messageText = "Remove the old “Gemini Voyager” app"
-    alert.informativeText =
-      "Voyager was renamed. An older “Gemini Voyager.app” is still in your "
-      + "Applications folder, and keeping both can cause a duplicate Safari "
-      + "extension. Move the old app to the Trash to finish migrating — your "
-      + "folders, prompts, and settings are preserved."
-    alert.addButton(withTitle: "Move Old App to Trash")
-    alert.addButton(withTitle: "Migration Guide")
-    alert.addButton(withTitle: "Not Now")
+    alert.messageText = voyagerLocalized("legacy.title", "Remove the old “Gemini Voyager” app")
+    alert.informativeText = voyagerLocalized(
+      "legacy.message",
+      "Voyager was renamed. An older “Gemini Voyager.app” is still in your Applications folder, and keeping both can cause a duplicate Safari extension. Move the old app to the Trash to finish migrating — your folders, prompts, and settings are preserved."
+    )
+    alert.addButton(withTitle: voyagerLocalized("legacy.trash", "Move Old App to Trash"))
+    alert.addButton(withTitle: voyagerLocalized("legacy.guide", "Migration Guide"))
+    alert.addButton(withTitle: voyagerLocalized("legacy.notNow", "Not Now"))
 
     switch alert.runModal() {
     case .alertFirstButtonReturn:
@@ -273,7 +287,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     guard let applicationMenu = NSApp.mainMenu?.items.first?.submenu else { return }
 
     let item = NSMenuItem(
-      title: "Check for Updates…",
+      title: voyagerLocalized("menu.checkForUpdates", "Check for Updates…"),
       action: #selector(checkForUpdates(_:)),
       keyEquivalent: ""
     )

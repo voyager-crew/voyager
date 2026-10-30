@@ -89,6 +89,14 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
       }
     case .copyImageToPasteboard(let request):
       copyImageToPasteboard(request: request, context: context)
+    case .setAppLanguage(let language):
+      // The containing app reads it at launch to show its window in this language.
+      respondWithSuccess(
+        context: context,
+        data: VoyagerAppLanguageResponse(
+          saved: VoyagerSharedState.keychain.setAppLanguage(language)
+        )
+      )
     }
   }
 

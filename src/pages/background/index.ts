@@ -25,6 +25,7 @@ import { registerBackgroundSettingListeners } from './registrationSettings';
 import { startResearchPackOwner } from './researchPackOwner';
 import { createResponseNotifications } from './responseNotifications';
 import { registerBackgroundRuntimeMessages } from './runtimeMessages';
+import { startSafariAppLanguageHandoff } from './safariAppLanguage';
 import { createSiteAccessRegistration } from './siteAccessRegistration';
 import { createStarredMessagesHandler } from './starredMessages';
 import { registerWatermarkDefaultMigrationOnInstall } from './watermarkDefaultMigration';
@@ -56,6 +57,7 @@ const handleBridgeMessage = startBridgeOwner({
 
 if (getVoyagerBuildTarget() === 'safari') {
   responseNotifications.connectNativeOpenConversationPort();
+  startSafariAppLanguageHandoff();
 }
 responseNotifications.registerClickListener();
 

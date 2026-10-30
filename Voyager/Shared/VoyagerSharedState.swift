@@ -62,6 +62,7 @@ struct VoyagerKeychainValueStore: VoyagerSharedValueStore {
 struct VoyagerSharedState {
   private enum Key {
     static let googleDriveSignedInAt = "googleDriveSignedInAt"
+    static let appLanguage = "appLanguage"
   }
 
   static let keychain = VoyagerSharedState(store: VoyagerKeychainValueStore())
@@ -79,5 +80,16 @@ struct VoyagerSharedState {
   func recordGoogleDriveSignIn(at date: Date) -> Bool {
     let milliseconds = Int64((date.timeIntervalSince1970 * 1_000).rounded())
     return store.setValue(String(milliseconds), forKey: Key.googleDriveSignedInAt)
+  }
+
+  /// The language chosen in Voyager, which the extension hands over whenever it changes.
+  var appLanguage: VoyagerAppLanguage? {
+    store.value(forKey: Key.appLanguage).flatMap(VoyagerAppLanguage.init(rawValue:))
+  }
+
+  /// Writes only a change, since the extension repeats the language on every start.
+  @discardableResult
+  func setAppLanguage(_ language: VoyagerAppLanguage) -> Bool {
+    appLanguage == language || store.setValue(language.rawValue, forKey: Key.appLanguage)
   }
 }

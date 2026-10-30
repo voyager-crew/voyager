@@ -19,43 +19,63 @@ final class NativeDiagnosticsService {
       let extensionEnabled = error == nil ? state?.isEnabled : nil
       let extensionReady = extensionEnabled == true
 
+      let unavailable = voyagerLocalized("diag.value.unavailable", "Unavailable")
       self.googleDriveDiagnostic { googleDriveItem in
         let items = [
           VoyagerDiagnosticItem(
             id: "extension",
-            label: "Safari extension",
-            value: extensionEnabled.map { $0 ? "Enabled" : "Disabled" } ?? "Unavailable",
+            label: voyagerLocalized("diag.extension.label", "Safari extension"),
+            value: extensionEnabled.map {
+              $0
+                ? voyagerLocalized("diag.value.enabled", "Enabled")
+                : voyagerLocalized("diag.value.disabled", "Disabled")
+            } ?? unavailable,
             detail: extensionReady
-              ? "Voyager is available in Safari."
-              : "Open Safari Extensions and enable Voyager.",
+              ? voyagerLocalized("diag.extension.ready", "Voyager is available in Safari.")
+              : voyagerLocalized(
+                "diag.extension.attention", "Open Safari Extensions and enable Voyager."),
             level: extensionReady ? .ready : .attention
           ),
           VoyagerDiagnosticItem(
             id: "notifications",
-            label: "Native notifications",
-            value: extensionReady ? "Safari managed" : "Unavailable",
+            label: voyagerLocalized("diag.notifications.label", "Native notifications"),
+            value: extensionReady
+              ? voyagerLocalized("diag.notifications.value.ready", "Safari managed")
+              : unavailable,
             detail: extensionReady
-              ? "Safari checks notification authorization before delivery."
-              : "Enable the Safari extension before requesting notification access.",
+              ? voyagerLocalized(
+                "diag.notifications.ready",
+                "Safari checks notification authorization before delivery.")
+              : voyagerLocalized(
+                "diag.notifications.attention",
+                "Enable the Safari extension before requesting notification access."),
             level: extensionReady ? .neutral : .attention
           ),
           VoyagerDiagnosticItem(
             id: "icloud",
-            label: "iCloud bridge",
-            value: extensionReady ? "Checked on use" : "Unavailable",
+            label: voyagerLocalized("diag.icloud.label", "iCloud bridge"),
+            value: extensionReady
+              ? voyagerLocalized("diag.icloud.value.ready", "Checked on use")
+              : unavailable,
             detail: extensionReady
-              ? "The Safari extension verifies CloudKit account status before every sync."
-              : "Enable the Safari extension before using iCloud sync.",
+              ? voyagerLocalized(
+                "diag.icloud.ready",
+                "The Safari extension verifies CloudKit account status before every sync.")
+              : voyagerLocalized(
+                "diag.icloud.attention", "Enable the Safari extension before using iCloud sync."),
             level: extensionReady ? .neutral : .attention
           ),
           googleDriveItem,
           VoyagerDiagnosticItem(
             id: "updates",
-            label: "Updates",
-            value: automaticUpdatesEnabled ? "Automatic" : "Manual",
+            label: voyagerLocalized("updates.title", "Updates"),
+            value: automaticUpdatesEnabled
+              ? voyagerLocalized("diag.updates.value.automatic", "Automatic")
+              : voyagerLocalized("diag.updates.value.manual", "Manual"),
             detail: canCheckForUpdates
               ? Self.updatesReadyDetail(lastCheck: lastUpdateCheckDate)
-              : "Sparkle is still starting or unavailable.",
+              : voyagerLocalized(
+                "diag.updates.starting", "Sparkle is still starting or unavailable."),
             level: canCheckForUpdates ? .ready : .attention
           ),
         ]
@@ -73,8 +93,9 @@ final class NativeDiagnosticsService {
     else {
       completion(
         googleDriveItem(
-          value: "Not configured",
-          detail: "Google Sign-In is missing its client configuration.",
+          value: voyagerLocalized("diag.drive.value.notConfigured", "Not configured"),
+          detail: voyagerLocalized(
+            "diag.drive.notConfigured", "Google Sign-In is missing its client configuration."),
           level: .attention
         )
       )
@@ -84,8 +105,9 @@ final class NativeDiagnosticsService {
     guard GIDSignIn.sharedInstance.hasPreviousSignIn() else {
       completion(
         googleDriveItem(
-          value: "Not connected",
-          detail: "Connect Google Drive from the Voyager popup when needed.",
+          value: voyagerLocalized("diag.drive.value.notConnected", "Not connected"),
+          detail: voyagerLocalized(
+            "diag.drive.notConnected", "Connect Google Drive from the Voyager popup when needed."),
           level: .neutral
         )
       )
@@ -97,8 +119,9 @@ final class NativeDiagnosticsService {
       guard let user else {
         completion(
           self.googleDriveItem(
-            value: "Needs sign-in",
-            detail: "The saved Google session could not be restored.",
+            value: voyagerLocalized("diag.drive.value.needsSignIn", "Needs sign-in"),
+            detail: voyagerLocalized(
+              "diag.drive.restoreFailed", "The saved Google session could not be restored."),
             level: .attention
           )
         )
@@ -109,8 +132,9 @@ final class NativeDiagnosticsService {
         guard let refreshedUser else {
           completion(
             self.googleDriveItem(
-              value: "Needs sign-in",
-              detail: "The Google session could not be refreshed.",
+              value: voyagerLocalized("diag.drive.value.needsSignIn", "Needs sign-in"),
+              detail: voyagerLocalized(
+                "diag.drive.refreshFailed", "The Google session could not be refreshed."),
               level: .attention
             )
           )
@@ -120,8 +144,10 @@ final class NativeDiagnosticsService {
         guard refreshedUser.grantedScopes?.contains(self.googleDriveScope) == true else {
           completion(
             self.googleDriveItem(
-              value: "Reconnect",
-              detail: "The saved Google session does not include Drive access.",
+              value: voyagerLocalized("diag.drive.value.reconnect", "Reconnect"),
+              detail: voyagerLocalized(
+                "diag.drive.missingScope",
+                "The saved Google session does not include Drive access."),
               level: .attention
             )
           )
@@ -130,8 +156,10 @@ final class NativeDiagnosticsService {
 
         completion(
           self.googleDriveItem(
-            value: "Connected",
-            detail: "The native Google session is valid and includes Drive access.",
+            value: voyagerLocalized("diag.drive.value.connected", "Connected"),
+            detail: voyagerLocalized(
+              "diag.drive.connected",
+              "The native Google session is valid and includes Drive access."),
             level: .ready
           )
         )
@@ -141,12 +169,19 @@ final class NativeDiagnosticsService {
 
   private static func updatesReadyDetail(lastCheck: Date?) -> String {
     guard let lastCheck else {
-      return "Sparkle is ready to check for updates. No check has completed yet."
+      return voyagerLocalized(
+        "diag.updates.neverChecked",
+        "Sparkle is ready to check for updates. No check has completed yet.")
     }
     let formatter = DateFormatter()
+    // Dates read in the window's language, not only the system's.
+    formatter.locale = Locale(identifier: Bundle.main.preferredLocalizations.first ?? "en")
     formatter.dateStyle = .medium
     formatter.timeStyle = .short
-    return "Sparkle is ready to check for updates. Last checked \(formatter.string(from: lastCheck))."
+    return String(
+      format: voyagerLocalized(
+        "diag.updates.lastChecked", "Sparkle is ready to check for updates. Last checked %@."),
+      formatter.string(from: lastCheck))
   }
 
   private func googleDriveItem(
@@ -156,7 +191,7 @@ final class NativeDiagnosticsService {
   ) -> VoyagerDiagnosticItem {
     VoyagerDiagnosticItem(
       id: "google-drive",
-      label: "Google Drive",
+      label: voyagerLocalized("diag.drive.label", "Google Drive"),
       value: value,
       detail: detail,
       level: level

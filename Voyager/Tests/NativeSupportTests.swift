@@ -322,6 +322,7 @@ final class NativeSupportTests: XCTestCase {
         ["action": "copyImageToPasteboard", "pngBase64": "aGVsbG8="],
         .copyImageToPasteboard(VoyagerClipboardImageRequest(pngBase64: "aGVsbG8="))
       ),
+      (["action": "setAppLanguage", "language": "ar"], .setAppLanguage(.ar)),
     ]
 
     for (message, expected) in cases {

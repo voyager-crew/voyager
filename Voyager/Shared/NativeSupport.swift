@@ -242,10 +242,13 @@ struct VoyagerNotificationDestination: Equatable {
     ]
   }
 
-  static func notificationCategory() -> UNNotificationCategory {
+  /// The containing app passes `openActionTitle` in its window's language.
+  static func notificationCategory(
+    openActionTitle: String = "Open Conversation"
+  ) -> UNNotificationCategory {
     let openAction = UNNotificationAction(
       identifier: openActionIdentifier,
-      title: "Open Conversation",
+      title: openActionTitle,
       // The containing app owns Safari notifications so macOS can relaunch it
       // for the response. The handler immediately focuses Safari and hides the
       // app again after this foreground action.
