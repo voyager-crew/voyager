@@ -29,8 +29,8 @@ export function resolveExportSite(): ExportSite {
 
 /**
  * The export `conversationExport` mounts for a site adapter on the page at
- * `url`: the packaged reader of the bundled site there (ChatGPT's full-thread
- * crawl), else the catalog reader the adapter's `export` descriptor configures.
+ * `url`: the packaged reader of the bundled site there (Gemini's mounted page or
+ * ChatGPT's full-thread crawl), else the catalog reader the adapter's `export` descriptor configures.
  * Null when there is neither, or a catalog site lacks the `conversationIdPattern`
  * its toolbar gate reads.
  */

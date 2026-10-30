@@ -1,4 +1,5 @@
 import type { PluginManifest } from '../types';
+import { contract as conversationExportContract } from '../verbs/conversationExport/contract';
 
 /** Fixed-id export entry points; their default-on sync switch is bound outside plugin state. */
 export const GEMINI_EXPORT_MANIFEST: PluginManifest = {
@@ -57,9 +58,9 @@ export const GEMINI_EXPORT_MANIFEST: PluginManifest = {
   author: 'voyager-official',
   category: 'productivity',
   license: 'GPL-3.0-or-later',
-  engine: '>=1.2.0',
+  engine: `>=${conversationExportContract.sinceEngine}`,
   tier: 'declarative',
   matches: ['https://gemini.google.com/*'],
   requires: { formFactors: ['desktop', 'mobile'] },
-  contributes: {},
+  contributes: { domOps: [{ op: 'native', handler: 'conversationExport', params: {} }] },
 };

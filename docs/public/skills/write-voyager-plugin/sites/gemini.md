@@ -12,10 +12,11 @@ Semantic anchors Gemini declares (use them as { "kind": "semantic", "key": … }
 - codeBlock: a rendered code block
 - composer: the prompt input the user types into
 - sidebar: the conversation list / navigation rail
+- scrollContainer: the element that scrolls the conversation
 - composerRoot: the container around the prompt input and its action buttons
 - sendButton: the button that sends the prompt (may exist only while the prompt is non-empty)
 
-Gemini does not declare thinkingBlock, sidePanel, headerActions, scrollContainer: a plugin that relies on one of these is refused. Use a CSS selector instead.
+Gemini does not declare thinkingBlock, sidePanel, headerActions: a plugin that relies on one of these is refused. Use a CSS selector instead.
 
 Gemini allows only these primitives (native ops): codeCollapse, draftSave, echarts, formulaCopy, mermaid, sendShortcut, siteCheck, turnNavigator, userLatex, vimInput, wavedrom. No "theme".
 

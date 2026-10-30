@@ -33,7 +33,6 @@ import {
   activateGeminiEditInputWidth,
   updateGeminiEditInputWidthSettings,
 } from './editInputWidth/pluginHandler';
-import { activateGeminiExport } from './export/pluginHandler';
 import { activateGeminiFork } from './fork/pluginHandler';
 import {
   activateGeminiGemsSidebar,
@@ -95,7 +94,7 @@ export const NATIVE_HANDLER_BINDINGS: Readonly<Record<string, NativeHandler>> = 
   'voyager.gemini-sidebar-full-hide': { activate: activateGeminiSidebarFullHide },
   'voyager.gemini-timeline': { activate: activateGeminiTimeline },
   'voyager.gemini-safari-enter-fix': { activate: activateGeminiSafariEnterFix },
-  // formula-copy, input-vim, claude-timeline and chatgpt-export invoke primitives
+  // formula-copy, input-vim, claude-timeline and conversation export invoke primitives
   // through a `native` op in their manifests (see verbs/); they need no binding here.
   'voyager.chatgpt-temporary-handoff': {
     activate: activateChatGptTemporaryHandoff,
@@ -117,7 +116,6 @@ export const NATIVE_HANDLER_BINDINGS: Readonly<Record<string, NativeHandler>> = 
   },
   'voyager.gemini-markdown-fix': { activate: activateGeminiMarkdownFix },
   'voyager.gemini-message-timestamps': { activate: activateGeminiMessageTimestamps },
-  'voyager.gemini-export': { activate: activateGeminiExport },
   'voyager.gemini-canvas-copy': { activate: activateGeminiCanvasCopy },
   'voyager.gemini-deep-research-export': { activate: activateGeminiDeepResearchExport },
   'voyager.gemini-edit-input-width': {

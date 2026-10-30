@@ -32,7 +32,6 @@ import { type LogoExportButton, mountLogoExportButton } from './logoExportButton
 import { mountPersistentExportToolbar } from './persistentExportToolbar';
 import { startResponseCopyImageActions } from './responseCopyImageAction';
 import { openSidebarConversationForExport } from './sidebarConversationNavigation';
-import { resolveExportSite } from './sites/resolveExportSite';
 
 /** Mounts one export site's entry points and owns its dialog and active run. */
 export function createExportEntrypoint(exportSite: ExportSite) {
@@ -383,18 +382,3 @@ export function createExportEntrypoint(exportSite: ExportSite) {
 
   return startExportButton;
 }
-
-// Resolve only when a native exporter mounts: importing export code on another
-// host must not resolve that page using Gemini's DOM adapter.
-let nativeEntrypoint: ReturnType<typeof createExportEntrypoint> | undefined;
-
-/** Native exporters retain one runner and one preload-resume check per page. */
-export async function startExportButton(
-  options: { signal?: AbortSignal } = {},
-): Promise<() => void> {
-  if (options.signal?.aborted) return () => {};
-  nativeEntrypoint ??= createExportEntrypoint(resolveExportSite());
-  return nativeEntrypoint(options);
-}
-
-export default { startExportButton };

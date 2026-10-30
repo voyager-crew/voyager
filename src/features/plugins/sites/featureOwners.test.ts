@@ -72,7 +72,7 @@ describe('feature owners', () => {
     }
   });
 
-  it('hands feature-specific runtimes to fixed-id builtins that open no primitive', () => {
+  it('owns feature-specific runtimes without opening their primitives to local plugins', () => {
     for (const [feature, id] of [
       ['promptHistory', 'voyager.gemini-prompt-history'],
       ['inputCollapse', 'voyager.gemini-input-collapse'],

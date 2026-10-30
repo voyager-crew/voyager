@@ -76,6 +76,22 @@ describe('BUILTIN_PLUGINS', () => {
     expect(handoff?.id).not.toBe('voyager.chatgpt-export');
   });
 
+  it('ships Gemini export through the primitive with all localized metadata and no native binding', () => {
+    const id = 'voyager.gemini-export';
+    const manifest = BUILTIN_PLUGINS.find((plugin) => plugin.id === id);
+    expect(manifest?.matches).toEqual(['https://gemini.google.com/*']);
+    expect(manifest?.contributes.domOps).toEqual([
+      { op: 'native', handler: 'conversationExport', params: {} },
+    ]);
+    expect(manifest?.requires?.formFactors).toEqual(['desktop', 'mobile']);
+    expect(NATIVE_BUILTIN_PLUGIN_IDS).not.toContain(id);
+    expect(NATIVE_HANDLER_BINDINGS[id]).toBeUndefined();
+    for (const locale of ['zh', 'zh_TW', 'ja', 'ko', 'fr', 'es', 'pt', 'ru', 'ar'] as const) {
+      expect(manifest?.i18n?.[locale]?.name, locale).toBeTruthy();
+      expect(manifest?.i18n?.[locale]?.description, locale).toBeTruthy();
+    }
+  });
+
   it('includes the Claude timeline native function plugin', () => {
     const timeline = BUILTIN_PLUGINS.find((m) => m.id === 'voyager.claude-timeline');
     expect(timeline).toBeDefined();
@@ -278,7 +294,6 @@ describe('BUILTIN_PLUGINS', () => {
   it.each([
     ['Markdown rendering fix', 'voyager.gemini-markdown-fix'],
     ['Message timestamps', 'voyager.gemini-message-timestamps'],
-    ['conversation export', 'voyager.gemini-export'],
     ['canvas copy', 'voyager.gemini-canvas-copy'],
     ['Deep Research export', 'voyager.gemini-deep-research-export'],
     ['context sync', 'voyager.gemini-context-sync'],

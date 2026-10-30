@@ -20,7 +20,6 @@ const COPY_IMAGE = '[data-test-id="gv-copy-image-button"]';
 let harness: LifecycleHarness;
 let cleanupManager: CleanupManager;
 let host: PluginHost | null;
-let releaseHandlers: (() => void) | null;
 
 /**
  * Fresh modules per test: the export module remembers per page load whether
@@ -28,20 +27,21 @@ let releaseHandlers: (() => void) | null;
  */
 async function start(admit = true): Promise<void> {
   vi.resetModules();
-  const [{ PluginHost }, admissionModule, sourceModule, startup, registration] = await Promise.all([
-    import('@/features/plugins/runtime/PluginHost'),
-    import('@/features/plugins/runtime/officialAdmission'),
-    import('@/features/plugins/sources/BuiltinPluginSource'),
-    import('../geminiBuiltinStartup'),
-    import('../pluginNativeRegistration'),
-  ]);
-  releaseHandlers = registration.registerBuiltinNativeHandlers();
+  const [{ PluginHost }, admissionModule, sourceModule, localSourceModule, startup] =
+    await Promise.all([
+      import('@/features/plugins/runtime/PluginHost'),
+      import('@/features/plugins/runtime/officialAdmission'),
+      import('@/features/plugins/sources/BuiltinPluginSource'),
+      import('@/features/plugins/local/LocalPluginSource'),
+      import('../geminiBuiltinStartup'),
+    ]);
   const admission = admissionModule.createOfficialAdmission();
   if (admit) await startup.createGeminiBuiltinStartup(admission, cleanupManager).startExport();
   admission.close();
   host = new PluginHost({
     url: location.href,
-    sources: [new sourceModule.BuiltinPluginSource()],
+    // Export must mount through its primitive, without a fixed-id native handler.
+    sources: [new sourceModule.BuiltinPluginSource(), new localSourceModule.LocalPluginSource()],
     doc: document,
     admission,
     requestCatalogRefresh: () => {},
@@ -136,14 +136,12 @@ beforeEach(() => {
   harness = installLifecycleHarness();
   cleanupManager = new CleanupManager();
   host = null;
-  releaseHandlers = null;
   sessionStorage.clear();
 });
 
 afterEach(async () => {
   vi.useRealTimers();
   host?.stop();
-  releaseHandlers?.();
   cleanupManager.executeCleanups();
   await settleQuietly();
   harness.restore();
@@ -172,6 +170,43 @@ describe('Gemini conversation export through its official plugin', () => {
 
     await expectEntryPoints(false);
     expect(statusOf()).not.toBe('mounted');
+    expect(harness.ledger.openObservers()).toEqual([]);
+  });
+
+  it('blocks a stored local export primitive even when the official plugin is off', async () => {
+    const id = 'local.gemini-export';
+    harness.storage.sync.set(SWITCH, false);
+    harness.storage.local.set(StorageKeys.PLUGIN_LOCAL_MANIFESTS, {
+      [id]: {
+        manifest: {
+          id,
+          name: 'Local export',
+          version: '1.0.0',
+          description: 'Conversation export',
+          author: 'local',
+          category: 'productivity',
+          license: 'MIT',
+          engine: '>=1.10.0',
+          tier: 'declarative',
+          matches: ['https://gemini.google.com/*'],
+          contributes: { domOps: [{ op: 'native', handler: 'conversationExport', params: {} }] },
+        },
+        importedAt: 1,
+        updatedAt: 1,
+      },
+    });
+    harness.storage.local.set(StorageKeys.PLUGINS_STATE, {
+      [id]: { enabled: true, installedAt: 1 },
+    });
+    const pending = storePendingRun(400);
+    await start();
+
+    expect(host?.getStatuses().find((entry) => entry.id === id)).toMatchObject({
+      kind: 'blocked',
+      blockedReason: 'host-policy',
+    });
+    await expectEntryPoints(false);
+    expect(sessionStorage.getItem(PENDING_EXPORT_SESSION_KEY)).toBe(pending);
     expect(harness.ledger.openObservers()).toEqual([]);
   });
 

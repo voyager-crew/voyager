@@ -10,7 +10,9 @@ const runner = vi.hoisted(() => ({
 
 vi.mock('../exportRun', () => ({ createExportRunner: () => runner }));
 
-const { startExportButton } = await import('../index');
+const { createExportEntrypoint } = await import('../index');
+const { resolveExportSite } = await import('../sites/resolveExportSite');
+const startExportButton = createExportEntrypoint(resolveExportSite());
 
 describe('a ChatGPT export mount switched off before it finished', () => {
   it("does not cancel the newer mount's export when its late cleanup runs", async () => {

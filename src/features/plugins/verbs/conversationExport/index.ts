@@ -1,6 +1,6 @@
 import { startChatGptExportOpenListener } from '@/features/plugins/builtin/chatgptExport/openListener';
-import { createExportEntrypoint } from '@/pages/content/export';
 import { openPersistentExportToolbar } from '@/pages/content/export/persistentExportToolbar';
+import { exportEntrypointFor } from '@/pages/content/export/sites/resolveExportEntrypoint';
 import { exportSiteFor } from '@/pages/content/export/sites/resolveExportSite';
 
 import { getPrimitiveContract } from '../contracts';
@@ -37,7 +37,7 @@ export const conversationExportPrimitive: Primitive = {
             };
           }, 'conversation-export-popup-open')
         : null;
-    const start = createExportEntrypoint(exportSite);
+    const start = exportEntrypointFor(exportSite, context.doc);
     scope.effect(
       () =>
         start({ signal: scope.signal }).catch((error: unknown) => {

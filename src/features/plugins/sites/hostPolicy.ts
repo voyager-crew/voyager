@@ -15,8 +15,8 @@
  *     Voyager's native timeline owns that data here, whether or not the site
  *     is described by a bundled `site.json`;
  *   - `native` ops: only public primitives listed by entries in
- *     `featureOwners.ts`, plus `EXTRA_ALLOWED_HANDLERS`. Fixed-id builtins
- *     may own a feature without opening a public primitive.
+ *     `featureOwners.ts`, plus `EXTRA_ALLOWED_HANDLERS`. Official-only
+ *     handlers stay closed to local plugins.
  *
  * The import-time check (`manifestHostPolicyIssues`) is early feedback by
  * pattern; the runtime asks again by the page's real URL (`hostPolicyRefusal`).
@@ -26,7 +26,7 @@
  */
 import type { ManifestIssue } from '../manifest/validate';
 import type { PluginManifest, SiteAdapter } from '../types';
-import { type PackagedSiteId, pluginOwnedHandlers } from './featureOwners';
+import { OFFICIAL_PLUGIN_IDS, type PackagedSiteId, pluginOwnedHandlers } from './featureOwners';
 import { patternWithinAny } from './matchPattern';
 import {
   FOLDERS_HANDLER,
@@ -96,6 +96,12 @@ export const PACKAGED_MATCHES: readonly string[] = PACKAGED_HOST_POLICIES.flatMa
 export const EXTRA_ALLOWED_HANDLERS: Readonly<Record<PackagedSiteId, readonly string[]>> = {
   gemini: [],
   aistudio: [],
+};
+
+/** Reserved ids come only from the package; local imports are namespaced and remote copies dropped. */
+const OFFICIAL_ONLY_HANDLERS: Readonly<Record<PackagedSiteId, Readonly<Record<string, string>>>> = {
+  gemini: { conversationExport: OFFICIAL_PLUGIN_IDS.geminiExport },
+  aistudio: {},
 };
 
 const POLICY_BY_HOST: ReadonlyMap<string, PackagedHostPolicy> = new Map(
@@ -248,7 +254,12 @@ export function hostPolicyRefusal(
       sharedTimelineAdmissionId(url, manifest) === null
     )
       refused.add(op.handler);
-    if (site !== null && !allowsNativeHandler(site, op.handler)) refused.add(op.handler);
+    if (
+      site !== null &&
+      !allowsNativeHandler(site, op.handler) &&
+      (manifest.id === undefined || OFFICIAL_ONLY_HANDLERS[site][op.handler] !== manifest.id)
+    )
+      refused.add(op.handler);
     if (refusesLocalFolders(manifest.id, op.handler, site)) refused.add(op.handler);
   }
   return refused.size > 0 ? { kind: 'native-op', handlers: [...refused] } : null;

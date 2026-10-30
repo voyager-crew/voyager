@@ -1,17 +1,17 @@
 # Export ownership
 
-Start with the owner of the behavior being changed. `index.ts` is the composition root: it
-resolves the export site once per page, creates the runner, and mounts the entry points
+Start with the owner of the behavior being changed. `index.ts` creates the runner and mounts the entry points
 (persistent toolbar, conversation/response menus, logo dropdown, copy-as-image). An official
-plugin mounts them and calls the returned stop when it unmounts: `voyager.gemini-export`
-(`pluginHandler.ts`, admitted by `geminiBuiltinStartup.startExport`), and every other host through
-the `conversationExport` primitive (`voyager.chatgpt-export`, `voyager.deepseek-export`). Stopping
+plugin mounts them through the `conversationExport` primitive and calls the returned stop when it unmounts:
+`voyager.gemini-export` (still admitted by `geminiBuiltinStartup.startExport`),
+`voyager.chatgpt-export`, `voyager.deepseek-export`. Gemini's host policy permits the primitive
+only for its packaged official export id; local plugins cannot invoke it there. Stopping
 removes every entry point, closes the dialog and cancels the active run. File writing
 (JSON/Markdown/PDF/image) lives in `src/features/export/`; it renders only content that was read
 from the page beforehand (`extractTurnContent` with an extractor from `createContentExtractor`).
 
 The primitive picks the site's reader with `exportSiteFor` (`sites/resolveExportSite.ts`): a site
-Voyager ships a reader for (ChatGPT's thread crawl, keyed by the bundled site id) keeps it, and
+Voyager ships a reader for (Gemini's mounted page or ChatGPT's thread crawl, keyed by the bundled site id) keeps it, and
 answers the popup's export card when its entry points say `opensFromPopup`; any other site uses
 `sites/catalogSite.ts`, with facts in the adapter's versioned `export` descriptor. `catalogReader.ts` snapshots mounted messages or
 crawls a virtual list. Virtual reading requires `export.messageKey`; without a key, use
@@ -44,7 +44,7 @@ The `export` descriptor’s `title` and `generating` locators can use catalog up
 | Export item in Gemini conversation / sidebar / response menus                           | `conversationMenuExportObserver.ts` (+ `conversationMenuInjection.ts`)               |
 | Opening a sidebar conversation before exporting it                                      | `sidebarConversationNavigation.ts`                                                   |
 | Copy a single response as an image (button, width menu, Safari fallbacks)               | `responseCopyImageAction.ts`                                                         |
-| Gemini export as the `voyager.gemini-export` official plugin                            | `pluginHandler.ts`                                                                   |
+| Per-page history entrypoint cache                                                       | `sites/resolveExportEntrypoint.ts`                                                   |
 | Logo dropdown button (old Gemini layout) and its re-creation after re-renders           | `logoExportButton.ts`                                                                |
 | Always-visible toolbar (lr26 Gemini, ChatGPT and other plugin hosts)                    | `persistentExportToolbar.ts`, `exportEntryGate.ts`                                   |
 | Where that toolbar sits and which host controls it keeps clear of                       | `toolbarPlacement.ts`, `toolbarAvoidance.ts`, `toolbarOcclusion.ts`                  |
@@ -63,7 +63,8 @@ selection UI.
 Keep these less obvious boundaries intact:
 
 - Gemini's preload click can reload the page. `exportRun.ts` persists the run in sessionStorage
-  before clicking; `startExportButton` resumes it on the page's first plugin mount, so only while
+  before clicking; `sites/resolveExportEntrypoint.ts` retains one entrypoint per document and history site.
+  That entrypoint resumes it on the page's first plugin mount, so only while
   `voyager.gemini-export` is on. A remount on the same page (switch off and on) does not resume,
   and page teardown cancels without clearing the stored run. Do not move that persist after the click.
 - `generatedUiScreenshots.ensureGeneratedUiScreenshotPermission()` must run while the user gesture

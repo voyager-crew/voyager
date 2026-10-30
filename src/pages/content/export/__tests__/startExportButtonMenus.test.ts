@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 
-import { startExportButton } from '../index';
+import { createExportEntrypoint } from '../index';
+import { resolveExportSite } from '../sites/resolveExportSite';
+
+const startExportButton = createExportEntrypoint(resolveExportSite());
 
 function openConversationMenu(): HTMLElement {
   const trigger = document.createElement('button');
