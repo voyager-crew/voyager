@@ -7,7 +7,7 @@ import {
   HighlightAnnotationError,
   getHighlightAccountHash,
 } from '@/core/services/highlightAnnotationData';
-import { StorageKeys } from '@/core/types/common';
+import { readHighlightCloudSyncEnabled } from '@/core/services/highlightCloudSyncSetting';
 import type {
   HighlightAccountScope,
   HighlightCreateInput,
@@ -83,14 +83,7 @@ export async function isHighlightCloudSyncRequested(
 ): Promise<boolean> {
   if (platform !== 'gemini') return false;
   if (explicitlyIncluded) return true;
-  try {
-    const stored = await chrome.storage.local.get({
-      [StorageKeys.HIGHLIGHT_CLOUD_SYNC_ENABLED]: true,
-    });
-    return stored[StorageKeys.HIGHLIGHT_CLOUD_SYNC_ENABLED] !== false;
-  } catch {
-    return false;
-  }
+  return readHighlightCloudSyncEnabled();
 }
 
 export async function notifyHighlightChanged(

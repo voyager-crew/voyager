@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { readHighlightCloudSyncEnabled } from '@/core/services/highlightCloudSyncSetting';
 import { StorageKeys } from '@/core/types/common';
 import type { SyncMode, SyncPlatform, SyncProvider, SyncState } from '@/core/types/sync';
 import { DEFAULT_SYNC_STATE } from '@/core/types/sync';
@@ -98,16 +99,15 @@ export function useCloudSyncSettings(sourceTabId?: number) {
   useEffect(() => {
     const fetchState = async () => {
       try {
-        const [response, highlightSetting] = await Promise.all([
+        // The reader never rejects, so a failed setting read keeps the sync state.
+        const [response, highlightsEnabled] = await Promise.all([
           chrome.runtime.sendMessage({ type: 'gv.sync.getState' }),
-          chrome.storage.local.get({ [StorageKeys.HIGHLIGHT_CLOUD_SYNC_ENABLED]: true }),
+          readHighlightCloudSyncEnabled(),
         ]);
         if (response?.ok && response.state) {
           setSyncState(response.state);
         }
-        setHighlightSyncEnabled(
-          highlightSetting[StorageKeys.HIGHLIGHT_CLOUD_SYNC_ENABLED] !== false,
-        );
+        setHighlightSyncEnabled(highlightsEnabled);
       } catch (error) {
         console.error('[CloudSyncSettings] Failed to get sync state:', error);
       }

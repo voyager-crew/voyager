@@ -1,7 +1,7 @@
 import { undoCloudSyncSnapshot } from '@/core/services/CloudSyncSnapshotService';
 import type { CloudSyncPayload } from '@/core/services/CloudSyncTransferContext';
 import type { CloudSyncUndoResult } from '@/core/services/cloudSyncSnapshotTypes';
-import { StorageKeys } from '@/core/types/common';
+import { readHighlightCloudSyncEnabled } from '@/core/services/highlightCloudSyncSetting';
 
 import type { RunStep } from './syncPlan';
 import { type StatusRow, type SyncSend, parseConnection, parseStatusRows } from './syncProtocol';
@@ -23,17 +23,6 @@ export interface SheetEnvironment {
   page(): SheetPage;
   /** 通用 and the enabled sites the sheet lists, and the off sites checked for cloud data. */
   rows(): { readonly listed: readonly string[]; readonly idle: readonly string[] };
-}
-
-async function highlightSyncEnabled(): Promise<boolean> {
-  try {
-    const stored: Record<string, unknown> = await chrome.storage.local.get({
-      [StorageKeys.HIGHLIGHT_CLOUD_SYNC_ENABLED]: true,
-    });
-    return stored[StorageKeys.HIGHLIGHT_CLOUD_SYNC_ENABLED] !== false;
-  } catch {
-    return true;
-  }
 }
 
 function statusPayload(row: readonly string[], scopes: CloudSyncPayload | null, platform: string) {
@@ -58,7 +47,7 @@ export async function loadSheet(env: SheetEnvironment, signal: AbortSignal): Pro
   if (!connection?.connected) return { connection, rows: [], unconfirmed: [], loaded: true };
   const page = env.page();
   const { listed, idle } = env.rows();
-  const highlights = await highlightSyncEnabled();
+  const highlights = await readHighlightCloudSyncEnabled();
   // One request carries one platform: the shared row's, whose own-page scopes go with it.
   const platform = sharedRowPlatform(page);
   const unconfirmed: string[] = [];
@@ -136,7 +125,7 @@ export async function restorePrevious(
   rows: readonly StatusRow[],
 ): Promise<{ restored: number; failed: number }> {
   const page = env.page();
-  const highlights = await highlightSyncEnabled();
+  const highlights = await readHighlightCloudSyncEnabled();
   let restored = 0;
   let failed = 0;
   for (const row of rows) {
@@ -182,7 +171,7 @@ export function createStepRunner(env: SheetEnvironment) {
     const { op, row } = step;
     let context;
     try {
-      context = await resolveRowContext(row, page, await highlightSyncEnabled());
+      context = await resolveRowContext(row, page, await readHighlightCloudSyncEnabled());
     } catch {
       const error = 'account_unconfirmed';
       return {
