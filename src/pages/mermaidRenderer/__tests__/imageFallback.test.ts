@@ -39,6 +39,8 @@ describe('image fallback in the dedicated renderer document', () => {
       'avatar',
       '/avatar',
       'chrome-extension://another-extension-id/icon-32.png',
+      'blob:https://gemini.google.com/local-image',
+      '#local-image',
     ]) {
       const image = new renderer.window.Image();
       image.src = source;
@@ -53,15 +55,9 @@ describe('image fallback in the dedicated renderer document', () => {
     }
   });
 
-  it('preserves inline, blob, fragment and explicit own-extension image sources', () => {
+  it('preserves inline and explicit own-extension image sources', () => {
     installMermaidImageFallback(renderer.window.document, EXTENSION_BASE);
-    for (const source of [
-      INLINE_IMAGE,
-      'blob:https://gemini.google.com/local-image',
-      '#local-image',
-      `${EXTENSION_BASE}icon-32.png`,
-      '',
-    ]) {
+    for (const source of [INLINE_IMAGE, `${EXTENSION_BASE}icon-32.png`, '']) {
       const image = new renderer.window.Image();
       image.src = source;
       expect(image.getAttribute('src')).toBe(source);

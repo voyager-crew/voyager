@@ -190,21 +190,24 @@ const LEGIT: Array<[string, string, readonly string[]]> = [
 ];
 
 describe('isolated Mermaid document output', () => {
-  it.each([URL, 'avatar'])('keeps image-node labels when %s cannot be loaded', async (image) => {
-    const result = await renderMermaidDocument({
-      id: 'mermaid-image-fallback',
-      code: `flowchart TD\n  A@{ img: "${image}", label: "Useful image label" }\n  A --> B[Next step]`,
-      theme: 'light',
-      lightExport: false,
-    });
-    expect(result.errorMessage).toBeNull();
-    expect(decodedSources).toHaveLength(1);
-    expect(decodedSources[0]).toMatch(/^data:image\/gif;base64,/);
-    const template = document.createElement('template');
-    template.innerHTML = result.svg;
-    expect(template.content.querySelector('svg')?.textContent).toContain('Useful image label');
-    expect(template.content.querySelector('svg')?.textContent).toContain('Next step');
-  });
+  it.each([URL, 'avatar', 'blob:https://gemini.google.com/local-image', '#local-image'])(
+    'keeps image-node labels when %s cannot be loaded',
+    async (image) => {
+      const result = await renderMermaidDocument({
+        id: 'mermaid-image-fallback',
+        code: `flowchart TD\n  A@{ img: "${image}", label: "Useful image label" }\n  A --> B[Next step]`,
+        theme: 'light',
+        lightExport: false,
+      });
+      expect(result.errorMessage).toBeNull();
+      expect(decodedSources).toHaveLength(1);
+      expect(decodedSources[0]).toMatch(/^data:image\/gif;base64,/);
+      const template = document.createElement('template');
+      template.innerHTML = result.svg;
+      expect(template.content.querySelector('svg')?.textContent).toContain('Useful image label');
+      expect(template.content.querySelector('svg')?.textContent).toContain('Next step');
+    },
+  );
 
   it.each(ATTACKS)('returns no fetching markup: %s', async (_, source) => {
     const result = await renderMermaidDocument({
