@@ -138,3 +138,10 @@ export function formatRelativeTime(
 ): string {
   return new Intl.RelativeTimeFormat(localeFromLanguage(language), options).format(value, unit);
 }
+
+/** `{name}` placeholders, filled once each, so a value containing `$` stays literal. */
+export function fillPlaceholders(text: string, values: Readonly<Record<string, string>>): string {
+  return text.replace(/\{(\w+)\}/g, (match, name: string) =>
+    Object.hasOwn(values, name) ? values[name] : match,
+  );
+}

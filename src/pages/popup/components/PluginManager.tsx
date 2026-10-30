@@ -1,5 +1,6 @@
 import { type ReactNode, useMemo, useState } from 'react';
 
+import { pluginIncompatibleNote } from '@/features/plugins/runtime/pluginIncompatibleNote';
 import type { PluginStatus } from '@/features/plugins/runtime/pluginStatus';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
 import type { BlockedPluginUpdate } from '@/features/plugins/sources/defaultSources';
@@ -183,27 +184,7 @@ export function PluginManager({
     const needsSiteAccess = !prompt && enabled && missingPermissionIds.has(plugin.id);
     const isUpdated = updatedIds.has(plugin.id);
     const status = statusById.get(plugin.id);
-    // Only the incompatibility kinds block the toggle; `no-effect`
-    // stays enabled because the plugin did run, it just found no targets,
-    // and `blocked` keeps the user's choice for when the reason clears.
-    const incompatibleNote = ((): string | null => {
-      switch (status?.kind) {
-        case 'needs-form-factor':
-          return t('pluginUnavailableOnMobile');
-        case 'needs-engine':
-          return t('pluginNeedsNewerVoyager').replace(
-            '{engine}',
-            status.requiredEngine ?? plugin.engine,
-          );
-        case 'needs-handler':
-          return t('pluginNeedsVoyagerUpdate');
-        case 'needs-semantic':
-        case 'needs-site-data':
-          return t('pluginNeedsSiteAdapterUpdate').replace('{site}', currentSiteLabel ?? hosts);
-        default:
-          return null;
-      }
-    })();
+    const incompatibleNote = pluginIncompatibleNote(status, plugin, currentSiteLabel ?? hosts, t);
     const railKeys = dedicatedTimelineKeys(plugin, sourceIds?.[plugin.id], timelineRail);
     const blockedNote = blockedPluginNote({
       status,

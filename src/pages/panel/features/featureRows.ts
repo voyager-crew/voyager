@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 
+import { pluginIncompatibleNote } from '@/features/plugins/runtime/pluginIncompatibleNote';
 import type { PluginStatus } from '@/features/plugins/runtime/pluginStatus';
 import {
   resolvePluginSettings,
@@ -186,30 +187,6 @@ function selectChip(
   return options.length > 1 ? { key, label: localized.label, value, options, pick } : undefined;
 }
 
-/** Why a plugin's switch can't turn on here, as the popup's plugin list says it. */
-function incompatibleNote(
-  status: PluginStatus | undefined,
-  plugin: PluginManifest,
-  siteLabel: string,
-  t: (key: TranslationKey) => string,
-): string | null {
-  switch (status?.kind) {
-    case 'needs-form-factor':
-      return t('pluginUnavailableOnMobile');
-    case 'needs-engine':
-      return fillPlaceholders(t('pluginNeedsNewerVoyager'), {
-        engine: status.requiredEngine ?? plugin.engine,
-      });
-    case 'needs-handler':
-      return t('pluginNeedsVoyagerUpdate');
-    case 'needs-semantic':
-    case 'needs-site-data':
-      return fillPlaceholders(t('pluginNeedsSiteAdapterUpdate'), { site: siteLabel });
-    default:
-      return null;
-  }
-}
-
 export interface CatalogRowInputs {
   readonly texts: RowTexts;
   readonly enabled: boolean;
@@ -252,7 +229,7 @@ export function catalogPanelRow(plugin: PluginManifest, inputs: CatalogRowInputs
       })
     : undefined;
   const name = displayName(pickLocalized(plugin, 'name', language));
-  const note = incompatibleNote(status, plugin, inputs.siteLabel, t);
+  const note = pluginIncompatibleNote(status, plugin, inputs.siteLabel, t);
   return {
     id: plugin.id,
     group: rowTopic(plugin),

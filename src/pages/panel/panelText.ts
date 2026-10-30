@@ -51,9 +51,4 @@ export function shortcutLabel(shortcut: KeyboardShortcut, mac: boolean): string 
   return [...modifiers.map((modifier) => OTHER_MODIFIERS[modifier]), key].join('+');
 }
 
-/** `{name}` placeholders, filled once each, so a value containing `$` stays literal. */
-export function fillPlaceholders(text: string, values: Readonly<Record<string, string>>): string {
-  return text.replace(/\{(\w+)\}/g, (match, name: string) =>
-    Object.hasOwn(values, name) ? values[name] : match,
-  );
-}
+export { fillPlaceholders } from '@/utils/translations';
