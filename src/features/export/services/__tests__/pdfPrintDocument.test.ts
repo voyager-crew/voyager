@@ -26,6 +26,12 @@ describe('PDF print document construction', () => {
     document.title = 'Gemini';
   });
 
+  it('shows itself with an inline !important, which outranks a layered host print rule', () => {
+    const container = createPDFPrintContainer([], metadata, DEFAULT_EXPORT_SPEAKER_LABELS);
+    expect(container.style.getPropertyValue('display')).toBe('block');
+    expect(container.style.getPropertyPriority('display')).toBe('important');
+  });
+
   it('prefers captured rich content over changed live elements and plain text', () => {
     const stale = document.createElement('div');
     stale.textContent = 'Changed after capture';

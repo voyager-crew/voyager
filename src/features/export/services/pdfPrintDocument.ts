@@ -14,6 +14,11 @@ export function createPDFPrintContainer(
   const container = document.createElement('div');
   container.id = PDF_PRINT_CONTAINER_ID;
   container.className = 'gv-print-only';
+  // A host's print CSS can hide every body child but its own print copy with a
+  // layered !important (ChatGPT inserts one on beforeprint), which outranks any
+  // unlayered rule. Only an inline !important outranks it; the screen rule in
+  // pdfPrintStyles keeps the container off screen until it prints.
+  container.style.setProperty('display', 'block', 'important');
 
   // Build HTML content
   container.innerHTML = `

@@ -1,4 +1,4 @@
-<div id="gv-pdf-print-container" class="gv-print-only">
+<div id="gv-pdf-print-container" class="gv-print-only" style="display: block !important;">
       <div class="gv-print-document">
         
       <div class="gv-print-header gv-print-cover-page">

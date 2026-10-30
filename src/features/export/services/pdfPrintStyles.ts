@@ -25,6 +25,17 @@ export function injectPDFPrintStyles(fontSize?: number): void {
         display: none;
       }
 
+      /* Its inline display wins on screen too, so it waits off screen instead */
+      @media screen {
+        #${PDF_PRINT_CONTAINER_ID} {
+          position: fixed !important;
+          top: 0 !important;
+          left: -200vw !important;
+          width: 100vw !important;
+          pointer-events: none !important;
+        }
+      }
+
       /* Show print container when printing */
       @media print {
         /* Hide everything except print container */
