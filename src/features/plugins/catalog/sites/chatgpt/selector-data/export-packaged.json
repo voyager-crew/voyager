@@ -15,9 +15,9 @@
     "section[data-turn]"
   ],
   "export.activeConversation": "nav a[aria-current=\"page\"], #stage-slideover-sidebar a[aria-current=\"page\"]",
-  "export.userAttachments": "[role=\"group\"][aria-label]",
-  "export.attachmentAction": "[data-default-action] button[aria-label]",
-  "export.uploadCandidates": "img, [role=\"group\"][aria-label]",
+  "export.userAttachments": "[role=\"group\"][aria-label], span:has(> button[aria-busy][aria-label])",
+  "export.attachmentAction": "[data-default-action] button[aria-label], :scope > button[aria-busy][aria-label]",
+  "export.uploadCandidates": "img, [role=\"group\"][aria-label], span:has(> button[aria-busy][aria-label])",
   "export.copyExcluded": "[data-markdown-copy=\"exclude\"]",
   "export.mermaidPreview": "[data-chatgpt-mermaid-preview]",
   "export.userBubble": "[data-user-message-bubble]"

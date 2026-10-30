@@ -78,11 +78,12 @@ function getUserAttachmentCandidates(element: HTMLElement): HTMLElement[] | unde
   return Array.from(
     element.querySelectorAll<HTMLElement>(chatgptExportData['export.userAttachments']),
   ).filter((candidate) => {
-    const name = candidate.getAttribute('aria-label')?.trim();
     const buttonName = candidate
       .querySelector<HTMLElement>(chatgptExportData['export.attachmentAction'])
       ?.getAttribute('aria-label')
       ?.trim();
+    // A labelled tile must carry its button's name; the newer resource card labels only the button.
+    const name = candidate.getAttribute('aria-label')?.trim() ?? buttonName;
     return !!name && name === buttonName;
   });
 }

@@ -108,9 +108,18 @@
     "export-packaged.json/export.activeConversation",
     "nav a[aria-current=\"page\"], #stage-slideover-sidebar a[aria-current=\"page\"]"
   ],
-  ["export-packaged.json/export.userAttachments", "[role=\"group\"][aria-label]"],
-  ["export-packaged.json/export.attachmentAction", "[data-default-action] button[aria-label]"],
-  ["export-packaged.json/export.uploadCandidates", "img, [role=\"group\"][aria-label]"],
+  [
+    "export-packaged.json/export.userAttachments",
+    "[role=\"group\"][aria-label], span:has(> button[aria-busy][aria-label])"
+  ],
+  [
+    "export-packaged.json/export.attachmentAction",
+    "[data-default-action] button[aria-label], :scope > button[aria-busy][aria-label]"
+  ],
+  [
+    "export-packaged.json/export.uploadCandidates",
+    "img, [role=\"group\"][aria-label], span:has(> button[aria-busy][aria-label])"
+  ],
   ["export-packaged.json/export.copyExcluded", "[data-markdown-copy=\"exclude\"]"],
   ["export-packaged.json/export.mermaidPreview", "[data-chatgpt-mermaid-preview]"],
   ["export-packaged.json/export.userBubble", "[data-user-message-bubble]"],
