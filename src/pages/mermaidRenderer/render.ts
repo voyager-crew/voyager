@@ -1,5 +1,6 @@
 import mermaid from 'mermaid';
 
+import { installMermaidImageFallback } from './imageFallback';
 import type { MermaidRenderRequest, MermaidRenderResult } from './protocol';
 import { MERMAID_FONT_FAMILY, sanitizeMermaidSvg } from './sanitize';
 
@@ -9,6 +10,7 @@ const MERMAID_LIGHT_THEME_DIRECTIVE = '%%{init: {"theme":"default"}}%%';
 export async function renderMermaidDocument(
   request: MermaidRenderRequest,
 ): Promise<MermaidRenderResult> {
+  installMermaidImageFallback(document, chrome.runtime.getURL(''));
   mermaid.initialize({
     startOnLoad: false,
     theme: request.theme === 'dark' ? 'dark' : 'default',

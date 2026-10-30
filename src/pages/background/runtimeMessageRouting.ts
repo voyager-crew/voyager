@@ -23,6 +23,7 @@ import {
   CATALOG_TIMELINE_PUSH_MESSAGE,
 } from '@/features/timeline/catalogHierarchySync';
 import { CATALOG_OUTLINE_WRITE_MESSAGE } from '@/features/timeline/catalogOutlineMessages';
+import { MERMAID_TOKEN_MESSAGE } from '@/pages/mermaidRenderer/authorization';
 
 import type { PanelSender } from './panelStorage';
 import { isRedeemedPanelFrame, redeemedPanelPageUrl } from './panelTrust';
@@ -108,6 +109,8 @@ export function isTrustedSharedDataSyncSender(sender: chrome.runtime.MessageSend
 }
 
 const HANDLED_BACKGROUND_MESSAGE_TYPES = new Set([
+  MERMAID_TOKEN_MESSAGE.issue,
+  MERMAID_TOKEN_MESSAGE.redeem,
   NOTIFICATION_ENABLEMENT_MESSAGE,
   LIBRARY_OPEN_MESSAGE,
   FORM_FACTOR_MESSAGE,

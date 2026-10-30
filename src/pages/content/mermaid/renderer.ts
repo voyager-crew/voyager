@@ -1,3 +1,4 @@
+import { createMermaidId } from '@/pages/mermaidRenderer/identifiers';
 import type { MermaidTheme } from '@/pages/mermaidRenderer/protocol';
 
 import { renderInIsolatedDocument } from './isolatedRender';
@@ -52,17 +53,17 @@ export class MermaidRenderer {
   /** Only sanitized SVG crosses back from the extension document. */
   async render(code: string, { lightExport = true }: { lightExport?: boolean } = {}) {
     if (this.loadFailed || this.lifetime.signal.aborted) return null;
-    const diagram = await renderInIsolatedDocument(
+    const outcome = await renderInIsolatedDocument(
       {
-        id: `mermaid-${crypto.randomUUID()}`,
+        id: createMermaidId(),
         code,
         theme: this.initializedTheme ?? this.resolveTheme(),
         lightExport,
       },
       this.lifetime.signal,
     );
-    if (!diagram && !this.lifetime.signal.aborted) this.loadFailed = true;
-    return diagram;
+    if (outcome.kind === 'not-ready') this.loadFailed = true;
+    return outcome.kind === 'rendered' ? outcome.diagram : null;
   }
 
   dispose(): void {

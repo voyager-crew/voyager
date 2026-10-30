@@ -10,6 +10,7 @@ import { CHATGPT_HANDOFF_GET_TAB_ID_MESSAGE } from '@/features/plugins/builtin/c
 
 import { createCatalogOutlineMessageHandler } from './catalogOutlineMessages';
 import { handleHighlightRuntimeMessage } from './highlightMessages';
+import { createMermaidAuthorization } from './mermaidAuthorization';
 import { handlePageRuntimeMessage } from './pageRuntimeMessages';
 import { createPanelBackground } from './panelMessages';
 import { handleRuntimeImageMessage, isRuntimeImageMessage } from './runtimeImageMessages';
@@ -46,6 +47,8 @@ export function registerBackgroundRuntimeMessages(owners: {
   const handleCatalogOutlineMessage = createCatalogOutlineMessageHandler();
   const panel = createPanelBackground();
   panel.registerListeners();
+  const mermaid = createMermaidAuthorization();
+  mermaid.registerListeners();
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!isPanelRuntimeMessage(message) && !isHandledBackgroundRuntimeMessage(message))
       return undefined;
@@ -66,6 +69,11 @@ export function registerBackgroundRuntimeMessages(owners: {
         const panelResponse = panel.handle(message, sender);
         if (panelResponse) {
           sendResponse(await panelResponse);
+          return;
+        }
+        const mermaidResponse = mermaid.handle(message, sender);
+        if (mermaidResponse) {
+          sendResponse(await mermaidResponse);
           return;
         }
         if (isRuntimeImageMessage(message)) {

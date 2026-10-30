@@ -26,7 +26,12 @@ import { wavedromPrimitive } from './wavedrom/index';
 const mermaidLibrary = vi.hoisted(() => ({ initialize: vi.fn(), render: vi.fn() }));
 vi.mock('mermaid', () => ({ default: mermaidLibrary }));
 vi.mock('@/pages/content/mermaid/isolatedRender', async () => ({
-  renderInIsolatedDocument: (await import('@/pages/mermaidRenderer/render')).renderMermaidDocument,
+  renderInIsolatedDocument: async (
+    request: import('@/pages/mermaidRenderer/protocol').MermaidRenderRequest,
+  ) => ({
+    kind: 'rendered',
+    diagram: await (await import('@/pages/mermaidRenderer/render')).renderMermaidDocument(request),
+  }),
 }));
 
 const echartsLibrary = vi.hoisted(() => {

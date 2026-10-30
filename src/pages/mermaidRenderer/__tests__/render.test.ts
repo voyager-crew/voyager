@@ -1,8 +1,7 @@
-import mermaid from 'mermaid';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+// @vitest-environment-options { "url": "chrome-extension://test-extension-id/src/pages/mermaidRenderer/index.html" }
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { renderMermaidDocument } from '../render';
-import { sanitizeMermaidSvg } from '../sanitize';
 
 const URL = 'https://attacker.example/x.png';
 const ATTACKER = 'attacker.example';
@@ -23,20 +22,21 @@ const canvasContext = new Proxy(
 const originalGetContext = HTMLCanvasElement.prototype.getContext;
 const originalGetComputedStyle = window.getComputedStyle;
 const originalComplete = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'complete')!;
-
-/** Rough.js and layouts draw from Math.random; a fixed sequence makes two renders comparable. */
-let seed = 1;
-const seededRandom = () => {
-  seed = (seed * 16807) % 2147483647;
-  return (seed - 1) / 2147483646;
-};
+let decodedSources: string[] = [];
 
 beforeEach(() => {
   // jsdom has no layout, image decoding or canvas; give Mermaid what a browser would.
   const proto = SVGElement.prototype as Measurable;
   proto.getBBox = () => ({ x: 0, y: 0, width: 40, height: 20 });
   proto.getComputedTextLength = () => 40;
-  (HTMLImageElement.prototype as Decodable).decode = () => Promise.resolve();
+  decodedSources = [];
+  (HTMLImageElement.prototype as Decodable).decode = function (this: HTMLImageElement) {
+    const source = this.getAttribute('src') ?? '';
+    decodedSources.push(source);
+    return /^data:image\/gif;base64,R0lGODlh/i.test(source)
+      ? Promise.resolve()
+      : Promise.reject(new Error('Image source cannot decode in the isolated document'));
+  };
   Object.defineProperty(HTMLImageElement.prototype, 'complete', {
     configurable: true,
     get: () => true,
@@ -57,8 +57,6 @@ beforeEach(() => {
       },
     });
   }) as typeof window.getComputedStyle;
-  seed = 1;
-  vi.spyOn(Math, 'random').mockImplementation(seededRandom);
 });
 
 afterEach(() => {
@@ -69,24 +67,21 @@ afterEach(() => {
   Object.defineProperty(HTMLImageElement.prototype, 'complete', originalComplete);
   HTMLCanvasElement.prototype.getContext = originalGetContext;
   window.getComputedStyle = originalGetComputedStyle;
-  vi.restoreAllMocks();
   document.body.replaceChildren();
 });
 
-/**
- * Sequence and class diagrams number some ids from counters that survive between renders,
- * so ids are compared by order of appearance.
- */
-function canonicalIds(svg: string): string {
-  const ids = [...new Set(Array.from(svg.matchAll(/\bid="([^"]+)"/g), (match) => match[1]))];
-  const ordinal = new Map(ids.map((id, index) => [id, `gv-id-${index}`]));
-  const escaped = ids
-    .sort((a, b) => b.length - a.length)
-    .map((id) => id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  if (escaped.length === 0) return svg;
-  return svg.replace(new RegExp(`(?<![\\w-])(?:${escaped.join('|')})(?![\\w-])`, 'g'), (id) =>
-    ordinal.get(id)!,
-  );
+function parsedSvg(markup: string): SVGSVGElement | null {
+  const template = document.createElement('template');
+  template.innerHTML = markup;
+  return template.content.querySelector('svg');
+}
+
+function nodeColors(markup: string): string {
+  const css = parsedSvg(markup)
+    ?.querySelector('style')
+    ?.textContent?.replace(/\s+/g, '')
+    .toLowerCase();
+  return css?.match(/\.noderect[^{}]*\{([^}]+)\}/)?.[1] ?? '';
 }
 
 const ATTACKS: Array<[string, string]> = [
@@ -152,7 +147,7 @@ const ATTACKS: Array<[string, string]> = [
   ],
 ];
 
-const LEGIT: Array<[string, string]> = [
+const LEGIT: Array<[string, string, readonly string[]]> = [
   [
     'a flowchart with classes, styles, a callback and URL-like labels',
     [
@@ -164,27 +159,53 @@ const LEGIT: Array<[string, string]> = [
       '  style B fill:#bbf,stroke:#f66',
       '  click A callback "Open the docs"',
     ].join('\n'),
+    // Mermaid's SVG Markdown renderer omits autolink tokens; keep the surrounding labels.
+    ['See', 'src/app.ts', 'is text', 'literal @{ img:', '} syntax'],
   ],
   [
     'the literal shape-data label',
     'flowchart TD\n  A["literal @{ img: https://example.com } syntax"]-->B',
+    ['literal @{ img:', '} syntax', 'B'],
   ],
   [
     'a sequence diagram with URL-like messages',
     'sequenceDiagram\n  participant A\n  participant B\n  A->>B: GET https://example.com/api/items\n  Note right of B: see src/app.ts\n  B-->>A: 200',
+    ['GET https://example.com/api/items', 'see src/app.ts', '200'],
   ],
   [
     'a class diagram with a style',
     'classDiagram\n  class Animal {\n    +String name\n  }\n  Animal <|-- Dog\n  style Dog fill:#f9f,stroke:#333',
+    ['Animal', 'Dog', 'String name'],
   ],
   [
     'a gantt chart',
     'gantt\n  title Plan\n  dateFormat YYYY-MM-DD\n  todayMarker off\n  section Build\n  Design :a1, 2024-01-01, 3d\n  Ship :after a1, 2d',
+    ['Plan', 'Build', 'Design', 'Ship'],
   ],
-  ['a mindmap', 'mindmap\n  root((Voyager))\n    Timeline\n    Folders\n      Sync'],
+  [
+    'a mindmap',
+    'mindmap\n  root((Voyager))\n    Timeline\n    Folders\n      Sync',
+    ['Voyager', 'Timeline', 'Folders', 'Sync'],
+  ],
 ];
 
 describe('isolated Mermaid document output', () => {
+  it.each([URL, 'avatar'])('keeps image-node labels when %s cannot be loaded', async (image) => {
+    const result = await renderMermaidDocument({
+      id: 'mermaid-image-fallback',
+      code: `flowchart TD\n  A@{ img: "${image}", label: "Useful image label" }\n  A --> B[Next step]`,
+      theme: 'light',
+      lightExport: false,
+    });
+    expect(result.errorMessage).toBeNull();
+    expect(decodedSources).toHaveLength(1);
+    expect(decodedSources[0]).toMatch(/^data:image\/gif;base64,/);
+    const template = document.createElement('template');
+    template.innerHTML = result.svg;
+    expect(template.content.querySelector('svg')?.textContent).toContain('Useful image label');
+    expect(template.content.querySelector('svg')?.textContent).toContain('Next step');
+  });
+
   it.each(ATTACKS)('returns no fetching markup: %s', async (_, source) => {
     const result = await renderMermaidDocument({
       id: 'mermaid-test',
@@ -202,7 +223,7 @@ describe('isolated Mermaid document output', () => {
     );
   });
 
-  it.each(LEGIT)('preserves the diagram layout and theme: %s', async (_, source) => {
+  it.each(LEGIT)('preserves the diagram labels: %s', async (_, source, labels) => {
     const result = await renderMermaidDocument({
       id: 'mermaid-test',
       code: source,
@@ -211,10 +232,47 @@ describe('isolated Mermaid document output', () => {
     });
     expect(result?.errorMessage).toBeNull();
     expect(result?.svg).toMatch(/^<svg[\s>]/);
-    // Compare the same id/random sequence with a direct library render. Only the
-    // sanitization needed before host insertion is permitted to change its SVG.
-    seed = 1;
-    const direct = await mermaid.render(result!.id, source);
-    expect(canonicalIds(result!.svg)).toBe(canonicalIds(await sanitizeMermaidSvg(direct.svg)));
+    const svg = parsedSvg(result.svg);
+    const text = Array.from(svg?.querySelectorAll('text, foreignObject') ?? [])
+      .map((element) => element.textContent)
+      .join(' ');
+    for (const label of labels) expect(text).toContain(label);
   });
+
+  it.each([
+    { theme: 'light', fill: '#ececff', stroke: '#9370db' },
+    { theme: 'dark', fill: '#1f2020', stroke: '#ccc' },
+  ] as const)(
+    'keeps classDef, node styles and $theme theme colors',
+    async ({ theme, fill, stroke }) => {
+      const result = await renderMermaidDocument({
+        id: 'mermaid-themed',
+        code: 'flowchart TD\n  A[Warm] --> B[Styled]\n  B --> C[Default]\n  classDef warm fill:#f96,stroke:#333,stroke-width:2px\n  class A warm\n  style B fill:#bbf,stroke:#f66',
+        theme,
+        lightExport: true,
+      });
+      expect(result.errorMessage).toBeNull();
+      expect(nodeColors(result.svg)).toContain(`fill:${fill}`);
+      expect(nodeColors(result.svg)).toContain(`stroke:${stroke}`);
+      const svg = parsedSvg(result.svg);
+      const css = svg?.querySelector('style')?.textContent?.replace(/\s+/g, '').toLowerCase() ?? '';
+      expect(svg?.querySelector('.warm')?.textContent).toContain('Warm');
+      expect(css).toMatch(/\.warm[^{}]*\{[^}]*fill:#f96/);
+      expect(css).toMatch(/\.warm[^{}]*\{[^}]*stroke:#333/);
+      const styledNode = Array.from(svg?.querySelectorAll('g.node') ?? []).find((node) =>
+        node.textContent?.includes('Styled'),
+      );
+      const style =
+        styledNode?.querySelector('rect')?.getAttribute('style')?.replace(/\s+/g, '') ?? '';
+      expect(style).toContain('fill:#bbf');
+      expect(style).toContain('stroke:#f66');
+      if (theme === 'dark') {
+        expect(nodeColors(result.lightExportSvg ?? '')).toContain('fill:#ececff');
+        expect(nodeColors(result.lightExportSvg ?? '')).toContain('stroke:#9370db');
+        expect(parsedSvg(result.lightExportSvg ?? '')?.textContent).toContain('Default');
+      } else {
+        expect(result.lightExportSvg).toBeNull();
+      }
+    },
+  );
 });

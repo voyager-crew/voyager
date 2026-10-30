@@ -15,7 +15,12 @@ vi.mock('mermaid', () => ({
 }));
 
 vi.mock('../isolatedRender', async () => ({
-  renderInIsolatedDocument: (await import('@/pages/mermaidRenderer/render')).renderMermaidDocument,
+  renderInIsolatedDocument: async (
+    request: import('@/pages/mermaidRenderer/protocol').MermaidRenderRequest,
+  ) => ({
+    kind: 'rendered',
+    diagram: await (await import('@/pages/mermaidRenderer/render')).renderMermaidDocument(request),
+  }),
 }));
 
 describe('Mermaid rendering', () => {

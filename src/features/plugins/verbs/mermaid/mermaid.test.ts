@@ -15,7 +15,12 @@ import { mermaidPrimitive } from './index';
 const library = vi.hoisted(() => ({ initialize: vi.fn(), render: vi.fn() }));
 vi.mock('mermaid', () => ({ default: library }));
 vi.mock('@/pages/content/mermaid/isolatedRender', async () => ({
-  renderInIsolatedDocument: (await import('@/pages/mermaidRenderer/render')).renderMermaidDocument,
+  renderInIsolatedDocument: async (
+    request: import('@/pages/mermaidRenderer/protocol').MermaidRenderRequest,
+  ) => ({
+    kind: 'rendered',
+    diagram: await (await import('@/pages/mermaidRenderer/render')).renderMermaidDocument(request),
+  }),
 }));
 
 const FLOWCHART = 'flowchart TD\n  Start --> Middle\n  Middle --> Finish\n  Finish --> Done';

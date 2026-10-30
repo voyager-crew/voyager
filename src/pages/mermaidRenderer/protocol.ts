@@ -1,3 +1,5 @@
+import { isMermaidRequestId } from './authorization';
+
 export const MERMAID_RENDERER_PATH = 'src/pages/mermaidRenderer/index.html';
 export const MERMAID_RENDERER_CONNECT = 'gv-mermaid-renderer-connect';
 
@@ -19,16 +21,21 @@ export interface MermaidRenderResult {
 }
 
 export type MermaidRendererResponse =
+  | { readonly type: 'ready' }
   | { readonly type: 'rendered'; readonly result: MermaidRenderResult }
   | { readonly type: 'unavailable' };
+
+export type MermaidDocumentOutcome =
+  | { readonly kind: 'rendered'; readonly diagram: MermaidRenderResult }
+  | { readonly kind: 'not-ready' }
+  | { readonly kind: 'failed' };
 
 export function parseMermaidRequest(value: unknown): MermaidRenderRequest | null {
   if (
     typeof value !== 'object' ||
     value === null ||
     !('id' in value) ||
-    typeof value.id !== 'string' ||
-    !/^mermaid-[a-z0-9-]+$/i.test(value.id) ||
+    !isMermaidRequestId(value.id) ||
     !('code' in value) ||
     typeof value.code !== 'string' ||
     !('theme' in value) ||
@@ -43,6 +50,7 @@ export function parseMermaidRequest(value: unknown): MermaidRenderRequest | null
 
 export function parseMermaidResponse(value: unknown): MermaidRendererResponse | null {
   if (typeof value !== 'object' || value === null || !('type' in value)) return null;
+  if (value.type === 'ready') return { type: 'ready' };
   if (value.type === 'unavailable') return { type: 'unavailable' };
   if (value.type !== 'rendered' || !('result' in value)) return null;
   const result = value.result;
