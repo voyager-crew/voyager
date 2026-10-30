@@ -15,6 +15,9 @@ export interface PromptDataTransferProps {
   t: (key: TranslationKey) => string;
 }
 
+/** The cloud labels carry "(merge)" and outgrow half the card in some languages: they wrap. */
+const CLOUD_BUTTON_CLASS = 'h-auto min-h-8 w-full whitespace-normal py-1.5 leading-tight';
+
 /** The same Material Symbols paths used in the injected Gemini folder panel. */
 function MaterialGlyphIcon({ path, className }: { path: string; className?: string }) {
   return (
@@ -80,28 +83,28 @@ export function PromptDataTransfer({ transfer, t }: PromptDataTransferProps) {
         <Button
           variant="outline"
           size="sm"
-          className="w-full"
+          className={CLOUD_BUTTON_CLASS}
           disabled={locked || cloudUnavailable}
           onClick={() => {
             void onCloudPull();
           }}
         >
           <span className="inline-flex items-center gap-1.5">
-            <MaterialGlyphIcon path={CLOUD_SYNC_PATH} className="h-3.5 w-3.5" />
+            <MaterialGlyphIcon path={CLOUD_SYNC_PATH} className="h-3.5 w-3.5 shrink-0" />
             <span>{t('promptCloudPull')}</span>
           </span>
         </Button>
         <Button
           variant="outline"
           size="sm"
-          className="w-full"
+          className={CLOUD_BUTTON_CLASS}
           disabled={locked || cloudUnavailable}
           onClick={(event) => {
             void onCloudPush(event.currentTarget);
           }}
         >
           <span className="inline-flex items-center gap-1.5">
-            <MaterialGlyphIcon path={CLOUD_UPLOAD_PATH} className="h-3.5 w-3.5" />
+            <MaterialGlyphIcon path={CLOUD_UPLOAD_PATH} className="h-3.5 w-3.5 shrink-0" />
             <span>{t('promptCloudPush')}</span>
           </span>
         </Button>
