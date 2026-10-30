@@ -303,6 +303,26 @@ describe('ChatGPT folders sidebar guide', () => {
     expect(bubble()).not.toBeNull();
   });
 
+  it('waits while the sidebar only peeks on hover, and shows once it is docked', async () => {
+    // ChatGPT's collapsed rail slides the sidebar out as an overlay on hover; the
+    // guide's scrim would end the peek and close the guide unseen, over and over.
+    const panel = document.createElement('aside');
+    panel.setAttribute('data-slate-sidebar-peeking', 'true');
+    sidebar.sidebar.replaceWith(panel);
+    panel.append(sidebar.sidebar);
+    await activate();
+    sidebar.rerenderList();
+    await nextPass();
+    expect(document.querySelector(SECTION)?.isConnected).toBe(true);
+    expect(bubble()).toBeNull();
+    expect(seen()).toBeUndefined();
+
+    // Docking changes only the marker: nothing inside the sidebar moves.
+    panel.removeAttribute('data-slate-sidebar-peeking');
+    await nextPass();
+    expect(bubble()).not.toBeNull();
+  });
+
   it('waits while the header is hidden, and shows once it is visible', async () => {
     // jsdom caches computed styles inside a shadow root, so the style is stubbed.
     let hidden = true;

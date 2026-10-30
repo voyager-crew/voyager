@@ -17,6 +17,12 @@
       "maxLength": 1000,
       "description": "CSS selector of the site's sidebar root, searched in the document and observed for rows. Match nothing while the site lists no conversations: the folders then fall back to a floating panel."
     },
+    "transientSidebar": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "description": "CSS selector matching an ancestor of the folder section while the sidebar shows only for a moment, such as a hover peek. The one-time folder guide waits until it no longer matches. Without it, the guide treats every shown sidebar as docked."
+    },
     "rows": {
       "type": "object",
       "required": ["row", "drag"],

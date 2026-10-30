@@ -168,6 +168,7 @@ export function siteFoldersFromData(
           debugEvent: `gv:debug:${site}FoldersCoachmark`,
           titleKey: messages.guideTitle,
           bodyKey: messages.guideBody,
+          ...(section.transientSidebar ? { transientSidebar: section.transientSidebar } : {}),
         }
       : null,
     messages,

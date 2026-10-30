@@ -233,6 +233,7 @@
   "folders": {
     "format": 1,
     "sidebar": ":is(nav, #stage-slideover-sidebar):has([data-app-action-sidebar-scroll])",
+    "transientSidebar": "[data-slate-sidebar-peeking=\"true\"]",
     "rows": {
       "row": "[role=\"listitem\"]",
       "link": "a[href]",

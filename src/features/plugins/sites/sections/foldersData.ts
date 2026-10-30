@@ -13,6 +13,8 @@
  *
  * Format 1:
  * - `sidebar`: the host's sidebar root, observed for row passes (document);
+ * - `transientSidebar`: matches an ancestor of the folder section while the
+ *   sidebar only shows for a moment (a hover peek); the one-time guide waits;
  * - `rows`: inside `sidebar`, a conversation `row`; inside a row its `link`
  *   (the row itself when omitted), ordered `title` candidates, `idSources`
  *   read before the link route (an attribute plus a safe regex whose group 1
@@ -112,6 +114,8 @@ export interface FoldersPage {
 export interface FoldersSection {
   readonly format: FoldersFormat;
   readonly sidebar: string;
+  /** Matches an ancestor of the section while the sidebar is transient (e.g. a hover peek). */
+  readonly transientSidebar?: string;
   readonly rows: FoldersRows;
   readonly mount?: FoldersMount;
   readonly hideFiled?: FoldersHideFiled;
@@ -432,10 +436,24 @@ export function readFoldersSection(
     return { issues: [{ path: `${path}.format`, message: 'unknown format' }] };
   }
   const reader = new Reader(isSelector);
-  reader.record(raw, path, ['format', 'sidebar', 'rows', 'mount', 'hideFiled', 'rowMenu', 'page']);
+  reader.record(raw, path, [
+    'format',
+    'sidebar',
+    'transientSidebar',
+    'rows',
+    'mount',
+    'hideFiled',
+    'rowMenu',
+    'page',
+  ]);
+  const transientSidebar = reader.optionalSelector(
+    raw.transientSidebar,
+    `${path}.transientSidebar`,
+  );
   const section: FoldersSection = {
     format: 1,
     sidebar: reader.selector(raw.sidebar, `${path}.sidebar`),
+    ...(transientSidebar !== undefined ? { transientSidebar } : {}),
     rows: readRows(reader, raw.rows, `${path}.rows`),
     ...(raw.mount !== undefined ? { mount: readMount(reader, raw.mount, `${path}.mount`) } : {}),
     ...(raw.hideFiled !== undefined

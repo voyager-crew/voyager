@@ -80,6 +80,8 @@ export interface SiteFolderGuideConfig {
   readonly debugEvent: string;
   readonly titleKey: string;
   readonly bodyKey: string;
+  /** Matches an ancestor of the anchor while the sidebar is transient; the guide waits. */
+  readonly transientSidebar?: string;
 }
 
 /** The site's i18n keys for what it says about filing. */

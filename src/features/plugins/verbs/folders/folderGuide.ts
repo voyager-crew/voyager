@@ -3,10 +3,11 @@
  * shared coachmark (`src/pages/content/coachmark`). It is checked after every
  * sidebar change, scroll, resize and change in the header's visibility, never on
  * a timer. It shows only once the folders have loaded and the section header is
- * actually on screen (not scrolled out of the sidebar, not collapsed away), and
- * never over an open menu or dialog; until then it waits. Seen state is the
- * shared coachmark list, so it shows once per user. Turning the plugin off, or
- * the header leaving the screen, closes an open guide without marking it seen.
+ * actually on screen (not scrolled out of the sidebar, not collapsed away, not
+ * in a sidebar that only peeks on hover), and never over an open menu or
+ * dialog; until then it waits. Seen state is the shared coachmark list, so it
+ * shows once per user. Turning the plugin off, or the header leaving the
+ * screen, closes an open guide without marking it seen.
  */
 import { LAYER_ATTR } from '@/core/ui/layer';
 import { detectRTL } from '@/core/utils/rtl';
@@ -48,6 +49,22 @@ export function hasOpenOverlay(doc: Document = document): boolean {
   return false;
 }
 
+/**
+ * The element marking `anchor`'s sidebar as shown only for a moment, if any.
+ * The guide's scrim would end a hover peek and so close the guide unseen, over
+ * and over. Crosses shadow roots: the section header lives in one.
+ */
+function transientSidebarOf(anchor: HTMLElement, selector: string | undefined): Element | null {
+  if (!selector) return null;
+  for (let node: Element | null = anchor; node;) {
+    const match = node.closest(selector);
+    if (match) return match;
+    const root = node.getRootNode();
+    node = root instanceof ShadowRoot ? root.host : null;
+  }
+  return null;
+}
+
 export interface FolderGuideTarget {
   /** The element the bubble points at, or null while the section is out of the page. */
   anchor(): HTMLElement | null;
@@ -66,6 +83,9 @@ export class SiteFolderGuide {
   private readonly triggers: Dispose[] = [];
   private visibility: IntersectionObserver | null = null;
   private observed: HTMLElement | null = null;
+  /** Watches the transient marker, so docking a peeking sidebar re-checks. */
+  private transient: MutationObserver | null = null;
+  private transientHost: Element | null = null;
   private checkQueued = false;
 
   /** `label` names the plugin's effects, e.g. `chatgpt-folders`. */
@@ -82,6 +102,8 @@ export class SiteFolderGuide {
         this.open.clear();
         this.visibility?.disconnect();
         this.visibility = null;
+        this.transient?.disconnect();
+        this.transient = null;
       },
       `${label}:guide`,
     );
@@ -101,12 +123,18 @@ export class SiteFolderGuide {
   isEligible(): boolean {
     if (this.scope.isDisposed || !this.target.ready() || this.target.busy()) return false;
     const anchor = this.target.anchor();
-    return !!anchor && isOnScreen(anchor) && !hasOpenOverlay();
+    return (
+      !!anchor &&
+      isOnScreen(anchor) &&
+      !transientSidebarOf(anchor, this.config.transientSidebar) &&
+      !hasOpenOverlay()
+    );
   }
 
   /** Called after every sidebar change, and by the guide's own triggers. */
   check(): void {
     this.watch(this.target.anchor());
+    this.watchTransient(this.target.anchor());
     if (this.state === 'showing') {
       // The header was dropped, scrolled away or hidden: close without marking
       // the guide seen, and wait for the header to come back.
@@ -152,6 +180,19 @@ export class SiteFolderGuide {
     this.observed = anchor;
   }
 
+  /** Follows the marker of a peeking sidebar: docking it changes only that element. */
+  private watchTransient(anchor: HTMLElement | null): void {
+    if (this.state === 'done' || this.scope.isDisposed) return;
+    const host = anchor ? transientSidebarOf(anchor, this.config.transientSidebar) : null;
+    if (host === this.transientHost) return;
+    this.transient?.disconnect();
+    this.transient = null;
+    this.transientHost = host;
+    if (!host || typeof MutationObserver !== 'function') return;
+    this.transient = new MutationObserver(() => this.queueCheck());
+    this.transient.observe(host, { attributes: true });
+  }
+
   /** Seen: nothing left to wait for. */
   private finish(): void {
     this.state = 'done';
@@ -159,6 +200,9 @@ export class SiteFolderGuide {
     this.visibility?.disconnect();
     this.visibility = null;
     this.observed = null;
+    this.transient?.disconnect();
+    this.transient = null;
+    this.transientHost = null;
   }
 
   private async run(): Promise<void> {
