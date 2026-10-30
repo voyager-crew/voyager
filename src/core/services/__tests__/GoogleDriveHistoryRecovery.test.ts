@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import { EXTENSION_VERSION } from '@/core/utils/version';
 
 import { GoogleDriveSyncService } from '../GoogleDriveSyncService';
 import { FakeSyncDrive, createSyncStorage } from './fixtures/fakeSyncDrive';
@@ -149,7 +150,11 @@ describe('history recovery through the sync service', () => {
     for (const id of ['oldest', 'middle', 'newest']) {
       expect(d.drive.histories(source).some((entry) => entry.id === id)).toBe(true);
     }
-    expect(d.drive.payload(source)).toEqual(payload('replacement'));
+    // The upload stamps the running extension's version.
+    expect(d.drive.payload(source)).toEqual({
+      ...payload('replacement'),
+      version: EXTENSION_VERSION,
+    });
   });
 
   it('restores the newest complete valid history behind corrupt and empty newer records', async () => {

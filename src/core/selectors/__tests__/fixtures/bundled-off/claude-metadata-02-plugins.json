@@ -150,7 +150,7 @@
     "plugins/prompt-manager/plugin.json",
     {
       "id": "voyager.claude-prompt-manager",
-      "engine": ">=next",
+      "engine": ">=1.11.0",
       "tier": "declarative",
       "matches": ["https://claude.ai/*", "https://*.frame.claudeusercontent.com/*"],
       "contributes": {

@@ -1,6 +1,6 @@
 {
   "name": "voyager",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "description": "A better workspace for Gemini, Claude, ChatGPT, and DeepSeek: prompts, reading tools, organization, export, and more.",
   "packageManager": "bun@1.3.12",
   "license": "GPL-3.0",

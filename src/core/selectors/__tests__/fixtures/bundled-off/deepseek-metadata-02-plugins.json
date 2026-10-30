@@ -203,7 +203,7 @@
     "plugins/prompt-manager/plugin.json",
     {
       "id": "voyager.deepseek-prompt-manager",
-      "engine": ">=next",
+      "engine": ">=1.11.0",
       "tier": "declarative",
       "matches": ["https://chat.deepseek.com/*"],
       "contributes": {

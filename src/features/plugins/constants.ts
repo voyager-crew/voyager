@@ -12,7 +12,7 @@
  * that batch and advances this constant independently of the extension version.
  * Runtime checks use EFFECTIVE_PLUGIN_ENGINE_VERSION from verbs/contracts.ts.
  */
-export const PLUGIN_ENGINE_VERSION = '1.10.0';
+export const PLUGIN_ENGINE_VERSION = '1.11.0';
 
 /** Manifest format major this engine understands (D9). */
 export const PLUGIN_MANIFEST_FORMAT = 1;

@@ -2,7 +2,7 @@ import type { PrimitiveContract } from '../contractTypes';
 
 export const contract: PrimitiveContract = {
   name: 'promptManager',
-  sinceEngine: 'next',
+  sinceEngine: '1.11.0',
   semantic: [],
   params: {},
   settings: {},

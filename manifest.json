@@ -3,7 +3,7 @@
   "default_locale": "en",
   "name": "__MSG_extName__",
   "description": "__MSG_extDescription__",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqyGtKj1peaqzYlrf+cu2b9PKAapZJ7FCuIAh9N8ZQf0c9NKgt2R0G6t+QwXtmqNBFqnerqZrzVgH37cjK93Nt+/WCMCFksGH48nxKAGNpYzeALQnqa7s1fHVMleIGuHSQmKMqzT9YBy9hLqzK2DhX1jQPQBOiSLnhsqhGHTaoTEArerCopHmjfu3Ksl9paXFX/1ybi9HG3MnJKSY3X9m2+zbe370ntUEYxWTBN91ikKRveB1w6U5KqaMNFka2XblzN7nAajWjSLGUdZNpbcF1gC9MKnu3oZsABh65zFmiZeW21vUGUrsJt7mgkLcoV2/gjQCXEtsk23Ty/b+ZTNxWwIDAQAB",
   "action": {
     "default_popup": "src/pages/popup/index.html",

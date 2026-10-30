@@ -46,7 +46,7 @@
   "category": "input",
   "license": "GPL-3.0-or-later",
   "homepage": "https://github.com/voyager-crew/voyager/tree/main/src/features/plugins/catalog/sites/kimi/plugins/prompt-manager",
-  "engine": ">=next",
+  "engine": ">=1.11.0",
   "tier": "declarative",
   "matches": ["https://www.kimi.com/*"],
   "contributes": {

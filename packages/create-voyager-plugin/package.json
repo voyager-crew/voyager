@@ -1,6 +1,6 @@
 {
   "name": "create-voyager-plugin",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "description": "Scaffold and check a Voyager local plugin offline, with the same checks as the extension's import",
   "license": "GPL-3.0",
   "author": "Jesse Zhang",

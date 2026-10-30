@@ -134,7 +134,7 @@
     "plugins/prompt-manager/plugin.json",
     {
       "id": "voyager.kimi-prompt-manager",
-      "engine": ">=next",
+      "engine": ">=1.11.0",
       "tier": "declarative",
       "matches": ["https://www.kimi.com/*"],
       "contributes": {

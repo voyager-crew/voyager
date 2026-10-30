@@ -163,7 +163,7 @@
     "plugins/prompt-manager/plugin.json",
     {
       "id": "voyager.chatgpt-prompt-manager",
-      "engine": ">=next",
+      "engine": ">=1.11.0",
       "tier": "declarative",
       "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
       "contributes": {
