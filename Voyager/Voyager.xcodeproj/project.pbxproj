@@ -58,6 +58,8 @@
 		D20000000000000000000014 /* ICloudRecordMaintenance.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000004 /* ICloudRecordMaintenance.swift */; };
 		D20000000000000000000015 /* ICloudBackupDeletion.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000005 /* ICloudBackupDeletion.swift */; };
 		D20000000000000000000016 /* ICloudHistoryOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000006 /* ICloudHistoryOperations.swift */; };
+		D30000000000000000000011 /* VoyagerSharedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000001 /* VoyagerSharedState.swift */; };
+		D30000000000000000000012 /* VoyagerSharedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000001 /* VoyagerSharedState.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -136,6 +138,7 @@
 		D20000000000000000000004 /* ICloudRecordMaintenance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudRecordMaintenance.swift; sourceTree = "<group>"; };
 		D20000000000000000000005 /* ICloudBackupDeletion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudBackupDeletion.swift; sourceTree = "<group>"; };
 		D20000000000000000000006 /* ICloudHistoryOperations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudHistoryOperations.swift; sourceTree = "<group>"; };
+		D30000000000000000000001 /* VoyagerSharedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoyagerSharedState.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -253,6 +256,7 @@
 				D20000000000000000000004 /* ICloudRecordMaintenance.swift */,
 				D20000000000000000000005 /* ICloudBackupDeletion.swift */,
 				D20000000000000000000006 /* ICloudHistoryOperations.swift */,
+				D30000000000000000000001 /* VoyagerSharedState.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -405,6 +409,7 @@
 				B60723AD2FB752BC00F3A4FD /* AppDelegate.swift in Sources */,
 				D10000000000000000000011 /* NativeSupport.swift in Sources */,
 				D10000000000000000000014 /* NativeDiagnosticsService.swift in Sources */,
+				D30000000000000000000011 /* VoyagerSharedState.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -426,6 +431,7 @@
 				D20000000000000000000015 /* ICloudBackupDeletion.swift in Sources */,
 				D20000000000000000000016 /* ICloudHistoryOperations.swift in Sources */,
 				D10000000000000000000013 /* NativeNotificationService.swift in Sources */,
+				D30000000000000000000012 /* VoyagerSharedState.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

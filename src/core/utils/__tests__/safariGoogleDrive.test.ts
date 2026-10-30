@@ -33,12 +33,13 @@ describe('Safari Google Drive native transport', () => {
   it('gets native session state without receiving an access token', async () => {
     sendNativeMessage.mockResolvedValue({
       success: true,
-      data: { signedIn: true, requiresAppLaunch: false },
+      data: { signedIn: true, requiresAppLaunch: false, signedInAt: 1_761_700_000_000 },
     });
 
     await expect(requestSafariGoogleDriveSession(false)).resolves.toEqual({
       signedIn: true,
       requiresAppLaunch: false,
+      signedInAt: 1_761_700_000_000,
     });
     expect(sendNativeMessage).toHaveBeenCalledWith('com.yourCompany.Gemini-Voyager', {
       action: 'googleDriveGetSession',

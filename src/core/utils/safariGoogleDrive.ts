@@ -10,6 +10,8 @@ const SAFARI_NATIVE_APP_ID = 'com.yourCompany.Gemini-Voyager';
 export type SafariGoogleDriveSession = {
   signedIn: boolean;
   requiresAppLaunch: boolean;
+  /** When the Voyager app last completed a Drive sign-in (ms since 1970), if it recorded one. */
+  signedInAt: number | null;
 };
 
 export class SafariGoogleDriveError extends Error {
@@ -77,6 +79,10 @@ export async function requestSafariGoogleDriveSession(
   return {
     signedIn: data.signedIn === true,
     requiresAppLaunch: data.requiresAppLaunch === true,
+    signedInAt:
+      typeof data.signedInAt === 'number' && Number.isFinite(data.signedInAt)
+        ? data.signedInAt
+        : null,
   };
 }
 

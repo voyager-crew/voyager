@@ -13,6 +13,9 @@ final class GoogleDriveService {
   var backupFolderResolutionWaiters: [
     (Result<String, Error>) -> Void
   ] = []
+  private let restoredSignInLock = NSLock()
+  /// The app sign-in the restored Google user came from; see `withAccessToken`.
+  private var restoredSignInAt: Int64?
 
   enum AuthorizationState {
     case signedIn
@@ -524,7 +527,13 @@ final class GoogleDriveService {
       return
     }
 
-    if let currentUser = GIDSignIn.sharedInstance.currentUser {
+    // This process can outlive a sign-in the app completes later, such as a
+    // changed account. A newer sign-in reloads the user from the keychain, so
+    // Drive requests never keep going to the account the person left.
+    let signedInAt = VoyagerSharedState.keychain.googleDriveSignedInAt
+    if let currentUser = GIDSignIn.sharedInstance.currentUser,
+      !needsRestore(forSignInAt: signedInAt)
+    {
       refresh(user: currentUser, completion: completion)
       return
     }
@@ -534,8 +543,24 @@ final class GoogleDriveService {
         completion(.failure(VoyagerGoogleDriveFailure.authRequired))
         return
       }
+      self.markRestored(forSignInAt: signedInAt)
       self.refresh(user: user, completion: completion)
     }
+  }
+
+  private func needsRestore(forSignInAt signedInAt: Int64?) -> Bool {
+    restoredSignInLock.lock()
+    defer { restoredSignInLock.unlock() }
+    return restoredSignInAt != signedInAt
+  }
+
+  private func markRestored(forSignInAt signedInAt: Int64?) {
+    restoredSignInLock.lock()
+    let accountMayHaveChanged = restoredSignInAt != signedInAt
+    restoredSignInAt = signedInAt
+    restoredSignInLock.unlock()
+    // The previous account's folder is invisible to a new one; resolve it again.
+    if accountMayHaveChanged { backupFolderID = nil }
   }
 
   private func refresh(

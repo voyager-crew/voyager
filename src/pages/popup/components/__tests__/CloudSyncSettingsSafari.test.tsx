@@ -121,6 +121,49 @@ describe('CloudSyncSettings on Safari', () => {
     expect(connectLink?.textContent).toBe('syncConnectGoogleDrive');
   });
 
+  it('offers to change account once the Voyager app has connected Drive', async () => {
+    browserTarget.value = 'safari';
+    // Sync is off and the background only knows what it had before the app signed in.
+    let nativeSignedIn = false;
+    const sendMessageMock = vi.fn().mockImplementation((message: { type?: string }) => {
+      if (message.type === 'gv.sync.getState') {
+        return Promise.resolve({ ok: true, state: { ...baseState, mode: 'disabled' } });
+      }
+      if (message.type === 'gv.sync.refreshAuthorization') {
+        return Promise.resolve({
+          ok: true,
+          state: { ...baseState, mode: 'disabled', isAuthenticated: nativeSignedIn },
+        });
+      }
+      return Promise.resolve({ ok: true });
+    });
+    (globalThis as { chrome: MockedChrome }).chrome = createChromeMock(sendMessageMock);
+
+    await act(async () => {
+      root = createRoot(container);
+      root.render(<CloudSyncSettings />);
+    });
+    await flushMicrotasks();
+    const link = () =>
+      container.querySelector<HTMLAnchorElement>('a[href="gemini-voyager://google-drive-auth"]');
+    expect(link()?.textContent).toBe('syncConnectGoogleDrive');
+
+    await act(async () => {
+      link()?.addEventListener('click', (event) => event.preventDefault());
+      link()?.click();
+    });
+    expect(sendMessageMock).toHaveBeenCalledWith({ type: 'gv.sync.connectStarted' });
+
+    // The app finishes signing in; the popup is focused again.
+    nativeSignedIn = true;
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+    });
+    await flushMicrotasks();
+
+    expect(link()?.textContent).toBe('syncChangeGoogleDriveAccount');
+  });
+
   it('lets Safari users delete their iCloud backup without deleting local data', async () => {
     browserTarget.value = 'safari';
     deleteSafariICloudBackup.mockResolvedValue(3);

@@ -1238,6 +1238,10 @@
   "syncConnectGoogleDrive": {
     "message": "连接 Google Drive"
   },
+  "syncChangeGoogleDriveAccount": {
+    "message": "更换账号",
+    "description": "Safari: replaces \"Connect Google Drive\" once Drive is connected; opens the Voyager app to sign in with another Google account"
+  },
   "preventAutoScroll": {
     "message": "防自动跳转",
     "description": "功能选项：防止每次输入后生成答案时自动滚到底部"

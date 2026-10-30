@@ -458,13 +458,17 @@ struct VoyagerNotificationPermissionResponse: Codable {
 struct VoyagerGoogleDriveSessionResponse: Codable {
   let signedIn: Bool
   let requiresAppLaunch: Bool?
+  /// When the app last completed a sign-in, in milliseconds since 1970.
+  let signedInAt: Int64?
 
   init(
     signedIn: Bool,
-    requiresAppLaunch: Bool? = nil
+    requiresAppLaunch: Bool? = nil,
+    signedInAt: Int64? = nil
   ) {
     self.signedIn = signedIn
     self.requiresAppLaunch = requiresAppLaunch
+    self.signedInAt = signedInAt
   }
 }
 

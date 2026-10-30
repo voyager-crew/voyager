@@ -39,6 +39,9 @@ describe('background runtime message routing', () => {
     expect(isHandledBackgroundRuntimeMessage({ type: NOTIFICATION_ENABLEMENT_MESSAGE })).toBe(true);
     expect(isHandledBackgroundRuntimeMessage({ type: 'gv.highlight.list' })).toBe(true);
     expect(isHandledBackgroundRuntimeMessage({ type: 'gv.sync.upload' })).toBe(true);
+    // Safari's popup reads the Drive session the Voyager app signed in.
+    expect(isHandledBackgroundRuntimeMessage({ type: 'gv.sync.refreshAuthorization' })).toBe(true);
+    expect(isHandledBackgroundRuntimeMessage({ type: 'gv.sync.connectStarted' })).toBe(true);
     expect(isHandledBackgroundRuntimeMessage({ type: PLUGIN_CONTENT_SCRIPT_SYNC_MESSAGE })).toBe(
       true,
     );

@@ -1238,6 +1238,10 @@
   "syncConnectGoogleDrive": {
     "message": "Connect Google Drive"
   },
+  "syncChangeGoogleDriveAccount": {
+    "message": "Change account",
+    "description": "Safari: replaces \"Connect Google Drive\" once Drive is connected; opens the Voyager app to sign in with another Google account"
+  },
   "preventAutoScroll": {
     "message": "Prevent auto-scroll to bottom",
     "description": "Feature to prevent auto scrolling to bottom when generating answers"

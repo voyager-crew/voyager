@@ -257,7 +257,9 @@ export type SyncMessageType =
   | 'gv.sync.download'
   | 'gv.sync.getState'
   | 'gv.sync.setMode'
-  | 'gv.sync.setProvider';
+  | 'gv.sync.setProvider'
+  | 'gv.sync.connectStarted'
+  | 'gv.sync.refreshAuthorization';
 
 /**
  * Message payload for sync operations

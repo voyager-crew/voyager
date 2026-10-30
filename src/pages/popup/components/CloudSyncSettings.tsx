@@ -79,6 +79,7 @@ export function CloudSyncSettings({ sourceTabId }: CloudSyncSettingsProps = {}) 
     handleProviderChange,
     handleHighlightSyncChange,
     handleSignOut,
+    handleConnectGoogleDrive,
     handleDeleteICloudBackup,
     handleSyncNow,
     handleDownloadFromDrive,
@@ -128,12 +129,20 @@ export function CloudSyncSettings({ sourceTabId }: CloudSyncSettingsProps = {}) 
           </div>
         )}
 
-        {supportsICloud && syncState.provider === 'googleDrive' && !syncState.isAuthenticated && (
+        {/* Safari signs in through the Voyager app; once it has, the same handoff changes account. */}
+        {supportsICloud && syncState.provider === 'googleDrive' && (
           <a
-            className="border-primary/25 bg-primary/5 text-primary hover:bg-primary/10 flex h-9 w-full items-center justify-center rounded-lg border text-xs font-semibold transition-colors"
+            className={`flex h-9 w-full items-center justify-center rounded-lg border text-xs font-semibold transition-colors ${
+              syncState.isAuthenticated
+                ? 'border-border text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                : 'border-primary/25 bg-primary/5 text-primary hover:bg-primary/10'
+            }`}
             href="gemini-voyager://google-drive-auth"
+            onClick={() => void handleConnectGoogleDrive()}
           >
-            {t('syncConnectGoogleDrive')}
+            {t(
+              syncState.isAuthenticated ? 'syncChangeGoogleDriveAccount' : 'syncConnectGoogleDrive',
+            )}
           </a>
         )}
 

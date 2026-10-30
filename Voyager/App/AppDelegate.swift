@@ -156,8 +156,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       withPresenting: window,
       hint: nil,
       additionalScopes: [googleDriveScope]
-    ) { _, error in
-      guard let error else { return }
+    ) { result, error in
+      guard let error else {
+        // The extension compares this with when the popup asked to connect.
+        if result != nil { VoyagerSharedState.keychain.recordGoogleDriveSignIn(at: Date()) }
+        return
+      }
       let nsError = error as NSError
       if nsError.code != GIDSignInError.canceled.rawValue {
         os_log(.error, "Google Drive sign-in failed: %{public}@", error.localizedDescription)

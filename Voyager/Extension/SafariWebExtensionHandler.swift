@@ -215,7 +215,10 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
       case .success(.signedIn):
         self.respondWithSuccess(
           context: context,
-          data: VoyagerGoogleDriveSessionResponse(signedIn: true)
+          data: VoyagerGoogleDriveSessionResponse(
+            signedIn: true,
+            signedInAt: VoyagerSharedState.keychain.googleDriveSignedInAt
+          )
         )
       case .success(.signedOut):
         self.respondWithSuccess(

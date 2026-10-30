@@ -5,6 +5,7 @@ import { AccountUnconfirmedError } from '@/core/services/GoogleDriveIdentity';
 import { PROMPTS_FILE_NAME } from '@/core/services/GoogleDriveSyncFileNames';
 import { googleDriveSyncService } from '@/core/services/GoogleDriveSyncService';
 import type { GoogleDriveSyncTransfer } from '@/core/services/GoogleDriveSyncTransfer';
+import { recordGoogleDriveConnectStart } from '@/core/services/googleDriveConnectIntent';
 import { getHighlightAccountHash } from '@/core/services/highlightAnnotationData';
 import type { SyncAccountScope, SyncMode, SyncPlatform, SyncProvider } from '@/core/types/sync';
 import { getPromptNameConflictIds } from '@/core/utils/promptName';
@@ -275,6 +276,13 @@ export function createCloudSyncMessageHandler(readers: CloudSyncReaders) {
           await googleDriveSyncService.setProvider(payload.provider);
         }
         break;
+      // Safari hands Drive sign-in to the Voyager app, which the popup cannot watch.
+      case 'gv.sync.connectStarted':
+        await recordGoogleDriveConnectStart();
+        break;
+      case 'gv.sync.refreshAuthorization':
+        await googleDriveSyncService.refreshNativeAuthorization();
+        break;
     }
     return { ok: true, state: await googleDriveSyncService.getState() };
   }
@@ -289,6 +297,8 @@ export function createCloudSyncMessageHandler(readers: CloudSyncReaders) {
       'gv.sync.getState',
       'gv.sync.setMode',
       'gv.sync.setProvider',
+      'gv.sync.connectStarted',
+      'gv.sync.refreshAuthorization',
     ].includes(message.type);
     return configuration
       ? configure(message)

@@ -1246,6 +1246,10 @@
   "syncConnectGoogleDrive": {
     "message": "Connecter Google Drive"
   },
+  "syncChangeGoogleDriveAccount": {
+    "message": "Changer de compte",
+    "description": "Safari: replaces \"Connect Google Drive\" once Drive is connected; opens the Voyager app to sign in with another Google account"
+  },
   "syncModeDisabled": {
     "message": "Désactivé",
     "description": "Sync mode disabled option"

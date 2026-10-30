@@ -170,6 +170,8 @@ const HANDLED_BACKGROUND_MESSAGE_TYPES = new Set([
   'gv.sync.completeDownload',
   'gv.sync.setMode',
   'gv.sync.setProvider',
+  'gv.sync.connectStarted',
+  'gv.sync.refreshAuthorization',
   'gv.openPopup',
   'gv.syncToIDE',
   'gv.checkSyncStatus',

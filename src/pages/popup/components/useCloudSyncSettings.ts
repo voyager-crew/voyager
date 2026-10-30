@@ -84,6 +84,16 @@ export function useCloudSyncSettings(sourceTabId?: number) {
     return 'gemini';
   }, [getTargetTab]);
 
+  // Safari signs in to Drive in the Voyager app, outside this popup: ask the native side again.
+  const refreshNativeAuthorization = useCallback(async () => {
+    try {
+      const response = await chrome.runtime.sendMessage({ type: 'gv.sync.refreshAuthorization' });
+      if (response?.ok && response.state) setSyncState(response.state);
+    } catch (error) {
+      console.warn('[CloudSyncSettings] Failed to refresh Drive authorization:', error);
+    }
+  }, []);
+
   // Fetch sync state and detect platform on mount
   useEffect(() => {
     const fetchState = async () => {
@@ -101,6 +111,8 @@ export function useCloudSyncSettings(sourceTabId?: number) {
       } catch (error) {
         console.error('[CloudSyncSettings] Failed to get sync state:', error);
       }
+      // After the stored state, so its older answer never replaces the native one.
+      if (supportsICloud) await refreshNativeAuthorization();
     };
     const initPlatform = async () => {
       const detected = await detectPlatform();
@@ -109,7 +121,30 @@ export function useCloudSyncSettings(sourceTabId?: number) {
     };
     fetchState();
     initPlatform();
-  }, [detectPlatform]);
+  }, [detectPlatform, supportsICloud, refreshNativeAuthorization]);
+
+  // The connect handoff leaves for the Voyager app; a popup still open asks again on return.
+  useEffect(() => {
+    if (!supportsICloud) return;
+    const handleReturn = () => {
+      if (document.visibilityState === 'visible') void refreshNativeAuthorization();
+    };
+    window.addEventListener('focus', handleReturn);
+    document.addEventListener('visibilitychange', handleReturn);
+    return () => {
+      window.removeEventListener('focus', handleReturn);
+      document.removeEventListener('visibilitychange', handleReturn);
+    };
+  }, [supportsICloud, refreshNativeAuthorization]);
+
+  // The link itself opens the app; the background remembers that this connect was asked for.
+  const handleConnectGoogleDrive = useCallback(async () => {
+    try {
+      await chrome.runtime.sendMessage({ type: 'gv.sync.connectStarted' });
+    } catch (error) {
+      console.warn('[CloudSyncSettings] Failed to record the Drive connect:', error);
+    }
+  }, []);
 
   // Handle mode change
   const handleModeChange = useCallback(async (mode: SyncMode) => {
@@ -226,6 +261,7 @@ export function useCloudSyncSettings(sourceTabId?: number) {
     handleProviderChange,
     handleHighlightSyncChange,
     handleSignOut,
+    handleConnectGoogleDrive,
     handleDeleteICloudBackup,
     handleSyncNow,
     handleDownloadFromDrive,

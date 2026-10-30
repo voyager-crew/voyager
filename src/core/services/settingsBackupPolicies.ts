@@ -45,6 +45,12 @@ export const NON_SETTINGS_BACKUP_POLICIES = {
     disposition: 'device-local',
     reason: 'An unreadable pre-apply snapshot is retained locally, outside settings backups.',
   },
+  [StorageKeys.GOOGLE_DRIVE_CONNECT_PENDING]: {
+    storage: 'local',
+    disposition: 'transient',
+    reason:
+      'A Safari Drive connect waiting for the Voyager app belongs to this device and expires.',
+  },
   [StorageKeys.GV_ACCOUNT_ISOLATION_ENABLED]: {
     storage: 'sync',
     disposition: 'device-local',

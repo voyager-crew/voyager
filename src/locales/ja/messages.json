@@ -1246,6 +1246,10 @@
   "syncConnectGoogleDrive": {
     "message": "Google ドライブに接続"
   },
+  "syncChangeGoogleDriveAccount": {
+    "message": "アカウントを変更",
+    "description": "Safari: replaces \"Connect Google Drive\" once Drive is connected; opens the Voyager app to sign in with another Google account"
+  },
   "syncModeDisabled": {
     "message": "無効",
     "description": "Sync mode disabled option"
