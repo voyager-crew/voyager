@@ -16,6 +16,9 @@ import {
 
 const library = vi.hoisted(() => ({ initialize: vi.fn(), render: vi.fn() }));
 vi.mock('mermaid', () => ({ default: library }));
+vi.mock('@/pages/content/mermaid/isolatedRender', async () => ({
+  renderInIsolatedDocument: (await import('@/pages/mermaidRenderer/render')).renderMermaidDocument,
+}));
 
 const SECRET = 'Alice-Private-Plan';
 /** What Mermaid draws for `class Alice Alice-Private-Plan`: the author's class lands on the node. */

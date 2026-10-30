@@ -20,12 +20,24 @@ import type { SiteAdapter } from '../types';
 import type { CodeBlockDiagramParams } from './codeBlockDiagram';
 import { readDiagramExport } from './diagramExportRegistry';
 import { echartsPrimitive } from './echarts/index';
+import {
+  chatgptReply,
+  drawn,
+  fenced,
+  geminiCodeBlock,
+  geminiReply,
+  panelOf,
+  toolbarButtons,
+} from './mermaid/__tests__/diagramBridgeFixtures';
 import { mermaidPrimitive } from './mermaid/index';
 import type { Primitive, PrimitiveContext } from './types';
 import { wavedromPrimitive } from './wavedrom/index';
 
 const mermaidLibrary = vi.hoisted(() => ({ initialize: vi.fn(), render: vi.fn() }));
 vi.mock('mermaid', () => ({ default: mermaidLibrary }));
+vi.mock('@/pages/content/mermaid/isolatedRender', async () => ({
+  renderInIsolatedDocument: (await import('@/pages/mermaidRenderer/render')).renderMermaidDocument,
+}));
 
 const echartsLibrary = vi.hoisted(() => ({
   init: vi.fn(() => ({
@@ -67,26 +79,6 @@ const geminiMermaidParams = paramsOf(mermaidManifest, 'mermaid');
 const geminiEChartsParams = paramsOf(echartsManifest, 'echarts');
 const geminiWaveDromParams = paramsOf(waveDromManifest, 'wavedrom');
 
-/** Gemini's code block: label and copy button in the decoration, source in `code-content`. */
-function geminiCodeBlock(source: string, label: string): string {
-  const code = document.createElement('code');
-  code.setAttribute('data-test-id', 'code-content');
-  code.textContent = source;
-  return (
-    '<code-block><div class="code-block">' +
-    `<div class="code-block-decoration"><span>${label}</span>` +
-    '<div class="buttons"><button class="copy-button">copy</button></div></div>' +
-    `<pre>${code.outerHTML}</pre></div></code-block>`
-  );
-}
-
-function geminiReply(markdown: string): HTMLElement {
-  const reply = document.createElement('model-response');
-  reply.innerHTML = `<message-content><div class="markdown">${markdown}</div></message-content>`;
-  document.querySelector('main')!.append(reply);
-  return reply;
-}
-
 const scopes: PluginScope[] = [];
 function activate(
   primitive: Primitive<CodeBlockDiagramParams>,
@@ -106,38 +98,11 @@ function activate(
   return scope;
 }
 
-const panelOf = (root: Element) => root.querySelector<HTMLElement>('.gv-diagram-panel');
-const toolbarButtons = (root: Element) =>
-  Array.from(panelOf(root)?.shadowRoot?.querySelectorAll('button') ?? []);
-const drawn = (root: Element) =>
-  panelOf(root)?.shadowRoot?.querySelector('.diagram')?.textContent ?? null;
 const exportChatGpt = (reply: HTMLElement) =>
   createContentExtractor(buildChatGptAdapter(chatgpt)).extractAssistantContent(reply);
 
-/** A ChatGPT reply with a `pre` code block, as the mermaid primitive's own tests model it. */
-function chatgptReply(source: string, { inList = false } = {}): HTMLElement {
-  const reply = document.createElement('div');
-  reply.setAttribute(
-    'data-chatgpt-selection-message-id',
-    `m${document.querySelectorAll('*').length}`,
-  );
-  const block =
-    '<pre class="overflow-visible!"><div class="contain-inline-size">' +
-    '<div class="flex items-center">mermaid</div>' +
-    '<div class="sticky"><button aria-label="Copy">Copy code</button></div>' +
-    '<div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-mermaid"></code></div>' +
-    '</div></pre>';
-  reply.innerHTML = inList
-    ? `<div class="markdown"><ol><li><p>Here it is:</p>${block}</li></ol></div>`
-    : `<div class="markdown"><p>Here it is:</p>${block}</div>`;
-  reply.querySelector('code')!.textContent = source;
-  document.querySelector('main')!.append(reply);
-  return reply;
-}
-
 const exportGemini = (reply: HTMLElement) =>
   createContentExtractor(buildGeminiAdapter(gemini)).extractAssistantContent(reply);
-const fenced = (language: string, source: string) => `\`\`\`${language}\n${source}\n\`\`\``;
 
 beforeEach(() => {
   mermaidLibrary.initialize.mockReset();
@@ -399,74 +364,6 @@ describe('diagram toolbar copy', () => {
     expect(askedExport.html).toContain('gv-export-mermaid');
     expect(askedExport.html).toContain('Light');
     expect(askedExport.text).toContain(fenced('mermaid', OTHER_FLOWCHART));
-  });
-});
-
-describe('ChatGPT diagram export when the plugin asks for the image', () => {
-  const asked: CodeBlockDiagramParams = { codeBlock: 'pre', exportImage: true };
-  const count = (text: string, part: string) => text.split(part).length - 1;
-
-  it('exports the light drawing of a diagram block among the reply text, and its source once in Markdown', async () => {
-    document.documentElement.setAttribute('data-gv-scheme', 'dark');
-    const reply = chatgptReply(FLOWCHART);
-    activate(mermaidPrimitive, chatgpt, asked);
-    await vi.waitFor(() => expect(drawn(reply)).toBe('Diagram'));
-
-    const exported = exportChatGpt(reply);
-
-    const html = document.createElement('div');
-    html.innerHTML = exported.html;
-    expect(html.querySelector('.gv-export-mermaid svg')?.textContent).toBe('Light');
-    expect(html.querySelector('pre')).toBeNull();
-    expect(exported.text).toContain('Here it is:');
-    expect(count(exported.text, fenced('mermaid', FLOWCHART))).toBe(1);
-    expect(exported.hasCode).toBe(true);
-  });
-
-  it('exports a bare pre > code diagram block once, as its drawing', async () => {
-    const reply = document.createElement('div');
-    reply.innerHTML = `<div class="markdown"><pre><code class="language-mermaid"></code></pre></div>`;
-    reply.querySelector('code')!.textContent = FLOWCHART;
-    document.querySelector('main')!.append(reply);
-    activate(mermaidPrimitive, chatgpt, {
-      turn: 'main > div',
-      codeBlock: 'pre',
-      exportImage: true,
-    });
-    await vi.waitFor(() => expect(drawn(reply)).toBe('Diagram'));
-
-    const exported = exportChatGpt(reply);
-
-    expect(exported.html).toContain('gv-export-mermaid');
-    expect(exported.html).not.toContain('<pre>');
-    expect(count(exported.text, fenced('mermaid', FLOWCHART))).toBe(1);
-  });
-
-  it('exports the drawing of a diagram block inside a list item', async () => {
-    document.documentElement.setAttribute('data-gv-scheme', 'dark');
-    const reply = chatgptReply(FLOWCHART, { inList: true });
-    activate(mermaidPrimitive, chatgpt, asked);
-    await vi.waitFor(() => expect(drawn(reply)).toBe('Diagram'));
-
-    const exported = exportChatGpt(reply);
-
-    expect(exported.html).toContain('gv-export-mermaid');
-    expect(exported.html).toContain('Light');
-    expect(exported.text).toContain('mermaid');
-  });
-
-  it('exports the source of a diagram block shown as code', async () => {
-    const reply = chatgptReply(FLOWCHART);
-    activate(mermaidPrimitive, chatgpt, asked);
-    await vi.waitFor(() => expect(drawn(reply)).toBe('Diagram'));
-    // The toolbar's Code button (copy is off): the drawing is not what the reader sees.
-    toolbarButtons(reply)[1].click();
-
-    const exported = exportChatGpt(reply);
-
-    expect(exported.html).not.toContain('gv-export-mermaid');
-    expect(exported.html).toContain('language-mermaid');
-    expect(count(exported.text, fenced('mermaid', FLOWCHART))).toBe(1);
   });
 });
 

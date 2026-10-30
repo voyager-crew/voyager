@@ -132,6 +132,7 @@ export default mergeConfig(
       rollupOptions: {
         input: {
           panel: resolve(__dirname, 'src/pages/panel/index.html'),
+          mermaidRenderer: resolve(__dirname, 'src/pages/mermaidRenderer/index.html'),
           sakuraRenderer: resolve(__dirname, 'src/pages/sakuraRenderer/index.html'),
           welcome: resolve(__dirname, 'src/pages/welcome/index.html'),
           library: resolve(__dirname, 'src/pages/library/index.html'),

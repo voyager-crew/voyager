@@ -9,7 +9,7 @@
 import { mermaidExportHtml } from '@/features/export/services/exportCodeBlocks';
 import { createMermaidErrorCard, createStyles } from '@/pages/content/mermaid/codeBlock';
 import { createMermaidFullscreen } from '@/pages/content/mermaid/fullscreen';
-import { MermaidRenderer, sanitizeMermaidSvg } from '@/pages/content/mermaid/renderer';
+import { MermaidRenderer } from '@/pages/content/mermaid/renderer';
 import { normalizeMermaidCode, shouldRenderMermaid } from '@/pages/content/mermaid/source';
 import type { Scheme } from '@/pages/content/platformTheme/scheme';
 
@@ -61,12 +61,9 @@ function mermaidDiagram(exportImage: boolean): CodeBlockDiagram {
         target.replaceChildren(createMermaidErrorCard(diagram.errorMessage));
         return;
       }
-      target.innerHTML = await sanitizeMermaidSvg(diagram.svg);
+      target.innerHTML = diagram.svg;
       if (!exportImage) return;
-      const light =
-        diagram.theme === 'dark'
-          ? diagram.lightExportSvg && (await sanitizeMermaidSvg(diagram.lightExportSvg))
-          : target.innerHTML;
+      const light = diagram.theme === 'dark' ? diagram.lightExportSvg : target.innerHTML;
       if (light) lightSvgs.set(target, light);
     },
     exportHtml(target) {
@@ -80,6 +77,7 @@ function mermaidDiagram(exportImage: boolean): CodeBlockDiagram {
       const release = leaseDiagramStyle(doc, MERMAID_STYLES_ID, createStyles);
       // An open viewer belongs to this activation: turning the plugin off closes it and its listeners.
       return () => {
+        renderer.dispose();
         fullscreen.close();
         release();
       };

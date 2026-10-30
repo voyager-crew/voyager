@@ -32,6 +32,10 @@
         "assets/*.png"
       ],
       "matches": ["<all_urls>"]
+    },
+    {
+      "resources": ["src/pages/mermaidRenderer/index.html"],
+      "matches": ["<all_urls>"]
     }
   ],
   "content_scripts": [
