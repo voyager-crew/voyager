@@ -1,3 +1,4 @@
+import { printedShortcutKey } from '@/core/services/KeyboardShortcutService';
 import type { KeyboardShortcut, ModifierKey } from '@/core/types/keyboardShortcut';
 import type { AppLanguage } from '@/utils/language';
 import { getLoadedTranslations, getPluralTranslation } from '@/utils/translations';
@@ -34,11 +35,10 @@ const OTHER_MODIFIERS: Readonly<Record<ModifierKey, string>> = {
   Meta: 'Win',
 };
 
-/** The physical key when one is stored: Option+V reads "√" in `key` on macOS. */
-function keyName({ code, key }: KeyboardShortcut): string {
-  const physical = code ? (/^Key([A-Z])$/.exec(code) ?? /^Digit(\d)$/.exec(code)) : null;
-  if (physical) return physical[1];
-  return key.length === 1 ? key.toUpperCase() : key;
+/** Option+V reads "√" in `key` on macOS; the core rule names the letter its code prints. */
+function keyName(shortcut: KeyboardShortcut): string {
+  const { key } = shortcut;
+  return printedShortcutKey(shortcut) ?? (key.length === 1 ? key.toUpperCase() : key);
 }
 
 /** ⌥V on macOS and Alt+V elsewhere, as the key cap and tooltips show the panel shortcut. */
