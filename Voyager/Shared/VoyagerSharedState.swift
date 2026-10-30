@@ -70,8 +70,7 @@ struct VoyagerSharedState {
   let store: VoyagerSharedValueStore
 
   /// When the app last completed a Google Drive sign-in, in milliseconds since 1970.
-  /// The extension compares it with when the popup started a connect, and reloads
-  /// a Google user it restored before this sign-in replaced it.
+  /// The extension compares it with when the popup started a connect.
   var googleDriveSignedInAt: Int64? {
     store.value(forKey: Key.googleDriveSignedInAt).flatMap { Int64($0) }
   }

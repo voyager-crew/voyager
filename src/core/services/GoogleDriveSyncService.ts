@@ -22,7 +22,8 @@ export class GoogleDriveSyncService {
   private state: SyncState = { ...DEFAULT_SYNC_STATE };
   private stateChangeCallback: ((state: SyncState) => void) | null = null;
   private readonly stateLoadPromise: Promise<void>;
-  private nativeAuthorizationRead: Promise<void> | null = null;
+  private nativeAuthorizationRead: { session: GoogleDriveSyncSession; read: Promise<void> } | null =
+    null;
   private readonly auth = new GoogleDriveAuth(() => this.state.provider);
   private readonly files = new GoogleDriveFiles(
     new GoogleDriveBackupFolder(BACKUP_FOLDER_RECOVERY_FILE_NAMES),
@@ -141,18 +142,28 @@ export class GoogleDriveSyncService {
    * transfers anything by itself.
    */
   refreshNativeAuthorization(): Promise<void> {
-    this.nativeAuthorizationRead ??= this.readNativeAuthorization().finally(() => {
-      this.nativeAuthorizationRead = null;
+    // A read belongs to the session it was asked in; a later session asks again.
+    const session = this.session;
+    if (this.nativeAuthorizationRead?.session === session) return this.nativeAuthorizationRead.read;
+    const read = this.readNativeAuthorization(session).finally(() => {
+      if (this.nativeAuthorizationRead?.read === read) this.nativeAuthorizationRead = null;
     });
-    return this.nativeAuthorizationRead;
+    this.nativeAuthorizationRead = { session, read };
+    return read;
   }
 
-  private async readNativeAuthorization(): Promise<void> {
+  /**
+   * Sign-out and a provider change end `session`, so an answer that arrives after either is
+   * dropped instead of marking Drive connected again or switching another provider's sync on.
+   */
+  private async readNativeAuthorization(session: GoogleDriveSyncSession): Promise<void> {
+    const answersCurrentDrive = () =>
+      session === this.session && session.isActive && this.state.provider === 'googleDrive';
     await this.stateLoadPromise;
-    if (!isSafariRuntime() || this.state.provider !== 'googleDrive') return;
-    let session;
+    if (!isSafariRuntime() || !answersCurrentDrive()) return;
+    let native;
     try {
-      session = await requestSafariGoogleDriveSession(false);
+      native = await requestSafariGoogleDriveSession(false);
     } catch (error) {
       // An unreachable native side says nothing about the session; keep what the card shows.
       logger.warn('[GoogleDriveSyncService] Native Drive session unavailable', {
@@ -160,10 +171,12 @@ export class GoogleDriveSyncService {
       });
       return;
     }
-    if (this.state.provider !== 'googleDrive') return;
-    this.updateState({ isAuthenticated: session.signedIn });
-    const connected = await settleGoogleDriveConnect(session.signedIn ? session.signedInAt : null);
-    if (connected && this.state.mode === 'disabled') await this.setMode('manual');
+    if (!answersCurrentDrive()) return;
+    this.updateState({ isAuthenticated: native.signedIn });
+    const connected = await settleGoogleDriveConnect(native.signedIn ? native.signedInAt : null);
+    if (connected && answersCurrentDrive() && this.state.mode === 'disabled') {
+      await this.setMode('manual');
+    }
   }
 
   async signOut(): Promise<void> {

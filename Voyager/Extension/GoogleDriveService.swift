@@ -1,11 +1,11 @@
+import AppAuthCore
 import Foundation
-import GoogleSignIn
 import os.log
 
 final class GoogleDriveService {
   static let shared = GoogleDriveService()
 
-  private let scope = "https://www.googleapis.com/auth/drive.file"
+  let scope = "https://www.googleapis.com/auth/drive.file"
   private let apiHost = "www.googleapis.com"
   var backupFolderID: String?
   let backupFolderResolutionLock = NSLock()
@@ -13,51 +13,13 @@ final class GoogleDriveService {
   var backupFolderResolutionWaiters: [
     (Result<String, Error>) -> Void
   ] = []
-  private let restoredSignInLock = NSLock()
-  /// The app sign-in the restored Google user came from; see `withAccessToken`.
-  private var restoredSignInAt: Int64?
+  /// The Google authorization requests use; see `withAccessToken`.
+  let authorizations = VoyagerStoredAuthorizationTracker<OIDAuthState>()
 
   enum AuthorizationState {
     case signedIn
     case signedOut
     case requiresAppLaunch
-  }
-
-  func authorizationState(
-    interactive: Bool,
-    completion: @escaping (Result<AuthorizationState, Error>) -> Void
-  ) {
-    withAccessToken { result in
-      switch result {
-      case .success:
-        completion(.success(.signedIn))
-      case .failure(let error as VoyagerGoogleDriveFailure) where error.code == .authRequired:
-        completion(.success(interactive ? .requiresAppLaunch : .signedOut))
-      case .failure(let error):
-        completion(.failure(error))
-      }
-    }
-  }
-
-  func signOut(completion: @escaping (Result<Void, Error>) -> Void) {
-    backupFolderID = nil
-    guard GIDSignIn.sharedInstance.hasPreviousSignIn() else {
-      GIDSignIn.sharedInstance.signOut()
-      completion(.success(()))
-      return
-    }
-
-    GIDSignIn.sharedInstance.disconnect { error in
-      if let error {
-        os_log(
-          .error,
-          "Google Drive revocation failed; completing local sign-out: %{public}@",
-          error.localizedDescription
-        )
-        GIDSignIn.sharedInstance.signOut()
-      }
-      completion(.success(()))
-    }
   }
 
   func findFile(
@@ -517,85 +479,6 @@ final class GoogleDriveService {
         }.resume()
       }
     }
-  }
-
-  private func withAccessToken(
-    completion: @escaping (Result<String, Error>) -> Void
-  ) {
-    guard configureGoogleSignIn() else {
-      completion(.failure(GoogleDriveServiceError.notConfigured))
-      return
-    }
-
-    // This process can outlive a sign-in the app completes later, such as a
-    // changed account. A newer sign-in reloads the user from the keychain, so
-    // Drive requests never keep going to the account the person left.
-    let signedInAt = VoyagerSharedState.keychain.googleDriveSignedInAt
-    if let currentUser = GIDSignIn.sharedInstance.currentUser,
-      !needsRestore(forSignInAt: signedInAt)
-    {
-      refresh(user: currentUser, completion: completion)
-      return
-    }
-
-    GIDSignIn.sharedInstance.restorePreviousSignIn { user, _ in
-      guard let user else {
-        completion(.failure(VoyagerGoogleDriveFailure.authRequired))
-        return
-      }
-      self.markRestored(forSignInAt: signedInAt)
-      self.refresh(user: user, completion: completion)
-    }
-  }
-
-  private func needsRestore(forSignInAt signedInAt: Int64?) -> Bool {
-    restoredSignInLock.lock()
-    defer { restoredSignInLock.unlock() }
-    return restoredSignInAt != signedInAt
-  }
-
-  private func markRestored(forSignInAt signedInAt: Int64?) {
-    restoredSignInLock.lock()
-    let accountMayHaveChanged = restoredSignInAt != signedInAt
-    restoredSignInAt = signedInAt
-    restoredSignInLock.unlock()
-    // The previous account's folder is invisible to a new one; resolve it again.
-    if accountMayHaveChanged { backupFolderID = nil }
-  }
-
-  private func refresh(
-    user: GIDGoogleUser,
-    completion: @escaping (Result<String, Error>) -> Void
-  ) {
-    user.refreshTokensIfNeeded { refreshedUser, error in
-      if let error {
-        completion(
-          .failure(
-            VoyagerGoogleDriveAuthErrorClassifier.isPermanentAuthFailure(error)
-              ? VoyagerGoogleDriveFailure.authRequired
-              : error
-          )
-        )
-        return
-      }
-      guard let refreshedUser else {
-        completion(.failure(VoyagerGoogleDriveFailure.authRequired))
-        return
-      }
-      guard refreshedUser.grantedScopes?.contains(self.scope) == true else {
-        completion(.failure(VoyagerGoogleDriveFailure.authRequired))
-        return
-      }
-      completion(.success(refreshedUser.accessToken.tokenString))
-    }
-  }
-
-  private func configureGoogleSignIn() -> Bool {
-    guard let clientID = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String,
-      !clientID.isEmpty
-    else { return false }
-    GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
-    return true
   }
 
   func escapeQueryValue(_ value: String) -> String {
