@@ -4,8 +4,42 @@ import { type Root, createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import { listPluginManifests } from '@/features/plugins/sources/defaultSources';
+import { loadPluginState } from '@/features/plugins/storage/pluginState';
+import type { PluginManifest } from '@/features/plugins/types';
 
 import { usePopupBrandTheme } from '../usePopupBrandTheme';
+
+vi.mock('@/features/plugins/sources/defaultSources', () => ({ listPluginManifests: vi.fn() }));
+vi.mock('@/features/plugins/storage/pluginState', () => ({
+  loadPluginState: vi.fn(),
+  subscribePluginState: () => () => {},
+}));
+vi.mock('@/features/plugins/remote/hostCatalogCache', () => ({
+  subscribeHostCatalog: () => () => {},
+}));
+vi.mock('@/features/plugins/remote/siteOverride', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/plugins/remote/siteOverride')>()),
+  loadSiteOverrideForHost: async () => null,
+}));
+
+const THEMED_PLUGIN: PluginManifest = {
+  id: 'x.themed',
+  name: 'Themed',
+  version: '1.0.0',
+  description: 'd',
+  author: 'a',
+  category: 'theme',
+  license: 'MIT',
+  engine: '>=1.0.0',
+  tier: 'declarative',
+  matches: ['https://claude.ai/*'],
+  contributes: {},
+  theme: { brand: '#00aa77' },
+};
+
+/** Let the brand sources' storage and catalog reads settle. */
+const settle = () => act(async () => {});
 
 type BrandTheme = ReturnType<typeof usePopupBrandTheme>;
 type StorageListener = Parameters<typeof chrome.storage.onChanged.addListener>[0];
@@ -13,7 +47,6 @@ type StorageListener = Parameters<typeof chrome.storage.onChanged.addListener>[0
 function Harness({ capture }: { capture: (theme: BrandTheme) => void }) {
   const theme = usePopupBrandTheme({
     activeUrl: 'https://claude.ai/chat/example',
-    pluginManifests: [],
     pluginSiteOverride: null,
   });
   useEffect(() => {
@@ -29,7 +62,7 @@ describe('usePopupBrandTheme', () => {
   let stored: Record<string, string>;
   let listeners: Set<StorageListener>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
     vi.resetAllMocks();
     vi.useFakeTimers();
@@ -41,6 +74,8 @@ describe('usePopupBrandTheme', () => {
       if (typeof callback === 'function') callback(result);
       return Promise.resolve(result);
     });
+    vi.mocked(listPluginManifests).mockResolvedValue([]);
+    vi.mocked(loadPluginState).mockResolvedValue({});
     vi.mocked(chrome.storage.onChanged.addListener).mockImplementation((listener) => {
       listeners.add(listener);
     });
@@ -51,6 +86,7 @@ describe('usePopupBrandTheme', () => {
     document.body.appendChild(container);
     root = createRoot(container);
     act(() => root?.render(<Harness capture={(next) => (theme = next)} />));
+    await settle();
   });
 
   afterEach(() => {
@@ -95,12 +131,14 @@ describe('usePopupBrandTheme', () => {
     expect(chrome.storage.sync.set).toHaveBeenCalledTimes(1);
   });
 
-  it('follows external sync colors and resets only the current site override', () => {
+  it('follows external sync colors and resets only the current site override', async () => {
     stored = { claude: '#998877', chatgpt: '#665544' };
     const changes = { [StorageKeys.ACCENT_COLORS]: { newValue: stored } };
     act(() => listeners.forEach((listener) => listener(changes, 'local')));
+    await settle();
     expect(theme.picker.value).toBe('#112233');
     act(() => listeners.forEach((listener) => listener(changes, 'sync')));
+    await settle();
     expect(theme.picker.value).toBe('#998877');
 
     act(() => theme.picker.onChange(null));
@@ -110,5 +148,27 @@ describe('usePopupBrandTheme', () => {
     expect(chrome.storage.sync.set).toHaveBeenCalledExactlyOnceWith({
       [StorageKeys.ACCENT_COLORS]: { chatgpt: '#665544' },
     });
+  });
+
+  it("ignores a disabled plugin's brand, as the page does, and takes it once enabled", async () => {
+    stored = {};
+    vi.mocked(listPluginManifests).mockResolvedValue([THEMED_PLUGIN]);
+    vi.mocked(loadPluginState).mockResolvedValue({
+      [THEMED_PLUGIN.id]: { enabled: false, installedAt: 0 },
+    });
+    act(() => root?.unmount());
+    root = createRoot(container);
+    act(() => root?.render(<Harness capture={(next) => (theme = next)} />));
+    await settle();
+    expect(theme.style).toMatchObject({ '--primary': '#d97757' });
+
+    vi.mocked(loadPluginState).mockResolvedValue({
+      [THEMED_PLUGIN.id]: { enabled: true, installedAt: 0 },
+    });
+    act(() => root?.unmount());
+    root = createRoot(container);
+    act(() => root?.render(<Harness capture={(next) => (theme = next)} />));
+    await settle();
+    expect(theme.style).toMatchObject({ '--primary': '#00aa77' });
   });
 });

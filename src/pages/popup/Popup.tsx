@@ -110,7 +110,6 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
   }, [tab.activeUrl]);
   const theme = usePopupBrandTheme({
     activeUrl: tab.activeUrl,
-    pluginManifests: plugins.pluginManifests,
     pluginSiteOverride: plugins.pluginSiteOverride,
   });
   const release = usePopupReleaseInfo(isSafariBrowser);

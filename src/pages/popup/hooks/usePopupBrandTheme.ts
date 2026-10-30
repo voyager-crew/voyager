@@ -4,20 +4,25 @@ import { StorageKeys } from '@/core/types/common';
 import { resolveSiteAdapterForUrl } from '@/features/plugins/remote/siteOverride';
 import { SiteRegistry } from '@/features/plugins/sites/registry';
 import type { PluginManifest, SiteAdapter } from '@/features/plugins/types';
-import { effectiveAccentForDisplay, resolveBrandColor } from '@/pages/content/platformTheme';
+import {
+  type AccentColorMap,
+  effectiveAccentForDisplay,
+  resolveBrandColor,
+  watchBrandSources,
+} from '@/pages/content/platformTheme';
 
 import { createPopupBrandThemeStyle } from '../utils/brandTheme';
 
 export function usePopupBrandTheme({
   activeUrl,
-  pluginManifests,
   pluginSiteOverride,
 }: {
   activeUrl: string;
-  pluginManifests: readonly PluginManifest[];
   pluginSiteOverride: SiteAdapter | null;
 }) {
-  const [accentColors, setAccentColors] = useState<Record<string, string>>({});
+  const [accentColors, setAccentColors] = useState<AccentColorMap>({});
+  // Enabled plugins that declare theme.brand, as the page and the panel see them.
+  const [brandManifests, setBrandManifests] = useState<readonly PluginManifest[]>([]);
   const accentWriteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingAccentWrite = useRef<Record<string, string> | null>(null);
   const flushPendingAccent = useCallback(() => {
@@ -43,48 +48,33 @@ export function usePopupBrandTheme({
     [activeUrl, pluginSiteOverride],
   );
   const activeBrand = useMemo(
-    () => resolveBrandColor(activeUrl, pluginManifests, accentColors, activeSiteAdapter),
-    [activeUrl, pluginManifests, accentColors, activeSiteAdapter],
+    () => resolveBrandColor(activeUrl, brandManifests, accentColors, activeSiteAdapter),
+    [activeUrl, brandManifests, accentColors, activeSiteAdapter],
   );
 
   // Theme-colour picker: which site the override applies to, that site's
   // default (what "reset" returns to), and the site's own display label.
   const activeSiteId = activeSiteAdapter?.id ?? null;
   const activeSiteDefault = useMemo(
-    () => effectiveAccentForDisplay(activeUrl, pluginManifests, {}, activeSiteAdapter),
-    [activeUrl, pluginManifests, activeSiteAdapter],
+    () => effectiveAccentForDisplay(activeUrl, brandManifests, {}, activeSiteAdapter),
+    [activeUrl, brandManifests, activeSiteAdapter],
   );
   const activeSiteLabel = activeSiteAdapter?.label ?? '';
 
-  // Load the per-site accent map once and keep it live (changes flow back in
-  // from this same popup's writes, or another device's sync).
+  // The per-site accent map and the enabled brand plugins, kept live from the
+  // same source as the page (changes flow back in from this popup's writes, a
+  // plugin toggle, or another device's sync).
   useEffect(() => {
-    let alive = true;
-    const read = (): void => {
-      try {
-        chrome.storage?.sync?.get(StorageKeys.ACCENT_COLORS, (res) => {
-          if (!alive) return;
-          const value = res?.[StorageKeys.ACCENT_COLORS];
-          setAccentColors(value && typeof value === 'object' ? value : {});
-        });
-      } catch {
-        /* storage unavailable */
-      }
-    };
-    read();
-    const onChanged = (
-      changes: Record<string, chrome.storage.StorageChange>,
-      area: string,
-    ): void => {
-      if (area === 'sync' && StorageKeys.ACCENT_COLORS in changes) read();
-    };
-    chrome.storage?.onChanged?.addListener(onChanged);
+    const stop = watchBrandSources(activeUrl, ({ manifests, customColors }) => {
+      setBrandManifests(manifests);
+      // A plugin or catalog change re-reads storage; keep an unsaved preview.
+      if (!pendingAccentWrite.current) setAccentColors(customColors);
+    });
     return () => {
-      alive = false;
-      chrome.storage?.onChanged?.removeListener(onChanged);
+      stop();
       flushPendingAccent();
     };
-  }, [flushPendingAccent]);
+  }, [activeUrl, flushPendingAccent]);
 
   const handleAccentColorChange = useCallback(
     (next: string | null) => {
