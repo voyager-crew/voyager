@@ -179,7 +179,8 @@ export function uploadFailureNotice(
   return {
     tone: 'err',
     headline: t(
-      code === 'highlight_upload_failed' && options.partial
+      // Part of the upload landed, on the account the app then replaced.
+      (code === 'highlight_upload_failed' || code === 'account_changed') && options.partial
         ? 'syncUploadIncomplete'
         : 'syncUploadFailed',
     ),

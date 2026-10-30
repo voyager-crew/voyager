@@ -10,10 +10,14 @@ enum VoyagerDriveAccount {
   /// Response key: the account that served the request.
   static let responseKey = "driveAccount"
 
-  /// Names a stored authorization without revealing its token: one authorization gives the same
-  /// name in every process, another authorization a different name.
-  static func name(forIdentity identity: String) -> String {
-    SHA256.hash(data: Data(identity.utf8)).prefix(16).map { String(format: "%02x", $0) }.joined()
+  /// Names a Google account without revealing it. The same account has the same name in every
+  /// process and after it signs in again, so an upload's Undo can still find it; another account
+  /// has another name. Without a user ID, which GoogleSignIn stores with each sign-in, the
+  /// authorization itself stands in for the account.
+  static func name(userID: String?, authorization: String) -> String {
+    let identity = userID.map { "user:\($0)" } ?? "authorization:\(authorization)"
+    return SHA256.hash(data: Data(identity.utf8)).prefix(16)
+      .map { String(format: "%02x", $0) }.joined()
   }
 
   struct InvalidExpectation: Error {}
@@ -28,27 +32,48 @@ enum VoyagerDriveAccount {
   }
 }
 
-/// One Drive transfer action, held to the account it starts under.
-struct VoyagerDriveAccountCheck {
-  let expected: String?
-  /// The stored account when the action starts; nil while nobody is signed in.
-  let account: String?
+/// The Google account every Drive request of one action runs under.
+///
+/// An action starts in the account its sync session expects, which must still be the one the app
+/// stores. Every request the action makes, reads and writes alike, takes this scope and is sent
+/// only with a token of that account, so an account the app stores later is refused instead of
+/// used. The scope also records whether the action has sent a write, so a refusal can tell the web
+/// extension whether anything may have reached Drive.
+final class VoyagerDriveAccountScope {
+  let account: String
+  private let lock = NSLock()
+  private var sentWrite = false
 
-  /// Nil when the session expects another account than the one stored now. A missing stored
-  /// account passes, so the action fails as signed out instead.
-  init?(expected: String?, current: String?) {
-    if let expected, let current, expected != current { return nil }
-    self.expected = expected
-    self.account = current
+  init(account: String) {
+    self.account = account
   }
 
-  /// What a write's access token must belong to; checked as the token is chosen, so nothing is
-  /// written to an account that replaced this one after the action started.
-  var writeAccount: String? { expected ?? account }
+  /// The scope of an action whose session expects `expected` while the app stores `current`. Nil
+  /// while nobody is signed in, so the action fails as signed out; throws when the session expects
+  /// another account than the stored one, before the action sends anything.
+  static func forAction(expected: String?, current: String?) throws -> VoyagerDriveAccountScope? {
+    guard let current else { return nil }
+    if let expected, expected != current { throw VoyagerGoogleDriveFailure.accountChanged }
+    return VoyagerDriveAccountScope(account: current)
+  }
 
-  /// False when another account was stored while the action ran, so its requests may have
-  /// reached two Drives. Signing out is left to the action's own authorization failure.
-  func held(byCurrent current: String?) -> Bool {
-    current == nil || current == account
+  /// Whether a request may use the authorization stored now, which belongs to `storedAccount`.
+  /// No stored authorization passes, so the request fails as signed out.
+  func admits(storedAccount: String?) -> Bool {
+    storedAccount == nil || storedAccount == account
+  }
+
+  /// Records a request that can change Drive, just before it leaves.
+  func recordWrite() {
+    lock.lock()
+    sentWrite = true
+    lock.unlock()
+  }
+
+  /// What a request this scope does not admit answers.
+  var refusal: VoyagerGoogleDriveFailure {
+    lock.lock()
+    defer { lock.unlock() }
+    return sentWrite ? .accountChangedAfterWrite : .accountChanged
   }
 }

@@ -30,7 +30,10 @@ export interface SafariDriveAccountBinding {
   endForDriveAccountChange(): void;
 }
 
+/** The native side refused the action before it sent anything that could change Drive. */
 const DRIVE_ACCOUNT_CHANGED = 'drive_account_changed';
+/** Refused after the action had already sent a write to the session's account. */
+const DRIVE_ACCOUNT_CHANGED_AFTER_WRITE = 'drive_account_changed_after_write';
 
 export class SafariGoogleDriveError extends Error {
   readonly code: string | null;
@@ -50,6 +53,14 @@ export function isSafariGoogleDriveAuthError(error: unknown): boolean {
 
 /** The session already ended for the new account; repeating the request cannot succeed. */
 export function isSafariGoogleDriveAccountChangedError(error: unknown): boolean {
+  return (
+    error instanceof SafariGoogleDriveError &&
+    (error.code === DRIVE_ACCOUNT_CHANGED || error.code === DRIVE_ACCOUNT_CHANGED_AFTER_WRITE)
+  );
+}
+
+/** A refusal for the new account that left Drive exactly as it was. */
+export function isSafariGoogleDriveUnsentRefusal(error: unknown): boolean {
   return error instanceof SafariGoogleDriveError && error.code === DRIVE_ACCOUNT_CHANGED;
 }
 
@@ -78,7 +89,11 @@ export async function sendSafariDriveMessage(
     expected ? { ...message, expectedDriveAccount: expected } : message,
   );
   if (isRecord(response) && account) {
-    if (response.code === DRIVE_ACCOUNT_CHANGED) account.endForDriveAccountChange();
+    if (
+      response.code === DRIVE_ACCOUNT_CHANGED ||
+      response.code === DRIVE_ACCOUNT_CHANGED_AFTER_WRITE
+    )
+      account.endForDriveAccountChange();
     else if (
       response.success === true &&
       typeof response.driveAccount === 'string' &&

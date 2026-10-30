@@ -19,6 +19,7 @@ private func stored(_ account: String, refreshToken: String)
   // Every read decodes a new copy, carrying the access token saved at sign-in.
   VoyagerStoredAuthorization(
     identity: refreshToken,
+    account: account,
     authorization: FakeAuthorization(account: account, accessToken: "\(account)-at-sign-in")
   )
 }

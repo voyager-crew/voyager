@@ -1418,6 +1418,10 @@
     "message": "Не удалось отменить. Повторите попытку.",
     "description": "Undo result: the undo failed; Undo stays offered"
   },
+  "syncUndoAccountChanged": {
+    "message": "Не удалось отменить. Drive сейчас подключён к другому аккаунту Google.",
+    "description": "Undo result: the run wrote to a Google account other than the one Drive is signed in to now (Safari); Undo stays offered"
+  },
   "syncRestoreForks": {
     "message": "Ветки диалогов",
     "description": "Drive restore part: conversation fork links"

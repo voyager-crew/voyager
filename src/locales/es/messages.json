@@ -1418,6 +1418,10 @@
     "message": "No se pudo deshacer. Vuelve a intentarlo.",
     "description": "Undo result: the undo failed; Undo stays offered"
   },
+  "syncUndoAccountChanged": {
+    "message": "No se pudo deshacer. Drive tiene ahora otra cuenta de Google.",
+    "description": "Undo result: the run wrote to a Google account other than the one Drive is signed in to now (Safari); Undo stays offered"
+  },
   "syncRestoreForks": {
     "message": "Bifurcaciones de conversación",
     "description": "Drive restore part: conversation fork links"

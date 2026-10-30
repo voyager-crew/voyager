@@ -1418,6 +1418,10 @@
     "message": "撤销失败，请重试。",
     "description": "Undo result: the undo failed; Undo stays offered"
   },
+  "syncUndoAccountChanged": {
+    "message": "撤销失败：Drive 现在登录的是另一个 Google 账号。",
+    "description": "Undo result: the run wrote to a Google account other than the one Drive is signed in to now (Safari); Undo stays offered"
+  },
   "syncRestoreForks": {
     "message": "对话分叉",
     "description": "Drive restore part: conversation fork links"

@@ -8,7 +8,6 @@ import {
   ensureSafariGoogleDriveFile,
   findSafariGoogleDriveFile,
   getSafariGoogleDriveRetryDelay,
-  isSafariGoogleDriveAccountChangedError,
   isSafariGoogleDriveAuthError,
   type SafariDriveAccountBinding,
   uploadSafariGoogleDriveText,
@@ -30,6 +29,7 @@ import type { GoogleDriveBackupFolder } from './GoogleDriveBackupFolder';
 import { GoogleDriveHistoryFiles } from './GoogleDriveHistoryFiles';
 import { uploadICloudWithReceipt } from './GoogleDriveICloudUpload';
 import { readSafariDriveMetadata, uploadSafariDriveWithMetadata } from './GoogleDriveMetadata';
+import { asSentRefusal, endsSyncSession } from './GoogleDriveSyncSession';
 import {
   DriveVersionChangedError,
   DriveWriteUnchanged,
@@ -378,7 +378,8 @@ export class GoogleDriveFiles {
           throw error;
         if (error instanceof DriveVersionChangedError) throw error;
         if (isSafariICloudConflictError(error)) throw error;
-        if (isSafariGoogleDriveAccountChangedError(error)) throw error;
+        // A retry's refusal cannot vouch for what an earlier attempt sent.
+        if (endsSyncSession(error)) throw attempt === 1 ? error : asSentRefusal(error);
         if (this.markAuthLostIfNeeded(error)) throw error;
         if (attempt === MAX_RETRIES) throw error;
         await this.sleep(
@@ -414,7 +415,7 @@ export class GoogleDriveFiles {
         return parseDriveJson(await response.text()) as T | null;
       } catch (error) {
         if (error instanceof UnrecognizedDriveFileError) throw error;
-        if (isSafariGoogleDriveAccountChangedError(error)) throw error;
+        if (endsSyncSession(error)) throw error;
         if (this.markAuthLostIfNeeded(error)) throw error;
         if (attempt === MAX_RETRIES) throw error;
         await this.sleep(Math.max(delay, getSafariGoogleDriveRetryDelay(error) ?? 0));
@@ -468,7 +469,7 @@ export class GoogleDriveFiles {
       } catch (error) {
         if (error instanceof DriveVersionChangedError) throw error;
         if (isSafariICloudConflictError(error)) throw error;
-        if (isSafariGoogleDriveAccountChangedError(error)) throw error;
+        if (endsSyncSession(error)) throw error;
         if (this.markAuthLostIfNeeded(error)) throw error;
         if (attempt === MAX_RETRIES) throw error;
         await this.sleep(Math.max(delay, getSafariGoogleDriveRetryDelay(error) ?? 0));

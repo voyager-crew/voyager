@@ -1418,6 +1418,10 @@
     "message": "Couldn't undo. Try again.",
     "description": "Undo result: the undo failed; Undo stays offered"
   },
+  "syncUndoAccountChanged": {
+    "message": "Couldn't undo. Drive is now signed in to a different Google account.",
+    "description": "Undo result: the run wrote to a Google account other than the one Drive is signed in to now (Safari); Undo stays offered"
+  },
   "syncRestoreForks": {
     "message": "Conversation forks",
     "description": "Drive restore part: conversation fork links"

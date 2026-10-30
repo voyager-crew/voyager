@@ -1,8 +1,8 @@
 import Foundation
 
 /// Drive actions. A sync session binds its transfers to one Google account (`VoyagerDriveAccount`):
-/// a transfer action is refused when the app has stored another account since, or replaced it
-/// while the action ran, and each answer names the account that served it.
+/// each transfer action runs in a `VoyagerDriveAccountScope` of that account, so every request it
+/// makes is refused once the app stores another account, and its answer names the account.
 extension SafariWebExtensionHandler {
   func handleGoogleDrive(
     _ request: VoyagerNativeRequest,
@@ -21,55 +21,58 @@ extension SafariWebExtensionHandler {
     }
 
     let service = GoogleDriveService.shared
-    let expected: String?
+    let scope: VoyagerDriveAccountScope
     do {
-      expected = try VoyagerDriveAccount.expected(in: message)
+      guard
+        let started = try VoyagerDriveAccountScope.forAction(
+          expected: VoyagerDriveAccount.expected(in: message),
+          current: service.currentDriveAccount())
+      else {
+        respondWithGoogleDriveError(context: context, error: service.signedOutFailure())
+        return
+      }
+      scope = started
+    } catch let failure as VoyagerGoogleDriveFailure {
+      respondWithGoogleDriveError(context: context, error: failure)
+      return
     } catch {
       respondWithError(context: context, message: "Invalid native message")
       return
     }
-    guard let check = VoyagerDriveAccountCheck(
-      expected: expected, current: service.currentDriveAccount())
-    else {
-      respondWithGoogleDriveError(context: context, error: VoyagerGoogleDriveFailure.accountChanged)
-      return
-    }
-    let reply = GoogleDriveTransferReply(handler: self, context: context, check: check)
+    let reply = GoogleDriveTransferReply(handler: self, context: context, account: scope.account)
 
     switch request {
     case .googleDriveFindFile(let fileName):
-      service.findFile(named: fileName) {
+      service.findFile(named: fileName, in: scope) {
         reply.finish($0.map { VoyagerGoogleDriveFileResponse(fileID: $0) })
       }
     case .googleDriveEnsureFile(let ensure):
-      service.ensureFile(named: ensure.fileName, cachedFileID: ensure.cachedFileID) {
+      service.ensureFile(named: ensure.fileName, cachedFileID: ensure.cachedFileID, in: scope) {
         reply.finish($0.map { VoyagerGoogleDriveFileResponse(fileID: $0) })
       }
     case .googleDriveUploadFile(let upload):
-      service.upload(
-        fileID: upload.fileID, json: upload.json, expectedAccount: check.writeAccount
-      ) {
+      service.upload(fileID: upload.fileID, json: upload.json, in: scope) {
         reply.finish($0.map { VoyagerGoogleDriveUploadMetadataResponse($0) })
       }
     case .googleDriveDownloadFile(let fileID):
-      service.download(fileID: fileID) {
+      service.download(fileID: fileID, in: scope) {
         reply.finish($0.map { VoyagerGoogleDriveDownloadResponse(json: $0, found: $0 != nil) })
       }
     case .googleDriveGetFileMetadata(let fileID):
-      service.fileMetadata(fileID: fileID) { reply.finish($0) }
+      service.fileMetadata(fileID: fileID, in: scope) { reply.finish($0) }
     case .googleDriveCreateFile(let create):
       service.createFile(
         named: create.fileName,
         appProperties: create.appProperties,
         json: create.json,
-        expectedAccount: check.writeAccount
+        in: scope
       ) { reply.finish($0) }
     case .googleDriveListHistory(let sourceFileName):
-      service.listHistory(sourceFileName: sourceFileName) {
+      service.listHistory(sourceFileName: sourceFileName, in: scope) {
         reply.finish($0.map { VoyagerGoogleDriveHistoryResponse(files: $0) })
       }
     case .googleDriveTrashFile(let fileID):
-      service.trashFile(fileID: fileID, expectedAccount: check.writeAccount) {
+      service.trashFile(fileID: fileID, in: scope) {
         reply.finish($0.map { VoyagerGoogleDriveTrashResponse(trashed: true) })
       }
     default:
@@ -144,22 +147,17 @@ extension SafariWebExtensionHandler {
   }
 }
 
-/// Answers one Drive transfer action under the account it started with.
+/// Answers one Drive transfer action. Every request it made ran in its scope, so a success is
+/// that account's alone, even when the app stored another account just after the last request.
 private struct GoogleDriveTransferReply {
   let handler: SafariWebExtensionHandler
   let context: NSExtensionContext
-  let check: VoyagerDriveAccountCheck
+  let account: String
 
   func finish<Payload: Codable>(_ result: Result<Payload, Error>) {
-    // A read that straddled a change of account may hold either Drive's data; drop it.
-    guard check.held(byCurrent: GoogleDriveService.shared.currentDriveAccount()) else {
-      handler.respondWithGoogleDriveError(
-        context: context, error: VoyagerGoogleDriveFailure.accountChanged)
-      return
-    }
     switch result {
     case .success(let data):
-      handler.respondWithSuccess(context: context, data: data, driveAccount: check.account)
+      handler.respondWithSuccess(context: context, data: data, driveAccount: account)
     case .failure(let error):
       handler.respondWithGoogleDriveError(context: context, error: error)
     }

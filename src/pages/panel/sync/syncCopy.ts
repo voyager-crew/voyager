@@ -135,6 +135,9 @@ export function runUndoText(
     const notice = undoNotice(t, result.snapshot);
     return { message: notice.headline, error: notice.tone === 'err', retry: notice.retry };
   }
+  // Undo stays offered: it works again once Drive is back on the account the run wrote to.
+  if (result.accountChanged)
+    return { message: t('syncUndoAccountChanged'), error: true, retry: true };
   if (result.failedFiles) return { message: t('syncUndoFailed'), error: true, retry: true };
   const kept = result.snapshot ? undoNotice(t, result.snapshot).lines[0] : undefined;
   if (kept) return { message: kept, error: false, retry: false };

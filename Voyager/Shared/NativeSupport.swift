@@ -81,6 +81,8 @@ enum VoyagerGoogleDriveFailureCode: String, Codable {
   case rateLimited = "drive_rate_limited"
   case temporarilyUnavailable = "drive_temporarily_unavailable"
   case accountChanged = "drive_account_changed"
+  /// Like `accountChanged`, but the action had already sent a write to the previous account.
+  case accountChangedAfterWrite = "drive_account_changed_after_write"
 }
 
 enum VoyagerGoogleDriveFolderIdentity {
@@ -116,9 +118,17 @@ struct VoyagerGoogleDriveFailure: LocalizedError, Equatable {
     retryAfterMilliseconds: nil
   )
 
-  /// The transfer began under another Google account than the one the app stores now.
+  /// The transfer began under another Google account than the one the app stores now; the
+  /// refused action sent nothing that could change Drive.
   static let accountChanged = VoyagerGoogleDriveFailure(
     code: .accountChanged,
+    message: "The Google account changed during this sync.",
+    retryAfterMilliseconds: nil
+  )
+
+  /// The account changed after the refused action had sent a write to the previous account.
+  static let accountChangedAfterWrite = VoyagerGoogleDriveFailure(
+    code: .accountChangedAfterWrite,
     message: "The Google account changed during this sync.",
     retryAfterMilliseconds: nil
   )

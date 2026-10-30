@@ -4,14 +4,17 @@ import type { CloudUploadReceipt } from '@/core/types/syncUploadReceipt';
 import { historyTargets } from './syncHistoryTargets';
 import { type SyncSend, parseRestoredFiles } from './syncProtocol';
 
-/** Exact upload Undo: the backend rechecks each receipted version immediately before mutation. */
+/**
+ * Exact upload Undo: the backend rechecks each receipted version immediately before mutation.
+ * `accountChanged`: Drive is signed in to another account than the one the upload wrote to.
+ */
 export async function undoRowUpload(
   send: SyncSend,
   payload: CloudSyncPayload,
   uploadReceipt: CloudUploadReceipt,
-): Promise<{ restored: number; kept: number; failed: number }> {
+): Promise<{ restored: number; kept: number; failed: number; accountChanged: boolean }> {
   const files = uploadReceipt.files.map((file) => file.name);
-  if (!files.length) return { restored: 0, kept: 0, failed: 0 };
+  if (!files.length) return { restored: 0, kept: 0, failed: 0, accountChanged: false };
   const reply = await send({
     type: 'gv.sync.restorePreviousVersion',
     payload: {
@@ -30,5 +33,10 @@ export async function undoRowUpload(
     if (result?.restored) restored += 1;
     else if (result?.kept) kept += 1;
   }
-  return { restored, kept, failed: files.length - restored - kept };
+  const accountChanged =
+    typeof reply === 'object' &&
+    reply !== null &&
+    'error' in reply &&
+    reply.error === 'account_changed';
+  return { restored, kept, failed: files.length - restored - kept, accountChanged };
 }

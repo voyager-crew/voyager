@@ -234,6 +234,8 @@ export type RunUndoResult =
       readonly keptFiles: boolean;
       /** Cloud files that could not be put back; a retry tries them again. */
       readonly failedFiles: boolean;
+      /** Drive is signed in to another account than the one the run wrote to. */
+      readonly accountChanged: boolean;
       /** Whether anything was there to undo at all. */
       readonly anything: boolean;
     };
@@ -261,6 +263,7 @@ export async function undoRun(env: SheetEnvironment, record: RunRecord): Promise
   }
   let keptFiles = false;
   let failedFiles = false;
+  let accountChanged = false;
   let restoredFiles = 0;
   for (const upload of record.uploads) {
     if (!upload.receipt?.complete) {
@@ -272,12 +275,14 @@ export async function undoRun(env: SheetEnvironment, record: RunRecord): Promise
     restoredFiles += result.restored;
     if (result.kept) keptFiles = true;
     if (result.failed) failedFiles = true;
+    if (result.accountChanged) accountChanged = true;
   }
   return {
     kind: 'undone',
     snapshot,
     keptFiles,
     failedFiles,
+    accountChanged,
     anything: restoredFiles > 0 || (snapshot?.status === 'restored' && snapshot.restoredKeys > 0),
   };
 }

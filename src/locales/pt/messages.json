@@ -1418,6 +1418,10 @@
     "message": "Não foi possível desfazer. Tente novamente.",
     "description": "Undo result: the undo failed; Undo stays offered"
   },
+  "syncUndoAccountChanged": {
+    "message": "Não foi possível desfazer. O Drive está conectado a outra conta do Google.",
+    "description": "Undo result: the run wrote to a Google account other than the one Drive is signed in to now (Safari); Undo stays offered"
+  },
   "syncRestoreForks": {
     "message": "Ramificações de conversa",
     "description": "Drive restore part: conversation fork links"

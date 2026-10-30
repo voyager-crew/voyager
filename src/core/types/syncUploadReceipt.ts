@@ -10,6 +10,8 @@ export interface CloudUploadReceipt {
   files: CloudUploadWrittenFile[];
   /** False means at least one attempted mutation lacks a confirmed, reversible receipt. */
   complete: boolean;
+  /** Safari Drive: the Google account the files were written to; Undo runs only there. */
+  driveAccount?: string;
 }
 
 export function parseCloudUploadReceipt(value: unknown): CloudUploadReceipt | null {
@@ -68,5 +70,7 @@ export function parseCloudUploadReceipt(value: unknown): CloudUploadReceipt | nu
     else return null;
     names.add(raw.name);
   }
-  return { files, complete: value.complete };
+  if (!('driveAccount' in value)) return { files, complete: value.complete };
+  if (typeof value.driveAccount !== 'string' || !value.driveAccount) return null;
+  return { files, complete: value.complete, driveAccount: value.driveAccount };
 }

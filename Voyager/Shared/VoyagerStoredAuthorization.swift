@@ -5,6 +5,8 @@ import Foundation
 struct VoyagerStoredAuthorization<Authorization> {
   /// Changes whenever the stored authorization does: another account, or a new sign-in.
   let identity: String
+  /// The Google account it belongs to, named as `VoyagerDriveAccount.name` names it.
+  let account: String
   let authorization: Authorization
 }
 

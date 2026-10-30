@@ -28,6 +28,7 @@ extension GoogleDriveService {
   /** Status reads file metadata only and uses the existing drive.file authorization. */
   func fileMetadata(
     fileID: String,
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<VoyagerGoogleDriveMetadataResponse, Error>) -> Void
   ) {
     guard !fileID.isEmpty else {
@@ -37,7 +38,8 @@ extension GoogleDriveService {
     performRequest(
       method: "GET",
       path: "/drive/v3/files/\(fileID)",
-      queryItems: [URLQueryItem(name: "fields", value: "id,md5Checksum,modifiedTime,trashed")]
+      queryItems: [URLQueryItem(name: "fields", value: "id,md5Checksum,modifiedTime,trashed")],
+      in: scope
     ) { result in
       completion(result.flatMap { response in
         if response.statusCode == 404 {
@@ -66,7 +68,7 @@ extension GoogleDriveService {
     named fileName: String,
     appProperties: [String: String],
     json: String,
-    expectedAccount: String? = nil,
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<VoyagerGoogleDriveHistoryFile, Error>) -> Void
   ) {
     guard !fileName.isEmpty,
@@ -76,7 +78,7 @@ extension GoogleDriveService {
       completion(.failure(GoogleDriveServiceError.invalidResponse))
       return
     }
-    ensureBackupFolder { result in
+    ensureBackupFolder(in: scope) { result in
       switch result {
       case .failure(let error):
         completion(.failure(error))
@@ -88,7 +90,7 @@ extension GoogleDriveService {
             json: json
           ),
           parentID: folderID,
-          expectedAccount: expectedAccount,
+          in: scope,
           completion: completion
         )
       }
@@ -98,7 +100,7 @@ extension GoogleDriveService {
   private func createHistoryItem(
     request: VoyagerGoogleDriveCreateRequest,
     parentID: String,
-    expectedAccount: String?,
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<VoyagerGoogleDriveHistoryFile, Error>) -> Void
   ) {
     let upload: (contentType: String, body: Data)
@@ -119,7 +121,7 @@ extension GoogleDriveService {
       ],
       contentType: upload.contentType,
       body: upload.body,
-      expectedAccount: expectedAccount
+      in: scope
     ) { result in
       completion(
         result.flatMap { response in
@@ -141,13 +143,14 @@ extension GoogleDriveService {
 
   func listHistory(
     sourceFileName: String,
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<[VoyagerGoogleDriveHistoryFile], Error>) -> Void
   ) {
     guard !sourceFileName.isEmpty else {
       completion(.failure(GoogleDriveServiceError.invalidResponse))
       return
     }
-    resolveExistingBackupFolder { result in
+    resolveExistingBackupFolder(in: scope) { result in
       switch result {
       case .failure(let error):
         completion(.failure(error))
@@ -160,6 +163,7 @@ extension GoogleDriveService {
           pageToken: nil,
           collected: [],
           visited: [],
+          in: scope,
           completion: completion
         )
       }
@@ -172,6 +176,7 @@ extension GoogleDriveService {
     pageToken: String?,
     collected: [VoyagerGoogleDriveHistoryFile],
     visited: Set<String>,
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<[VoyagerGoogleDriveHistoryFile], Error>) -> Void
   ) {
     let clauses = [
@@ -185,7 +190,8 @@ extension GoogleDriveService {
       URLQueryItem(name: "pageSize", value: "1000"),
     ]
     if let pageToken { queryItems.append(URLQueryItem(name: "pageToken", value: pageToken)) }
-    performRequest(method: "GET", path: "/drive/v3/files", queryItems: queryItems) { result in
+    performRequest(method: "GET", path: "/drive/v3/files", queryItems: queryItems, in: scope) {
+      result in
       switch result {
       case .failure(let error):
         completion(.failure(error))
@@ -217,6 +223,7 @@ extension GoogleDriveService {
             pageToken: nextPage,
             collected: files,
             visited: visited.union([nextPage]),
+            in: scope,
             completion: completion
           )
         } catch {
@@ -228,7 +235,7 @@ extension GoogleDriveService {
 
   func trashFile(
     fileID: String,
-    expectedAccount: String? = nil,
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<Void, Error>) -> Void
   ) {
     guard !fileID.isEmpty else {
@@ -240,7 +247,7 @@ extension GoogleDriveService {
       path: "/drive/v3/files/\(fileID)",
       contentType: "application/json",
       body: Data("{\"trashed\":true}".utf8),
-      expectedAccount: expectedAccount
+      in: scope
     ) { result in
       completion(result.flatMap { response in
         response.isSuccessful ? .success(()) : .failure(self.requestFailure(response))

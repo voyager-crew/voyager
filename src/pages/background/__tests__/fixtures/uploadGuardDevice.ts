@@ -152,6 +152,19 @@ export function scopedGuardFile(name: string, scope: SyncAccountScope): string {
   return name.replace(/\.json$/, `.acct-${hashString(scope.accountKey)}.json`);
 }
 
+type NativeMessage = Record<string, unknown>;
+
+/** Puts a layer in front of the device's native side, such as the account the app signed in. */
+export function interceptGuardNative(
+  layer: (message: NativeMessage, next: (message: NativeMessage) => Promise<unknown>) => unknown,
+): void {
+  const next = native.getMockImplementation();
+  if (!next) throw new Error('Create the guard device first');
+  native.mockImplementation(async (app: string, message: NativeMessage) =>
+    layer(message, async (forwarded) => next(app, forwarded)),
+  );
+}
+
 /** Only storage/HTTP/native boundaries are fake; handlers, owners, payload readers and queue are real. */
 export async function createGuardDevice(
   options: {

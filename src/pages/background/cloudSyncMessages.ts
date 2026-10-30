@@ -4,6 +4,7 @@ import { CloudSyncUploadGuardTokens } from '@/core/services/CloudSyncUploadGuard
 import { AccountUnconfirmedError } from '@/core/services/GoogleDriveIdentity';
 import { PROMPTS_FILE_NAME } from '@/core/services/GoogleDriveSyncFileNames';
 import { googleDriveSyncService } from '@/core/services/GoogleDriveSyncService';
+import { DriveAccountChangedError } from '@/core/services/GoogleDriveSyncSession';
 import type { GoogleDriveSyncTransfer } from '@/core/services/GoogleDriveSyncTransfer';
 import { recordGoogleDriveConnectStart } from '@/core/services/googleDriveConnectIntent';
 import { getHighlightAccountHash } from '@/core/services/highlightAnnotationData';
@@ -78,7 +79,11 @@ export function createCloudSyncMessageHandler(readers: CloudSyncReaders) {
             }),
         ).catch(async (error: unknown) => {
           const uploadReceipt = drive.getUploadReceipt();
-          if (!uploadReceipt.complete || uploadReceipt.files.length)
+          if (!uploadReceipt.complete || uploadReceipt.files.length) {
+            // A new account ends this turn's session, which drops what the turn returns; the
+            // writes the old account already holds travel on the error instead.
+            if (error instanceof DriveAccountChangedError)
+              throw new DriveAccountChangedError(error.unsent, uploadReceipt);
             return {
               ok: false,
               error: cloudSyncFailureCode(error) ?? 'sync_failed',
@@ -86,6 +91,7 @@ export function createCloudSyncMessageHandler(readers: CloudSyncReaders) {
               uploadReceipt,
               state: await drive.getState(),
             };
+          }
           throw error;
         });
       case 'gv.sync.download':
@@ -304,7 +310,16 @@ export function createCloudSyncMessageHandler(readers: CloudSyncReaders) {
       ? configure(message)
       : googleDriveSyncService
           .runExclusive((drive) => handle(message, sender, drive))
-          .catch((error: unknown) => {
+          .catch(async (error: unknown) => {
+            // Part of an upload landed on the account the app replaced; Undo can still reach it.
+            if (error instanceof DriveAccountChangedError && error.uploadReceipt)
+              return {
+                ok: false,
+                error: error.code,
+                partial: true,
+                uploadReceipt: error.uploadReceipt,
+                state: await googleDriveSyncService.getState(),
+              };
             if (
               error instanceof Error &&
               ['untrusted_sender', 'invalid_sync_request'].includes(error.message)

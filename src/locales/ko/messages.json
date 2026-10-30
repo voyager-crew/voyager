@@ -1418,6 +1418,10 @@
     "message": "실행 취소하지 못했습니다. 다시 시도하세요.",
     "description": "Undo result: the undo failed; Undo stays offered"
   },
+  "syncUndoAccountChanged": {
+    "message": "실행 취소하지 못했습니다. Drive가 다른 Google 계정으로 로그인되어 있습니다.",
+    "description": "Undo result: the run wrote to a Google account other than the one Drive is signed in to now (Safari); Undo stays offered"
+  },
   "syncRestoreForks": {
     "message": "대화 분기",
     "description": "Drive restore part: conversation fork links"

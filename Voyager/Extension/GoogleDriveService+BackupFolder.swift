@@ -1,41 +1,31 @@
 import Foundation
 import os.log
 
-/** Owns backup-folder discovery, recovery and the existing metadata migration. */
+/// Owns backup-folder discovery, recovery and the existing metadata migration. Each account has
+/// its own folder: every lookup runs in the scope of the action that asked, and its answer is
+/// cached for that scope's account only (`VoyagerDriveFolderCache`).
 extension GoogleDriveService {
   func ensureBackupFolder(
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<String, Error>) -> Void
   ) {
-    backupFolderResolutionLock.lock()
-    backupFolderResolutionWaiters.append(completion)
-    guard !backupFolderResolutionInFlight else {
-      backupFolderResolutionLock.unlock()
-      return
-    }
-    backupFolderResolutionInFlight = true
-    backupFolderResolutionLock.unlock()
-
-    resolveBackupFolder { result in
-      self.backupFolderResolutionLock.lock()
-      let waiters = self.backupFolderResolutionWaiters
-      self.backupFolderResolutionWaiters.removeAll()
-      self.backupFolderResolutionInFlight = false
-      self.backupFolderResolutionLock.unlock()
-      waiters.forEach { $0(result) }
+    folderCache.resolve(for: scope.account, completion: completion) { answer in
+      self.resolveBackupFolder(in: scope, completion: answer)
     }
   }
 
   private func resolveBackupFolder(
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<String, Error>) -> Void
   ) {
-    if let backupFolderID {
-      itemExists(fileID: backupFolderID) { result in
+    if let backupFolderID = folderCache.folder(for: scope.account) {
+      itemExists(fileID: backupFolderID, in: scope) { result in
         switch result {
         case .success(true):
           completion(.success(backupFolderID))
         case .success(false):
-          self.backupFolderID = nil
-          self.findOrCreateBackupFolder(completion: completion)
+          self.folderCache.forget(backupFolderID, for: scope.account)
+          self.findOrCreateBackupFolder(in: scope, completion: completion)
         case .failure(let error):
           completion(.failure(error))
         }
@@ -43,18 +33,19 @@ extension GoogleDriveService {
       return
     }
 
-    findOrCreateBackupFolder(completion: completion)
+    findOrCreateBackupFolder(in: scope, completion: completion)
   }
 
   private func findOrCreateBackupFolder(
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<String, Error>) -> Void
   ) {
-    findExistingBackupFolder { result in
+    findExistingBackupFolder(in: scope) { result in
       switch result {
       case .failure(let error):
         completion(.failure(error))
       case .success(let folderID?):
-        self.backupFolderID = folderID
+        self.folderCache.remember(folderID, for: scope.account)
         completion(.success(folderID))
       case .success(nil):
         self.createItem(
@@ -64,10 +55,11 @@ extension GoogleDriveService {
           appProperties: [
             VoyagerGoogleDriveFolderIdentity.markerKey:
               VoyagerGoogleDriveFolderIdentity.markerValue
-          ]
+          ],
+          in: scope
         ) { createResult in
           if case .success(let folderID) = createResult {
-            self.backupFolderID = folderID
+            self.folderCache.remember(folderID, for: scope.account)
           }
           completion(createResult)
         }
@@ -75,8 +67,11 @@ extension GoogleDriveService {
     }
   }
 
-  func migrateBackupFolderIfPresent(completion: @escaping () -> Void) {
-    resolveExistingBackupFolder { result in
+  func migrateBackupFolderIfPresent(
+    in scope: VoyagerDriveAccountScope,
+    completion: @escaping () -> Void
+  ) {
+    resolveExistingBackupFolder(in: scope) { result in
       if case .failure(let error) = result {
         os_log(
           .error,
@@ -89,17 +84,18 @@ extension GoogleDriveService {
   }
 
   func resolveExistingBackupFolder(
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<String?, Error>) -> Void
   ) {
-    if let backupFolderID {
+    if let backupFolderID = folderCache.folder(for: scope.account) {
       completion(.success(backupFolderID))
       return
     }
 
-    findExistingBackupFolder { result in
+    findExistingBackupFolder(in: scope) { result in
       switch result {
       case .success(let folderID?):
-        self.backupFolderID = folderID
+        self.folderCache.remember(folderID, for: scope.account)
       case .failure, .success(nil):
         break
       }
@@ -109,21 +105,23 @@ extension GoogleDriveService {
   }
 
   private func findExistingBackupFolder(
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<String?, Error>) -> Void
   ) {
-    findMarkedBackupFolder { markedResult in
+    findMarkedBackupFolder(in: scope) { markedResult in
       switch markedResult {
       case .failure(let error):
         completion(.failure(error))
       case .success(let folderID?):
         completion(.success(folderID))
       case .success(nil):
-        self.findNamedBackupFolders(completion: completion)
+        self.findNamedBackupFolders(in: scope, completion: completion)
       }
     }
   }
 
   private func findMarkedBackupFolder(
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<String?, Error>) -> Void
   ) {
     let identity = VoyagerGoogleDriveFolderIdentity.self
@@ -133,61 +131,68 @@ extension GoogleDriveService {
         "mimeType='application/vnd.google-apps.folder'",
         "trashed=false",
       ],
-      fields: "files(id)"
+      fields: "files(id)",
+      in: scope
     ) { result in
       completion(result)
     }
   }
 
   private func findNamedBackupFolders(
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<String?, Error>) -> Void
   ) {
     findItem(
       named: VoyagerGoogleDriveFolderIdentity.currentName,
       mimeType: "application/vnd.google-apps.folder",
-      fields: "files(id)"
+      fields: "files(id)",
+      in: scope
     ) { canonicalResult in
       switch canonicalResult {
       case .failure(let error):
         completion(.failure(error))
       case .success(let folderID?):
-        self.markBackupFolder(folderID: folderID, renameLegacyFolder: false) {
+        self.markBackupFolder(folderID: folderID, renameLegacyFolder: false, in: scope) {
           completion(.success(folderID))
         }
       case .success(nil):
-        self.findLegacyOrRecoveredBackupFolder(completion: completion)
+        self.findLegacyOrRecoveredBackupFolder(in: scope, completion: completion)
       }
     }
   }
 
   private func findLegacyOrRecoveredBackupFolder(
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<String?, Error>) -> Void
   ) {
     findItem(
       named: VoyagerGoogleDriveFolderIdentity.legacyName,
       mimeType: "application/vnd.google-apps.folder",
-      fields: "files(id)"
+      fields: "files(id)",
+      in: scope
     ) { legacyResult in
       switch legacyResult {
       case .failure(let error):
         completion(.failure(error))
       case .success(let folderID?):
-        self.markBackupFolder(folderID: folderID, renameLegacyFolder: true) {
+        self.markBackupFolder(folderID: folderID, renameLegacyFolder: true, in: scope) {
           completion(.success(folderID))
         }
       case .success(nil):
-        self.recoverBackupFolderFromSyncFile(completion: completion)
+        self.recoverBackupFolderFromSyncFile(in: scope, completion: completion)
       }
     }
   }
 
   private func recoverBackupFolderFromSyncFile(
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<String?, Error>) -> Void
   ) {
     findItem(
       named: "gemini-voyager-folders.json",
       mimeType: nil,
-      fields: "files(id)"
+      fields: "files(id)",
+      in: scope
     ) { fileResult in
       switch fileResult {
       case .failure(let error):
@@ -195,7 +200,7 @@ extension GoogleDriveService {
       case .success(nil):
         completion(.success(nil))
       case .success(let fileID?):
-        self.getFileParents(fileID: fileID) { parentsResult in
+        self.getFileParents(fileID: fileID, in: scope) { parentsResult in
           switch parentsResult {
           case .failure(let error):
             completion(.failure(error))
@@ -204,7 +209,7 @@ extension GoogleDriveService {
               completion(.success(nil))
               return
             }
-            self.markBackupFolder(folderID: folderID, renameLegacyFolder: false) {
+            self.markBackupFolder(folderID: folderID, renameLegacyFolder: false, in: scope) {
               completion(.success(folderID))
             }
           case .success(nil):
@@ -218,6 +223,7 @@ extension GoogleDriveService {
   private func markBackupFolder(
     folderID: String,
     renameLegacyFolder: Bool,
+    in scope: VoyagerDriveAccountScope,
     completion: @escaping () -> Void
   ) {
     let metadata = DriveUpdateMetadata(
@@ -242,7 +248,8 @@ extension GoogleDriveService {
       path: "/drive/v3/files/\(folderID)",
       queryItems: [URLQueryItem(name: "fields", value: "id,name,appProperties")],
       contentType: "application/json",
-      body: body
+      body: body,
+      in: scope
     ) { result in
       if case .failure(let error) = result {
         os_log(.error, "Google Drive folder migration failed: %{public}@", error.localizedDescription)

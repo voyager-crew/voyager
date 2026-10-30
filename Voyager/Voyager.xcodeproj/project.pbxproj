@@ -55,6 +55,7 @@
 		D30000000000000000000041 /* GoogleDriveService+Authorization.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000004 /* GoogleDriveService+Authorization.swift */; };
 		D30000000000000000000051 /* VoyagerStoredAuthorization.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000005 /* VoyagerStoredAuthorization.swift */; };
 		D30000000000000000000061 /* VoyagerDriveAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000006 /* VoyagerDriveAccount.swift */; };
+		D30000000000000000000081 /* VoyagerDriveFolderCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000008 /* VoyagerDriveFolderCache.swift */; };
 		D30000000000000000000071 /* SafariWebExtensionHandler+GoogleDrive.swift in Sources */ = {isa = PBXBuildFile; fileRef = D30000000000000000000007 /* SafariWebExtensionHandler+GoogleDrive.swift */; };
 		D10000000000000000000018 /* GoogleDriveService+History.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000007 /* GoogleDriveService+History.swift */; };
 		D20000000000000000000011 /* ICloudUploadMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000001 /* ICloudUploadMessages.swift */; };
@@ -143,6 +144,7 @@
 		D30000000000000000000004 /* GoogleDriveService+Authorization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GoogleDriveService+Authorization.swift"; sourceTree = "<group>"; };
 		D30000000000000000000005 /* VoyagerStoredAuthorization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoyagerStoredAuthorization.swift; sourceTree = "<group>"; };
 		D30000000000000000000006 /* VoyagerDriveAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoyagerDriveAccount.swift; sourceTree = "<group>"; };
+		D30000000000000000000008 /* VoyagerDriveFolderCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoyagerDriveFolderCache.swift; sourceTree = "<group>"; };
 		D30000000000000000000007 /* SafariWebExtensionHandler+GoogleDrive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SafariWebExtensionHandler+GoogleDrive.swift"; sourceTree = "<group>"; };
 		D10000000000000000000007 /* GoogleDriveService+History.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GoogleDriveService+History.swift"; sourceTree = "<group>"; };
 		D20000000000000000000001 /* ICloudUploadMessages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudUploadMessages.swift; sourceTree = "<group>"; };
@@ -297,6 +299,7 @@
 				D30000000000000000000002 /* VoyagerAppLanguage.swift */,
 				D30000000000000000000005 /* VoyagerStoredAuthorization.swift */,
 				D30000000000000000000006 /* VoyagerDriveAccount.swift */,
+				D30000000000000000000008 /* VoyagerDriveFolderCache.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -475,6 +478,7 @@
 				D30000000000000000000041 /* GoogleDriveService+Authorization.swift in Sources */,
 				D30000000000000000000051 /* VoyagerStoredAuthorization.swift in Sources */,
 				D30000000000000000000061 /* VoyagerDriveAccount.swift in Sources */,
+				D30000000000000000000081 /* VoyagerDriveFolderCache.swift in Sources */,
 				D30000000000000000000071 /* SafariWebExtensionHandler+GoogleDrive.swift in Sources */,
 				D10000000000000000000018 /* GoogleDriveService+History.swift in Sources */,
 				C1D2E3F40516273849A5B6C7 /* ICloudSyncService.swift in Sources */,

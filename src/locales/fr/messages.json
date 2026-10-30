@@ -1418,6 +1418,10 @@
     "message": "Impossible d'annuler. Réessayez.",
     "description": "Undo result: the undo failed; Undo stays offered"
   },
+  "syncUndoAccountChanged": {
+    "message": "Impossible d'annuler. Drive est maintenant connecté à un autre compte Google.",
+    "description": "Undo result: the run wrote to a Google account other than the one Drive is signed in to now (Safari); Undo stays offered"
+  },
   "syncRestoreForks": {
     "message": "Forks de conversation",
     "description": "Drive restore part: conversation fork links"

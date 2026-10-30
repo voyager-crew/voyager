@@ -1418,6 +1418,10 @@
     "message": "元に戻せませんでした。もう一度お試しください。",
     "description": "Undo result: the undo failed; Undo stays offered"
   },
+  "syncUndoAccountChanged": {
+    "message": "元に戻せませんでした。Drive は別の Google アカウントでログイン中です。",
+    "description": "Undo result: the run wrote to a Google account other than the one Drive is signed in to now (Safari); Undo stays offered"
+  },
   "syncRestoreForks": {
     "message": "会話の分岐",
     "description": "Drive restore part: conversation fork links"

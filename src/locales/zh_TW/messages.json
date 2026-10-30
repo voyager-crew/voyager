@@ -1386,6 +1386,10 @@
     "message": "復原失敗，請再試一次。",
     "description": "Undo result: the undo failed; Undo stays offered"
   },
+  "syncUndoAccountChanged": {
+    "message": "復原失敗：Drive 目前登入的是另一個 Google 帳號。",
+    "description": "Undo result: the run wrote to a Google account other than the one Drive is signed in to now (Safari); Undo stays offered"
+  },
   "syncRestoreForks": {
     "message": "對話分叉",
     "description": "Drive restore part: conversation fork links"

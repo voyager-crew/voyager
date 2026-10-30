@@ -118,8 +118,11 @@ export function createGoogleDriveTurnPort(options: TurnOptions): GoogleDriveSync
   return {
     kind: 'sync-turn',
     getUploadReceipt: () => {
-      session.assertActive();
-      return uploads.getReceipt();
+      // After a change of account the receipt still lists this session's own writes, all of them
+      // on the account it was bound to, which the receipt names so Undo goes only there.
+      if (!session.endedForDriveAccountChange) session.assertActive();
+      const driveAccount = session.driveAccount;
+      return { ...uploads.getReceipt(), ...(driveAccount ? { driveAccount } : {}) };
     },
     beginDownloadBookkeeping: () => {
       session.assertActive();

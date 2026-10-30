@@ -4,6 +4,7 @@ import { restoreICloudPreviousVersion } from '@/core/utils/safariICloudHistory';
 
 import type { DriveFilesPort } from './GoogleDriveFiles';
 import { isDriveSyncFileName } from './GoogleDriveHistoryPayload';
+import { isUnsentDriveCall } from './GoogleDriveSyncSession';
 import { GoogleDriveUploadHistory, type PreparedDriveHistory } from './GoogleDriveUploadHistory';
 import { undoDriveUploadFile } from './GoogleDriveUploadUndo';
 import { DriveWriteUnchanged, preserveLatestDriveVersion } from './GoogleDriveWriteVersion';
@@ -70,8 +71,12 @@ export class GoogleDriveUploadFiles {
     const target = this.targets.get(name);
     if (target?.kind === 'found') {
       // Creation can succeed even if its response is lost. Do not offer a partial run Undo.
-      this.unreceipted.add(name);
-      const id = await this.files.ensure(token, name, target.id);
+      // Finding the file it already had creates nothing; only the write below then needs Undo.
+      const id = await this.mutating(
+        name,
+        () => this.files.ensure(token, name, target.id),
+        (found) => found === target.id,
+      );
       this.targets.set(name, {
         kind: 'ready',
         id,
@@ -94,29 +99,31 @@ export class GoogleDriveUploadFiles {
     const previous = this.receipts.get(name);
     let checks = 0;
     let skippedWrite = false;
-    this.unreceipted.add(name);
-    const metadata = await this.files.upload(token, target.id, payload, async () => {
-      checks++;
-      if (this.files.supportsHistory()) {
-        const current = await preserveLatestDriveVersion({
-          files: this.files,
-          history: this.history,
-          plan: target.history,
-          token,
-          name,
-          id: target.id,
-          next: text,
-          created: target.created,
-        });
-        if (previous && current.metadata?.md5Checksum === previous.md5Checksum)
-          replacement = previous.replaced;
-        else if (current.historyId) replacement = { kind: 'history', historyId: current.historyId };
-        if (current.metadata && target.history.current === text) {
-          skippedWrite = true;
-          throw new DriveWriteUnchanged(current.metadata);
+    const metadata = await this.mutating(name, () =>
+      this.files.upload(token, target.id, payload, async () => {
+        checks++;
+        if (this.files.supportsHistory()) {
+          const current = await preserveLatestDriveVersion({
+            files: this.files,
+            history: this.history,
+            plan: target.history,
+            token,
+            name,
+            id: target.id,
+            next: text,
+            created: target.created,
+          });
+          if (previous && current.metadata?.md5Checksum === previous.md5Checksum)
+            replacement = previous.replaced;
+          else if (current.historyId)
+            replacement = { kind: 'history', historyId: current.historyId };
+          if (current.metadata && target.history.current === text) {
+            skippedWrite = true;
+            throw new DriveWriteUnchanged(current.metadata);
+          }
         }
-      }
-    });
+      }),
+    );
     if (skippedWrite) {
       // A retry can see our own ambiguous earlier PATCH. Its later GET is not a write receipt.
       if (checks === 1) this.unreceipted.delete(name);
@@ -140,6 +147,27 @@ export class GoogleDriveUploadFiles {
     // A verification retry snapshots the body it actually replaces, never an already saved copy.
     target.history.current = text;
     await this.history.retain(token, target.history);
+  }
+
+  /**
+   * Holds `name` without a receipt while a call that may change it runs. A call refused before it
+   * was sent, or one `unchanged` vouches for, leaves the name as it was.
+   */
+  private async mutating<T>(
+    name: string,
+    mutate: () => Promise<T>,
+    unchanged?: (value: T) => boolean,
+  ): Promise<T> {
+    const held = this.unreceipted.has(name);
+    this.unreceipted.add(name);
+    try {
+      const value = await mutate();
+      if (!held && unchanged?.(value)) this.unreceipted.delete(name);
+      return value;
+    } catch (error) {
+      if (!held && isUnsentDriveCall(error)) this.unreceipted.delete(name);
+      throw error;
+    }
   }
 
   /** Restore is planned for all requested files before any current content can be replaced. */

@@ -14,7 +14,9 @@ extension GoogleDriveService {
     interactive: Bool,
     completion: @escaping (Result<AuthorizationState, Error>) -> Void
   ) {
-    withAccessToken { result in
+    // The one token request outside an action's scope: it asks whether any account is signed in,
+    // reads nothing from Drive and writes nothing to it.
+    accessToken(admitting: nil) { result in
       switch result {
       case .success:
         completion(.success(.signedIn))
@@ -27,7 +29,7 @@ extension GoogleDriveService {
   }
 
   func signOut(completion: @escaping (Result<Void, Error>) -> Void) {
-    backupFolderID = nil
+    folderCache.removeAll()
     authorizations.forget()
     _ = configureGoogleSignIn()
     // Only sign-out restores a GoogleSignIn user in this process, and it always ends cleared, so
@@ -54,15 +56,28 @@ extension GoogleDriveService {
 
   /// The account the app stores now, as the web extension names it; nil while signed out.
   func currentDriveAccount() -> String? {
-    Self.storedAuthorization().map { VoyagerDriveAccount.name(forIdentity: $0.identity) }
+    Self.storedAuthorization()?.account
+  }
+
+  /// What a Drive action answers when nobody was signed in as it started.
+  func signedOutFailure() -> Error {
+    configureGoogleSignIn()
+      ? VoyagerGoogleDriveFailure.authRequired : GoogleDriveServiceError.notConfigured
   }
 
   /// This process can outlive a sign-in the app completes later, such as a changed account, and
   /// GoogleSignIn would keep answering with the user it restored first. Each request therefore
-  /// starts from the authorization the app stored, so Drive never keeps the account left behind.
-  /// With `expectedAccount`, a token of any other account is refused instead of used.
+  /// starts from the authorization the app stored, and a token of any other account than the
+  /// scope's is refused instead of used.
   func withAccessToken(
-    expectedAccount: String? = nil,
+    in scope: VoyagerDriveAccountScope,
+    completion: @escaping (Result<String, Error>) -> Void
+  ) {
+    accessToken(admitting: scope, completion: completion)
+  }
+
+  private func accessToken(
+    admitting scope: VoyagerDriveAccountScope?,
     completion: @escaping (Result<String, Error>) -> Void
   ) {
     guard configureGoogleSignIn() else {
@@ -71,30 +86,29 @@ extension GoogleDriveService {
     }
 
     let stored = Self.storedAuthorization()
-    if let expectedAccount, let stored,
-      VoyagerDriveAccount.name(forIdentity: stored.identity) != expectedAccount
-    {
-      completion(.failure(VoyagerGoogleDriveFailure.accountChanged))
+    if let scope, !scope.admits(storedAccount: stored?.account) {
+      completion(.failure(scope.refusal))
       return
     }
+    // Each account keeps its own backup folder, so a replaced authorization needs no cleanup here.
     switch authorizations.lookup(stored) {
     case .signedOut:
       completion(.failure(VoyagerGoogleDriveFailure.authRequired))
-    case .replaced(let authState):
-      // The previous account's folder is invisible to a new one; resolve it again.
-      backupFolderID = nil
-      freshAccessToken(from: authState, completion: completion)
-    case .unchanged(let authState):
+    case .replaced(let authState), .unchanged(let authState):
       freshAccessToken(from: authState, completion: completion)
     }
   }
 
   private static func storedAuthorization() -> VoyagerStoredAuthorization<OIDAuthState>? {
     let store = KeychainStore(itemName: sharedAuthorizationItemName)
-    guard let authState = try? store.retrieveAuthSession().authState,
-      let refreshToken = authState.refreshToken
+    guard let session = try? store.retrieveAuthSession(),
+      let refreshToken = session.authState.refreshToken
     else { return nil }
-    return VoyagerStoredAuthorization(identity: refreshToken, authorization: authState)
+    return VoyagerStoredAuthorization(
+      identity: refreshToken,
+      account: VoyagerDriveAccount.name(userID: session.userID, authorization: refreshToken),
+      authorization: session.authState
+    )
   }
 
   private func freshAccessToken(

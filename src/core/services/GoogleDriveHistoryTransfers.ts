@@ -8,6 +8,7 @@ import {
   type AccountScopedFolderPlatform,
 } from '@/features/folder/platforms';
 
+import { CloudSyncFailure } from './CloudSyncFailure';
 import type { GoogleDriveAuth } from './GoogleDriveAuth';
 import { isDriveSyncFileName } from './GoogleDriveHistoryPayload';
 import { AccountUnconfirmedError, GoogleDriveIdentity } from './GoogleDriveIdentity';
@@ -68,6 +69,16 @@ export async function restoreDrivePreviousVersion(
 ): Promise<DriveHistoryRestoreFile[]> {
   const names = targets.map(({ name }) => name);
   if (names.some((name) => !isDriveSyncFileName(name))) throw new Error('invalid_sync_files');
+  // An upload's Undo writes only to the Drive the upload wrote to. A session bound to another
+  // account refuses at once; an unbound one is bound to the upload's, so the native side refuses
+  // each request while the app holds another account.
+  const driveAccount = receipt?.driveAccount;
+  if (driveAccount) {
+    const bound = options.session.driveAccount;
+    if (bound !== null && bound !== driveAccount)
+      throw new CloudSyncFailure('account_changed', 'The upload went to another Google account');
+    options.session.bindDriveAccount(driveAccount);
+  }
   const authorities = targets.map(({ name, accountScope }) => ({
     name,
     scope: driveHistoryAccountPlatform(name) ? accountScope : null,

@@ -1418,6 +1418,10 @@
     "message": "تعذّر التراجع. حاول مرة أخرى.",
     "description": "Undo result: the undo failed; Undo stays offered"
   },
+  "syncUndoAccountChanged": {
+    "message": "تعذّر التراجع. Drive مسجّل الآن بحساب Google مختلف.",
+    "description": "Undo result: the run wrote to a Google account other than the one Drive is signed in to now (Safari); Undo stays offered"
+  },
   "syncRestoreForks": {
     "message": "تفريعات المحادثات",
     "description": "Drive restore part: conversation fork links"
