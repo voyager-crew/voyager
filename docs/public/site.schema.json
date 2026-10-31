@@ -211,16 +211,16 @@
     },
     "bridge": {
       "type": "object",
-      "description": "Local Bridge kill switch: the ops the extension may run for `voyager serve` on this site. A missing or invalid section denies every op, and only a fresh remote catalog newer than the packaged one can allow them. Removing an op from `allow` revokes it at the next catalog revision.",
+      "description": "Local Bridge policy: the ops the extension may run for `voyager serve` on this site. A missing or invalid section denies policy-gated ops. Production builds require a fresh remote catalog with a revision at least as new as the packaged one; unstamped dev builds may use the packaged policy. Removing a policy-gated op from `allow` revokes it at the next catalog revision. Policy-exempt ops such as `catalog.refresh` bypass this section and still require the bridge to be enabled and its permissions granted.",
       "required": ["format", "allow"],
       "properties": {
         "format": {
           "const": 1,
-          "description": "Policy format version; an unknown format denies the bridge."
+          "description": "Policy format version; an unknown format denies policy-gated ops."
         },
         "allow": {
           "type": "array",
-          "maxItems": 40,
+          "maxItems": 72,
           "uniqueItems": true,
           "items": {
             "type": "string",
@@ -233,8 +233,10 @@
               "composer.attach",
               "composer.send",
               "turns.waitReply",
+              "turns.approve",
               "turns.read",
               "files.download",
+              "catalog.refresh",
               "project.list",
               "project.create",
               "project.open",
@@ -243,112 +245,12 @@
               "project.remove"
             ]
           },
-          "description": "Allowed op names. Every op, including the ones the service worker runs itself, must be listed."
+          "description": "Allowed op names. Every policy-gated op, including those run by the service worker, must be listed. Policy-exempt ops (`catalog.refresh`) may be listed but do not need to be; the bridge must still be enabled and its permissions granted."
         }
       }
     },
     "locators": {
-      "type": "object",
-      "description": "Ordered page locator profiles for the named site. Each site has a packaged literal allowlist and independent rejection groups. Account and content identity, destructive actions and interaction policies remain packaged.",
-      "maxProperties": 75,
-      "propertyNames": {
-        "enum": [
-          "activity.inputs",
-          "bridge.replyContent",
-          "canvas.codePanels",
-          "code.host",
-          "composer.candidates",
-          "composer.draftCandidates",
-          "composer.sendContainers",
-          "content.answer",
-          "content.userLines",
-          "context.images",
-          "export.assistantContent",
-          "exportOverlay.canvas",
-          "exportOverlay.composer",
-          "gems.description",
-          "gems.icon",
-          "gems.list",
-          "gems.navEntry",
-          "gems.row",
-          "gems.title",
-          "generatedImage.downloadIcon",
-          "imageExport.searchHosts",
-          "input.candidates",
-          "input.handoff",
-          "input.sendContainers",
-          "inputCollapse.wrapper",
-          "library.archivableRows",
-          "library.rows",
-          "library.table",
-          "menu.content",
-          "menu.panels",
-          "modelPicker.container",
-          "modelPicker.focusInput",
-          "modelPicker.items",
-          "modelPicker.legacyPanels",
-          "modelPicker.modelEvidence",
-          "modelPicker.modelIdItem",
-          "modelPicker.modelLabel",
-          "modelPicker.modelTitleContainer",
-          "modelPicker.observerRoot",
-          "modelPicker.overlayPane",
-          "modelPicker.panelFallback",
-          "modelPicker.thinkingContent",
-          "modelPicker.thinkingItems",
-          "modelPicker.thinkingLabel",
-          "modelPicker.thinkingRow",
-          "modelPicker.thinkingTitleContainer",
-          "modelPicker.trigger",
-          "navigation.libraryLink",
-          "project.inputs",
-          "promptHistory.candidates",
-          "researchPack.actionBars",
-          "responseActions.bars",
-          "sentChips.bubbles",
-          "sidebar.allConversations",
-          "sidebar.conversationLinks",
-          "sidebar.forkRoots",
-          "sidebar.history",
-          "sidebar.host",
-          "sidebar.interactionButton",
-          "sidebar.links",
-          "sidebar.notebooks",
-          "sidebar.openHost",
-          "sidebar.overflow",
-          "sidebar.recents",
-          "sidebar.row",
-          "sidebar.rowContainer",
-          "sidebar.scroller",
-          "sidebar.section",
-          "sidebar.title",
-          "sidebar.titleFallback",
-          "sidebar.visibilityHost",
-          "sidebarHover.dialogs",
-          "sidebarHover.menus",
-          "sidebarWidth.buttons",
-          "slash.candidates",
-          "turn.assistant",
-          "turn.assistantFallback",
-          "turn.assistantWithHosts",
-          "turn.user",
-          "turn.userWithHosts",
-          "usage.root",
-          "userLatex.lines",
-          "vim.candidates",
-          "vim.configuredComposer"
-        ]
-      },
-      "additionalProperties": {
-        "type": "array",
-        "minItems": 1,
-        "maxItems": 32,
-        "items": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 2048
-        }
-      }
+      "$ref": "site-sections/locators.schema.json"
     }
   },
   "allOf": [
@@ -376,86 +278,7 @@
       "then": {
         "properties": {
           "locators": {
-            "maxProperties": 75,
-            "propertyNames": {
-              "enum": [
-                "turn.user",
-                "turn.userWithHosts",
-                "turn.assistant",
-                "turn.assistantFallback",
-                "turn.assistantWithHosts",
-                "sidebar.overflow",
-                "sidebar.notebooks",
-                "sidebar.recents",
-                "sidebar.allConversations",
-                "sidebar.history",
-                "sidebar.section",
-                "sidebar.row",
-                "sidebar.rowContainer",
-                "sidebar.openHost",
-                "sidebar.host",
-                "sidebar.visibilityHost",
-                "sidebar.links",
-                "sidebar.conversationLinks",
-                "sidebar.title",
-                "sidebar.titleFallback",
-                "sidebar.scroller",
-                "sidebar.interactionButton",
-                "sidebar.forkRoots",
-                "modelPicker.trigger",
-                "modelPicker.legacyPanels",
-                "modelPicker.panelFallback",
-                "modelPicker.overlayPane",
-                "modelPicker.container",
-                "modelPicker.observerRoot",
-                "modelPicker.items",
-                "modelPicker.modelEvidence",
-                "modelPicker.modelIdItem",
-                "modelPicker.modelLabel",
-                "modelPicker.thinkingLabel",
-                "modelPicker.thinkingRow",
-                "modelPicker.thinkingItems",
-                "modelPicker.thinkingContent",
-                "modelPicker.modelTitleContainer",
-                "modelPicker.thinkingTitleContainer",
-                "modelPicker.focusInput",
-                "composer.candidates",
-                "composer.draftCandidates",
-                "composer.sendContainers",
-                "inputCollapse.wrapper",
-                "vim.configuredComposer",
-                "vim.candidates",
-                "promptHistory.candidates",
-                "slash.candidates",
-                "sentChips.bubbles",
-                "project.inputs",
-                "activity.inputs",
-                "menu.panels",
-                "menu.content",
-                "exportOverlay.canvas",
-                "exportOverlay.composer",
-                "sidebarWidth.buttons",
-                "sidebarHover.dialogs",
-                "sidebarHover.menus",
-                "gems.navEntry",
-                "gems.list",
-                "gems.row",
-                "gems.title",
-                "gems.description",
-                "gems.icon",
-                "content.answer",
-                "content.userLines",
-                "context.images",
-                "responseActions.bars",
-                "researchPack.actionBars",
-                "usage.root",
-                "code.host",
-                "userLatex.lines",
-                "imageExport.searchHosts",
-                "generatedImage.downloadIcon",
-                "canvas.codePanels"
-              ]
-            }
+            "$ref": "site-sections/locator-contracts.schema.json#/$defs/gemini"
           }
         }
       }
@@ -472,17 +295,7 @@
       "then": {
         "properties": {
           "locators": {
-            "maxProperties": 6,
-            "propertyNames": {
-              "enum": [
-                "input.candidates",
-                "input.sendContainers",
-                "library.rows",
-                "library.archivableRows",
-                "library.table",
-                "navigation.libraryLink"
-              ]
-            }
+            "$ref": "site-sections/locator-contracts.schema.json#/$defs/aistudio"
           }
         }
       }
@@ -499,17 +312,7 @@
       "then": {
         "properties": {
           "locators": {
-            "maxProperties": 6,
-            "propertyNames": {
-              "enum": [
-                "input.candidates",
-                "vim.candidates",
-                "input.handoff",
-                "export.assistantContent",
-                "bridge.replyContent",
-                "input.handoff"
-              ]
-            }
+            "$ref": "site-sections/locator-contracts.schema.json#/$defs/chatgpt"
           }
         }
       }
@@ -526,16 +329,7 @@
       "then": {
         "properties": {
           "locators": {
-            "maxProperties": 5,
-            "propertyNames": {
-              "enum": [
-                "input.candidates",
-                "vim.candidates",
-                "input.handoff",
-                "export.assistantContent",
-                "input.handoff"
-              ]
-            }
+            "$ref": "site-sections/locator-contracts.schema.json#/$defs/claude"
           }
         }
       }
@@ -552,10 +346,7 @@
       "then": {
         "properties": {
           "locators": {
-            "maxProperties": 1,
-            "propertyNames": {
-              "enum": ["export.assistantContent"]
-            }
+            "$ref": "site-sections/locator-contracts.schema.json#/$defs/deepseek"
           }
         }
       }
@@ -572,10 +363,7 @@
       "then": {
         "properties": {
           "locators": {
-            "maxProperties": 3,
-            "propertyNames": {
-              "enum": ["input.candidates", "vim.candidates", "export.assistantContent"]
-            }
+            "$ref": "site-sections/locator-contracts.schema.json#/$defs/kimi"
           }
         }
       }

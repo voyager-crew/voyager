@@ -157,7 +157,7 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 40,
-          "description": "The anchor used unless the user chose another; the first anchor when omitted."
+          "description": "The anchor used unless the user chose another; must name one of `anchors[].id` (checked by the runtime reader, since standard JSON Schema cannot compare these values). The first anchor is used when omitted."
         },
         "open": {
           "type": "string",
@@ -272,7 +272,7 @@
         "placeholderTitles": {
           "type": "object",
           "additionalProperties": false,
-          "minProperties": 1,
+          "anyOf": [{ "required": ["any"] }, { "required": ["byLanguage"] }],
           "description": "Titles the site shows before a chat is named; never stored as a title.",
           "properties": {
             "any": {
