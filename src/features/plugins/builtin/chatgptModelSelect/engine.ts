@@ -46,6 +46,8 @@ import {
 } from './pickerDom';
 
 const OPEN_TIMEOUT_MS = 3_000;
+/** Presses before the menu counts as not opening; the first can land before hydration. */
+const OPEN_PRESSES = 3;
 /** A step lands about 500 ms after its key press (measured). */
 const STEP_TIMEOUT_MS = 2_500;
 const TRIGGER_TIMEOUT_MS = 5_000;
@@ -180,12 +182,22 @@ export async function selectModel(
   const openWith = async (button: HTMLElement): Promise<HTMLElement | 'replaced' | null> => {
     const shown = findOpenMenu(button);
     if (shown) return shown;
-    ctx.dispatch(button, pointer('pointerdown'));
-    ctx.dispatch(button, pointer('pointerup'));
-    return ctx.waitFor(() => findOpenMenu(button) ?? (replaced(button) ? 'replaced' : null), {
-      timeoutMs: budget(ctx, OPEN_TIMEOUT_MS),
-      minGapMs: MIN_GAP_MS,
-    });
+    // A never-shown tab renders the trigger before ChatGPT hydrates it, and a press then
+    // opens nothing (measured live 2026-10-31): press again while it stays closed.
+    for (let press = 0; press < OPEN_PRESSES; press++) {
+      // No time left to see a press land: one now would open the menu after the op gave up.
+      if (press > 0 && budget(ctx, OPEN_TIMEOUT_MS) === 0) break;
+      if (button.getAttribute('aria-expanded') !== 'true') {
+        ctx.dispatch(button, pointer('pointerdown'));
+        ctx.dispatch(button, pointer('pointerup'));
+      }
+      const outcome = await ctx.waitFor(
+        () => findOpenMenu(button) ?? (replaced(button) ? 'replaced' : null),
+        { timeoutMs: budget(ctx, OPEN_TIMEOUT_MS), minGapMs: MIN_GAP_MS },
+      );
+      if (outcome !== null) return outcome;
+    }
+    return null;
   };
 
   // A fresh tab renders the picker after the composer that made it ready (measured live).

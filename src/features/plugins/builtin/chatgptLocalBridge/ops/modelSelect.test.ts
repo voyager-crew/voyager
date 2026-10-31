@@ -258,12 +258,20 @@ describe('Local Bridge model.select: a remounted composer', () => {
     expect(fresh!.state()).toMatchObject({ effort: 4, open: false, pointerdowns: 1 });
   });
 
+  it('presses again when the first press lands before the page hydrates', async () => {
+    mount({ effort: 1, ignoredPresses: 1 });
+    await select({ target: { preset: 'pro' } });
+
+    expect(bridge.outcome()).toMatchObject({ ok: true, data: { observed: { effortIndex: 4 } } });
+    expect(picker.state()).toMatchObject({ effort: 4, open: false, pointerdowns: 2 });
+  });
+
   it('still fails menu-not-found when the one button there never opens', async () => {
     mount({ effort: 1, opens: false });
     await select({ target: { preset: 'pro' } });
 
     expect(errorCode(bridge.outcome())).toBe('menu-not-found');
-    expect(picker.state().pointerdowns).toBe(1);
+    expect(picker.state().pointerdowns).toBe(3);
   });
 
   it.each([

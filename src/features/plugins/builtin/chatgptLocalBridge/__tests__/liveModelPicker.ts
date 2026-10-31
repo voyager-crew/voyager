@@ -30,6 +30,8 @@ export interface PickerOptions {
   readonly stuck?: boolean;
   /** The trigger ignores pointer events. */
   readonly opens?: boolean;
+  /** Presses the trigger ignores first, as before ChatGPT hydrates a never-shown tab. */
+  readonly ignoredPresses?: number;
   /** The trigger's `aria-label`; ChatGPT translates it into each UI language. */
   readonly triggerLabel?: string;
   /** ChatGPT's `data-composer-navigation-target` marker on the trigger. */
@@ -174,7 +176,8 @@ export function mountLiveModelPicker(
 
   trigger.addEventListener('pointerdown', (event) => {
     pointerdowns += 1;
-    pressed = options.opens !== false && event.button === 0;
+    pressed =
+      options.opens !== false && pointerdowns > (options.ignoredPresses ?? 0) && event.button === 0;
   });
   trigger.addEventListener('pointerup', () => {
     if (!pressed) return;
