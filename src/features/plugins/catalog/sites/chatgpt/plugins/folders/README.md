@@ -9,8 +9,7 @@ code: it invokes Voyager's first-party `folders` primitive through a `native`
 op, and everything about ChatGPT's page comes from the `folders` section of
 `sites/chatgpt/site.json`.
 
-- Requires the plugin engine that ships `folders` (`"engine": ">=next"` until
-  the next release stamps it).
+- Requires the plugin engine that ships `folders` (`"engine": ">=1.10.0"`).
 - On by default, the only site whose folders are: it runs once you grant
   Voyager access to chatgpt.com, until you turn it off in the popup.
 - Folders, their keys (`gvFolderDataChatGPT`), the Drive file

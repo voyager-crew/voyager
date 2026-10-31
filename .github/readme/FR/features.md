@@ -27,9 +27,9 @@
 
 Grâce au [moteur d'extensions Voyager](https://voyager.nagi.fun/fr/guide/plugins), ces fonctionnalités étendent votre expérience au-delà de Gemini. Activez-les dans la fenêtre de l'extension et accordez l'accès à chaque site :
 
-- **📍 Timeline** : la même chronologie, avec les messages en favori et la recherche, sur Claude et ChatGPT ; DeepSeek la propose comme extension facultative.
-- **📂 Dossiers ChatGPT** : rangez vos conversations ChatGPT dans des dossiers. Activé par défaut.
-- **💾 Export ChatGPT** : exportez une conversation ChatGPT en Markdown, JSON, PDF ou image.
+- **📍 Timeline** : la même chronologie, avec les messages en favori et la recherche, sur ChatGPT, Claude et DeepSeek. Désactivée tant que vous ne l’activez pas.
+- **📂 Dossiers** : rangez vos conversations dans des dossiers sur ChatGPT, Claude, DeepSeek et Kimi. Ceux de ChatGPT sont activés par défaut.
+- **💾 Export** : exportez une conversation en Markdown, JSON, PDF ou image sur ChatGPT, Claude, DeepSeek et Kimi.
 - **📐 Copie de formules** : cliquez sur une formule pour copier son LaTeX sur Claude, ChatGPT et DeepSeek.
 - **⌨️ Saisie Vim** : édition modale façon Vim et déplacement du curseur dans la zone de saisie de Claude, ChatGPT et DeepSeek.
 - **📖 Largeur de lecture confortable** : Ajustez la largeur de chat pour une meilleure expérience de lecture sur Claude, ChatGPT, DeepSeek et Kimi.

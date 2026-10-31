@@ -16,8 +16,7 @@ there is no fallback Enter dispatch. IME composition is left alone, including
 keydown events that report `isComposing` or key code 229. Plain Enter never sends.
 
 This requires an extension update that ships `sendShortcut`. The manifest uses
-`engine: ">=next"` until the release stamps its concrete engine version; a catalog
-update alone cannot provide the primitive.
+`engine: ">=1.8.0"`; a catalog update alone cannot provide the primitive.
 
 ## Safe live checks needed
 

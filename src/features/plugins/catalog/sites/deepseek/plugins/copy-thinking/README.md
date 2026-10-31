@@ -12,6 +12,5 @@ primitive through a `native` op with `target: "thinkingBlock"`.
   gets its button once it settles. Turning the plugin off removes every button.
 - `target` is a `semanticKey` param, so the compatibility check requires the
   site to declare `thinkingBlock` without a `requires.semantic` entry.
-- Requires the Voyager plugin engine that ships `copyButton` (`engine: ">=next"`
-  until the release stamps it).
+- Requires the Voyager plugin engine that ships `copyButton` (`engine: ">=1.8.0"`).
 - Ships disabled; enable it from the popup on DeepSeek.

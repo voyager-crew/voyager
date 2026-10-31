@@ -42,5 +42,5 @@ This plugin is the feature's only runtime: `src/features/plugins/sites/featureOw
 assigns the feature to it, and the plugin host admits it where the retired
 native module used to start.
 
-Requires the next plugin engine (the `copyButton` and `exportImage` params) and
-the Gemini site adapter's `codeBlock` anchor.
+Requires plugin engine `>=1.9.0` (the `copyButton` and `exportImage` params)
+and the Gemini site adapter's `codeBlock` anchor.

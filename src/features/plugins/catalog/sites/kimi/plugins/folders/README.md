@@ -7,8 +7,7 @@ contains no code: it invokes Voyager's first-party `folders` primitive through a
 `native` op, and everything about Kimi's page comes from the `folders` section
 of `sites/kimi/site.json`.
 
-- Requires the plugin engine that ships `folders` (`"engine": ">=next"` until
-  the next release stamps it).
+- Requires the plugin engine that ships `folders` (`"engine": ">=1.10.0"`).
 - Ships disabled; enable it from the popup on Kimi.
 - Folders, their keys (`gvFolderData:kimi`), the Drive file
   (`gemini-voyager-kimi-folders.json`) and the backup namespace (`kimi-folders`)

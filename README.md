@@ -94,7 +94,7 @@ Voyager's own features are built the same way. The timeline, formula copy, quote
 | -------------------------------------------------------------- | :----: | :-------: | :-----: | :----: | :------: | :--: |
 | [Folders](https://voyager.nagi.fun/en/guide/folders)           |   ●    |     ●     |    ●    |   ○    |    ○     |  ○   |
 | [Timeline](https://voyager.nagi.fun/en/guide/timeline)         |   ●    |           |    ○    |   ○    |    ○     |      |
-| [Export](https://voyager.nagi.fun/en/guide/export)             |   ●    |           |    ○    |        |          |  ○   |
+| [Export](https://voyager.nagi.fun/en/guide/export)             |   ●    |           |    ○    |   ○    |    ○     |  ○   |
 | [Formula copy](https://voyager.nagi.fun/en/guide/formula-copy) |   ●    |     ●     |    ○    |   ○    |    ○     |      |
 | [Quote reply](https://voyager.nagi.fun/en/guide/quote-reply)   |   ●    |           |    ○    |   ○    |    ○     |  ○   |
 | [Diagrams](https://voyager.nagi.fun/en/guide/mermaid)          |   ●    |           |    ○    |        |          |      |

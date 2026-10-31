@@ -122,18 +122,18 @@ bun install
 
 ### 利用できるコマンド
 
-| コマンド              | 説明                                            |
-| --------------------- | ----------------------------------------------- |
-| `bun run dev`         | Chrome の開発モードを開始（ホットリロード付き） |
-| `bun run dev:firefox` | Firefox の開発モードを開始                      |
-| `bun run dev:safari`  | Safari の開発モードを開始（macOS のみ）         |
-| `bun run build`       | Chrome 向けの本番ビルド                         |
-| `bun run build:edge`  | Edge 向けの単独ビルドとパッケージ化             |
-| `bun run build:all`   | Chrome、Firefox、Safari のビルド                |
-| `bun run lint`        | oxlint を実行し、自動修正を行う                 |
-| `bun run typecheck`   | TypeScript の型チェックを実行                   |
-| `bun run test`        | テストスイートを実行                            |
-| `bun run verify:pr`   | ローカルの PR 向け標準チェックを実行            |
+| コマンド              | 説明                                              |
+| --------------------- | ------------------------------------------------- |
+| `bun run dev`         | Chrome の開発モード（再ビルドして自動再読み込み） |
+| `bun run dev:firefox` | Firefox の開発モードを開始                        |
+| `bun run dev:safari`  | Safari の開発モードを開始（macOS のみ）           |
+| `bun run build`       | Chrome 向けの本番ビルド                           |
+| `bun run build:edge`  | Edge 向けの単独ビルドとパッケージ化               |
+| `bun run build:all`   | Chrome、Firefox、Safari のビルド                  |
+| `bun run lint`        | oxlint を実行し、自動修正を行う                   |
+| `bun run typecheck`   | TypeScript の型チェックを実行                     |
+| `bun run test`        | テストスイートを実行                              |
+| `bun run verify:pr`   | ローカルの PR 向け標準チェックを実行              |
 
 ### 拡張機能の読み込み
 

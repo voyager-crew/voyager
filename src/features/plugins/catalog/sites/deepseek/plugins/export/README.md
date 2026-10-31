@@ -9,5 +9,5 @@ The `conversationExport` primitive reads DeepSeek’s virtual list from the sema
 collects message snapshots while scrolling and restores the scroll position after
 reading. An uncertain or interrupted read warns that the export may be incomplete.
 
-This plugin requires the next Voyager plugin engine; the manifest contains no
-site selectors or executable code.
+This plugin requires Voyager plugin engine `>=1.10.0`; the manifest contains
+no site selectors or executable code.

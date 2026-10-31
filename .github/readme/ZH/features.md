@@ -27,9 +27,9 @@
 
 通过 [Voyager 插件引擎](https://voyager.nagi.fun/guide/plugins)，这些功能让你的体验延伸到 Gemini 之外。在扩展弹窗中开启它们，并分别授权每个网站：
 
-- **📍 时间线**: 在 Claude 和 ChatGPT 上提供同样的时间线，支持星标消息和搜索；DeepSeek 上则是可选插件。
-- **📂 ChatGPT 文件夹**: 将 ChatGPT 对话整理到文件夹中。默认开启。
-- **💾 ChatGPT 导出**: 将 ChatGPT 对话导出为 Markdown、JSON、PDF 或图片。
+- **📍 时间线**: 在 ChatGPT、Claude 和 DeepSeek 上提供同样的时间线，支持星标消息和搜索；默认关闭，需手动开启。
+- **📂 文件夹**: 在 ChatGPT、Claude、DeepSeek 和 Kimi 上把对话整理到文件夹中。ChatGPT 文件夹默认开启。
+- **💾 导出**: 在 ChatGPT、Claude、DeepSeek 和 Kimi 上将对话导出为 Markdown、JSON、PDF 或图片。
 - **📐 公式复制**: 在 Claude、ChatGPT 和 DeepSeek 上点击公式即可复制其 LaTeX。
 - **⌨️ Vim 输入**: 在 Claude、ChatGPT 和 DeepSeek 的输入框中使用 Vim 风格的模态编辑和光标移动。
 - **📖 舒适阅读宽度**: 调整 Claude、ChatGPT、DeepSeek 和 Kimi 的对话宽度，获得更好的阅读体验。

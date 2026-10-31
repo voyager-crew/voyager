@@ -27,8 +27,7 @@ from screen readers because it changes on every keystroke. Turning the plugin
 off removes the badge and its styles.
 
 This requires an extension update that ships `counterBadge`. The manifest uses
-`engine: ">=next"` until the release stamps its concrete engine version; a
-catalog update alone cannot provide the primitive.
+`engine: ">=1.8.0"`; a catalog update alone cannot provide the primitive.
 
 ## Live check
 

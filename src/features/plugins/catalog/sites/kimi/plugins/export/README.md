@@ -13,5 +13,5 @@ survey, so the descriptor declares no `generating` selector and the reader
 reports completeness as unknown rather than guessed. The scroll position is
 restored after reading.
 
-This plugin requires the next Voyager plugin engine; the manifest contains no
-site selectors or executable code.
+This plugin requires Voyager plugin engine `>=1.10.0`; the manifest contains
+no site selectors or executable code.

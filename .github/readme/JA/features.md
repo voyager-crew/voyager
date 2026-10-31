@@ -27,9 +27,9 @@
 
 [Voyager プラグインエンジン](https://voyager.nagi.fun/ja/guide/plugins)を基盤に、これらの機能で Gemini の外でも体験を広げます。拡張機能のポップアップでオンにし、各サイトへのアクセスを許可してください。
 
-- **📍 タイムライン**: Claude と ChatGPT では、スター付きメッセージと検索を備えた同じタイムラインが使えます。DeepSeek では、オプションのプラグインとして提供されています。
-- **📂 ChatGPT フォルダ**: ChatGPT の会話をフォルダに整理できます。既定でオンです。
-- **💾 ChatGPT エクスポート**: ChatGPT の会話を Markdown、JSON、PDF、または画像で書き出せます。
+- **📍 タイムライン**: ChatGPT、Claude、DeepSeek で、スター付きメッセージと検索を備えた同じタイムラインが使えます。オンにするまではオフです。
+- **📂 フォルダ**: ChatGPT、Claude、DeepSeek、Kimi で会話をフォルダに整理できます。ChatGPT のフォルダは既定でオンです。
+- **💾 エクスポート**: ChatGPT、Claude、DeepSeek、Kimi で会話を Markdown、JSON、PDF、または画像で書き出せます。
 - **📐 数式コピー**: Claude、ChatGPT、DeepSeek で、数式をクリックすると LaTeX をコピーできます。
 - **⌨️ Vim 入力**: Claude、ChatGPT、DeepSeek の入力欄で、Vim 風のモード編集とカーソル移動ができます。
 - **📖 快適な閲覧幅**: Claude、ChatGPT、DeepSeek、Kimi のチャット幅を調整し、より良い読書体験を。

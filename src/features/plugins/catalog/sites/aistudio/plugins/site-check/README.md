@@ -33,5 +33,4 @@ and its selectors are withheld.
 Turn it on with **Site check** in the Conversations card of Voyager's popup (off by default); the switch is stored as `gvSiteCheckEnabled`, shared by Gemini and AI Studio.
 
 The plugin invokes Voyager's `siteCheck` primitive with no params, so it needs
-an extension that ships the primitive. The manifest uses `engine: ">=next"`
-until the release stamps its engine version.
+an extension that ships the primitive. The manifest uses `engine: ">=1.10.0"`.

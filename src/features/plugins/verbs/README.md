@@ -22,8 +22,8 @@ and outside `thinkingBlock`) is Gemini's long code block collapse on another sit
 `pages/content/codeBlockCollapse/engine.ts` drives both, Gemini with its blocks expanded until the
 user collapses them, the primitive with them collapsed plus expand all / collapse all. The formula-copy,
 Vim, Claude-timeline and ChatGPT-timeline builtins are now manifests that invoke these primitives;
-the shared timeline engine lives in `../timeline/TimelineEngine.ts`. Its catalog adapter
-(`../timeline/adapters/catalog/`) accumulates markers across virtualized windows (`turnMerge.ts`)
+the shared timeline engine lives in `../../timeline/TimelineEngine.ts`. Its catalog adapter
+(`../../timeline/adapters/catalog/`) accumulates markers across virtualized windows (`turnMerge.ts`)
 and keeps stars and hierarchy in per-site local keys, while stars remain available in Saved Library. Star ids come from the URL at
 each read or write (`conversationId.ts`); a manifest's `conversationIdPattern` wins over the site
 adapter's. A mounted timeline publishes that namespace (`activeStarNamespace.ts`) so ChatGPT

@@ -19,8 +19,7 @@ is preserved as LaTeX where the reply renders KaTeX. Light and dark colors follo
 Voyager’s resolved page theme, and the button supports RTL layouts.
 
 This requires an extension update that ships `quoteReply`. The manifest uses
-`engine: ">=next"` until release stamps its concrete engine version; a catalog
-update alone cannot provide the primitive.
+`engine: ">=1.8.0"`; a catalog update alone cannot provide the primitive.
 
 ## Live check
 

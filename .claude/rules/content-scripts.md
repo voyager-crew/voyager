@@ -16,7 +16,7 @@ globs: ["src/pages/content/**", "src/styles/contentStyle/**"]
 
 ## DOM Injection
 - Each content script sub-module in `src/pages/content/` is self-contained
-- Bridge between host sites (Gemini, AI Studio, Claude, ChatGPT, DeepSeek) and the extension — any host DOM may change without notice
+- Bridge between host sites (Gemini, AI Studio, Claude, ChatGPT, DeepSeek, Kimi) and the extension — any host DOM may change without notice
 - Safari has platform-specific manifest and native-bridge paths, but cloud sync,
   watermark removal, and image export are supported. Do not add an `isSafari()`
   skip from historical assumptions; verify the current Safari implementation

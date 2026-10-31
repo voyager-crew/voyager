@@ -127,18 +127,18 @@ bun install
 
 ### Commandes Disponibles
 
-| Commande              | Description                                           |
-| --------------------- | ----------------------------------------------------- |
-| `bun run dev`         | Démarrer le mode dev Chrome avec rechargement à chaud |
-| `bun run dev:firefox` | Démarrer le mode dev Firefox                          |
-| `bun run dev:safari`  | Démarrer le mode dev Safari (macOS uniquement)        |
-| `bun run build`       | Build de production pour Chrome                       |
-| `bun run build:edge`  | Build et paquet Edge indépendants                     |
-| `bun run build:all`   | Builds Chrome + Firefox + Safari                      |
-| `bun run lint`        | Exécuter oxlint avec correction automatique           |
-| `bun run typecheck`   | Exécuter la vérification de type TypeScript           |
-| `bun run test`        | Exécuter la suite de tests                            |
-| `bun run verify:pr`   | Vérification automatisée locale standard d'une PR     |
+| Commande              | Description                                                                                                                                               |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run dev`         | Démarrer le mode dev Chrome : les modifications relancent le build et l'extension se recharge automatiquement (les onglets ouverts ne sont pas rechargés) |
+| `bun run dev:firefox` | Démarrer le mode dev Firefox                                                                                                                              |
+| `bun run dev:safari`  | Démarrer le mode dev Safari (macOS uniquement)                                                                                                            |
+| `bun run build`       | Build de production pour Chrome                                                                                                                           |
+| `bun run build:edge`  | Build et paquet Edge indépendants                                                                                                                         |
+| `bun run build:all`   | Builds Chrome + Firefox + Safari                                                                                                                          |
+| `bun run lint`        | Exécuter oxlint avec correction automatique                                                                                                               |
+| `bun run typecheck`   | Exécuter la vérification de type TypeScript                                                                                                               |
+| `bun run test`        | Exécuter la suite de tests                                                                                                                                |
+| `bun run verify:pr`   | Vérification automatisée locale standard d'une PR                                                                                                         |
 
 ### Charger l'Extension
 

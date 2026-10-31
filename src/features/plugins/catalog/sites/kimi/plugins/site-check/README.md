@@ -17,5 +17,4 @@ or a full URL. Enable it from Voyager's popup (off by default); there are no
 settings.
 
 The plugin invokes Voyager's `siteCheck` primitive with no params, so it needs
-an extension that ships the primitive. The manifest uses `engine: ">=next"`
-until the release stamps its engine version.
+an extension that ships the primitive. The manifest uses `engine: ">=1.10.0"`.

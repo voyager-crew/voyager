@@ -4,7 +4,7 @@ Start with the owner of the behavior being changed. `index.ts` creates the runne
 (persistent toolbar, conversation/response menus, logo dropdown, copy-as-image). An official
 plugin mounts them through the `conversationExport` primitive and calls the returned stop when it unmounts:
 `voyager.gemini-export` (still admitted by `geminiBuiltinStartup.startExport`),
-`voyager.chatgpt-export`, `voyager.deepseek-export`. Gemini's host policy permits the primitive
+`voyager.chatgpt-export`, `voyager.claude-export`, `voyager.deepseek-export`, `voyager.kimi-export`. Gemini's host policy permits the primitive
 only for its packaged official export id; local plugins cannot invoke it there. Stopping
 removes every entry point, closes the dialog and cancels the active run. File writing
 (JSON/Markdown/PDF/image) lives in `src/features/export/`; it renders only content that was read

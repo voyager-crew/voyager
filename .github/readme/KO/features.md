@@ -27,9 +27,9 @@
 
 [Voyager 플러그인 엔진](https://voyager.nagi.fun/ko/guide/plugins)을 기반으로, 이 기능들은 Gemini를 넘어 사용 경험을 확장합니다. 확장 프로그램 팝업에서 켜고, 각 사이트에 대한 접근을 허용하세요.
 
-- **📍 타임라인**: Claude와 ChatGPT에서 별표 메시지와 검색을 갖춘 같은 타임라인을 제공합니다. DeepSeek에서는 선택 사항인 플러그인으로 제공됩니다.
-- **📂 ChatGPT 폴더**: ChatGPT 대화를 폴더로 정리합니다. 기본으로 켜져 있습니다.
-- **💾 ChatGPT 내보내기**: ChatGPT 대화를 Markdown, JSON, PDF 또는 이미지로 내보냅니다.
+- **📍 타임라인**: ChatGPT, Claude, DeepSeek에서 별표 메시지와 검색을 갖춘 같은 타임라인을 제공합니다. 직접 켜기 전까지는 꺼져 있습니다.
+- **📂 폴더**: ChatGPT, Claude, DeepSeek, Kimi에서 대화를 폴더로 정리합니다. ChatGPT 폴더는 기본으로 켜져 있습니다.
+- **💾 내보내기**: ChatGPT, Claude, DeepSeek, Kimi에서 대화를 Markdown, JSON, PDF 또는 이미지로 내보냅니다.
 - **📐 수식 복사**: Claude, ChatGPT, DeepSeek에서 수식을 클릭해 LaTeX를 복사합니다.
 - **⌨️ Vim 입력**: Claude, ChatGPT, DeepSeek 입력창에서 Vim 방식의 모달 편집과 커서 이동을 지원합니다.
 - **📖 편안한 읽기 너비**: Claude, ChatGPT, DeepSeek, Kimi의 대화 너비를 조절하여 더 나은 읽기 경험 제공.

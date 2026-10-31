@@ -28,7 +28,7 @@ Grep for the existing primitive before writing parallel logic — reviewers trea
 
 ## Docs and locale mirrors
 
-- "The docs" are 20+ surfaces: the main `README.md`, nine `.github/README_*.md` locale mirrors, ten `docs/<locale>/` trees, and `docs/public/llms*.txt`. The green `i18n` CI check only compares `src/locales/*/messages.json` keys — it covers none of these (#874, #853).
+- "The docs" are 20+ surfaces: the main `README.md`, nine `.github/README_*.md` locale mirrors, ten `docs/<locale>/` trees, and `docs/public/llms*.txt`. The green `i18n` CI check compares `src/locales/*/messages.json` keys and primitive/panel message fragment keys — it covers none of these (#874, #853).
 - Never delete a published docs route — there is no redirect layer, so replace retired pages with a localized notice at the original URL (#874).
 
 ## Theme and data correctness

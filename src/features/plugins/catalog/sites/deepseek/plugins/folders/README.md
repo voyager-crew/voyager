@@ -7,8 +7,7 @@ plugin contains no code: it invokes Voyager's first-party `folders` primitive
 through a `native` op, and everything about DeepSeek's page comes from the
 `folders` section of `sites/deepseek/site.json`.
 
-- Requires the plugin engine that ships `folders` (`"engine": ">=next"` until
-  the next release stamps it).
+- Requires the plugin engine that ships `folders` (`"engine": ">=1.10.0"`).
 - Ships disabled; enable it from the popup on DeepSeek.
 - Folders, their keys (`gvFolderDataDeepSeek`), the Drive file
   (`gemini-voyager-deepseek-folders.json`) and the backup namespace are

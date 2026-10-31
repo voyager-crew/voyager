@@ -33,9 +33,9 @@
 
 這些功能由 [Voyager 外掛引擎](https://voyager.nagi.fun/zh_TW/guide/plugins) 驅動，讓你的體驗延伸到 Gemini 之外。請在擴充功能彈出視窗中開啟，並授權存取各網站：
 
-- **📍 時間軸**：在 Claude 與 ChatGPT 上提供相同的時間軸，支援星號訊息與搜尋；DeepSeek 則以選用外掛的形式提供。
-- **📂 ChatGPT 資料夾**：將 ChatGPT 對話整理到資料夾中。預設開啟。
-- **💾 ChatGPT 匯出**：將 ChatGPT 對話匯出為 Markdown、JSON、PDF 或圖片。
+- **📍 時間軸**：在 ChatGPT、Claude 與 DeepSeek 上提供相同的時間軸，支援星號訊息與搜尋；預設關閉，需手動開啟。
+- **📂 資料夾**：在 ChatGPT、Claude、DeepSeek 與 Kimi 上將對話整理到資料夾中。ChatGPT 資料夾預設開啟。
+- **💾 匯出**：在 ChatGPT、Claude、DeepSeek 與 Kimi 上將對話匯出為 Markdown、JSON、PDF 或圖片。
 - **📐 公式複製**：在 Claude、ChatGPT 與 DeepSeek 上點擊公式，即可複製其 LaTeX。
 - **⌨️ Vim 輸入**：在 Claude、ChatGPT 與 DeepSeek 的輸入框中使用 Vim 風格的模式編輯與游標移動。
 - **📖 舒適閱讀寬度**：在 Claude、ChatGPT、DeepSeek 與 Kimi 上調整對話寬度，獲得更好的閱讀體驗。

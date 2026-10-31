@@ -33,5 +33,5 @@ This plugin is the feature's only runtime: `src/features/plugins/sites/featureOw
 assigns the feature to it, and the plugin host admits it where the retired
 native module used to start.
 
-Requires the plugin engine that adds the `userLatex` `unit` param (`>=next`
-until release) and the `userLatex` handler.
+Requires the plugin engine that adds the `userLatex` `unit` param (`>=1.9.0`)
+and the `userLatex` handler.

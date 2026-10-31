@@ -39,6 +39,6 @@ This plugin is the feature's only runtime: `src/features/plugins/sites/featureOw
 assigns the feature to it, and the plugin host admits it where the retired
 native module used to start.
 
-Requires the plugin engine that adds the Gemini policy (`>=next` until
-release), the `codeCollapse` handler and the site's `assistantTurn` and
+Requires the plugin engine that adds the Gemini policy (`>=1.9.0`),
+the `codeCollapse` handler and the site's `assistantTurn` and
 `codeBlock` semantic selectors.

@@ -33,9 +33,9 @@ Para um guia completo, visite a nossa [Documentação](https://voyager.nagi.fun/
 
 Com o [Mecanismo de plugins do Voyager](https://voyager.nagi.fun/pt/guide/plugins), estes recursos levam sua experiência além do Gemini. Ative-os no popup da extensão e conceda acesso a cada site:
 
-- **📍 Timeline**: A mesma linha do tempo, com mensagens marcadas e pesquisa, no Claude e no ChatGPT; o DeepSeek a tem como plugin opcional.
-- **📂 Pastas do ChatGPT**: Organize as conversas do ChatGPT em pastas. Ativado por padrão.
-- **💾 Exportação do ChatGPT**: Exporte uma conversa do ChatGPT como Markdown, JSON, PDF ou imagem.
+- **📍 Timeline**: A mesma linha do tempo, com mensagens marcadas e pesquisa, no ChatGPT, no Claude e no DeepSeek. Fica desativada até você ativá-la.
+- **📂 Pastas**: Organize as conversas em pastas no ChatGPT, no Claude, no DeepSeek e no Kimi. As do ChatGPT vêm ativadas por padrão.
+- **💾 Exportação**: Exporte uma conversa como Markdown, JSON, PDF ou imagem no ChatGPT, no Claude, no DeepSeek e no Kimi.
 - **📐 Cópia de Fórmulas**: Clique em uma fórmula para copiar o seu LaTeX no Claude, no ChatGPT e no DeepSeek.
 - **⌨️ Entrada Vim**: Edição modal no estilo Vim e navegação do cursor nos campos de texto do Claude, do ChatGPT e do DeepSeek.
 - **📖 Largura de Leitura Confortável**: Ajuste a largura do chat para uma melhor experiência de leitura no Claude, ChatGPT, DeepSeek e Kimi.

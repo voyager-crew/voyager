@@ -7,8 +7,7 @@ import and export, and cloud sync. This plugin contains no code: it invokes
 Voyager's first-party `folders` primitive through a `native` op, and everything
 about Claude's page comes from the `folders` section of `sites/claude/site.json`.
 
-- Requires the plugin engine that ships `folders` (`"engine": ">=next"` until
-  the next release stamps it).
+- Requires the plugin engine that ships `folders` (`"engine": ">=1.10.0"`).
 - Ships disabled; enable it from the popup on Claude.
 - Folders, their keys (`gvFolderDataClaude`), the Drive file
   (`gemini-voyager-claude-folders.json`) and the backup namespace are

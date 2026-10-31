@@ -33,7 +33,7 @@ at the owner below.
 | Persisted schema                 | [`core/types/folder.ts`](../../../core/types/folder.ts); local [`types.ts`](types.ts) re-exports it and defines drag data.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | Pure tree operations             | [`features/folder/model/folderData.ts`](../../../features/folder/model/folderData.ts): moves, removal, ordering, integrity repair, `validateFolderData` and `cloneFolderData`. Adding or moving a conversation goes through [`placeConversations.ts`](../../../features/folder/model/placeConversations.ts) on both hosts, where callers build records and own side effects. Dropping at a position (reorder, including across folders) goes through `reorderConversations`. Shared constants live in [`features/folder/constants.ts`](../../../features/folder/constants.ts). |
 | Data and commands                | [`FolderStore.ts`](FolderStore.ts): folder mutations over `FolderStoreState`; Gemini's activity, Gem tags, titles and record edits in `gemini/`.                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Persistence                      | [`FolderRepository.ts`](FolderRepository.ts): load, serialized saves, draft replacement, recovery, storage echoes, account switching and scope retry, configured per platform by [`platformFolderConfig.ts`](platformFolderConfig.ts) (keys, backup namespace, root bucket, legacy migration hook, normalize/prune/recovery/retry policy). Gemini (`FolderStore`) and AI Studio (`aistudio.ts`, chrome.storage-only adapter) both use it.                                                                                                                                      |
+| Persistence                      | [`FolderRepository.ts`](FolderRepository.ts): load, serialized saves, draft replacement, recovery, storage echoes, account switching and scope retry, configured per platform by [`platformFolderConfig.ts`](platformFolderConfig.ts) (keys, backup namespace, root bucket, legacy migration hook, normalize/prune/recovery/retry policy). Gemini (`FolderStore`) and AI Studio (`storage/AIStudioFolderStorageAdapter.ts`, chrome.storage-only adapter) both use it.                                                                                                          |
 | Account write lifetime           | [`FolderDataSession.ts`](FolderDataSession.ts): captured snapshots, queued saves, recovery namespaces and unload cleanup.                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Sidebar rendering                | [`FolderSidebarView.ts`](FolderSidebarView.ts): header, search, Activity and preferences; the tree is the shared `floatingTree` mounted by [`sidebarTree.ts`](sidebarTree.ts), with drops in [`sidebarDrops.ts`](sidebarDrops.ts) and search/account filters over the cycle-cut layout in [`sidebarFilter.ts`](sidebarFilter.ts).                                                                                                                                                                                                                                              |
 | Selection and drag/drop          | [`FolderSelection.ts`](FolderSelection.ts): shared native/folder selection, drag state and batch actions.                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -48,7 +48,7 @@ at the owner below.
 | Native mutation scheduling       | [`NativeSidebarObserver.ts`](NativeSidebarObserver.ts): observer, frame batch, idle queue and title debounce.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Native menus and deletion        | [`NativeConversationMenus.ts`](NativeConversationMenus.ts): menu injection, confirmation identity and settlement checks; callbacks change data through the store.                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Browser storage                  | [`storage/FolderStorageAdapter.ts`](storage/FolderStorageAdapter.ts): Safari durable storage and Chromium mirror behavior.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| Other hosts and views            | [`aistudio.ts`](aistudio.ts) (see [AI Studio](#ai-studio)), [`floatingPanel.ts`](floatingPanel.ts); shared schema/session, separate host integration.                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Other hosts and views            | [`storage/AIStudioFolderStorageAdapter.ts`](storage/AIStudioFolderStorageAdapter.ts) (see [AI Studio](#ai-studio)), [`floatingPanel.ts`](floatingPanel.ts); shared schema/session, separate host integration.                                                                                                                                                                                                                                                                                                                                                                  |
 | Gem metadata and startup         | [`gemConfig.ts`](gemConfig.ts), [`geminiFolderStartup.ts`](../geminiFolderStartup.ts).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 Test data invariants and scheduling at their owner. Keep account transitions and view wiring in
@@ -78,55 +78,7 @@ file length alone is not a reason to add another layer.
 AI Studio's folders (the session the page holds, the plugin's view, and where each responsibility
 lives) are described in [`verbs/folders/aistudio/README.md`](../../../features/plugins/verbs/folders/aistudio/README.md).
 
-## Adding Support for New Gems
-
-To add support for a new Gem (either official Google Gems or custom Gems):
-
-1. Open `gemConfig.ts`
-2. Add a new entry to the `GEM_CONFIG` array:
-
-```typescript
-{
-  id: 'your-gem-id',           // The ID as it appears in URLs (/gem/your-gem-id/...)
-  name: 'Your Gem Name',       // Display name
-  icon: 'material_icon_name',  // Google Material Symbols icon name
-}
-```
-
-### Finding the Gem ID
-
-The Gem ID is the URL slug used by Gemini:
-
-- Open a conversation with the Gem
-- Check the URL: `https://gemini.google.com/app/gem/[GEM_ID]/...`
-- Use this ID in the configuration
-
-### Choosing an Icon
-
-Icons should be valid [Google Material Symbols](https://fonts.google.com/icons) icon names. Common examples:
-
-- `auto_stories` - Learning Coach
-- `lightbulb` - Brainstorm Buddy
-- `work` - Career Guide
-- `code` - Coding Partner
-- `edit_note` - Writing Editor
-- `menu_book` - Storybook
-- `chess_pawn` - Chess Champ
-- `check_circle` - Productivity Helper
-- `sports_cricket` - Cricket
-
-### Example
-
-```typescript
-export const GEM_CONFIG: GemConfig[] = [
-  // ... existing entries ...
-  {
-    id: 'data-analyst',
-    name: 'Data Analyst',
-    icon: 'analytics',
-  },
-];
-```
+To add support for a new Gem, see [Adding Gem Support](../../../../.github/contributing/en/adding-gem-support.md).
 
 ## Contributing
 
@@ -169,10 +121,3 @@ localized untitled label.
 
 `getGemIcon` maps a recorded `gemId` to its icon when a conversation renders
 in a folder; unknown Gems use `DEFAULT_GEM_ICON`.
-
-## Future Enhancements
-
-Potential improvements that could be contributed:
-
-- Custom user-defined Gems
-- Gem icon customization
