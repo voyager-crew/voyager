@@ -8,7 +8,7 @@ import { GoogleDriveAuth, isSafariRuntime } from './GoogleDriveAuth';
 import { GoogleDriveBackupFolder } from './GoogleDriveBackupFolder';
 import { GoogleDriveFiles } from './GoogleDriveFiles';
 import { BACKUP_FOLDER_RECOVERY_FILE_NAMES } from './GoogleDriveSyncPayloads';
-import { GoogleDriveSyncSession } from './GoogleDriveSyncSession';
+import { DriveAccountChangedError, GoogleDriveSyncSession } from './GoogleDriveSyncSession';
 import { loadPersistedSyncState, savePersistedSyncState } from './GoogleDriveSyncStateStorage';
 import type { GoogleDriveSyncTransfer } from './GoogleDriveSyncTransfer';
 import { createGoogleDriveTurnPort } from './GoogleDriveTurnPort';
@@ -69,7 +69,17 @@ export class GoogleDriveSyncService {
             if (session === this.session) await this.saveState();
           },
         });
-        return await session.run(() => run(port));
+        return await session
+          .run(() => run(port))
+          .catch((error: unknown) => {
+            if (error instanceof DriveAccountChangedError) {
+              // The session can reject a resolved failure after a coordinator catches the error.
+              const uploadReceipt = port.getUploadReceipt();
+              if (!uploadReceipt.complete || uploadReceipt.files.length)
+                throw new DriveAccountChangedError(error.unsent, uploadReceipt);
+            }
+            throw error;
+          });
       } finally {
         this.transferSession = null;
         if (session.endedForDriveAccountChange) this.replaceSessionForDriveAccount(session);

@@ -78,12 +78,9 @@ export function createCloudSyncMessageHandler(readers: CloudSyncReaders) {
               accountHash: getHighlightAccountHash({ ...scope, platform: 'gemini' }),
             }),
         ).catch(async (error: unknown) => {
+          if (error instanceof DriveAccountChangedError) throw error;
           const uploadReceipt = drive.getUploadReceipt();
           if (!uploadReceipt.complete || uploadReceipt.files.length) {
-            // A new account ends this turn's session, which drops what the turn returns; the
-            // writes the old account already holds travel on the error instead.
-            if (error instanceof DriveAccountChangedError)
-              throw new DriveAccountChangedError(error.unsent, uploadReceipt);
             return {
               ok: false,
               error: cloudSyncFailureCode(error) ?? 'sync_failed',
