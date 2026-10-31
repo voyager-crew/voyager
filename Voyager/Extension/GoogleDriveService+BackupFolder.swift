@@ -88,7 +88,18 @@ extension GoogleDriveService {
     completion: @escaping (Result<String?, Error>) -> Void
   ) {
     if let backupFolderID = folderCache.folder(for: scope.account) {
-      completion(.success(backupFolderID))
+      // Another device can delete the cached folder while this account is inactive.
+      itemExists(fileID: backupFolderID, in: scope) { result in
+        switch result {
+        case .success(true):
+          completion(.success(backupFolderID))
+        case .success(false):
+          self.folderCache.forget(backupFolderID, for: scope.account)
+          self.resolveExistingBackupFolder(in: scope, completion: completion)
+        case .failure(let error):
+          completion(.failure(error))
+        }
+      }
       return
     }
 

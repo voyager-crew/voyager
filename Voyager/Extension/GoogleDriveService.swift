@@ -204,7 +204,8 @@ final class GoogleDriveService {
     in scope: VoyagerDriveAccountScope,
     completion: @escaping (Result<String, Error>) -> Void
   ) {
-    findFile(named: fileName, in: scope) { result in
+    // ensureBackupFolder already validated the folder for this write.
+    findFileInResolvedFolder(named: fileName, in: scope) { result in
       switch result {
       case .failure(let error):
         completion(.failure(error))
@@ -425,7 +426,7 @@ final class GoogleDriveService {
     performRequest(
       method: "GET",
       path: "/drive/v3/files/\(fileID)",
-      queryItems: [URLQueryItem(name: "fields", value: "id")],
+      queryItems: [URLQueryItem(name: "fields", value: "id,trashed")],
       in: scope
     ) { result in
       switch result {
@@ -434,7 +435,10 @@ final class GoogleDriveService {
       case .success(let response) where response.statusCode == 404:
         completion(.success(false))
       case .success(let response) where response.isSuccessful:
-        completion(.success(true))
+        // Drive still returns HTTP 200 for items in the trash.
+        completion(Result {
+          try JSONDecoder().decode(DriveFile.self, from: response.data).trashed != true
+        })
       case .success(let response):
         completion(.failure(self.requestFailure(response)))
       }
@@ -534,6 +538,7 @@ private struct DriveFileList: Decodable {
 
 private struct DriveFile: Decodable {
   let id: String
+  let trashed: Bool?
 }
 
 private struct DriveCreateMetadata: Encodable {
