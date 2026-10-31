@@ -39,6 +39,11 @@ Claude, ChatGPT, DeepSeek, Kimi도 쓰고 있다면 Voyager 팝업을 열고 **�
 다음 번에는요? 버튼을 클릭하여 찾아서 삽입하기만 하면 됩니다.
 당신은 이제 단순히 채팅을 하는 것이 아닙니다. 당신만의 천재성이 담긴 저장소를 구축하고 있습니다.
 
+## 5. 조타실 (Helm)
+
+버튼에 마우스를 올리고 **Voyager 패널**을 클릭하거나, ⌥V / Alt+V를 누르세요.
+대화를 떠나지 않고 이 사이트의 기능을 켜고 끄고, 슬라이더를 실시간으로 미리 보고, 동기화까지 할 수 있습니다.
+
 ---
 
 **준비가 되었습니다.**
@@ -48,3 +53,4 @@ Claude, ChatGPT, DeepSeek, Kimi도 쓰고 있다면 Voyager 팝업을 열고 **�
 - [폴더 관리](/ko/guide/folders)
 - [프롬프트 엔지니어링](/ko/guide/prompts)
 - [데이터 내보내기](/ko/guide/export)
+- [Voyager 패널](/ko/guide/panel)

@@ -47,7 +47,7 @@ No modo compacto, passe o mouse sobre qualquer linha por **~250 ms** para ver o 
 
 ### Inserção rápida com barra
 
-Na caixa de conversa, digite `/` seguido de parte do nome de um prompt. A lista mostra apenas os nomes e tags correspondentes; passe o mouse sobre um item para ver o conteúdo completo e selecione-o com o botão esquerdo ou com `Tab` / `Enter`. O nome aparece como um token destacado e, ao enviar, o corpo completo do prompt é usado.
+Na caixa de conversa, digite `/` seguido de parte do nome de um prompt. A lista mostra os nomes e tags correspondentes, seguidos de **Gerenciar prompts…** e **Painel do Voyager…**, que abrem o Gestor de prompts e o [painel do Voyager](/pt/guide/panel); passe o mouse sobre um item para ver o conteúdo completo e selecione-o com o botão esquerdo ou com `Tab` / `Enter`. O nome aparece como um token destacado e, ao enviar, o corpo completo do prompt é usado.
 
 ![Visualização em lista compacta](/assets/gemini-prompt-manager-compact.png)
 

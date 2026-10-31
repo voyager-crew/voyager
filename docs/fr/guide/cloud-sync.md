@@ -4,15 +4,15 @@ La Synchro Cloud de Voyager sauvegarde vos dossiers, votre bibliothèque de prom
 
 ## Données synchronisées
 
-| Type de données              | Synchronisé | Détails                                                                                                                       |
-| ---------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Structure des dossiers       | Oui         | Dossiers de Gemini, AI Studio, ChatGPT, Claude, DeepSeek et Kimi : imbrication, couleurs et rattachement des conversations    |
-| Bibliothèque de prompts      | Oui         | Tous les prompts enregistrés, avec leurs étiquettes et leur organisation en dossiers                                          |
-| Messages favoris             | Oui         | Signets de la chronologie, issus de n'importe quelle conversation                                                             |
-| Chronologie des autres sites | Oui         | Favoris et niveaux de la chronologie sur ChatGPT, Claude et DeepSeek                                                          |
-| Réglages de l'extension      | Oui         | Préférences à synchroniser entre appareils, comme le tri, les couleurs et le comportement de saisie                           |
-| Configuration des extensions | Oui         | État d'installation et d'activation, et réglages des extensions ; les autorisations de site restent propres à chaque appareil |
-| Réponses du modèle           | Non         | Les sauvegardes des favoris contiennent les prompts utilisateur, pas les réponses du modèle                                   |
+| Type de données              | Synchronisé | Détails                                                                                                                                                       |
+| ---------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Structure des dossiers       | Oui         | Dossiers de Gemini, AI Studio, ChatGPT, Claude, DeepSeek et Kimi : imbrication, couleurs et rattachement des conversations                                    |
+| Bibliothèque de prompts      | Oui         | Tous les prompts enregistrés, avec leurs étiquettes et leur organisation en dossiers                                                                          |
+| Messages favoris             | Oui         | Signets de la chronologie, issus de n'importe quelle conversation                                                                                             |
+| Chronologie des autres sites | Oui         | Favoris et niveaux de la chronologie sur ChatGPT, Claude et DeepSeek                                                                                          |
+| Réglages de l'extension      | Oui         | `gemini-voyager-settings.json` : préférences à synchroniser entre appareils, comme le tri, les couleurs et le comportement de saisie                          |
+| Configuration des extensions | Oui         | `gemini-voyager-plugins.json` : état d'installation et d'activation, et réglages des extensions ; les autorisations de site restent propres à chaque appareil |
+| Réponses du modèle           | Non         | Les sauvegardes des favoris contiennent les prompts utilisateur, pas les réponses du modèle                                                                   |
 
 **Enable Hard Isolation** ne fait plus partie du fichier de réglages du cloud. La synchronisation propre à votre navigateur (celle de Chrome, par exemple) le transmet toujours entre les ordinateurs connectés au même profil de navigateur.
 
@@ -26,12 +26,12 @@ La synchronisation fusionne et vérifie les écritures, avec trois tentatives au
 
 ## Fonctionnalités
 
-- **Synchronisation multi-appareils** : Gardez vos configurations synchronisées sur plusieurs ordinateurs.
+- **Synchronisation multi-appareils** : Gardez vos configurations synchronisées sur plusieurs appareils.
 - **Confidentialité des données** : Les données sont stockées directement dans votre propre espace Google Drive ou votre base iCloud privée, garantissant la confidentialité sans serveur Voyager.
 - **Synchronisation flexible** : Prise en charge de l'envoi manuel, du téléchargement et de la fusion des données.
 
 ::: info
-Les identifiants d'appareil, les jetons d'accès, les caches, les coordonnées d'affichage et l'état temporaire d'exécution ne sont volontairement pas synchronisés comme réglages personnels.
+Les identifiants d'appareil, les jetons d'accès, les caches, les coordonnées d'affichage, la position du panneau, la position du bouton d'export et l'état temporaire d'exécution ne sont volontairement pas synchronisés comme réglages personnels.
 :::
 
 ## Comment utiliser
@@ -44,6 +44,19 @@ Les identifiants d'appareil, les jetons d'accès, les caches, les coordonnées d
 6. Cliquez sur **Envoyer** pour transférer vos données locales vers le cloud, ou sur **Récupérer** pour fusionner les données du cloud dans ce navigateur. **Remplacer** demande d'abord confirmation, puis ne remplace que les données que le cloud contient et que Voyager sait lire ; ce qui manque ou reste illisible dans le cloud est conservé, et le résultat le signale. Vous pouvez annuler juste après.
 
 Avec iCloud, **Supprimer la sauvegarde iCloud** retire toutes les sauvegardes Voyager d'iCloud ; les données locales du Mac restent intactes.
+
+## Synchroniser depuis le panneau
+
+<GuideOp>
+
+L'icône de nuage dans la barre du haut du [panneau Voyager](/fr/guide/panel) ouvre **Synchro Cloud** : vous synchronisez via Google Drive sans quitter la conversation. Tant que Drive n'est pas connecté, cliquez sur **Connecter Google Drive** ; la première synchronisation après la connexion fusionne d'abord le cloud et cet appareil, sans rien écraser.
+
+- **Choisir les sites** : **Commun** (Prompts · Réglages · Plugins) et chaque site ont leur ligne. Désactivez une ligne et cet appareil l'ignore lors de la synchronisation ; un site pris en charge auquel vous donnez accès est ajouté automatiquement.
+- **État** : chaque ligne affiche **Synchronisé**, **Plus récent ici**, **Plus récent dans le cloud**, **Pas envoyé** ou **Vérification impossible**. Le bouton principal, **Synchroniser** suivi d'un nombre, traite d'un coup toutes les lignes en attente.
+- **Dans le cloud** : un site désactivé sur cet appareil mais qui a des données dans le cloud a sa propre ligne ; **Activer** vous emmène à l'onglet **Sites** pour l'activer.
+- **Plus** : le menu propose **Tout envoyer**, **Tout fusionner depuis le cloud**, **Restaurer la version précédente** et **Déconnecter Google Drive**. **Restaurer la version précédente** demande confirmation, puis remet dans le cloud chaque ligne activée à sa version précédente.
+
+</GuideOp>
 
 ### 💡 Synchronisation rapide
 
@@ -79,7 +92,7 @@ Après **Récupérer** ou **Remplacer**, la ligne de résultat du popup propose 
 </GuideFact>
 <GuideFact title="Copies d'historique dans Google Drive">
 
-Avant qu'un envoi remplace un fichier, Voyager garde la version remplacée à côté, dans son dossier Drive, sous le nom `<fichier>.backup-<heure UTC>.json`, par exemple `gemini-voyager-folders.backup-2026-10-29-031100.json`. Il garde les 3 plus récentes par fichier et place les plus anciennes dans la corbeille de Drive. iCloud ne garde pas de copies d'historique.
+Avant qu'un envoi remplace un fichier, Voyager garde la version remplacée à côté, dans son dossier Drive, sous le nom `<fichier>.backup-<heure UTC>.json`, par exemple `gemini-voyager-folders.backup-2026-10-29-031100.json`. Il garde les 3 plus récentes par fichier et place les plus anciennes dans la corbeille de Drive. **Restaurer la version précédente**, dans le menu Synchro Cloud du panneau, remet le cloud à la version précédente. iCloud garde lui aussi les 3 dernières versions remplacées de chaque type de données.
 
 </GuideFact>
 <GuideFact title="Mettez à jour tous vos appareils">
@@ -110,4 +123,4 @@ Changer de fournisseur ne copie pas les données de l'un vers l'autre et n'écri
 
 ## Plateformes prises en charge
 
-La synchronisation Google Drive fonctionne sur Chrome, Edge, Firefox et Safari sur ordinateur. Elle n'est pas disponible sur téléphone (Firefox pour Android), qui ne peut pas ouvrir la fenêtre de connexion Google. La synchronisation iCloud n'est disponible que dans l'application Safari distribuée directement et utilise le compte iCloud connecté sur le Mac.
+La synchronisation Google Drive fonctionne sur Chrome, Edge, Firefox et Safari sur ordinateur, ainsi que sur les navigateurs Android qui permettent la connexion Google, comme Edge. Elle n'est pas disponible sur Firefox pour Android, qui ne peut pas ouvrir la fenêtre de connexion Google. La synchronisation iCloud n'est disponible que dans l'application Safari distribuée directement et utilise le compte iCloud connecté sur le Mac.

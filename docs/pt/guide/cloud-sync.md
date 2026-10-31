@@ -4,15 +4,15 @@ A Sincronização na Nuvem do Voyager faz backup das suas pastas, da biblioteca 
 
 ## O que é sincronizado
 
-| Tipo de dado                   | Sincronizado | Detalhes                                                                                                     |
-| ------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------ |
-| Estrutura de pastas            | Sim          | Pastas do Gemini, AI Studio, ChatGPT, Claude, DeepSeek e Kimi: aninhamento, cores e atribuições de conversas |
-| Biblioteca de prompts          | Sim          | Todos os prompts salvos, com tags e organização em pastas                                                    |
-| Mensagens com estrela          | Sim          | Marcadores da linha do tempo de qualquer conversa                                                            |
-| Linha do tempo em outros sites | Sim          | Favoritos e níveis da linha do tempo no ChatGPT, Claude e DeepSeek                                           |
-| Configurações da extensão      | Sim          | Preferências que valem em todos os dispositivos, como ordenação, cores e comportamento da entrada            |
-| Configuração de plugins        | Sim          | Estado de instalação/ativação e configurações do plugin; as permissões de sites continuam por dispositivo    |
-| Respostas do modelo            | Não          | Os backups de estrelas contêm prompts do usuário, não respostas do modelo                                    |
+| Tipo de dado                   | Sincronizado | Detalhes                                                                                                                                 |
+| ------------------------------ | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Estrutura de pastas            | Sim          | Pastas do Gemini, AI Studio, ChatGPT, Claude, DeepSeek e Kimi: aninhamento, cores e atribuições de conversas                             |
+| Biblioteca de prompts          | Sim          | Todos os prompts salvos, com tags e organização em pastas                                                                                |
+| Mensagens com estrela          | Sim          | Marcadores da linha do tempo de qualquer conversa                                                                                        |
+| Linha do tempo em outros sites | Sim          | Favoritos e níveis da linha do tempo no ChatGPT, Claude e DeepSeek                                                                       |
+| Configurações da extensão      | Sim          | `gemini-voyager-settings.json`: preferências que valem em todos os dispositivos, como ordenação, cores e comportamento da entrada        |
+| Configuração de plugins        | Sim          | `gemini-voyager-plugins.json`: estado de instalação/ativação e configurações do plugin; as permissões de sites continuam por dispositivo |
+| Respostas do modelo            | Não          | Os backups de estrelas contêm prompts do usuário, não respostas do modelo                                                                |
 
 **Enable Hard Isolation** não vai mais no arquivo de configurações da nuvem. A sincronização do próprio navegador (a do Chrome, por exemplo) continua levando essa opção entre computadores conectados ao mesmo perfil do navegador.
 
@@ -26,12 +26,12 @@ A sincronização mescla e verifica as gravações, com no máximo três tentati
 
 ## Recursos
 
-- **Sincronização entre dispositivos**: Mantenha suas configurações sincronizadas em vários computadores.
+- **Sincronização entre dispositivos**: Mantenha suas configurações sincronizadas em vários dispositivos.
 - **Privacidade de dados**: Os dados são armazenados diretamente no seu próprio Google Drive ou no banco de dados privado do iCloud, garantindo a privacidade sem nenhum servidor do Voyager.
 - **Sincronização flexível**: Suporte para upload manual e download/mesclagem de dados.
 
 ::: info
-Identificadores de dispositivo, tokens de acesso, caches, coordenadas da janela e estados temporários de execução não são sincronizados de propósito, pois são considerados personalização.
+Identificadores de dispositivo, tokens de acesso, caches, coordenadas da janela, posição do painel, posição do botão de exportação e estados temporários de execução não são sincronizados de propósito, pois são considerados personalização.
 :::
 
 ## Como usar
@@ -44,6 +44,19 @@ Identificadores de dispositivo, tokens de acesso, caches, coordenadas da janela 
 6. Clique em **Enviar** para sincronizar seus dados locais com a nuvem, ou em **Mesclar** para trazer os dados da nuvem para este navegador. **Sobrescrever** pede confirmação e depois substitui só os dados que a nuvem tem e o Voyager consegue ler; o que estiver faltando ou ilegível na nuvem fica como está, e o resultado mostra isso. Você pode desfazer logo em seguida.
 
 No iCloud, **Excluir backup do iCloud** remove todos os backups do Voyager no iCloud; os dados locais no Mac permanecem como estão.
+
+## Sincronizar pelo painel
+
+<GuideOp>
+
+O ícone de nuvem na barra superior do [painel do Voyager](/pt/guide/panel) abre **Sincronização na Nuvem**, para sincronizar pelo Google Drive sem sair do chat. Enquanto o Drive não estiver conectado, clique em **Conectar ao Google Drive**; a primeira sincronização depois de conectar mescla a nuvem e este dispositivo, e nada é sobrescrito.
+
+- **Escolher sites**: **Comum** (Prompts · Configurações · Plugins) e cada site têm uma linha. Desative uma linha e este dispositivo a ignora ao sincronizar; um site compatível ao qual você dá acesso entra automaticamente.
+- **Status**: cada linha mostra **Sincronizado**, **Mais recente aqui**, **Mais recente na nuvem**, **Não enviado** ou **Não foi possível verificar**. O botão principal, **Sincronizar** seguido de um número, processa de uma vez todas as linhas pendentes.
+- **Na nuvem**: um site desativado neste dispositivo, mas com dados na nuvem, ganha uma linha própria; **Ativar** leva você à aba **Sites** para ativá-lo.
+- **Mais**: o menu tem **Enviar tudo**, **Mesclar tudo da nuvem**, **Restaurar versão anterior** e **Desconectar o Google Drive**. **Restaurar versão anterior** pede confirmação e depois devolve na nuvem cada linha ativada à versão anterior.
+
+</GuideOp>
 
 ### 💡 Sincronização rápida
 
@@ -79,7 +92,7 @@ Depois de **Mesclar** ou **Sobrescrever**, a linha de resultado do popup oferece
 </GuideFact>
 <GuideFact title="Cópias de histórico no Google Drive">
 
-Antes de um envio substituir um arquivo, o Voyager guarda a versão substituída ao lado dele, na pasta do Drive, como `<arquivo>.backup-<hora UTC>.json`, por exemplo `gemini-voyager-folders.backup-2026-10-29-031100.json`. Ele mantém as 3 mais recentes de cada arquivo e move as mais antigas para a lixeira do Drive. O iCloud não guarda cópias de histórico.
+Antes de um envio substituir um arquivo, o Voyager guarda a versão substituída ao lado dele, na pasta do Drive, como `<arquivo>.backup-<hora UTC>.json`, por exemplo `gemini-voyager-folders.backup-2026-10-29-031100.json`. Ele mantém as 3 mais recentes de cada arquivo e move as mais antigas para a lixeira do Drive. **Restaurar versão anterior**, no menu de Sincronização na Nuvem do painel, devolve a nuvem à versão anterior. O iCloud também mantém as 3 versões substituídas mais recentes de cada tipo de dado.
 
 </GuideFact>
 <GuideFact title="Atualize todos os dispositivos">
@@ -110,4 +123,4 @@ Trocar de provedor não copia dados entre eles nem grava em ambos. Depois de tro
 
 ## Plataformas compatíveis
 
-A sincronização com o Google Drive funciona no Chrome, Edge, Firefox e Safari no computador. Ela não está disponível no celular (Firefox para Android), que não consegue abrir a janela de login do Google. A sincronização com o iCloud está disponível apenas no app do Safari distribuído diretamente e usa a conta do iCloud conectada no Mac.
+A sincronização com o Google Drive funciona no Chrome, Edge, Firefox e Safari no computador, e em navegadores Android com login do Google, como o Edge. Ela não está disponível no Firefox para Android, que não consegue abrir a janela de login do Google. A sincronização com o iCloud está disponível apenas no app do Safari distribuído diretamente e usa a conta do iCloud conectada no Mac.

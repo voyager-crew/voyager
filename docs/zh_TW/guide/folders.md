@@ -1,6 +1,6 @@
 # 資料夾
 
-把對話收進側邊欄裡的資料夾：拖進去就歸檔好了，資料夾可以套三層，換一台電腦也能同步回來。資料夾只在電腦上執行：手機（Firefox for Android）上，彈出視窗裡的資料夾設定會變灰，設定值保留，在電腦上照常生效。
+把對話收進側邊欄裡的資料夾：拖進去就歸檔好了，資料夾可以套三層，換一台裝置也能同步回來。電腦和 Android 手機上都能用。
 
 <SiteSupport feature="folders" :labels="{ folders: '側邊欄資料夾', 'hide-filed': '隱藏已歸檔對話', activity: 'Activity 檢視', 'account-isolation': '帳號隔離', projects: '資料夾即專案', 'ai-organize': 'AI 整理', 'move-menu': '對話選單裡的 **移動到資料夾**', 'library-drag': '從 Library 表格拖進資料夾', 'gem-icons': '依 Gem 類型顯示的對話圖示' }" :only="[{ id: 'move-menu', sites: ['gemini', 'chatgpt', 'claude'] }, { id: 'library-drag', sites: ['aistudio'] }, { id: 'gem-icons', sites: ['gemini'] }]" />
 

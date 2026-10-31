@@ -1,6 +1,6 @@
 # 폴더
 
-사이드바의 폴더로 대화를 정리합니다. 끌어다 놓으면 정리되고, 폴더는 3단계까지 중첩할 수 있으며, 다른 컴퓨터에서도 같은 폴더를 쓸 수 있습니다. 폴더는 컴퓨터에서만 작동합니다. 휴대폰(Firefox for Android)에서는 팝업의 폴더 설정이 비활성화되며, 값은 컴퓨터용으로 유지됩니다.
+사이드바의 폴더로 대화를 정리합니다. 끌어다 놓으면 정리되고, 폴더는 3단계까지 중첩할 수 있으며, 다른 기기에서도 같은 폴더를 쓸 수 있습니다. 컴퓨터와 Android 휴대폰에서 모두 작동합니다.
 
 <SiteSupport feature="folders" :labels="{ folders: '사이드바 폴더', 'hide-filed': '정리한 대화 숨기기', activity: 'Activity 보기', 'account-isolation': '계정 분리', projects: '폴더를 프로젝트로', 'ai-organize': 'AI 정리', 'move-menu': '대화 메뉴의 **폴더로 이동**', 'library-drag': 'Library 표에서 끌어 놓기', 'gem-icons': 'Gem 종류에 따른 대화 아이콘' }" :only="[{ id: 'move-menu', sites: ['gemini', 'chatgpt', 'claude'] }, { id: 'library-drag', sites: ['aistudio'] }, { id: 'gem-icons', sites: ['gemini'] }]" />
 

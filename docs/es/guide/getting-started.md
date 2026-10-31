@@ -40,6 +40,11 @@ Guárdalo, ponle una etiqueta.
 Haz clic en la bola, busca, inserta.
 Esto no es solo chatear, es acumular tus activos digitales.
 
+## 5. El timón
+
+Pasa el ratón por la bola y haz clic en **Panel de Voyager**, o pulsa ⌥V / Alt+V.
+Activa y desactiva las funciones de este sitio, arrastra deslizadores con vista previa en vivo y sincroniza, sin salir del chat.
+
 ---
 
 **Despegue.**
@@ -49,3 +54,4 @@ Profundiza en cada función:
 - [Maestro de Carpetas](/es/guide/folders)
 - [Gestiona Prompts](/es/guide/prompts)
 - [Domina tus Datos](/es/guide/export)
+- [Panel de Voyager](/es/guide/panel)

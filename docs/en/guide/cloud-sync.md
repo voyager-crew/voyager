@@ -10,8 +10,8 @@ Voyager Cloud Sync backs up your folders, prompt library, starred messages, and 
 | Prompt library          | Yes    | All saved prompts with tags and folder organization                                                              |
 | Starred messages        | Yes    | Timeline bookmarks from any conversation                                                                         |
 | Timeline on other sites | Yes    | Timeline stars and levels on ChatGPT, Claude, and DeepSeek                                                       |
-| Extension settings      | Yes    | Cross-device preferences such as sorting, colors, and input behavior                                             |
-| Plugin configuration    | Yes    | Install/enable state and plugin settings; site permissions remain per-device                                     |
+| Extension settings      | Yes    | `gemini-voyager-settings.json`: cross-device preferences such as sorting, colors, and input behavior             |
+| Plugin configuration    | Yes    | `gemini-voyager-plugins.json`: install/enable state and plugin settings; site permissions remain per-device      |
 | Model answers           | No     | Star backups contain user prompts, not model answers                                                             |
 
 **Enable Hard Isolation** no longer travels in the cloud settings file. Your browser's own sync (Chrome sync, for example) still carries it between computers signed in to the same browser profile.
@@ -26,12 +26,12 @@ Sync merges and checks its writes, with at most three attempts, but is not an at
 
 ## Features
 
-- **Multi-Device Sync**: Keep your configurations in sync across multiple computers.
+- **Multi-Device Sync**: Keep your configurations in sync across multiple devices.
 - **Data Privacy**: Data is stored in your own Google Drive or private iCloud database, without a Voyager server.
 - **Flexible Sync**: Support for manual uploading and downloading/merging of data.
 
 ::: info
-Device identifiers, access tokens, caches, viewport coordinates, and temporary runtime state are intentionally not synced as personalization settings.
+Device identifiers, access tokens, caches, viewport coordinates, panel position, export button position, and temporary runtime state are intentionally not synced as personalization settings.
 :::
 
 ## How to Use
@@ -44,6 +44,19 @@ Device identifiers, access tokens, caches, viewport coordinates, and temporary r
 6. Click **Upload** to send local data to the cloud, or **Download & Merge** to merge cloud data into this browser. **Overwrite** asks first, then replaces only the data the cloud has and Voyager can read; anything missing or unreadable in the cloud stays as it is, and the result lists it. You can undo right after.
 
 With iCloud, **Delete iCloud backup** removes every Voyager backup from iCloud; local data on the Mac stays as it is.
+
+## Sync from the Panel
+
+<GuideOp>
+
+The cloud icon in the [Voyager panel](/en/guide/panel)'s top bar opens **Cloud Sync**, so you can sync through Google Drive without leaving the chat. Until Drive is connected, click **Connect Google Drive**; the first sync after connecting merges cloud and local, and nothing is overwritten.
+
+- **Choose sites**: **Shared** (Prompts · Settings · Plugins) and each site have a row. Switch a row off and this device skips it when syncing; a supported site you grant access to joins automatically.
+- **Status**: each row shows **Synced**, **Newer here**, **Newer in cloud**, **Not uploaded** or **Couldn't check**. The main button, **Sync** followed by a count, runs every pending row at once.
+- **In the cloud**: a site that is off on this device but has cloud data gets its own row; **Enable** takes you to the **Sites** tab to turn it on.
+- **More**: the menu holds **Upload all**, **Merge all from cloud**, **Restore previous version** and **Disconnect Google Drive**. **Restore previous version** asks first, then puts each switched-on row back to its previous version in the cloud.
+
+</GuideOp>
 
 ### 💡 Quick Sync
 
@@ -79,7 +92,7 @@ After **Download & Merge** or **Overwrite**, the popup's result line offers **Un
 </GuideFact>
 <GuideFact title="History copies in Google Drive">
 
-Before an upload replaces a file, Voyager keeps the replaced version beside it in its Drive folder as `<file>.backup-<UTC time>.json`, for example `gemini-voyager-folders.backup-2026-10-29-031100.json`. It keeps the latest 3 per file and moves older ones to Drive's trash. iCloud keeps no history copies.
+Before an upload replaces a file, Voyager keeps the replaced version beside it in its Drive folder as `<file>.backup-<UTC time>.json`, for example `gemini-voyager-folders.backup-2026-10-29-031100.json`. It keeps the latest 3 per file and moves older ones to Drive's trash. **Restore previous version** in the panel's Cloud Sync menu puts the cloud back to the previous version. iCloud also keeps the 3 latest replaced versions of each kind of data.
 
 </GuideFact>
 <GuideFact title="Update every device">
@@ -110,4 +123,4 @@ Switching providers does not copy data between them and does not write to both p
 
 ## Supported Platforms
 
-Google Drive sync works on Chrome, Edge, Firefox, and Safari on computers. It isn't available on phones (Firefox for Android), which can't open Google's sign-in window. iCloud sync is available only in the directly distributed Safari app and uses the iCloud account signed in on the Mac.
+Google Drive sync works on Chrome, Edge, Firefox, and Safari on computers, and on Android browsers with Google sign-in, such as Edge. It isn't available on Firefox for Android, which can't open Google's sign-in window. iCloud sync is available only in the directly distributed Safari app and uses the iCloud account signed in on the Mac.

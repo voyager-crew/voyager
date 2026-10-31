@@ -19,6 +19,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
         items: [
           { text: '安裝', link: '/zh_TW/guide/installation' },
           { text: '快速開始', link: '/zh_TW/guide/getting-started' },
+          { text: 'Voyager 面板', link: '/zh_TW/guide/panel' },
         ],
       },
       {

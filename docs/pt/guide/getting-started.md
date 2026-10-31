@@ -39,6 +39,11 @@ Guarde-o. Etiquete-o.
 Da próxima vez? Basta clicar na bola para o encontrar e inserir.
 Já não está apenas a conversar. Está a construir um cofre do seu próprio génio.
 
+## 5. O Leme
+
+Passe o mouse sobre a bola e clique em **Painel do Voyager**, ou pressione ⌥V / Alt+V.
+Ative e desative os recursos deste site, arraste sliders com pré-visualização ao vivo e sincronize, tudo sem sair do chat.
+
 ---
 
 **Está pronto.**
@@ -48,3 +53,4 @@ Explore os guias específicos para mergulhos profundos:
 - [Gestão de Pastas](/pt/guide/folders)
 - [Engenharia de Prompts](/pt/guide/prompts)
 - [Exportação de Dados](/pt/guide/export)
+- [Painel do Voyager](/pt/guide/panel)

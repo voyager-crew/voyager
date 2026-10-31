@@ -28,11 +28,13 @@ Voyager 幫你把數據從雲端拽回手心。
 
 ### 怎麼導
 
-1. 點擊頁面右上角的 **匯出** 按鈕（ChatGPT、Claude、DeepSeek、Kimi 與目前的 Gemini 版面）。在 Gemini 上，也可以從對話或回覆的 ⋮ 選單選擇 **匯出對話記錄**；舊版 Gemini 版面則把滑鼠懸停在 Gemini Logo 上，即可看到出現的 **匯出圖示**。
+1. 點擊 **匯出** 按鈕（ChatGPT、Claude、DeepSeek、Kimi 與目前的 Gemini 版面）。它預設在頁面右上角，可以拖到任意位置，每個網站分別記住；拖回預設位置附近會自動歸位。在 Gemini 上，也可以從對話或回覆的 ⋮ 選單選擇 **匯出對話記錄**；舊版 Gemini 版面則把滑鼠懸停在 Gemini Logo 上，即可看到出現的 **匯出圖示**。
 2. 選格式。
 3. 拿走。
 
-在 Claude、DeepSeek 與 Kimi 上，匯出是預設關閉的外掛：請先在彈出視窗的 **外掛** 中開啟（僅限電腦）。長對話由 Voyager 捲動一遍讀完；若無法確認讀到開頭與結尾，會提示匯出內容可能不完整。切換到其他對話會中止匯出，在 Claude 上開始產生新回覆也會。
+在 Claude、DeepSeek 與 Kimi 上，匯出是預設關閉的外掛：請先在彈出視窗的 **外掛** 中開啟。長對話由 Voyager 捲動一遍讀完，讀完後所有訊息預設都已勾選，取消不要的即可；若無法確認讀到開頭與結尾，會提示匯出內容可能不完整。在 ChatGPT 上無法讀到完整紀錄時，會提示向上捲動載入較早的訊息後重試。切換到其他對話會中止匯出，在 Claude 上開始產生新回覆也會。
+
+ChatGPT 對話裡上傳的檔案，會在匯出內容裡以 `📎 檔名` 一行列出。
 
 你的數據，聽你的。
 
@@ -79,4 +81,4 @@ Gemini 的 Deep Research 模式會產生包含來源、思考步驟與引用的�
 
 ## 支援平台
 
-匯出功能可用於 Gemini 與 ChatGPT，支援 Chrome、Edge、Firefox、Safari、Opera 與 Brave。Claude、DeepSeek 與 Kimi 的匯出是外掛，預設關閉，需在 **外掛** 中開啟，僅限電腦。在 Firefox for Android 上，只有 Gemini 與 ChatGPT 匯出可用。在 Safari 上，PDF 匯出需要點擊匯出後手動列印（按 Command+P）；Markdown 與 JSON 匯出仍會包含圖片。
+匯出功能可用於 Gemini 與 ChatGPT，支援 Chrome、Edge、Firefox、Safari、Opera 與 Brave。Claude、DeepSeek 與 Kimi 的匯出是外掛，預設關閉，需在 **外掛** 中開啟。在 Safari 上，PDF 匯出需要點擊匯出後手動列印（按 Command+P）；Markdown 與 JSON 匯出仍會包含圖片。

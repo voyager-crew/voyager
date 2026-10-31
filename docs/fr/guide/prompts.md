@@ -47,7 +47,7 @@ En mode compact, survolez n'importe quelle ligne pendant **~250 ms** pour voir l
 
 ### Insertion rapide avec une barre oblique
 
-Dans la zone de saisie du chat, tapez `/` puis une partie du nom d'un prompt. La liste affiche uniquement les noms et étiquettes correspondants ; survolez un élément pour prévisualiser son contenu, puis cliquez ou appuyez sur `Tab` / `Entrée` pour le sélectionner. Le nom apparaît sous forme de jeton surligné et le contenu complet est envoyé.
+Dans la zone de saisie du chat, tapez `/` puis une partie du nom d'un prompt. La liste affiche les noms et étiquettes correspondants, suivis de **Gérer les prompts…** et **Panneau Voyager…**, qui ouvrent le gestionnaire de prompts et le [panneau Voyager](/fr/guide/panel) ; survolez un élément pour prévisualiser son contenu, puis cliquez ou appuyez sur `Tab` / `Entrée` pour le sélectionner. Le nom apparaît sous forme de jeton surligné et le contenu complet est envoyé.
 
 ![Vue en liste compacte](/assets/gemini-prompt-manager-compact.png)
 

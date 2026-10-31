@@ -4,7 +4,7 @@
 
 ## 功能特点
 
-- **多端同步**：利用 Google Drive 或 iCloud，在多台电脑上同步配置。
+- **多端同步**：利用 Google Drive 或 iCloud，在多台设备上同步配置。
 - **全面覆盖**：支持同步文件夹（Gemini、AI Studio、ChatGPT、Claude、DeepSeek、Kimi）、提示词库、星标、分支、时间线层级、高亮、个性化设置和插件配置，以及 ChatGPT、Claude、DeepSeek 上的时间线星标与层级。
 - **数据安全**：数据存储在您自己的 Google Drive 或 iCloud 私有数据库中，不经过 Voyager 服务器。
 - **灵活同步**：支持手动上传、下载合并数据。
@@ -22,6 +22,19 @@
 
 同步为手动触发，不会在后台自动上传。切换服务不会自动搬运数据，也不会同时写入两个服务；切换后请手动上传一次。
 
+## 在面板里同步
+
+<GuideOp>
+
+[Voyager 面板](/guide/panel) 顶栏的云图标打开 **云同步**，不用离开对话就能用 Google Drive 同步。还没连接时，点 **连接 Google Drive**；第一次连接后会先合并云端和本地，不会覆盖任何一边。
+
+- **选择网站**：**通用**（提示词 · 设置 · 插件）和每个网站各占一行。关掉某一行的开关，这台设备同步时就跳过它；给一个支持的网站授权访问后，它会自动加入。
+- **状态**：每行显示 **已同步**、**本地较新**、**云端较新**、**未上传** 或 **无法读取**。主按钮 **同步 N 项** 一次处理所有待同步的行。
+- **云端有数据**：这台设备没开、但云端有数据的网站会单独列出，点 **启用** 跳到 **网站** 分页打开它。
+- **更多**：菜单里有 **全部上传到云端**、**全部从云端合并**、**恢复上一版** 和 **断开 Google Drive**。**恢复上一版** 会先确认，再把开着的行在云端放回上一版。
+
+</GuideOp>
+
 ## 同步内容
 
 Voyager 会把不同类型的数据保存为独立备份，避免某一类数据覆盖其他内容。Google Drive 中是 JSON 文件；iCloud 中保存于 Voyager 的私有 CloudKit 数据库：
@@ -31,7 +44,7 @@ Voyager 会把不同类型的数据保存为独立备份，避免某一类数据
 - 文件夹（Gemini、AI Studio、ChatGPT、Claude、DeepSeek、Kimi 各自独立）、提示词、星标、分支、时间线层级和高亮分别使用各自的同步文件；高亮内容仅在开启高亮云同步后上传。
 - ChatGPT、Claude、DeepSeek 上的时间线星标与层级按网站分别保存。
 
-窗口坐标、缓存、访问令牌、设备 ID 和临时任务状态不会写入个性化设置文件。
+窗口坐标、面板位置、导出按钮位置、缓存、访问令牌、设备 ID 和临时任务状态不会写入个性化设置文件。
 
 **启用硬隔离（Hard Isolation）** 不再写入云端的设置文件；浏览器自带的同步（例如 Chrome 同步）仍会在登录同一浏览器个人资料的电脑之间同步它。
 
@@ -77,7 +90,7 @@ Voyager 会把不同类型的数据保存为独立备份，避免某一类数据
 </GuideFact>
 <GuideFact title="Google Drive 中的历史副本">
 
-上传替换某个文件之前，Voyager 会把被替换的版本保存在 Drive 的同一文件夹里，命名为 `<文件名>.backup-<UTC 时间>.json`，例如 `gemini-voyager-folders.backup-2026-10-29-031100.json`。每个文件保留最近 3 份，更早的会移到 Drive 回收站。iCloud 不保留历史副本。
+上传替换某个文件之前，Voyager 会把被替换的版本保存在 Drive 的同一文件夹里，命名为 `<文件名>.backup-<UTC 时间>.json`，例如 `gemini-voyager-folders.backup-2026-10-29-031100.json`。每个文件保留最近 3 份，更早的会移到 Drive 回收站。在面板的云同步菜单里选 **恢复上一版**，就能把云端放回上一版。iCloud 同样保留每类数据被替换的最近 3 个版本。
 
 </GuideFact>
 <GuideFact title="所有设备都请更新">
@@ -106,4 +119,4 @@ Voyager 会把不同类型的数据保存为独立备份，避免某一类数据
 
 ## 支持的平台
 
-Google Drive 同步可在电脑上的 Chrome、Edge、Firefox 和 Safari 中使用；手机（Firefox for Android）上暂不支持，因为它无法打开 Google 登录窗口。iCloud 同步仅在 Safari 直装版中可用，使用 Mac 上登录的 iCloud 账户。
+Google Drive 同步可在电脑上的 Chrome、Edge、Firefox 和 Safari 中使用，也可在带 Google 登录的安卓浏览器（例如 Edge）中使用；Firefox for Android 无法打开 Google 登录窗口，暂不支持。iCloud 同步仅在 Safari 直装版中可用，使用 Mac 上登录的 iCloud 账户。

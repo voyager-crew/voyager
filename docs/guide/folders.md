@@ -1,6 +1,6 @@
 # 文件夹
 
-把对话收进侧边栏里的文件夹：拖进去就归档好了，文件夹可以套三层，换一台电脑也能同步回来。文件夹只在电脑上运行：手机（Firefox for Android）上，弹窗里的文件夹设置会变灰，设置值保留，回到电脑上照常生效。
+把对话收进侧边栏里的文件夹：拖进去就归档好了，文件夹可以套三层，换一台设备也能同步回来。电脑和安卓手机上都能用。
 
 <SiteSupport feature="folders" :labels="{ folders: '侧边栏文件夹', 'hide-filed': '隐藏已归档对话', activity: 'Activity 视图', 'account-isolation': '账号隔离', projects: '文件夹即项目', 'ai-organize': 'AI 整理', 'move-menu': '对话菜单里的 **移动到文件夹**', 'library-drag': '从 Library 表格拖进文件夹', 'gem-icons': '按 Gem 类型显示的对话图标' }" :only="[{ id: 'move-menu', sites: ['gemini', 'chatgpt', 'claude'] }, { id: 'library-drag', sites: ['aistudio'] }, { id: 'gem-icons', sites: ['gemini'] }]" />
 

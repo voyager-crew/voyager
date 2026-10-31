@@ -20,6 +20,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
         items: [
           { text: 'Installation', link: '/en/guide/installation' },
           { text: 'Getting Started', link: '/en/guide/getting-started' },
+          { text: 'Voyager Panel', link: '/en/guide/panel' },
         ],
       },
       {

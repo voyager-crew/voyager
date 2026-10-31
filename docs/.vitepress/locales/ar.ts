@@ -20,6 +20,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
         items: [
           { text: 'التثبيت', link: '/ar/guide/installation' },
           { text: 'البدء', link: '/ar/guide/getting-started' },
+          { text: 'لوحة Voyager', link: '/ar/guide/panel' },
         ],
       },
       {

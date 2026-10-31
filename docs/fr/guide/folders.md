@@ -1,6 +1,6 @@
 # Dossiers
 
-Rangez vos conversations dans des dossiers de la barre latérale : glissez-en une dans un dossier et elle est classée, imbriquez les dossiers sur trois niveaux et retrouvez les mêmes sur un autre ordinateur. Les dossiers ne fonctionnent que sur ordinateur : sur téléphone (Firefox pour Android), leurs réglages dans la fenêtre sont grisés et conservés pour votre ordinateur.
+Rangez vos conversations dans des dossiers de la barre latérale : glissez-en une dans un dossier et elle est classée, imbriquez les dossiers sur trois niveaux et retrouvez les mêmes sur un autre appareil. Les dossiers fonctionnent sur ordinateur et sur téléphone Android.
 
 <SiteSupport feature="folders" :labels="{ folders: 'Dossiers dans la barre latérale', 'hide-filed': 'Masquer les conversations classées', activity: 'Vue Activity', 'account-isolation': 'Isolation des comptes', projects: 'Dossiers comme projets', 'ai-organize': 'Organiser par IA', 'move-menu': '**Déplacer vers un dossier** dans le menu', 'library-drag': 'Glisser depuis le tableau Library', 'gem-icons': 'Icônes selon le type de Gem' }" :only="[{ id: 'move-menu', sites: ['gemini', 'chatgpt', 'claude'] }, { id: 'library-drag', sites: ['aistudio'] }, { id: 'gem-icons', sites: ['gemini'] }]" />
 

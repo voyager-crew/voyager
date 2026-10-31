@@ -28,11 +28,13 @@ Voyager lets you pull your data out of the cloud and into your hands.
 
 ### How to Export
 
-1. Click the **Export** button at the top right of the page (ChatGPT, Claude, DeepSeek, Kimi, and current Gemini layouts). On Gemini you can also choose **Export conversation history** from a conversation's or response's ⋮ menu; on older Gemini layouts, hover the Gemini logo to see the **Export Icon**.
+1. Click the **Export** button (ChatGPT, Claude, DeepSeek, Kimi, and current Gemini layouts). It starts at the top right of the page; drag it anywhere, each site remembers its spot, and dropping it near the default position snaps it back. On Gemini you can also choose **Export conversation history** from a conversation's or response's ⋮ menu; on older Gemini layouts, hover the Gemini logo to see the **Export Icon**.
 2. Choose your format.
 3. Done.
 
-On Claude, DeepSeek, and Kimi, export is a plugin that is off by default: turn it on under **Plugins** in the popup first (computers only). Voyager scrolls through a long conversation to read all of it. If it can't confirm both the beginning and the end, it warns that the export may be incomplete. Switching to another chat stops the export, and so does a new reply starting on Claude.
+On Claude, DeepSeek, and Kimi, export is a plugin that is off by default: turn it on under **Plugins** in the popup first. Voyager scrolls through a long conversation to read all of it, then starts with every message selected; untick the ones you don't want. If it can't confirm both the beginning and the end, it warns that the export may be incomplete. On ChatGPT, if it can't read the full history, it says so and asks you to scroll up to load earlier messages, then try again. Switching to another chat stops the export, and so does a new reply starting on Claude.
+
+Files uploaded in a ChatGPT conversation appear in the export as a `📎 file name` line.
 
 It’s your data. Do what you want with it.
 
@@ -79,4 +81,4 @@ This is useful for academic research, competitive analysis, and technical docume
 
 ## Supported Platforms
 
-Export works on Gemini and ChatGPT across Chrome, Edge, Firefox, Safari, Opera, and Brave. Claude, DeepSeek, and Kimi export are plugins: off by default, turned on under **Plugins**, and for computers only. On Firefox for Android, only Gemini and ChatGPT export run. On Safari, PDF export uses a manual print step (Command+P after clicking export); Markdown and JSON exports still include images.
+Export works on Gemini and ChatGPT across Chrome, Edge, Firefox, Safari, Opera, and Brave. Claude, DeepSeek, and Kimi export are plugins: off by default and turned on under **Plugins**. On Safari, PDF export uses a manual print step (Command+P after clicking export); Markdown and JSON exports still include images.

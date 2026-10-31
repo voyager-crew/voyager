@@ -28,11 +28,13 @@ Voyager 帮你把数据从云端拽回手心。
 
 ### 怎么导
 
-1. 点击页面右上角的 **导出** 按钮（ChatGPT、Claude、DeepSeek、Kimi 与当前的 Gemini 布局）。在 Gemini 上，也可以从对话或回复的 ⋮ 菜单选择 **导出对话记录**；旧版 Gemini 布局则把鼠标悬停在 Gemini Logo 上，即可看到出现的 **导出图标**。
+1. 点击 **导出** 按钮（ChatGPT、Claude、DeepSeek、Kimi 与当前的 Gemini 布局）。它默认在页面右上角，可以拖到任意位置，每个网站分别记住；拖回默认位置附近会自动归位。在 Gemini 上，也可以从对话或回复的 ⋮ 菜单选择 **导出对话记录**；旧版 Gemini 布局则把鼠标悬停在 Gemini Logo 上，即可看到出现的 **导出图标**。
 2. 选格式。
 3. 拿走。
 
-在 Claude、DeepSeek 和 Kimi 上，导出是一个默认关闭的插件：先在弹窗的 **插件** 里打开它（仅限电脑）。长对话由 Voyager 滚动一遍读全；如果没能确认读到开头和结尾，会提示导出内容可能不完整。切换到别的对话会中止导出，在 Claude 上开始生成新回复也会。
+在 Claude、DeepSeek 和 Kimi 上，导出是一个默认关闭的插件：先在弹窗的 **插件** 里打开它。长对话由 Voyager 滚动一遍读全，读完后所有消息默认都已勾选，取消不要的即可；如果没能确认读到开头和结尾，会提示导出内容可能不完整。在 ChatGPT 上没能读到完整历史时，会提示向上滚动加载更早的消息后重试。切换到别的对话会中止导出，在 Claude 上开始生成新回复也会。
+
+ChatGPT 对话里上传的文件，会在导出内容里以 `📎 文件名` 一行列出。
 
 你的数据，听你的。
 
@@ -79,4 +81,4 @@ Gemini 的深度研究模式会生成包含来源、思考步骤和引用的结�
 
 ## 支持的平台
 
-导出功能支持 Gemini 和 ChatGPT，覆盖 Chrome、Edge、Firefox、Safari、Opera 和 Brave。Claude、DeepSeek 和 Kimi 的导出是插件，默认关闭，在 **插件** 里打开，仅限电脑。在 Firefox for Android 上，只有 Gemini 和 ChatGPT 导出可用。在 Safari 上，PDF 导出需要手动打印（点击导出后，再按 Command+P）；Markdown 和 JSON 导出仍会包含图片。
+导出功能支持 Gemini 和 ChatGPT，覆盖 Chrome、Edge、Firefox、Safari、Opera 和 Brave。Claude、DeepSeek 和 Kimi 的导出是插件，默认关闭，在 **插件** 里打开。在 Safari 上，PDF 导出需要手动打印（点击导出后，再按 Command+P）；Markdown 和 JSON 导出仍会包含图片。

@@ -1,6 +1,6 @@
 # Pastas
 
-Guarde as suas conversas em pastas na barra lateral: arraste uma para uma pasta e fica arquivada, encaixe pastas até três níveis e recupere as mesmas noutro computador. As pastas só funcionam no computador: no telemóvel (Firefox para Android), as definições das pastas na janela ficam a cinzento e mantêm-se para o computador.
+Guarde as suas conversas em pastas na barra lateral: arraste uma para uma pasta e fica arquivada, encaixe pastas até três níveis e recupere as mesmas em outro dispositivo. As pastas funcionam no computador e em celulares Android.
 
 <SiteSupport feature="folders" :labels="{ folders: 'Pastas na barra lateral', 'hide-filed': 'Ocultar conversas arquivadas', activity: 'Vista Activity', 'account-isolation': 'Isolamento de contas', projects: 'Pastas como projetos', 'ai-organize': 'Organizar com IA', 'move-menu': '**Mover para pasta** no menu da conversa', 'library-drag': 'Arrastar da tabela da Library', 'gem-icons': 'Ícones conforme o tipo de Gem' }" :only="[{ id: 'move-menu', sites: ['gemini', 'chatgpt', 'claude'] }, { id: 'library-drag', sites: ['aistudio'] }, { id: 'gem-icons', sites: ['gemini'] }]" />
 

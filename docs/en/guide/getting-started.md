@@ -39,6 +39,11 @@ Save it. Tag it.
 Next time? Just click the ball to find and insert it.
 You aren't just chatting anymore. You are building a vault of your own genius.
 
+## 5. The Helm
+
+Hover the ball and click **Voyager panel**, or just press ⌥V / Alt+V.
+Turn this site's features on and off, drag sliders with a live preview, and sync, all without leaving the chat.
+
 ---
 
 **You are ready.**
@@ -48,3 +53,4 @@ Explore the specific guides for deep dives:
 - [Folder Management](/en/guide/folders)
 - [Prompt Engineering](/en/guide/prompts)
 - [Data Export](/en/guide/export)
+- [Voyager Panel](/en/guide/panel)

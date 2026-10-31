@@ -39,6 +39,11 @@ Enregistrez-le. Ajoutez-lui des étiquettes.
 La prochaine fois ? Cliquez simplement sur le bouton pour le retrouver et l'insérer.
 Vous ne faites plus que discuter. Vous construisez un coffre-fort de votre propre génie.
 
+## 5. La Barre
+
+Survolez le bouton et cliquez sur **Panneau Voyager**, ou appuyez simplement sur ⌥V / Alt+V.
+Activez ou désactivez les fonctions de ce site, faites glisser des curseurs avec un aperçu en direct et synchronisez, sans quitter la conversation.
+
 ---
 
 **Vous êtes prêt.**
@@ -48,3 +53,4 @@ Explorez les guides spécifiques pour approfondir :
 - [Gestion des Dossiers](/fr/guide/folders)
 - [Ingénierie de Prompt](/fr/guide/prompts)
 - [Export de Données](/fr/guide/export)
+- [Panneau Voyager](/fr/guide/panel)

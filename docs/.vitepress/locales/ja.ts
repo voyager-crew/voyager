@@ -19,6 +19,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
         items: [
           { text: 'インストール', link: '/ja/guide/installation' },
           { text: 'クイックスタート', link: '/ja/guide/getting-started' },
+          { text: 'Voyager パネル', link: '/ja/guide/panel' },
         ],
       },
       {

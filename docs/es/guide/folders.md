@@ -1,6 +1,6 @@
 # Carpetas
 
-Guarda tus conversaciones en carpetas de la barra lateral: arrastra una a una carpeta y queda archivada, anida carpetas hasta tres niveles y recupera las mismas en otro ordenador. Las carpetas solo funcionan en el ordenador: en el móvil (Firefox para Android), sus ajustes en la ventana aparecen atenuados y se conservan para tu ordenador.
+Guarda tus conversaciones en carpetas de la barra lateral: arrastra una a una carpeta y queda archivada, anida carpetas hasta tres niveles y recupera las mismas en otro dispositivo. Las carpetas funcionan en el ordenador y en móviles Android.
 
 <SiteSupport feature="folders" :labels="{ folders: 'Carpetas en la barra lateral', 'hide-filed': 'Ocultar conversaciones archivadas', activity: 'Vista Activity', 'account-isolation': 'Aislamiento de cuentas', projects: 'Carpetas como proyectos', 'ai-organize': 'Organizar con IA', 'move-menu': '**Mover a carpeta** en el menú de la conversación', 'library-drag': 'Arrastrar desde la tabla de Library', 'gem-icons': 'Iconos según el tipo de Gem' }" :only="[{ id: 'move-menu', sites: ['gemini', 'chatgpt', 'claude'] }, { id: 'library-drag', sites: ['aistudio'] }, { id: 'gem-icons', sites: ['gemini'] }]" />
 

@@ -19,6 +19,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
         items: [
           { text: '설치', link: '/ko/guide/installation' },
           { text: '시작하기', link: '/ko/guide/getting-started' },
+          { text: 'Voyager 패널', link: '/ko/guide/panel' },
         ],
       },
       {

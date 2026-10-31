@@ -1,6 +1,6 @@
 # フォルダ
 
-サイドバーのフォルダで会話を整理できます。ドラッグするだけで整理でき、フォルダは 3 階層まで入れ子にでき、別のパソコンでも同じフォルダを使えます。フォルダはパソコンでのみ動作します。スマートフォン（Firefox for Android）ではポップアップのフォルダ設定がグレー表示になり、値はパソコン用に保持されます。
+サイドバーのフォルダで会話を整理できます。ドラッグするだけで整理でき、フォルダは 3 階層まで入れ子にでき、別のデバイスでも同じフォルダを使えます。パソコンでも Android のスマートフォンでも使えます。
 
 <SiteSupport feature="folders" :labels="{ folders: 'サイドバーのフォルダ', 'hide-filed': '整理済みの会話を隠す', activity: 'Activity ビュー', 'account-isolation': 'アカウント分離', projects: 'フォルダをプロジェクトに', 'ai-organize': 'AI 整理', 'move-menu': '会話メニューの **フォルダへ移動**', 'library-drag': 'Library の表からドラッグ', 'gem-icons': 'Gem の種類に応じた会話アイコン' }" :only="[{ id: 'move-menu', sites: ['gemini', 'chatgpt', 'claude'] }, { id: 'library-drag', sites: ['aistudio'] }, { id: 'gem-icons', sites: ['gemini'] }]" />
 

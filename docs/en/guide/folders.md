@@ -1,6 +1,6 @@
 # Folders
 
-Keep your chats in folders in the sidebar: drag one in and it's filed, nest folders three levels deep, and get the same folders back on another computer. Folders run on computers only: on phones (Firefox for Android) the popup's folder settings are greyed out and kept for your computer.
+Keep your chats in folders in the sidebar: drag one in and it's filed, nest folders three levels deep, and get the same folders back on another device. Folders work on computers and Android phones.
 
 <SiteSupport feature="folders" :labels="{ folders: 'Sidebar folders', 'hide-filed': 'Hide filed chats', activity: 'Activity view', 'account-isolation': 'Account isolation', projects: 'Folders as projects', 'ai-organize': 'AI Organize', 'move-menu': '**Move to folder** in the chat menu', 'library-drag': 'Drag from the Library table', 'gem-icons': 'Chat icons by Gem type' }" :only="[{ id: 'move-menu', sites: ['gemini', 'chatgpt', 'claude'] }, { id: 'library-drag', sites: ['aistudio'] }, { id: 'gem-icons', sites: ['gemini'] }]" />
 

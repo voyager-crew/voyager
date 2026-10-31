@@ -19,6 +19,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
         items: [
           { text: 'Instalación', link: '/es/guide/installation' },
           { text: 'Comenzar', link: '/es/guide/getting-started' },
+          { text: 'Panel de Voyager', link: '/es/guide/panel' },
         ],
       },
       {

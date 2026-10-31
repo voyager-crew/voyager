@@ -47,7 +47,7 @@ En modo compacto, mantén el ratón sobre cualquier fila unos **250 ms** para ve
 
 ### Inserción rápida con barra
 
-En el cuadro de chat, escribe `/` seguido de parte del nombre de un prompt. La lista muestra solo los nombres y etiquetas coincidentes; pasa el ratón por un elemento para ver el contenido completo y selecciónalo con un clic izquierdo o con `Tab` / `Enter`. El nombre aparece como un token resaltado y al enviar se usa el cuerpo completo del prompt.
+En el cuadro de chat, escribe `/` seguido de parte del nombre de un prompt. La lista muestra los nombres y etiquetas coincidentes, seguidos de **Gestionar prompts…** y **Panel de Voyager…**, que abren el Gestor de prompts y el [panel de Voyager](/es/guide/panel); pasa el ratón por un elemento para ver el contenido completo y selecciónalo con un clic izquierdo o con `Tab` / `Enter`. El nombre aparece como un token resaltado y al enviar se usa el cuerpo completo del prompt.
 
 ![Vista de lista compacta](/assets/gemini-prompt-manager-compact.png)
 

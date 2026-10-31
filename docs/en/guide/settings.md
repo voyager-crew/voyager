@@ -27,6 +27,38 @@ Hover over any settings card and ▲/▼ arrows appear in the top-right corner. 
 
 Features are grouped into topic cards (Page layout, Sidebar, Timeline, Answer content, and so on), and a feature's options show right under its switch once it is on. The search box and the row of card names under it stay at the top while you scroll; click a name to jump to that card. Flipped a switch by mistake? Press **Undo** in the message at the bottom.
 
+## Voyager Panel
+
+Tired of opening the popup? Hover the floating button and click **Voyager panel**, or press ⌥V / Alt+V, to turn the current site's features on and off right on the page, with live slider previews. See [Voyager Panel](/en/guide/panel).
+
+## Site Access
+
+<GuideOp>
+
+The popup's **Site access** card lists every site Voyager can run on and what is turned on there.
+
+- **Status**: Gemini and AI Studio show **Built in** and **All features**; every other site shows **Allowed** or **Not allowed**, with the features turned on there underneath.
+- **Remove access**: click **Remove access** to take back Voyager's access to a site; press **Undo** in the message at the bottom to restore it.
+- **Other websites**: elsewhere, Voyager offers only Prompt Manager; see [Prompts](/en/guide/prompts) for how to add a website.
+
+</GuideOp>
+
+## Online Updates
+
+<GuideOp>
+
+When a site redesign breaks a feature, the fix can arrive through online updates instead of waiting for store review. On Gemini and AI Studio, the **Online updates** switch is a card below **General Options**; on other sites it sits at the bottom of that site's **Plugins** card.
+
+- **What it checks**: voyager.nagi.fun, for plugin updates and page detection fixes for supported sites. Only the site name is sent, never cookies or page content.
+- **Check for updates now**: the refresh button beside the switch checks once right away, even with the switch off.
+- **Off**: automatic checks stop; from the next page load, page detection uses the rules built into the extension, and plugins already downloaded stay usable.
+
+</GuideOp>
+
+## Safari App Language
+
+On a Mac, the Voyager app's window, menus and notifications use the **Language** you chose in the Voyager popup, and Arabic mirrors the layout.
+
 ## Atmosphere
 
 Voyager is not limited to utility tweaks. You can also change the mood of the page.

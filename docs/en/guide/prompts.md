@@ -47,7 +47,7 @@ In compact mode, hover any row for **~250 ms** to see its full content in a floa
 
 ### Slash quick insert
 
-In a chat input, type `/` followed by part of a prompt name. The list shows matching names and tags; hover an item to preview its full body, then click it or press `Tab` / `Enter` to select it. The editor displays the selected name as a highlighted token and sends the complete prompt body.
+In a chat input, type `/` followed by part of a prompt name. The list shows matching names and tags, followed by **Manage prompts…** and **Voyager panel…**, which open Prompt Manager and the [Voyager panel](/en/guide/panel); hover an item to preview its full body, then click it or press `Tab` / `Enter` to select it. The editor displays the selected name as a highlighted token and sends the complete prompt body.
 
 ![Compact list view](/assets/gemini-prompt-manager-compact.png)
 

@@ -28,11 +28,13 @@ Voyager te ayuda a bajar tus datos de la nube a tu palma.
 
 ### Cómo Exportar
 
-1. Haz clic en el botón **Exportar** de la esquina superior derecha de la página (ChatGPT, Claude, DeepSeek, Kimi y los diseños actuales de Gemini). En Gemini también puedes elegir **Exportar historial de conversación** en el menú ⋮ de una conversación o de una respuesta; en los diseños antiguos de Gemini, pasa el ratón sobre el logo de Gemini para ver el **icono de exportación**.
+1. Haz clic en el botón **Exportar** (ChatGPT, Claude, DeepSeek, Kimi y los diseños actuales de Gemini). Empieza en la esquina superior derecha de la página; puedes arrastrarlo a cualquier sitio, cada sitio recuerda su posición y, si lo sueltas cerca de la posición original, vuelve a ella. En Gemini también puedes elegir **Exportar historial de conversación** en el menú ⋮ de una conversación o de una respuesta; en los diseños antiguos de Gemini, pasa el ratón sobre el logo de Gemini para ver el **icono de exportación**.
 2. Elige el formato.
 3. Llévatelo.
 
-En Claude, DeepSeek y Kimi, la exportación es un complemento desactivado por defecto: actívalo primero en **Complementos** en el popup (solo en ordenador). Voyager recorre las conversaciones largas desplazándose para leerlas enteras. Si no puede confirmar el principio y el final, avisa de que la exportación puede estar incompleta. Cambiar a otro chat detiene la exportación, igual que empezar una nueva respuesta en Claude.
+En Claude, DeepSeek y Kimi, la exportación es un complemento desactivado por defecto: actívalo primero en **Complementos** en el popup. Voyager recorre las conversaciones largas desplazándose para leerlas enteras y después empieza con todos los mensajes seleccionados; desmarca los que no quieras. Si no puede confirmar el principio y el final, avisa de que la exportación puede estar incompleta. En ChatGPT, si no puede leer el historial completo, lo indica y te pide que te desplaces hacia arriba para cargar los mensajes anteriores y vuelvas a intentarlo. Cambiar a otro chat detiene la exportación, igual que empezar una nueva respuesta en Claude.
+
+Los archivos subidos en una conversación de ChatGPT aparecen en la exportación como una línea `📎 nombre del archivo`.
 
 Tus datos, tus reglas.
 
@@ -79,4 +81,4 @@ Esto resulta útil en investigación académica, análisis de la competencia y d
 
 ## Plataformas compatibles
 
-La exportación funciona en Gemini y ChatGPT en Chrome, Edge, Firefox, Safari, Opera y Brave. En Claude, DeepSeek y Kimi, la exportación es un complemento desactivado por defecto que se activa en **Complementos** y solo funciona en ordenador. En Firefox para Android solo funcionan las exportaciones de Gemini y ChatGPT. En Safari, la exportación a PDF usa un paso de impresión manual (Command+P después de hacer clic en exportar); las exportaciones a Markdown y JSON siguen incluyendo imágenes.
+La exportación funciona en Gemini y ChatGPT en Chrome, Edge, Firefox, Safari, Opera y Brave. En Claude, DeepSeek y Kimi, la exportación es un complemento desactivado por defecto que se activa en **Complementos**. En Safari, la exportación a PDF usa un paso de impresión manual (Command+P después de hacer clic en exportar); las exportaciones a Markdown y JSON siguen incluyendo imágenes.

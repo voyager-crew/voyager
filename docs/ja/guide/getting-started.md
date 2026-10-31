@@ -40,6 +40,11 @@ Claude、ChatGPT、DeepSeek、Kimi もお使いですか？ Voyager のポップ
 ボールをクリックして、検索して、挿入するだけ。
 これは単なるチャットではありません。あなたのデジタル資産を蓄積するプロセスなのです。
 
+## 5. 舵を取る
+
+ボールにマウスを合わせて **Voyager パネル** をクリック。あるいは ⌥V / Alt+V を押すだけ。
+会話から離れずに、このサイトの機能のオン・オフ、スライダーのライブプレビュー、クラウド同期までこなせます。
+
 ---
 
 **発進。**
@@ -49,3 +54,4 @@ Claude、ChatGPT、DeepSeek、Kimi もお使いですか？ Voyager のポップ
 - [フォルダをマスターする](/ja/guide/folders)
 - [プロンプトを管理する](/ja/guide/prompts)
 - [データを掌握する](/ja/guide/export)
+- [Voyager パネル](/ja/guide/panel)
