@@ -2,9 +2,17 @@
 
 Voyager 面板直接在网页里打开：不用离开对话，就能开关当前网站的功能、拖动滑块实时看效果、管理网站访问，还能云同步。Voyager 运行的网站上都能打开它。
 
+<GuideHero src="/assets/panel-light.png" dark="/assets/panel-dark.png" alt="Gemini 页面上打开的 Voyager 面板">
+
+鼠标移到悬浮按钮上，或按 Alt/⌥+V，面板就在当前网页里打开。
+
+</GuideHero>
+
 ## 打开与关闭
 
-<GuideOp>
+<GuideOp side="end">
+
+<GuideShot src="/assets/panel-fab.png" alt="悬浮按钮和弹出的面板、隐藏按钮" :width="206" />
 
 面板有几个入口，哪个顺手用哪个。
 
@@ -33,6 +41,8 @@ Voyager 面板直接在网页里打开：不用离开对话，就能开关当前
 - **别的网站**：点顶栏的网站图标切换到另一个网站的功能；那时改动照样保存，但不会在当前网页实时预览。
 - **完整设置**：顶栏最右的按钮打开 Voyager 弹窗里的全部设置。
 
+<GuideShot kind="panel" src="/assets/panel-features-zh.png" alt="面板的功能分页" :width="640" />
+
 </GuideOp>
 
 ## 网站
@@ -44,6 +54,8 @@ Voyager 面板直接在网页里打开：不用离开对话，就能开关当前
 - **支持的网站**：Gemini 和 AI Studio 标着 **内置**；其他网站一个开关，打开时浏览器会请求访问权限，下面写着开了几项功能或 **未启用**。
 - **其他网站 · 仅提示词**：添加的网站只运行提示词管理器，可以在这里添加或移除。
 - **查看功能**：点一个网站，就切到它的 **功能** 分页。
+
+<GuideShot kind="panel" src="/assets/panel-sites-zh.png" alt="面板的网站分页" :width="640" />
 
 </GuideOp>
 

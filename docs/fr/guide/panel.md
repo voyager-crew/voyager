@@ -2,9 +2,17 @@
 
 Le panneau Voyager s'ouvre directement sur la page : activez ou désactivez les fonctions du site actuel, faites glisser des curseurs avec un aperçu en direct, gérez l'accès aux sites et lancez la synchro cloud sans quitter la conversation. Il s'ouvre sur tous les sites où Voyager fonctionne.
 
+<GuideHero src="/assets/panel-light.png" dark="/assets/panel-dark.png" alt="Le panneau Voyager ouvert sur une page Gemini">
+
+Survolez le bouton flottant ou appuyez sur Alt/⌥+V : le panneau s’ouvre dans la page en cours.
+
+</GuideHero>
+
 ## Ouvrir et fermer
 
-<GuideOp>
+<GuideOp side="end">
+
+<GuideShot src="/assets/panel-fab.png" alt="Le bouton flottant avec ses boutons panneau et masquer" :width="206" />
 
 Le panneau a plusieurs entrées ; prenez celle qui vous convient.
 
@@ -33,6 +41,8 @@ L'onglet **Fonctions** liste les fonctions de Voyager pour le site actuel, et ch
 - **Autre site** : cliquez sur l'icône du site dans la barre du haut pour afficher les fonctions d'un autre site ; les modifications y sont enregistrées, mais la page ouverte ne les prévisualise pas.
 - **Tous les réglages** : le dernier bouton de la barre du haut ouvre tous les réglages dans le popup de Voyager.
 
+<GuideShot kind="panel" src="/assets/panel-features-en.png" alt="L’onglet Fonctions du panneau" :width="640" />
+
 </GuideOp>
 
 ## Sites
@@ -44,6 +54,8 @@ L'onglet **Sites** reprend la carte [Accès aux sites](/fr/guide/settings#accès
 - **Sites pris en charge** : Gemini et AI Studio portent la mention **Intégré** ; chaque autre site a un interrupteur qui demande l'accès au navigateur, avec en dessous le nombre de fonctions activées ou **Désactivé**.
 - **Autres sites · Prompts uniquement** : les sites que vous ajoutez n'exécutent que le gestionnaire de prompts ; ajoutez-les ou retirez-les ici.
 - **Voir ses fonctions** : cliquez sur un site pour ouvrir son onglet **Fonctions**.
+
+<GuideShot kind="panel" src="/assets/panel-sites-en.png" alt="L’onglet Sites du panneau" :width="640" />
 
 </GuideOp>
 

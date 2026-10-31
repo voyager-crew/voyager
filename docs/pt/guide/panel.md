@@ -2,9 +2,17 @@
 
 O painel do Voyager abre direto na página: ative e desative os recursos do site atual, arraste sliders com pré-visualização ao vivo, gerencie o acesso a sites e sincronize com a nuvem sem sair do chat. Ele abre em todos os sites onde o Voyager funciona.
 
+<GuideHero src="/assets/panel-light.png" dark="/assets/panel-dark.png" alt="O painel do Voyager aberto numa página do Gemini">
+
+Passe o mouse sobre o botão flutuante ou pressione Alt/⌥+V e o painel abre na página atual.
+
+</GuideHero>
+
 ## Abrir e fechar
 
-<GuideOp>
+<GuideOp side="end">
+
+<GuideShot src="/assets/panel-fab.png" alt="O botão flutuante com os botões de painel e ocultar" :width="206" />
 
 O painel tem várias entradas; use a que estiver mais à mão.
 
@@ -33,6 +41,8 @@ A aba **Recursos** lista os recursos do Voyager para o site atual, e cada mudan�
 - **Outro site**: clique no ícone do site na barra superior para ver os recursos de outro site; as mudanças continuam sendo salvas, mas a página aberta não as pré-visualiza.
 - **Todas as configurações**: o último botão da barra superior abre todas as configurações no popup do Voyager.
 
+<GuideShot kind="panel" src="/assets/panel-features-en.png" alt="A aba Recursos do painel" :width="640" />
+
 </GuideOp>
 
 ## Sites
@@ -44,6 +54,8 @@ A aba **Sites** corresponde ao cartão [Acesso a sites](/pt/guide/settings#acess
 - **Sites compatíveis**: Gemini e AI Studio aparecem como **Integrado**; os outros sites têm um interruptor que pede acesso ao navegador, com quantos recursos estão ativos ou **Desativado** logo abaixo.
 - **Outros sites · Só prompts**: os sites que você adiciona executam só o Gestor de prompts; adicione ou remova-os aqui.
 - **Ver os recursos**: clique em um site para abrir a aba **Recursos** dele.
+
+<GuideShot kind="panel" src="/assets/panel-sites-en.png" alt="A aba Sites do painel" :width="640" />
 
 </GuideOp>
 

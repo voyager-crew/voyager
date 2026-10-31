@@ -2,9 +2,17 @@
 
 Voyager 패널은 페이지 위에서 바로 열립니다. 대화를 떠나지 않고 현재 사이트의 기능을 켜고 끄고, 슬라이더를 끌며 실시간으로 미리 보고, 사이트 접근을 관리하고, 클라우드 동기화까지 할 수 있습니다. Voyager가 동작하는 모든 사이트에서 열 수 있습니다.
 
+<GuideHero src="/assets/panel-light.png" dark="/assets/panel-dark.png" alt="Gemini 페이지에서 연 Voyager 패널">
+
+플로팅 버튼에 마우스를 올리거나 Alt/⌥+V를 누르면 지금 페이지 위에 패널이 열립니다.
+
+</GuideHero>
+
 ## 열기와 닫기
 
-<GuideOp>
+<GuideOp side="end">
+
+<GuideShot src="/assets/panel-fab.png" alt="플로팅 버튼과 패널·숨기기 버튼" :width="206" />
 
 패널을 여는 방법은 여러 가지입니다. 편한 것을 쓰세요.
 
@@ -33,6 +41,8 @@ Voyager 패널은 페이지 위에서 바로 열립니다. 대화를 떠나지 �
 - **다른 사이트**: 상단 바의 사이트 아이콘을 클릭하면 다른 사이트의 기능을 볼 수 있습니다. 바꾼 내용은 저장되지만 열려 있는 페이지에서 미리 보지는 않습니다.
 - **전체 설정**: 상단 바 맨 끝의 버튼은 Voyager 팝업의 모든 설정을 엽니다.
 
+<GuideShot kind="panel" src="/assets/panel-features-en.png" alt="패널의 기능 탭" :width="640" />
+
 </GuideOp>
 
 ## 사이트
@@ -44,6 +54,8 @@ Voyager 패널은 페이지 위에서 바로 열립니다. 대화를 떠나지 �
 - **지원 사이트**: Gemini와 AI Studio에는 **기본 제공**이 표시됩니다. 다른 사이트에는 브라우저에 접근 권한을 요청하는 스위치가 있고, 그 아래에 켜진 기능 수 또는 **사용 안 함**이 표시됩니다.
 - **기타 웹사이트 · 프롬프트만**: 직접 추가한 웹사이트에서는 프롬프트 관리자만 동작합니다. 여기서 추가하거나 제거할 수 있습니다.
 - **기능 보기**: 사이트를 클릭하면 그 사이트의 **기능** 탭이 열립니다.
+
+<GuideShot kind="panel" src="/assets/panel-sites-en.png" alt="패널의 사이트 탭" :width="640" />
 
 </GuideOp>
 

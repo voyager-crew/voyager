@@ -2,9 +2,17 @@
 
 El panel de Voyager se abre directamente en la página: activa y desactiva las funciones del sitio actual, arrastra deslizadores con vista previa en vivo, gestiona el acceso a sitios y sincroniza con la nube sin salir del chat. Se abre en todos los sitios donde funciona Voyager.
 
+<GuideHero src="/assets/panel-light.png" dark="/assets/panel-dark.png" alt="El panel de Voyager abierto en una página de Gemini">
+
+Pasa el ratón sobre el botón flotante o pulsa Alt/⌥+V y el panel se abre en la página actual.
+
+</GuideHero>
+
 ## Abrir y cerrar
 
-<GuideOp>
+<GuideOp side="end">
+
+<GuideShot src="/assets/panel-fab.png" alt="El botón flotante con sus botones de panel y ocultar" :width="206" />
 
 El panel tiene varias entradas; usa la que tengas más a mano.
 
@@ -33,6 +41,8 @@ La pestaña **Funciones** muestra las funciones de Voyager del sitio actual, y c
 - **Otro sitio**: haz clic en el icono del sitio en la barra superior para ver las funciones de otro sitio; los cambios se guardan igual, pero la página abierta no los previsualiza.
 - **Todos los ajustes**: el último botón de la barra superior abre todos los ajustes en el popup de Voyager.
 
+<GuideShot kind="panel" src="/assets/panel-features-en.png" alt="La pestaña Funciones del panel" :width="640" />
+
 </GuideOp>
 
 ## Sitios
@@ -44,6 +54,8 @@ La pestaña **Sitios** equivale a la tarjeta [Acceso a sitios](/es/guide/setting
 - **Sitios compatibles**: Gemini y AI Studio aparecen como **Integrado**; los demás sitios tienen un interruptor que pide acceso al navegador, y debajo se indica cuántas funciones están activas o **Desactivado**.
 - **Otros sitios web · Solo prompts**: los sitios web que añades solo ejecutan el Gestor de prompts; añádelos o quítalos aquí.
 - **Ver sus funciones**: haz clic en un sitio para abrir su pestaña **Funciones**.
+
+<GuideShot kind="panel" src="/assets/panel-sites-en.png" alt="La pestaña Sitios del panel" :width="640" />
 
 </GuideOp>
 

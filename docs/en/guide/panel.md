@@ -2,9 +2,17 @@
 
 The Voyager panel opens right on the page: turn the current site's features on and off, drag sliders with a live preview, manage site access and run cloud sync without leaving the chat. It opens on every site Voyager runs on.
 
+<GuideHero src="/assets/panel-light.png" dark="/assets/panel-dark.png" alt="The Voyager panel open on a Gemini page">
+
+Hover the floating button or press Alt/⌥+V and the panel opens on the page you are on.
+
+</GuideHero>
+
 ## Open and close
 
-<GuideOp>
+<GuideOp side="end">
+
+<GuideShot src="/assets/panel-fab.png" alt="The floating button with its panel and hide buttons" :width="206" />
 
 The panel has several ways in; use whichever is closest.
 
@@ -33,6 +41,8 @@ The **Features** tab lists Voyager's features for the current site, and every ch
 - **Another site**: click the site icon in the top bar to show another site's features; changes still save there, but the open page doesn't preview them.
 - **Full settings**: the last button in the top bar opens every setting in the Voyager popup.
 
+<GuideShot kind="panel" src="/assets/panel-features-en.png" alt="The panel’s Features tab" :width="640" />
+
 </GuideOp>
 
 ## Sites
@@ -44,6 +54,8 @@ The **Sites** tab matches the popup's [Site access](/en/guide/settings#site-acce
 - **Supported sites**: Gemini and AI Studio are marked **Built in**; every other site has a switch that asks the browser for access, with how many features are on there or **Not enabled** underneath.
 - **Other websites · Prompts only**: websites you add run only Prompt Manager; add or remove them here.
 - **See its features**: click a site to open its **Features** tab.
+
+<GuideShot kind="panel" src="/assets/panel-sites-en.png" alt="The panel’s Sites tab" :width="640" />
 
 </GuideOp>
 
