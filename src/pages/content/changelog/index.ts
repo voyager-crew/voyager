@@ -4,7 +4,7 @@ import { getCurrentLanguage } from '@/utils/i18n';
 import type { AppLanguage } from '@/utils/language';
 import { loadTranslations } from '@/utils/translations';
 
-import { createChangelogModal } from './modal';
+import { closeChangelogModal, createChangelogModal } from './modal';
 import { noteBody, notePath, pickNoteLocale } from './noteSections';
 
 /**
@@ -358,7 +358,7 @@ export async function startChangelog(opts: { onClosed?: () => void } = {}): Prom
 
   return () => {
     if (overlayRef) {
-      overlayRef.remove();
+      closeChangelogModal(overlayRef);
       overlayRef = null;
     }
   };

@@ -142,6 +142,27 @@
   font-size: 14px;
 }
 
+/* A note's `:kbd:` shortcut (`changelog.ts`, redrawn for the reader by
+   `theme/shortcutKeys.ts`). Left to right inside RTL text, like the extension's. */
+.vp-doc .gv-changelog-kbd {
+  display: inline-block;
+  direction: ltr;
+  unicode-bidi: isolate;
+  min-width: 1.6em;
+  padding: 0 6px;
+  border: 1px solid var(--vp-c-divider);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  font-family: var(--vp-font-family-base);
+  font-size: 0.875em;
+  font-weight: 500;
+  line-height: 1.55;
+  text-align: center;
+  white-space: nowrap;
+}
+
 /* Plugin table (`docs/.vitepress/pluginsPage.ts`). Narrow site columns, each
    mark above its name, leave the feature names room for one line. */
 .vp-doc .gv-plugins-table th {

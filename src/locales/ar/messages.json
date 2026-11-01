@@ -2289,6 +2289,10 @@
     "message": "التفاصيل في المستندات",
     "description": "Changelog annotation pointing to docs icon"
   },
+  "changelog_switch_hint": {
+    "message": "يغيّر هذا الإعداد في Voyager فورًا",
+    "description": "Tooltip and screen-reader description of a setting switch embedded in the changelog modal"
+  },
   "changelog_rate_chrome": {
     "message": "إذا كان Voyager مفيدًا لك، فإن تقييمك على متجر Chrome الإلكتروني يساعد الآخرين على اكتشافه.",
     "description": "Chrome Web Store rating prompt in changelog modal"

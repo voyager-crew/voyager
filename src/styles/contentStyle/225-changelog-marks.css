@@ -1,0 +1,96 @@
+/* ===== Changelog note marks: key caps and setting switches =====
+ * Set into the sentence that names them, painted from the page ui tokens (005)
+ * so light and dark follow html[data-gv-scheme]; logical properties so the
+ * switch slides the right way in Arabic. */
+
+/* `:kbd:Alt+V:` — the shortcut in the reader's notation. A shortcut reads left
+   to right in every language, so it is isolated from the RTL sentence around it. */
+.gv-changelog-body .gv-changelog-kbd {
+  display: inline-block;
+  direction: ltr;
+  unicode-bidi: isolate;
+  min-width: 1.6em;
+  padding: 0 6px;
+  border: 1px solid var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7));
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--gv-ui-text, oklch(0.14 0.004 285)) 5%, transparent);
+  color: var(--gv-ui-text, oklch(0.14 0.004 285));
+  font: 500 12.5px/1.55 var(--gv-ui-font, ui-sans-serif, system-ui, sans-serif);
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: 0.05em;
+}
+
+/* `:switch:<plugin id>:` — a working switch with the setting's name beside it. */
+.gv-changelog-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 2px;
+  padding-block: 1px;
+  padding-inline: 4px 8px;
+  border: 1px solid var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7));
+  border-radius: 999px;
+  background: var(--gv-ui-surface, oklch(0.995 0.002 250));
+  color: var(--gv-ui-text, oklch(0.14 0.004 285));
+  cursor: pointer;
+  font: 500 13px/20px var(--gv-ui-font, ui-sans-serif, system-ui, sans-serif);
+  vertical-align: middle;
+  transition: background-color 0.15s ease;
+}
+
+.gv-changelog-switch:hover:not(:disabled) {
+  background: var(--gv-ui-surface-hover, oklch(0.97 0.003 250));
+}
+
+.gv-changelog-switch:focus-visible {
+  outline: 2px solid var(--gv-ui-focus-ring, oklch(0.601 0.1 140));
+  outline-offset: 2px;
+}
+
+.gv-changelog-switch:disabled {
+  cursor: default;
+}
+
+.gv-changelog-switch__track {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 26px;
+  height: 16px;
+  flex: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gv-ui-text, oklch(0.14 0.004 285)) 22%, transparent);
+  transition: background-color 0.15s ease;
+}
+
+.gv-changelog-switch__thumb {
+  width: 12px;
+  height: 12px;
+  margin-inline-start: 2px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.25);
+  transition: margin-inline-start 0.15s ease;
+}
+
+.gv-changelog-switch[aria-checked='true'] .gv-changelog-switch__track {
+  background: var(--gv-ui-primary, oklch(0.601 0.1 140));
+}
+
+.gv-changelog-switch[aria-checked='true'] .gv-changelog-switch__thumb {
+  margin-inline-start: 12px;
+}
+
+/* Until the stored value is read, the switch shows no state at all. */
+.gv-changelog-switch:disabled .gv-changelog-switch__track {
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gv-changelog-switch__thumb,
+  .gv-changelog-switch__track {
+    transition: none;
+  }
+}

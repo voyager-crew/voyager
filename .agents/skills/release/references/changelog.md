@@ -49,6 +49,13 @@ These are the headers of 1.9.0 through 2.0.1. Highlights holds the one to three 
 
 Write `:gemini: Gemini`, `:aistudio: AI Studio`, `:chatgpt: ChatGPT`, `:claude: Claude` or `:deepseek: DeepSeek` to put that platform's mark before its name. The ids are the keys of `PLATFORM_LOGOS` (`src/core/icons/platformLogos.ts`, which also has `qwen`, `kimi`, `notebooklm`, `midjourney` and `perplexity`); an unknown id stays literal text. Both renderers (`src/pages/content/changelog/platformLogoMarks.ts` in-product, `docs/.vitepress/changelog.ts` on the site) swallow the one space after the marker, so keep the space and the name. Use the same markers in all 10 locales.
 
+## Shortcut and setting-switch markers
+
+- **Shortcut**: `:kbd:Alt+V:`, `:kbd:Mod+Shift+K:`. Modifiers are `Mod` (⌘ on macOS, Ctrl elsewhere), `Ctrl`, `Alt` and `Shift`, then exactly one key: a letter, digit, `/`, `.`, `,`, `F1`–`F12`, or `Enter`, `Esc`, `Tab`, `Space`, `Backspace`, `Delete`, `Up`, `Down`, `Left`, `Right`. The viewer shows a `<kbd>` in the reader's notation (⌥V, ⇧⌘K on macOS; Alt+V, Ctrl+Shift+K elsewhere); the site builds the combined `Alt/⌥+V` and redraws it for the reader once the page loads. Write the marker instead of hand-typing `Ctrl/⌘+…`.
+- **Setting switch**: `:switch:voyager.gemini-quote-reply:`. In the viewer it is a working switch labelled with the plugin's localized name, reading and writing the same setting as the popup; on the site it prints the name and "turn it on or off in Voyager". Only ids in `CHANGELOG_SWITCH_TARGETS` (`src/pages/content/changelog/switchTargets.ts`) work, and each must be a legacy-bound official plugin; add one there before using it in a note. Put the marker after the sentence that introduces the setting, at most one per entry.
+
+An invalid shortcut or an unlisted switch id renders as plain text in the viewer and fails both `bun run test` (`__tests__/shortcutMarks.test.ts` scans every note) and `bun run docs:build`. A marker inside backticks stays literal. Use the same markers in all 10 locales.
+
 ## Commit → entry filtering
 
 Include:

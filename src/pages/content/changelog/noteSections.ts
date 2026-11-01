@@ -38,3 +38,16 @@ export function noteBody(raw: string): string {
   const match = raw.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n([\s\S]*)$/);
   return (match ? match[1] : raw).trim();
 }
+
+const CODE = /(```[\s\S]*?```|`[^`\n]*`)/;
+
+/**
+ * `markdown` with `replace` applied to its prose only: inline code and fenced
+ * blocks keep their text, which is how a note shows a marker's own syntax.
+ */
+export function mapNoteProse(markdown: string, replace: (prose: string) => string): string {
+  return markdown
+    .split(CODE)
+    .map((part, index) => (index % 2 === 0 ? replace(part) : part))
+    .join('');
+}

@@ -2289,6 +2289,10 @@
     "message": "詳細功能見文檔",
     "description": "Changelog annotation pointing to docs icon"
   },
+  "changelog_switch_hint": {
+    "message": "立即變更 Voyager 中的這項設定",
+    "description": "Tooltip and screen-reader description of a setting switch embedded in the changelog modal"
+  },
   "changelog_rate_chrome": {
     "message": "如果 Voyager 對你有幫助，在 Chrome 線上應用程式商店留個評分，可以讓更多人找到它。",
     "description": "Chrome Web Store rating prompt in changelog modal"

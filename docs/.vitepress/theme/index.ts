@@ -1,6 +1,6 @@
 import { NolebaseGitChangelogPlugin } from '@nolebase/vitepress-plugin-git-changelog/client';
 import '@nolebase/vitepress-plugin-git-changelog/client/style.css';
-import { type Theme } from 'vitepress';
+import { type Theme, onContentUpdated } from 'vitepress';
 import DefaultTheme from 'vitepress/theme';
 import { defineAsyncComponent, h } from 'vue';
 
@@ -17,6 +17,7 @@ import GuideShot from './components/guide/GuideShot.vue';
 import { GuideFacts, GuideNote, GuideStep, GuideSteps } from './components/guide/wrappers';
 import { HomeFeaturesLazy } from './components/homeFeatures/lazy';
 import './guide.css';
+import { localizeShortcutKeys } from './shortcutKeys';
 import './style.css';
 
 const GUIDE_BLOCKS = {
@@ -39,6 +40,10 @@ export default {
       'home-features-before': () => h(HomeFeaturesLazy),
       'home-features-after': () => [h(HomeAskAI), h(HomeReviews)],
     });
+  },
+  setup() {
+    // Runs once the page content has mounted or changed, never during SSR or hydration.
+    onContentUpdated(() => localizeShortcutKeys(document));
   },
   enhanceApp({ app }) {
     app.use(NolebaseGitChangelogPlugin);

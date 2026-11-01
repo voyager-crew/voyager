@@ -70,4 +70,30 @@ describe('site changelog', () => {
     expect(page).toContain('[A](/fr/guide/timeline)');
     expect(page).toContain('[B](/guide/write-a-plugin#start)');
   });
+
+  it('prints shortcuts in both notations and a switch as a plain mention, never a control', () => {
+    const page = renderChangelog(
+      locale('zh'),
+      [
+        note('2.0.0', {
+          zh: '按 :kbd:Alt+V: 打开；:switch:voyager.gemini-quote-reply:；`:kbd:Alt+V:`',
+        }),
+      ],
+      () => false,
+    );
+
+    expect(page).toContain('<kbd class="gv-changelog-kbd" data-gv-keys="Alt+V">Alt/⌥+V</kbd>');
+    expect(page).toContain('<strong>Gemini · 引用回复</strong>（可在 Voyager 中开启或关闭）');
+    expect(page).not.toMatch(/<button|<input|role="switch"/);
+    expect(page).toContain('`:kbd:Alt+V:`');
+  });
+
+  it.each([':switch:voyager.gemini-folders:', ':kbd:Hyper+V:'])(
+    'fails the build on %s',
+    (marker) => {
+      expect(() =>
+        renderChangelog(locale('en'), [note('2.0.0', { en: marker })], () => false),
+      ).toThrow(/v2\.0\.0/);
+    },
+  );
 });

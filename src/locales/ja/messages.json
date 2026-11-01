@@ -2289,6 +2289,10 @@
     "message": "詳細はドキュメントへ",
     "description": "Changelog annotation pointing to docs icon"
   },
+  "changelog_switch_hint": {
+    "message": "Voyager のこの設定をすぐに切り替えます",
+    "description": "Tooltip and screen-reader description of a setting switch embedded in the changelog modal"
+  },
   "changelog_rate_chrome": {
     "message": "Voyager がお役に立っているなら、Chrome ウェブストアでの評価がほかの方に見つけてもらうきっかけになります。",
     "description": "Chrome Web Store rating prompt in changelog modal"

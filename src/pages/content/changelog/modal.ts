@@ -1,11 +1,22 @@
 import { createXIcon } from '@/core/icons/folderIcons';
 import { createHeartIcon } from '@/core/icons/promptManagerIcons';
-import { getWebStoreRatingChannel } from '@/core/utils/browser';
+import { getWebStoreRatingChannel, isMac } from '@/core/utils/browser';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 import type { AppLanguage } from '@/utils/language';
 import { type TranslationKey, getLoadedTranslations, loadTranslations } from '@/utils/translations';
 
+import { renderChangelogMarks } from './changelogMarks';
 import { renderPlatformLogoMarks } from './platformLogoMarks';
+
+/** How each open viewer closes, so the feature's teardown runs the same cleanup as a click. */
+const closers = new WeakMap<HTMLElement, () => void>();
+
+/** Close a viewer from outside it (the feature stopping), releasing what it holds. */
+export function closeChangelogModal(overlay: HTMLElement): void {
+  const close = closers.get(overlay);
+  if (close) close();
+  else overlay.remove();
+}
 
 /**
  * Translate a key using an explicit language, bypassing cachedLanguage.
@@ -111,6 +122,11 @@ export async function createChangelogModal(
   body.className = 'gv-changelog-body';
   body.innerHTML = htmlContent;
   renderPlatformLogoMarks(body);
+  const disposeMarks = renderChangelogMarks(body, {
+    mac: isMac(),
+    lang,
+    switchHint: t('changelog_switch_hint', lang),
+  });
   const leadingElement = body.firstElementChild;
   if (leadingElement?.tagName === 'BLOCKQUOTE') {
     leadingElement.classList.add('gv-changelog-quote');
@@ -347,8 +363,11 @@ export async function createChangelogModal(
       clearInterval(countdownTimer);
       countdownTimer = null;
     }
+    disposeMarks();
+    closers.delete(overlay);
     overlay.remove();
   };
+  closers.set(overlay, onClose);
 
   closeBtn.addEventListener('click', () => {
     if (!readyToClose) return;

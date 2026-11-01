@@ -2289,6 +2289,10 @@
     "message": "자세한 내용은 문서 참조",
     "description": "Changelog annotation pointing to docs icon"
   },
+  "changelog_switch_hint": {
+    "message": "Voyager의 이 설정을 바로 변경합니다",
+    "description": "Tooltip and screen-reader description of a setting switch embedded in the changelog modal"
+  },
   "changelog_rate_chrome": {
     "message": "Voyager가 도움이 되었다면 Chrome 웹 스토어에 평점을 남겨 주세요. 다른 분들이 찾는 데 도움이 됩니다.",
     "description": "Chrome Web Store rating prompt in changelog modal"
