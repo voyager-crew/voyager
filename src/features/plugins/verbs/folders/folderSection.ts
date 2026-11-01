@@ -64,6 +64,8 @@ function baseTreeSite(site: SectionSite): TreeSiteOptions {
     lineIcons: true,
     // No per-folder count, as in Gemini's sidebar.
     hideFolderCount: true,
+    // Keep hover/focus row actions from squeezing the name editor.
+    renameFillsRow: true,
     folderMenuButton: { labelKey: 'folder_settings' },
     folderBodyDrop: true,
     folderDrag: true,

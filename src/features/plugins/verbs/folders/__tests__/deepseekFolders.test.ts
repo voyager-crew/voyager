@@ -11,7 +11,7 @@ import { deepseekAdapter } from '@/features/plugins/sites/adapters/deepseek';
 import { SiteFolderStore } from '@/pages/content/folder/SiteFolderStore';
 import { fakeTransfer } from '@/pages/content/folder/floatingTree/__tests__/treeDriver';
 import { settle } from '@/tests/memoryStorage';
-import { initI18n } from '@/utils/i18n';
+import { getTranslationSyncUnsafe as t, initI18n } from '@/utils/i18n';
 
 import { siteFoldersFromData } from '../siteData';
 import {
@@ -111,6 +111,29 @@ describe('DeepSeek folders', () => {
     expect(section().parentElement?.classList.contains('inner')).toBe(true);
     expect(stored().folderContents.f1?.[0]?.title).toBe(FILED.title);
     expect(document.querySelector(FAB)).toBeNull();
+  });
+
+  it('leaves the row actions out while renaming, then restores them on cancel', async () => {
+    mountSidebar();
+    const { stored } = await open();
+    const row = section().shadowRoot!.querySelector<HTMLElement>('[data-folder-id="f1"]')!;
+    const button = (key: string) =>
+      row.querySelector<HTMLButtonElement>(`button[aria-label="${t(key)}"]`);
+
+    expect(button('floatingPanelCreateSubfolder')).not.toBeNull();
+    expect(button('folder_settings')).not.toBeNull();
+    row.querySelector('[dir="auto"]')!.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    await nextPass();
+
+    expect(button('floatingPanelCreateSubfolder')).toBeNull();
+    expect(button('folder_settings')).toBeNull();
+    expect(button('floatingPanelSave')).not.toBeNull();
+    button('floatingPanelCancel')!.click();
+    await nextPass();
+
+    expect(button('floatingPanelCreateSubfolder')).not.toBeNull();
+    expect(button('folder_settings')).not.toBeNull();
+    expect(stored().folders[0].name).toBe('Work');
   });
 
   it('files a row dragged from the history onto a folder', async () => {
