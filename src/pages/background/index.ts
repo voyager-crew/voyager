@@ -21,6 +21,7 @@ import { createMainWorldRegistration } from './mainWorldRegistration';
 import { createNotificationEnablement } from './notificationEnablement';
 import { handlePluginRuntimeMessage } from './pluginRuntimeMessages';
 import { startQueueOwners } from './queueOwners';
+import { migrateGeminiQuoteReplyDefault } from './quoteReplyDefaultMigration';
 import { registerBackgroundSettingListeners } from './registrationSettings';
 import { startResearchPackOwner } from './researchPackOwner';
 import { createResponseNotifications } from './responseNotifications';
@@ -68,6 +69,7 @@ const generatedUiCapture = createGeneratedUiCapture(siteAccess);
 // Initial sync for persisted permissions
 void disableRetiredTabTitleUpdateSetting();
 void migrateOptionalHighlightSetting();
+void migrateGeminiQuoteReplyDefault();
 void generatedUiCapture.cleanupLegacyGeneratedUiCapturePermission();
 void siteAccess.syncCustom();
 void siteAccess.syncPlugins();

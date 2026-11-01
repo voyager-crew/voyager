@@ -25,6 +25,11 @@ type NonSettingsStorageKey = Exclude<StorageKey, BackupableSettingsKey>;
  * make a new key fail fast until its sync/backup behavior is an explicit choice.
  */
 export const NON_SETTINGS_BACKUP_POLICIES = {
+  [StorageKeys.QUOTE_REPLY_DEFAULT_OFF_MIGRATED]: {
+    storage: 'local',
+    disposition: 'device-local',
+    reason: 'The one-time Gemini quote default reset must complete independently on each device.',
+  },
   [StorageKeys.CLOUD_SYNC_SCOPE]: {
     storage: 'local',
     disposition: 'device-local',

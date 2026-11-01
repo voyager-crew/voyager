@@ -25,6 +25,8 @@ export const APP_STORAGE_KEYS = {
   CODE_BLOCK_COLLAPSE_ENABLED: 'gvCodeBlockCollapseEnabled',
   USER_LATEX_ENABLED: 'gvUserLatexEnabled',
   QUOTE_REPLY_ENABLED: 'gvQuoteReplyEnabled',
+  // Device-local receipt for the 2.3.1 Gemini quote default reset; never backed up.
+  QUOTE_REPLY_DEFAULT_OFF_MIGRATED: 'gvQuoteReplyDefaultOffMigrated',
   RESPONSE_COMPLETE_NOTIFICATION_ENABLED: 'gvResponseCompleteNotificationEnabled',
   /** Local, expiring permission intent; never part of settings sync or backups. */
   RESPONSE_NOTIFICATION_ENABLE_PENDING: 'gvResponseNotificationEnablePending',

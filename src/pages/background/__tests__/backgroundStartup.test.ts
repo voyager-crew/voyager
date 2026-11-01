@@ -24,9 +24,12 @@ afterEach(() => {
 });
 
 /** Real browser events and storage, including the change events that writes emit. */
-async function startNotificationBackground() {
+async function startNotificationBackground(
+  initialSync: Record<string, unknown> = {},
+  buildTarget = 'chrome',
+) {
   vi.resetModules();
-  vi.stubEnv('VOYAGER_BUILD_TARGET', 'chrome');
+  vi.stubEnv('VOYAGER_BUILD_TARGET', buildTarget);
   vi.stubEnv('VOYAGER_DEV_AUTO_RELOAD', '');
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
   const event = <Args extends unknown[]>() => {
@@ -43,6 +46,7 @@ async function startNotificationBackground() {
   const sync: Record<string, unknown> = {
     [StorageKeys.RESPONSE_COMPLETE_NOTIFICATION_ENABLED]: false,
     [StorageKeys.HIGHLIGHT_ENABLED]: false,
+    ...initialSync,
   };
   const local: Record<string, unknown> = {};
   const area = (values: Record<string, unknown>, name: string) => ({
@@ -135,6 +139,20 @@ async function startNotificationBackground() {
 }
 
 describe('MV3 background startup', () => {
+  it.each(['chrome', 'firefox', 'safari'])(
+    'turns off a legacy default-on Gemini quote preference on %s startup',
+    async (buildTarget) => {
+      const background = await startNotificationBackground(
+        { [StorageKeys.QUOTE_REPLY_ENABLED]: true },
+        buildTarget,
+      );
+
+      await vi.waitFor(() => {
+        expect(background.sync[StorageKeys.QUOTE_REPLY_ENABLED]).toBe(false);
+      });
+    },
+  );
+
   it('enables notifications on the first permission grant after the requesting popup has closed', async () => {
     const background = await startNotificationBackground();
     expect(await background.send({ action: 'begin', requestId: 'popup-first-click' })).toEqual({
