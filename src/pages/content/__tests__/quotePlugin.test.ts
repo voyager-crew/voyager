@@ -44,8 +44,8 @@ async function flush(): Promise<void> {
   for (let round = 0; round < 60; round++) await Promise.resolve();
 }
 
-async function start(quote = true, collapse = false, highlight = false): Promise<void> {
-  harness.storage.sync.set(StorageKeys.QUOTE_REPLY_ENABLED, quote);
+async function start(quote?: boolean, collapse = false, highlight = false): Promise<void> {
+  if (quote !== undefined) harness.storage.sync.set(StorageKeys.QUOTE_REPLY_ENABLED, quote);
   harness.storage.sync.set(StorageKeys.INPUT_COLLAPSE_ENABLED, collapse);
   harness.storage.sync.set(StorageKeys.HIGHLIGHT_ENABLED, highlight);
   const admission = createOfficialAdmission();
@@ -147,6 +147,29 @@ afterEach(async () => {
 });
 
 describe('Quote through its registered official plugin', () => {
+  it('keeps Quote off until opted in and returns to off when the saved choice is removed', async () => {
+    await start();
+    select('answer');
+    expect(host!.getStatuses().find((entry) => entry.id === ID)?.kind).toBe('ready');
+    expect(quoteButton()).toBeNull();
+    expect(harness.storage.sync.has(StorageKeys.QUOTE_REPLY_ENABLED)).toBe(false);
+
+    flipQuote(true);
+    await flush();
+    select('answer');
+    expect(host!.getStatuses().find((entry) => entry.id === ID)?.kind).toBe('mounted');
+    quoteButton()!.click();
+    vi.advanceTimersByTime(200);
+    expect(editor().textContent).toBe('> Answer text\n');
+
+    harness.storage.sync.delete(StorageKeys.QUOTE_REPLY_ENABLED);
+    harness.emitStorageChange({ [StorageKeys.QUOTE_REPLY_ENABLED]: { oldValue: true } }, 'sync');
+    await flush();
+    select('answer');
+    expect(host!.getStatuses().find((entry) => entry.id === ID)?.kind).toBe('ready');
+    expect(quoteButton()).toBeNull();
+  });
+
   it('turning Quote off keeps Highlight usable and sent quotes styled', async () => {
     document.getElementById('question')!.classList.add('query-text-line');
     document.getElementById('question')!.textContent = '> Sent quote';
@@ -191,7 +214,7 @@ describe('Quote through its registered official plugin', () => {
   });
 
   it('a quote accepted before its plugin turns off still lands in the same chat', async () => {
-    await start();
+    await start(true);
     select('question');
     quoteButton()!.click();
     flipQuote(false);

@@ -224,6 +224,7 @@ afterEach(async () => {
 
 describe('Highlight through its registered official plugin', () => {
   it('only true enables highlights and off preserves annotations for re-enable', async () => {
+    harness.storage.sync.set(StorageKeys.QUOTE_REPLY_ENABLED, true);
     const original = await seed();
     const before = annotationData();
     await start();

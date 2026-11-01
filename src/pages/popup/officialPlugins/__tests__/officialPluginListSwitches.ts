@@ -71,7 +71,11 @@ export const MOVED_SWITCHES = [
     key: StorageKeys.PROMPT_HISTORY_ENABLED,
     missing: false,
   },
-  { id: OFFICIAL_PLUGIN_IDS.geminiQuoteReply, key: StorageKeys.QUOTE_REPLY_ENABLED, missing: true },
+  {
+    id: OFFICIAL_PLUGIN_IDS.geminiQuoteReply,
+    key: StorageKeys.QUOTE_REPLY_ENABLED,
+    missing: false,
+  },
   {
     id: OFFICIAL_PLUGIN_IDS.geminiPreventAutoScroll,
     key: StorageKeys.PREVENT_AUTO_SCROLL_ENABLED,

@@ -139,7 +139,7 @@ describe('legacy enable bindings', () => {
     }
   });
 
-  // Production readings: research pack opts in; default model and Quote stay on unless false.
+  // Production readings: research pack opts in; default model stays on unless false.
   it.each([
     ['missing', undefined, false, true],
     ['false', false, false, false],
@@ -173,9 +173,6 @@ describe('legacy enable bindings', () => {
       );
       expect(legacyBindingFor('voyager.gemini-default-model')?.read(stored)).toBe(defaultModel);
       expect(legacyBindingFor(OFFICIAL_PLUGIN_IDS.geminiTimeline)?.read(stored)).toBe(defaultModel);
-      expect(legacyBindingFor(OFFICIAL_PLUGIN_IDS.geminiQuoteReply)?.read(stored)).toBe(
-        defaultModel,
-      );
     },
   );
 

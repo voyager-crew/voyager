@@ -16,7 +16,7 @@ Voyager 简化了这一流程：
 
 ## 如何开启
 
-在 Gemini 上，引用回复由 Voyager 弹窗中 **输入** → **引用回复** 控制。
+Gemini 已自带引用回复，Voyager 的引用回复在 Gemini 上默认关闭。需要时可在 Voyager 弹窗中通过 **输入** → **引用回复** 开启。
 
 在 Claude、ChatGPT、DeepSeek 和 Kimi 上，在该网站打开 Voyager 弹窗，在 **插件** 卡片里开启 **引用回复**（各网站的插件见[插件一览](/guide/plugins)）。开启后，当你在单条 AI 回复内选中文字时会出现 **Quote** 按钮，引用内容会被添加到草稿中，而不会直接发送。
 

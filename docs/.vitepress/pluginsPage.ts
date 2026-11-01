@@ -138,7 +138,6 @@ export const FRESH_INSTALL_ON: ReadonlySet<string> = new Set([
   OFFICIAL_PLUGIN_IDS.aistudioFolders,
   OFFICIAL_PLUGIN_IDS.geminiFolders,
   OFFICIAL_PLUGIN_IDS.geminiTimeline,
-  OFFICIAL_PLUGIN_IDS.geminiQuoteReply,
   OFFICIAL_PLUGIN_IDS.geminiExport,
   OFFICIAL_PLUGIN_IDS.geminiCanvasCopy,
   OFFICIAL_PLUGIN_IDS.geminiMarkdownFix,

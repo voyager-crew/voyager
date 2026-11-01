@@ -16,7 +16,7 @@ Voyager simplifies this process:
 
 ## How to Enable
 
-On Gemini, quote reply is controlled by **Input** → **Quote Reply** in the Voyager popup.
+Gemini now has its own quote reply feature, so Voyager’s quote reply is off by default on Gemini. You can enable it under **Input** → **Quote Reply** in the Voyager popup.
 
 On Claude, ChatGPT, DeepSeek, and Kimi, open the Voyager popup on that site and turn on **Quote replies** in the **Plugins** card ([All plugins](/en/guide/plugins) lists what each site offers). Then the **Quote** button appears when you select text inside a single assistant reply, and the quote is added to your draft without sending anything.
 
