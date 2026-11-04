@@ -73,21 +73,24 @@ describe('DeepSeek reading typography', () => {
     }
   });
 
-  it('sizes a paragraph containing inline code like its neighbours', async () => {
-    const engine = await mountPage({ ...OFF, fontSizeEnabled: true, fontSize: 125 });
-    try {
-      for (const id of ['first', 'inline', 'item', 'last']) {
-        expect(applied(id, 'font-size'), id).toBe('125%');
-        // The line keeps DeepSeek's 28/16 ratio instead of its fixed 28px, in em so
-        // inline code inherits the paragraph's pixel line box.
-        expect(applied(id, 'line-height'), id).toBe('calc(1.75em)');
+  it.each([102.5, 125])(
+    'sizes a paragraph and its inline code at %s%% like its neighbours',
+    async (size) => {
+      const engine = await mountPage({ ...OFF, fontSizeEnabled: true, fontSize: size });
+      try {
+        for (const id of ['first', 'inline', 'item', 'last']) {
+          expect(applied(id, 'font-size'), id).toBe(`${size}%`);
+          // The line keeps DeepSeek's 28/16 ratio instead of its fixed 28px, in em so
+          // inline code inherits the paragraph's pixel line box.
+          expect(applied(id, 'line-height'), id).toBe('calc(1.75em)');
+        }
+        // Inline code keeps its own em size, so it follows the paragraph.
+        expect(applied('inline-code', 'font-size')).toBe('');
+      } finally {
+        engine.unmountAll();
       }
-      // Inline code keeps its own em size, so it follows the paragraph.
-      expect(applied('inline-code', 'font-size')).toBe('');
-    } finally {
-      engine.unmountAll();
-    }
-  });
+    },
+  );
 
   it('does not compound the size on nested list items or loose-list paragraphs', async () => {
     const engine = await mountPage({ ...OFF, fontSizeEnabled: true, fontSize: 150 });

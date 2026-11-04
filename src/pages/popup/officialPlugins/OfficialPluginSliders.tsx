@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+import { FontSizeSlider } from '@/components/ui/font-size-slider';
+import { FontSizeValue } from '@/components/ui/font-size-value';
 import { Slider } from '@/components/ui/slider';
 import { SliderRow } from '@/components/ui/slider-row';
+import { isFontSizeSetting } from '@/features/plugins/runtime/fontSizeSetting';
 import type { PluginManifest, PluginSettingValue, PluginSettings } from '@/features/plugins/types';
 import type { TranslationKey } from '@/utils/translations';
 
@@ -18,6 +21,7 @@ interface PluginSliderProps {
   readonly value: number;
   readonly onCommit: (value: number) => void;
   readonly t: (key: TranslationKey) => string;
+  readonly fontSize: boolean;
 }
 
 function PluginSlider({
@@ -29,6 +33,7 @@ function PluginSlider({
   value,
   onCommit,
   t,
+  fontSize,
 }: PluginSliderProps) {
   const [draft, setDraft] = useState(value);
   const dragging = useRef(false);
@@ -40,16 +45,34 @@ function PluginSlider({
     draft === 0 && presentation.zeroLabel
       ? t(presentation.zeroLabel)
       : `${draft}${presentation.unit}`;
+  const Range = fontSize ? FontSizeSlider : Slider;
   return (
     <SliderRow
       className="mt-2.5"
       label={label}
       labelId={id}
-      value={shown}
+      value={
+        fontSize ? (
+          <FontSizeValue
+            label={label}
+            resetLabel={`${t('themeColorReset')} (100%)`}
+            value={draft}
+            min={min}
+            max={max}
+            onCommit={(next) => {
+              dragging.current = false;
+              setDraft(next);
+              onCommit(next);
+            }}
+          />
+        ) : (
+          shown
+        )
+      }
       minLabel={t(presentation.minLabel)}
       maxLabel={t(presentation.maxLabel)}
     >
-      <Slider
+      <Range
         min={min}
         max={max}
         step={presentation.step}
@@ -116,6 +139,7 @@ export function OfficialPluginSliders({
                 : pickLocalizedSetting(manifest, key, field, language).label
             }
             presentation={presentation}
+            fontSize={isFontSizeSetting(manifest, key)}
             min={field.min ?? 0}
             max={field.max ?? 100}
             value={value}

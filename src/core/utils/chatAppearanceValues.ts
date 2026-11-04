@@ -7,7 +7,7 @@
  * chat width plugin handler all read stored values through these functions,
  * so a stored value renders the same whoever runs the feature. The rule:
  * anything that is not a finite number reads as the default; a number is
- * rounded, then clamped to its range.
+ * rounded, then clamped to its range. Font size retains one decimal place.
  */
 
 export interface ChatAppearanceRange {
@@ -51,7 +51,12 @@ export function normalizeEditInputWidthPercent(stored: unknown): number {
 }
 
 export function normalizeChatFontSizePercent(stored: unknown): number {
-  return normalizeIn(CHAT_FONT_SIZE_PERCENT, stored);
+  if (typeof stored !== 'number' || !Number.isFinite(stored)) return CHAT_FONT_SIZE_PERCENT.default;
+  const clamped = Math.min(
+    CHAT_FONT_SIZE_PERCENT.max,
+    Math.max(CHAT_FONT_SIZE_PERCENT.min, stored),
+  );
+  return Math.round(clamped * 10) / 10;
 }
 
 export function normalizeChatLineHeightPercent(stored: unknown): number {

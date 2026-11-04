@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+import { FontSizeValue } from '@/components/ui/font-size-value';
 import { PANEL_SHELL_MESSAGE } from '@/features/panel/protocol';
 
 import type { PanelSlider } from '../features/featureRows';
@@ -93,7 +94,8 @@ export function RangeControl({ slider, disabled, previewPluginId, shell }: Range
   };
 
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const next = Number(event.target.value);
+    const raw = Number(event.target.value);
+    const next = slider.fontSizeResetLabel ? Math.round(raw) : raw;
     setDraft(next);
     latest.current = next;
     const held = hold.current;
@@ -116,7 +118,7 @@ export function RangeControl({ slider, disabled, previewPluginId, shell }: Range
         type="range"
         min={min}
         max={max}
-        step={slider.step}
+        step={slider.fontSizeResetLabel ? 'any' : slider.step}
         value={draft}
         disabled={disabled}
         aria-label={slider.label}
@@ -125,8 +127,45 @@ export function RangeControl({ slider, disabled, previewPluginId, shell }: Range
         onPointerDown={onPointerDown}
         onLostPointerCapture={() => hold.current?.finish(false)}
         onChange={onChange}
+        onKeyDown={(event) => {
+          if (!slider.fontSizeResetLabel) return;
+          const direction =
+            event.key === 'ArrowLeft' || event.key === 'ArrowDown'
+              ? -1
+              : event.key === 'ArrowRight' || event.key === 'ArrowUp'
+                ? 1
+                : 0;
+          if (!direction) return;
+          event.preventDefault();
+          const horizontal = event.key === 'ArrowLeft' || event.key === 'ArrowRight';
+          const delta =
+            horizontal && getComputedStyle(event.currentTarget).direction === 'rtl'
+              ? -direction
+              : direction;
+          const next = Math.min(max, Math.max(min, Math.round((draft + delta) * 10) / 10));
+          setDraft(next);
+          latest.current = next;
+          if (next !== value) slider.commit(next);
+        }}
       />
-      <span className="val">{shown}</span>
+      {slider.fontSizeResetLabel ? (
+        <FontSizeValue
+          variant="panel"
+          label={slider.label}
+          resetLabel={slider.fontSizeResetLabel}
+          value={draft}
+          min={min}
+          max={max}
+          disabled={disabled}
+          onCommit={(next) => {
+            setDraft(next);
+            latest.current = next;
+            slider.commit(next);
+          }}
+        />
+      ) : (
+        <span className="val">{shown}</span>
+      )}
     </>
   );
 }

@@ -1,3 +1,6 @@
+import { FontSizeSlider } from '@/components/ui/font-size-slider';
+import { FontSizeValue } from '@/components/ui/font-size-value';
+import { isFontSizeSetting } from '@/features/plugins/runtime/fontSizeSetting';
 import {
   compatibleSettingWrite,
   resolvePluginSettings,
@@ -16,10 +19,10 @@ import { pickLocalized, pickLocalizedSetting } from './PluginIdentity';
 
 /**
  * A popup slider track is a few hundred pixels wide, so a span up to 1,000 still
- * lands on the value people want — reading width (600–1,600) and text size
- * (80–150) keep their original display. A wider span cannot (the Pro weekly
- * allowance is 0–10,000 but useful values are 50/100/200), so only those get a
- * precise number input.
+ * lands on the value people want — reading width (600–1,600) keeps its
+ * original display. Font size always has a precise decimal input. Wider spans
+ * also need a number input (the Pro weekly allowance is 0–10,000 but useful
+ * values are 50/100/200).
  */
 const PRECISE_NUMBER_MIN_RANGE = 1000;
 
@@ -124,6 +127,8 @@ export function PluginSettings({
         const value = Number(rawValue);
         const min = field.min ?? 0;
         const max = field.max ?? 100;
+        const fontSize = isFontSizeSetting(plugin, key);
+        const Range = fontSize ? FontSizeSlider : Slider;
         const needsPreciseInput = max - min > PRECISE_NUMBER_MIN_RANGE;
         return (
           <SliderRow
@@ -132,7 +137,17 @@ export function PluginSettings({
             className={disabled ? 'opacity-50' : undefined}
             label={settingText.label}
             value={
-              needsPreciseInput ? (
+              fontSize ? (
+                <FontSizeValue
+                  label={settingText.label}
+                  resetLabel={`${t('themeColorReset')} (100%)`}
+                  value={value}
+                  min={min}
+                  max={max}
+                  disabled={disabled}
+                  onCommit={(next) => handleSetting(plugin.id, key, next)}
+                />
+              ) : needsPreciseInput ? (
                 <NumberSetting
                   label={settingText.label}
                   value={value}
@@ -150,7 +165,7 @@ export function PluginSettings({
             minLabel={settingText.minLabel}
             maxLabel={settingText.maxLabel}
           >
-            <Slider
+            <Range
               min={min}
               max={max}
               value={value}
