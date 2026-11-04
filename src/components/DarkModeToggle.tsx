@@ -1,15 +1,24 @@
 import React from 'react';
 
-import { Moon, Sun } from 'lucide-react';
+import { Monitor, Moon, Sun } from 'lucide-react';
 
 import { useLanguage } from '../contexts/LanguageContext';
-import { useDarkMode } from '../hooks/useDarkMode';
+import { getNextThemeMode, useDarkMode } from '../hooks/useDarkMode';
 import { Button } from './ui/button';
 
 export const DarkModeToggle: React.FC = () => {
-  const { isDark, toggleDarkMode } = useDarkMode();
+  const { themeMode, toggleDarkMode } = useDarkMode();
   const { t } = useLanguage();
-  const label = t(isDark ? 'pm_theme_light' : 'pm_theme_dark');
+
+  const nextMode = getNextThemeMode(themeMode);
+  const label = t(
+    nextMode === 'auto'
+      ? 'pm_theme_auto'
+      : nextMode === 'dark'
+        ? 'pm_theme_dark'
+        : 'pm_theme_light',
+  );
+  const Icon = themeMode === 'auto' ? Monitor : themeMode === 'dark' ? Moon : Sun;
 
   return (
     <Button
@@ -20,7 +29,7 @@ export const DarkModeToggle: React.FC = () => {
       aria-label={label}
       className="h-9 w-9"
     >
-      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      <Icon className="h-4 w-4" />
     </Button>
   );
 };

@@ -330,6 +330,10 @@
     "message": "التبديل إلى الوضع الداكن",
     "description": "Theme toggle tooltip - switch to dark"
   },
+  "pm_theme_auto": {
+    "message": "التبديل إلى الوضع التلقائي",
+    "description": "Theme toggle tooltip - switch to auto"
+  },
   "extensionVersion": {
     "message": "الإصدار",
     "description": "Extension version label"

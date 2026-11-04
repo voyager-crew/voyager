@@ -1,47 +1,77 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
+export type ThemeMode = 'auto' | 'light' | 'dark';
+
+function prefersDark(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+  );
+}
+
+export function getInitialThemeMode(): ThemeMode {
+  const savedMode = localStorage.getItem('themeMode');
+  if (savedMode === 'auto' || savedMode === 'light' || savedMode === 'dark') {
+    return savedMode;
+  }
+  // Legacy installs only stored the resolved boolean; keep their choice.
+  const legacyDarkMode = localStorage.getItem('darkMode');
+  if (legacyDarkMode === 'true') return 'dark';
+  if (legacyDarkMode === 'false') return 'light';
+  return 'auto';
+}
+
+export function resolveIsDark(mode: ThemeMode): boolean {
+  if (mode === 'dark') return true;
+  if (mode === 'light') return false;
+  return prefersDark();
+}
+
+/** Cycles in visual order: light → auto → dark. */
+export function getNextThemeMode(currentMode: ThemeMode): ThemeMode {
+  if (currentMode === 'light') return 'auto';
+  if (currentMode === 'auto') return 'dark';
+  return 'light';
+}
+
 export function useDarkMode() {
-  const [isDark, setIsDark] = useState(() => {
-    // Check saved preference first
-    const saved = localStorage.getItem('darkMode');
-    if (saved !== null) {
-      return saved === 'true';
-    }
-    // Fall back to system preference
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+  const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialThemeMode);
+  const [isDark, setIsDark] = useState<boolean>(() => resolveIsDark(getInitialThemeMode()));
 
   useEffect(() => {
-    // Apply dark class to document
-    document.documentElement.classList.toggle('dark', isDark);
+    const activeDark = resolveIsDark(themeMode);
+    setIsDark(activeDark);
+    document.documentElement.classList.toggle('dark', activeDark);
+    localStorage.setItem('themeMode', themeMode);
+    localStorage.setItem('darkMode', String(activeDark));
+  }, [themeMode]);
 
-    // Save preference
-    localStorage.setItem('darkMode', String(isDark));
-  }, [isDark]);
-
-  // Listen for system preference changes
+  // In auto mode the page follows the OS as it changes.
   useEffect(() => {
+    if (themeMode !== 'auto' || typeof window.matchMedia !== 'function') return;
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e: MediaQueryListEvent) => {
-      // Only auto-switch if user hasn't set a preference
-      const saved = localStorage.getItem('darkMode');
-      if (saved === null) {
-        setIsDark(e.matches);
-      }
+      setIsDark(e.matches);
+      document.documentElement.classList.toggle('dark', e.matches);
+      localStorage.setItem('darkMode', String(e.matches));
     };
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
+  }, [themeMode]);
 
   const toggleDarkMode = useCallback(
     (event?: React.MouseEvent) => {
-      const newIsDark = !isDark;
+      const nextMode = getNextThemeMode(themeMode);
+      const nextIsDark = resolveIsDark(nextMode);
 
       const applyTheme = () => {
-        document.documentElement.classList.toggle('dark', newIsDark);
-        localStorage.setItem('darkMode', String(newIsDark));
-        setIsDark(newIsDark);
+        setThemeMode(nextMode);
+        setIsDark(nextIsDark);
+        document.documentElement.classList.toggle('dark', nextIsDark);
+        localStorage.setItem('themeMode', nextMode);
+        localStorage.setItem('darkMode', String(nextIsDark));
       };
 
       // Skip animation if no event, no View Transition API, or user prefers reduced motion
@@ -51,7 +81,8 @@ export function useDarkMode() {
       if (
         !event ||
         !startViewTransition ||
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        (typeof window.matchMedia === 'function' &&
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches)
       ) {
         applyTheme();
         return;
@@ -79,8 +110,8 @@ export function useDarkMode() {
         );
       });
     },
-    [isDark],
+    [themeMode],
   );
 
-  return { isDark, toggleDarkMode };
+  return { themeMode, isDark, toggleDarkMode };
 }

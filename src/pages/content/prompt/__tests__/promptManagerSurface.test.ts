@@ -257,6 +257,47 @@ describe('prompt manager starting theme', () => {
     }
   });
 
+  it('cycles auto → dark → light → auto and resumes following the page', async () => {
+    const url = 'https://gemini.google.com/app';
+    setPageUrl(url);
+    document.body.insertAdjacentHTML('afterbegin', '<div class="theme-host light-theme"></div>');
+    const themeHost = document.querySelector('.theme-host')!;
+    const setPageTheme = (scheme: 'light' | 'dark') => {
+      themeHost.className = `theme-host ${scheme}-theme`;
+    };
+    ensureScheme(SiteRegistry.createDefault().resolveByUrl(url)?.theme ?? null);
+
+    try {
+      const panel = await openManager([prompt('a', 'Alpha')]);
+      const toggle = panel.querySelector<HTMLButtonElement>('.gv-pm-theme-toggle')!;
+
+      expect(toggle.classList.contains('gv-pm-theme-auto')).toBe(true);
+      expect(toggle.querySelector('.lucide-monitor')).not.toBeNull();
+
+      toggle.click();
+      expect(panel.getAttribute('data-gv-theme')).toBe('dark');
+      expect(toggle.querySelector('.lucide-moon')).not.toBeNull();
+      setPageTheme('light');
+      await vi.waitFor(() => expect(document.documentElement.dataset.gvScheme).toBe('light'));
+      expect(panel.getAttribute('data-gv-theme')).toBe('dark');
+
+      toggle.click();
+      expect(panel.getAttribute('data-gv-theme')).toBe('light');
+      expect(toggle.querySelector('.lucide-sun')).not.toBeNull();
+      setPageTheme('dark');
+      await vi.waitFor(() => expect(document.documentElement.dataset.gvScheme).toBe('dark'));
+      expect(panel.getAttribute('data-gv-theme')).toBe('light');
+
+      toggle.click();
+      expect(panel.getAttribute('data-gv-theme')).toBe('dark');
+      expect(toggle.classList.contains('gv-pm-theme-auto')).toBe(true);
+      expect(toggle.querySelector('.lucide-monitor')).not.toBeNull();
+    } finally {
+      stopScheme();
+      document.documentElement.removeAttribute('data-gv-scheme');
+    }
+  });
+
   it('follows page theme changes until the switch fixes a theme, and again after auto', async () => {
     const url = 'https://gemini.google.com/app';
     setPageUrl(url);
@@ -276,10 +317,12 @@ describe('prompt manager starting theme', () => {
       setPageTheme('light');
       setPageTheme('dark');
       await vi.waitFor(() => expect(document.documentElement.dataset.gvScheme).toBe('dark'));
-      expect(panel.getAttribute('data-gv-theme')).toBe('light');
-
-      emitStorageChange({ [StorageKeys.PROMPT_THEME]: { newValue: 'auto' } }, 'sync');
       expect(panel.getAttribute('data-gv-theme')).toBe('dark');
+
+      setPageTheme('light');
+      await vi.waitFor(() => expect(document.documentElement.dataset.gvScheme).toBe('light'));
+      emitStorageChange({ [StorageKeys.PROMPT_THEME]: { newValue: 'auto' } }, 'sync');
+      expect(panel.getAttribute('data-gv-theme')).toBe('light');
     } finally {
       stopScheme();
       document.documentElement.removeAttribute('data-gv-scheme');

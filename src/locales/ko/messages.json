@@ -330,6 +330,10 @@
     "message": "다크 모드로 전환",
     "description": "Theme toggle tooltip - switch to dark"
   },
+  "pm_theme_auto": {
+    "message": "자동 모드로 전환",
+    "description": "Theme toggle tooltip - switch to auto"
+  },
   "extensionVersion": {
     "message": "버전",
     "description": "Extension version label"
