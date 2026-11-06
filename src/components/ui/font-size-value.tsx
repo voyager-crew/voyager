@@ -41,7 +41,7 @@ export function FontSizeValue({
       setDraft(String(value));
       return;
     }
-    const next = Math.round(Math.min(max, Math.max(min, parsed)) * 10) / 10;
+    const next = Math.round(Math.min(max, Math.max(min, parsed)));
     setDraft(String(next));
     if (next !== value) onCommit(next);
   };
@@ -60,8 +60,8 @@ export function FontSizeValue({
           type="number"
           min={min}
           max={max}
-          step={0.1}
-          inputMode="decimal"
+          step={1}
+          inputMode="numeric"
           aria-label={label}
           value={draft}
           disabled={disabled}
@@ -80,7 +80,8 @@ export function FontSizeValue({
           onBlur={finish}
           onKeyDown={(event) => {
             if (event.key === 'Enter') event.currentTarget.blur();
-            if (event.key === 'Escape') {
+            // Nothing to cancel leaves Esc to its surroundings, so the panel can still close.
+            if (event.key === 'Escape' && draft !== String(value)) {
               event.preventDefault();
               event.stopPropagation();
               editing.current = false;

@@ -94,8 +94,7 @@ export function RangeControl({ slider, disabled, previewPluginId, shell }: Range
   };
 
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = Number(event.target.value);
-    const next = slider.fontSizeResetLabel ? Math.round(raw) : raw;
+    const next = Number(event.target.value);
     setDraft(next);
     latest.current = next;
     const held = hold.current;
@@ -118,7 +117,7 @@ export function RangeControl({ slider, disabled, previewPluginId, shell }: Range
         type="range"
         min={min}
         max={max}
-        step={slider.fontSizeResetLabel ? 'any' : slider.step}
+        step={slider.step}
         value={draft}
         disabled={disabled}
         aria-label={slider.label}
@@ -127,26 +126,6 @@ export function RangeControl({ slider, disabled, previewPluginId, shell }: Range
         onPointerDown={onPointerDown}
         onLostPointerCapture={() => hold.current?.finish(false)}
         onChange={onChange}
-        onKeyDown={(event) => {
-          if (!slider.fontSizeResetLabel) return;
-          const direction =
-            event.key === 'ArrowLeft' || event.key === 'ArrowDown'
-              ? -1
-              : event.key === 'ArrowRight' || event.key === 'ArrowUp'
-                ? 1
-                : 0;
-          if (!direction) return;
-          event.preventDefault();
-          const horizontal = event.key === 'ArrowLeft' || event.key === 'ArrowRight';
-          const delta =
-            horizontal && getComputedStyle(event.currentTarget).direction === 'rtl'
-              ? -direction
-              : direction;
-          const next = Math.min(max, Math.max(min, Math.round((draft + delta) * 10) / 10));
-          setDraft(next);
-          latest.current = next;
-          if (next !== value) slider.commit(next);
-        }}
       />
       {slider.fontSizeResetLabel ? (
         <FontSizeValue

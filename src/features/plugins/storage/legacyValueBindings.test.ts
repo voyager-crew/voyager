@@ -68,10 +68,10 @@ describe('legacy value bindings', () => {
     expect(deriveLegacyValueSettings(FONT_SIZE_ID, {})).toEqual({ fontSize: 100 });
   });
 
-  it('keeps decimal font sizes while rounding other values and reading old px widths as percent', () => {
+  it('rounds and clamps every value as the native modules do, reading an old px chat width as percent', () => {
     expect(
       deriveLegacyValueSettings(FONT_SIZE_ID, { [StorageKeys.CHAT_FONT_SIZE]: 112.6 }),
-    ).toEqual({ fontSize: 112.6 });
+    ).toEqual({ fontSize: 113 });
     expect(deriveLegacyValueSettings(FONT_SIZE_ID, { [StorageKeys.CHAT_FONT_SIZE]: 400 })).toEqual({
       fontSize: 150,
     });

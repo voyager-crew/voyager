@@ -82,7 +82,7 @@ beforeEach(async () => {
 describe('Gemini typography plugins', () => {
   it('sizes Gemini user and response text and keeps nested matches as percentages', () => {
     messageFixture();
-    for (const size of [80, 100, 102.5, 123, 150]) {
+    for (const size of [80, 100, 123, 150]) {
       inject(rendered(fontSize, { fontSize: size }));
       for (const target of document.querySelectorAll('.gv-font-target')) {
         expect(elementValue(target, 'font-size')).toBe(`${size}%`);

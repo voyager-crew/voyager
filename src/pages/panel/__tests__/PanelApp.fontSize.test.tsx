@@ -13,7 +13,7 @@ vi.mock('webextension-polyfill', async () => ({
 
 describe('font size in the floating panel', () => {
   it.each(['gemini', 'chatgpt', 'claude', 'deepseek', 'kimi'] as const)(
-    '%s saves the exact decimal in its own storage and resets to 100%',
+    '%s saves the typed percentage in its own storage and resets to 100%',
     async (site) => {
       const id =
         site === 'gemini'
@@ -21,13 +21,13 @@ describe('font size in the floating panel', () => {
           : `voyager.${site}-reading-typography`;
       if (site === 'gemini') {
         sync[StorageKeys.CHAT_FONT_SIZE_ENABLED] = true;
-        sync[StorageKeys.CHAT_FONT_SIZE] = 102.5;
+        sync[StorageKeys.CHAT_FONT_SIZE] = 102;
       } else {
         local[StorageKeys.PLUGINS_STATE] = {
           [id]: {
             enabled: true,
             installedAt: 0,
-            settings: { fontSizeEnabled: true, fontSize: 102.5, lineHeight: 165 },
+            settings: { fontSizeEnabled: true, fontSize: 102, lineHeight: 165 },
           },
         };
       }
@@ -42,26 +42,26 @@ describe('font size in the floating panel', () => {
       const row = container.querySelector(`[data-row="${id}"]`)!;
       const input = row.querySelector<HTMLInputElement>('input[type="number"]')!;
       const track = row.querySelector<HTMLInputElement>('input[type="range"]')!;
-      expect(input.value).toBe('102.5');
-      expect(track.value).toBe('102.5');
+      expect(input.value).toBe('102');
+      expect(track.value).toBe('102');
       await act(async () => {
         input.focus();
         Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(
           input,
-          '103.5',
+          '103',
         );
         input.dispatchEvent(new Event('input', { bubbles: true }));
       });
-      expect(track.value).toBe('102.5');
+      expect(track.value).toBe('102');
       await act(async () => input.blur());
-      expect(track.value).toBe('103.5');
+      expect(track.value).toBe('103');
       const read = () =>
         site === 'gemini'
           ? sync[StorageKeys.CHAT_FONT_SIZE]
           : (
               local[StorageKeys.PLUGINS_STATE] as Record<string, { settings: { fontSize: number } }>
             )[id].settings.fontSize;
-      expect(read()).toBe(103.5);
+      expect(read()).toBe(103);
       await click(
         row.querySelector<HTMLButtonElement>(`button[aria-label="${en.themeColorReset} (100%)"]`)!,
       );

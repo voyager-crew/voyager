@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-import { FontSizeSlider } from '@/components/ui/font-size-slider';
 import { FontSizeValue } from '@/components/ui/font-size-value';
 import { Slider } from '@/components/ui/slider';
 import { SliderRow } from '@/components/ui/slider-row';
@@ -45,7 +44,6 @@ function PluginSlider({
     draft === 0 && presentation.zeroLabel
       ? t(presentation.zeroLabel)
       : `${draft}${presentation.unit}`;
-  const Range = fontSize ? FontSizeSlider : Slider;
   return (
     <SliderRow
       className="mt-2.5"
@@ -72,7 +70,7 @@ function PluginSlider({
       minLabel={t(presentation.minLabel)}
       maxLabel={t(presentation.maxLabel)}
     >
-      <Range
+      <Slider
         min={min}
         max={max}
         step={presentation.step}

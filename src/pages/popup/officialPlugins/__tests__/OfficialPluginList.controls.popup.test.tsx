@@ -163,36 +163,27 @@ describe('the official plugin list in the popup', () => {
       expect(sync[StorageKeys.CHAT_FONT_SIZE]).toBe(120);
     });
 
-    it('preserves a typed decimal font size, moves by 1%, and resets its legacy key to 100%', async () => {
+    it('saves a typed font size on blur and resets its legacy key to 100%', async () => {
       sync[StorageKeys.CHAT_FONT_SIZE_ENABLED] = true;
-      sync[StorageKeys.CHAT_FONT_SIZE] = 102.5;
+      sync[StorageKeys.CHAT_FONT_SIZE] = 102;
       await mount();
       const id = OFFICIAL_PLUGIN_IDS.geminiChatFontSize;
       const track = slider(id, en.chatFontSize);
       const input = row(id)!.querySelector<HTMLInputElement>('input[type="number"]')!;
-      expect(input.value).toBe('102.5');
-      expect(track.value).toBe('102.5');
+      expect(input.value).toBe('102');
+      expect(track.value).toBe('102');
       await act(async () => {
         input.focus();
         Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(
           input,
-          '103.5',
+          '103',
         );
         input.dispatchEvent(new Event('input', { bubbles: true }));
       });
       expect(extensionApi.storage.sync.set).not.toHaveBeenCalled();
       await act(async () => input.blur());
-      expect(sync[StorageKeys.CHAT_FONT_SIZE]).toBe(103.5);
-      expect(track.value).toBe('103.5');
-      await release(track);
-      expect(sync[StorageKeys.CHAT_FONT_SIZE]).toBe(103.5);
-      await act(async () => {
-        track.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
-      });
-      await act(async () => {
-        track.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowRight', bubbles: true }));
-      });
-      expect(sync[StorageKeys.CHAT_FONT_SIZE]).toBe(104.5);
+      expect(sync[StorageKeys.CHAT_FONT_SIZE]).toBe(103);
+      expect(track.value).toBe('103');
       await act(async () =>
         row(id)!
           .querySelector<HTMLButtonElement>(`button[aria-label="${en.themeColorReset} (100%)"]`)!
@@ -203,14 +194,12 @@ describe('the official plugin list in the popup', () => {
       expect(pluginStateWritten()).toBe(false);
     });
 
-    it('saves the displayed whole percentage when a fine drag moves within the same 1% interval', async () => {
+    it('moves the gemini font size in 1% steps', async () => {
       sync[StorageKeys.CHAT_FONT_SIZE_ENABLED] = true;
       sync[StorageKeys.CHAT_FONT_SIZE] = 100;
       await mount();
       const track = slider(OFFICIAL_PLUGIN_IDS.geminiChatFontSize, en.chatFontSize);
-      drag(track, 102.1);
-      drag(track, 102.4);
-      expect(track.getAttribute('aria-valuetext')).toBe('102%');
+      drag(track, 102);
       expect(track.value).toBe('102');
       await release(track);
       expect(sync[StorageKeys.CHAT_FONT_SIZE]).toBe(102);

@@ -18,31 +18,31 @@ const plugins = (await new BundledCatalogPluginSource().list()).filter((plugin) 
   ),
 );
 
-describe.each(plugins)('$name precise font size', (plugin) => {
-  it('saves a decimal only on Enter, preserves it on reopen, and resets only the font size', async () => {
+describe.each(plugins)('$name font size', (plugin) => {
+  it('saves a typed value only on Enter, preserves it on reopen, and resets only the font size', async () => {
     pluginState.current = {
       [plugin.id]: {
         enabled: true,
         installedAt: 0,
-        settings: { fontSizeEnabled: true, fontSize: 117.5, lineHeight: 165 },
+        settings: { fontSizeEnabled: true, fontSize: 117, lineHeight: 165 },
       },
     };
     await renderSettings(plugin);
     const input = container.querySelector<HTMLInputElement>('input[type="number"]')!;
     const track = container.querySelector<HTMLInputElement>('input[type="range"]')!;
-    expect(input.value).toBe('117.5');
-    expect(track.value).toBe('117.5');
+    expect(input.value).toBe('117');
+    expect(track.value).toBe('117');
     act(() => {
       input.focus();
-      nativeSetSliderValue(input, 102.5);
+      nativeSetSliderValue(input, 102);
     });
     act(() => vi.advanceTimersByTime(200));
     expect(setPluginSetting).not.toHaveBeenCalled();
-    expect(track.value).toBe('117.5');
+    expect(track.value).toBe('117');
     act(() => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })));
-    expect(track.value).toBe('102.5');
+    expect(track.value).toBe('102');
     act(() => vi.advanceTimersByTime(200));
-    expect(setPluginSetting).toHaveBeenLastCalledWith(plugin.id, 'fontSize', 102.5);
+    expect(setPluginSetting).toHaveBeenLastCalledWith(plugin.id, 'fontSize', 102);
 
     const reset = container.querySelector<HTMLButtonElement>(
       'button[aria-label="themeColorReset (100%)"]',
@@ -54,25 +54,17 @@ describe.each(plugins)('$name precise font size', (plugin) => {
     expect(setPluginSetting).toHaveBeenLastCalledWith(plugin.id, 'fontSize', 100);
   });
 
-  it('moves in 1% steps from a decimal and keeps disabled controls inert', async () => {
+  it('keeps disabled controls inert', async () => {
     pluginState.current = {
       [plugin.id]: {
         enabled: true,
         installedAt: 0,
-        settings: { fontSizeEnabled: true, fontSize: 102.5 },
+        settings: { fontSizeEnabled: true, fontSize: 102 },
       },
     };
     await renderSettings(plugin);
     const input = container.querySelector<HTMLInputElement>('input[type="number"]')!;
     const track = container.querySelector<HTMLInputElement>('input[type="range"]')!;
-    act(() =>
-      track.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })),
-    );
-    expect(track.value).toBe('103.5');
-    expect(input.value).toBe('103.5');
-    act(() => vi.advanceTimersByTime(200));
-    expect(setPluginSetting).toHaveBeenLastCalledWith(plugin.id, 'fontSize', 103.5);
-
     const toggle = container.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
     act(() => toggle.click());
     expect(input.disabled).toBe(true);
@@ -81,6 +73,6 @@ describe.each(plugins)('$name precise font size', (plugin) => {
       container.querySelector<HTMLButtonElement>('button[aria-label="themeColorReset (100%)"]')!
         .disabled,
     ).toBe(true);
-    expect(input.value).toBe('103.5');
+    expect(input.value).toBe('102');
   });
 });
