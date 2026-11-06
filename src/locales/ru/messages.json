@@ -330,10 +330,6 @@
     "message": "Переключить на тёмную тему",
     "description": "Theme toggle tooltip - switch to dark"
   },
-  "pm_theme_auto": {
-    "message": "Переключить на авторежим",
-    "description": "Theme toggle tooltip - switch to auto"
-  },
   "extensionVersion": {
     "message": "Версия",
     "description": "Extension version label"

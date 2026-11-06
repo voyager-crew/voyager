@@ -330,10 +330,6 @@
     "message": "切换到深色模式",
     "description": "Theme toggle tooltip - switch to dark"
   },
-  "pm_theme_auto": {
-    "message": "切换到自动模式",
-    "description": "Theme toggle tooltip - switch to auto"
-  },
   "extensionVersion": {
     "message": "版本",
     "description": "扩展版本标签"

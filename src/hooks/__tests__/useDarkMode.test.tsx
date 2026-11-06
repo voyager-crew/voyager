@@ -1,81 +1,45 @@
-import React, { act } from 'react';
+import { act } from 'react';
 import { type Root, createRoot } from 'react-dom/client';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getInitialThemeMode, getNextThemeMode, resolveIsDark, useDarkMode } from '../useDarkMode';
+import { useDarkMode } from '../useDarkMode';
 
 function stubSystemTheme(dark: boolean) {
   const listeners = new Set<(event: MediaQueryListEvent) => void>();
-  const mediaQuery = {
+  vi.stubGlobal('matchMedia', () => ({
     matches: dark,
-    media: '(prefers-color-scheme: dark)',
-    addEventListener: (_: string, listener: (event: MediaQueryListEvent) => void) => {
-      listeners.add(listener);
-    },
-    removeEventListener: (_: string, listener: (event: MediaQueryListEvent) => void) => {
-      listeners.delete(listener);
-    },
-  } as unknown as MediaQueryList;
-  vi.stubGlobal('matchMedia', () => mediaQuery);
-  return {
-    emit(matches: boolean) {
-      for (const listener of listeners) {
-        listener({ matches } as MediaQueryListEvent);
-      }
-    },
+    addEventListener: (_: string, listener: (event: MediaQueryListEvent) => void) =>
+      listeners.add(listener),
+    removeEventListener: (_: string, listener: (event: MediaQueryListEvent) => void) =>
+      listeners.delete(listener),
+  }));
+  return (matches: boolean) => {
+    for (const listener of listeners) listener({ matches } as MediaQueryListEvent);
   };
 }
 
-describe('theme mode helpers', () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
+function Toggle() {
+  const { toggleDarkMode } = useDarkMode();
+  return <button onClick={() => toggleDarkMode()}>Toggle</button>;
+}
 
-  it('defaults to auto when no preference was stored', () => {
-    expect(getInitialThemeMode()).toBe('auto');
-  });
-
-  it('prefers the saved three-state mode over the legacy boolean', () => {
-    localStorage.setItem('themeMode', 'dark');
-    localStorage.setItem('darkMode', 'false');
-    expect(getInitialThemeMode()).toBe('dark');
-  });
-
-  it('migrates the legacy darkMode boolean', () => {
-    localStorage.setItem('darkMode', 'true');
-    expect(getInitialThemeMode()).toBe('dark');
-
-    localStorage.setItem('darkMode', 'false');
-    expect(getInitialThemeMode()).toBe('light');
-  });
-
-  it('cycles in visual order: light → auto → dark', () => {
-    expect(getNextThemeMode('light')).toBe('auto');
-    expect(getNextThemeMode('auto')).toBe('dark');
-    expect(getNextThemeMode('dark')).toBe('light');
-  });
-
-  it('resolves auto against the system preference', () => {
-    stubSystemTheme(true);
-    expect(resolveIsDark('auto')).toBe(true);
-    expect(resolveIsDark('light')).toBe(false);
-    expect(resolveIsDark('dark')).toBe(true);
-  });
-});
+/** The Welcome page's shape: the page holds a hook instance and the toggle holds its own. */
+function Page() {
+  useDarkMode();
+  return <Toggle />;
+}
 
 describe('useDarkMode', () => {
   let container: HTMLDivElement;
   let root: Root;
+  const isDark = () => document.documentElement.classList.contains('dark');
 
   beforeEach(() => {
-    (
-      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
-    ).IS_REACT_ACT_ENVIRONMENT = true;
     localStorage.clear();
     document.documentElement.classList.remove('dark');
     container = document.createElement('div');
-    document.body.appendChild(container);
+    document.body.append(container);
     root = createRoot(container);
   });
 
@@ -86,71 +50,40 @@ describe('useDarkMode', () => {
     vi.unstubAllGlobals();
   });
 
-  function Harness() {
-    const { themeMode, isDark, toggleDarkMode } = useDarkMode();
-    return (
-      <div>
-        <span data-testid="mode">{themeMode}</span>
-        <span data-testid="isDark">{String(isDark)}</span>
-        <button data-testid="toggle" type="button" onClick={(e) => toggleDarkMode(e)}>
-          Toggle
-        </button>
-      </div>
-    );
-  }
+  it('follows the system theme while nothing has been picked', () => {
+    const emit = stubSystemTheme(true);
+    act(() => root.render(<Page />));
+    expect(isDark()).toBe(true);
+    expect(localStorage.getItem('darkMode')).toBeNull();
 
-  function render() {
-    act(() => root.render(<Harness />));
-    return {
-      mode: () => container.querySelector('[data-testid="mode"]')!.textContent,
-      isDark: () => container.querySelector('[data-testid="isDark"]')!.textContent,
-      toggle: container.querySelector<HTMLButtonElement>('[data-testid="toggle"]')!,
-    };
-  }
-
-  it('starts in auto, follows the system, and cycles through the three modes', () => {
-    stubSystemTheme(true);
-    const ui = render();
-
-    expect(ui.mode()).toBe('auto');
-    expect(ui.isDark()).toBe('true');
-    expect(document.documentElement.classList.contains('dark')).toBe(true);
-
-    act(() => ui.toggle.click());
-    expect(ui.mode()).toBe('dark');
-    expect(localStorage.getItem('themeMode')).toBe('dark');
-
-    act(() => ui.toggle.click());
-    expect(ui.mode()).toBe('light');
-    expect(document.documentElement.classList.contains('dark')).toBe(false);
-
-    act(() => ui.toggle.click());
-    expect(ui.mode()).toBe('auto');
-    expect(localStorage.getItem('themeMode')).toBe('auto');
+    act(() => emit(false));
+    expect(isDark()).toBe(false);
+    act(() => emit(true));
+    expect(isDark()).toBe(true);
   });
 
-  it('updates the page while auto is active and ignores system changes otherwise', () => {
-    const system = stubSystemTheme(true);
-    const ui = render();
+  it('keeps a picked theme when the system theme changes', () => {
+    const emit = stubSystemTheme(true);
+    act(() => root.render(<Page />));
 
-    act(() => system.emit(false));
-    expect(ui.isDark()).toBe('false');
-    expect(document.documentElement.classList.contains('dark')).toBe(false);
+    act(() => container.querySelector('button')!.click());
+    expect(isDark()).toBe(false);
+    expect(localStorage.getItem('darkMode')).toBe('false');
 
-    act(() => ui.toggle.click()); // auto -> dark, fixed
-    expect(ui.mode()).toBe('dark');
-
-    act(() => system.emit(false));
-    expect(ui.isDark()).toBe('true');
-    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    act(() => emit(true));
+    act(() => emit(false));
+    act(() => emit(true));
+    expect(isDark()).toBe(false);
+    expect(localStorage.getItem('darkMode')).toBe('false');
   });
 
-  it('honours the legacy boolean as a fixed theme', () => {
-    stubSystemTheme(true);
+  it('keeps honoring a theme saved by an earlier version', () => {
     localStorage.setItem('darkMode', 'false');
-    const ui = render();
+    const emit = stubSystemTheme(true);
+    act(() => root.render(<Page />));
+    expect(isDark()).toBe(false);
 
-    expect(ui.mode()).toBe('light');
-    expect(document.documentElement.classList.contains('dark')).toBe(false);
+    act(() => emit(true));
+    expect(isDark()).toBe(false);
   });
 });

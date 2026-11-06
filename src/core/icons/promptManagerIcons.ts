@@ -81,12 +81,6 @@ const LOCK_OPEN_ICON_NODE = [
   ['path', { d: 'M7 11V7a5 5 0 0 1 9.9-1', key: '1mm8w8' }],
 ] satisfies IconNode;
 
-const MONITOR_ICON_NODE = [
-  ['rect', { width: '20', height: '14', x: '2', y: '3', rx: '2', key: '48i651' }],
-  ['line', { x1: '8', x2: '16', y1: '21', y2: '21', key: '1svkeh' }],
-  ['line', { x1: '12', x2: '12', y1: '17', y2: '21', key: 'vw1qmm' }],
-] satisfies IconNode;
-
 const MOON_ICON_NODE = [
   [
     'path',
@@ -161,10 +155,6 @@ export function createLockIcon(size = 16): SVGSVGElement {
 
 export function createLockOpenIcon(size = 16): SVGSVGElement {
   return createLucideIcon('lock-open', LOCK_OPEN_ICON_NODE, size);
-}
-
-export function createMonitorIcon(size = 16): SVGSVGElement {
-  return createLucideIcon('monitor', MONITOR_ICON_NODE, size);
 }
 
 export function createMoonIcon(size = 16): SVGSVGElement {

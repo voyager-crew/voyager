@@ -366,23 +366,9 @@ body.gv-rtl .gv-pm-saved-footer-primary .lucide-arrow-left {
   outline-offset: 2px;
 }
 
-.gv-pm-theme-toggle.gv-pm-theme-auto {
-  border-color: color-mix(in srgb, var(--gv-pm-brand, var(--gv-pm-brand-default)) 55%, transparent);
-  background: color-mix(
-    in srgb,
-    var(--gv-pm-brand, var(--gv-pm-brand-default)) 35%,
-    oklch(0.76 0.006 250 / 0.65)
-  );
-}
-
 .gv-pm-theme-toggle.gv-pm-theme-dark::before,
 .gv-pm-theme-toggle.gv-pm-theme-dark svg {
   transform: translateX(14px);
-}
-
-.gv-pm-theme-toggle.gv-pm-theme-auto::before,
-.gv-pm-theme-toggle.gv-pm-theme-auto svg {
-  transform: translateX(8px);
 }
 
 /* Smooth panel theme transition */
