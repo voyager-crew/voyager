@@ -12,11 +12,9 @@ export function useDarkMode() {
   });
 
   useEffect(() => {
-    // Apply dark class to document
+    // Apply dark class to document. Only an explicit pick is saved, or the system
+    // preference would stop applying after the first render.
     document.documentElement.classList.toggle('dark', isDark);
-
-    // Save preference
-    localStorage.setItem('darkMode', String(isDark));
   }, [isDark]);
 
   // Listen for system preference changes
