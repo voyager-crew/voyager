@@ -1,0 +1,78 @@
+.font-size-value {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.font-size-number {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding-inline: 5px;
+  border-radius: 6px;
+  background: var(--chip);
+}
+
+.font-size-number:focus-within {
+  outline: 2px solid var(--ink-3);
+}
+
+.font-size-input {
+  width: 39px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: end;
+  -moz-appearance: textfield;
+}
+
+.font-size-input::-webkit-inner-spin-button,
+.font-size-input::-webkit-outer-spin-button {
+  appearance: none;
+}
+
+.font-size-reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-3);
+  font: inherit;
+  cursor: pointer;
+}
+
+.font-size-reset:hover:not(:disabled) {
+  background: var(--chip-hover);
+  color: var(--ink);
+}
+
+.font-size-reset:focus-visible {
+  outline: 2px solid var(--ink-3);
+}
+
+.row.off .font-size-value {
+  opacity: 0.4;
+}
+
+.row:has(.font-size-value) .rng {
+  width: 100px;
+}
+
+@media (max-width: 720px) {
+  .row:has(.font-size-value) .rng {
+    width: 72px;
+  }
+}

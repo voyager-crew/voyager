@@ -163,6 +163,48 @@ describe('the official plugin list in the popup', () => {
       expect(sync[StorageKeys.CHAT_FONT_SIZE]).toBe(120);
     });
 
+    it('saves a typed font size on blur and resets its legacy key to 100%', async () => {
+      sync[StorageKeys.CHAT_FONT_SIZE_ENABLED] = true;
+      sync[StorageKeys.CHAT_FONT_SIZE] = 102;
+      await mount();
+      const id = OFFICIAL_PLUGIN_IDS.geminiChatFontSize;
+      const track = slider(id, en.chatFontSize);
+      const input = row(id)!.querySelector<HTMLInputElement>('input[type="number"]')!;
+      expect(input.value).toBe('102');
+      expect(track.value).toBe('102');
+      await act(async () => {
+        input.focus();
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(
+          input,
+          '103',
+        );
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      expect(extensionApi.storage.sync.set).not.toHaveBeenCalled();
+      await act(async () => input.blur());
+      expect(sync[StorageKeys.CHAT_FONT_SIZE]).toBe(103);
+      expect(track.value).toBe('103');
+      await act(async () =>
+        row(id)!
+          .querySelector<HTMLButtonElement>(`button[aria-label="${en.themeColorReset} (100%)"]`)!
+          .click(),
+      );
+      expect(sync[StorageKeys.CHAT_FONT_SIZE]).toBe(100);
+      expect(input.value).toBe('100');
+      expect(pluginStateWritten()).toBe(false);
+    });
+
+    it('moves the gemini font size in 1% steps', async () => {
+      sync[StorageKeys.CHAT_FONT_SIZE_ENABLED] = true;
+      sync[StorageKeys.CHAT_FONT_SIZE] = 100;
+      await mount();
+      const track = slider(OFFICIAL_PLUGIN_IDS.geminiChatFontSize, en.chatFontSize);
+      drag(track, 102);
+      expect(track.value).toBe('102');
+      await release(track);
+      expect(sync[StorageKeys.CHAT_FONT_SIZE]).toBe(102);
+    });
+
     it('saves a width on keyboard release, not on every step, to its old sync key only', async () => {
       sync[StorageKeys.CHAT_WIDTH_ENABLED] = true;
       await mount();

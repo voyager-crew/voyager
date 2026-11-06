@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 
+import { isFontSizeSetting } from '@/features/plugins/runtime/fontSizeSetting';
 import { pluginIncompatibleNote } from '@/features/plugins/runtime/pluginIncompatibleNote';
 import type { PluginStatus } from '@/features/plugins/runtime/pluginStatus';
 import {
@@ -36,6 +37,7 @@ export interface PanelSlider {
   readonly format: (value: number) => string;
   /** Saves one value; the slider calls it once, on release or per keyboard step. */
   readonly commit: (value: number) => void;
+  readonly fontSizeResetLabel?: string;
 }
 
 export interface PanelChip {
@@ -134,6 +136,9 @@ export function officialPanelRow(
           ? t(presentation.zeroLabel)
           : `${value}${presentation.unit}`,
       commit: (value) => write.setSettings(manifest.id, { [key]: value }),
+      fontSizeResetLabel: isFontSizeSetting(manifest, key)
+        ? `${t('themeColorReset')} (100%)`
+        : undefined,
     };
     break;
   }
@@ -220,6 +225,9 @@ export function catalogPanelRow(plugin: PluginManifest, inputs: CatalogRowInputs
     value: Number(resolved[number[0]]),
     format: (value) => String(value),
     commit: (value) => save(number[0], value),
+    fontSizeResetLabel: isFontSizeSetting(plugin, number[0])
+      ? `${t('themeColorReset')} (100%)`
+      : undefined,
   };
   const select = fields.find(([, field]) => field.type === 'select');
   const chip = select

@@ -7,6 +7,7 @@ import { PanelApp } from './PanelApp';
 import { startPanelBootstrap } from './bootstrap';
 import './styles/panel.css';
 import './styles/rows.css';
+import './styles/fontSize.css';
 import './styles/sync.css';
 
 startPanelBootstrap(async (session, signal) => {

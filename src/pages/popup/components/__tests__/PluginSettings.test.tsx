@@ -357,13 +357,15 @@ describe('PluginSettings setting slider', () => {
     const sliders = Array.from(container.querySelectorAll<HTMLInputElement>('input[type="range"]'));
     expect(sliders.map((input) => input.disabled)).toEqual([true, true, true]);
     expect(sliders.map((input) => input.value)).toEqual(['117', '165', '17']);
-    // Font size and line spacing spans stay within a slider's usable precision.
-    expect(container.querySelector('input[type="number"]')).toBeNull();
+    const fontInput = container.querySelector<HTMLInputElement>('input[type="number"]')!;
+    expect(fontInput.value).toBe('117');
+    expect(fontInput.disabled).toBe(true);
     const switches = Array.from(
       container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'),
     );
     act(() => switches[0].click());
     expect(sliders.map((input) => input.disabled)).toEqual([false, true, true]);
+    expect(fontInput.disabled).toBe(false);
     act(() => switches[1].click());
     expect(sliders.map((input) => input.disabled)).toEqual([false, false, false]);
     act(() => switches[1].click());

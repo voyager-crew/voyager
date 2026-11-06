@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+import { FontSizeValue } from '@/components/ui/font-size-value';
 import { PANEL_SHELL_MESSAGE } from '@/features/panel/protocol';
 
 import type { PanelSlider } from '../features/featureRows';
@@ -126,7 +127,24 @@ export function RangeControl({ slider, disabled, previewPluginId, shell }: Range
         onLostPointerCapture={() => hold.current?.finish(false)}
         onChange={onChange}
       />
-      <span className="val">{shown}</span>
+      {slider.fontSizeResetLabel ? (
+        <FontSizeValue
+          variant="panel"
+          label={slider.label}
+          resetLabel={slider.fontSizeResetLabel}
+          value={draft}
+          min={min}
+          max={max}
+          disabled={disabled}
+          onCommit={(next) => {
+            setDraft(next);
+            latest.current = next;
+            slider.commit(next);
+          }}
+        />
+      ) : (
+        <span className="val">{shown}</span>
+      )}
     </>
   );
 }

@@ -67,7 +67,7 @@ export const OFFICIAL_PLUGIN_ENTRIES: readonly OfficialPluginEntry[] = [
         label: 'chatFontSize',
         minLabel: 'chatFontSizeSmall',
         maxLabel: 'chatFontSizeLarge',
-        step: 5,
+        step: 1,
         unit: '%',
       },
     },
