@@ -264,6 +264,8 @@ function createBall(startup: BallStartup): Ball {
   let dragging = false;
   let dragStart: { x: number; y: number } | null = null;
   let wasDragged = false;
+  /** Past the threshold: a finger always wobbles, and a wobbling tap must not shift the ball. */
+  let travelling = false;
   const moved = (ev: PointerEvent): boolean =>
     !!dragStart &&
     (Math.abs(ev.clientX - dragStart.x) > DRAG_THRESHOLD ||
@@ -274,6 +276,7 @@ function createBall(startup: BallStartup): Ball {
     if (typeof ev.button === 'number' && ev.button !== 0) return;
     dragging = true;
     wasDragged = false;
+    travelling = false;
     dragStart = { x: ev.clientX, y: ev.clientY };
     try {
       element.setPointerCapture?.(ev.pointerId);
@@ -282,6 +285,8 @@ function createBall(startup: BallStartup): Ball {
 
   const onPointerMove = (ev: PointerEvent): void => {
     if (!dragging) return;
+    travelling ||= moved(ev);
+    if (!travelling) return;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const rect = element.getBoundingClientRect();
@@ -291,7 +296,14 @@ function createBall(startup: BallStartup): Ball {
     const bottom = Math.max(6, Math.min(vh - 6 - h, vh - ev.clientY - h / 2));
     element.style.right = `${Math.round(right)}px`;
     element.style.bottom = `${Math.round(bottom)}px`;
-    if (moved(ev)) element.classList.add(BALL_DRAGGING_CLASS);
+    element.classList.add(BALL_DRAGGING_CLASS);
+  };
+
+  // The browser took the pointer away: without this the next touch anywhere drags the ball.
+  const onPointerCancel = (): void => {
+    dragging = false;
+    dragStart = null;
+    element.classList.remove(BALL_DRAGGING_CLASS);
   };
 
   const onPointerUp = async (ev: PointerEvent): Promise<void> => {
@@ -373,6 +385,7 @@ function createBall(startup: BallStartup): Ball {
   element.addEventListener('pointerdown', onPointerDown);
   window.addEventListener('pointermove', onPointerMove, { passive: true });
   window.addEventListener('pointerup', onPointerUp, { passive: true });
+  window.addEventListener('pointercancel', onPointerCancel, { passive: true });
   window.addEventListener('resize', constrain, { passive: true });
   chrome.storage?.onChanged?.addListener(onStorageChanged);
 
@@ -395,6 +408,7 @@ function createBall(startup: BallStartup): Ball {
       element.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
       window.removeEventListener('resize', constrain);
       chrome.storage?.onChanged?.removeListener(onStorageChanged);
       element.remove();

@@ -1,12 +1,14 @@
 /**
  * The floating entry's satellites: "Voyager 面板" and "隐藏" ride a tight
- * orbit out of the ball on hover or keyboard focus (motion in `orbit.ts`).
+ * orbit out of the ball on hover or keyboard focus (motion in `orbit.ts`). A
+ * finger has no hover, so a tap on the ball keeps them out until a press elsewhere.
  *
  * The ball stays Prompt Manager's own element (position, drag, clearance and
  * its click are untouched); this sits beside it, one layer below, and follows
  * where it is and whether it shows. Satellites fan toward the page interior
  * from wherever the ball sits.
  */
+import { isVoyagerLayerEvent } from '@/core/ui/layer';
 import { isUserEvent } from '@/core/utils/userEvent';
 
 import { BALL_DRAGGING_CLASS } from '../prompt/promptBall';
@@ -94,6 +96,8 @@ export function decorateBall(ball: HTMLElement, options: EntryOptions): Entry {
   const hovered = new Set<EventTarget>();
   let destroyed = false;
   let open = false;
+  /** The press that the next click ends came from a finger. */
+  let touchPress = false;
 
   const shows = (): boolean =>
     ball.isConnected && !ball.hidden && getComputedStyle(ball).display !== 'none';
@@ -163,16 +167,35 @@ export function decorateBall(ball: HTMLElement, options: EntryOptions): Entry {
     update();
   }
 
-  const onEnter = (event: Event): void => {
+  // A touch enters as it lands and leaves as it lifts, which is no hover: the taps below stand in.
+  const onEnter = (event: PointerEvent): void => {
+    if (event.pointerType === 'touch') return;
     if (event.currentTarget === ball) sync();
     if (event.currentTarget) hovered.add(event.currentTarget);
     update();
   };
-  const onLeave = (event: Event): void => {
+  const onLeave = (event: PointerEvent): void => {
+    if (event.pointerType === 'touch') return;
     if (event.currentTarget) hovered.delete(event.currentTarget);
     update();
   };
-  const onPress = (): void => options.onPress();
+  const onPress = (event: PointerEvent): void => {
+    touchPress = event.pointerType === 'touch';
+    options.onPress();
+  };
+  // A finger's drag ends in no click, so only a tap gets here.
+  const onBallClick = (): void => {
+    if (!touchPress) return;
+    hovered.add(ball);
+    sync();
+  };
+  const onPagePress = (event: PointerEvent): void => {
+    const target = event.target;
+    if (event.pointerType !== 'touch' || !(target instanceof Node)) return;
+    if (ball.contains(target) || container.contains(target) || isVoyagerLayerEvent(event)) return;
+    hovered.clear();
+    update();
+  };
   const keepFocus = (event: Event): void => event.preventDefault();
   // A page script's click() must not open the panel, nor hide the ball on every synced device.
   const onPanel = (event: Event): void => {
@@ -197,6 +220,8 @@ export function decorateBall(ball: HTMLElement, options: EntryOptions): Entry {
     target.addEventListener('focusout', update);
   }
   for (const hit of [panelHit, hideHit]) hit.addEventListener('mousedown', keepFocus);
+  ball.addEventListener('click', onBallClick);
+  document.addEventListener('pointerdown', onPagePress, { capture: true, passive: true });
   panelHit.addEventListener('click', onPanel);
   hideHit.addEventListener('click', onHide);
   window.addEventListener('resize', sync, { passive: true });
@@ -243,6 +268,8 @@ export function decorateBall(ball: HTMLElement, options: EntryOptions): Entry {
         target.removeEventListener('focusout', update);
       }
       for (const hit of [panelHit, hideHit]) hit.removeEventListener('mousedown', keepFocus);
+      ball.removeEventListener('click', onBallClick);
+      document.removeEventListener('pointerdown', onPagePress, { capture: true });
       panelHit.removeEventListener('click', onPanel);
       hideHit.removeEventListener('click', onHide);
       ball.classList.remove(BALL_CLASS, OPEN_CLASS);
