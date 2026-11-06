@@ -85,6 +85,34 @@ describe('floating entry', () => {
     expect(satellite('hide')?.hidden).toBe(false);
   });
 
+  it('lets a finger reach the satellites: a tap keeps them out until a press elsewhere', async () => {
+    page = installShellPage(GEMINI);
+    await page.start();
+    manager = await startPromptManager(resolvePromptSiteAdapter(location.href));
+    await flush();
+    const touch = (target: Element | null, type: string): void => {
+      target?.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerType: 'touch' }));
+    };
+
+    touch(ball(), 'pointerenter');
+    touch(ball(), 'pointerdown');
+    touch(ball(), 'pointerup');
+    touch(ball(), 'pointerleave');
+    ball()!.click();
+    expect(entry()?.classList.contains('gv-ps-open')).toBe(true);
+
+    touch(document.body, 'pointerdown');
+    expect(entry()?.classList.contains('gv-ps-open')).toBe(false);
+
+    touch(ball(), 'pointerdown');
+    ball()!.click();
+    touch(satellite('hide'), 'pointerdown');
+    expect(entry()?.classList.contains('gv-ps-open')).toBe(true);
+    satellite('hide')!.click();
+    await flush();
+    expect(page.memory.values.sync.get(StorageKeys.HIDE_PROMPT_MANAGER)).toBe(true);
+  });
+
   it('grows the panel out of the "Voyager panel" satellite', async () => {
     const animations = recordAnimations();
     page = installShellPage(GEMINI);

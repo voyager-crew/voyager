@@ -151,6 +151,41 @@ describe('prompt trigger activation', () => {
   });
 });
 
+describe('prompt trigger on touch', () => {
+  const press = (ball: HTMLElement, x: number, y: number): void => {
+    ball.dispatchEvent(
+      new MouseEvent('pointerdown', { button: 0, clientX: x, clientY: y, bubbles: true }),
+    );
+  };
+
+  it('does not chase the next touch after the browser cancels a drag', async () => {
+    const { ball } = await mount();
+    trigger!.enable(vi.fn());
+    press(ball, 100, 100);
+    window.dispatchEvent(new MouseEvent('pointermove', { clientX: 90, clientY: 90 }));
+    const { right, bottom } = ball.style;
+
+    window.dispatchEvent(new MouseEvent('pointercancel'));
+    window.dispatchEvent(new MouseEvent('pointermove', { clientX: 400, clientY: 300 }));
+
+    expect(ball.style.right).toBe(right);
+    expect(ball.style.bottom).toBe(bottom);
+    expect(writePromptPref).not.toHaveBeenCalled();
+  });
+
+  it('stays put under a tap whose finger wobbles', async () => {
+    const { ball } = await mount();
+    trigger!.enable(vi.fn());
+    const { right, bottom } = ball.style;
+
+    press(ball, 100, 100);
+    window.dispatchEvent(new MouseEvent('pointermove', { clientX: 102, clientY: 98 }));
+
+    expect(ball.style.right).toBe(right);
+    expect(ball.style.bottom).toBe(bottom);
+  });
+});
+
 describe('prompt trigger default spot', () => {
   /** A Material FAB touch target laid out at the given viewport rect. */
   function mountMaterialFab(rect: DOMRect): void {
