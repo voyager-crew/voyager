@@ -53,6 +53,9 @@
   "vim.inputFallback": ["rich-textarea"],
   "vim.mountInput": ["#prompt-textarea[contenteditable=\"true\"]"],
   "vim.mountRoot": ["form"],
-  "vim.mountChatInput": ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"],
-  "vim.mountChatRoot": ["fieldset"]
+  "vim.mountChatInput": [
+    "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+    "[data-codex-composer][contenteditable=\"true\"]"
+  ],
+  "vim.mountChatRoot": ["fieldset", "[class*=\"--thread-content-max-width\"]"]
 }

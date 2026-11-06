@@ -54,6 +54,43 @@ describe('vim HUD composer mount', () => {
     expect(getVimComposerMount(input, COMPOSER)).toBe(row);
   });
 
+  it('stays at the composer when a display: contents wrapper sits above its clip', () => {
+    // ChatGPT's Codex home: a wrapper with no box reads as top 0, which used to
+    // make every later clip look too close and sent the badge to the page's top.
+    const panel = div('panel', 52);
+    const panelClip = div('panel-clip', 52, 'hidden');
+    const footer = div('footer', 1117);
+    const noBox = div('no-box', 0);
+    noBox.style.display = 'contents';
+    const scroller = div('scroller', 1117, 'auto');
+    const row = div('row', 1132);
+    const input = atTop(document.createElement('textarea'), 1132);
+    input.className = 'ds-scroll-area';
+    row.appendChild(input);
+    scroller.appendChild(row);
+    noBox.appendChild(scroller);
+    footer.appendChild(noBox);
+    panelClip.appendChild(footer);
+    panel.appendChild(panelClip);
+    document.body.appendChild(panel);
+
+    expect(getVimComposerMount(input, COMPOSER)).toBe(footer);
+  });
+
+  it('climbs out of a mount that itself clips the badge above it', () => {
+    // ChatGPT's chat composer: the wrapper around the input hides its overflow,
+    // so a badge floating above that wrapper was never visible.
+    const field = div('field', 644);
+    const row = div('row', 649, 'hidden');
+    const input = atTop(document.createElement('textarea'), 649);
+    input.className = 'ds-scroll-area';
+    row.appendChild(input);
+    field.appendChild(row);
+    document.body.appendChild(field);
+
+    expect(getVimComposerMount(input, COMPOSER)).toBe(field);
+  });
+
   it('leaves an unclipped host composer alone', () => {
     setVimTestSite('chatgpt.com');
     // ChatGPT's form and Claude's fieldset already sit outside any clip.

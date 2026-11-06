@@ -203,9 +203,15 @@
   ["input-packaged.json/input.fab", [":not(*)"]],
   [
     "input-packaged.json/vim.mountChatInput",
-    ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]
+    [
+      "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+      "[data-codex-composer][contenteditable=\"true\"]"
+    ]
   ],
-  ["input-packaged.json/vim.mountChatRoot", ["fieldset"]],
+  [
+    "input-packaged.json/vim.mountChatRoot",
+    ["fieldset", "[class*=\"--thread-content-max-width\"]"]
+  ],
   [
     "input.json/input.candidates",
     [
@@ -311,8 +317,14 @@
   ["placement.json/vim.inputFallback", ["rich-textarea"]],
   ["placement.json/vim.mountInput", ["#prompt-textarea[contenteditable=\"true\"]"]],
   ["placement.json/vim.mountRoot", ["form"]],
-  ["placement.json/vim.mountChatInput", ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]],
-  ["placement.json/vim.mountChatRoot", ["fieldset"]],
+  [
+    "placement.json/vim.mountChatInput",
+    [
+      "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+      "[data-codex-composer][contenteditable=\"true\"]"
+    ]
+  ],
+  ["placement.json/vim.mountChatRoot", ["fieldset", "[class*=\"--thread-content-max-width\"]"]],
   [
     "timeline-packaged.json/timeline.userText",
     "[data-user-message-bubble], .query-text, .ds-collapsible-text"

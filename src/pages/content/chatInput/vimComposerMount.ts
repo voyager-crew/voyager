@@ -15,21 +15,33 @@ function clipsOverflow(element: Element): boolean {
   return CLIPPING_OVERFLOW.has(style.overflowY) || CLIPPING_OVERFLOW.has(style.overflow);
 }
 
+/** A `display: contents` element has no box: it reads as top 0 and positions nothing. */
+function nearestBoxed(element: HTMLElement): HTMLElement {
+  let current = element;
+  while (
+    current.parentElement &&
+    current.ownerDocument.defaultView?.getComputedStyle(current).display === 'contents'
+  ) {
+    current = current.parentElement;
+  }
+  return current;
+}
+
 /**
- * The badge floats just above its mount, so a mount that sits inside a box
- * hiding its overflow renders nothing at all — DeepSeek's composer card clips
- * exactly that strip. Climb out of any ancestor whose own top is close enough
- * to swallow the badge, so a newly adapted site needs no rule of its own.
+ * The badge floats just above its mount, so a mount that hides its overflow, or
+ * sits inside a box that does, renders nothing at all — DeepSeek's composer card
+ * clips exactly that strip. Climb out of any such box whose own top is close
+ * enough to swallow the badge, so a newly adapted site needs no rule of its own.
  */
 function unclippedMount(mount: HTMLElement | null): HTMLElement | null {
   if (!mount) return null;
   const body = mount.ownerDocument.body;
-  let result = mount;
-  for (let node = mount.parentElement; node && node !== body; node = node.parentElement) {
+  let result = nearestBoxed(mount);
+  for (let node: HTMLElement | null = result; node && node !== body; node = node.parentElement) {
     if (!clipsOverflow(node)) continue;
     const headroom = result.getBoundingClientRect().top - HUD_CLEARANCE_PX;
     if (node.getBoundingClientRect().top <= headroom) continue;
-    result = node.parentElement ?? result;
+    if (node.parentElement) result = nearestBoxed(node.parentElement);
   }
   return result;
 }
