@@ -22,6 +22,8 @@
      (2147483000), including when the two are dragged into the same area. */
   z-index: 2147483100;
   cursor: pointer;
+  /* The ball is its own drag handle: a touch drag moves it instead of panning the page. */
+  touch-action: none;
   transition:
     background-color 0.15s ease,
     box-shadow 0.15s ease;

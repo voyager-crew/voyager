@@ -163,8 +163,14 @@
   ["profiles/vim.inputFallback", ["rich-textarea"]],
   ["profiles/vim.mountInput", ["#prompt-textarea[contenteditable=\"true\"]"]],
   ["profiles/vim.mountRoot", ["form"]],
-  ["profiles/vim.mountChatInput", ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]],
-  ["profiles/vim.mountChatRoot", ["fieldset"]],
+  [
+    "profiles/vim.mountChatInput",
+    [
+      "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+      "[data-codex-composer][contenteditable=\"true\"]"
+    ]
+  ],
+  ["profiles/vim.mountChatRoot", ["fieldset", "[class*=\"--thread-content-max-width\"]"]],
   ["profiles/timeline.userText", ["[data-user-message-bubble], .query-text, .ds-collapsible-text"]],
   [
     "packagedInput",
@@ -226,8 +232,14 @@
       ],
       ["vim.mountInput", ["#prompt-textarea[contenteditable=\"true\"]"]],
       ["vim.mountRoot", ["form"]],
-      ["vim.mountChatInput", ["[data-testid=\"chat-input\"][contenteditable=\"true\"]"]],
-      ["vim.mountChatRoot", ["fieldset"]],
+      [
+        "vim.mountChatInput",
+        [
+          "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
+          "[data-codex-composer][contenteditable=\"true\"]"
+        ]
+      ],
+      ["vim.mountChatRoot", ["fieldset", "[class*=\"--thread-content-max-width\"]"]],
       ["vim.crossSiteEdit", ["textarea[aria-label=\"Edit message\"]"]],
       ["vim.editActions", ["button"]]
     ]
