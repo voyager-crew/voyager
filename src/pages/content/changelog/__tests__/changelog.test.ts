@@ -9,7 +9,6 @@ import * as translations from '@/utils/translations';
 import {
   hasUnreadChangelog,
   openChangelog,
-  showChangelogModalDirect,
   resolveChangelogImageUrl,
   rewriteChangelogImageUrls,
 } from '../index';
@@ -291,6 +290,13 @@ describe('hasUnreadChangelog', () => {
     expect(await hasUnreadChangelog()).toBe(false);
   });
 
+  it('counts an empty stored version as unread: older popups wrote it on choosing badge mode', async () => {
+    (chrome.storage.local.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      [StorageKeys.CHANGELOG_DISMISSED_VERSION]: '',
+    });
+    expect(await hasUnreadChangelog()).toBe(true);
+  });
+
   it('returns true when dismissed version differs from current', async () => {
     (chrome.storage.local.get as ReturnType<typeof vi.fn>).mockResolvedValue({
       [StorageKeys.CHANGELOG_DISMISSED_VERSION]: '0.0.1',
@@ -338,7 +344,7 @@ describe('notes of skipped releases', () => {
     });
     parseMarkdown.mockReturnValue('<p>Notes</p>');
 
-    void showChangelogModalDirect();
+    void openChangelog({ untilClosed: true });
     await vi.waitFor(() => expect(parseMarkdown).toHaveBeenCalled());
 
     const markdown = String(parseMarkdown.mock.lastCall?.[0]);

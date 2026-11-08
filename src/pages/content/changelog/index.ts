@@ -198,8 +198,9 @@ async function showChangelogModal(
     if (dismissedVersion === EXTENSION_VERSION) return null;
     // First install — user has never seen any changelog, so the current
     // version's notes aren't meaningful.  Silently dismiss and let them
-    // explore the extension first.
-    if (!dismissedVersion) {
+    // explore the extension first. An empty string is not a first install:
+    // older popups wrote it when badge mode was chosen, to mean "show this release".
+    if (dismissedVersion == null) {
       try {
         await chrome.storage.local.set({
           [StorageKeys.CHANGELOG_DISMISSED_VERSION]: EXTENSION_VERSION,
@@ -296,42 +297,18 @@ async function showChangelogModal(
 }
 
 /**
- * Open the changelog modal for the current version (always shows, no dismiss
- * check). Manual opens from the prompt manager skip the read-gate countdown
- * since the user has already seen the auto-popup once.
+ * Open the current release's changelog because the person asked for it (the
+ * floating ball's NEW, the Prompt Manager's version badge). Always shows, no
+ * read-gate countdown, and marks the release read even when it has no notes,
+ * so a NEW mark never outlives the click.
  *
- * @returns whether the modal was actually shown — callers reacting to an
- * explicit user click should provide a fallback when this is false.
+ * @returns whether the modal was shown — callers reacting to an explicit click
+ * should provide a fallback when this is false. With `untilClosed`, resolves
+ * only once the person closes it. Rejects when opening threw.
  */
-export async function openChangelog(): Promise<boolean> {
-  const overlay = await showChangelogModal(EXTENSION_VERSION, true, false);
-  return overlay !== null;
-}
-
-/**
- * Check if the current version has an unread changelog.
- */
-export async function hasUnreadChangelog(): Promise<boolean> {
-  try {
-    const result = await chrome.storage.local.get(StorageKeys.CHANGELOG_DISMISSED_VERSION);
-    const dismissed = result[StorageKeys.CHANGELOG_DISMISSED_VERSION] as string | undefined;
-    if (!dismissed) return false;
-    return dismissed !== EXTENSION_VERSION;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Show the changelog modal directly (used by badge mode in prompt manager).
- * Returns a Promise that resolves when the modal is closed.
- */
-export async function showChangelogModalDirect(): Promise<boolean> {
-  // Badge-mode prompt-manager open: skip the read-gate. The user is
-  // explicitly clicking the changelog button — they don't need a countdown.
+export async function openChangelog(options: { untilClosed?: boolean } = {}): Promise<boolean> {
   const overlay = await showChangelogModal(EXTENSION_VERSION, true, false);
   if (!overlay) {
-    // No notes found for this version — dismiss anyway so badge doesn't persist
     try {
       await chrome.storage.local.set({
         [StorageKeys.CHANGELOG_DISMISSED_VERSION]: EXTENSION_VERSION,
@@ -341,8 +318,7 @@ export async function showChangelogModalDirect(): Promise<boolean> {
     }
     return false;
   }
-
-  // Resolve once the overlay is removed (modal closed)
+  if (!options.untilClosed) return true;
   return new Promise<boolean>((resolve) => {
     const observer = new MutationObserver(() => {
       if (!overlay.isConnected) {
@@ -352,6 +328,24 @@ export async function showChangelogModalDirect(): Promise<boolean> {
     });
     observer.observe(document.body, { childList: true });
   });
+}
+
+/** Whether the current release has notes this person has not read; never on a first install. */
+export async function hasUnreadChangelog(): Promise<boolean> {
+  try {
+    const result = await chrome.storage.local.get(StorageKeys.CHANGELOG_DISMISSED_VERSION);
+    const dismissed = result[StorageKeys.CHANGELOG_DISMISSED_VERSION] as string | undefined;
+    if (dismissed == null) return false;
+    return dismissed !== EXTENSION_VERSION;
+  } catch {
+    return false;
+  }
+}
+
+/** Whether the floating ball should carry NEW: badge mode, and a release not read yet. */
+export async function isChangelogBadgeDue(): Promise<boolean> {
+  const [mode, unread] = await Promise.all([readNotifyMode(), hasUnreadChangelog()]);
+  return mode === 'badge' && unread;
 }
 
 /**

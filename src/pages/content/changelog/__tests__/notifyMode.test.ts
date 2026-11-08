@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 
-import { openChangelog, startChangelog } from '../index';
+import { isChangelogBadgeDue, openChangelog, startChangelog } from '../index';
 
 const parseMarkdown = vi.hoisted(() => vi.fn(() => '<p>Notes</p>'));
 vi.mock('marked', () => ({ marked: { parse: parseMarkdown } }));
@@ -60,5 +60,22 @@ describe('changelog notify mode', () => {
     expect(await openChangelog()).toBe(true);
     expect(overlay()).not.toBeNull();
     expect(document.querySelector('.gv-changelog-notify-hint')).toBeNull();
+  });
+
+  it.each([
+    ['badge', '0.0.1', true],
+    // Popups before this fix cleared the read version on choosing badge mode.
+    ['badge', '', true],
+    ['badge', undefined, false],
+    ['off', '0.0.1', false],
+    ['popup', '0.0.1', false],
+    [undefined, '0.0.1', false],
+  ])('marks the floating ball in %s mode with %j read: %s', async (mode, read, due) => {
+    vi.mocked(chrome.storage.local.get).mockResolvedValue({
+      [StorageKeys.CHANGELOG_NOTIFY_MODE]: mode,
+      [StorageKeys.CHANGELOG_DISMISSED_VERSION]: read,
+    } as never);
+
+    expect(await isChangelogBadgeDue()).toBe(due);
   });
 });

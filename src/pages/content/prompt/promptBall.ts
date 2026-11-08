@@ -19,7 +19,7 @@ import { StorageKeys } from '@/core/types/common';
 import { isUserEvent } from '@/core/utils/userEvent';
 import type { PromptTriggerSpot } from '@/features/prompt/PromptSiteAdapter';
 
-import { hasUnreadChangelog, showChangelogModalDirect } from '../changelog/index';
+import { isChangelogBadgeDue, openChangelog } from '../changelog/index';
 import { readPromptPref, writePromptPref } from './promptPrefs';
 import { PROMPT_TRIGGER_ELEMENT_ID } from './triggerClearance';
 import { applyTriggerLogoFromStorageChange, createTriggerLogoImage } from './triggerLogo';
@@ -245,7 +245,7 @@ function createBall(startup: BallStartup): Ball {
   async function consumeAttention(): Promise<boolean> {
     setAttention(false);
     try {
-      return await showChangelogModalDirect();
+      return await openChangelog({ untilClosed: true });
     } finally {
       applyVisibility();
     }
@@ -359,11 +359,7 @@ function createBall(startup: BallStartup): Ball {
       return;
     void (async () => {
       try {
-        const [modeRes, unread] = await Promise.all([
-          browser.storage.local.get(StorageKeys.CHANGELOG_NOTIFY_MODE),
-          hasUnreadChangelog(),
-        ]);
-        const shouldAnnounce = modeRes?.[StorageKeys.CHANGELOG_NOTIFY_MODE] === 'badge' && unread;
+        const shouldAnnounce = await isChangelogBadgeDue();
         if (!destroyed && shouldAnnounce !== attention) {
           setAttention(shouldAnnounce);
           applyVisibility();

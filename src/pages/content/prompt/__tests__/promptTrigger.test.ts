@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StorageKeys } from '@/core/types/common';
 import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
-import { hasUnreadChangelog, showChangelogModalDirect } from '../../changelog/index';
+import { isChangelogBadgeDue, openChangelog } from '../../changelog/index';
 import { readPromptPref, writePromptPref } from '../promptPrefs';
 import { type PromptTrigger, mountPromptTrigger } from '../promptTrigger';
 import { resolvePromptSiteAdapter } from '../resolvePromptSiteAdapter';
@@ -11,8 +11,8 @@ import { resolvePromptSiteAdapter } from '../resolvePromptSiteAdapter';
 vi.mock('webextension-polyfill', () => ({ default: globalThis.chrome }));
 vi.mock('@/core/utils/userEvent', () => import('./ballClicks'));
 vi.mock('../../changelog/index', () => ({
-  hasUnreadChangelog: vi.fn(async () => false),
-  showChangelogModalDirect: vi.fn(async () => true),
+  isChangelogBadgeDue: vi.fn(async () => false),
+  openChangelog: vi.fn(async () => true),
 }));
 vi.mock('../promptPrefs', () => ({
   readPromptPref: vi.fn(async (_key: string, fallback: unknown) => fallback),
@@ -64,7 +64,7 @@ describe('prompt trigger visibility', () => {
 
     await expect(trigger!.consumeAttention()).resolves.toBe(true);
 
-    expect(showChangelogModalDirect).toHaveBeenCalledTimes(1);
+    expect(openChangelog).toHaveBeenCalledWith({ untilClosed: true });
     expect(onAttentionChange).toHaveBeenCalledWith(false);
     expect(trigger!.hasAttention).toBe(false);
     expect(ball.style.display).toBe('none');
@@ -85,10 +85,7 @@ describe('prompt trigger visibility', () => {
   });
 
   it('starts announcing when release notes become unread in badge mode', async () => {
-    vi.mocked(chrome.storage.local.get).mockResolvedValue({
-      [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'badge',
-    } as never);
-    vi.mocked(hasUnreadChangelog).mockResolvedValue(true);
+    vi.mocked(isChangelogBadgeDue).mockResolvedValue(true);
     const { ball, onAttentionChange } = await mount({ hiddenByUser: true });
     expect(ball.style.display).toBe('none');
 
@@ -102,10 +99,7 @@ describe('prompt trigger visibility', () => {
   });
 
   it('drops the NEW mark when the person switches update reminders off', async () => {
-    vi.mocked(chrome.storage.local.get).mockResolvedValue({
-      [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'off',
-    } as never);
-    vi.mocked(hasUnreadChangelog).mockResolvedValue(true);
+    vi.mocked(isChangelogBadgeDue).mockResolvedValue(false);
     const { ball, onAttentionChange } = await mount({ attention: true });
 
     trigger!.applyStorageChange('local', {
@@ -139,7 +133,7 @@ describe('prompt trigger activation', () => {
     ball.click();
     await flush();
 
-    expect(showChangelogModalDirect).toHaveBeenCalledTimes(1);
+    expect(openChangelog).toHaveBeenCalledWith({ untilClosed: true });
     expect(onActivate).not.toHaveBeenCalled();
     ball.click();
     expect(onActivate).toHaveBeenCalledTimes(1);

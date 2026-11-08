@@ -161,10 +161,7 @@ export function useGeneralPopupSettings({
   const handleChangelogNotifyModeChange = useCallback((mode: ChangelogNotifyMode): void => {
     setChangelogNotifyMode(mode);
     try {
-      const updates: Record<string, string> = { [StorageKeys.CHANGELOG_NOTIFY_MODE]: mode };
-      // Allow the current release's NEW badge to appear when badge mode is enabled.
-      if (mode === 'badge') updates[StorageKeys.CHANGELOG_DISMISSED_VERSION] = '';
-      chrome.storage?.local?.set(updates);
+      chrome.storage?.local?.set({ [StorageKeys.CHANGELOG_NOTIFY_MODE]: mode });
     } catch {
       // Ignore storage errors.
     }

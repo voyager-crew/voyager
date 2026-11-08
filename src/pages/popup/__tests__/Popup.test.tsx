@@ -60,7 +60,6 @@ describe('Popup settings integration', () => {
     expect(badge.getAttribute('aria-checked')).toBe('true');
     expect(extensionApi.storage.local.set).toHaveBeenLastCalledWith({
       [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'badge',
-      [StorageKeys.CHANGELOG_DISMISSED_VERSION]: '',
     });
     expect(extensionApi.storage.local.set).toHaveBeenCalledTimes(3);
     expect(extensionApi.storage.sync.set).not.toHaveBeenCalled();

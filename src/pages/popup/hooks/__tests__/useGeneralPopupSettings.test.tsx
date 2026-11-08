@@ -178,7 +178,6 @@ describe('useGeneralPopupSettings', () => {
     expect(settings.values.changelogNotifyMode).toBe('badge');
     expect(chrome.storage.local.set).toHaveBeenLastCalledWith({
       [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'badge',
-      [StorageKeys.CHANGELOG_DISMISSED_VERSION]: '',
     });
     expect(writeSyncStorage).not.toHaveBeenCalled();
   });

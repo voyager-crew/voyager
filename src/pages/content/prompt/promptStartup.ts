@@ -10,7 +10,7 @@ import { promptStorageService } from '@/core/services/StorageService';
 import { StorageKeys } from '@/core/types/common';
 import { migrateFromLocalStorage } from '@/core/utils/storageMigration';
 
-import { hasUnreadChangelog } from '../changelog/index';
+import { isChangelogBadgeDue } from '../changelog/index';
 import { mascotLogoFromRecord } from './triggerLogo';
 
 const pmLogger = logger.createChild('PromptManager');
@@ -58,12 +58,7 @@ export async function readPromptStartupSettings(): Promise<PromptStartupSettings
 
   // Check changelog badge mode
   try {
-    const [modeRes, unread] = await Promise.all([
-      browser.storage.local.get(StorageKeys.CHANGELOG_NOTIFY_MODE),
-      hasUnreadChangelog(),
-    ]);
-    const notifyMode = modeRes?.[StorageKeys.CHANGELOG_NOTIFY_MODE];
-    settings.changelogBadgeActive = notifyMode === 'badge' && unread;
+    settings.changelogBadgeActive = await isChangelogBadgeDue();
   } catch {
     // Ignore errors
   }

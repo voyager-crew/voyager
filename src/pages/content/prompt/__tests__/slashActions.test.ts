@@ -24,8 +24,8 @@ import {
 vi.mock('webextension-polyfill', () => ({ default: globalThis.chrome }));
 vi.mock('@/core/utils/userEvent', () => import('../../panelShell/__tests__/forgedEvents'));
 vi.mock('../../changelog/index', () => ({
-  hasUnreadChangelog: vi.fn(async () => false),
-  showChangelogModalDirect: vi.fn(async () => true),
+  isChangelogBadgeDue: vi.fn(async () => false),
+  openChangelog: vi.fn(async () => true),
 }));
 vi.mock('../promptPrefs', () => ({
   readPromptPref: vi.fn(async (_key: string, fallback: unknown) => fallback),
