@@ -36,11 +36,12 @@ import type { ChatGptReadOptions } from './type';
  *   inside the viewport and hold still, so a window left mounted from an
  *   earlier scroll position is never taken for the current one;
  * - start: older history is loaded until ChatGPT's history spinner is gone,
- *   and the first mounted item starts where the list box starts. When the
- *   spinner stays and nothing loads (ChatGPT loads older pages only on a
- *   trusted wheel or touch), the crawl starts at the first loaded item and the
- *   turns before it come from ChatGPT's conversation endpoint, read along
- *   that item's own branch;
+ *   and the first mounted item starts where the list box starts. When older
+ *   turns remain but no page arrives for the stall timeout (ChatGPT loads
+ *   older pages only on a trusted wheel or touch, or answers slowly), the
+ *   crawl starts at the first loaded item and the turns before it come from
+ *   ChatGPT's conversation endpoint, read along that item's own branch.
+ *   Pages that arrive later land before that item and are not read again;
  * - no gaps: every scroll keeps the last recorded item mounted, so each new
  *   window continues the previous one. A window without it is retried with a
  *   shorter step, then fails;
@@ -122,7 +123,13 @@ function spanOf(view: ScrollView, element: Element): Span {
 }
 
 function readWindow(context: CrawlContext): MountedWindow {
-  const items = mountedTurnItems(context.root);
+  let items = mountedTurnItems(context.root);
+  // Older pages ChatGPT prepends after the crawl chose where to start are the
+  // turns the conversation endpoint supplies; reading them too would repeat them.
+  const start = context.loadedFrom
+    ? items.findIndex((item) => readTurnKey(item) === context.loadedFrom)
+    : -1;
+  if (start > 0) items = items.slice(start);
   const box = items[0] ? findThreadExtent(items[0]) : null;
   return {
     items,
@@ -213,8 +220,9 @@ async function settleWindow(context: CrawlContext): Promise<MountedWindow> {
 
 /**
  * Scroll to the top until ChatGPT has no older page left to load. Returns
- * false when its history spinner stays but no page arrives: older turns exist
- * that the page will not load for a script.
+ * false when no page arrives for the stall timeout while older turns remain
+ * (the history spinner, or blank room above the first item): ChatGPT will not
+ * load them for a script, or loads them too slowly to wait for.
  */
 async function loadFullHistory(context: CrawlContext): Promise<boolean> {
   const { root, view, timing, options } = context;
@@ -231,11 +239,13 @@ async function loadFullHistory(context: CrawlContext): Promise<boolean> {
       changedAt = Date.now();
       continue;
     }
-    const pending = hasPendingHistory(root, first);
     const idleFor = Date.now() - changedAt;
-    if (!pending && first && view.offset() <= 1 && idleFor >= timing.historyIdleMs) return true;
+    // The blank room for unloaded turns can show without the spinner (#1071),
+    // so a missing spinner alone does not mean the start is loaded.
+    const loaded = !!first && view.offset() <= 1 && atThreadStart(context, readWindow(context));
+    if (loaded && idleFor >= timing.historyIdleMs) return true;
     if (idleFor >= timing.historyStallMs) {
-      if (pending && first) return false;
+      if (first) return false;
       throw new Error('chatgpt_export_history_unavailable');
     }
   }
@@ -315,7 +325,11 @@ async function walkThread(context: CrawlContext): Promise<ChatGptThreadMessage[]
   let anchoredOffset = 0;
   let gapRetries = 0;
 
-  view.scrollTo(0);
+  // Start at the first loaded item, not the top: a viewport shorter than the
+  // blank room above it never covers the list there, older pages that arrive
+  // late land above it without moving it, and the top would ask for more.
+  const loadedStart = context.loadedFrom ? findMountedTurnItem(root, context.loadedFrom) : null;
+  view.scrollTo(loadedStart ? view.offsetOf(loadedStart) : 0);
   for (let step = 0; ; step++) {
     if (step > timing.maxSteps) throw new Error('chatgpt_export_thread_incomplete');
     const mounted = await settleWindow(context);

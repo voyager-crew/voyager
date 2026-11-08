@@ -30,6 +30,14 @@ export interface ThreadFixtureOptions {
   readonly pageSize?: number;
   /** Delay before a requested history page arrives; Infinity never loads it. */
   readonly historyDelayMs?: number;
+  /** Delay between the scroller reaching the top and the page request going out. */
+  readonly requestDelayMs?: number;
+  /**
+   * Whether the "Loading older messages" status shows while older history
+   * remains but no page request is in flight; true by default. When false it
+   * shows only during a request.
+   */
+  readonly idleSpinner?: boolean;
   /** Delay before the list re-renders after a scroll; Infinity freezes it. */
   readonly renderDelayMs?: number;
   /**
@@ -57,6 +65,8 @@ export interface ThreadFixture {
   setOffset(offset: number): void;
   mountedKeys(): string[];
   loadedCount(): number;
+  /** Deliver the next older history page now, as a slow page request finally does. */
+  loadOlderPage(): void;
   /** Swap a turn's content in place, as a branch switch does; re-renders it if mounted. */
   replaceTurn(key: string, changes: Partial<Omit<FixtureTurn, 'key'>>): void;
   /**
@@ -116,11 +126,14 @@ export function mountThreadFixture(options: ThreadFixtureOptions): ThreadFixture
   const pageSize = options.pageSize ?? 3;
   const historyDelay = options.historyDelayMs ?? 5;
   const renderDelay = options.renderDelayMs ?? 1;
+  const requestDelay = options.requestDelayMs ?? 0;
+  const idleSpinner = options.idleSpinner ?? true;
   const all = [...options.turns];
   let loadedFrom = Math.max(0, all.length - (options.initiallyLoaded ?? all.length));
   let scrollTop = 0;
   let overshootsLeft = options.overshootWrites ?? Infinity;
   let historyTimer: number | null = null;
+  let requesting = false;
   let renderTimer: number | null = null;
   const mounted = new Map<string, HTMLElement>();
 
@@ -169,7 +182,7 @@ export function mountThreadFixture(options: ThreadFixtureOptions): ThreadFixture
   };
 
   function render(): void {
-    if (loadedFrom === 0) spinner.remove();
+    if (loadedFrom === 0 || !(idleSpinner || requesting)) spinner.remove();
     else if (!spinner.isConnected) target.insertBefore(spinner, outer);
     const view = offset();
     const visible = new Set<string>();
@@ -208,16 +221,22 @@ export function mountThreadFixture(options: ThreadFixtureOptions): ThreadFixture
     }, renderDelay);
   }
 
+  function loadOlderPage(): void {
+    requesting = false;
+    // column-reverse: the distance from the bottom (scrollTop) is kept, so
+    // the new page lands above the viewport.
+    loadedFrom = Math.max(0, loadedFrom - pageSize);
+    render();
+  }
+
   function maybeLoadHistory(): void {
-    if (loadedFrom === 0 || offset() > 1 || historyTimer !== null) return;
-    if (!Number.isFinite(historyDelay)) return;
+    if (loadedFrom === 0 || offset() > 1 || historyTimer !== null || requesting) return;
     historyTimer = window.setTimeout(() => {
       historyTimer = null;
-      // column-reverse: the distance from the bottom (scrollTop) is kept, so
-      // the new page lands above the viewport.
-      loadedFrom = Math.max(0, loadedFrom - pageSize);
+      requesting = true;
       render();
-    }, historyDelay);
+      if (Number.isFinite(historyDelay)) window.setTimeout(loadOlderPage, historyDelay);
+    }, requestDelay);
   }
 
   Object.defineProperty(scroller, 'scrollTop', {
@@ -257,6 +276,7 @@ export function mountThreadFixture(options: ThreadFixtureOptions): ThreadFixture
         (item) => item.getAttribute('data-turn-key') ?? '',
       ),
     loadedCount: () => all.length - loadedFrom,
+    loadOlderPage,
     replaceTurn(key, changes) {
       const index = all.findIndex((turn) => turn.key === key);
       all[index] = { ...all[index]!, ...changes };

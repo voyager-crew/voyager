@@ -180,6 +180,65 @@ describe('crawlChatGptThread', () => {
     expect(messages[0]?.fingerprint).toBe(messages[1]?.fingerprint);
   });
 
+  it('waits for older history ChatGPT starts loading only after the top looked idle', async () => {
+    // Live (#1071): the blank room for unloaded turns showed before the
+    // spinner did, the crawl took the thread for fully loaded, and no window
+    // over that room ever settled.
+    history.replaceState(null, '', '/c/conv-1');
+    const turns = makeTurns(21);
+    const fixture = mountThreadFixture({
+      turns,
+      initiallyLoaded: 6,
+      pageSize: 10,
+      unloadedRoom: 950,
+      idleSpinner: false,
+      requestDelayMs: 80,
+      historyDelayMs: 40,
+    });
+    const fetchMock = stubConversationEndpoint(conversationTree(turns));
+
+    const messages = await crawlChatGptThread({
+      extractor,
+      timing: { ...FAST, historyStallMs: 400 },
+      history: new ChatGptHistoryReader(),
+    });
+
+    expect(fixture.loadedCount()).toBe(turns.length);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(messages.map((message) => message.id)).toEqual(ids(turns));
+  });
+
+  it('reads each turn once when older pages arrive after the crawl gave up waiting for them', async () => {
+    history.replaceState(null, '', '/c/conv-1');
+    const turns = makeTurns(21, 3000);
+    const fixture = mountThreadFixture({
+      turns,
+      initiallyLoaded: 6,
+      pageSize: 10,
+      unloadedRoom: 950,
+      historyDelayMs: Infinity,
+      // Shorter than the blank room, and prepended turns stay mounted beside the start.
+      viewportHeight: 800,
+      overscan: 1000,
+    });
+    const fetchMock = stubConversationEndpoint(conversationTree(turns));
+    // The slow page requests answer mid-crawl: one page, then the rest.
+    const onProgress = (count: number) => {
+      if (count === 1 || count === 3) fixture.loadOlderPage();
+    };
+
+    const messages = await crawlChatGptThread({
+      extractor,
+      timing: FAST,
+      history: new ChatGptHistoryReader(),
+      onProgress,
+    });
+
+    expect(fixture.loadedCount()).toBe(turns.length);
+    expect(fetchMock).toHaveBeenCalledWith('/backend-api/conversation/conv-1', expect.anything());
+    expect(messages.map((message) => message.id)).toEqual(ids(turns));
+  });
+
   it('fails when older history neither loads nor can be read from the endpoint', async () => {
     history.replaceState(null, '', '/c/conv-1');
     const turns = makeTurns(8);
@@ -221,7 +280,11 @@ describe('crawlChatGptThread', () => {
 
   it('fails instead of reading a stale window that never moves to the scroll position', async () => {
     const fixture = mountThreadFixture({ turns: makeTurns(8), renderDelayMs: Infinity });
+    // Frozen mid-thread: the crawl starts at the first mounted turn, and the
+    // window never follows it past the next one.
+    fixture.setOffset(5000);
     expect(fixture.mountedKeys()).not.toContain('turn-01');
+    expect(fixture.mountedKeys()).not.toContain('turn-08');
 
     await expect(crawlChatGptThread({ extractor, timing: FAST })).rejects.toThrow(
       'chatgpt_export_thread_unsettled',
