@@ -236,6 +236,23 @@
   );
 }
 
+/* A release's version, when one popup gathers the notes of several skipped updates. */
+.gv-changelog-body h2 {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--gv-ui-primary, oklch(0.601 0.1 140));
+  background: color-mix(in srgb, var(--gv-ui-primary, oklch(0.601 0.1 140)) 12%, transparent);
+}
+
+.gv-changelog-body * + h2 {
+  margin-top: 20px;
+}
+
 .gv-changelog-body h3 {
   font-size: 15px;
   font-weight: 600;

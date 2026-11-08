@@ -9,11 +9,21 @@ import * as translations from '@/utils/translations';
 import {
   hasUnreadChangelog,
   openChangelog,
+  showChangelogModalDirect,
   resolveChangelogImageUrl,
   rewriteChangelogImageUrls,
 } from '../index';
 import { createChangelogModal } from '../modal';
-import { NOTE_LOCALES, noteBody, notePath, pickNoteLocale } from '../noteSections';
+import {
+  MAX_GATHERED_NOTES,
+  NOTE_LOCALES,
+  compareVersions,
+  noteBody,
+  notePath,
+  pickNoteLocale,
+  unseenNoteVersions,
+  withoutOpeningQuote,
+} from '../noteSections';
 
 const parseMarkdown = vi.hoisted(() => vi.fn());
 vi.mock('marked', () => ({ marked: { parse: parseMarkdown } }));
@@ -294,5 +304,48 @@ describe('hasUnreadChangelog', () => {
       [StorageKeys.CHANGELOG_DISMISSED_VERSION]: EXTENSION_VERSION,
     });
     expect(await hasUnreadChangelog()).toBe(false);
+  });
+});
+
+describe('notes of skipped releases', () => {
+  it('lists the noted releases after the last one read, newest first', () => {
+    const noted = ['2.2.0', '2.2.1', '2.10.0', '2.3.0', '2.3.1'];
+
+    expect(unseenNoteVersions(noted, '2.2.0', '2.3.1')).toEqual(['2.3.1', '2.3.0', '2.2.1']);
+    expect(unseenNoteVersions(noted, '2.3.1', '2.3.1')).toEqual([]);
+    expect(compareVersions('2.10.0', '2.9.9')).toBeGreaterThan(0);
+  });
+
+  it('gathers at most a few releases', () => {
+    const noted = Array.from({ length: 9 }, (_, index) => `1.${index}.0`);
+
+    expect(unseenNoteVersions(noted, '0.9.0', '1.8.0')).toHaveLength(MAX_GATHERED_NOTES);
+  });
+
+  it('drops only the opening quote of an older note', () => {
+    expect(withoutOpeningQuote('> _quote_\n\n### Fixed\n\n> kept')).toBe('### Fixed\n\n> kept');
+  });
+
+  it('shows every release a person updated past, each under its version', async () => {
+    const { EXTENSION_VERSION } = await import('@/core/utils/version');
+    const notesDir = resolve(process.cwd(), 'src/pages/content/changelog/notes');
+    const noted = readdirSync(notesDir)
+      .filter((version) => compareVersions(version, EXTENSION_VERSION) <= 0)
+      .sort(compareVersions);
+    const [lastRead, skipped] = noted.slice(-3);
+    (chrome.storage.local.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      [StorageKeys.CHANGELOG_DISMISSED_VERSION]: lastRead,
+    });
+    parseMarkdown.mockReturnValue('<p>Notes</p>');
+
+    void showChangelogModalDirect();
+    await vi.waitFor(() => expect(parseMarkdown).toHaveBeenCalled());
+
+    const markdown = String(parseMarkdown.mock.lastCall?.[0]);
+    expect(markdown.indexOf(`## v${EXTENSION_VERSION}`)).toBeGreaterThanOrEqual(0);
+    expect(markdown.indexOf(`## v${skipped}`)).toBeGreaterThan(
+      markdown.indexOf(`## v${EXTENSION_VERSION}`),
+    );
+    expect(markdown).not.toContain(`## v${lastRead}`);
   });
 });

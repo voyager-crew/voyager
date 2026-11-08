@@ -5,7 +5,13 @@ import type { AppLanguage } from '@/utils/language';
 import { loadTranslations } from '@/utils/translations';
 
 import { closeChangelogModal, createChangelogModal } from './modal';
-import { noteBody, notePath, pickNoteLocale } from './noteSections';
+import {
+  noteBody,
+  notePath,
+  pickNoteLocale,
+  unseenNoteVersions,
+  withoutOpeningQuote,
+} from './noteSections';
 
 /**
  * One loader per language file, e.g. './notes/2.2.0/en.md'.
@@ -16,6 +22,11 @@ const changelogModules = import.meta.glob('./notes/*/*.md', {
   import: 'default',
   eager: false,
 }) as Record<string, () => Promise<string>>;
+
+/** Every release with a note, from the note folders' names. */
+const NOTED_VERSIONS = [
+  ...new Set(Object.keys(changelogModules).map((path) => path.split('/')[2] ?? '')),
+].filter(Boolean);
 
 /**
  * Versions whose changelog must show as a popup even for users who opted into
@@ -139,6 +150,30 @@ async function readNotifyMode(): Promise<'popup' | 'badge'> {
   }
 }
 
+/** A release's note in `lang` (English as the fallback), without front matter; null when none. */
+async function loadNoteBody(version: string, lang: AppLanguage): Promise<string | null> {
+  const locale = pickNoteLocale(lang, (language) =>
+    Boolean(changelogModules[`./notes/${notePath(version, language)}`]),
+  );
+  const loader = locale ? changelogModules[`./notes/${notePath(version, locale)}`] : undefined;
+  if (!loader) return null;
+  return noteBody(await loader()) || null;
+}
+
+/**
+ * Several releases' notes, newest first, each under its version. The newest
+ * keeps its opening quote on top; the older ones drop theirs.
+ */
+function gatherNotes(notes: readonly { version: string; body: string }[]): string {
+  return notes
+    .map(({ version, body }, index) => {
+      const rest = withoutOpeningQuote(body);
+      const quote = index === 0 ? body.slice(0, body.length - rest.length).trim() : '';
+      return [quote, `## v${version}`, rest].filter(Boolean).join('\n\n');
+    })
+    .join('\n\n');
+}
+
 /**
  * Load and render the changelog modal.
  * @param version - Which version's changelog to show (defaults to EXTENSION_VERSION)
@@ -153,10 +188,10 @@ async function showChangelogModal(
   skipDismissCheck = false,
   applyReadGate = true,
 ): Promise<HTMLDivElement | null> {
-  // 1. Check dismissed version
+  // 1. Check dismissed version. It is also the last release whose notes this person read.
+  const stored = await chrome.storage.local.get(StorageKeys.CHANGELOG_DISMISSED_VERSION);
+  const dismissedVersion = stored[StorageKeys.CHANGELOG_DISMISSED_VERSION] as string | undefined;
   if (!skipDismissCheck) {
-    const result = await chrome.storage.local.get(StorageKeys.CHANGELOG_DISMISSED_VERSION);
-    const dismissedVersion = result[StorageKeys.CHANGELOG_DISMISSED_VERSION] as string | undefined;
     if (dismissedVersion === EXTENSION_VERSION) return null;
     // First install — user has never seen any changelog, so the current
     // version's notes aren't meaningful.  Silently dismiss and let them
@@ -173,22 +208,28 @@ async function showChangelogModal(
     }
   }
 
-  // 2. Load this version's note in the current language. English is the
-  //    fallback; no file for the version, or an empty body, means nothing to show.
+  // 2. Gather the notes not read yet: updating past a release skipped its popup.
+  //    Each in the current language, English as the fallback; a release with
+  //    no note, or an empty one, adds nothing.
   const lang = await getCurrentLanguage();
-  const locale = pickNoteLocale(lang, (language) =>
-    Boolean(changelogModules[`./notes/${notePath(version, language)}`]),
-  );
-  if (!locale) return null;
+  const unseen =
+    version === EXTENSION_VERSION && dismissedVersion
+      ? unseenNoteVersions(NOTED_VERSIONS, dismissedVersion, version)
+      : [];
+  const versions = unseen.length ? unseen : [version];
+  const notes = (
+    await Promise.all(
+      versions.map(async (noteVersion) => ({
+        version: noteVersion,
+        body: await loadNoteBody(noteVersion, lang),
+      })),
+    )
+  ).filter((note): note is { version: string; body: string } => Boolean(note.body));
+  if (!notes.length) return null;
 
-  const loader = changelogModules[`./notes/${notePath(version, locale)}`];
-  if (!loader) return null;
-
-  const rawMarkdown = await loader();
-
-  // 3. Drop optional front matter. An empty body is the same as a missing note.
-  const extracted = noteBody(rawMarkdown);
-  if (!extracted) return null;
+  // 3. One release reads as before; several each sit under their version.
+  const extracted =
+    notes.length === 1 && notes[0]!.version === version ? notes[0]!.body : gatherNotes(notes);
   const localizedContent = rewriteChangelogDocUrls(
     rewriteChangelogImageUrls(extracted, getRuntimeUrl),
     lang,

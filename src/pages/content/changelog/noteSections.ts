@@ -51,3 +51,40 @@ export function mapNoteProse(markdown: string, replace: (prose: string) => strin
     .map((part, index) => (index % 2 === 0 ? replace(part) : part))
     .join('');
 }
+
+/** Order two `x.y.z` versions: negative when `a` is older. */
+export function compareVersions(a: string, b: string): number {
+  const left = a.split('.').map(Number);
+  const right = b.split('.').map(Number);
+  for (let index = 0; index < Math.max(left.length, right.length); index++) {
+    const diff = (left[index] ?? 0) - (right[index] ?? 0);
+    if (diff) return diff;
+  }
+  return 0;
+}
+
+/** The most releases one popup gathers; anything older stays on the docs site. */
+export const MAX_GATHERED_NOTES = 5;
+
+/**
+ * The noted releases after `seen` up to `current`, newest first: what a person
+ * who last read `seen` has not read yet. Updating past a release skips its
+ * popup, so its note joins the next one.
+ */
+export function unseenNoteVersions(
+  noted: readonly string[],
+  seen: string,
+  current: string,
+): string[] {
+  return noted
+    .filter(
+      (version) => compareVersions(version, seen) > 0 && compareVersions(version, current) <= 0,
+    )
+    .sort((a, b) => compareVersions(b, a))
+    .slice(0, MAX_GATHERED_NOTES);
+}
+
+/** A note without its opening quote, for a release shown below a newer one. */
+export function withoutOpeningQuote(body: string): string {
+  return body.replace(/^(?:>[^\n]*(?:\n|$))+/, '').trim();
+}
