@@ -40,6 +40,12 @@ const SETTLE_REMEASURE_MS = 300;
 const DOCK_SNAP_PX = 24;
 /** The toolbar's size before it has one (hidden by a fullscreen Canvas). */
 const FALLBACK_SIZE = { width: 80, height: 36 };
+/**
+ * How long the docked toolbar must stay put before it counts as settled. A
+ * host header that fills in its buttons after load (ChatGPT's) pushes the dock
+ * left once per batch; the settle re-measure lands within this window.
+ */
+const SETTLED_QUIET_MS = 600;
 
 export type ToolbarPlacementOptions = {
   /** The element the user drags; the toolbar's button. */
@@ -53,6 +59,11 @@ export type ToolbarPlacementOptions = {
 export type ToolbarPlacement = {
   /** Moves to a remembered spot, unless the user already dropped the toolbar on this page. */
   restoreSpot: (spot: ToolbarSpot) => void;
+  /**
+   * Calls `callback` once the toolbar has been measured and has not moved for
+   * a short while; never after `stop`. Callers that hide it meanwhile cap the wait.
+   */
+  whenSettled: (callback: () => void) => void;
   stop: () => void;
 };
 
@@ -82,6 +93,20 @@ export function startToolbarPlacement(
   };
   let size = FALLBACK_SIZE;
   let appliedOffset = root.style.getPropertyValue(RIGHT_OFFSET_PROPERTY);
+  let measuredOnce = false;
+  let quietTimer: number | null = null;
+  let settledWaiters: Array<() => void> = [];
+  /** (Re)starts the quiet window: any move before it ends pushes "settled" back. */
+  const armQuiet = () => {
+    if (!measuredOnce || settledWaiters.length === 0) return;
+    if (quietTimer !== null) window.clearTimeout(quietTimer);
+    quietTimer = window.setTimeout(() => {
+      quietTimer = null;
+      const waiters = settledWaiters;
+      settledWaiters = [];
+      waiters.forEach((callback) => callback());
+    }, SETTLED_QUIET_MS);
+  };
   // One layout read session per measurement: each remote field is proved at most once.
   const context = (): AvoidanceContext => {
     const layout = exportLayoutData(root);
@@ -102,6 +127,7 @@ export function startToolbarPlacement(
     if (next === appliedOffset) return;
     appliedOffset = next;
     root.style.setProperty(RIGHT_OFFSET_PROPERTY, next);
+    armQuiet();
   };
   // Inline only for a user's spot; the dock's top comes from the per-site stylesheet.
   const applyTop = (top: number | null) => {
@@ -174,6 +200,10 @@ export function startToolbarPlacement(
     measured = indexMeasuredControls(watched, hidden, canvas);
     widthWatch.track([...watched, ...rowHosts]);
     applyRight(spot ? clampRight(offset, measureSize().width) : offset);
+    if (!measuredOnce) {
+      measuredOnce = true;
+      armQuiet();
+    }
   };
   const updateNow = () => {
     if (frameId !== null) window.cancelAnimationFrame(frameId);
@@ -267,6 +297,10 @@ export function startToolbarPlacement(
       spot = next;
       updateNow();
     },
+    whenSettled: (callback) => {
+      settledWaiters.push(callback);
+      if (quietTimer === null) armQuiet();
+    },
     stop: () => {
       if (frameId !== null) window.cancelAnimationFrame(frameId);
       frameId = null;
@@ -274,6 +308,9 @@ export function startToolbarPlacement(
       softTimer = null;
       if (settleTimer !== null) window.clearTimeout(settleTimer);
       settleTimer = null;
+      if (quietTimer !== null) window.clearTimeout(quietTimer);
+      quietTimer = null;
+      settledWaiters = [];
       observer.disconnect();
       widthWatch.stop();
       window.removeEventListener('resize', scheduleUpdate);

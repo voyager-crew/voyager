@@ -29,9 +29,14 @@ const TOOLBAR_CLASS = 'gv-persistent-export-toolbar';
 const BUTTON_CLASS = 'gv-persistent-export-btn';
 const ICON_CLASS = 'gv-persistent-export-icon';
 const LABEL_CLASS = 'gv-persistent-export-label';
-/** Hides the toolbar until its remembered spot is read, so it does not jump there visibly. */
+/**
+ * Hides the toolbar until it is in place: at its remembered spot, or at the dock
+ * once the host header stops pushing it (ChatGPT fills its header in after
+ * load, and a click aimed at the toolbar just before the jump hit ChatGPT's).
+ */
 const PLACING_CLASS = 'gv-persistent-export-toolbar--placing';
-const PLACING_TIMEOUT_MS = 800;
+/** Storage or a header that never settles must not keep the only export entry hidden. */
+const PLACING_TIMEOUT_MS = 2500;
 
 type OwnedToolbarRoot = HTMLDivElement & { _gvOwner?: symbol; _gvRevealTimer?: number };
 type ToolbarButton = HTMLButtonElement & { _gvOnClick?: () => void };
@@ -51,15 +56,30 @@ function placeToolbar(
       if (siteId) void writeToolbarSpot(siteId, spot);
     },
   });
-  if (!siteId) return;
   root.classList.add(PLACING_CLASS);
-  const reveal = () => root.classList.remove(PLACING_CLASS);
-  // Storage that never answers must not keep the only export entry hidden.
-  root._gvRevealTimer = window.setTimeout(reveal, PLACING_TIMEOUT_MS);
-  void readToolbarSpot(siteId).then((spot) => {
+  let spotRead = !siteId;
+  let settled = false;
+  const reveal = () => {
     window.clearTimeout(root._gvRevealTimer);
-    if (spot && isToolbarPlaced(root)) placement.restoreSpot(spot);
-    reveal();
+    root.classList.remove(PLACING_CLASS);
+  };
+  const revealWhenPlaced = () => {
+    if (spotRead && settled) reveal();
+  };
+  root._gvRevealTimer = window.setTimeout(reveal, PLACING_TIMEOUT_MS);
+  placement.whenSettled(() => {
+    settled = true;
+    revealWhenPlaced();
+  });
+  if (!siteId) return;
+  void readToolbarSpot(siteId).then((spot) => {
+    // A remembered spot is the user's own: shown there at once, as before.
+    if (spot && isToolbarPlaced(root)) {
+      placement.restoreSpot(spot);
+      settled = true;
+    }
+    spotRead = true;
+    revealWhenPlaced();
   });
 }
 
