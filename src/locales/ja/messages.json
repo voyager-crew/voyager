@@ -4277,5 +4277,21 @@
   },
   "export_read_history_unavailable": {
     "message": "会話の履歴をすべて読み込めませんでした。上にスクロールして以前のメッセージを読み込んでから、もう一度お試しください。"
+  },
+  "update_refresh_title": {
+    "message": "Voyager が更新されました",
+    "description": "Title of the card shown in an open tab after Voyager updates, while the tab still runs the previous version"
+  },
+  "update_refresh_body": {
+    "message": "このタブで新しいバージョンを使うには、ページを再読み込みしてください。それまでは一部の機能が動かないことがあります。",
+    "description": "Body of the post-update refresh card: the tab must reload for the new version to work"
+  },
+  "update_refresh_reload": {
+    "message": "再読み込み",
+    "description": "Button on the post-update refresh card that reloads the page"
+  },
+  "update_refresh_later": {
+    "message": "後で",
+    "description": "Button on the post-update refresh card that closes it without reloading"
   }
 }

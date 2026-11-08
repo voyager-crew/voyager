@@ -4277,5 +4277,21 @@
   },
   "export_read_history_unavailable": {
     "message": "Couldn't read the full conversation history. Scroll up to load earlier messages, then try again."
+  },
+  "update_refresh_title": {
+    "message": "Voyager updated",
+    "description": "Title of the card shown in an open tab after Voyager updates, while the tab still runs the previous version"
+  },
+  "update_refresh_body": {
+    "message": "Refresh this page to use the new version here. Until then, some Voyager features in this tab may not work.",
+    "description": "Body of the post-update refresh card: the tab must reload for the new version to work"
+  },
+  "update_refresh_reload": {
+    "message": "Refresh",
+    "description": "Button on the post-update refresh card that reloads the page"
+  },
+  "update_refresh_later": {
+    "message": "Later",
+    "description": "Button on the post-update refresh card that closes it without reloading"
   }
 }

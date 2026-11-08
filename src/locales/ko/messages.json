@@ -4277,5 +4277,21 @@
   },
   "export_read_history_unavailable": {
     "message": "전체 대화 기록을 읽지 못했습니다. 위로 스크롤해 이전 메시지를 불러온 후 다시 시도하세요."
+  },
+  "update_refresh_title": {
+    "message": "Voyager가 업데이트되었습니다",
+    "description": "Title of the card shown in an open tab after Voyager updates, while the tab still runs the previous version"
+  },
+  "update_refresh_body": {
+    "message": "이 탭에서 새 버전을 쓰려면 페이지를 새로고침하세요. 그전까지는 일부 기능이 작동하지 않을 수 있습니다.",
+    "description": "Body of the post-update refresh card: the tab must reload for the new version to work"
+  },
+  "update_refresh_reload": {
+    "message": "새로고침",
+    "description": "Button on the post-update refresh card that reloads the page"
+  },
+  "update_refresh_later": {
+    "message": "나중에",
+    "description": "Button on the post-update refresh card that closes it without reloading"
   }
 }

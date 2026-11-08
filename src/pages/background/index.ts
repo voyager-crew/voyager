@@ -29,6 +29,7 @@ import { registerBackgroundRuntimeMessages } from './runtimeMessages';
 import { startSafariAppLanguageHandoff } from './safariAppLanguage';
 import { createSiteAccessRegistration } from './siteAccessRegistration';
 import { createStarredMessagesHandler } from './starredMessages';
+import { registerUpdateRefreshPrompt } from './updateRefreshPrompt';
 import { registerWatermarkDefaultMigrationOnInstall } from './watermarkDefaultMigration';
 
 const responseNotifications = createResponseNotifications();
@@ -42,6 +43,7 @@ void notificationEnablement?.reconcile().catch(() => {
 const remoteAnnouncementService = startRemoteAnnouncementBackgroundService();
 registerWelcomePageOnInstall();
 registerWatermarkDefaultMigrationOnInstall();
+registerUpdateRefreshPrompt();
 if (import.meta.env.VOYAGER_DEV_AUTO_RELOAD) startDevAutoReload();
 // Remote plugin catalog: the only network writer. Content scripts and the popup
 // only ever ask; this decides (interval, switch, backoff, single flight).

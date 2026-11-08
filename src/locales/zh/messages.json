@@ -4277,5 +4277,21 @@
   },
   "export_read_history_unavailable": {
     "message": "未能读取完整的对话历史。请向上滚动加载更早的消息后重试。"
+  },
+  "update_refresh_title": {
+    "message": "Voyager 已更新",
+    "description": "Title of the card shown in an open tab after Voyager updates, while the tab still runs the previous version"
+  },
+  "update_refresh_body": {
+    "message": "刷新页面后，新版本才会在这个标签页生效；在此之前，部分功能可能用不了。",
+    "description": "Body of the post-update refresh card: the tab must reload for the new version to work"
+  },
+  "update_refresh_reload": {
+    "message": "刷新",
+    "description": "Button on the post-update refresh card that reloads the page"
+  },
+  "update_refresh_later": {
+    "message": "稍后",
+    "description": "Button on the post-update refresh card that closes it without reloading"
   }
 }
