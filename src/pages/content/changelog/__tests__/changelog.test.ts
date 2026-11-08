@@ -1,17 +1,12 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
 import { readContentStyle } from '@/tests/contentStyle';
 import * as translations from '@/utils/translations';
 
-import {
-  hasUnreadChangelog,
-  openChangelog,
-  resolveChangelogImageUrl,
-  rewriteChangelogImageUrls,
-} from '../index';
+import { openChangelog, resolveChangelogImageUrl, rewriteChangelogImageUrls } from '../index';
 import { createChangelogModal } from '../modal';
 import {
   MAX_GATHERED_NOTES,
@@ -277,39 +272,6 @@ describe('rewriteChangelogImageUrls', () => {
     );
 
     expect(result).toBe(source);
-  });
-});
-
-describe('hasUnreadChangelog', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('returns false on first install (no dismissed version stored)', async () => {
-    (chrome.storage.local.get as ReturnType<typeof vi.fn>).mockResolvedValue({});
-    expect(await hasUnreadChangelog()).toBe(false);
-  });
-
-  it('counts an empty stored version as unread: older popups wrote it on choosing badge mode', async () => {
-    (chrome.storage.local.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-      [StorageKeys.CHANGELOG_DISMISSED_VERSION]: '',
-    });
-    expect(await hasUnreadChangelog()).toBe(true);
-  });
-
-  it('returns true when dismissed version differs from current', async () => {
-    (chrome.storage.local.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-      [StorageKeys.CHANGELOG_DISMISSED_VERSION]: '0.0.1',
-    });
-    expect(await hasUnreadChangelog()).toBe(true);
-  });
-
-  it('returns false when dismissed version matches current', async () => {
-    const { EXTENSION_VERSION } = await import('@/core/utils/version');
-    (chrome.storage.local.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-      [StorageKeys.CHANGELOG_DISMISSED_VERSION]: EXTENSION_VERSION,
-    });
-    expect(await hasUnreadChangelog()).toBe(false);
   });
 });
 

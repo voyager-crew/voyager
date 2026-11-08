@@ -1,8 +1,5 @@
 import { StorageKeys } from '@/core/types/common';
-import {
-  type ChangelogNotifyMode,
-  parseChangelogNotifyMode,
-} from '@/core/utils/changelogNotifyMode';
+import { type ReleaseAnnouncement, releaseAnnouncement } from '@/core/utils/changelogNotifyMode';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 import { getCurrentLanguage } from '@/utils/i18n';
 import type { AppLanguage } from '@/utils/language';
@@ -38,7 +35,7 @@ const NOTED_VERSIONS = [
  * actually read — e.g. when Gemini ships a major UI overhaul that breaks
  * assumptions and a quiet badge would let users miss critical context.
  *
- * Effect: bypasses the notify-mode early-return in startChangelog. The user's
+ * Effect: releaseAnnouncement answers popup whatever the mode. The user's
  * CHANGELOG_NOTIFY_MODE preference is preserved untouched for future releases.
  */
 const FORCE_POPUP_VERSIONS: ReadonlySet<string> = new Set(['1.4.5']);
@@ -141,16 +138,23 @@ export function rewriteChangelogDocUrls(markdown: string, lang: AppLanguage): st
   });
 }
 
-/**
- * Read the current changelog notification mode.
- */
-async function readNotifyMode(): Promise<ChangelogNotifyMode> {
-  try {
-    const result = await chrome.storage.local.get(StorageKeys.CHANGELOG_NOTIFY_MODE);
-    return parseChangelogNotifyMode(result[StorageKeys.CHANGELOG_NOTIFY_MODE]);
-  } catch {
-    return 'popup';
-  }
+/** What this page should do about the running release, and the last release read. */
+async function readAnnouncement(): Promise<{
+  announcement: ReleaseAnnouncement;
+  readVersion: string | undefined;
+}> {
+  const stored = await chrome.storage.local.get([
+    StorageKeys.CHANGELOG_NOTIFY_MODE,
+    StorageKeys.CHANGELOG_DISMISSED_VERSION,
+  ]);
+  const readVersion = stored[StorageKeys.CHANGELOG_DISMISSED_VERSION] as string | undefined;
+  const announcement = releaseAnnouncement({
+    mode: stored[StorageKeys.CHANGELOG_NOTIFY_MODE],
+    readVersion,
+    currentVersion: EXTENSION_VERSION,
+    forcePopup: FORCE_POPUP_VERSIONS.has(EXTENSION_VERSION),
+  });
+  return { announcement, readVersion };
 }
 
 /** A release's note in `lang` (English as the fallback), without front matter; null when none. */
@@ -179,8 +183,8 @@ function gatherNotes(notes: readonly { version: string; body: string }[]): strin
 
 /**
  * Load and render the changelog modal.
+ * Callers decide whether it is due (releaseAnnouncement); this always shows.
  * @param version - Which version's changelog to show (defaults to EXTENSION_VERSION)
- * @param skipDismissCheck - Skip the dismissed-version check
  * @param applyReadGate - Whether the force-popup read-gate countdown should
  *   engage. True for the auto-popup on page load; false for re-opens from
  *   the prompt manager (the user has already seen this once, no need to
@@ -188,29 +192,11 @@ function gatherNotes(notes: readonly { version: string; body: string }[]): strin
  */
 async function showChangelogModal(
   version = EXTENSION_VERSION,
-  skipDismissCheck = false,
   applyReadGate = true,
 ): Promise<HTMLDivElement | null> {
-  // 1. Check dismissed version. It is also the last release whose notes this person read.
+  // 1. The last release whose notes this person read.
   const stored = await chrome.storage.local.get(StorageKeys.CHANGELOG_DISMISSED_VERSION);
   const dismissedVersion = stored[StorageKeys.CHANGELOG_DISMISSED_VERSION] as string | undefined;
-  if (!skipDismissCheck) {
-    if (dismissedVersion === EXTENSION_VERSION) return null;
-    // First install — user has never seen any changelog, so the current
-    // version's notes aren't meaningful.  Silently dismiss and let them
-    // explore the extension first. An empty string is not a first install:
-    // older popups wrote it when badge mode was chosen, to mean "show this release".
-    if (dismissedVersion == null) {
-      try {
-        await chrome.storage.local.set({
-          [StorageKeys.CHANGELOG_DISMISSED_VERSION]: EXTENSION_VERSION,
-        });
-      } catch {
-        // Ignore
-      }
-      return null;
-    }
-  }
 
   // 2. Gather the notes not read yet: updating past a release skipped its popup.
   //    Each in the current language, English as the fallback; a release with
@@ -307,7 +293,7 @@ async function showChangelogModal(
  * only once the person closes it. Rejects when opening threw.
  */
 export async function openChangelog(options: { untilClosed?: boolean } = {}): Promise<boolean> {
-  const overlay = await showChangelogModal(EXTENSION_VERSION, true, false);
+  const overlay = await showChangelogModal(EXTENSION_VERSION, false);
   if (!overlay) {
     try {
       await chrome.storage.local.set({
@@ -330,22 +316,13 @@ export async function openChangelog(options: { untilClosed?: boolean } = {}): Pr
   });
 }
 
-/** Whether the current release has notes this person has not read; never on a first install. */
-export async function hasUnreadChangelog(): Promise<boolean> {
+/** Whether the floating ball should carry NEW for the running release. */
+export async function isChangelogBadgeDue(): Promise<boolean> {
   try {
-    const result = await chrome.storage.local.get(StorageKeys.CHANGELOG_DISMISSED_VERSION);
-    const dismissed = result[StorageKeys.CHANGELOG_DISMISSED_VERSION] as string | undefined;
-    if (dismissed == null) return false;
-    return dismissed !== EXTENSION_VERSION;
+    return (await readAnnouncement()).announcement === 'badge';
   } catch {
     return false;
   }
-}
-
-/** Whether the floating ball should carry NEW: badge mode, and a release not read yet. */
-export async function isChangelogBadgeDue(): Promise<boolean> {
-  const [mode, unread] = await Promise.all([readNotifyMode(), hasUnreadChangelog()]);
-  return mode === 'badge' && unread;
 }
 
 /**
@@ -361,18 +338,21 @@ export async function startChangelog(opts: { onClosed?: () => void } = {}): Prom
   //   __gvChangelog()          — show current version
   //   __gvChangelog('1.2.8')   — show specific version
   (window as unknown as Record<string, unknown>).__gvChangelog = (version?: string) => {
-    showChangelogModal(version ?? EXTENSION_VERSION, true);
+    void showChangelogModal(version ?? EXTENSION_VERSION);
   };
 
   try {
-    // Only popup mode opens the modal on its own: badge mode leaves it to the
-    // floating ball, off mode to the Prompt Manager's version badge.
-    // Exception: force-popup versions ignore this and surface the modal anyway.
-    const notifyMode = await readNotifyMode();
-    const isForcePopup = FORCE_POPUP_VERSIONS.has(EXTENSION_VERSION);
-    if (notifyMode !== 'popup' && !isForcePopup) {
-      return () => {};
+    const { announcement, readVersion } = await readAnnouncement();
+    // A first install records the release as read in every mode, so the next
+    // update announces itself; its own notes mean little to someone new.
+    if (readVersion == null) {
+      await chrome.storage.local.set({
+        [StorageKeys.CHANGELOG_DISMISSED_VERSION]: EXTENSION_VERSION,
+      });
     }
+    // Only a popup opens here: the floating ball carries a badge, and off waits
+    // for the Prompt Manager's version badge.
+    if (announcement !== 'popup') return () => {};
 
     overlayRef = await showChangelogModal();
     // Fire onClosed once the user dismisses the modal (overlay leaves the DOM).

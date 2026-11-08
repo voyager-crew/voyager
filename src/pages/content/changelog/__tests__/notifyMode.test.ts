@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import { EXTENSION_VERSION } from '@/core/utils/version';
 
 import { isChangelogBadgeDue, openChangelog, startChangelog } from '../index';
 
@@ -53,6 +54,19 @@ describe('changelog notify mode', () => {
       );
     },
   );
+
+  it('records a first install as read in badge mode, so the next update shows NEW', async () => {
+    vi.mocked(chrome.storage.local.set).mockClear();
+    vi.mocked(chrome.storage.local.get).mockResolvedValue({
+      [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'badge',
+    } as never);
+    stop = await startChangelog();
+
+    expect(overlay()).toBeNull();
+    expect(chrome.storage.local.set).toHaveBeenCalledWith({
+      [StorageKeys.CHANGELOG_DISMISSED_VERSION]: EXTENSION_VERSION,
+    });
+  });
 
   it('still opens from the version badge in off mode, without the settings hint', async () => {
     storeMode('off');
