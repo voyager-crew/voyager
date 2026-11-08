@@ -1,3 +1,4 @@
+import { logger } from '@/core/services/LoggerService';
 import { CleanupPositions } from '@/core/types/cleanupPositions';
 import { StorageKeys } from '@/core/types/common';
 import { CleanupManager } from '@/core/utils/cleanupManager';
@@ -189,7 +190,7 @@ async function initializeFeatures(): Promise<void> {
       );
 
       if (!aiStudioEnabled) {
-        console.log('[Gemini Voyager] AI Studio features disabled by user');
+        logger.info('AI Studio features disabled by user');
         // Admit while off: PluginHost follows the master live and can remount without a reload.
         startAIStudioSidebarLayout(officialAdmission);
         admitAIStudioFolders(officialAdmission, { masterOn: false, lifetime: pageLifetime.signal });
@@ -236,7 +237,7 @@ function handleVisibilityChange(): void {
     if (initializationTimer !== null) {
       clearTimeout(initializationTimer);
       initializationTimer = null;
-      console.log('[Gemini Voyager] Tab became visible, initializing immediately');
+      logger.debug('Tab became visible, initializing immediately');
     }
     initializeFeatures();
   }

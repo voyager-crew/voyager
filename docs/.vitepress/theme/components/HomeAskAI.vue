@@ -4,7 +4,15 @@ import { computed } from 'vue';
 
 const { lang } = useData();
 
-const i18n: Record<string, any> = {
+interface AskAICopy {
+  title: string;
+  chatgpt: string;
+  perplexity: string;
+  grok: string;
+  query: string;
+}
+
+const i18n: Record<string, AskAICopy> = {
   'zh-CN': {
     title: '去问问 AI，Voyager 到底好在哪？',
     chatgpt: '在 ChatGPT 提问',

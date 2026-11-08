@@ -35,6 +35,7 @@ interface FolderNavigationOptions {
 
 function debug(...args: unknown[]): void {
   try {
+    // oxlint-disable-next-line no-console -- opt-in diagnostics behind gvFolderDebug, shown in production too
     if (localStorage.getItem('gvFolderDebug') === '1') console.log('[FolderManager]', ...args);
   } catch {
     /* Debugging must not affect navigation. */

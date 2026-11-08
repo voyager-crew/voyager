@@ -34,6 +34,7 @@ export function isCurrentTransfer(host: FolderTransferHost, context: TransferCon
 
 export function debugTransfer(...args: unknown[]): void {
   try {
+    // oxlint-disable-next-line no-console -- opt-in diagnostics behind gvFolderDebug, shown in production too
     if (localStorage.getItem('gvFolderDebug') === '1') console.log('[FolderTransfer]', ...args);
   } catch {
     // Debug storage may be unavailable in private browsing.

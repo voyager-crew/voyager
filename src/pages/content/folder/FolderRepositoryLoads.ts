@@ -1,4 +1,5 @@
 import { isUndoneCloudSyncValue } from '@/core/services/CloudSyncUndoMarkers';
+import { logger } from '@/core/services/LoggerService';
 import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContext';
 import { cloneFolderData, validateFolderData } from '@/features/folder/model/folderData';
 
@@ -132,7 +133,7 @@ export abstract class FolderRepositoryLoads extends FolderRepositoryUndo {
         applied = await this.attemptDataRecovery(null, session);
       } else {
         // No data found - likely a first-time user
-        console.log(
+        logger.debug(
           `${this.tag} No folder data found, initializing empty state (likely first-time user)`,
         );
         this.data = { folders: [], folderContents: {} };

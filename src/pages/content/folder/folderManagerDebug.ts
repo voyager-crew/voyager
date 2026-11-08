@@ -12,6 +12,7 @@ function isDebugEnabled(): boolean {
 
 /** Gemini folder manager diagnostics, silent unless `gvFolderDebug` is set. */
 export function folderDebug(...args: unknown[]): void {
+  // oxlint-disable-next-line no-console -- opt-in diagnostics behind gvFolderDebug, shown in production too
   if (isDebugEnabled()) console.log('[FolderManager]', ...args);
 }
 

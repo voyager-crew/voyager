@@ -90,6 +90,7 @@ export class LoggerService implements ILogger {
   }
 
   private getLogFunction(level: LogLevel): (...args: unknown[]) => void {
+    /* oxlint-disable no-console -- the logger is the one sanctioned path to the console */
     switch (level) {
       case LogLevel.DEBUG:
         return console.debug.bind(console);
@@ -102,6 +103,7 @@ export class LoggerService implements ILogger {
       default:
         return console.log.bind(console);
     }
+    /* oxlint-enable no-console */
   }
 
   setLevel(level: LogLevel): void {

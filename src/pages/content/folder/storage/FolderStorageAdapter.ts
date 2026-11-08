@@ -1,3 +1,4 @@
+import { isUndoneCloudSyncValue } from '@/core/services/CloudSyncUndoMarkers';
 /**
  * Folder Storage Adapter
  *
@@ -15,7 +16,7 @@
  * - Dependency Inversion: FolderManager depends on interface, not implementation
  * - Testability: Easy to mock storage in unit tests
  */
-import { isUndoneCloudSyncValue } from '@/core/services/CloudSyncUndoMarkers';
+import { logger } from '@/core/services/LoggerService';
 import { isSafari } from '@/core/utils/browser';
 import { safariStorage } from '@/core/utils/safariStorage';
 import { LegacyFolderWriteRefusedError } from '@/features/folder/owner/legacyFolderFence';
@@ -128,7 +129,7 @@ export class LocalStorageFolderAdapter implements IFolderStorageAdapter {
           // Migrate localStorage data to chrome.storage.local
           const data = JSON.parse(localData) as FolderData;
           await this.write(key, () => chrome.storage.local.set({ [key]: data }));
-          console.log('[LocalStorageFolderAdapter] Migrated folder data to chrome.storage.local');
+          logger.info('[LocalStorageFolderAdapter] Migrated folder data to chrome.storage.local');
         }
       }
     } catch (error) {
@@ -141,7 +142,7 @@ export class LocalStorageFolderAdapter implements IFolderStorageAdapter {
     // First check chrome.storage.local (for synced data from popup/download)
     const chromeResult = await chrome.storage.local.get(key);
     if (chromeResult[key]) {
-      console.log('[LocalStorageFolderAdapter] Loaded data from chrome.storage.local');
+      logger.debug('[LocalStorageFolderAdapter] Loaded data from chrome.storage.local');
       // Also sync to localStorage for consistency. A full localStorage must not fail the read.
       try {
         await this.write(key, () => localStorage.setItem(key, JSON.stringify(chromeResult[key])));
@@ -326,10 +327,10 @@ export class SafariFolderAdapter implements IFolderStorageAdapter {
  */
 export function createFolderStorageAdapter(): IFolderStorageAdapter {
   if (isSafari()) {
-    console.log('[FolderStorage] Using SafariFolderAdapter (browser.storage.local)');
+    logger.debug('[FolderStorage] Using SafariFolderAdapter (browser.storage.local)');
     return new SafariFolderAdapter();
   }
 
-  console.log('[FolderStorage] Using LocalStorageFolderAdapter (localStorage)');
+  logger.debug('[FolderStorage] Using LocalStorageFolderAdapter (localStorage)');
   return new LocalStorageFolderAdapter();
 }

@@ -1,3 +1,5 @@
+import browser from 'webextension-polyfill';
+
 /**
  * Safari-specific storage adapter
  * Uses browser.storage.local for reliable persistence on Safari
@@ -11,7 +13,7 @@
  * - Use browser.storage.local (persistent; quota depends on Safari version and permissions)
  * - Writes fall back to localStorage if the storage API fails; reads reject instead
  */
-import browser from 'webextension-polyfill';
+import { logger } from '@/core/services/LoggerService';
 
 /** Optional authorization immediately around a physical storage call. */
 export type PhysicalStorageWriter = <T>(operation: () => T | Promise<T>) => Promise<T>;
@@ -136,9 +138,9 @@ export class SafariStorage implements SafariStorageAdapter {
       if (!migrated.ok) throw migrated.error;
       await this.setItem(migrationKey, 'true', authorize);
 
-      console.log(
-        `[SafariStorage] Successfully migrated ${key} from localStorage to browser.storage.local`,
-      );
+      logger.info('[SafariStorage] Migrated a key from localStorage to browser.storage.local', {
+        key,
+      });
       return true;
     } catch (error) {
       if (writeRefused) throw error;

@@ -1,7 +1,8 @@
+import { AppError, ErrorCode } from '@/core/errors/AppError';
 /**
  * Service for importing and exporting folder configurations
  */
-import { AppError, ErrorCode } from '@/core/errors/AppError';
+import { logger } from '@/core/services/LoggerService';
 import type { Result } from '@/core/types/common';
 import type { ConversationReference, Folder, FolderData } from '@/core/types/folder';
 import { AsyncLockTimeoutError, LOCK_KEYS, importExportLock } from '@/core/utils/concurrency';
@@ -363,7 +364,7 @@ export class FolderImportExportService {
           migrationsApplied.push(...migrationResult.migrationsApplied);
 
           if (migrationsApplied.length > 0) {
-            console.log('Applied migrations:', migrationsApplied);
+            logger.info('Applied folder import migrations', { migrationsApplied });
           }
         } catch (error) {
           console.warn('Migration failed, using original data:', error);

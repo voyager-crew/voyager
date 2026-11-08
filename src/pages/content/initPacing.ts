@@ -1,3 +1,5 @@
+import { logger } from '@/core/services/LoggerService';
+
 /**
  * How the content script paces its initialization.
  *
@@ -18,15 +20,15 @@ const BACKGROUND_TAB_MAX_DELAY = 8000;
 export function getInitializationDelay(): number {
   if (document.visibilityState === 'visible') {
     // Foreground tab: initialize immediately for good UX
-    console.log('[Gemini Voyager] Foreground tab detected, initializing immediately');
+    logger.debug('Foreground tab detected, initializing immediately');
     return 0;
   }
   // Background tab: add random delay to distribute load across multiple tabs
   const randomRange = BACKGROUND_TAB_MAX_DELAY - BACKGROUND_TAB_MIN_DELAY;
   const randomDelay = BACKGROUND_TAB_MIN_DELAY + Math.random() * randomRange;
-  console.log(
-    `[Gemini Voyager] Background tab detected, delaying initialization by ${Math.round(randomDelay)}ms`,
-  );
+  logger.debug('Background tab detected, delaying initialization', {
+    delayMs: Math.round(randomDelay),
+  });
   return randomDelay;
 }
 

@@ -67,7 +67,7 @@
     {
       // Repository tooling, never bundled into the extension. Printing to the
       // terminal is what these scripts are for.
-      "files": ["scripts/**"],
+      "files": ["scripts/**", "custom-vite-plugins.ts"],
       "rules": { "no-console": "off" }
     }
   ]

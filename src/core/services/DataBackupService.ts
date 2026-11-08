@@ -18,6 +18,7 @@
  */
 import browser from 'webextension-polyfill';
 
+import { logger } from '@/core/services/LoggerService';
 import { isSafari } from '@/core/utils/browser';
 import { requestBudgetCopy } from '@/features/storage/budgetCopyMessage';
 
@@ -311,7 +312,7 @@ export class DataBackupService<T = unknown> {
       const serialized = JSON.stringify(backup);
       if (!(await this.track(this.writeBackup(this.primaryKey, serialized, version)))) return false;
       await this.track(this.updateMetadata('primary', backup.metadata, version, metadataVersion));
-      console.log(`[BackupService:${this.namespace}] Primary backup created`);
+      logger.debug(`[BackupService:${this.namespace}] Primary backup created`);
       return true;
     } catch (error) {
       console.error(`[BackupService:${this.namespace}] Failed to create primary backup:`, error);
@@ -329,7 +330,7 @@ export class DataBackupService<T = unknown> {
       const serialized = JSON.stringify(backup);
       if (!(await this.track(this.writeBackup(this.emergencyKey, serialized, version))))
         return false;
-      console.log(`[BackupService:${this.namespace}] Emergency backup created`);
+      logger.debug(`[BackupService:${this.namespace}] Emergency backup created`);
       return true;
     } catch (error) {
       console.error(`[BackupService:${this.namespace}] Failed to create emergency backup:`, error);
@@ -347,7 +348,7 @@ export class DataBackupService<T = unknown> {
       const serialized = JSON.stringify(backup);
       if (!(await this.track(this.writeBackup(this.beforeUnloadKey, serialized, version, true))))
         return false;
-      console.log(`[BackupService:${this.namespace}] BeforeUnload backup created`);
+      logger.debug(`[BackupService:${this.namespace}] BeforeUnload backup created`);
       return true;
     } catch (error) {
       console.error(
@@ -522,7 +523,7 @@ export class DataBackupService<T = unknown> {
           }),
         );
       }
-      console.log(`[BackupService:${this.namespace}] All backups cleared`);
+      logger.info(`[BackupService:${this.namespace}] All backups cleared`);
     } catch (error) {
       console.error(`[BackupService:${this.namespace}] Failed to clear backups:`, error);
     }

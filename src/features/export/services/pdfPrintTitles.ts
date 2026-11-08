@@ -4,6 +4,7 @@ import {
   readCorroboratedGeminiTitle,
   readGeminiActiveSidebarTitle,
 } from '@/core/gemini/sidebarTitles';
+import { logger } from '@/core/services/LoggerService';
 
 import type { ConversationMetadata } from '../types/export';
 
@@ -39,7 +40,7 @@ function getConversationTitle(): string {
       return activeFolderTitle.textContent.trim();
     }
   } catch (error) {
-    console.debug('[PDF Export] Failed to get title from Folder Manager:', error);
+    logger.debug('[PDF Export] Failed to get title from Folder Manager', { error: String(error) });
   }
 
   // Strategy 1b: Get from Gemini native sidebar via current conversation ID
@@ -50,7 +51,9 @@ function getConversationTitle(): string {
       if (byId) return byId;
     }
   } catch (error) {
-    console.debug('[PDF Export] Failed to get title from native sidebar by id:', error);
+    logger.debug('[PDF Export] Failed to get title from native sidebar by id', {
+      error: String(error),
+    });
   }
 
   // Strategy 2: Try to get from page title
@@ -67,7 +70,7 @@ function getConversationTitle(): string {
     const title = readGeminiActiveSidebarTitle('active', isMeaningfulConversationTitle);
     if (title) return title;
   } catch (error) {
-    console.debug('[PDF Export] Failed to get title from sidebar:', error);
+    logger.debug('[PDF Export] Failed to get title from sidebar', { error: String(error) });
   }
 
   // Strategy 4: URL fallback

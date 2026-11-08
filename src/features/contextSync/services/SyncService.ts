@@ -1,3 +1,5 @@
+import { logger } from '@/core/services/LoggerService';
+
 import { DialogNode, SyncResponse } from '../types';
 
 export class SyncService {
@@ -39,7 +41,7 @@ export class SyncService {
   }
 
   async syncToIDE(data: DialogNode[]): Promise<SyncResponse> {
-    console.log('📡 Syncing to Code Editor server via background...', data);
+    logger.debug('Syncing to the code editor server', { nodes: data.length });
     try {
       const url = await this.getServerUrl();
       return new Promise((resolve, reject) => {

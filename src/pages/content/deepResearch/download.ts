@@ -1,3 +1,5 @@
+import { logger } from '@/core/services/LoggerService';
+
 /**
  * File download module for Deep Research exports
  */
@@ -43,7 +45,7 @@ export function downloadMarkdown(content: string): void {
       URL.revokeObjectURL(url);
     }, 100);
 
-    console.log('[Gemini Voyager] Deep Research thinking content downloaded successfully');
+    logger.info('Deep Research thinking content downloaded');
   } catch (error) {
     console.error('[Gemini Voyager] Error downloading markdown:', error);
   }

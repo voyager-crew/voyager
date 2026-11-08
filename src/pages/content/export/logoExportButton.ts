@@ -1,3 +1,4 @@
+import { logger } from '@/core/services/LoggerService';
 import packaged from '@/features/plugins/catalog/sites/gemini/selector-data/export-entry-packaged.json';
 
 /**
@@ -168,9 +169,7 @@ export function mountLogoExportButton(
         // Update our tracking reference so the next check uses the new element.
         currentBtn = newBtn;
       } catch (e) {
-        try {
-          console.debug('[Gemini Voyager] Export button re-injection failed:', e);
-        } catch {}
+        logger.debug('Export button re-injection failed', { error: String(e) });
       }
     }, REINJECT_DEBOUNCE_MS);
   };
