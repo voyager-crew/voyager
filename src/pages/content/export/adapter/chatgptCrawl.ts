@@ -1,5 +1,6 @@
 import { chatGptTurnHash } from '@/features/savedLibrary/exportStars';
 
+import { type ChatGptHistoryReader, apiTurnMessages, chatGptHistory } from './chatgptHistoryApi';
 import { type ScrollView, createScrollView, findScrollContainer } from './chatgptScrollView';
 import { assertActive, wait } from './chatgptShared';
 import {
@@ -35,7 +36,11 @@ import type { ChatGptReadOptions } from './type';
  *   inside the viewport and hold still, so a window left mounted from an
  *   earlier scroll position is never taken for the current one;
  * - start: older history is loaded until ChatGPT's history spinner is gone,
- *   and the first mounted item starts where the list box starts;
+ *   and the first mounted item starts where the list box starts. When the
+ *   spinner stays and nothing loads (ChatGPT loads older pages only on a
+ *   trusted wheel or touch), the crawl starts at the first loaded item and the
+ *   turns before it come from ChatGPT's conversation endpoint, read along
+ *   that item's own branch;
  * - no gaps: every scroll keeps the last recorded item mounted, so each new
  *   window continues the previous one. A window without it is retried with a
  *   shorter step, then fails;
@@ -71,6 +76,8 @@ export interface ChatGptCrawlOptions extends ChatGptReadOptions {
   readonly timing?: Partial<ChatGptCrawlTiming>;
   /** Called with the number of turns read so far, after each one. */
   readonly onProgress?: (turns: number) => void;
+  /** Reads the turns ChatGPT will not load; the page's shared reader by default. */
+  readonly history?: ChatGptHistoryReader;
 }
 
 /** A tall last item is crossed in steps of this share of the viewport. */
@@ -89,6 +96,12 @@ interface CrawlContext {
   readonly view: ScrollView;
   readonly options: ChatGptCrawlOptions;
   readonly timing: ChatGptCrawlTiming;
+  /**
+   * The first loaded item's key when older history would not load. ChatGPT
+   * keeps blank room for the unloaded turns above it (measured live: ~950px
+   * inside the list box), so the list starts at that item, not at the box.
+   */
+  loadedFrom: string | null;
 }
 
 interface Span {
@@ -122,7 +135,11 @@ function readWindow(context: CrawlContext): MountedWindow {
  * Whether the mounted items cover the part of the list inside the viewport,
  * as a virtual list does once it has rendered for the current position.
  */
-function coversViewport(view: ScrollView, mounted: MountedWindow): boolean {
+function coversViewport(
+  view: ScrollView,
+  mounted: MountedWindow,
+  loadedFrom: string | null,
+): boolean {
   const { spans, extent } = mounted;
   const first = spans[0];
   const last = spans.at(-1);
@@ -130,7 +147,10 @@ function coversViewport(view: ScrollView, mounted: MountedWindow): boolean {
   const viewTop = view.offset();
   const viewBottom = viewTop + view.viewportHeight();
   if (!extent) return spans.some((span) => span.bottom > viewTop && span.top < viewBottom);
-  const top = Math.max(viewTop, extent.top);
+  const startIndex = loadedFrom
+    ? mounted.items.findIndex((item) => readTurnKey(item) === loadedFrom)
+    : -1;
+  const top = Math.max(viewTop, extent.top, startIndex >= 0 ? spans[startIndex]!.top : -Infinity);
   const bottom = Math.min(viewBottom, extent.bottom);
   if (bottom <= top) return false;
   if (first.top > top + COVER_SLACK_PX || last.bottom < bottom - COVER_SLACK_PX) return false;
@@ -146,6 +166,12 @@ function atThreadStart(context: CrawlContext, mounted: MountedWindow): boolean {
   return mounted.extent
     ? Math.abs(mounted.spans[0]!.top - mounted.extent.top) <= EDGE_TOLERANCE_PX
     : context.view.offset() <= 1;
+}
+
+/** The first mounted item is the first one loaded, older history left unloaded above it. */
+function atLoadedStart(context: CrawlContext, mounted: MountedWindow): boolean {
+  const first = mounted.items[0];
+  return !!first && readTurnKey(first) === context.loadedFrom;
 }
 
 /** The last mounted item is the conversation's last. */
@@ -175,7 +201,7 @@ async function settleWindow(context: CrawlContext): Promise<MountedWindow> {
       Math.round(view.range()),
       Math.round(view.offset()),
     ].join('|');
-    if (next !== signature || !coversViewport(view, mounted)) {
+    if (next !== signature || !coversViewport(view, mounted, context.loadedFrom)) {
       signature = next;
       stableSince = Date.now();
     } else if (Date.now() - stableSince >= timing.settleMs) {
@@ -185,8 +211,12 @@ async function settleWindow(context: CrawlContext): Promise<MountedWindow> {
   throw new Error('chatgpt_export_thread_unsettled');
 }
 
-/** Scroll to the top until ChatGPT has no older page left to load. */
-async function loadFullHistory(context: CrawlContext): Promise<void> {
+/**
+ * Scroll to the top until ChatGPT has no older page left to load. Returns
+ * false when its history spinner stays but no page arrives: older turns exist
+ * that the page will not load for a script.
+ */
+async function loadFullHistory(context: CrawlContext): Promise<boolean> {
   const { root, view, timing, options } = context;
   let signature = '';
   let changedAt = Date.now();
@@ -203,8 +233,11 @@ async function loadFullHistory(context: CrawlContext): Promise<void> {
     }
     const pending = hasPendingHistory(root, first);
     const idleFor = Date.now() - changedAt;
-    if (!pending && first && view.offset() <= 1 && idleFor >= timing.historyIdleMs) return;
-    if (idleFor >= timing.historyStallMs) throw new Error('chatgpt_export_history_unavailable');
+    if (!pending && first && view.offset() <= 1 && idleFor >= timing.historyIdleMs) return true;
+    if (idleFor >= timing.historyStallMs) {
+      if (pending && first) return false;
+      throw new Error('chatgpt_export_history_unavailable');
+    }
   }
 }
 
@@ -297,7 +330,10 @@ async function walkThread(context: CrawlContext): Promise<ChatGptThreadMessage[]
     let start = 0;
     const tail = order.at(-1);
     if (tail === undefined) {
-      if (!atThreadStart(context, mounted)) throw new Error('chatgpt_export_thread_incomplete');
+      const started = context.loadedFrom
+        ? atLoadedStart(context, mounted)
+        : atThreadStart(context, mounted);
+      if (!started) throw new Error('chatgpt_export_thread_incomplete');
     } else {
       const tailIndex = keys.indexOf(tail);
       if (tailIndex < 0) {
@@ -338,6 +374,28 @@ async function walkThread(context: CrawlContext): Promise<ChatGptThreadMessage[]
     );
     if (view.offset() <= current) throw new Error('chatgpt_export_thread_incomplete');
   }
+}
+
+/**
+ * Put the turns ChatGPT would not load in front of the crawled ones. They are
+ * the ancestors of the first loaded turn's prompt, so the branch on screen
+ * decides them, not the branch the server last saved.
+ */
+async function prependUnloadedHistory(
+  context: CrawlContext,
+  crawled: ChatGptThreadMessage[],
+): Promise<ChatGptThreadMessage[]> {
+  const { options, loadedFrom } = context;
+  if (!loadedFrom) return crawled;
+  const older = await (options.history ?? chatGptHistory).turnsBefore(
+    options.expectedUrl ?? location.href,
+    loadedFrom,
+    options.signal,
+  );
+  assertActive(options);
+  const messages = [...apiTurnMessages(older), ...crawled];
+  options.onProgress?.(new Set(messages.map((message) => message.turnKey)).size);
+  return messages;
 }
 
 interface ScrollRestore {
@@ -389,12 +447,18 @@ export async function crawlChatGptThread(
     view: createScrollView(findScrollContainer(first)),
     options,
     timing,
+    loadedFrom: null,
   };
   const position = captureReaderPosition(context);
   let messages: ChatGptThreadMessage[];
   try {
-    await loadFullHistory(context);
+    if (!(await loadFullHistory(context))) {
+      const firstLoaded = mountedTurnItems(root)[0];
+      if (!firstLoaded) throw new Error('chatgpt_export_history_unavailable');
+      context.loadedFrom = readTurnKey(firstLoaded);
+    }
     messages = await walkThread(context);
+    if (context.loadedFrom) messages = await prependUnloadedHistory(context, messages);
   } finally {
     await position.restore();
   }

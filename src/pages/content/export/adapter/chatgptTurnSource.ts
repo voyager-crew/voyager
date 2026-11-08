@@ -143,9 +143,10 @@ export function createChatGptTurnSource(adapter: ExportPlatformAdapter) {
                   }
                 } else {
                   stay.send({ type: 'fail' });
-                  logger.warn('ChatGPT export could not read the whole conversation', {
-                    error: String(error),
-                  });
+                  // The code goes in the text: consoles fold a data object to `Object`.
+                  logger.warn(
+                    `ChatGPT export could not read the whole conversation: ${String(error)}`,
+                  );
                   resolve();
                 }
               },

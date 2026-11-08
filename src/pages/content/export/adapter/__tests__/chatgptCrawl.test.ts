@@ -8,6 +8,8 @@ import type { ExportContentDialect } from '@/features/export/services/exportCont
 import { normalizeText } from '@/features/export/services/exportDomPolicy';
 
 import { type ChatGptCrawlTiming, crawlChatGptThread } from '../chatgptCrawl';
+import { ChatGptHistoryReader } from '../chatgptHistoryApi';
+import { conversationTree, stubConversationEndpoint } from './chatgptConversationTree';
 import { type FixtureTurn, makeTurns, mountThreadFixture } from './chatgptThreadFixture';
 
 let extractor: ContentExtractor;
@@ -43,6 +45,8 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+  history.replaceState(null, '', '/');
 });
 
 function ids(turns: readonly FixtureTurn[]): string[] {
@@ -145,12 +149,46 @@ describe('crawlChatGptThread', () => {
     expect(messages.map((message) => message.id)).not.toContain('turn-03:a');
   });
 
-  it('fails instead of starting mid-thread when older history never finishes loading', async () => {
-    mountThreadFixture({ turns: makeTurns(8), initiallyLoaded: 3, historyDelayMs: Infinity });
+  it('reads the turns ChatGPT will not load from its conversation endpoint', async () => {
+    history.replaceState(null, '', '/c/conv-1');
+    const turns = makeTurns(8);
+    const fixture = mountThreadFixture({
+      turns,
+      initiallyLoaded: 3,
+      historyDelayMs: Infinity,
+      unloadedRoom: 950,
+    });
+    const fetchMock = stubConversationEndpoint(conversationTree(turns));
 
-    await expect(crawlChatGptThread({ extractor, timing: FAST })).rejects.toThrow(
-      'chatgpt_export_history_unavailable',
+    const messages = await crawlChatGptThread({
+      extractor,
+      timing: FAST,
+      history: new ChatGptHistoryReader(),
+    });
+
+    expect(fixture.loadedCount()).toBe(3);
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/backend-api/conversation/conv-1',
+      expect.objectContaining({ headers: { Authorization: 'Bearer token' } }),
     );
+    expect(messages.map((message) => message.id)).toEqual(ids(turns));
+    expect(messages.map((message) => message.content.text)).toEqual(
+      turns.flatMap((turn) => [turn.user, turn.assistant]),
+    );
+    // Older turns carry the ids the page lists, so mounting one later is no branch change.
+    expect(messages[0]?.fingerprint).toBe('ids:turn-01 turn-01-a');
+    expect(messages[0]?.fingerprint).toBe(messages[1]?.fingerprint);
+  });
+
+  it('fails when older history neither loads nor can be read from the endpoint', async () => {
+    history.replaceState(null, '', '/c/conv-1');
+    const turns = makeTurns(8);
+    mountThreadFixture({ turns, initiallyLoaded: 3, historyDelayMs: Infinity });
+    stubConversationEndpoint(conversationTree(turns), 401);
+
+    await expect(
+      crawlChatGptThread({ extractor, timing: FAST, history: new ChatGptHistoryReader() }),
+    ).rejects.toThrow('chatgpt_export_history_fetch:401');
   });
 
   it('steps back when a scroll overshoots past every recorded turn', async () => {
@@ -256,8 +294,11 @@ describe('crawlChatGptThread', () => {
     });
     fixture.setOffset(1700);
     const fromEnd = fixture.range() - fixture.offset();
+    stubConversationEndpoint({}, 500);
 
-    await expect(crawlChatGptThread({ extractor, timing: FAST })).rejects.toThrow();
+    await expect(
+      crawlChatGptThread({ extractor, timing: FAST, history: new ChatGptHistoryReader() }),
+    ).rejects.toThrow();
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     expect(fromEnd).toBeGreaterThan(0);

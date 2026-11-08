@@ -39,6 +39,11 @@ export interface ThreadFixtureOptions {
   readonly scrollOvershoot?: number;
   /** How many writes overshoot; every one by default. */
   readonly overshootWrites?: number;
+  /**
+   * Blank room ChatGPT keeps at the top of the list box for turns not yet
+   * loaded (measured live: ~950px), while older history remains.
+   */
+  readonly unloadedRoom?: number;
   /** A cached, `display: none` page placed before the visible one. */
   readonly cachedPageTurns?: readonly FixtureTurn[];
 }
@@ -150,11 +155,12 @@ export function mountThreadFixture(options: ThreadFixtureOptions): ThreadFixture
   document.body.appendChild(page);
 
   const loaded = () => all.slice(loadedFrom);
-  const contentHeight = () => loaded().reduce((sum, turn) => sum + turn.height, 0);
+  const room = () => (loadedFrom > 0 ? (options.unloadedRoom ?? 0) : 0);
+  const contentHeight = () => loaded().reduce((sum, turn) => sum + turn.height, room());
   const range = () => Math.max(0, contentHeight() - viewport);
   const offset = () => scrollTop + range();
   const topOf = (key: string) => {
-    let top = 0;
+    let top = room();
     for (const turn of loaded()) {
       if (turn.key === key) return top;
       top += turn.height;
@@ -167,7 +173,7 @@ export function mountThreadFixture(options: ThreadFixtureOptions): ThreadFixture
     else if (!spinner.isConnected) target.insertBefore(spinner, outer);
     const view = offset();
     const visible = new Set<string>();
-    let top = 0;
+    let top = room();
     for (const turn of loaded()) {
       const bottom = top + turn.height;
       if (bottom > view - overscan && top < view + viewport + overscan) visible.add(turn.key);
