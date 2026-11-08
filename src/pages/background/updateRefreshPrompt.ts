@@ -4,30 +4,39 @@ import { getTranslation } from './allTranslations';
 import { type RefreshPromptText, showRefreshPromptCard } from './refreshPromptCard';
 
 /**
- * After an update, ask the tabs still running the previous Voyager to refresh.
+ * After an update, bring the tabs still running the previous Voyager onto the new one.
  *
  * Chrome does not put the new content script into tabs that were already open:
  * their old script is cut off from the extension, so Voyager quietly stops
  * working there until the page reloads. The background asks each tab on a
  * Voyager site whether a live script answers (`gv.content.ping`, answered in
- * `src/pages/content/index.tsx`); a tab that stays silent gets a small card
- * offering to refresh. Nothing reloads until the person clicks.
+ * `src/pages/content/index.tsx`). A tab that stays silent gets the new script
+ * injected; the old copy steps aside for it (`contentScriptHandoff.ts`). Only a
+ * tab where that fails gets a small card offering to refresh, and nothing
+ * reloads until the person clicks.
  */
 
 /** Gives the plugin and custom-site sync, which re-inject some open tabs, time to land first. */
 const SETTLE_MS = 4000;
+/** Time the injected script gets to start answering pings before the card is offered instead. */
+const BOOT_MS = 1500;
 
 export interface RefreshPromptDeps {
   /** URL patterns of every page Voyager's content script runs on. */
   readonly voyagerMatches: () => Promise<string[]>;
   readonly queryTabs: (urls: string[]) => Promise<chrome.tabs.Tab[]>;
   readonly isLive: (tabId: number) => Promise<boolean>;
+  /** Inject the current content script and its styles into the tab's top frame. */
+  readonly reinject: (tabId: number) => Promise<void>;
   readonly showCard: (tabId: number, text: RefreshPromptText) => Promise<void>;
   readonly text: () => Promise<RefreshPromptText>;
   readonly wait: (ms: number) => Promise<void>;
 }
 
-/** Offer a refresh in every open Voyager tab whose script predates this update. */
+/**
+ * Re-inject Voyager into every open tab whose script predates this update, and
+ * offer a refresh where that does not take. Returns how many cards were shown.
+ */
 export async function promptStaleTabsToRefresh(deps: RefreshPromptDeps): Promise<number> {
   await deps.wait(SETTLE_MS);
   const matches = await deps.voyagerMatches();
@@ -44,6 +53,7 @@ export async function promptStaleTabsToRefresh(deps: RefreshPromptDeps): Promise
     // A discarded tab reloads with the new script when it is next opened.
     if (typeof tab.id !== 'number' || tab.discarded) continue;
     if (await deps.isLive(tab.id)) continue;
+    if (await reinjected(deps, tab.id)) continue;
     text ??= await deps.text();
     try {
       await deps.showCard(tab.id, text);
@@ -53,6 +63,16 @@ export async function promptStaleTabsToRefresh(deps: RefreshPromptDeps): Promise
     }
   }
   return shown;
+}
+
+async function reinjected(deps: RefreshPromptDeps, tabId: number): Promise<boolean> {
+  try {
+    await deps.reinject(tabId);
+  } catch {
+    return false;
+  }
+  await deps.wait(BOOT_MS);
+  return deps.isLive(tabId);
 }
 
 /** The main content script's own patterns, from the manifest and the plugin and custom-site registrations. */
@@ -103,6 +123,12 @@ export function registerUpdateRefreshPrompt(): void {
       voyagerMatches,
       queryTabs: (urls) => chrome.tabs.query({ url: urls }),
       isLive,
+      reinject: async (tabId) => {
+        const main = chrome.runtime.getManifest().content_scripts?.[0];
+        const target = { tabId, frameIds: [0] };
+        if (main?.css?.length) await chrome.scripting.insertCSS({ target, files: main.css });
+        if (main?.js?.length) await chrome.scripting.executeScript({ target, files: main.js });
+      },
       showCard: async (tabId, text) => {
         await chrome.scripting.executeScript({
           target: { tabId },

@@ -22,6 +22,9 @@ function deps(overrides: Partial<RefreshPromptDeps> = {}) {
       { id: 3, discarded: true } as chrome.tabs.Tab,
     ],
     isLive: async (tabId) => tabId === 2,
+    reinject: async () => {
+      throw new Error('Cannot access contents of the page');
+    },
     showCard,
     text: async () => TEXT,
     wait: async () => {},
@@ -31,6 +34,26 @@ function deps(overrides: Partial<RefreshPromptDeps> = {}) {
 }
 
 describe('promptStaleTabsToRefresh', () => {
+  it('brings a stale tab onto the new script without a card when the injection takes', async () => {
+    const live = new Set([2]);
+    const reinject = vi.fn(async (tabId: number) => {
+      live.add(tabId);
+    });
+    const { all, showCard } = deps({ isLive: async (tabId) => live.has(tabId), reinject });
+
+    await expect(promptStaleTabsToRefresh(all)).resolves.toBe(0);
+
+    expect(reinject).toHaveBeenCalledExactlyOnceWith(1);
+    expect(showCard).not.toHaveBeenCalled();
+  });
+
+  it('offers a refresh where the injected script never answers', async () => {
+    const { all, showCard } = deps({ reinject: async () => {} });
+
+    await expect(promptStaleTabsToRefresh(all)).resolves.toBe(1);
+    expect(showCard).toHaveBeenCalledExactlyOnceWith(1, TEXT);
+  });
+
   it('offers a refresh only in open tabs whose script no longer answers', async () => {
     const { all, showCard } = deps();
 
