@@ -162,7 +162,7 @@ Implementation: `src/features/plugins/local/` and `src/features/plugins/local/RE
 
 ## Verification and completion
 
-Use the selected path's validators and focused tests during implementation. Before a code PR, run `bun run verify:pr` on the final tree per `AGENTS.md`; reuse covered results for unchanged inputs. Run `catalog:build` for catalog/contract changes and inspect its generated diff. Keep the evidence tied to the final changed files; later relevant edits invalidate it.
+Use the selected path's validators and focused tests during implementation. Before a code PR, run the final-tree checks in `AGENTS.md`; reuse covered results for unchanged inputs. Run `catalog:build` for catalog/contract changes and inspect its generated diff. Keep the evidence tied to the final changed files; later relevant edits invalidate it.
 
 The PR needs:
 

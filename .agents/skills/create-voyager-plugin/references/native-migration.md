@@ -28,4 +28,4 @@ Edit input width (`voyager.gemini-edit-input-width`) is the reference migration:
 
 ## Checks
 
-`bun run test:changed`, `typecheck`, `lint:check`, `i18n:check`, `plugin:check`, `filesize:check`, and `skills:build` with no diff; then the live-browser check from `verify-in-browser`, and `verify:pr` under the lock on the final tree.
+`bun run test:changed`, `typecheck`, `lint:check`, `i18n:check`, `plugin:check`, `filesize:check`, and `skills:build` with no diff; then the live-browser check from `verify-in-browser`.
