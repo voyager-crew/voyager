@@ -2309,13 +2309,29 @@
     "message": "評分",
     "description": "Edge Add-ons store rating CTA button text"
   },
-  "changelog_badge_mode": {
-    "message": "使用 NEW 標記提醒更新",
-    "description": "Changelog notification mode toggle label"
+  "changelog_notify_mode": {
+    "message": "更新提醒方式",
+    "description": "Popup General Options: label of the choice of how a new release is announced"
   },
-  "changelog_badge_mode_hint": {
-    "message": "新版本發布時，只在懸浮按鈕上顯示 NEW 標記，不自動開啟更新日誌。",
-    "description": "Changelog notification mode toggle hint"
+  "changelog_notify_mode_hint": {
+    "message": "新版本發布時怎麼通知你。點提示詞管理器裡的版本號，隨時都能開啟更新日誌。",
+    "description": "Popup General Options: hint under the update-announcement choice"
+  },
+  "changelog_notify_mode_popup": {
+    "message": "彈出日誌",
+    "description": "Update-announcement choice: open the changelog automatically (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_badge": {
+    "message": "NEW 標記",
+    "description": "Update-announcement choice: show a NEW mark on the floating ball (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_off": {
+    "message": "不提醒",
+    "description": "Update-announcement choice: no reminder at all (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_footer_hint": {
+    "message": "不想自動彈出？可以在 Voyager 設定 → 一般選項裡改成 NEW 標記或不提醒。",
+    "description": "Muted one-line footnote in an auto-opened changelog, naming the popup section where the announcement mode is changed"
   },
   "forkConversation": {
     "message": "Fork",

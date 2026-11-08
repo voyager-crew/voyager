@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { StorageKeys } from '@/core/types/common';
+import {
+  type ChangelogNotifyMode,
+  parseChangelogNotifyMode,
+} from '@/core/utils/changelogNotifyMode';
 import { requestNotificationEnablement } from '@/core/utils/notificationEnablement';
 import {
   ensureNotificationsPermission,
@@ -17,7 +21,7 @@ export const GENERAL_SETTINGS_STORAGE_DEFAULTS = {
   [StorageKeys.REMOTE_ANNOUNCEMENTS_ENABLED]: true,
 };
 
-type PlainGeneralSettings = Omit<GeneralSettingsValues, 'changelogBadgeMode'>;
+type PlainGeneralSettings = Omit<GeneralSettingsValues, 'changelogNotifyMode'>;
 
 const PLAIN_SETTING_STORAGE_KEYS = {
   persistentExportToolbarEnabled: StorageKeys.PERSISTENT_EXPORT_TOOLBAR_ENABLED,
@@ -58,7 +62,7 @@ export function useGeneralPopupSettings({
     persistentExportToolbarEnabled: true,
     remoteAnnouncementEnabled: true,
   });
-  const [changelogBadgeMode, setChangelogBadgeMode] = useState(false);
+  const [changelogNotifyMode, setChangelogNotifyMode] = useState<ChangelogNotifyMode>('popup');
   const [responseCompleteNotificationEnabled, setResponseCompleteNotificationEnabled] =
     useState(false);
   const [remoteAnnouncementPermissionGranted, setRemoteAnnouncementPermissionGranted] =
@@ -113,7 +117,7 @@ export function useGeneralPopupSettings({
   useEffect(() => {
     try {
       chrome.storage?.local?.get(StorageKeys.CHANGELOG_NOTIFY_MODE, (res) => {
-        setChangelogBadgeMode(res?.[StorageKeys.CHANGELOG_NOTIFY_MODE] === 'badge');
+        setChangelogNotifyMode(parseChangelogNotifyMode(res?.[StorageKeys.CHANGELOG_NOTIFY_MODE]));
       });
     } catch {
       // Ignore storage errors (e.g. invalidated extension context).
@@ -154,14 +158,12 @@ export function useGeneralPopupSettings({
     setResponseCompleteNotificationEnabled(storedResponseNotification);
   }, [storedResponseNotification, isSafariBrowser]);
 
-  const handleChangelogBadgeModeChange = useCallback((checked: boolean): void => {
-    setChangelogBadgeMode(checked);
+  const handleChangelogNotifyModeChange = useCallback((mode: ChangelogNotifyMode): void => {
+    setChangelogNotifyMode(mode);
     try {
-      const updates: Record<string, string> = {
-        [StorageKeys.CHANGELOG_NOTIFY_MODE]: checked ? 'badge' : 'popup',
-      };
+      const updates: Record<string, string> = { [StorageKeys.CHANGELOG_NOTIFY_MODE]: mode };
       // Allow the current release's NEW badge to appear when badge mode is enabled.
-      if (checked) updates[StorageKeys.CHANGELOG_DISMISSED_VERSION] = '';
+      if (mode === 'badge') updates[StorageKeys.CHANGELOG_DISMISSED_VERSION] = '';
       chrome.storage?.local?.set(updates);
     } catch {
       // Ignore storage errors.
@@ -224,8 +226,8 @@ export function useGeneralPopupSettings({
 
   const onChange = useCallback(
     (patch: Partial<GeneralSettingsValues>): void => {
-      const { changelogBadgeMode: badgeMode, ...rest } = patch;
-      if (badgeMode !== undefined) handleChangelogBadgeModeChange(badgeMode);
+      const { changelogNotifyMode: notifyMode, ...rest } = patch;
+      if (notifyMode !== undefined) handleChangelogNotifyModeChange(notifyMode);
       if (Object.keys(rest).length === 0) return;
 
       const nextSettings: Partial<PlainGeneralSettings> = {};
@@ -241,7 +243,7 @@ export function useGeneralPopupSettings({
       setPlainSettings((current) => ({ ...current, ...nextSettings }));
       void writeSyncStorage(payload);
     },
-    [handleChangelogBadgeModeChange, writeSyncStorage],
+    [handleChangelogNotifyModeChange, writeSyncStorage],
   );
 
   const setResponseNotificationEnabled = useCallback(
@@ -257,7 +259,7 @@ export function useGeneralPopupSettings({
   );
 
   return {
-    values: { ...plainSettings, changelogBadgeMode },
+    values: { ...plainSettings, changelogNotifyMode },
     onChange,
     hydrateFromStorage,
     responseNotification,

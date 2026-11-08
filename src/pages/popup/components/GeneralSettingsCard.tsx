@@ -1,17 +1,29 @@
 import React from 'react';
 
+import type { ChangelogNotifyMode } from '@/core/utils/changelogNotifyMode';
 import type { TranslationKey } from '@/utils/translations';
 
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardTitle } from '../../../components/ui/card';
+import { SegmentedControl } from '../../../components/ui/segmented-control';
 import { SettingToggleRow } from './SettingToggleRow';
 
-/** Every general toggle the card edits; the popup owns the state and persistence. */
+/** Every general setting the card edits; the popup owns the state and persistence. */
 export interface GeneralSettingsValues {
   persistentExportToolbarEnabled: boolean;
   remoteAnnouncementEnabled: boolean;
-  changelogBadgeMode: boolean;
+  changelogNotifyMode: ChangelogNotifyMode;
 }
+
+type GeneralToggleKey = {
+  [K in keyof GeneralSettingsValues]: GeneralSettingsValues[K] extends boolean ? K : never;
+}[keyof GeneralSettingsValues];
+
+const CHANGELOG_NOTIFY_OPTIONS = [
+  { value: 'popup', label: 'changelog_notify_mode_popup' },
+  { value: 'badge', label: 'changelog_notify_mode_badge' },
+  { value: 'off', label: 'changelog_notify_mode_off' },
+] as const satisfies readonly { value: ChangelogNotifyMode; label: TranslationKey }[];
 
 export interface GeneralSettingsCardProps {
   values: GeneralSettingsValues;
@@ -34,7 +46,7 @@ export function GeneralSettingsCard({
   const row = (
     id: string,
     settingId: string,
-    key: keyof GeneralSettingsValues,
+    key: GeneralToggleKey,
     label: TranslationKey,
     hint: TranslationKey,
     options: { disabled?: boolean; extra?: React.ReactNode; experimental?: boolean } = {},
@@ -98,12 +110,23 @@ export function GeneralSettingsCard({
             ) : null,
           },
         )}
-        {row(
-          'changelog-notify-badge',
-          'changelogBadgeMode',
-          'changelogBadgeMode',
-          'changelog_badge_mode',
-          'changelog_badge_mode_hint',
+        {isVisible('changelogNotifyMode') && (
+          <div>
+            <p id="changelog-notify-mode-label" className="text-sm leading-5 font-medium">
+              {t('changelog_notify_mode')}
+            </p>
+            <p className="text-muted-foreground mt-1 text-xs">{t('changelog_notify_mode_hint')}</p>
+            <SegmentedControl
+              aria-labelledby="changelog-notify-mode-label"
+              className="mt-2"
+              options={CHANGELOG_NOTIFY_OPTIONS.map((option) => ({
+                value: option.value,
+                label: t(option.label),
+              }))}
+              value={values.changelogNotifyMode}
+              onChange={(changelogNotifyMode) => onChange({ changelogNotifyMode })}
+            />
+          </div>
         )}
       </CardContent>
     </Card>

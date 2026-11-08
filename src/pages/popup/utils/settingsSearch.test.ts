@@ -93,18 +93,18 @@ describe('settings search', () => {
     expect(matches.has('promptManager:slashPromptEnabled')).toBe(true);
   });
 
-  it('finds the changelog badge preference through update wording', async () => {
+  it('finds the changelog announcement preference through update wording', async () => {
     const matches = await getSettingsSearchMatches(
       [
         {
-          id: 'general:changelogBadgeMode',
-          keys: ['changelog_badge_mode', 'changelog_badge_mode_hint'],
+          id: 'general:changelogNotifyMode',
+          keys: ['changelog_notify_mode', 'changelog_notify_mode_hint'],
         },
       ],
       '更新日志',
     );
 
-    expect(matches.has('general:changelogBadgeMode')).toBe(true);
+    expect(matches.has('general:changelogNotifyMode')).toBe(true);
   });
 
   it('does not match unrelated words', async () => {

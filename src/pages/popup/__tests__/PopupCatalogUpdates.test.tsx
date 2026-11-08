@@ -87,7 +87,7 @@ describe('native popup catalog updates', () => {
         );
       });
 
-      expect(container.querySelector('#changelog-notify-badge')).not.toBeNull();
+      expect(container.querySelector('#changelog-notify-mode-label')).not.toBeNull();
       const controls = container.querySelectorAll<HTMLInputElement>(
         `input[aria-label="${en.pluginsOnlineUpdates}"]`,
       );

@@ -108,7 +108,7 @@ describe('useGeneralPopupSettings', () => {
     expect(settings.values).toEqual({
       persistentExportToolbarEnabled: true,
       remoteAnnouncementEnabled: true,
-      changelogBadgeMode: false,
+      changelogNotifyMode: 'popup',
     });
     expect(settings.responseNotification.enabled).toBe(false);
     expect(chrome.storage.sync.get).not.toHaveBeenCalled();
@@ -128,7 +128,7 @@ describe('useGeneralPopupSettings', () => {
     expect(settings.values).toEqual({
       persistentExportToolbarEnabled: false,
       remoteAnnouncementEnabled: false,
-      changelogBadgeMode: false,
+      changelogNotifyMode: 'popup',
     });
     act(() => settings.hydrateFromStorage({}));
     expect(settings.values.persistentExportToolbarEnabled).toBe(true);
@@ -153,7 +153,7 @@ describe('useGeneralPopupSettings', () => {
     expect(chrome.storage.local.set).not.toHaveBeenCalled();
   });
 
-  it('reads badge mode from local and clears the dismissed version only when enabling it', async () => {
+  it('reads the notify mode from local and clears the dismissed version only when choosing badge', async () => {
     vi.mocked(chrome.storage.local.get).mockImplementation((...args: unknown[]) => {
       const result = { [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'badge' };
       const callback = args[1];
@@ -161,17 +161,21 @@ describe('useGeneralPopupSettings', () => {
       return Promise.resolve(result);
     });
     await render();
-    expect(settings.values.changelogBadgeMode).toBe(true);
+    expect(settings.values.changelogNotifyMode).toBe('badge');
     act(() => settings.hydrateFromStorage({ [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'popup' }));
-    expect(settings.values.changelogBadgeMode).toBe(true);
+    expect(settings.values.changelogNotifyMode).toBe('badge');
 
-    act(() => settings.onChange({ changelogBadgeMode: false }));
-    expect(settings.values.changelogBadgeMode).toBe(false);
+    act(() => settings.onChange({ changelogNotifyMode: 'off' }));
+    expect(settings.values.changelogNotifyMode).toBe('off');
+    expect(chrome.storage.local.set).toHaveBeenLastCalledWith({
+      [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'off',
+    });
+    act(() => settings.onChange({ changelogNotifyMode: 'popup' }));
     expect(chrome.storage.local.set).toHaveBeenLastCalledWith({
       [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'popup',
     });
-    act(() => settings.onChange({ changelogBadgeMode: true }));
-    expect(settings.values.changelogBadgeMode).toBe(true);
+    act(() => settings.onChange({ changelogNotifyMode: 'badge' }));
+    expect(settings.values.changelogNotifyMode).toBe('badge');
     expect(chrome.storage.local.set).toHaveBeenLastCalledWith({
       [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'badge',
       [StorageKeys.CHANGELOG_DISMISSED_VERSION]: '',

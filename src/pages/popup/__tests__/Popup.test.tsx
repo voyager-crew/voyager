@@ -23,36 +23,46 @@ import {
 } from './popupHarness';
 
 describe('Popup settings integration', () => {
-  it('hydrates the badge inside General Options and toggles only local preferences', async () => {
+  it('hydrates the notify mode inside General Options and changes only local preferences', async () => {
     await mount();
     const generalHeading = Array.from(container.querySelectorAll('h3')).find(
       (heading) => heading.textContent === en.generalOptions,
     );
     expect(generalHeading).toBeDefined();
     const generalCard = generalHeading!.parentElement!;
-    const badge = generalCard.querySelector<HTMLInputElement>('#changelog-notify-badge');
-    expect(badge).not.toBeNull();
-    expect(container.querySelectorAll('#changelog-notify-badge')).toHaveLength(1);
-    expect(badge!.checked).toBe(true);
-    expect(badge!.disabled).toBe(false);
-    expect(generalCard.textContent).toContain(en.changelog_badge_mode_hint);
+    const choice = (label: string) =>
+      Array.from(generalCard.querySelectorAll<HTMLButtonElement>('[role="radio"]')).find(
+        (radio) => radio.textContent === label,
+      )!;
+    const popup = choice(en.changelog_notify_mode_popup);
+    const badge = choice(en.changelog_notify_mode_badge);
+    const off = choice(en.changelog_notify_mode_off);
+    expect(container.querySelectorAll('#changelog-notify-mode-label')).toHaveLength(1);
+    expect(badge.getAttribute('aria-checked')).toBe('true');
+    expect(badge.disabled).toBe(false);
+    expect(generalCard.textContent).toContain(en.changelog_notify_mode_hint);
 
     extensionApi.storage.local.set.mockClear();
     extensionApi.storage.sync.set.mockClear();
-    await act(async () => badge!.click());
-    expect(badge!.checked).toBe(false);
+    await act(async () => off.click());
+    expect(off.getAttribute('aria-checked')).toBe('true');
     expect(extensionApi.storage.local.set).toHaveBeenLastCalledWith({
-      [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'popup',
+      [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'off',
     });
     expect(local[StorageKeys.CHANGELOG_DISMISSED_VERSION]).toBe('1.8.2');
 
-    await act(async () => badge!.click());
-    expect(badge!.checked).toBe(true);
+    await act(async () => popup.click());
+    expect(extensionApi.storage.local.set).toHaveBeenLastCalledWith({
+      [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'popup',
+    });
+
+    await act(async () => badge.click());
+    expect(badge.getAttribute('aria-checked')).toBe('true');
     expect(extensionApi.storage.local.set).toHaveBeenLastCalledWith({
       [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'badge',
       [StorageKeys.CHANGELOG_DISMISSED_VERSION]: '',
     });
-    expect(extensionApi.storage.local.set).toHaveBeenCalledTimes(2);
+    expect(extensionApi.storage.local.set).toHaveBeenCalledTimes(3);
     expect(extensionApi.storage.sync.set).not.toHaveBeenCalled();
     expect(
       extensionApi.storage.local.get.mock.calls.filter(
@@ -124,7 +134,7 @@ describe('Popup settings integration', () => {
     expect(container.querySelector('#hide-container')).toBeNull();
     expect(container.querySelector(pluginRow(OFFICIAL_PLUGIN_IDS.geminiVimInput))).toBeNull();
     expect(container.querySelector(MERMAID_SWITCH)).toBeNull();
-    expect(container.querySelector('#changelog-notify-badge')).not.toBeNull();
+    expect(container.querySelector('#changelog-notify-mode-label')).not.toBeNull();
     const isolation = container.querySelector<HTMLInputElement>('#account-isolation-enabled')!;
     expect(isolation.checked).toBe(true);
     await act(async () => isolation.click());

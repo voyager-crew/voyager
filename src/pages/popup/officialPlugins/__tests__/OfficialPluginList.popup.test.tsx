@@ -393,7 +393,7 @@ describe('the official plugin list in the popup', () => {
         ],
       ]);
       expect(toggle(OFFICIAL_PLUGIN_IDS.aistudioEnterSend).checked).toBe(expected);
-      expect(container.querySelector('#changelog-notify-badge')).not.toBeNull();
+      expect(container.querySelector('#changelog-notify-mode-label')).not.toBeNull();
     },
   );
 

@@ -2309,13 +2309,29 @@
     "message": "評価する",
     "description": "Edge Add-ons store rating CTA button text"
   },
-  "changelog_badge_mode": {
-    "message": "NEWバッジで更新を通知",
-    "description": "Changelog notification mode toggle label"
+  "changelog_notify_mode": {
+    "message": "更新のお知らせ",
+    "description": "Popup General Options: label of the choice of how a new release is announced"
   },
-  "changelog_badge_mode_hint": {
-    "message": "新しいバージョンが公開されたとき、変更履歴を自動で開かず、フローティングボタンにNEWバッジを表示します。",
-    "description": "Changelog notification mode toggle hint"
+  "changelog_notify_mode_hint": {
+    "message": "新しいバージョンの知らせ方です。プロンプトマネージャーのバージョン番号をクリックすれば、いつでも変更履歴を開けます。",
+    "description": "Popup General Options: hint under the update-announcement choice"
+  },
+  "changelog_notify_mode_popup": {
+    "message": "ポップアップ",
+    "description": "Update-announcement choice: open the changelog automatically (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_badge": {
+    "message": "NEWマーク",
+    "description": "Update-announcement choice: show a NEW mark on the floating ball (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_off": {
+    "message": "通知しない",
+    "description": "Update-announcement choice: no reminder at all (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_footer_hint": {
+    "message": "自動で開かないようにするには、Voyager の設定 → 一般オプションで「NEWマーク」か「通知しない」に切り替えてください。",
+    "description": "Muted one-line footnote in an auto-opened changelog, naming the popup section where the announcement mode is changed"
   },
   "forkConversation": {
     "message": "Fork",

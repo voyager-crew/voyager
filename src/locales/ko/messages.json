@@ -2309,13 +2309,29 @@
     "message": "평가하기",
     "description": "Edge Add-ons store rating CTA button text"
   },
-  "changelog_badge_mode": {
-    "message": "NEW 배지로 업데이트 알림",
-    "description": "Changelog notification mode toggle label"
+  "changelog_notify_mode": {
+    "message": "업데이트 알림 방식",
+    "description": "Popup General Options: label of the choice of how a new release is announced"
   },
-  "changelog_badge_mode_hint": {
-    "message": "새 버전이 출시되면 변경 기록을 자동으로 열지 않고 플로팅 버튼에 NEW 배지를 표시합니다.",
-    "description": "Changelog notification mode toggle hint"
+  "changelog_notify_mode_hint": {
+    "message": "새 버전이 나왔을 때 알려 주는 방식입니다. 프롬프트 관리자의 버전 번호를 누르면 언제든 변경 기록을 열 수 있습니다.",
+    "description": "Popup General Options: hint under the update-announcement choice"
+  },
+  "changelog_notify_mode_popup": {
+    "message": "팝업",
+    "description": "Update-announcement choice: open the changelog automatically (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_badge": {
+    "message": "NEW 표시",
+    "description": "Update-announcement choice: show a NEW mark on the floating ball (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_off": {
+    "message": "알리지 않음",
+    "description": "Update-announcement choice: no reminder at all (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_footer_hint": {
+    "message": "자동으로 뜨는 게 싫다면 Voyager 설정 → 일반 옵션에서 NEW 표시나 알리지 않음으로 바꿀 수 있습니다.",
+    "description": "Muted one-line footnote in an auto-opened changelog, naming the popup section where the announcement mode is changed"
   },
   "forkConversation": {
     "message": "Fork",

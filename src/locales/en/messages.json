@@ -2309,13 +2309,29 @@
     "message": "Rate",
     "description": "Edge Add-ons store rating CTA button text"
   },
-  "changelog_badge_mode": {
-    "message": "Use a NEW badge for updates",
-    "description": "Changelog notification mode toggle label"
+  "changelog_notify_mode": {
+    "message": "Update reminders",
+    "description": "Popup General Options: label of the choice of how a new release is announced"
   },
-  "changelog_badge_mode_hint": {
-    "message": "When a new version is released, show NEW on the floating button instead of opening the changelog automatically.",
-    "description": "Changelog notification mode toggle hint"
+  "changelog_notify_mode_hint": {
+    "message": "How a new version lets you know. Clicking the version number in the Prompt Manager always opens the changelog.",
+    "description": "Popup General Options: hint under the update-announcement choice"
+  },
+  "changelog_notify_mode_popup": {
+    "message": "Pop up",
+    "description": "Update-announcement choice: open the changelog automatically (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_badge": {
+    "message": "NEW mark",
+    "description": "Update-announcement choice: show a NEW mark on the floating ball (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_off": {
+    "message": "Don't remind",
+    "description": "Update-announcement choice: no reminder at all (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_footer_hint": {
+    "message": "Rather not have this pop up? In Voyager settings → General Options, switch to a NEW mark or no reminder.",
+    "description": "Muted one-line footnote in an auto-opened changelog, naming the popup section where the announcement mode is changed"
   },
   "forkConversation": {
     "message": "Fork",

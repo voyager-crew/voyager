@@ -16,7 +16,7 @@ const translate = (key: TranslationKey): string => key;
 const values: GeneralSettingsValues = {
   persistentExportToolbarEnabled: false,
   remoteAnnouncementEnabled: true,
-  changelogBadgeMode: false,
+  changelogNotifyMode: 'popup',
 };
 
 describe('GeneralSettingsCard', () => {
@@ -61,8 +61,13 @@ describe('GeneralSettingsCard', () => {
 
     act(() => input('persistent-export-toolbar').click());
     expect(props.onChange).toHaveBeenLastCalledWith({ persistentExportToolbarEnabled: true });
-    act(() => input('changelog-notify-badge').click());
-    expect(props.onChange).toHaveBeenLastCalledWith({ changelogBadgeMode: true });
+    const notifyChoice = (label: TranslationKey) =>
+      Array.from(container.querySelectorAll<HTMLButtonElement>('[role="radio"]')).find(
+        (radio) => radio.textContent === label,
+      )!;
+    expect(notifyChoice('changelog_notify_mode_popup').getAttribute('aria-checked')).toBe('true');
+    act(() => notifyChoice('changelog_notify_mode_off').click());
+    expect(props.onChange).toHaveBeenLastCalledWith({ changelogNotifyMode: 'off' });
     expect(props.onChange).toHaveBeenCalledTimes(2);
   });
 

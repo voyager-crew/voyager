@@ -169,8 +169,15 @@ export const POPUP_SETTINGS_SEARCH_ITEMS = [
   ]),
   popupSearchTarget(
     'general',
-    'changelogBadgeMode',
-    ['changelog_badge_mode', 'changelog_badge_mode_hint', 'changelog_title'],
-    ['update release changelog new badge 更新 版本 更新日志 提醒'],
+    'changelogNotifyMode',
+    [
+      'changelog_notify_mode',
+      'changelog_notify_mode_hint',
+      'changelog_notify_mode_popup',
+      'changelog_notify_mode_badge',
+      'changelog_notify_mode_off',
+      'changelog_title',
+    ],
+    ['update release changelog new badge popup off 更新 版本 更新日志 提醒 弹出 不提醒'],
   ),
 ] as const satisfies readonly PopupSettingsSearchItem[];

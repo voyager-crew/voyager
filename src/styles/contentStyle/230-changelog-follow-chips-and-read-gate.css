@@ -101,6 +101,16 @@ a.gv-changelog-social-item:focus-visible {
     center / contain no-repeat;
 }
 
+/* Footnote under the action row of an auto-opened changelog: where the
+ * notification mode is changed. Muted like the docs annotation. */
+.gv-changelog-notify-hint {
+  margin: -4px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--gv-ui-text-muted, oklch(0.45 0.01 270));
+  text-wrap: pretty;
+}
+
 /* The confirm card's primary button. */
 .gv-changelog-got-it {
   box-sizing: border-box;

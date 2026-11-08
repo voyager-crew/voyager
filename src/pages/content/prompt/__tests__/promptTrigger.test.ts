@@ -100,6 +100,23 @@ describe('prompt trigger visibility', () => {
     expect(onAttentionChange).toHaveBeenCalledWith(true);
     expect(ball.style.display).toBe('');
   });
+
+  it('drops the NEW mark when the person switches update reminders off', async () => {
+    vi.mocked(chrome.storage.local.get).mockResolvedValue({
+      [StorageKeys.CHANGELOG_NOTIFY_MODE]: 'off',
+    } as never);
+    vi.mocked(hasUnreadChangelog).mockResolvedValue(true);
+    const { ball, onAttentionChange } = await mount({ attention: true });
+
+    trigger!.applyStorageChange('local', {
+      [StorageKeys.CHANGELOG_NOTIFY_MODE]: { newValue: 'off' },
+    });
+    await flush();
+
+    expect(onAttentionChange).toHaveBeenCalledWith(false);
+    expect(trigger!.hasAttention).toBe(false);
+    expect(ball.classList.contains('gv-pm-trigger-new')).toBe(false);
+  });
 });
 
 describe('prompt trigger activation', () => {

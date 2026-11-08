@@ -2309,13 +2309,29 @@
     "message": "Avaliar",
     "description": "Edge Add-ons store rating CTA button text"
   },
-  "changelog_badge_mode": {
-    "message": "Avisar sobre atualizações com um selo NEW",
-    "description": "Changelog notification mode toggle label"
+  "changelog_notify_mode": {
+    "message": "Avisos de atualização",
+    "description": "Popup General Options: label of the choice of how a new release is announced"
   },
-  "changelog_badge_mode_hint": {
-    "message": "Quando uma nova versão for lançada, mostra NEW no botão flutuante em vez de abrir automaticamente o histórico de alterações.",
-    "description": "Changelog notification mode toggle hint"
+  "changelog_notify_mode_hint": {
+    "message": "Como uma nova versão avisa você. Clicar no número da versão no Gerenciador de Prompts sempre abre o histórico de alterações.",
+    "description": "Popup General Options: hint under the update-announcement choice"
+  },
+  "changelog_notify_mode_popup": {
+    "message": "Janela",
+    "description": "Update-announcement choice: open the changelog automatically (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_badge": {
+    "message": "Marca NEW",
+    "description": "Update-announcement choice: show a NEW mark on the floating ball (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_off": {
+    "message": "Não avisar",
+    "description": "Update-announcement choice: no reminder at all (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_footer_hint": {
+    "message": "Prefere que isto não abra sozinho? Em configurações do Voyager → Opções Gerais, mude para a marca NEW ou para não avisar.",
+    "description": "Muted one-line footnote in an auto-opened changelog, naming the popup section where the announcement mode is changed"
   },
   "forkConversation": {
     "message": "Fork",

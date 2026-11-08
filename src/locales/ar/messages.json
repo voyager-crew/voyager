@@ -2309,13 +2309,29 @@
     "message": "تقييم",
     "description": "Edge Add-ons store rating CTA button text"
   },
-  "changelog_badge_mode": {
-    "message": "التنبيه بالتحديثات عبر شارة NEW",
-    "description": "Changelog notification mode toggle label"
+  "changelog_notify_mode": {
+    "message": "التنبيه بالتحديثات",
+    "description": "Popup General Options: label of the choice of how a new release is announced"
   },
-  "changelog_badge_mode_hint": {
-    "message": "عند إصدار نسخة جديدة، تظهر شارة NEW على الزر العائم بدلاً من فتح سجل التغييرات تلقائياً.",
-    "description": "Changelog notification mode toggle hint"
+  "changelog_notify_mode_hint": {
+    "message": "طريقة إعلامك بالإصدار الجديد. يفتح النقر على رقم الإصدار في مدير المطالبات سجل التغييرات في أي وقت.",
+    "description": "Popup General Options: hint under the update-announcement choice"
+  },
+  "changelog_notify_mode_popup": {
+    "message": "نافذة",
+    "description": "Update-announcement choice: open the changelog automatically (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_badge": {
+    "message": "علامة NEW",
+    "description": "Update-announcement choice: show a NEW mark on the floating ball (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_off": {
+    "message": "بلا تنبيه",
+    "description": "Update-announcement choice: no reminder at all (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_footer_hint": {
+    "message": "لا تريد أن تظهر هذه النافذة تلقائياً؟ من إعدادات Voyager ← خيارات عامة يمكنك التبديل إلى علامة NEW أو إيقاف التنبيه.",
+    "description": "Muted one-line footnote in an auto-opened changelog, naming the popup section where the announcement mode is changed"
   },
   "forkConversation": {
     "message": "Fork",

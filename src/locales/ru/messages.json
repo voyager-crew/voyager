@@ -2309,13 +2309,29 @@
     "message": "Оценить",
     "description": "Edge Add-ons store rating CTA button text"
   },
-  "changelog_badge_mode": {
-    "message": "Сообщать об обновлениях значком NEW",
-    "description": "Changelog notification mode toggle label"
+  "changelog_notify_mode": {
+    "message": "Уведомления об обновлениях",
+    "description": "Popup General Options: label of the choice of how a new release is announced"
   },
-  "changelog_badge_mode_hint": {
-    "message": "При выходе новой версии показывает NEW на плавающей кнопке вместо автоматического открытия списка изменений.",
-    "description": "Changelog notification mode toggle hint"
+  "changelog_notify_mode_hint": {
+    "message": "Как сообщать о новой версии. Номер версии в менеджере промптов всегда открывает список изменений.",
+    "description": "Popup General Options: hint under the update-announcement choice"
+  },
+  "changelog_notify_mode_popup": {
+    "message": "Окно",
+    "description": "Update-announcement choice: open the changelog automatically (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_badge": {
+    "message": "Метка NEW",
+    "description": "Update-announcement choice: show a NEW mark on the floating ball (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_off": {
+    "message": "Не сообщать",
+    "description": "Update-announcement choice: no reminder at all (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_footer_hint": {
+    "message": "Не хотите, чтобы это окно открывалось само? В настройках Voyager → Общие настройки можно выбрать метку NEW или отключить уведомления.",
+    "description": "Muted one-line footnote in an auto-opened changelog, naming the popup section where the announcement mode is changed"
   },
   "forkConversation": {
     "message": "Fork",

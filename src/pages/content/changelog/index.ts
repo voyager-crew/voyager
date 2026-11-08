@@ -1,4 +1,8 @@
 import { StorageKeys } from '@/core/types/common';
+import {
+  type ChangelogNotifyMode,
+  parseChangelogNotifyMode,
+} from '@/core/utils/changelogNotifyMode';
 import { EXTENSION_VERSION } from '@/core/utils/version';
 import { getCurrentLanguage } from '@/utils/i18n';
 import type { AppLanguage } from '@/utils/language';
@@ -29,12 +33,12 @@ const NOTED_VERSIONS = [
 ].filter(Boolean);
 
 /**
- * Versions whose changelog must show as a popup even for users who opted into
- * badge-only mode. Reserved for releases the maintainer wants every user to
+ * Versions whose changelog must show as a popup even for users who chose the
+ * NEW mark or no reminder. Reserved for releases the maintainer wants every user to
  * actually read — e.g. when Gemini ships a major UI overhaul that breaks
  * assumptions and a quiet badge would let users miss critical context.
  *
- * Effect: bypasses the badge-mode early-return in startChangelog. The user's
+ * Effect: bypasses the notify-mode early-return in startChangelog. The user's
  * CHANGELOG_NOTIFY_MODE preference is preserved untouched for future releases.
  */
 const FORCE_POPUP_VERSIONS: ReadonlySet<string> = new Set(['1.4.5']);
@@ -140,11 +144,10 @@ export function rewriteChangelogDocUrls(markdown: string, lang: AppLanguage): st
 /**
  * Read the current changelog notification mode.
  */
-async function readNotifyMode(): Promise<'popup' | 'badge'> {
+async function readNotifyMode(): Promise<ChangelogNotifyMode> {
   try {
     const result = await chrome.storage.local.get(StorageKeys.CHANGELOG_NOTIFY_MODE);
-    const mode = result[StorageKeys.CHANGELOG_NOTIFY_MODE];
-    return mode === 'badge' ? 'badge' : 'popup';
+    return parseChangelogNotifyMode(result[StorageKeys.CHANGELOG_NOTIFY_MODE]);
   } catch {
     return 'popup';
   }
@@ -181,7 +184,7 @@ function gatherNotes(notes: readonly { version: string; body: string }[]): strin
  * @param applyReadGate - Whether the force-popup read-gate countdown should
  *   engage. True for the auto-popup on page load; false for re-opens from
  *   the prompt manager (the user has already seen this once, no need to
- *   gate them again).
+ *   gate them again). An auto-popup also carries the notify-mode hint.
  */
 async function showChangelogModal(
   version = EXTENSION_VERSION,
@@ -286,7 +289,8 @@ async function showChangelogModal(
   // 6. Inject modal
   const readGateSeconds =
     applyReadGate && FORCE_POPUP_VERSIONS.has(version) ? FORCE_POPUP_READ_GATE_SECONDS : 0;
-  const overlay = await createChangelogModal(sanitizedHtml, lang, readGateSeconds);
+  // An auto-open says where to change how releases announce themselves.
+  const overlay = await createChangelogModal(sanitizedHtml, lang, readGateSeconds, applyReadGate);
   document.body.appendChild(overlay);
   return overlay;
 }
@@ -367,11 +371,12 @@ export async function startChangelog(opts: { onClosed?: () => void } = {}): Prom
   };
 
   try {
-    // In badge mode, skip auto-showing the modal (prompt manager handles it).
+    // Only popup mode opens the modal on its own: badge mode leaves it to the
+    // floating ball, off mode to the Prompt Manager's version badge.
     // Exception: force-popup versions ignore this and surface the modal anyway.
     const notifyMode = await readNotifyMode();
     const isForcePopup = FORCE_POPUP_VERSIONS.has(EXTENSION_VERSION);
-    if (notifyMode === 'badge' && !isForcePopup) {
+    if (notifyMode !== 'popup' && !isForcePopup) {
       return () => {};
     }
 

@@ -69,7 +69,7 @@ const AI_STUDIO_CAPABILITIES = {
     'promptInsertOnClick',
     'promptDataMigration',
   ],
-  general: ['remoteAnnouncementNotification', 'changelogBadgeMode', 'onlineUpdates'],
+  general: ['remoteAnnouncementNotification', 'changelogNotifyMode', 'onlineUpdates'],
 } as const satisfies Partial<Record<NativePopupSectionId, SectionCapability>>;
 
 export function isOfficialPluginTopicId(id: string): id is OfficialPluginTopicId {

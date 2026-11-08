@@ -2309,13 +2309,29 @@
     "message": "Évaluer",
     "description": "Edge Add-ons store rating CTA button text"
   },
-  "changelog_badge_mode": {
-    "message": "Signaler les mises à jour avec un badge NEW",
-    "description": "Changelog notification mode toggle label"
+  "changelog_notify_mode": {
+    "message": "Annonce des mises à jour",
+    "description": "Popup General Options: label of the choice of how a new release is announced"
   },
-  "changelog_badge_mode_hint": {
-    "message": "Lorsqu’une nouvelle version est publiée, affiche NEW sur le bouton flottant au lieu d’ouvrir automatiquement le journal des modifications.",
-    "description": "Changelog notification mode toggle hint"
+  "changelog_notify_mode_hint": {
+    "message": "Comment une nouvelle version vous est signalée. Un clic sur le numéro de version dans le gestionnaire de prompts ouvre toujours le journal des modifications.",
+    "description": "Popup General Options: hint under the update-announcement choice"
+  },
+  "changelog_notify_mode_popup": {
+    "message": "Fenêtre",
+    "description": "Update-announcement choice: open the changelog automatically (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_badge": {
+    "message": "Marque NEW",
+    "description": "Update-announcement choice: show a NEW mark on the floating ball (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_off": {
+    "message": "Aucune",
+    "description": "Update-announcement choice: no reminder at all (keep very short, segmented button)"
+  },
+  "changelog_notify_mode_footer_hint": {
+    "message": "Vous préférez que cette fenêtre ne s’ouvre pas toute seule ? Dans les paramètres de Voyager → Options générales, passez à la marque NEW ou à aucune annonce.",
+    "description": "Muted one-line footnote in an auto-opened changelog, naming the popup section where the announcement mode is changed"
   },
   "forkConversation": {
     "message": "Fork",
