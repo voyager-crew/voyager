@@ -218,6 +218,8 @@ gh api -X POST repos/voyager-crew/voyager/actions/runs/{RUN_ID}/pending_deployme
   -F "environment_ids[]=$ENV_ID" -f state=approved -f comment="Release v{VERSION}"
 ```
 
+Before a release that changes `release*.yml` or the build scripts, run `release.yml` from `main` with `dry_run` ticked: it builds, signs and notarizes every package under the current version and stops before any tag, GitHub Release or store submission.
+
 The tag workflow runs these gates:
 
 1. `build-safari-release` builds `dist_safari`, imports the Developer ID certificate and provisioning profiles, then calls `scripts/build-safari-release.sh`.

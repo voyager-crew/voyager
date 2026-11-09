@@ -16,7 +16,8 @@ Use this reference when the `build-safari-release` GitHub Actions job fails or w
 
 Read these before changing the release procedure:
 
-- `.github/workflows/release.yml` — orchestration, secrets, provisioning-profile installation, artifact handoff
+- `.github/workflows/release.yml` — orchestration: inputs, version bump, the tag every stage builds
+- `.github/workflows/release-safari.yml` — secrets, provisioning-profile installation, artifact handoff
 - `scripts/build-safari-release.sh` — archive, export, signing, notarization, DMG, Sparkle, privacy checks
 - `scripts/generate-sparkle-appcast.sh` — Sparkle key validation and signed feed generation
 - `scripts/verify-release-privacy.mjs` — artifact privacy gate

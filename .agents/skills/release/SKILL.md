@@ -7,7 +7,7 @@ metadata:
 
 # Voyager Release
 
-Use repository scripts and `.github/workflows/release.yml` as the source of truth. Normal releases use CI: a release tag builds the browser artifacts, signs and notarizes Safari, creates the GitHub Release, and submits the stores.
+Use repository scripts and `.github/workflows/release.yml` (with the `release-*.yml` stages it calls) as the source of truth. Normal releases use CI: a release tag builds the browser artifacts, signs and notarizes Safari, creates the GitHub Release, and submits the stores.
 
 ## Choose the requested workflow
 
