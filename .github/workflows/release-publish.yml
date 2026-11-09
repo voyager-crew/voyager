@@ -1,0 +1,266 @@
+name: Release · Build and publish
+
+# Called by release.yml once the Safari job succeeds: builds the other browser
+# packages, signs and submits Firefox, creates the GitHub Release, then submits
+# Chrome and Edge. A dry run builds and checks every package and stops there.
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Release tag, e.g. v1.2.0'
+        required: true
+        type: string
+      ref:
+        description: 'What to check out: the tag, or a commit for a dry run'
+        required: true
+        type: string
+      notes:
+        description: 'Release notes; empty generates them'
+        required: false
+        type: string
+        default: ''
+      dry_run:
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  BUN_VERSION: '1.3.12'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify release commit is on main
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git fetch origin main --no-tags
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "Release tag must point to a commit already on origin/main" >&2
+            exit 1
+          fi
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Build All
+        env:
+          VOYAGER_FIREFOX_OAUTH_CLIENT_SECRET: ${{ secrets.VOYAGER_FIREFOX_OAUTH_CLIENT_SECRET }}
+        run: |
+          bun run plugin:release:check
+          if [ -z "$VOYAGER_FIREFOX_OAUTH_CLIENT_SECRET" ]; then
+            echo "::error::VOYAGER_FIREFOX_OAUTH_CLIENT_SECRET is not set; Firefox Google Drive sign-in needs it." >&2
+            exit 1
+          fi
+          bun run build:all
+
+      - name: Download Safari release artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: safari-release
+          path: .
+
+      - name: Check release artifacts for private data
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: >-
+          node scripts/verify-release-privacy.mjs dist_chrome dist_firefox dist_safari
+          voyager-${RELEASE_TAG}.dmg
+          appcast.xml
+
+      - name: Archive artifacts
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          cd dist_chrome && zip -r ../voyager-chrome-${TAG}.zip . && cd ..
+
+      - name: Validate Chrome artifact
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          ZIP="voyager-chrome-${TAG}.zip"
+
+          unzip -Z1 "$ZIP" > chrome-zip-files.txt
+          grep -qx 'manifest.json' chrome-zip-files.txt
+          grep -qx '_locales/en/messages.json' chrome-zip-files.txt
+
+      - name: Sign Firefox Extension and Submit to AMO
+        if: ${{ !inputs.dry_run }}
+        env:
+          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          node_modules/.bin/web-ext sign \
+            --source-dir=dist_firefox \
+            --api-key="$AMO_JWT_ISSUER" \
+            --api-secret="$AMO_JWT_SECRET" \
+            --channel=listed
+          # Move signed XPI to root with proper naming
+          mv web-ext-artifacts/*.xpi voyager-firefox-${TAG}.xpi
+
+      - name: Prepare Release Notes
+        if: ${{ !inputs.dry_run }}
+        id: release_body
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPOSITORY: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          if [ -n "$NOTES" ]; then
+            delimiter="BODY_$(openssl rand -hex 16)"
+            {
+              echo "body<<$delimiter"
+              printf '%s\n' "$NOTES"
+              echo "$delimiter"
+            } >> "$GITHUB_OUTPUT"
+          else
+            # Get the previous tag for auto-generated notes
+            PREV_TAG=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || echo "")
+
+            # Generate release notes via GitHub API
+            AUTO_NOTES=""
+            if [ -n "$PREV_TAG" ]; then
+              AUTO_NOTES=$(gh api "repos/${GH_REPOSITORY}/releases/generate-notes" \
+                -f tag_name="${TAG}" \
+                -f target_commitish="main" \
+                -f previous_tag_name="${PREV_TAG}" \
+                --jq '.body' 2>/dev/null || echo "")
+            fi
+
+            cat > release_body.md << 'INSTALL_EOF'
+          ## 📥 Installation
+
+          <div align="center">
+            <a href="https://chromewebstore.google.com/detail/iifacdnjakkhjjiengaffnegbndgingi?utm_source=github&utm_medium=readme&utm_campaign=organic_growth&utm_content=en" target="_blank">
+              <img src="https://img.shields.io/badge/Chrome%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Web Store" height="36">
+            </a>
+            &nbsp;&nbsp;
+            <a href="https://microsoftedge.microsoft.com/addons/detail/voyager/gibmkggjijalcjinbdhcpklodjkhhlne" target="_blank">
+              <img src="https://img.shields.io/badge/Edge%20Add--ons-0078D7?style=for-the-badge&logo=microsoftedge&logoColor=white" alt="Edge Add-ons" height="36">
+            </a>
+            &nbsp;&nbsp;
+            <a href="https://addons.mozilla.org/firefox/addon/gemini-voyager/" target="_blank">
+              <img src="https://img.shields.io/badge/Firefox%20Add--ons-FF7139?style=for-the-badge&logo=firefox&logoColor=white" alt="Firefox Add-ons" height="36">
+            </a>
+          </div>
+
+          <p align="center">
+            <sub><b>Edge users:</b> Voyager is still maintained on Edge Add-ons for users who need Edge on mobile or tablet. If review is delayed, Chrome Web Store and GitHub manual packages remain available.</sub>
+          </p>
+          INSTALL_EOF
+
+            # Append version-specific file names
+            cat >> release_body.md << EOF
+
+          - **Chrome / Edge / Chromium browsers**: \`voyager-chrome-${TAG}.zip\`
+          - **Firefox**: \`voyager-firefox-${TAG}.xpi\`
+          - **Safari**: \`voyager-${TAG}.dmg\`
+
+          > Do not use GitHub's auto-generated **Source code (zip/tar.gz)** archives for manual extension installs. Those files are repository source snapshots, not browser-ready extension packages.
+
+          <details>
+          <summary><b>🍎 Safari 安装与升级说明 (Safari installation &amp; upgrade)</b></summary>
+
+          > 🎉 从 v1.6.0 起，Voyager 的核心功能已正式覆盖 Safari。
+          > Starting with v1.6.0, Voyager's core experience is officially supported on Safari.
+
+          - 📦 **安装 (Installation)**: 下载并打开 \`voyager-${TAG}.dmg\`，按提示安装应用。
+            Download and open \`voyager-${TAG}.dmg\`, then follow the prompts to install the app.
+          - ⚠️ **旧版升级 (Legacy upgrade)**: 如果仍安装着 \`Gemini Voyager.app\`，请先完成一次 [Safari 迁移步骤](https://voyager.nagi.fun/guide/safari-migration)，避免两个 App 并存。
+            If \`Gemini Voyager.app\` is still installed, follow the one-time [Safari migration guide](https://voyager.nagi.fun/en/guide/safari-migration) first so the two apps do not conflict.
+          - 🖼️ **图片能力 (Images)**: Image Refinement 水印去除、全尺寸图片下载与聊天导出中的图片提取均已支持。
+            Image Refinement watermark removal, full-size image downloads, and image extraction in conversation exports are supported.
+          - ☁️ **原生云同步 (Native cloud sync)**: Google Drive 与 iCloud 同步均已接入 Safari 原生层。
+            Google Drive and iCloud sync are integrated through Safari's native layer.
+          - 🔔 **系统通知 (Notifications)**: Gemini 回复完成后可发送 macOS 通知，并直达对应对话。
+            macOS can notify you when a Gemini response finishes and open the matching conversation.
+          - 🔄 **自动更新 (Automatic updates)**: 完成这次迁移后，后续版本可通过 Sparkle 自动更新。
+            After this one-time migration, future versions can update automatically through Sparkle.
+
+          </details>
+          EOF
+
+            # Combine: auto-generated notes first, then installation
+            delimiter="BODY_$(openssl rand -hex 16)"
+            {
+              echo "body<<$delimiter"
+              if [ -n "$AUTO_NOTES" ]; then
+                printf '%s\n\n' "$AUTO_NOTES"
+              fi
+              cat release_body.md
+              echo "$delimiter"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        if: ${{ !inputs.dry_run }}
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          name: Voyager ${{ inputs.tag }}
+          tag_name: ${{ inputs.tag }}
+          files: |
+            voyager-chrome-*.zip
+            voyager-firefox-*.xpi
+            voyager-*.dmg
+            appcast.xml
+          body: ${{ steps.release_body.outputs.body }}
+
+      # Store publishing happens after the GitHub Release and Firefox/AMO
+      # submission, so a store-side failure does not prevent release assets.
+      - name: Publish to Chrome Web Store
+        if: ${{ !inputs.dry_run }}
+        env:
+          TAG: ${{ inputs.tag }}
+          EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+        run: |
+          # Chrome Web Store rejects a manifest that still carries the local dev `key`
+          # field (PKG_MANIFEST_KEY_NOT_MATCH). Strip it into a store-only copy; the
+          # GitHub Release zip keeps the key for manual unpacked installs.
+          rm -rf cws_pkg "voyager-chrome-cws-${TAG}.zip"
+          mkdir cws_pkg
+          unzip -q "voyager-chrome-${TAG}.zip" -d cws_pkg
+          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('cws_pkg/manifest.json','utf8'));delete m.key;fs.writeFileSync('cws_pkg/manifest.json',JSON.stringify(m,null,2)+'\n');"
+          (cd cws_pkg && zip -qr "../voyager-chrome-cws-${TAG}.zip" .)
+          node_modules/.bin/chrome-webstore-upload \
+            --source "voyager-chrome-cws-${TAG}.zip" \
+            --extension-id "$EXTENSION_ID"
+      - name: Build and publish to Edge Add-ons
+        env:
+          EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+          EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
+          EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+          TAG: ${{ inputs.tag }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          bun run build:edge
+          node scripts/verify-release-privacy.mjs dist_edge
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run: Edge package built and checked, not submitted."
+            exit 0
+          fi
+          node scripts/publish-edge.js "voyager-edge-${TAG}.zip" \
+            --notes "Voyager ${TAG} automated release submission."

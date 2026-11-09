@@ -1,6 +1,7 @@
 name: Release
 run-name: >
   ${{
+    (github.event_name == 'workflow_dispatch' && inputs.dry_run && format('Release dry run {0}', github.ref_name)) ||
     (github.event_name == 'workflow_dispatch' && inputs.publish_firefox_only && inputs.version && format('Firefox hotfix {0}', inputs.version)) ||
     (github.event_name == 'workflow_dispatch' && inputs.version && format('chore(release): v{0}', inputs.version)) ||
     (github.event_name == 'workflow_dispatch' && !inputs.version && 'chore(release): auto-increment') ||
@@ -32,6 +33,16 @@ run-name: >
 #      2. SKIPS version calculation and bumping (assumes you already did it).
 #      3. Builds artifacts from that tag.
 #      4. Creates a GitHub Release for that tag.
+#
+# 3. Dry run
+#    - How: "Run workflow" with "dry_run" ticked, from main or any branch.
+#    - What it does: builds, signs and notarizes every package from that commit
+#      under the current package.json version, then stops. No bump, no tag, no
+#      GitHub Release, no store submission.
+#
+# Each stage lives in its own reusable workflow: release-safari.yml,
+# release-publish.yml, release-firefox-hotfix.yml, release-chrome-retry.yml and
+# release-edge-retry.yml. Job names match the ones these files used to share.
 
 on:
   push:
@@ -57,6 +68,11 @@ on:
         required: false
         type: boolean
         default: false
+      dry_run:
+        description: 'Build, sign and notarize every package from this commit, then stop (no tag, release or store submission).'
+        required: false
+        type: boolean
+        default: false
       publish_firefox_only:
         description: 'Build and publish a Firefox-only four-part hotfix from main (for example 1.6.0.1). Requires version.'
         required: false
@@ -74,11 +90,11 @@ env:
   BUN_VERSION: '1.3.12'
 
 jobs:
-  # Job 1: Calculate & Bump Version (Only runs on manual trigger)
   bump-version:
     if: >-
       github.event_name == 'workflow_dispatch' &&
       github.ref == 'refs/heads/main' &&
+      !inputs.dry_run &&
       !inputs.publish_only &&
       !inputs.publish_edge_only &&
       !inputs.publish_firefox_only
@@ -90,7 +106,7 @@ jobs:
       tag_name: ${{ steps.tag.outputs.name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -196,707 +212,121 @@ jobs:
           git push origin HEAD:main
           git push origin "$TAG"
 
-  # Job 2: Build, sign and notarize the Safari direct-distribution app.
-  build-safari-release:
+  # Job 2: Settle the tag and the commit every build job uses.
+  release-tag:
     needs: bump-version
     if: >-
       always() &&
-      (github.event_name == 'push' || needs.bump-version.result == 'success') &&
+      (github.event_name == 'push' || needs.bump-version.result == 'success' || inputs.dry_run) &&
       !(github.event_name == 'workflow_dispatch' && (inputs.publish_only || inputs.publish_edge_only || inputs.publish_firefox_only))
-    runs-on: macos-15
-    environment: release
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+      ref: ${{ steps.vars.outputs.ref }}
+    steps:
+      - name: Checkout
+        if: ${{ inputs.dry_run }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set release tag and ref
+        id: vars
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          MANUAL_TAG: ${{ needs.bump-version.outputs.tag_name }}
+          PUSH_TAG: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$DRY_RUN" = "true" ]; then
+            TAG="v$(node -p "require('./package.json').version")"
+            REF="$SHA"
+          elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            TAG="$MANUAL_TAG"
+            REF="$TAG"
+          else
+            TAG="$PUSH_TAG"
+            REF="$TAG"
+          fi
+
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]]; then
+            echo "Invalid release tag: $TAG" >&2
+            exit 64
+          fi
+
+          printf 'tag=%s\nref=%s\n' "$TAG" "$REF" >> "$GITHUB_OUTPUT"
+
+  # Job 3: Build, sign and notarize the Safari direct-distribution app.
+  build-safari-release:
+    needs: release-tag
+    if: ${{ always() && needs.release-tag.result == 'success' }}
     permissions:
       contents: read
-    steps:
-      - name: Set Release Tag Variable
-        id: vars
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          MANUAL_TAG: ${{ needs.bump-version.outputs.tag_name }}
-          PUSH_TAG: ${{ github.ref_name }}
-        run: |
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            TAG="$MANUAL_TAG"
-          else
-            TAG="$PUSH_TAG"
-          fi
+    uses: ./.github/workflows/release-safari.yml
+    with:
+      tag: ${{ needs.release-tag.outputs.tag }}
+      ref: ${{ needs.release-tag.outputs.ref }}
+      dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+    secrets: inherit
 
-          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]]; then
-            echo "Invalid release tag: $TAG" >&2
-            exit 64
-          fi
-
-          printf 'tag_name=%s\n' "$TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Checkout trusted release source
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          ref: ${{ steps.vars.outputs.tag_name }}
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Verify release commit is on main
-        run: |
-          git fetch origin main --no-tags
-          if ! git merge-base --is-ancestor HEAD origin/main; then
-            echo "Release tag must point to a commit already on origin/main" >&2
-            exit 1
-          fi
-
-      - name: Check required Safari release secrets
-        env:
-          APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_APP_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_APP_PROVISIONING_PROFILE_BASE64 }}
-          APPLE_EXTENSION_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_EXTENSION_PROVISIONING_PROFILE_BASE64 }}
-          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-        run: |
-          missing=()
-          for name in \
-            APPLE_CERTIFICATE_P12_BASE64 \
-            APPLE_CERTIFICATE_PASSWORD \
-            APPLE_ID \
-            APPLE_APP_SPECIFIC_PASSWORD \
-            APPLE_APP_PROVISIONING_PROFILE_BASE64 \
-            APPLE_EXTENSION_PROVISIONING_PROFILE_BASE64 \
-            SPARKLE_PRIVATE_KEY
-          do
-            if [ -z "${!name:-}" ]; then
-              missing+=("$name")
-            fi
-          done
-
-          if [ ${#missing[@]} -ne 0 ]; then
-            printf 'Missing Safari release secrets: %s\n' "${missing[*]}" >&2
-            exit 1
-          fi
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Setup Python for Safari DMG builder
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: '3.13'
-
-      - name: Install Safari DMG builder
-        run: |
-          python -m pip install --disable-pip-version-check --only-binary=:all: \
-            'dmgbuild==1.6.7' \
-            'ds-store==1.3.3' \
-            'mac-alias==2.2.3'
-          python -c 'from importlib.metadata import version; print(version("dmgbuild"))'
-
-      - name: Build Safari web extension
-        run: bun run plugin:release:check && bun run build:safari
-
-      - name: Import Developer ID certificate
-        uses: Apple-Actions/import-codesign-certs@5142e029c445c10ffc7149d172e540235a065466 # v7
-        with:
-          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
-          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-
-      - name: Install Developer ID provisioning profiles
-        env:
-          APPLE_APP_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_APP_PROVISIONING_PROFILE_BASE64 }}
-          APPLE_EXTENSION_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_EXTENSION_PROVISIONING_PROFILE_BASE64 }}
-          CLOUDKIT_PRODUCTION_SCHEMA_SHA256: ${{ vars.CLOUDKIT_PRODUCTION_SCHEMA_SHA256 }}
-        run: |
-          profile_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
-          mkdir -p "$profile_dir"
-
-          install_profile() {
-            local encoded=$1
-            local label=$2
-            local expected_bundle_id=$3
-            local profile="$RUNNER_TEMP/$label.provisionprofile"
-            local plist="$RUNNER_TEMP/$label.plist"
-
-            printf '%s' "$encoded" | base64 --decode > "$profile"
-            security cms -D -i "$profile" > "$plist"
-
-            local uuid
-            local name
-            uuid=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$plist")
-            name=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$plist")
-
-            python3 - "$plist" "$expected_bundle_id" "$label" <<'PY'
-          import datetime
-          import plistlib
-          import sys
-
-          path, expected_bundle_id, label = sys.argv[1:]
-          team_id = "PJM828YBFJ"
-          with open(path, "rb") as handle:
-              profile = plistlib.load(handle)
-
-          expires = profile.get("ExpirationDate")
-          now = datetime.datetime.now(datetime.timezone.utc)
-          if isinstance(expires, datetime.datetime) and expires.tzinfo is None:
-              expires = expires.replace(tzinfo=datetime.timezone.utc)
-          if not isinstance(expires, datetime.datetime) or expires <= now:
-              raise SystemExit(f"{label} provisioning profile is expired or has no expiration date")
-
-          entitlements = profile.get("Entitlements", {})
-          application_id = entitlements.get("application-identifier")
-          if application_id != f"{team_id}.{expected_bundle_id}":
-              raise SystemExit(f"{label} provisioning profile has the wrong application identifier")
-
-          profile_team = entitlements.get("com.apple.developer.team-identifier")
-          if profile_team not in (None, team_id):
-              raise SystemExit(f"{label} provisioning profile has the wrong Team ID")
-
-          if label == "extension":
-              services = entitlements.get("com.apple.developer.icloud-services", [])
-              containers = entitlements.get("com.apple.developer.icloud-container-identifiers", [])
-              environment = entitlements.get("com.apple.developer.icloud-container-environment")
-              if "CloudKit" not in services and "*" not in services:
-                  raise SystemExit("extension provisioning profile does not permit CloudKit")
-              if "iCloud.com.yourCompany.Gemini-Voyager" not in containers:
-                  raise SystemExit("extension provisioning profile has the wrong iCloud container")
-              if environment != "Production":
-                  raise SystemExit("extension provisioning profile is not for Production CloudKit")
-          PY
-
-            if [[ "$label" == "extension" ]]; then
-              expected_schema_hash=$(shasum -a 256 Voyager/CloudKit/VoyagerSchema.ckdb | awk '{print $1}')
-              if [ "${CLOUDKIT_PRODUCTION_SCHEMA_SHA256:-}" != "$expected_schema_hash" ]; then
-                echo "CloudKit Production schema is not acknowledged for this release." >&2
-                echo "After deploying Voyager/CloudKit/VoyagerSchema.ckdb to Production, set" >&2
-                echo "the release environment variable CLOUDKIT_PRODUCTION_SCHEMA_SHA256=$expected_schema_hash" >&2
-                exit 1
-              fi
-            fi
-
-            cp "$profile" "$profile_dir/$uuid.provisionprofile"
-            printf '%s|%s\n' "$uuid" "$name"
-          }
-
-          app_profile=$(install_profile \
-            "$APPLE_APP_PROVISIONING_PROFILE_BASE64" \
-            app \
-            com.yourCompany.Gemini-Voyager)
-          extension_profile=$(install_profile \
-            "$APPLE_EXTENSION_PROVISIONING_PROFILE_BASE64" \
-            extension \
-            com.yourCompany.Gemini-Voyager.Extension)
-          app_profile_uuid=${app_profile%%|*}
-          app_profile_name=${app_profile#*|}
-          extension_profile_uuid=${extension_profile%%|*}
-          extension_profile_name=${extension_profile#*|}
-          echo "VOYAGER_APP_PROFILE_NAME=$app_profile_name" >> "$GITHUB_ENV"
-          echo "VOYAGER_EXTENSION_PROFILE_NAME=$extension_profile_name" >> "$GITHUB_ENV"
-          echo "VOYAGER_APP_PROFILE_UUID=$app_profile_uuid" >> "$GITHUB_ENV"
-          echo "VOYAGER_EXTENSION_PROFILE_UUID=$extension_profile_uuid" >> "$GITHUB_ENV"
-
-      - name: Build, sign, notarize and prepare Sparkle update
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: PJM828YBFJ
-          VOYAGER_APP_PROFILE_NAME: ${{ env.VOYAGER_APP_PROFILE_NAME }}
-          VOYAGER_EXTENSION_PROFILE_NAME: ${{ env.VOYAGER_EXTENSION_PROFILE_NAME }}
-          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-          RELEASE_TAG: ${{ steps.vars.outputs.tag_name }}
-        run: |
-          chmod +x scripts/build-safari-release.sh scripts/generate-sparkle-appcast.sh
-          scripts/build-safari-release.sh \
-            "$RELEASE_TAG" \
-            "$RUNNER_TEMP/safari-release"
-
-      - name: Upload Safari release artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: safari-release
-          path: |
-            ${{ runner.temp }}/safari-release/voyager-*.dmg
-            ${{ runner.temp }}/safari-release/appcast.xml
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Remove provisioning profiles
-        if: always()
-        run: |
-          profile_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
-          rm -f \
-            "$profile_dir/${VOYAGER_APP_PROFILE_UUID:-missing}.provisionprofile" \
-            "$profile_dir/${VOYAGER_EXTENSION_PROFILE_UUID:-missing}.provisionprofile" \
-            "$RUNNER_TEMP/app.provisionprofile" \
-            "$RUNNER_TEMP/app.plist" \
-            "$RUNNER_TEMP/extension.provisionprofile" \
-            "$RUNNER_TEMP/extension.plist"
-
-  # Job 3: Build & Release (Runs on both manual and tag push)
+  # Job 4: Build & Release (Runs on both manual and tag push)
   build-and-release:
-    needs: [bump-version, build-safari-release]
-    if: >-
-      always() &&
-      needs.build-safari-release.result == 'success' &&
-      (needs.bump-version.result == 'success' || github.event_name == 'push')
-    runs-on: ubuntu-latest
-    environment: release
+    needs: [release-tag, build-safari-release]
+    if: ${{ always() && needs.build-safari-release.result == 'success' }}
     permissions:
       contents: write
-    steps:
-      - name: Set Release Tag Variable
-        id: vars
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          MANUAL_TAG: ${{ needs.bump-version.outputs.tag_name }}
-          PUSH_TAG: ${{ github.ref_name }}
-        run: |
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            TAG="$MANUAL_TAG"
-          else
-            TAG="$PUSH_TAG"
-          fi
+    uses: ./.github/workflows/release-publish.yml
+    with:
+      tag: ${{ needs.release-tag.outputs.tag }}
+      ref: ${{ needs.release-tag.outputs.ref }}
+      notes: ${{ inputs.notes }}
+      dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+    secrets: inherit
 
-          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]]; then
-            echo "Invalid release tag: $TAG" >&2
-            exit 64
-          fi
-
-          printf 'tag_name=%s\n' "$TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          ref: ${{ steps.vars.outputs.tag_name }}
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Verify release commit is on main
-        run: |
-          git fetch origin main --no-tags
-          if ! git merge-base --is-ancestor HEAD origin/main; then
-            echo "Release tag must point to a commit already on origin/main" >&2
-            exit 1
-          fi
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Install deps
-        run: bun install --frozen-lockfile
-
-      - name: Build All
-        env:
-          VOYAGER_FIREFOX_OAUTH_CLIENT_SECRET: ${{ secrets.VOYAGER_FIREFOX_OAUTH_CLIENT_SECRET }}
-        run: |
-          bun run plugin:release:check
-          if [ -z "$VOYAGER_FIREFOX_OAUTH_CLIENT_SECRET" ]; then
-            echo "::error::VOYAGER_FIREFOX_OAUTH_CLIENT_SECRET is not set; Firefox Google Drive sign-in needs it." >&2
-            exit 1
-          fi
-          bun run build:all
-
-      - name: Download Safari release artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: safari-release
-          path: .
-
-      - name: Check release artifacts for private data
-        env:
-          RELEASE_TAG: ${{ steps.vars.outputs.tag_name }}
-        run: >-
-          node scripts/verify-release-privacy.mjs dist_chrome dist_firefox dist_safari
-          voyager-${RELEASE_TAG}.dmg
-          appcast.xml
-
-      - name: Archive artifacts
-        env:
-          TAG: ${{ steps.vars.outputs.tag_name }}
-        run: |
-          cd dist_chrome && zip -r ../voyager-chrome-${TAG}.zip . && cd ..
-
-      - name: Validate Chrome artifact
-        env:
-          TAG: ${{ steps.vars.outputs.tag_name }}
-        run: |
-          ZIP="voyager-chrome-${TAG}.zip"
-
-          unzip -Z1 "$ZIP" > chrome-zip-files.txt
-          grep -qx 'manifest.json' chrome-zip-files.txt
-          grep -qx '_locales/en/messages.json' chrome-zip-files.txt
-
-      - name: Sign Firefox Extension and Submit to AMO
-        env:
-          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
-          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
-          TAG: ${{ steps.vars.outputs.tag_name }}
-        run: |
-          node_modules/.bin/web-ext sign \
-            --source-dir=dist_firefox \
-            --api-key="$AMO_JWT_ISSUER" \
-            --api-secret="$AMO_JWT_SECRET" \
-            --channel=listed
-          # Move signed XPI to root with proper naming
-          mv web-ext-artifacts/*.xpi voyager-firefox-${TAG}.xpi
-
-      - name: Prepare Release Notes
-        id: release_body
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPOSITORY: ${{ github.repository }}
-          TAG: ${{ steps.vars.outputs.tag_name }}
-          NOTES: ${{ inputs.notes }}
-        run: |
-          if [ -n "$NOTES" ]; then
-            delimiter="BODY_$(openssl rand -hex 16)"
-            {
-              echo "body<<$delimiter"
-              printf '%s\n' "$NOTES"
-              echo "$delimiter"
-            } >> "$GITHUB_OUTPUT"
-          else
-            # Get the previous tag for auto-generated notes
-            PREV_TAG=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || echo "")
-
-            # Generate release notes via GitHub API
-            AUTO_NOTES=""
-            if [ -n "$PREV_TAG" ]; then
-              AUTO_NOTES=$(gh api "repos/${GH_REPOSITORY}/releases/generate-notes" \
-                -f tag_name="${TAG}" \
-                -f target_commitish="main" \
-                -f previous_tag_name="${PREV_TAG}" \
-                --jq '.body' 2>/dev/null || echo "")
-            fi
-
-            cat > release_body.md << 'INSTALL_EOF'
-          ## 📥 Installation
-
-          <div align="center">
-            <a href="https://chromewebstore.google.com/detail/iifacdnjakkhjjiengaffnegbndgingi?utm_source=github&utm_medium=readme&utm_campaign=organic_growth&utm_content=en" target="_blank">
-              <img src="https://img.shields.io/badge/Chrome%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Web Store" height="36">
-            </a>
-            &nbsp;&nbsp;
-            <a href="https://microsoftedge.microsoft.com/addons/detail/voyager/gibmkggjijalcjinbdhcpklodjkhhlne" target="_blank">
-              <img src="https://img.shields.io/badge/Edge%20Add--ons-0078D7?style=for-the-badge&logo=microsoftedge&logoColor=white" alt="Edge Add-ons" height="36">
-            </a>
-            &nbsp;&nbsp;
-            <a href="https://addons.mozilla.org/firefox/addon/gemini-voyager/" target="_blank">
-              <img src="https://img.shields.io/badge/Firefox%20Add--ons-FF7139?style=for-the-badge&logo=firefox&logoColor=white" alt="Firefox Add-ons" height="36">
-            </a>
-          </div>
-
-          <p align="center">
-            <sub><b>Edge users:</b> Voyager is still maintained on Edge Add-ons for users who need Edge on mobile or tablet. If review is delayed, Chrome Web Store and GitHub manual packages remain available.</sub>
-          </p>
-          INSTALL_EOF
-
-            # Append version-specific file names
-            cat >> release_body.md << EOF
-
-          - **Chrome / Edge / Chromium browsers**: \`voyager-chrome-${TAG}.zip\`
-          - **Firefox**: \`voyager-firefox-${TAG}.xpi\`
-          - **Safari**: \`voyager-${TAG}.dmg\`
-
-          > Do not use GitHub's auto-generated **Source code (zip/tar.gz)** archives for manual extension installs. Those files are repository source snapshots, not browser-ready extension packages.
-
-          <details>
-          <summary><b>🍎 Safari 安装与升级说明 (Safari installation &amp; upgrade)</b></summary>
-
-          > 🎉 从 v1.6.0 起，Voyager 的核心功能已正式覆盖 Safari。
-          > Starting with v1.6.0, Voyager's core experience is officially supported on Safari.
-
-          - 📦 **安装 (Installation)**: 下载并打开 \`voyager-${TAG}.dmg\`，按提示安装应用。
-            Download and open \`voyager-${TAG}.dmg\`, then follow the prompts to install the app.
-          - ⚠️ **旧版升级 (Legacy upgrade)**: 如果仍安装着 \`Gemini Voyager.app\`，请先完成一次 [Safari 迁移步骤](https://voyager.nagi.fun/guide/safari-migration)，避免两个 App 并存。
-            If \`Gemini Voyager.app\` is still installed, follow the one-time [Safari migration guide](https://voyager.nagi.fun/en/guide/safari-migration) first so the two apps do not conflict.
-          - 🖼️ **图片能力 (Images)**: Image Refinement 水印去除、全尺寸图片下载与聊天导出中的图片提取均已支持。
-            Image Refinement watermark removal, full-size image downloads, and image extraction in conversation exports are supported.
-          - ☁️ **原生云同步 (Native cloud sync)**: Google Drive 与 iCloud 同步均已接入 Safari 原生层。
-            Google Drive and iCloud sync are integrated through Safari's native layer.
-          - 🔔 **系统通知 (Notifications)**: Gemini 回复完成后可发送 macOS 通知，并直达对应对话。
-            macOS can notify you when a Gemini response finishes and open the matching conversation.
-          - 🔄 **自动更新 (Automatic updates)**: 完成这次迁移后，后续版本可通过 Sparkle 自动更新。
-            After this one-time migration, future versions can update automatically through Sparkle.
-
-          </details>
-          EOF
-
-            # Combine: auto-generated notes first, then installation
-            delimiter="BODY_$(openssl rand -hex 16)"
-            {
-              echo "body<<$delimiter"
-              if [ -n "$AUTO_NOTES" ]; then
-                printf '%s\n\n' "$AUTO_NOTES"
-              fi
-              cat release_body.md
-              echo "$delimiter"
-            } >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
-        with:
-          name: Voyager ${{ steps.vars.outputs.tag_name }}
-          tag_name: ${{ steps.vars.outputs.tag_name }}
-          files: |
-            voyager-chrome-*.zip
-            voyager-firefox-*.xpi
-            voyager-*.dmg
-            appcast.xml
-          body: ${{ steps.release_body.outputs.body }}
-
-      # Store publishing happens after the GitHub Release and Firefox/AMO
-      # submission, so a store-side failure does not prevent release assets.
-      - name: Publish to Chrome Web Store
-        env:
-          TAG: ${{ steps.vars.outputs.tag_name }}
-          EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
-          CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
-          REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
-        run: |
-          # Chrome Web Store rejects a manifest that still carries the local dev `key`
-          # field (PKG_MANIFEST_KEY_NOT_MATCH). Strip it into a store-only copy; the
-          # GitHub Release zip keeps the key for manual unpacked installs.
-          rm -rf cws_pkg "voyager-chrome-cws-${TAG}.zip"
-          mkdir cws_pkg
-          unzip -q "voyager-chrome-${TAG}.zip" -d cws_pkg
-          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('cws_pkg/manifest.json','utf8'));delete m.key;fs.writeFileSync('cws_pkg/manifest.json',JSON.stringify(m,null,2)+'\n');"
-          (cd cws_pkg && zip -qr "../voyager-chrome-cws-${TAG}.zip" .)
-          node_modules/.bin/chrome-webstore-upload \
-            --source "voyager-chrome-cws-${TAG}.zip" \
-            --extension-id "$EXTENSION_ID"
-      - name: Build and publish to Edge Add-ons
-        env:
-          EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
-          EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
-          EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
-          TAG: ${{ steps.vars.outputs.tag_name }}
-        run: |
-          bun run build:edge
-          node scripts/verify-release-privacy.mjs dist_edge
-          node scripts/publish-edge.js "voyager-edge-${TAG}.zip" \
-            --notes "Voyager ${TAG} automated release submission."
-
-  # Job 4: Build and publish a Firefox-only four-part hotfix from main. This
-  # leaves the shared product version and every other store untouched; the next
-  # three-part release still sorts above the hotfix (1.6.1 > 1.6.0.1).
+  # Job 5: Build and publish a Firefox-only four-part hotfix from main.
   publish-firefox-hotfix:
     if: >-
       github.event_name == 'workflow_dispatch' &&
       github.ref == 'refs/heads/main' &&
       inputs.publish_firefox_only &&
       !inputs.publish_only &&
+      !inputs.dry_run &&
       !inputs.publish_edge_only &&
       inputs.version != ''
-    runs-on: ubuntu-latest
-    environment: release
     permissions:
       contents: write
-    steps:
-      - name: Checkout main
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
+    uses: ./.github/workflows/release-firefox-hotfix.yml
+    with:
+      version: ${{ inputs.version }}
+    secrets: inherit
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Validate Firefox hotfix version
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          CURRENT=$(node -p "require('./package.json').version")
-          BASE=${VERSION%.*}
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[1-9][0-9]*$ ]] || [ "$BASE" != "$CURRENT" ]; then
-            echo "Firefox hotfix must be a four-part version above the current base (${CURRENT}.1)." >&2
-            exit 64
-          fi
-
-      - name: Build and verify Firefox hotfix
-        env:
-          VERSION: ${{ inputs.version }}
-          VOYAGER_FIREFOX_VERSION: ${{ inputs.version }}
-          VOYAGER_FIREFOX_OAUTH_CLIENT_SECRET: ${{ secrets.VOYAGER_FIREFOX_OAUTH_CLIENT_SECRET }}
-        run: |
-          bun run plugin:release:check
-          if [ -z "$VOYAGER_FIREFOX_OAUTH_CLIENT_SECRET" ]; then
-            echo "::error::VOYAGER_FIREFOX_OAUTH_CLIENT_SECRET is not set; Firefox Google Drive sign-in needs it." >&2
-            exit 1
-          fi
-          bun run build:firefox
-          node -e "const fs=require('fs');const actual=JSON.parse(fs.readFileSync('dist_firefox/manifest.json','utf8')).version;if(actual!==process.env.VERSION)throw new Error('Firefox manifest version mismatch: '+actual);"
-          node scripts/verify-release-privacy.mjs dist_firefox
-
-      - name: Sign Firefox hotfix and submit to AMO
-        env:
-          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
-          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
-          VERSION: ${{ inputs.version }}
-        run: |
-          node_modules/.bin/web-ext sign \
-            --source-dir=dist_firefox \
-            --api-key="$AMO_JWT_ISSUER" \
-            --api-secret="$AMO_JWT_SECRET" \
-            --channel=listed
-          mv web-ext-artifacts/*.xpi "voyager-firefox-v${VERSION}.xpi"
-
-      - name: Upload signed Firefox hotfix artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: firefox-hotfix-${{ inputs.version }}
-          path: voyager-firefox-v${{ inputs.version }}.xpi
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Refresh Firefox asset on the base GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ inputs.version }}
-        run: |
-          BASE_VERSION=${VERSION%.*}
-          HOTFIX_ASSET="voyager-firefox-v${VERSION}.xpi"
-          RELEASE_ASSET="voyager-firefox-v${BASE_VERSION}.xpi"
-          cp "$HOTFIX_ASSET" "$RELEASE_ASSET"
-          gh release view "v${BASE_VERSION}" --repo "$GITHUB_REPOSITORY" >/dev/null
-          gh release upload "v${BASE_VERSION}" "$RELEASE_ASSET" \
-            --repo "$GITHUB_REPOSITORY" \
-            --clobber
-
-  # Job 5: Re-publish Chrome only (manual) — recover a failed Chrome Web Store
-  # upload without re-cutting the release. Downloads the existing release's Chrome
-  # zip, strips the dev `key`, and publishes. No version bump, no rebuild.
+  # Job 6: Re-publish Chrome only — recover a failed Chrome Web Store upload.
   republish-chrome:
     if: >-
       github.event_name == 'workflow_dispatch' &&
       inputs.publish_only &&
       !inputs.publish_firefox_only &&
+      !inputs.dry_run &&
       inputs.version != ''
-    runs-on: ubuntu-latest
-    environment: release
     permissions:
       contents: read
-    steps:
-      - name: Checkout release tooling
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          persist-credentials: false
+    uses: ./.github/workflows/release-chrome-retry.yml
+    with:
+      version: ${{ inputs.version }}
+    secrets: inherit
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Validate release version
-        id: vars
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]]; then
-            echo "Invalid release version: $VERSION" >&2
-            exit 64
-          fi
-          printf 'tag=v%s\n' "$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Download Chrome zip from the existing release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPOSITORY: ${{ github.repository }}
-          TAG: ${{ steps.vars.outputs.tag }}
-        run: |
-          gh release download "$TAG" --repo "$GH_REPOSITORY" --pattern "voyager-chrome-${TAG}.zip"
-          ls -la "voyager-chrome-${TAG}.zip"
-
-      - name: Strip dev key and publish to Chrome Web Store
-        env:
-          EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
-          CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
-          REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
-          TAG: ${{ steps.vars.outputs.tag }}
-        run: |
-          ZIP="voyager-chrome-${TAG}.zip"
-          rm -rf cws_pkg "voyager-chrome-cws-${TAG}.zip"
-          mkdir cws_pkg
-          unzip -q "$ZIP" -d cws_pkg
-          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('cws_pkg/manifest.json','utf8'));delete m.key;fs.writeFileSync('cws_pkg/manifest.json',JSON.stringify(m,null,2)+'\n');"
-          (cd cws_pkg && zip -qr "../voyager-chrome-cws-${TAG}.zip" .)
-          node_modules/.bin/chrome-webstore-upload \
-            --source "voyager-chrome-cws-${TAG}.zip" \
-            --extension-id "$EXTENSION_ID"
-
-  # Job 6: Publish Edge only (manual) — recover or retry Microsoft Edge Add-ons
-  # submission without re-cutting the release. Downloads the existing release's
-  # Chrome zip, strips the dev `key`, and submits the package to Edge review.
+  # Job 7: Publish Edge only — recover or retry a Microsoft Edge Add-ons submission.
   republish-edge:
     if: >-
       github.event_name == 'workflow_dispatch' &&
       inputs.publish_edge_only &&
       !inputs.publish_firefox_only &&
+      !inputs.dry_run &&
       inputs.version != ''
-    runs-on: ubuntu-latest
-    environment: release
     permissions:
       contents: read
-    steps:
-      - name: Checkout scripts
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          persist-credentials: false
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Validate release version
-        id: vars
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]]; then
-            echo "Invalid release version: $VERSION" >&2
-            exit 64
-          fi
-          printf 'tag=v%s\n' "$VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Download Chrome zip from the existing release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPOSITORY: ${{ github.repository }}
-          TAG: ${{ steps.vars.outputs.tag }}
-        run: |
-          gh release download "$TAG" --repo "$GH_REPOSITORY" --pattern "voyager-chrome-${TAG}.zip"
-          ls -la "voyager-chrome-${TAG}.zip"
-
-      - name: Prepare Edge package and publish to Edge Add-ons
-        env:
-          EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
-          EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
-          EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
-          TAG: ${{ steps.vars.outputs.tag }}
-        run: |
-          ZIP="voyager-chrome-${TAG}.zip"
-          rm -rf edge_pkg "voyager-edge-${TAG}.zip"
-          mkdir edge_pkg
-          unzip -q "$ZIP" -d edge_pkg
-          node -e "const fs=require('fs');const m=JSON.parse(fs.readFileSync('edge_pkg/manifest.json','utf8'));delete m.key;fs.writeFileSync('edge_pkg/manifest.json',JSON.stringify(m,null,2)+'\n');"
-          (cd edge_pkg && zip -qr "../voyager-edge-${TAG}.zip" .)
-          node scripts/publish-edge.js "voyager-edge-${TAG}.zip" \
-            --notes "Voyager ${TAG} automated Edge Add-ons submission."
+    uses: ./.github/workflows/release-edge-retry.yml
+    with:
+      version: ${{ inputs.version }}
+    secrets: inherit

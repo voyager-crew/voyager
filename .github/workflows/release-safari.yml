@@ -1,0 +1,239 @@
+name: Release · Safari
+
+# Called by release.yml: builds, signs and notarizes the Safari direct-distribution
+# app, then hands the DMG and Sparkle appcast to the publish job as an artifact.
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Release tag, e.g. v1.2.0; names the DMG and the appcast entry'
+        required: true
+        type: string
+      ref:
+        description: 'What to check out: the tag, or a commit for a dry run'
+        required: true
+        type: string
+      dry_run:
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  BUN_VERSION: '1.3.12'
+
+jobs:
+  build-safari-release:
+    runs-on: macos-15
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout trusted release source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify release commit is on main
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git fetch origin main --no-tags
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "Release tag must point to a commit already on origin/main" >&2
+            exit 1
+          fi
+
+      - name: Check required Safari release secrets
+        env:
+          APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_APP_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_APP_PROVISIONING_PROFILE_BASE64 }}
+          APPLE_EXTENSION_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_EXTENSION_PROVISIONING_PROFILE_BASE64 }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          missing=()
+          for name in \
+            APPLE_CERTIFICATE_P12_BASE64 \
+            APPLE_CERTIFICATE_PASSWORD \
+            APPLE_ID \
+            APPLE_APP_SPECIFIC_PASSWORD \
+            APPLE_APP_PROVISIONING_PROFILE_BASE64 \
+            APPLE_EXTENSION_PROVISIONING_PROFILE_BASE64 \
+            SPARKLE_PRIVATE_KEY
+          do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ ${#missing[@]} -ne 0 ]; then
+            printf 'Missing Safari release secrets: %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Setup Python for Safari DMG builder
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.13'
+
+      - name: Install Safari DMG builder
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: \
+            'dmgbuild==1.6.7' \
+            'ds-store==1.3.3' \
+            'mac-alias==2.2.3'
+          python -c 'from importlib.metadata import version; print(version("dmgbuild"))'
+
+      - name: Build Safari web extension
+        run: bun run plugin:release:check && bun run build:safari
+
+      - name: Import Developer ID certificate
+        uses: Apple-Actions/import-codesign-certs@5142e029c445c10ffc7149d172e540235a065466 # v7
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+
+      - name: Install Developer ID provisioning profiles
+        env:
+          APPLE_APP_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_APP_PROVISIONING_PROFILE_BASE64 }}
+          APPLE_EXTENSION_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_EXTENSION_PROVISIONING_PROFILE_BASE64 }}
+          CLOUDKIT_PRODUCTION_SCHEMA_SHA256: ${{ vars.CLOUDKIT_PRODUCTION_SCHEMA_SHA256 }}
+        run: |
+          profile_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$profile_dir"
+
+          install_profile() {
+            local encoded=$1
+            local label=$2
+            local expected_bundle_id=$3
+            local profile="$RUNNER_TEMP/$label.provisionprofile"
+            local plist="$RUNNER_TEMP/$label.plist"
+
+            printf '%s' "$encoded" | base64 --decode > "$profile"
+            security cms -D -i "$profile" > "$plist"
+
+            local uuid
+            local name
+            uuid=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$plist")
+            name=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$plist")
+
+            python3 - "$plist" "$expected_bundle_id" "$label" <<'PY'
+          import datetime
+          import plistlib
+          import sys
+
+          path, expected_bundle_id, label = sys.argv[1:]
+          team_id = "PJM828YBFJ"
+          with open(path, "rb") as handle:
+              profile = plistlib.load(handle)
+
+          expires = profile.get("ExpirationDate")
+          now = datetime.datetime.now(datetime.timezone.utc)
+          if isinstance(expires, datetime.datetime) and expires.tzinfo is None:
+              expires = expires.replace(tzinfo=datetime.timezone.utc)
+          if not isinstance(expires, datetime.datetime) or expires <= now:
+              raise SystemExit(f"{label} provisioning profile is expired or has no expiration date")
+
+          entitlements = profile.get("Entitlements", {})
+          application_id = entitlements.get("application-identifier")
+          if application_id != f"{team_id}.{expected_bundle_id}":
+              raise SystemExit(f"{label} provisioning profile has the wrong application identifier")
+
+          profile_team = entitlements.get("com.apple.developer.team-identifier")
+          if profile_team not in (None, team_id):
+              raise SystemExit(f"{label} provisioning profile has the wrong Team ID")
+
+          if label == "extension":
+              services = entitlements.get("com.apple.developer.icloud-services", [])
+              containers = entitlements.get("com.apple.developer.icloud-container-identifiers", [])
+              environment = entitlements.get("com.apple.developer.icloud-container-environment")
+              if "CloudKit" not in services and "*" not in services:
+                  raise SystemExit("extension provisioning profile does not permit CloudKit")
+              if "iCloud.com.yourCompany.Gemini-Voyager" not in containers:
+                  raise SystemExit("extension provisioning profile has the wrong iCloud container")
+              if environment != "Production":
+                  raise SystemExit("extension provisioning profile is not for Production CloudKit")
+          PY
+
+            if [[ "$label" == "extension" ]]; then
+              expected_schema_hash=$(shasum -a 256 Voyager/CloudKit/VoyagerSchema.ckdb | awk '{print $1}')
+              if [ "${CLOUDKIT_PRODUCTION_SCHEMA_SHA256:-}" != "$expected_schema_hash" ]; then
+                echo "CloudKit Production schema is not acknowledged for this release." >&2
+                echo "After deploying Voyager/CloudKit/VoyagerSchema.ckdb to Production, set" >&2
+                echo "the release environment variable CLOUDKIT_PRODUCTION_SCHEMA_SHA256=$expected_schema_hash" >&2
+                exit 1
+              fi
+            fi
+
+            cp "$profile" "$profile_dir/$uuid.provisionprofile"
+            printf '%s|%s\n' "$uuid" "$name"
+          }
+
+          app_profile=$(install_profile \
+            "$APPLE_APP_PROVISIONING_PROFILE_BASE64" \
+            app \
+            com.yourCompany.Gemini-Voyager)
+          extension_profile=$(install_profile \
+            "$APPLE_EXTENSION_PROVISIONING_PROFILE_BASE64" \
+            extension \
+            com.yourCompany.Gemini-Voyager.Extension)
+          app_profile_uuid=${app_profile%%|*}
+          app_profile_name=${app_profile#*|}
+          extension_profile_uuid=${extension_profile%%|*}
+          extension_profile_name=${extension_profile#*|}
+          echo "VOYAGER_APP_PROFILE_NAME=$app_profile_name" >> "$GITHUB_ENV"
+          echo "VOYAGER_EXTENSION_PROFILE_NAME=$extension_profile_name" >> "$GITHUB_ENV"
+          echo "VOYAGER_APP_PROFILE_UUID=$app_profile_uuid" >> "$GITHUB_ENV"
+          echo "VOYAGER_EXTENSION_PROFILE_UUID=$extension_profile_uuid" >> "$GITHUB_ENV"
+
+      - name: Build, sign, notarize and prepare Sparkle update
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: PJM828YBFJ
+          VOYAGER_APP_PROFILE_NAME: ${{ env.VOYAGER_APP_PROFILE_NAME }}
+          VOYAGER_EXTENSION_PROFILE_NAME: ${{ env.VOYAGER_EXTENSION_PROFILE_NAME }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          chmod +x scripts/build-safari-release.sh scripts/generate-sparkle-appcast.sh
+          scripts/build-safari-release.sh \
+            "$RELEASE_TAG" \
+            "$RUNNER_TEMP/safari-release"
+
+      - name: Upload Safari release artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: safari-release
+          path: |
+            ${{ runner.temp }}/safari-release/voyager-*.dmg
+            ${{ runner.temp }}/safari-release/appcast.xml
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Remove provisioning profiles
+        if: always()
+        run: |
+          profile_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
+          rm -f \
+            "$profile_dir/${VOYAGER_APP_PROFILE_UUID:-missing}.provisionprofile" \
+            "$profile_dir/${VOYAGER_EXTENSION_PROFILE_UUID:-missing}.provisionprofile" \
+            "$RUNNER_TEMP/app.provisionprofile" \
+            "$RUNNER_TEMP/app.plist" \
+            "$RUNNER_TEMP/extension.provisionprofile" \
+            "$RUNNER_TEMP/extension.plist"
