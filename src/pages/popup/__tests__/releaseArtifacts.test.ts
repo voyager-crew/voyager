@@ -1,6 +1,16 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+
+/** release.yml and the stage workflows it calls (`release-*.yml`), as one text. */
+function readReleaseWorkflows(): string {
+  const dir = resolve(process.cwd(), '.github/workflows');
+  return readdirSync(dir)
+    .filter((file) => file === 'release.yml' || /^release-.+\.yml$/.test(file))
+    .sort()
+    .map((file) => readFileSync(resolve(dir, file), 'utf8'))
+    .join('\n');
+}
 
 describe('release artifacts', () => {
   it('documents the browser-ready Voyager artifacts instead of source archives', () => {
@@ -13,7 +23,7 @@ describe('release artifacts', () => {
   });
 
   it('validates the Chrome release zip root before publishing', () => {
-    const workflow = readFileSync(resolve(process.cwd(), '.github/workflows/release.yml'), 'utf8');
+    const workflow = readReleaseWorkflows();
 
     expect(workflow).toContain('voyager-chrome-${TAG}.zip');
     expect(workflow).toContain("grep -qx 'manifest.json' chrome-zip-files.txt");
@@ -21,7 +31,7 @@ describe('release artifacts', () => {
   });
 
   it('checks release outputs for private data and keeps AMO secrets out of workflow commands', () => {
-    const workflow = readFileSync(resolve(process.cwd(), '.github/workflows/release.yml'), 'utf8');
+    const workflow = readReleaseWorkflows();
 
     expect(workflow).toContain(
       'node scripts/verify-release-privacy.mjs dist_chrome dist_firefox dist_safari',
@@ -32,7 +42,7 @@ describe('release artifacts', () => {
   });
 
   it('supports a Firefox-only four-part hotfix without changing other store versions', () => {
-    const workflow = readFileSync(resolve(process.cwd(), '.github/workflows/release.yml'), 'utf8');
+    const workflow = readReleaseWorkflows();
     const firefoxConfig = readFileSync(resolve(process.cwd(), 'vite.config.firefox.ts'), 'utf8');
 
     expect(workflow).toContain('publish_firefox_only');
@@ -49,7 +59,7 @@ describe('release artifacts', () => {
   });
 
   it('keeps full Safari support guidance collapsed without restoring obsolete limitations', () => {
-    const workflow = readFileSync(resolve(process.cwd(), '.github/workflows/release.yml'), 'utf8');
+    const workflow = readReleaseWorkflows();
     const safariDetails = workflow.match(
       /<details>\s*<summary><b>[^<]*Safari[^<]*<\/b><\/summary>[\s\S]*?<\/details>/,
     )?.[0];
@@ -71,7 +81,7 @@ describe('release artifacts', () => {
   });
 
   it('builds a branded Safari DMG with a fixed drag-to-Applications layout', () => {
-    const workflow = readFileSync(resolve(process.cwd(), '.github/workflows/release.yml'), 'utf8');
+    const workflow = readReleaseWorkflows();
     const script = readFileSync(resolve(process.cwd(), 'scripts/build-safari-release.sh'), 'utf8');
     const background = readFileSync(
       resolve(process.cwd(), 'scripts/assets/safari-dmg-background.png'),
