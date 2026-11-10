@@ -88,7 +88,7 @@
   ["profiles/gems.title", [".title-container", ".bot-title-inner"]],
   ["profiles/gems.description", [".bot-desc"]],
   ["profiles/gems.icon", [".bot-logo-text"]],
-  ["profiles/sidebarHover.dialogs", [".mat-mdc-dialog-container"]],
+  ["profiles/sidebarHover.dialogs", [".mat-mdc-dialog-container", "iframe[name='account']"]],
   ["profiles/sidebarHover.menus", [".mat-mdc-menu-panel"]],
   [
     "profiles/sidebarWidth.buttons",

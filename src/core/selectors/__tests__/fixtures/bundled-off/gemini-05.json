@@ -14,7 +14,10 @@
     "sent-chips.json/sentChips.bubbles",
     [".user-query-bubble-with-background", ".user-query-bubble-container", ".user-query-container"]
   ],
-  ["sidebar-hover.json/sidebarHover.dialogs", [".mat-mdc-dialog-container"]],
+  [
+    "sidebar-hover.json/sidebarHover.dialogs",
+    [".mat-mdc-dialog-container", "iframe[name='account']"]
+  ],
   ["sidebar-hover.json/sidebarHover.menus", [".mat-mdc-menu-panel"]],
   ["sidebar-interaction-packaged.json/widthButtons", ["bard-sidenav button"]],
   ["sidebar-interaction-packaged.json/widthIcon", ["mat-icon[fonticon]"]],

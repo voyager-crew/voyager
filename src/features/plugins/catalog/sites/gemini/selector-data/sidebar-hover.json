@@ -1,4 +1,4 @@
 {
-  "sidebarHover.dialogs": [".mat-mdc-dialog-container"],
+  "sidebarHover.dialogs": [".mat-mdc-dialog-container", "iframe[name='account']"],
   "sidebarHover.menus": [".mat-mdc-menu-panel"]
 }
