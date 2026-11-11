@@ -7,7 +7,6 @@ import { StorageKeys } from '@/core/types/common';
 import type { FormFactor } from '@/core/utils/formFactor';
 import { PANEL_MESSAGE } from '@/features/panel/protocol';
 import { importLocalPlugin } from '@/features/plugins/local/localPluginImport';
-import { SCRIPTED_RELOAD_PAGE_REQUEST } from '@/features/plugins/scripted/messages';
 import { readScriptedPlugin } from '@/features/plugins/scripted/state';
 
 import { fakeUserScripts } from '../../background/scriptedCreations/__tests__/fakeUserScripts';
@@ -116,6 +115,7 @@ describe('reviewing a reply that runs code', () => {
     const declarative = local[StorageKeys.PLUGINS_STATE] as Record<string, { enabled?: boolean }>;
     expect(declarative[ID]?.enabled).not.toBe(true);
     expect(review()?.textContent).toContain('Send counter is on.');
+    expect(review()?.textContent).toContain('It’s in Features, under My creations.');
   });
 
   it('turns nothing on when the install changed after the review, then reviews the reply again', async () => {
@@ -167,40 +167,5 @@ describe('when this browser cannot run it yet', () => {
     expect(card?.textContent).toContain(en.scriptedUnsupported);
     expect(card?.textContent).toContain(en.scriptedUnsupportedHint);
     expect(button(en.panelCreateInstall)).toBeNull();
-  });
-});
-
-describe('stopping every creation that runs code', () => {
-  it('stops, says open pages keep them until a reload, reloads on request, and resumes', async () => {
-    const fake = allowUserScripts();
-    expect((await importLocalPlugin(PLUGIN)).ok).toBe(true);
-    local[StorageKeys.PLUGIN_SCRIPTED_STATE] = {
-      version: 1,
-      stopped: false,
-      enabled: { [ID]: { reviewHash: await hashOf(PLUGIN), enabledAt: 1 } },
-      crashNotices: {},
-    };
-    pageHolds(null);
-    await mount(GEMINI);
-    await click(tab('create'));
-    expect([...fake.scripts.keys()]).toEqual([ID]);
-
-    await click(button(en.scriptedStopAll));
-    await settle();
-    expect(scriptedState()?.stopped).toBe(true);
-    expect(scriptedState()?.enabled[ID]).toBeDefined();
-    expect([...fake.scripts.keys()]).toEqual([]);
-    expect(query('[data-testid="scripted-stopped"]')?.textContent).toContain(
-      en.scriptedStoppedReload,
-    );
-
-    await click(button(en.scriptedReloadPage));
-    expect(tabRequests).toContainEqual({ type: SCRIPTED_RELOAD_PAGE_REQUEST });
-
-    await click(button(en.scriptedResume));
-    await settle();
-    expect(scriptedState()?.stopped).toBe(false);
-    expect([...fake.scripts.keys()]).toEqual([ID]);
-    expect(button(en.scriptedStopAll)).not.toBeNull();
   });
 });

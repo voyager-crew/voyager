@@ -79,6 +79,10 @@
     "message": "還想改？直接在這個對話裡告訴 AI，Voyager 會在它的回覆下提示新版本。",
     "description": "Create tab: how to change the installed plugin again"
   },
+  "panelCreateFoundIn": {
+    "message": "它在「{features}」分頁的「{creations}」裡。",
+    "description": "Create tab, after an install: where the creation is now; {features} is the Features tab name, {creations} the My creations group name"
+  },
   "panelCreateFailed": {
     "message": "Voyager 無法安裝它，沒有任何變動。",
     "description": "Create tab: the install failed; nothing was installed"
@@ -158,6 +162,18 @@
   "panelRemoveWebsite": {
     "message": "移除 {site}",
     "description": "Accessible name of the remove button of an added website; {site} is its host"
+  },
+  "panelCreationRemove": {
+    "message": "移除 {name}",
+    "description": "Accessible name of the remove button on a creation in the Features tab; {name} is the creation"
+  },
+  "panelCreationRemoveAsk": {
+    "message": "要從這個瀏覽器移除 {name} 嗎？移除後無法復原。",
+    "description": "Features tab: asked under a creation before removing it; {name} is the creation"
+  },
+  "panelRemoveCreationFailed": {
+    "message": "Voyager 無法移除 {name}，請再試一次。",
+    "description": "Toast: storage refused to remove a creation; {name} is the creation"
   },
   "panelSyncShared": {
     "message": "通用",

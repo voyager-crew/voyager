@@ -79,6 +79,10 @@
     "message": "Quer mudar algo? Diga à IA neste chat, e o Voyager oferece a nova versão abaixo da resposta.",
     "description": "Create tab: how to change the installed plugin again"
   },
+  "panelCreateFoundIn": {
+    "message": "Ela está em {features}, em {creations}.",
+    "description": "Create tab, after an install: where the creation is now; {features} is the Features tab name, {creations} the My creations group name"
+  },
   "panelCreateFailed": {
     "message": "O Voyager não conseguiu instalar. Nada foi alterado.",
     "description": "Create tab: the install failed; nothing was installed"
@@ -158,6 +162,18 @@
   "panelRemoveWebsite": {
     "message": "Remover {site}",
     "description": "Accessible name of the remove button of an added website; {site} is its host"
+  },
+  "panelCreationRemove": {
+    "message": "Remover {name}",
+    "description": "Accessible name of the remove button on a creation in the Features tab; {name} is the creation"
+  },
+  "panelCreationRemoveAsk": {
+    "message": "Remover {name} deste navegador? Não dá para desfazer.",
+    "description": "Features tab: asked under a creation before removing it; {name} is the creation"
+  },
+  "panelRemoveCreationFailed": {
+    "message": "O Voyager não conseguiu remover {name}. Tente de novo.",
+    "description": "Toast: storage refused to remove a creation; {name} is the creation"
   },
   "panelSyncShared": {
     "message": "Comum",

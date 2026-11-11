@@ -4371,7 +4371,7 @@
     "description": "Label above the full source code of a creation that runs code"
   },
   "scriptedInstallNote": {
-    "message": "It turns on right away, on this device only. You can stop every creation that runs code at any time from My creations or the panel’s Create tab.",
+    "message": "It turns on right away, on this device only. You can stop every creation that runs code at any time from My creations.",
     "description": "Under the review of a creation that runs code, before Install and turn on"
   },
   "scriptedInstallAndTurnOn": {
@@ -4496,7 +4496,7 @@
   },
   "scriptedStopAll": {
     "message": "Stop all creations that run code",
-    "description": "Kill switch button in My creations and the panel’s Create tab"
+    "description": "Kill switch button at the end of My creations, in the popup and the panel’s Features tab"
   },
   "scriptedStoppedAll": {
     "message": "Creations that run code are stopped.",

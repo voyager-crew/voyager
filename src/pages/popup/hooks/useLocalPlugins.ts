@@ -76,12 +76,9 @@ function downloadText(filename: string, text: string): void {
   }, 0);
 }
 
-/** Local plugin list plus import / export / remove for the popup plugin page. */
-export function useLocalPlugins() {
+/** The stored local plugins, kept fresh as they are imported, updated or removed. */
+export function useLocalPluginEntries(): readonly LocalPluginEntry[] {
   const [entries, setEntries] = useState<readonly LocalPluginEntry[]>([]);
-  const [result, setResult] = useState<LocalPluginImportResult | null>(null);
-  const [busy, setBusy] = useState(false);
-
   useEffect(() => {
     let active = true;
     const load = (): void => {
@@ -96,6 +93,14 @@ export function useLocalPlugins() {
       unsubscribe();
     };
   }, []);
+  return entries;
+}
+
+/** Local plugin list plus import / export / remove for the popup plugin page. */
+export function useLocalPlugins() {
+  const entries = useLocalPluginEntries();
+  const [result, setResult] = useState<LocalPluginImportResult | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const runImport = useCallback(
     async (job: () => Promise<LocalPluginImportResult>): Promise<LocalPluginImportResult> => {

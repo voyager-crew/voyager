@@ -7,6 +7,7 @@ import {
   resolvePluginSettings,
   unavailableChoices,
 } from '@/features/plugins/runtime/resolvePluginSettings';
+import type { ScriptedManifest } from '@/features/plugins/scripted/types';
 import { legacyValueWrite } from '@/features/plugins/storage/legacyValueBindings';
 import type { PluginManifest, PluginSettingValue } from '@/features/plugins/types';
 import {
@@ -22,9 +23,11 @@ import type { OfficialPluginRow } from '@/pages/popup/officialPlugins/useOfficia
 import type { TranslationKey } from '@/utils/translations';
 
 import { fillPlaceholders } from '../panelText';
-import { rowIcon, rowTopic } from './rowPresentation';
+import { CREATIONS_GROUP, rowGroup, rowIcon } from './rowPresentation';
 
-export type PanelGroupId = 'entry' | OfficialPluginTopicId;
+export { CREATIONS_GROUP };
+
+export type PanelGroupId = 'entry' | typeof CREATIONS_GROUP | OfficialPluginTopicId;
 
 export interface PanelSlider {
   readonly key: string;
@@ -69,6 +72,24 @@ export interface PanelRow {
   readonly keyCap?: { readonly label: string; readonly hint: string };
   /** The switch's element id when something outside the panel looks for it. */
   readonly switchId?: string;
+  /** Set on a creation's row: its removal and, when it runs code, its state and review. */
+  readonly creation?: PanelCreation;
+}
+
+export interface PanelCreation {
+  /** Removes it from this browser; false when storage refused. */
+  readonly remove: () => Promise<boolean>;
+  readonly code: PanelCodeCreation | null;
+}
+
+/**
+ * A creation that runs code. While it is not on, its row has no switch: it
+ * turns on only from its review, bound to the `manifest` that review shows.
+ */
+export interface PanelCodeCreation {
+  readonly manifest: ScriptedManifest;
+  /** The popup's run-state line: on, off, or paused with its reason. */
+  readonly state: string;
 }
 
 export interface PanelGroup {
@@ -164,7 +185,7 @@ export function officialPanelRow(
       ...entry.searchKeys.flatMap((key) => [t(key), english(key)]),
       ...(entry.searchAliases ?? []),
     ]),
-    icon: rowIcon(manifest.id),
+    icon: rowIcon(manifest),
     enabled: !unavailable && row.enabled,
     note,
     locked: requirement !== null,
@@ -240,10 +261,10 @@ export function catalogPanelRow(plugin: PluginManifest, inputs: CatalogRowInputs
   const note = pluginIncompatibleNote(status, plugin, inputs.siteLabel, t);
   return {
     id: plugin.id,
-    group: rowTopic(plugin),
+    group: rowGroup(plugin),
     name,
     search: lower([name, plugin.name, displayName(plugin.name)]),
-    icon: rowIcon(plugin.id),
+    icon: rowIcon(plugin),
     enabled,
     note,
     locked: !enabled && note !== null,
@@ -253,13 +274,44 @@ export function catalogPanelRow(plugin: PluginManifest, inputs: CatalogRowInputs
   };
 }
 
-/** "入口" first, then the official topics in their order; rows keep the order given. */
+/** A creation that runs code, from its stored manifest and the run state the popup shows. */
+export function codeCreationRow(
+  manifest: ScriptedManifest,
+  inputs: {
+    readonly language: string;
+    /** Turned on, though maybe paused by this browser or the kill switch. */
+    readonly on: boolean;
+    readonly state: string;
+    readonly turnOff: () => void;
+    readonly remove: () => Promise<boolean>;
+  },
+): PanelRow {
+  const name = displayName(pickLocalized(manifest, 'name', inputs.language));
+  return {
+    id: manifest.id,
+    group: CREATIONS_GROUP,
+    name,
+    search: lower([name, manifest.name]),
+    icon: rowIcon(manifest),
+    enabled: inputs.on,
+    note: null,
+    locked: false,
+    // Never a way on: only the review's Turn on enables it.
+    toggle: (next) => {
+      if (!next) inputs.turnOff();
+    },
+    creation: { remove: inputs.remove, code: { manifest, state: inputs.state } },
+  };
+}
+
+/** "入口", My creations, then the official topics in their order; rows keep the order given. */
 export function groupPanelRows(
   rows: readonly PanelRow[],
   t: (key: TranslationKey) => string,
 ): PanelGroup[] {
   const order: readonly { id: PanelGroupId; label: string }[] = [
     { id: 'entry', label: t('panelEntryGroup') },
+    { id: CREATIONS_GROUP, label: t('localPluginsTitle') },
     ...OFFICIAL_PLUGIN_TOPICS.map((topic) => ({ id: topic.id, label: t(topic.tocLabel) })),
   ];
   return order.flatMap(({ id, label }) => {
@@ -276,6 +328,17 @@ export function filterPanelGroups(groups: readonly PanelGroup[], query: string):
     const rows = group.rows.filter((row) => row.search.some((text) => text.includes(needle)));
     return rows.length ? [{ ...group, rows }] : [];
   });
+}
+
+/**
+ * The tab's two columns. My creations heads the first; the other groups split
+ * as if it were absent, so adding or removing a creation never moves an
+ * official group to the other column.
+ */
+export function featureColumns(groups: readonly PanelGroup[]): [PanelGroup[], PanelGroup[]] {
+  const creations = groups.filter((group) => group.id === CREATIONS_GROUP);
+  const [start, end] = splitColumns(groups.filter((group) => group.id !== CREATIONS_GROUP));
+  return [[...creations, ...start], end];
 }
 
 /** Two columns in reading order, split where their heights (rows plus a label) come closest. */

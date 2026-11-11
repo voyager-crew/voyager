@@ -67,6 +67,7 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
   );
   const viewed = (viewedKey !== null && viewedKey !== own.key && siteByKey(viewedKey)) || own;
   const viewingPage = viewed.key === own.key;
+  const scripted = usePanelScripted(tab.requestTab);
   const model = usePanelModel({
     sessionId: session.sessionId,
     tab,
@@ -74,6 +75,7 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
     viewingPage,
     shortcut,
     toast: show,
+    scripted,
   });
 
   const failed = useCallback(
@@ -140,7 +142,6 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
     requestTab: tab.requestTab,
     onReview: () => changeView('create'),
   });
-  const scripted = usePanelScripted(tab.requestTab);
   const viewSite = useCallback(
     (key: string) => {
       setViewedKey(key);
@@ -224,10 +225,11 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
               groups={groups}
               previewing={viewingPage}
               shell={shell}
+              creations={{ scripted, activeUrl: viewed.url, t }}
               emptyText={t('panelNoMatches')}
             />
           ) : view === 'create' ? (
-            <CreateView handoff={handoff} scripted={scripted} t={t}>
+            <CreateView handoff={handoff} t={t}>
               <CreationReview review={review} scripted={scripted} t={t} />
             </CreateView>
           ) : (

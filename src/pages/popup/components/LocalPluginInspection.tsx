@@ -1,6 +1,6 @@
 import { type ReactNode, useMemo } from 'react';
 
-import { inspectPlugin } from '@/features/plugins/local/inspectPlugin';
+import { type PluginInspection, inspectPlugin } from '@/features/plugins/local/inspectPlugin';
 import { isScriptedManifest } from '@/features/plugins/scripted/types';
 import type { PluginManifest } from '@/features/plugins/types';
 import type { TranslationKey } from '@/utils/translations';
@@ -33,6 +33,11 @@ function Lines({ items, none }: { items: readonly string[]; none: string }) {
   );
 }
 
+/** The sites a creation runs on, as its code warning names them: a site's name, else its pattern. */
+export function siteNames(sites: PluginInspection['sites']): string[] {
+  return [...new Set(sites.map(({ pattern, site }) => site ?? pattern))];
+}
+
 /**
  * Inspect-before-enable view of a validated plugin: where it runs, its CSS in
  * full, each page change, every Voyager built-in it calls with its
@@ -59,7 +64,7 @@ export function LocalPluginInspection({
         </p>
         <ScriptedSource
           source={manifest.contributes.script.source}
-          sites={[...new Set(inspection.sites.map(({ pattern, site }) => site ?? pattern))]}
+          sites={siteNames(inspection.sites)}
           look={POPUP_SCRIPTED_LOOK}
           t={t}
         />

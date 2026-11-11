@@ -146,18 +146,22 @@ page" click, the only reload it makes.
   any other, then `enableScriptedWithSiteAccess` (`pages/popup/utils/`) binds
   the enable to `scriptedReviewHash` of the manifest on screen, asking for the
   site's optional host access in the same click. `changed` refreshes the review.
-- **Rows.** My creations shows each scripted creation's run state (**On, this
-  device only**, **Off** or **Paused** with its reason), **Turn off**, and
-  **Review and turn on**, which shows the source and warning before **Turn on**.
-  A paused creation is never removed.
+- **Rows.** My creations, the popup card and the group that heads the panel's
+  Features tab, shows each scripted creation's run state (**On, this device
+  only**, **Off** or **Paused** with its reason). One that is on turns off from
+  the popup's **Turn off** or the panel row's switch; otherwise **Review and
+  turn on** shows the source and warning before **Turn on**. Both reviews end in
+  `ScriptedTurnOn`, the one hash-bound enable; the panel row has no switch until
+  then. A paused creation is never removed.
 - **Availability.** `ScriptedSetupCard` shows the one-time steps for
   `toggle-off` (open the details page through `openDetails`, the address as
   selectable text when the browser refuses; **Allow User Scripts**, or Developer
   mode before Chrome 138; **I turned it on**) and, for `unsupported`, that this
   browser cannot run them and to ask the AI for a version that only restyles.
   No install is offered there.
-- **Kill switch.** `ScriptedStopAll` in My creations and the panel's Create tab
-  calls `setScriptedStopped`, shows the stopped state with **Resume**, and right
+- **Kill switch.** `ScriptedStopAll` closes My creations (in the panel, only
+  while the group lists a creation that runs code). It calls
+  `setScriptedStopped`, shows the stopped state with **Resume**, and right
   after a stop says open pages keep running them until reloaded, with **Reload
   this page** (the popup reloads the active tab, the panel relays the request).
 - **The toggle flip.** Chrome exposes `chrome.userScripts` only to contexts

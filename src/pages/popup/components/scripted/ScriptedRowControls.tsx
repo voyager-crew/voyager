@@ -1,6 +1,5 @@
-import { type MouseEvent, useState } from 'react';
+import { useState } from 'react';
 
-import { isUserEvent } from '@/core/utils/userEvent';
 import type {
   ScriptedManifest,
   ScriptedPauseReason,
@@ -9,12 +8,8 @@ import type {
 import type { TranslationKey } from '@/utils/translations';
 
 import type { ScriptedCreations } from '../../hooks/useScriptedCreations';
-import {
-  type ScriptedTurnOnResult,
-  enableScriptedWithSiteAccess,
-} from '../../utils/scriptedEnablement';
 import { LocalPluginInspection } from '../LocalPluginInspection';
-import { ScriptedSetupCard } from './ScriptedSetupCard';
+import { ScriptedTurnOn } from './ScriptedTurnOn';
 import { POPUP_SCRIPTED_LOOK as LOOK } from './scriptedLook';
 
 type Translate = (key: TranslationKey) => string;
@@ -44,19 +39,12 @@ export function runStateText(t: Translate, state: ScriptedRunState): string {
 }
 
 /** Still turned on: paused only by this browser or the kill switch, so it resumes by itself. */
-function isOn(state: ScriptedRunState): boolean {
+export function isScriptedOn(state: ScriptedRunState): boolean {
   if (state.kind === 'running') return true;
   return (
     state.kind === 'paused' && state.reason !== 'crash-guard' && state.reason !== 'needs-review'
   );
 }
-
-const TURN_ON_PROBLEMS: Readonly<Record<Exclude<ScriptedTurnOnResult, 'enabled'>, TranslationKey>> =
-  {
-    changed: 'scriptedChangedSinceReview',
-    denied: 'scriptedTurnOnDenied',
-    write_failed: 'scriptedTurnOnFailed',
-  };
 
 /**
  * A scripted creation's row: its state, Turn off, or a review (the full source
@@ -75,19 +63,8 @@ export function ScriptedRowControls({
   t: Translate;
 }) {
   const [reviewing, setReviewing] = useState(false);
-  const [problem, setProblem] = useState<TranslationKey | null>(null);
-  const [busy, setBusy] = useState(false);
   const state = scripted.runState(manifest.id) ?? { kind: 'off' };
-  const cannotRun = scripted.status?.availability.kind === 'unsupported';
-
-  const turnOn = async (event: MouseEvent): Promise<void> => {
-    if (!isUserEvent(event.nativeEvent)) return;
-    setBusy(true);
-    const result = await enableScriptedWithSiteAccess(manifest, activeUrl);
-    setBusy(false);
-    setProblem(result === 'enabled' ? null : TURN_ON_PROBLEMS[result]);
-    if (result === 'enabled') setReviewing(false);
-  };
+  const on = isScriptedOn(state);
 
   return (
     <div className="mt-1.5 space-y-1.5" data-testid="scripted-row">
@@ -95,7 +72,7 @@ export function ScriptedRowControls({
         <p className="text-muted-foreground text-[11px]" data-testid="scripted-state">
           {runStateText(t, state)}
         </p>
-        {isOn(state) ? (
+        {on ? (
           <button
             type="button"
             className={LOOK.secondary}
@@ -114,27 +91,17 @@ export function ScriptedRowControls({
           </button>
         )}
       </div>
-      {reviewing && !isOn(state) && (
+      {reviewing && !on && (
         <div className="space-y-2">
           <LocalPluginInspection manifest={manifest} t={t} />
-          <ScriptedSetupCard scripted={scripted} look={LOOK} t={t} />
-          {problem && (
-            <p className={LOOK.alert} role="alert">
-              {t(problem)}
-            </p>
-          )}
-          {!cannotRun && (
-            <div className={LOOK.actions}>
-              <button
-                type="button"
-                className={LOOK.primary}
-                disabled={busy}
-                onClick={(event) => void turnOn(event)}
-              >
-                {t('scriptedTurnOn')}
-              </button>
-            </div>
-          )}
+          <ScriptedTurnOn
+            manifest={manifest}
+            scripted={scripted}
+            activeUrl={activeUrl}
+            look={LOOK}
+            t={t}
+            onEnabled={() => setReviewing(false)}
+          />
         </div>
       )}
     </div>
