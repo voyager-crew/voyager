@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { MAX_PLUGIN_REQUEST_CHARS } from '@/features/plugins/local/authoringSites';
 import type { TranslationKey } from '@/utils/translations';
 
+import type { PanelSite } from '../sites/panelSites';
 import { ModelWarning } from './ModelWarning';
 import { PageStructure } from './PageStructure';
 import type { CreateHandoff, CreateHandoffOutcome } from './useCreateHandoff';
@@ -43,10 +44,13 @@ function fit(field: HTMLTextAreaElement | null): void {
  */
 export function CreateView({
   handoff,
+  pageSite,
   t,
   children,
 }: {
   handoff: CreateHandoff;
+  /** The page the panel sits on, whose mark leads the model notice. */
+  pageSite: PanelSite;
   t: Translate;
   children?: React.ReactNode;
 }) {
@@ -81,6 +85,7 @@ export function CreateView({
         {site && warning && (
           <ModelWarning
             warning={warning}
+            site={pageSite}
             siteLabel={site.label}
             copyLabel={copyLabel}
             canCopy={handoff.ready}

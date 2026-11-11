@@ -71,6 +71,7 @@ describe('the Create tab on a chat model that usually cannot write a plugin', ()
 
     expect(notice()?.textContent).toContain(title('Flash'));
     expect(notice()?.textContent).toContain('Argon');
+    expect(notice()?.querySelector('svg')).not.toBeNull();
     expect(notice()?.querySelectorAll('button')).toHaveLength(2);
     expect(button(en.createModeCopyForAgent)?.closest('[role="note"]')).toBe(notice());
 

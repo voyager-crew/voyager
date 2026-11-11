@@ -3,7 +3,7 @@ import React from 'react';
 import type { PlatformLogo } from '@/core/icons/platformLogos';
 import { PlatformMark } from '@/pages/popup/components/WebsiteLogos';
 
-import { letterTileHue } from '../sites/panelSites';
+import { type PanelSite, letterTileHue } from '../sites/panelSites';
 
 /** A bundled platform mark in its brand colour, or the text colour where it has none. */
 export function SiteLogo({ logo, size }: { logo: PlatformLogo; size: number }) {
@@ -14,6 +14,20 @@ export function SiteLogo({ logo, size }: { logo: PlatformLogo; size: number }) {
       style={{ width: size, height: size, color: logo.brand ?? 'currentColor' }}
     >
       <PlatformMark logo={logo} />
+    </span>
+  );
+}
+
+/** A site's mark at text size: its bundled logo, or the first letter of its host on its hue. */
+export function SiteGlyph({ site, size }: { site: PanelSite; size: number }) {
+  if (site.logo) return <SiteLogo logo={site.logo} size={size} />;
+  return (
+    <span
+      className="mini"
+      aria-hidden="true"
+      style={{ '--h': letterTileHue(site.host) } as React.CSSProperties}
+    >
+      {site.host.charAt(0).toUpperCase()}
     </span>
   );
 }

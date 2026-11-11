@@ -8,9 +8,9 @@ import type { TranslationKey } from '@/utils/translations';
 
 import type { PanelShell } from '../hooks/panelShell';
 import { fillPlaceholders } from '../panelText';
-import { type PanelSite, letterTileHue } from '../sites/panelSites';
+import type { PanelSite } from '../sites/panelSites';
 import { PanelMenu } from './PanelMenu';
-import { SiteLogo } from './SiteMark';
+import { SiteGlyph } from './SiteMark';
 
 export type PanelTabId = 'features' | 'sites' | 'create';
 export const PANEL_TABS: readonly PanelTabId[] = ['features', 'sites', 'create'];
@@ -23,19 +23,6 @@ const MASCOT = 'mascot-logo.png';
 
 export const panelTabId = (tab: PanelTabId) => `panel-tab-${tab}`;
 export const panelViewId = (tab: PanelTabId) => `panel-view-${tab}`;
-
-function SiteGlyph({ site, size }: { site: PanelSite; size: number }) {
-  if (site.logo) return <SiteLogo logo={site.logo} size={size} />;
-  return (
-    <span
-      className="mini"
-      aria-hidden="true"
-      style={{ '--h': letterTileHue(site.host) } as React.CSSProperties}
-    >
-      {site.host.charAt(0).toUpperCase()}
-    </span>
-  );
-}
 
 export interface PanelSearchState {
   readonly open: boolean;

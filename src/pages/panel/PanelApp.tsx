@@ -237,7 +237,7 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
               emptyText={t('panelNoMatches')}
             />
           ) : view === 'create' ? (
-            <CreateView handoff={handoff} t={t}>
+            <CreateView handoff={handoff} pageSite={own} t={t}>
               <CreationReview review={review} scripted={scripted} t={t} />
             </CreateView>
           ) : (

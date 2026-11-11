@@ -194,11 +194,28 @@
   border-inline-start: 3px solid var(--wait);
 }
 
-/* The page's chat model usually cannot write a creation: a marked note in the flow, not a box. */
+/* The page's chat model usually cannot write a creation: the site's mark, then a note in the flow. */
 .create-model-warn {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: 10px;
+}
+
+/* Centred on the title's first line (13px at 1.5 is a 19.5px line), not on the whole note. */
+.create-model-warn > .logo {
+  margin-block-start: 2px;
+}
+
+.create-model-warn > .mini {
+  margin-block-start: 1px;
+}
+
+.create-model-text {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .create-model-actions {
