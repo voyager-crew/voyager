@@ -265,7 +265,7 @@
   height: 24px;
   border: none;
   background: transparent;
-  color: var(--gv-theme-text-muted, #9ca3af);
+  color: #9ca3af;
   cursor: pointer;
   display: flex;
   align-items: center;

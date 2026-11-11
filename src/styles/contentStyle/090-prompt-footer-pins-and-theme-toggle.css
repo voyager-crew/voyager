@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: 8px;
   padding: 12px 16px 14px 16px;
-  border-top: 1px solid var(--gv-ui-border);
+  border-top: 1px solid var(--gv-theme-border, var(--gv-ui-border));
 }
 
 /* Footer button groups */
@@ -33,10 +33,10 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 8px;
   background: transparent;
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   cursor: pointer;
   font: inherit;
   font-size: 12px;
@@ -71,8 +71,8 @@ body.gv-rtl .gv-pm-saved-footer-primary .lucide-arrow-left {
 
 .gv-pm-saved-footer-button:hover,
 .gv-pm-saved-export-open .gv-pm-saved-export-trigger {
-  background: var(--gv-ui-hover);
-  color: var(--gv-ui-text);
+  background: var(--gv-theme-hover, var(--gv-ui-hover));
+  color: var(--gv-theme-text, var(--gv-ui-text));
 }
 
 .gv-pm-saved-footer-primary {
@@ -118,7 +118,7 @@ body.gv-rtl .gv-pm-saved-footer-primary .lucide-arrow-left {
   display: grid;
   gap: 2px;
   padding: 4px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 10px;
   background: var(--gv-pm-surface, oklch(0.995 0.002 250));
   box-shadow: 0 6px 20px oklch(0 0 0 / 0.2);
@@ -134,7 +134,7 @@ body.gv-rtl .gv-pm-saved-footer-primary .lucide-arrow-left {
   border: 0;
   border-radius: 7px;
   background: transparent;
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   cursor: pointer;
   font: inherit;
   font-size: 12px;
@@ -148,7 +148,7 @@ body.gv-rtl .gv-pm-saved-footer-primary .lucide-arrow-left {
 }
 
 .gv-pm-saved-export-option:hover {
-  background: var(--gv-ui-hover);
+  background: var(--gv-theme-hover, var(--gv-ui-hover));
 }
 
 .gv-pm-footer-secondary {
@@ -202,7 +202,7 @@ body.gv-rtl .gv-pm-saved-footer-primary .lucide-arrow-left {
   padding: 0 10px;
   background: transparent;
   border: none;
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   flex: 1 1 0;
   min-width: 0;
   font: inherit;
@@ -225,8 +225,8 @@ body.gv-rtl .gv-pm-saved-footer-primary .lucide-arrow-left {
 
 .gv-pm-settings:hover,
 .gv-pm-support:hover {
-  background: var(--gv-ui-hover);
-  color: var(--gv-ui-text);
+  background: var(--gv-theme-hover, var(--gv-ui-hover));
+  color: var(--gv-theme-text, var(--gv-ui-text));
 }
 
 /* The label is the button's own text, so the gear is drawn here as a masked
@@ -278,7 +278,7 @@ body.gv-rtl .gv-pm-saved-footer-primary .lucide-arrow-left {
 .gv-pm-pin-divider {
   height: 1px;
   margin: 5px 2px;
-  background: var(--gv-ui-border);
+  background: var(--gv-theme-border, var(--gv-ui-border));
   flex-shrink: 0;
 }
 
@@ -288,7 +288,7 @@ body.gv-rtl .gv-pm-saved-footer-primary .lucide-arrow-left {
   margin-left: -6px;
   margin-right: 6px;
   position: relative;
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   cursor: move;
 }
 

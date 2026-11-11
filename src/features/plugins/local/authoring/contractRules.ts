@@ -97,7 +97,7 @@ export function themeVariablesLine(): string {
   const names = THEME_VARIABLES.map(
     ({ role, meaning }) => `${themeVariableName(role)} (${meaning})`,
   ).join(', ');
-  return `- To recolour Voyager’s own UI on any site, set these in one unscoped :root { } rule (it covers light and dark), never its gv- classes: ${names}.`;
+  return `- To recolour Voyager’s own panels, menus and dialogs on any site, set these in one unscoped :root { } rule (it covers light and dark), never its gv- classes: ${names}.`;
 }
 
 export function pageChangesSection(

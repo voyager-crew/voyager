@@ -8,7 +8,7 @@
   align-items: center;
   justify-content: center;
   background: var(--timeline-bar-bg);
-  border: 1px solid var(--timeline-tooltip-border);
+  border: 1px solid var(--gv-theme-border, var(--timeline-tooltip-border));
   cursor: pointer;
   padding: 0;
   color: var(--timeline-dot-color);
@@ -35,12 +35,12 @@
 
 .timeline-preview-toggle:hover {
   color: var(--timeline-dot-active-color);
-  background-color: var(--timeline-tooltip-bg);
+  background-color: var(--gv-theme-surface, var(--timeline-tooltip-bg));
 }
 
 .timeline-preview-toggle.active {
   color: var(--timeline-dot-active-color);
-  background-color: var(--timeline-tooltip-bg);
+  background-color: var(--gv-theme-surface, var(--timeline-tooltip-bg));
 }
 
 .timeline-preview-panel {
@@ -59,8 +59,8 @@
     Helvetica,
     Arial,
     sans-serif;
-  background-color: var(--timeline-tooltip-bg);
-  border: 1px solid var(--timeline-tooltip-border);
+  background-color: var(--gv-theme-surface, var(--timeline-tooltip-bg));
+  border: 1px solid var(--gv-theme-border, var(--timeline-tooltip-border));
   border-radius: var(--timeline-tooltip-radius);
   box-shadow: var(--timeline-tooltip-shadow);
   z-index: 2147483645;
@@ -113,7 +113,7 @@
 .timeline-preview-search {
   position: relative;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--timeline-tooltip-border);
+  border-bottom: 1px solid var(--gv-theme-border, var(--timeline-tooltip-border));
   flex-shrink: 0;
 }
 
@@ -145,7 +145,7 @@
   font-size: 13px;
   line-height: 1.4;
   background: var(--timeline-search-bg, rgba(120, 130, 150, 0.12));
-  color: var(--timeline-tooltip-text);
+  color: var(--gv-theme-text, var(--timeline-tooltip-text));
   text-align: start;
   outline: none;
   transition:
@@ -161,7 +161,7 @@
 
 .timeline-preview-search input:focus {
   border-color: var(--timeline-dot-active-color);
-  background: var(--timeline-tooltip-bg);
+  background: var(--gv-theme-surface, var(--timeline-tooltip-bg));
   box-shadow: 0 0 0 3px oklch(0.55 0.17 var(--gv-pm-brand-h, var(--gv-pm-brand-h-default)) / 0.15);
 }
 
@@ -177,7 +177,7 @@
 .timeline-preview-item {
   padding: 7px 10px;
   cursor: pointer;
-  color: var(--timeline-tooltip-text);
+  color: var(--gv-theme-text, var(--timeline-tooltip-text));
   font-size: 13px;
   line-height: 1.4;
   border-radius: 8px;
@@ -274,8 +274,8 @@ mark.timeline-search-highlight {
    surface was left on the Tailwind-era blue-black, so the panel and the tooltip
    it opens beside read as two different products. */
 html[data-gv-scheme='dark'] .timeline-preview-panel {
-  background-color: var(--timeline-tooltip-bg);
-  border-color: var(--timeline-tooltip-border);
+  background-color: var(--gv-theme-surface, var(--timeline-tooltip-bg));
+  border-color: var(--gv-theme-border, var(--timeline-tooltip-border));
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   --timeline-search-bg: oklch(0.92 0.004 250 / 0.06);
@@ -302,8 +302,8 @@ html[data-gv-scheme='dark'] mark.timeline-search-highlight {
 }
 
 html[data-gv-scheme='light'] .timeline-preview-panel {
-  background-color: var(--timeline-tooltip-bg);
-  border-color: var(--timeline-tooltip-border);
+  background-color: var(--gv-theme-surface, var(--timeline-tooltip-bg));
+  border-color: var(--gv-theme-border, var(--timeline-tooltip-border));
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   --timeline-search-bg: oklch(0.14 0.004 285 / 0.05);

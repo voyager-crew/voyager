@@ -14,12 +14,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--gv-ui-surface);
-  border: 1px solid var(--gv-ui-border);
+  background: var(--gv-theme-surface, var(--gv-ui-surface));
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   box-shadow:
     0 4px 14px oklch(0 0 0 / 0.12),
     0 1px 2px oklch(0 0 0 / 0.08);
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   z-index: 2147483150;
   cursor: pointer;
   transition:
@@ -42,8 +42,8 @@ html[data-gv-scheme='dark'] .gv-ph-trigger {
 
 .gv-ph-trigger:hover,
 .gv-ph-trigger[aria-expanded='true'] {
-  background: var(--gv-ui-surface-hover);
-  color: var(--gv-ui-text);
+  background: var(--gv-theme-hover, var(--gv-ui-surface-hover));
+  color: var(--gv-theme-text, var(--gv-ui-text));
 }
 
 .gv-ph-trigger-icon {
@@ -65,10 +65,10 @@ html[data-gv-scheme='dark'] .gv-ph-trigger {
   --gv-pm-surface: var(--gv-theme-surface, oklch(0.995 0.002 250));
   border-radius: 18px;
   background: var(--gv-pm-surface);
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   box-shadow: var(--gv-ui-shadow);
   z-index: 2147483200;
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-family: var(--gv-ui-font);
 }
 
@@ -87,7 +87,7 @@ html[data-gv-scheme='dark'] .gv-ph-panel {
   justify-content: space-between;
   padding: 14px 16px;
   gap: 6px;
-  border-bottom: 1px solid var(--gv-ui-border);
+  border-bottom: 1px solid var(--gv-theme-border, var(--gv-ui-border));
 }
 
 .gv-ph-title {
@@ -112,7 +112,7 @@ html[data-gv-scheme='dark'] .gv-ph-panel {
 }
 
 .gv-ph-item {
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 12px;
   padding: 10px 12px;
   display: flex;
@@ -174,7 +174,7 @@ html[data-gv-scheme='dark'] .gv-ph-panel {
   font-weight: 500;
   padding: 0 10px;
   border-radius: 8px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   background: transparent;
   color: inherit;
   cursor: pointer;
@@ -182,7 +182,7 @@ html[data-gv-scheme='dark'] .gv-ph-panel {
 }
 
 .gv-ph-action:hover {
-  background: var(--gv-ui-hover);
+  background: var(--gv-theme-hover, var(--gv-ui-hover));
 }
 
 .gv-ph-action-primary {

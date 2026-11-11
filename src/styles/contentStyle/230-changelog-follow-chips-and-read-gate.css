@@ -7,10 +7,10 @@
   box-sizing: border-box;
   min-height: 28px;
   padding: 4px 10px;
-  border: 1px solid var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7));
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7)));
   border-radius: 8px;
-  background: var(--gv-ui-surface, oklch(0.995 0.002 250));
-  color: var(--gv-ui-text, oklch(0.14 0.004 285));
+  background: var(--gv-theme-surface, var(--gv-ui-surface, oklch(0.995 0.002 250)));
+  color: var(--gv-theme-text, var(--gv-ui-text, oklch(0.14 0.004 285)));
   text-decoration: none;
   font-weight: 500;
   white-space: nowrap;
@@ -19,7 +19,7 @@
 }
 
 a.gv-changelog-social-item:hover {
-  background: var(--gv-ui-surface-hover, oklch(0.97 0.003 250));
+  background: var(--gv-theme-hover, var(--gv-ui-surface-hover, oklch(0.97 0.003 250)));
 }
 
 a.gv-changelog-social-item:focus-visible {
@@ -52,7 +52,7 @@ a.gv-changelog-social-item:focus-visible {
   width: 30px;
   height: 30px;
   border-radius: 8px;
-  color: var(--gv-ui-text-muted, oklch(0.45 0.01 270));
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted, oklch(0.45 0.01 270)));
   transition:
     background-color 0.15s ease,
     color 0.15s ease;
@@ -60,8 +60,8 @@ a.gv-changelog-social-item:focus-visible {
 }
 
 .gv-changelog-icon-link:hover {
-  background-color: var(--gv-ui-hover, oklch(0.14 0.004 285 / 0.06));
-  color: var(--gv-ui-text, oklch(0.14 0.004 285));
+  background-color: var(--gv-theme-hover, var(--gv-ui-hover, oklch(0.14 0.004 285 / 0.06)));
+  color: var(--gv-theme-text, var(--gv-ui-text, oklch(0.14 0.004 285)));
 }
 
 .gv-changelog-icon-link:focus-visible {
@@ -80,7 +80,7 @@ a.gv-changelog-social-item:focus-visible {
   left: calc(100% + 6px);
   white-space: nowrap;
   font-size: 11px;
-  color: var(--gv-ui-text-muted, oklch(0.45 0.01 270));
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted, oklch(0.45 0.01 270)));
   pointer-events: none;
   display: flex;
   align-items: center;
@@ -107,7 +107,7 @@ a.gv-changelog-social-item:focus-visible {
   margin: -4px 0 0;
   font-size: 11px;
   line-height: 1.4;
-  color: var(--gv-ui-text-muted, oklch(0.45 0.01 270));
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted, oklch(0.45 0.01 270)));
   text-wrap: pretty;
 }
 
@@ -170,7 +170,7 @@ a.gv-changelog-social-item:focus-visible {
 .gv-changelog-chrome-rating-text {
   flex: 1;
   font-size: 12.5px;
-  color: var(--gv-ui-text, oklch(0.14 0.004 285));
+  color: var(--gv-theme-text, var(--gv-ui-text, oklch(0.14 0.004 285)));
   line-height: 1.4;
 }
 

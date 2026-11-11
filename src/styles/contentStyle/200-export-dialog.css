@@ -56,10 +56,10 @@
   max-height: calc(100vh - 32px);
   overflow-y: auto;
   padding: 20px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 12px;
-  background: var(--gv-ui-surface);
-  color: var(--gv-ui-text);
+  background: var(--gv-theme-surface, var(--gv-ui-surface));
+  color: var(--gv-theme-text, var(--gv-ui-text));
   box-shadow: var(--gv-ui-shadow);
   font-family: var(--gv-ui-font);
   font-size: 13px;
@@ -84,7 +84,7 @@
 /* Dialog title */
 .gv-export-dialog-title {
   margin-bottom: 4px;
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-size: 16px;
   font-weight: 600;
   line-height: 1.3;
@@ -93,7 +93,7 @@
 /* Dialog subtitle */
 .gv-export-dialog-subtitle {
   margin-bottom: 16px;
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   font-size: 13px;
 }
 
@@ -104,7 +104,7 @@
   border: 1px solid color-mix(in srgb, var(--gv-ui-warning) 32%, transparent);
   border-radius: 9px;
   background: color-mix(in srgb, var(--gv-ui-warning) 10%, transparent);
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-size: 12.5px;
   line-height: 1.5;
 }
@@ -123,7 +123,7 @@
   align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 9px;
   cursor: pointer;
   transition:
@@ -132,7 +132,7 @@
 }
 
 .gv-export-format-option:hover {
-  background-color: var(--gv-ui-hover);
+  background-color: var(--gv-theme-hover, var(--gv-ui-hover));
 }
 
 /* Firefox only supports :has() from 121, and manifest.json keeps the floor at
@@ -159,7 +159,7 @@
   -webkit-appearance: none;
   border: 1.5px solid color-mix(in srgb, var(--gv-ui-text) 38%, transparent);
   border-radius: 50%;
-  background: var(--gv-ui-surface);
+  background: var(--gv-theme-surface, var(--gv-ui-surface));
   background-image: none;
   box-shadow: none;
   color: var(--gv-ui-primary);
@@ -195,7 +195,7 @@
   align-items: center;
   gap: 6px;
   margin-bottom: 2px;
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-size: 13px;
   font-weight: 500;
   line-height: 18px;
@@ -213,7 +213,7 @@
 }
 
 .gv-export-format-description {
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   font-size: 12px;
   line-height: 1.45;
 }
@@ -228,10 +228,10 @@
 .gv-export-dialog-btn {
   min-height: 28px;
   padding: 4px 14px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 8px;
   background: transparent;
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-family: inherit;
   font-size: 13px;
   font-weight: 500;
@@ -259,7 +259,7 @@
 }
 
 .gv-export-dialog-btn-secondary:hover {
-  background: var(--gv-ui-hover);
+  background: var(--gv-theme-hover, var(--gv-ui-hover));
 }
 
 /* Optional sections (prompt heading, speakers, font size, image width) */
@@ -269,7 +269,7 @@
 .gv-export-imagewidth-section {
   margin-bottom: 16px;
   padding: 12px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 9px;
 }
 
@@ -344,7 +344,7 @@ body.gv-rtl .gv-export-dialog .gv-export-prompt-heading-switch[aria-checked='tru
 
 .gv-export-speakers-title {
   margin-bottom: 10px;
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-size: 13px;
   font-weight: 500;
 }
@@ -362,7 +362,7 @@ body.gv-rtl .gv-export-dialog .gv-export-prompt-heading-switch[aria-checked='tru
 .gv-export-speaker-label {
   display: block;
   margin-bottom: 6px;
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   font-size: 12px;
   font-weight: 500;
 }
@@ -376,9 +376,9 @@ body.gv-rtl .gv-export-dialog .gv-export-prompt-heading-switch[aria-checked='tru
   border: 1px solid color-mix(in srgb, var(--gv-ui-text) 18%, transparent);
   border-radius: 8px;
   outline: none;
-  background: var(--gv-ui-surface);
+  background: var(--gv-theme-surface, var(--gv-ui-surface));
   box-shadow: none;
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-family: inherit;
   font-size: 13px;
   line-height: 30px;

@@ -122,10 +122,10 @@
   box-sizing: border-box;
   min-width: 148px;
   padding: 4px;
-  border: 1px solid var(--gv-ui-border, var(--timeline-tooltip-border));
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border, var(--timeline-tooltip-border)));
   border-radius: 12px;
-  background: var(--gv-ui-surface, var(--timeline-tooltip-bg));
-  color: var(--gv-ui-text, var(--timeline-tooltip-text));
+  background: var(--gv-theme-surface, var(--gv-ui-surface, var(--timeline-tooltip-bg)));
+  color: var(--gv-theme-text, var(--gv-ui-text, var(--timeline-tooltip-text)));
   box-shadow: var(--gv-ui-shadow, var(--timeline-tooltip-shadow));
   font-family: var(--gv-ui-font, ui-sans-serif, system-ui, sans-serif);
   font-size: 13px;
@@ -166,7 +166,7 @@
 }
 
 .gv-response-image-menu-item:hover {
-  background-color: var(--gv-ui-hover, oklch(0.14 0.004 285 / 0.06));
+  background-color: var(--gv-theme-hover, var(--gv-ui-hover, oklch(0.14 0.004 285 / 0.06)));
 }
 
 .gv-response-image-menu-item:focus-visible {

@@ -22,10 +22,10 @@
   padding: 0 9px;
   /* The same surface the timeline tooltip and the prompt preview sit on, so
      one chip does not read as a different product from the rest of Voyager. */
-  border: 1px solid var(--timeline-tooltip-border);
+  border: 1px solid var(--gv-theme-border, var(--timeline-tooltip-border));
   border-radius: 7px;
-  background: var(--timeline-tooltip-bg);
-  color: var(--timeline-tooltip-text);
+  background: var(--gv-theme-surface, var(--timeline-tooltip-bg));
+  color: var(--gv-theme-text, var(--timeline-tooltip-text));
   /* Voyager's own floating type: an unquoted Google Sans fell to Arial on
      every site that does not ship it. */
   font-family: var(--gv-ui-font, ui-sans-serif, system-ui, sans-serif);
@@ -146,7 +146,7 @@
 .gv-input-vim-hud-buffer {
   min-width: 12px;
   padding-left: 6px;
-  border-left: 1px solid var(--timeline-tooltip-border);
+  border-left: 1px solid var(--gv-theme-border, var(--timeline-tooltip-border));
   opacity: 0.72;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }

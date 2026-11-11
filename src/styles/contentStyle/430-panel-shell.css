@@ -15,7 +15,7 @@
   --gv-ps-brand-fg: var(--gv-pm-brand-fg, var(--gv-pm-brand-fg-default));
   --gv-ps-tip: oklch(0.22 0.005 285);
   --gv-ps-tip-ink: #fff;
-  --gv-ps-panel: var(--gv-theme-surface, oklch(0.975 0.002 250));
+  --gv-ps-panel: oklch(0.975 0.002 250);
   --gv-ps-shadow:
     0 24px 64px rgb(15 20 30 / 0.16), 0 4px 16px rgb(15 20 30 / 0.06),
     0 0 0 1px rgb(15 20 30 / 0.06);
@@ -101,7 +101,7 @@
 html[data-gv-scheme='dark'] :is(.gv-ps-entry, .gv-ps-panel, .gv-ps-toast) {
   --gv-ps-tip: oklch(0.93 0.003 250);
   --gv-ps-tip-ink: oklch(0.2 0.004 270);
-  --gv-ps-panel: var(--gv-theme-surface, oklch(0.205 0.004 270));
+  --gv-ps-panel: oklch(0.205 0.004 270);
   --gv-ps-shadow:
     0 24px 64px rgb(0 0 0 / 0.5), 0 4px 16px rgb(0 0 0 / 0.3), 0 0 0 1px rgb(255 255 255 / 0.06);
   --gv-ps-shadow-drag:

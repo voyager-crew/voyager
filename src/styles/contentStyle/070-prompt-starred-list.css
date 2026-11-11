@@ -26,7 +26,7 @@
   border: none;
   border-radius: 8px;
   background: var(--gv-pm-wash, oklch(0.14 0.004 285 / 0.04));
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font: inherit;
   text-align: left;
   cursor: pointer;
@@ -103,7 +103,7 @@
 }
 
 .gv-pm-highlight-note {
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   display: -webkit-box;
   padding-inline-start: 7px;
   border-inline-start: 2px solid
@@ -117,7 +117,7 @@
 }
 
 .gv-pm-starred-meta {
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   font-size: 11px;
   font-weight: 500;
   line-height: 1.3;
@@ -132,7 +132,7 @@
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   opacity: 0;
   cursor: pointer;
   transition:

@@ -14,14 +14,14 @@
   flex-shrink: 0;
   border-radius: 8px;
   background: transparent;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   position: relative;
   transition:
     background-color 0.15s ease,
     border-color 0.15s ease,
     color 0.15s ease;
   cursor: pointer;
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
 }
 
 .gv-pm-view-mode svg {
@@ -29,8 +29,8 @@
 }
 
 .gv-pm-view-mode:hover {
-  background: var(--gv-ui-hover);
-  color: var(--gv-ui-text);
+  background: var(--gv-theme-hover, var(--gv-ui-hover));
+  color: var(--gv-theme-text, var(--gv-ui-text));
 }
 
 .gv-pm-view-mode:focus-visible {

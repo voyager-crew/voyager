@@ -13,10 +13,10 @@
   min-width: 400px;
   max-width: 500px;
   padding: 20px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 12px;
-  background: var(--gv-ui-surface);
-  color: var(--gv-ui-text);
+  background: var(--gv-theme-surface, var(--gv-ui-surface));
+  color: var(--gv-theme-text, var(--gv-ui-text));
   box-shadow: var(--gv-ui-shadow);
   font-family: var(--gv-ui-font);
   font-size: 13px;
@@ -32,7 +32,7 @@ html[data-gv-scheme='dark'] .gv-folder-import-dialog {
   margin-bottom: 16px;
   padding: 0;
   border-bottom: none;
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-size: 16px;
   font-weight: 600;
   letter-spacing: 0;
@@ -45,7 +45,7 @@ html[data-gv-scheme='dark'] .gv-folder-import-dialog {
 
 .gv-folder-import-strategy-label {
   margin-bottom: 8px;
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   font-size: 12px;
   font-weight: 500;
 }
@@ -60,14 +60,14 @@ html[data-gv-scheme='dark'] .gv-folder-import-dialog {
   display: flex;
   align-items: center;
   padding: 9px 12px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 9px;
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
 
 .gv-folder-import-radio-option:hover {
-  background: var(--gv-ui-hover);
+  background: var(--gv-theme-hover, var(--gv-ui-hover));
 }
 
 .gv-folder-import-radio-option input[type='radio'] {
@@ -77,7 +77,7 @@ html[data-gv-scheme='dark'] .gv-folder-import-dialog {
 }
 
 .gv-folder-import-radio-option span {
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-size: 13px;
   font-weight: 500;
 }
@@ -94,10 +94,10 @@ html[data-gv-scheme='dark'] .gv-folder-import-dialog {
   width: 100%;
   min-height: 32px;
   padding: 6px 12px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 8px;
   background: transparent;
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font: inherit;
   font-weight: 500;
   cursor: pointer;
@@ -108,7 +108,7 @@ html[data-gv-scheme='dark'] .gv-folder-import-dialog {
 
 .gv-folder-import-file-button:hover,
 .gv-folder-import-paste-toggle:hover {
-  background: var(--gv-ui-hover);
+  background: var(--gv-theme-hover, var(--gv-ui-hover));
 }
 
 .gv-folder-import-file-button:focus-visible,
@@ -127,7 +127,7 @@ html[data-gv-scheme='dark'] .gv-folder-import-dialog {
   padding: 5px 10px;
   border-radius: 8px;
   background: var(--gv-import-field);
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   font-size: 12px;
   font-weight: 500;
   text-align: center;
@@ -145,12 +145,12 @@ html[data-gv-scheme='dark'] .gv-folder-import-dialog {
 
 .gv-folder-import-paste-toggle {
   border-style: dashed;
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
 }
 
 .gv-folder-import-paste-toggle-active {
   border-style: solid;
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
 }
 
 .gv-folder-import-paste-area {
@@ -160,10 +160,10 @@ html[data-gv-scheme='dark'] .gv-folder-import-dialog {
   max-height: 300px;
   margin-top: 8px;
   padding: 8px 10px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 8px;
   background: var(--gv-import-field);
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
   line-height: 1.5;
@@ -174,7 +174,7 @@ html[data-gv-scheme='dark'] .gv-folder-import-dialog {
 }
 
 .gv-folder-import-paste-area::placeholder {
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
 }
 
 .gv-folder-import-paste-area:focus {
@@ -194,10 +194,10 @@ html[data-gv-scheme='dark'] .gv-folder-import-dialog {
   box-sizing: border-box;
   min-height: 28px;
   padding: 4px 12px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 8px;
   background: transparent;
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-family: var(--gv-ui-font);
   font-size: 13px;
   font-weight: 500;
@@ -225,5 +225,5 @@ html[data-gv-scheme='dark'] .gv-folder-import-dialog {
 }
 
 .gv-folder-dialog-btn-secondary:hover:not(:disabled) {
-  background: var(--gv-ui-hover);
+  background: var(--gv-theme-hover, var(--gv-ui-hover));
 }

@@ -43,17 +43,17 @@ html[data-gv-scheme='dark'] .gv-chatgpt-pro-usage {
   box-sizing: border-box;
   max-width: min(320px, calc(100vw - 16px));
   padding: 8px 12px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 10px;
-  background: var(--gv-ui-surface);
-  color: var(--gv-ui-text);
+  background: var(--gv-theme-surface, var(--gv-ui-surface));
+  color: var(--gv-theme-text, var(--gv-ui-text));
   box-shadow: var(--gv-ui-shadow);
   font-family: var(--gv-ui-font);
   pointer-events: none;
 }
 
 .gv-chatgpt-pro-usage-card-title {
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
@@ -63,7 +63,7 @@ html[data-gv-scheme='dark'] .gv-chatgpt-pro-usage {
 
 .gv-chatgpt-pro-usage-card-detail {
   margin-top: 2px;
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   font-size: 12px;
   line-height: 16px;
   white-space: nowrap;

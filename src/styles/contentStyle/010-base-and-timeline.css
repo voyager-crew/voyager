@@ -56,7 +56,7 @@
 
 /* Gemini-like timeline styling with CSS variables and theme awareness */
 :root {
-  --timeline-dot-color: var(--gv-theme-text-muted, #94a3b8);
+  --timeline-dot-color: #94a3b8;
   --timeline-dot-active-color: var(--gv-pm-brand, var(--gv-pm-brand-default));
   --timeline-dot-active-glow: color-mix(
     in srgb,
@@ -69,9 +69,9 @@
      panel's neutral, so two Voyager surfaces sitting on the same page read as
      two different products. Shared with the timeline context menu, which is why
      the whole family moves together. */
-  --timeline-tooltip-bg: var(--gv-theme-surface, oklch(0.995 0.002 250));
-  --timeline-tooltip-text: var(--gv-theme-text, oklch(0.14 0.004 285));
-  --timeline-tooltip-border: var(--gv-theme-border, oklch(0.92 0.004 250 / 0.7));
+  --timeline-tooltip-bg: oklch(0.995 0.002 250);
+  --timeline-tooltip-text: oklch(0.14 0.004 285);
+  --timeline-tooltip-border: oklch(0.92 0.004 250 / 0.7);
   --timeline-tooltip-radius: 14px;
   /* One restrained lift, matching the prompt preview. The old pair of shadows
      read as a heavier, separate layer than every other floating Voyager
@@ -85,7 +85,7 @@
   --timeline-tooltip-arrow-outside: 4px;
   --timeline-tooltip-anim-in: 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --timeline-tooltip-anim-out: 100ms linear;
-  --timeline-bar-bg: var(--gv-theme-surface, rgba(248, 250, 252, 0.88));
+  --timeline-bar-bg: rgba(248, 250, 252, 0.88);
   --timeline-dot-size: 12px;
   --timeline-active-ring: 3px;
   --timeline-track-padding: 16px;
@@ -102,7 +102,7 @@
     --gv-pm-brand-default: var(--gv-theme-accent, oklch(0.773 0.091 126));
     --gv-pm-brand-fg-default: var(--gv-theme-accent-fg, #1f2a24);
     --gv-pm-brand-h-default: var(--gv-theme-accent-hue, 126);
-    --timeline-dot-color: var(--gv-theme-text-muted, #475569);
+    --timeline-dot-color: #475569;
     --timeline-dot-active-color: var(--gv-pm-brand, var(--gv-pm-brand-default));
     --timeline-dot-active-glow: color-mix(
       in srgb,
@@ -110,10 +110,10 @@
       transparent
     );
     --timeline-star-color: #f59e0b;
-    --timeline-tooltip-bg: var(--gv-theme-surface, oklch(0.2 0.008 285));
-    --timeline-tooltip-text: var(--gv-theme-text, oklch(0.92 0.004 250));
-    --timeline-tooltip-border: var(--gv-theme-border, oklch(0.3 0.008 285 / 0.7));
-    --timeline-bar-bg: var(--gv-theme-surface, rgba(2, 6, 23, 0.75));
+    --timeline-tooltip-bg: oklch(0.2 0.008 285);
+    --timeline-tooltip-text: oklch(0.92 0.004 250);
+    --timeline-tooltip-border: oklch(0.3 0.008 285 / 0.7);
+    --timeline-bar-bg: rgba(2, 6, 23, 0.75);
   }
 }
 
@@ -122,7 +122,7 @@ html[data-gv-scheme='dark'] {
   --gv-pm-brand-default: var(--gv-theme-accent, oklch(0.773 0.091 126));
   --gv-pm-brand-fg-default: var(--gv-theme-accent-fg, #1f2a24);
   --gv-pm-brand-h-default: var(--gv-theme-accent-hue, 126);
-  --timeline-dot-color: var(--gv-theme-text-muted, #475569);
+  --timeline-dot-color: #475569;
   --timeline-dot-active-color: var(--gv-pm-brand, var(--gv-pm-brand-default));
   --timeline-dot-active-glow: color-mix(
     in srgb,
@@ -130,10 +130,10 @@ html[data-gv-scheme='dark'] {
     transparent
   );
   --timeline-star-color: #f59e0b;
-  --timeline-tooltip-bg: var(--gv-theme-surface, oklch(0.2 0.008 285));
-  --timeline-tooltip-text: var(--gv-theme-text, oklch(0.92 0.004 250));
-  --timeline-tooltip-border: var(--gv-theme-border, oklch(0.3 0.008 285 / 0.7));
-  --timeline-bar-bg: var(--gv-theme-surface, rgba(2, 6, 23, 0.75));
+  --timeline-tooltip-bg: oklch(0.2 0.008 285);
+  --timeline-tooltip-text: oklch(0.92 0.004 250);
+  --timeline-tooltip-border: oklch(0.3 0.008 285 / 0.7);
+  --timeline-bar-bg: rgba(2, 6, 23, 0.75);
   /* The rail's ground: a film over whatever the host paints behind it, not a
      surface of its own. The old opaque slabs were picked when Gemini's dark was
      a blue slate; against today's near-black #0f0f0f the dark one measured a
@@ -149,7 +149,7 @@ html[data-gv-scheme='light'] {
   --gv-pm-brand-default: var(--gv-theme-accent, oklch(0.601 0.1 140));
   --gv-pm-brand-fg-default: var(--gv-theme-accent-fg, #ffffff);
   --gv-pm-brand-h-default: var(--gv-theme-accent-hue, 140);
-  --timeline-dot-color: var(--gv-theme-text-muted, #94a3b8);
+  --timeline-dot-color: #94a3b8;
   --timeline-dot-active-color: var(--gv-pm-brand, var(--gv-pm-brand-default));
   --timeline-dot-active-glow: color-mix(
     in srgb,
@@ -157,9 +157,9 @@ html[data-gv-scheme='light'] {
     transparent
   );
   --timeline-star-color: #f59e0b;
-  --timeline-tooltip-bg: var(--gv-theme-surface, oklch(0.995 0.002 250));
-  --timeline-tooltip-text: var(--gv-theme-text, oklch(0.14 0.004 285));
-  --timeline-tooltip-border: var(--gv-theme-border, oklch(0.92 0.004 250 / 0.7));
-  --timeline-bar-bg: var(--gv-theme-surface, rgba(248, 250, 252, 0.88));
+  --timeline-tooltip-bg: oklch(0.995 0.002 250);
+  --timeline-tooltip-text: oklch(0.14 0.004 285);
+  --timeline-tooltip-border: oklch(0.92 0.004 250 / 0.7);
+  --timeline-bar-bg: rgba(248, 250, 252, 0.88);
   --timeline-rail-film: rgba(0, 0, 0, 0.2);
 }

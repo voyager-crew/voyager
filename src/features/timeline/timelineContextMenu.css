@@ -9,10 +9,10 @@
   box-sizing: border-box;
   min-width: 168px;
   padding: 4px;
-  border: 1px solid var(--gv-ui-border, var(--timeline-tooltip-border));
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border, var(--timeline-tooltip-border)));
   border-radius: 12px;
-  background: var(--gv-ui-surface, var(--timeline-tooltip-bg));
-  color: var(--gv-ui-text, var(--timeline-tooltip-text));
+  background: var(--gv-theme-surface, var(--gv-ui-surface, var(--timeline-tooltip-bg)));
+  color: var(--gv-theme-text, var(--gv-ui-text, var(--timeline-tooltip-text)));
   box-shadow: var(--gv-ui-shadow, var(--timeline-tooltip-shadow));
   font-family: var(--gv-ui-font, ui-sans-serif, system-ui, sans-serif);
   font-size: 13px;
@@ -36,7 +36,7 @@
 
 .timeline-context-menu-title {
   padding: 6px 8px 4px;
-  color: var(--gv-ui-text-muted, var(--timeline-tooltip-text));
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted, var(--timeline-tooltip-text)));
   font-size: 12px;
   font-weight: 500;
 }
@@ -60,7 +60,7 @@
 }
 
 .timeline-context-menu-item:hover {
-  background-color: var(--gv-ui-hover, oklch(0.14 0.004 285 / 0.06));
+  background-color: var(--gv-theme-hover, var(--gv-ui-hover, oklch(0.14 0.004 285 / 0.06)));
 }
 
 .timeline-context-menu-item:focus-visible {
@@ -85,7 +85,7 @@
 .timeline-context-menu-item .level-dot {
   width: 9px;
   height: 9px;
-  background-color: var(--gv-ui-text-muted, var(--timeline-dot-color));
+  background-color: var(--gv-theme-text-muted, var(--gv-ui-text-muted, var(--timeline-dot-color)));
 }
 
 .timeline-context-menu-item.active .level-dot {
@@ -122,7 +122,7 @@
 .timeline-context-menu-separator {
   height: 1px;
   margin: 4px 4px;
-  background-color: var(--gv-ui-border, var(--timeline-tooltip-border));
+  background-color: var(--gv-theme-border, var(--gv-ui-border, var(--timeline-tooltip-border)));
 }
 
 .timeline-context-menu-item .collapse-icon {
@@ -130,5 +130,5 @@
   display: inline-flex;
   justify-content: center;
   flex: none;
-  color: var(--gv-ui-text-muted, var(--timeline-dot-color));
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted, var(--timeline-dot-color)));
 }

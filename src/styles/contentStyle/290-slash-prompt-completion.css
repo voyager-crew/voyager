@@ -44,7 +44,7 @@
 
 .gv-pm-slash-root:not(.gv-pm-slash-aiming)[data-gv-interaction='pointer'] .gv-pm-slash-option:hover,
 .gv-pm-slash-option[aria-selected='true'] {
-  background: var(--gv-ui-hover);
+  background: var(--gv-theme-hover, var(--gv-ui-hover));
 }
 
 .gv-pm-slash-option-name {

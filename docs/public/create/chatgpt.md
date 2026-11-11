@@ -40,7 +40,7 @@ Primitives (native ops) are allowed on ChatGPT.
 - CSS may not load anything, not even from the same site: no @import, image-set(), image(), cross-fade() or src(), and url() only with a #fragment or a png, jpeg, gif, webp or avif data: URI (never SVG).
 - Scope every rule under a class your plugin adds (see addClass), so nothing else changes. Site styles often win on specificity: add !important where a rule does not apply.
 - Light or dark only rules: scope them with html[data-gv-scheme='dark'] or html[data-gv-scheme='light'], never with the site's own theme classes.
-- To recolour Voyager’s own UI on any site, set these in one unscoped :root { } rule (it covers light and dark), never its gv- classes: --gv-theme-surface (panels, menus, dialogs), --gv-theme-hover (hovered rows), --gv-theme-text (text), --gv-theme-text-muted (secondary text, icons), --gv-theme-border (borders), --gv-theme-accent (buttons, selection, focus), --gv-theme-accent-fg (text on accent), --gv-theme-accent-hue (its OKLCH hue as a number, for tints), --gv-theme-danger (delete).
+- To recolour Voyager’s own panels, menus and dialogs on any site, set these in one unscoped :root { } rule (it covers light and dark), never its gv- classes: --gv-theme-surface (their background), --gv-theme-hover (hovered rows), --gv-theme-text (their text), --gv-theme-text-muted (secondary text, icons), --gv-theme-border (borders), --gv-theme-accent (buttons, selection, focus), --gv-theme-accent-fg (text on accent), --gv-theme-accent-hue (accent OKLCH hue, a number), --gv-theme-danger (delete).
 
 ## Page changes
 

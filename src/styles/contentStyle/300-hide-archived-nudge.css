@@ -6,11 +6,11 @@
    sidebar (Gemini #f0f4f9 / #1b1c1d, AI Studio #fff / dark) without a
    per-site palette. */
 .gv-hide-archived-nudge {
-  --gv-nudge-text: var(--gv-theme-text, oklch(0.14 0.004 285));
+  --gv-nudge-text: oklch(0.14 0.004 285);
   --gv-nudge-muted: oklch(0.38 0.008 285);
   --gv-nudge-surface: oklch(0.14 0.004 285 / 0.04);
   --gv-nudge-border: oklch(0.14 0.004 285 / 0.09);
-  --gv-nudge-hover: var(--gv-theme-hover, oklch(0.14 0.004 285 / 0.06));
+  --gv-nudge-hover: oklch(0.14 0.004 285 / 0.06);
   --gv-nudge-accent: var(--gv-pm-brand, var(--gv-pm-brand-default));
 
   position: relative;
@@ -35,11 +35,11 @@
 }
 
 html[data-gv-scheme='dark'] .gv-hide-archived-nudge {
-  --gv-nudge-text: var(--gv-theme-text, oklch(0.92 0.004 250));
-  --gv-nudge-muted: var(--gv-theme-text-muted, oklch(0.76 0.006 250));
+  --gv-nudge-text: oklch(0.92 0.004 250);
+  --gv-nudge-muted: oklch(0.76 0.006 250);
   --gv-nudge-surface: oklch(0.92 0.004 250 / 0.045);
   --gv-nudge-border: oklch(0.92 0.004 250 / 0.1);
-  --gv-nudge-hover: var(--gv-theme-hover, oklch(0.92 0.004 250 / 0.08));
+  --gv-nudge-hover: oklch(0.92 0.004 250 / 0.08);
 }
 
 .gv-hide-archived-nudge.gv-hide-archived-nudge--show {

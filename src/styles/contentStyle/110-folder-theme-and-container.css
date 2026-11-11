@@ -4,13 +4,13 @@
 
 /* CSS Variables for folder theming */
 :root {
-  --folder-bg: var(--gv-theme-surface, #ffffff);
-  --folder-text: var(--gv-theme-text, #1f2937);
-  --folder-border: var(--gv-theme-border, #e5e7eb);
-  --folder-hover-bg: var(--gv-theme-hover, #f3f4f6);
+  --folder-bg: #ffffff;
+  --folder-text: #1f2937;
+  --folder-border: #e5e7eb;
+  --folder-hover-bg: #f3f4f6;
   --folder-active-bg: #e0e7ff;
-  --folder-icon-color: var(--gv-theme-text-muted, #6b7280);
-  --folder-menu-bg: var(--gv-theme-surface, #ffffff);
+  --folder-icon-color: #6b7280;
+  --folder-menu-bg: #ffffff;
   --folder-menu-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   --folder-dragover-bg: #dbeafe;
   --folder-dragover-border: #3b82f6;
@@ -48,13 +48,13 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --folder-bg: var(--gv-theme-surface, #1f2937);
-    --folder-text: var(--gv-theme-text, #e5e7eb);
-    --folder-border: var(--gv-theme-border, #374151);
-    --folder-hover-bg: var(--gv-theme-hover, #374151);
+    --folder-bg: #1f2937;
+    --folder-text: #e5e7eb;
+    --folder-border: #374151;
+    --folder-hover-bg: #374151;
     --folder-active-bg: #1e40af;
-    --folder-icon-color: var(--gv-theme-text-muted, #9ca3af);
-    --folder-menu-bg: var(--gv-theme-surface, #1f2937);
+    --folder-icon-color: #9ca3af;
+    --folder-menu-bg: #1f2937;
     --folder-menu-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     --folder-dragover-bg: #1e3a8a;
     --folder-dragover-border: #60a5fa;
@@ -72,13 +72,13 @@
 
 /* Theme support - Overrides system preferences on Gemini/AI Studio */
 html[data-gv-scheme='dark'] {
-  --folder-bg: var(--gv-theme-surface, #1f2937);
-  --folder-text: var(--gv-theme-text, #e5e7eb);
-  --folder-border: var(--gv-theme-border, #374151);
-  --folder-hover-bg: var(--gv-theme-hover, #374151);
+  --folder-bg: #1f2937;
+  --folder-text: #e5e7eb;
+  --folder-border: #374151;
+  --folder-hover-bg: #374151;
   --folder-active-bg: #1e40af;
-  --folder-icon-color: var(--gv-theme-text-muted, #9ca3af);
-  --folder-menu-bg: var(--gv-theme-surface, #1f2937);
+  --folder-icon-color: #9ca3af;
+  --folder-menu-bg: #1f2937;
   --folder-menu-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   --folder-dragover-bg: #1e3a8a;
   --folder-dragover-border: #60a5fa;
@@ -94,13 +94,13 @@ html[data-gv-scheme='dark'] {
 }
 
 html[data-gv-scheme='light'] {
-  --folder-bg: var(--gv-theme-surface, #ffffff);
-  --folder-text: var(--gv-theme-text, #1f2937);
-  --folder-border: var(--gv-theme-border, #e5e7eb);
-  --folder-hover-bg: var(--gv-theme-hover, #f3f4f6);
+  --folder-bg: #ffffff;
+  --folder-text: #1f2937;
+  --folder-border: #e5e7eb;
+  --folder-hover-bg: #f3f4f6;
   --folder-active-bg: #e0e7ff;
-  --folder-icon-color: var(--gv-theme-text-muted, #6b7280);
-  --folder-menu-bg: var(--gv-theme-surface, #ffffff);
+  --folder-icon-color: #6b7280;
+  --folder-menu-bg: #ffffff;
   --folder-menu-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   --folder-dragover-bg: #dbeafe;
   --folder-dragover-border: #3b82f6;

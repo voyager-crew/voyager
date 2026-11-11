@@ -22,10 +22,10 @@
   inline-size: max-content;
   max-inline-size: min(300px, calc(100vw - 16px));
   padding: 12px;
-  border: 1px solid var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7));
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7)));
   border-radius: 12px;
-  background: var(--gv-ui-surface, oklch(0.995 0.002 250));
-  color: var(--gv-ui-text, oklch(0.14 0.004 285));
+  background: var(--gv-theme-surface, var(--gv-ui-surface, oklch(0.995 0.002 250)));
+  color: var(--gv-theme-text, var(--gv-ui-text, oklch(0.14 0.004 285)));
   box-shadow: var(--gv-ui-shadow, 0 6px 20px oklch(0 0 0 / 0.16));
   font-family: var(
     --gv-ui-font,
@@ -86,7 +86,7 @@
   box-sizing: border-box;
   min-block-size: 28px;
   padding: 4px 12px;
-  border: 1px solid var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7));
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7)));
   border-radius: 8px;
   background: transparent;
   color: inherit;
@@ -97,7 +97,7 @@
 }
 
 .gv-confirm-button:hover {
-  background: var(--gv-ui-surface-hover, oklch(0.97 0.003 250));
+  background: var(--gv-theme-hover, var(--gv-ui-surface-hover, oklch(0.97 0.003 250)));
 }
 
 .gv-confirm-button:focus-visible {

@@ -117,7 +117,7 @@
   --gv-folder-tree-save-hover-bg: rgba(15, 23, 42, 0.08);
   --gv-folder-tree-cancel-hover-bg: rgba(15, 23, 42, 0.08);
   --gv-folder-tree-input-bg: #ffffff;
-  --gv-folder-tree-input-color: var(--gv-theme-text, #1f2937);
+  --gv-folder-tree-input-color: #1f2937;
   --gv-folder-tree-input-focus-bg: #ffffff;
 }
 

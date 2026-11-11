@@ -24,8 +24,8 @@ describe('selection mode interaction', () => {
 
     for (const selector of ['.gv-export-dialog', '.gv-export-select-bar']) {
       const block = ruleBody(css, selector);
-      expect(block).toMatch(/background:\s*var\(--gv-ui-surface\);/);
-      expect(block).toMatch(/color:\s*var\(--gv-ui-text\);/);
+      expect(block).toMatch(/background:[^;]*var\(--gv-ui-surface\)/);
+      expect(block).toMatch(/color:[^;]*var\(--gv-ui-text\)/);
       expect(block).toMatch(/font-family:\s*var\(--gv-ui-font\);/);
     }
   });

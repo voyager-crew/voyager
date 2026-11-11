@@ -11,11 +11,11 @@
   unicode-bidi: isolate;
   min-width: 1.6em;
   padding: 0 6px;
-  border: 1px solid var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7));
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7)));
   border-bottom-width: 2px;
   border-radius: 5px;
   background: color-mix(in srgb, var(--gv-ui-text, oklch(0.14 0.004 285)) 5%, transparent);
-  color: var(--gv-ui-text, oklch(0.14 0.004 285));
+  color: var(--gv-theme-text, var(--gv-ui-text, oklch(0.14 0.004 285)));
   font: 500 12.5px/1.55 var(--gv-ui-font, ui-sans-serif, system-ui, sans-serif);
   text-align: center;
   white-space: nowrap;
@@ -30,10 +30,10 @@
   margin: 0 2px;
   padding-block: 1px;
   padding-inline: 4px 8px;
-  border: 1px solid var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7));
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7)));
   border-radius: 999px;
-  background: var(--gv-ui-surface, oklch(0.995 0.002 250));
-  color: var(--gv-ui-text, oklch(0.14 0.004 285));
+  background: var(--gv-theme-surface, var(--gv-ui-surface, oklch(0.995 0.002 250)));
+  color: var(--gv-theme-text, var(--gv-ui-text, oklch(0.14 0.004 285)));
   cursor: pointer;
   font: 500 13px/20px var(--gv-ui-font, ui-sans-serif, system-ui, sans-serif);
   vertical-align: middle;
@@ -41,7 +41,7 @@
 }
 
 .gv-changelog-switch:hover:not(:disabled) {
-  background: var(--gv-ui-surface-hover, oklch(0.97 0.003 250));
+  background: var(--gv-theme-hover, var(--gv-ui-surface-hover, oklch(0.97 0.003 250)));
 }
 
 .gv-changelog-switch:focus-visible {

@@ -7,7 +7,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  color: var(--gv-theme-text-muted, #5f6368);
+  color: #5f6368;
   position: relative;
   margin-left: 6px;
   display: flex;

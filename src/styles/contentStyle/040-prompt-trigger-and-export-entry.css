@@ -114,8 +114,8 @@
   margin-top: 4px;
   padding: 4px;
   min-width: 140px;
-  background: var(--gv-ui-surface);
-  border: 1px solid var(--gv-ui-border);
+  background: var(--gv-theme-surface, var(--gv-ui-surface));
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 12px;
   box-shadow: var(--gv-ui-shadow);
   font-family: var(--gv-ui-font);

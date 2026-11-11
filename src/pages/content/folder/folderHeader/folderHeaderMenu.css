@@ -24,10 +24,10 @@
   min-inline-size: 180px;
   max-inline-size: min(280px, calc(100vw - 16px));
   padding: 6px;
-  border: 1px solid var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7));
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7)));
   border-radius: 12px;
-  background: var(--gv-ui-surface, oklch(0.995 0.002 250));
-  color: var(--gv-ui-text, oklch(0.14 0.004 285));
+  background: var(--gv-theme-surface, var(--gv-ui-surface, oklch(0.995 0.002 250)));
+  color: var(--gv-theme-text, var(--gv-ui-text, oklch(0.14 0.004 285)));
   box-shadow: var(--gv-ui-shadow, 0 6px 20px oklch(0 0 0 / 0.16));
   font-family: var(
     --gv-ui-font,
@@ -61,7 +61,7 @@
 
 .gv-folder-header-menu-item:hover,
 .gv-folder-header-menu-item:focus-visible {
-  background: var(--gv-ui-surface-hover, oklch(0.97 0.003 250));
+  background: var(--gv-theme-hover, var(--gv-ui-surface-hover, oklch(0.97 0.003 250)));
   outline: none;
 }
 
@@ -69,5 +69,5 @@
   flex: none;
   width: 18px;
   height: 18px;
-  color: var(--gv-ui-text-muted, oklch(0.45 0.01 270));
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted, oklch(0.45 0.01 270)));
 }

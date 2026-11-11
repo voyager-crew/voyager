@@ -67,10 +67,10 @@ html[data-gv-scheme='dark'] .gv-fp-chip:hover {
   overflow-y: auto;
   box-sizing: border-box;
   padding: 4px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 12px;
-  background: var(--gv-ui-surface);
-  color: var(--gv-ui-text);
+  background: var(--gv-theme-surface, var(--gv-ui-surface));
+  color: var(--gv-theme-text, var(--gv-ui-text));
   box-shadow: var(--gv-ui-shadow);
   font-family: var(--gv-ui-font);
   z-index: 1000;
@@ -97,7 +97,7 @@ html[data-gv-scheme='dark'] .gv-fp-chip:hover {
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-family: var(--gv-ui-font);
   font-size: 13px;
   line-height: 18px;
@@ -107,7 +107,7 @@ html[data-gv-scheme='dark'] .gv-fp-chip:hover {
 }
 
 .gv-fp-item:hover {
-  background-color: var(--gv-ui-hover);
+  background-color: var(--gv-theme-hover, var(--gv-ui-hover));
 }
 
 .gv-fp-item:focus-visible,
@@ -148,7 +148,7 @@ html[data-gv-scheme='dark'] .gv-fp-chip:hover {
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   padding: 0;
   cursor: pointer;
   opacity: 0.5;
@@ -212,17 +212,17 @@ html[data-gv-scheme='dark'] .gv-fi-overlay {
   max-height: 80vh;
   padding: 20px;
   overflow: hidden;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 12px;
-  background: var(--gv-ui-surface);
-  color: var(--gv-ui-text);
+  background: var(--gv-theme-surface, var(--gv-ui-surface));
+  color: var(--gv-theme-text, var(--gv-ui-text));
   box-shadow: var(--gv-ui-shadow);
   font-family: var(--gv-ui-font);
 }
 
 .gv-fi-title {
   margin: 0;
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-size: 16px;
   font-weight: 600;
 }
@@ -232,10 +232,10 @@ html[data-gv-scheme='dark'] .gv-fi-overlay {
   min-height: 120px;
   max-height: 280px;
   padding: 10px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 8px;
   background: oklch(0.14 0.004 285 / 0.04);
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font-family: inherit;
   font-size: 13px;
   line-height: 1.5;
@@ -254,7 +254,7 @@ html[data-gv-scheme='dark'] .gv-fi-textarea {
 }
 
 .gv-fi-char-count {
-  color: var(--gv-ui-text-muted);
+  color: var(--gv-theme-text-muted, var(--gv-ui-text-muted));
   font-size: 11px;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -271,10 +271,10 @@ html[data-gv-scheme='dark'] .gv-fi-textarea {
   box-sizing: border-box;
   min-height: 28px;
   padding: 4px 12px;
-  border: 1px solid var(--gv-ui-border);
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border));
   border-radius: 8px;
   background: transparent;
-  color: var(--gv-ui-text);
+  color: var(--gv-theme-text, var(--gv-ui-text));
   font: inherit;
   font-size: 13px;
   font-weight: 500;
@@ -285,7 +285,7 @@ html[data-gv-scheme='dark'] .gv-fi-textarea {
 }
 
 .gv-fi-btn-cancel:hover {
-  background-color: var(--gv-ui-hover);
+  background-color: var(--gv-theme-hover, var(--gv-ui-hover));
 }
 
 .gv-fi-btn-save {

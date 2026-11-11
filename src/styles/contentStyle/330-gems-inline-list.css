@@ -54,7 +54,7 @@
 .gv-gems-inline-list {
   --gv-gems-text: oklch(0.14 0.004 285 / 0.88);
   --gv-gems-muted: oklch(0.14 0.004 285 / 0.65);
-  --gv-gems-hover: var(--gv-theme-hover, oklch(0.14 0.004 285 / 0.06));
+  --gv-gems-hover: oklch(0.14 0.004 285 / 0.06);
   --gv-gems-dot: oklch(0.14 0.004 285 / 0.08);
   --gv-gems-dot-text: oklch(0.14 0.004 285 / 0.72);
 }
@@ -63,7 +63,7 @@ html[data-gv-scheme='dark'] .gv-gems-inline-list,
 html[data-gv-scheme='dark'] .gv-gems-expand-toggle {
   --gv-gems-text: oklch(0.92 0.004 250 / 0.92);
   --gv-gems-muted: oklch(0.92 0.004 250 / 0.7);
-  --gv-gems-hover: var(--gv-theme-hover, oklch(0.92 0.004 250 / 0.08));
+  --gv-gems-hover: oklch(0.92 0.004 250 / 0.08);
   --gv-gems-dot: oklch(0.92 0.004 250 / 0.1);
   --gv-gems-dot-text: oklch(0.92 0.004 250 / 0.8);
 }

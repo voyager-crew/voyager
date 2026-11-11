@@ -461,11 +461,12 @@ html[data-gv-scheme] .gemini-timeline-bar:not(.timeline-no-container)::before {
 .timeline-tooltip {
   position: fixed;
   max-width: var(--timeline-tooltip-max);
-  background-color: var(--timeline-tooltip-bg);
-  color: var(--timeline-tooltip-text);
+  background-color: var(--gv-theme-surface, var(--timeline-tooltip-bg));
+  color: var(--gv-theme-text, var(--timeline-tooltip-text));
   padding: var(--timeline-tooltip-pad-y) var(--timeline-tooltip-pad-x);
   border-radius: var(--timeline-tooltip-radius);
-  border: var(--timeline-tooltip-border-w) solid var(--timeline-tooltip-border);
+  border: var(--timeline-tooltip-border-w) solid
+    var(--gv-theme-border, var(--timeline-tooltip-border));
   font-size: 13px;
   /* Pinned, like the prompt preview: Gemini, Claude and ChatGPT each set a
      different body font, and 'Google Sans' is one host's. Without this the
@@ -583,8 +584,9 @@ html[data-gv-scheme] .gemini-timeline-bar:not(.timeline-no-container)::before {
   position: absolute;
   width: var(--timeline-tooltip-arrow-size);
   height: var(--timeline-tooltip-arrow-size);
-  background: var(--timeline-tooltip-bg);
-  border: var(--timeline-tooltip-border-w) solid var(--timeline-tooltip-border);
+  background: var(--gv-theme-surface, var(--timeline-tooltip-bg));
+  border: var(--timeline-tooltip-border-w) solid
+    var(--gv-theme-border, var(--timeline-tooltip-border));
   transform: rotate(45deg);
 }
 

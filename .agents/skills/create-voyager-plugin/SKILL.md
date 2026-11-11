@@ -124,8 +124,10 @@ A native feature becomes a packaged official plugin that keeps its old setting a
   `gv-platform-themed` means "some brand applies" and three sites share it.
 - A creation recolours Voyager's own UI through the public, never-set
   `--gv-theme-*` roles in `src/core/ui/themeVariables.ts`. A new chrome colour
-  reads `var(--gv-theme-<role>, <value>)`; `themeVariables.test.ts` keeps the
-  list and the styles in step.
+  reads `var(--gv-theme-<role>, <value>)`; the neutral roles (surface, hover,
+  text, text-muted, border) only on a Voyager surface or what sits on it, never
+  on the page root or on what Voyager draws on the host page.
+  `themeVariables.test.ts` keeps the list and the styles in step.
 - Never hand-edit `dist_*` or `docs/public/catalog`; `catalog:build` writes the
   published catalog.
 
