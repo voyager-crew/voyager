@@ -2985,6 +2985,22 @@
     "message": "{skillUrl} 의 skill을 따라, 아래 요청대로 동작하는 {site}용 Voyager 플러그인을 작성해 주세요. 제 Voyager 플러그인 엔진은 {engine}이니 그보다 새로운 기능은 쓰지 마세요. 넘겨주기 전에 `{checkCommand}` 를 실행해 통과할 때까지 고쳐 주세요. 그런 다음 plugin.json과 style.css를 주시면 Voyager 팝업의 \"{importFiles}\"로 추가하겠습니다.\n\n요청:\n{request}",
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
+  "createModeFilled": {
+    "message": "요청을 입력창에 넣었습니다. 확인한 뒤 직접 보내세요.",
+    "description": "Create mode toast on the page: the creation message is in the composer, unsent"
+  },
+  "createModeComposerBusy": {
+    "message": "입력창에 이미 내용이 있습니다. 보내거나 지운 뒤 다시 시도하세요.",
+    "description": "Create mode: refused because the composer already has text; nothing was changed"
+  },
+  "createModeNoNewChat": {
+    "message": "여기서는 새 채팅을 열지 못했습니다. 직접 연 뒤 다시 시도하세요.",
+    "description": "Create mode: Voyager could not open a new chat on this site; nothing was added"
+  },
+  "createModeNoComposer": {
+    "message": "입력창을 찾지 못했습니다. 아무것도 넣지 않았습니다.",
+    "description": "Create mode: the composer was not found in time; nothing was added"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "AI 답변 붙여넣기",
     "description": "Label of the field where the user pastes the AI reply"

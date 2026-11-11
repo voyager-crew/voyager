@@ -2985,6 +2985,22 @@
     "message": "Écris un plugin Voyager pour {site} qui fait ce que je demande ci-dessous, en suivant la skill de {skillUrl}. Mon moteur de plugins Voyager est en version {engine} : n’utilise rien de plus récent. Avant de me le rendre, lance `{checkCommand}` jusqu’à ce qu’il passe. Donne-moi ensuite plugin.json et style.css pour que je les ajoute avec « {importFiles} » dans la fenêtre de Voyager.\n\nMa demande :\n{request}",
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
+  "createModeFilled": {
+    "message": "Votre demande est dans la zone de saisie. Relisez-la, puis envoyez-la vous-même.",
+    "description": "Create mode toast on the page: the creation message is in the composer, unsent"
+  },
+  "createModeComposerBusy": {
+    "message": "La zone de saisie contient déjà du texte. Envoyez-le ou effacez-le, puis réessayez.",
+    "description": "Create mode: refused because the composer already has text; nothing was changed"
+  },
+  "createModeNoNewChat": {
+    "message": "Voyager n’a pas pu ouvrir de nouveau chat ici. Ouvrez-en un vous-même, puis réessayez.",
+    "description": "Create mode: Voyager could not open a new chat on this site; nothing was added"
+  },
+  "createModeNoComposer": {
+    "message": "Voyager n’a pas trouvé la zone de saisie. Rien n’a été ajouté.",
+    "description": "Create mode: the composer was not found in time; nothing was added"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "Collez la réponse de l’IA",
     "description": "Label of the field where the user pastes the AI reply"

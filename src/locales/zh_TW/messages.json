@@ -2985,6 +2985,22 @@
     "message": "依照 {skillUrl} 裡的 skill，為 {site} 寫一個 Voyager 外掛，實現我下面的需求。我的 Voyager 外掛引擎版本是 {engine}，請不要用比它更新的功能。交付前執行 `{checkCommand}`，直到通過為止。然後把 plugin.json 和 style.css 給我，我會在 Voyager 彈出視窗裡用「{importFiles}」匯入。\n\n我的需求：\n{request}",
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
+  "createModeFilled": {
+    "message": "請求已填入輸入框。確認後再自行送出。",
+    "description": "Create mode toast on the page: the creation message is in the composer, unsent"
+  },
+  "createModeComposerBusy": {
+    "message": "輸入框裡已有內容。送出或清空後再試。",
+    "description": "Create mode: refused because the composer already has text; nothing was changed"
+  },
+  "createModeNoNewChat": {
+    "message": "Voyager 無法在這裡新增對話。請自行新增後再試。",
+    "description": "Create mode: Voyager could not open a new chat on this site; nothing was added"
+  },
+  "createModeNoComposer": {
+    "message": "Voyager 找不到輸入框，沒有填入任何內容。",
+    "description": "Create mode: the composer was not found in time; nothing was added"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "貼上 AI 的回覆",
     "description": "Label of the field where the user pastes the AI reply"

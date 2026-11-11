@@ -2985,6 +2985,22 @@
     "message": "{skillUrl} のスキルに従って、下の依頼どおりに動く {site} 用の Voyager プラグインを書いてください。私の Voyager プラグインエンジンは {engine} なので、それより新しい機能は使わないでください。渡す前に `{checkCommand}` を実行し、通るまで直してください。そのあと plugin.json と style.css をください。Voyager のポップアップの「{importFiles}」で追加します。\n\n依頼：\n{request}",
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
+  "createModeFilled": {
+    "message": "依頼を入力欄に入れました。確認してからご自身で送信してください。",
+    "description": "Create mode toast on the page: the creation message is in the composer, unsent"
+  },
+  "createModeComposerBusy": {
+    "message": "入力欄にすでに文字があります。送信するか消してから、もう一度お試しください。",
+    "description": "Create mode: refused because the composer already has text; nothing was changed"
+  },
+  "createModeNoNewChat": {
+    "message": "ここでは新しいチャットを開けませんでした。ご自身で開いてから、もう一度お試しください。",
+    "description": "Create mode: Voyager could not open a new chat on this site; nothing was added"
+  },
+  "createModeNoComposer": {
+    "message": "入力欄が見つかりませんでした。何も入力していません。",
+    "description": "Create mode: the composer was not found in time; nothing was added"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "AI の回答を貼り付け",
     "description": "Label of the field where the user pastes the AI reply"

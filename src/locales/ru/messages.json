@@ -2985,6 +2985,22 @@
     "message": "Напиши плагин Voyager для {site}, который делает то, о чём я прошу ниже, по skill из {skillUrl}. Мой движок плагинов Voyager версии {engine}, поэтому не используй ничего новее. Прежде чем отдать результат, запускай `{checkCommand}`, пока проверка не пройдёт. Потом дай мне plugin.json и style.css, чтобы я добавил их через «{importFiles}» во всплывающем окне Voyager.\n\nМой запрос:\n{request}",
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
+  "createModeFilled": {
+    "message": "Ваш запрос в поле ввода. Проверьте его и отправьте сами.",
+    "description": "Create mode toast on the page: the creation message is in the composer, unsent"
+  },
+  "createModeComposerBusy": {
+    "message": "В поле ввода уже есть текст. Отправьте или удалите его и попробуйте снова.",
+    "description": "Create mode: refused because the composer already has text; nothing was changed"
+  },
+  "createModeNoNewChat": {
+    "message": "Voyager не смог открыть новый чат. Откройте его сами и попробуйте снова.",
+    "description": "Create mode: Voyager could not open a new chat on this site; nothing was added"
+  },
+  "createModeNoComposer": {
+    "message": "Voyager не нашёл поле ввода. Ничего не добавлено.",
+    "description": "Create mode: the composer was not found in time; nothing was added"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "Вставьте ответ ИИ",
     "description": "Label of the field where the user pastes the AI reply"

@@ -2985,6 +2985,22 @@
     "message": "اكتب إضافة Voyager لموقع {site} تنفّذ ما أطلبه أدناه، متّبعًا الـ skill في {skillUrl}. إصدار محرك إضافات Voyager لديّ هو {engine}، فلا تستخدم شيئًا أحدث منه. قبل أن تسلّمني النتيجة، شغّل `{checkCommand}` حتى ينجح. ثم أعطني plugin.json وstyle.css لأضيفهما عبر «{importFiles}» في نافذة Voyager المنبثقة.\n\nطلبي:\n{request}",
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
+  "createModeFilled": {
+    "message": "طلبك في مربع الرسالة. اقرأه ثم أرسله بنفسك.",
+    "description": "Create mode toast on the page: the creation message is in the composer, unsent"
+  },
+  "createModeComposerBusy": {
+    "message": "مربع الرسالة يحتوي على نص بالفعل. أرسله أو امسحه، ثم أعد المحاولة.",
+    "description": "Create mode: refused because the composer already has text; nothing was changed"
+  },
+  "createModeNoNewChat": {
+    "message": "تعذّر على Voyager فتح محادثة جديدة هنا. افتح واحدة بنفسك، ثم أعد المحاولة.",
+    "description": "Create mode: Voyager could not open a new chat on this site; nothing was added"
+  },
+  "createModeNoComposer": {
+    "message": "تعذّر على Voyager العثور على مربع الرسالة. لم تتم إضافة شيء.",
+    "description": "Create mode: the composer was not found in time; nothing was added"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "الصق رد الذكاء الاصطناعي",
     "description": "Label of the field where the user pastes the AI reply"

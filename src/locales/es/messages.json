@@ -2985,6 +2985,22 @@
     "message": "Escribe un plugin de Voyager para {site} que haga lo que pido abajo, siguiendo la skill de {skillUrl}. Mi motor de plugins de Voyager es la versión {engine}, así que no uses nada más reciente. Antes de entregármelo, ejecuta `{checkCommand}` hasta que pase. Después dame plugin.json y style.css para añadirlos con «{importFiles}» en la ventana emergente de Voyager.\n\nMi petición:\n{request}",
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
+  "createModeFilled": {
+    "message": "Tu petición está en el cuadro de mensaje. Léela y envíala tú.",
+    "description": "Create mode toast on the page: the creation message is in the composer, unsent"
+  },
+  "createModeComposerBusy": {
+    "message": "El cuadro de mensaje ya tiene texto. Envíalo o bórralo y vuelve a intentarlo.",
+    "description": "Create mode: refused because the composer already has text; nothing was changed"
+  },
+  "createModeNoNewChat": {
+    "message": "Voyager no pudo abrir un chat nuevo aquí. Abre uno tú y vuelve a intentarlo.",
+    "description": "Create mode: Voyager could not open a new chat on this site; nothing was added"
+  },
+  "createModeNoComposer": {
+    "message": "Voyager no encontró el cuadro de mensaje. No se añadió nada.",
+    "description": "Create mode: the composer was not found in time; nothing was added"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "Pega la respuesta de la IA",
     "description": "Label of the field where the user pastes the AI reply"

@@ -27,6 +27,8 @@ export enum CleanupPositions {
   CleanupSendKeyCoordinator,
   /** The panel window, its satellites and its shortcut lease; the ball's other holder stops on its own. */
   CleanupPanelShell,
+  /** Create mode's composer fill and reply controls; the panel it opens stops just before. */
+  CleanupCreateMode,
   CleanupBrandTheme,
   CleanupRemoteAnnouncements,
   CleanupStorageQuotaWarning,

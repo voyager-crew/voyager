@@ -2985,6 +2985,22 @@
     "message": "Write a Voyager plugin for {site} that does what I ask below, following the skill at {skillUrl}. My Voyager plugin engine is {engine}, so use nothing newer. Before you hand it back, run `{checkCommand}` until it passes. Then give me plugin.json and style.css so I can add them with \"{importFiles}\" in the Voyager popup.\n\nMy request:\n{request}",
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
+  "createModeFilled": {
+    "message": "Your request is in the message box. Read it, then send it yourself.",
+    "description": "Create mode toast on the page: the creation message is in the composer, unsent"
+  },
+  "createModeComposerBusy": {
+    "message": "The message box already has text. Send or clear it, then try again.",
+    "description": "Create mode: refused because the composer already has text; nothing was changed"
+  },
+  "createModeNoNewChat": {
+    "message": "Voyager couldn’t open a new chat here. Open one yourself, then try again.",
+    "description": "Create mode: Voyager could not open a new chat on this site; nothing was added"
+  },
+  "createModeNoComposer": {
+    "message": "Voyager couldn’t find the message box. Nothing was added.",
+    "description": "Create mode: the composer was not found in time; nothing was added"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "Paste the AI’s reply",
     "description": "Label of the field where the user pastes the AI reply"

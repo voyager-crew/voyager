@@ -2,6 +2,7 @@ import { CleanupPositions } from '@/core/types/cleanupPositions';
 
 import { startAccountContextBridge } from './accountContext';
 import { startChatGptJump } from './chatGptJump';
+import { startCreateMode } from './createMode/index';
 import { startDefaultModelStarCleanupPageService } from './defaultModel/starCleanupPageService';
 import { startEdgeFinalVersionNotice } from './edgeFinalVersionNotice';
 import type { NativeFeature } from './featureLifecycle';
@@ -114,6 +115,12 @@ export const NATIVE_FEATURES = {
     id: 'panel-shell',
     position: CleanupPositions.CleanupPanelShell,
     start: startPanelShell,
+  },
+  /** Create mode works with every plugin off, like the panel that starts it. */
+  createMode: {
+    id: 'create-mode',
+    position: CleanupPositions.CleanupCreateMode,
+    start: () => startCreateMode(),
   },
 } as const satisfies Record<string, NativeFeature>;
 

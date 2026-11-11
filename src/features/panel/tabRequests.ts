@@ -1,5 +1,10 @@
 import { NATIVE_HEALTH_STATUS_MESSAGE } from '@/core/gemini/nativeHealth';
 import { CHATGPT_EXPORT_OPEN_MESSAGE } from '@/features/plugins/builtin/chatgptExport/openMessage';
+import {
+  CREATE_MODE_MESSAGES,
+  type CreateStartRequest,
+  parseCreateStartRequest,
+} from '@/features/plugins/local/creation/messages';
 import { PLUGIN_STATUS_MESSAGE } from '@/features/plugins/runtime/messages';
 
 /** The popup's current top-frame requests. Never accept a destination tab from the panel. */
@@ -11,15 +16,21 @@ export const PANEL_TAB_REQUEST_TYPES = [
   'gv.sync.requestData',
   'gv.account.getContext',
   CHATGPT_EXPORT_OPEN_MESSAGE,
+  CREATE_MODE_MESSAGES.pending,
 ] as const;
 
 type PanelTabRequestType = (typeof PANEL_TAB_REQUEST_TYPES)[number];
-export type PanelTabRequest = { type: PanelTabRequestType } | { action: 'sync_to_ide' };
+export type PanelTabRequest =
+  | { type: PanelTabRequestType }
+  | { action: 'sync_to_ide' }
+  /** The one request with a payload: Create mode's sentence, trimmed and bounded. */
+  | CreateStartRequest;
 
 /** Strip extra fields as well as rejecting unknown requests; no arbitrary tab commands. */
 export function parsePanelTabRequest(value: unknown): PanelTabRequest | null {
   if (!value || typeof value !== 'object') return null;
   if ('type' in value) {
+    if (value.type === CREATE_MODE_MESSAGES.start) return parseCreateStartRequest(value);
     const type = PANEL_TAB_REQUEST_TYPES.find((type) => type === value.type);
     return type ? { type } : null;
   }
