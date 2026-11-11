@@ -30,4 +30,4 @@
 
 - AMO 原文：「Usage of the `userScripts` API is allowed for user script managers only」，并且「cannot be used to extend or modify the functionality of the user script manager itself」。Voyager 不是脚本管理器。
 - Chrome：只允许运行用户自己提供的脚本，不能通过目录分发第三方 JS。Chrome 138 起需要用户为每个扩展单独打开「Allow User Scripts」开关；Safari 没有等价 API。
-- 能成立的只有「用户自行导入 JS，仅支持 Chrome/Edge」这一种形态，粗估 14 至 20 工程日，用户门槛高，目前没有需求证据。
+- 能成立的只有「用户自行导入 JS，仅支持 Chrome/Edge」这一种形态。这种形态后来作为创造模式的本地 scripted 创造实现了（`src/features/plugins/scripted/README.md`）：只有本地插件能带脚本，用户读过源码才能打开，Firefox 和 Safari 不运行。它不改变本节结论：目录插件仍然不能靠 scripted tier 表达状态。

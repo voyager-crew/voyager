@@ -4,7 +4,7 @@ Le mode création transforme une phrase en plugin. Vous dites ce qui doit change
 
 Un plugin local est un plugin que vous créez pour vous-même. Il modifie l'apparence ou la mise en page de Gemini, AI Studio, ChatGPT, Claude, DeepSeek ou Kimi, il ne vit que dans votre navigateur, et il ne demande ni pull request ni copie du code source de Voyager.
 
-Comme tous les plugins Voyager, il est déclaratif : un manifest `plugin.json` et du CSS. Il n'exécute aucun code qui lui soit propre. Voyager le vérifie à l'import, applique ses modifications et les retire toutes quand vous le désactivez. Un plugin importé est désactivé au départ, pour que vous puissiez le relire avant de l'activer.
+La plupart des créations sont déclaratives : un manifest `plugin.json` et du CSS, sans code qui leur soit propre. Voyager le vérifie à l'import, applique ses modifications et les retire toutes quand vous le désactivez. Un plugin importé est désactivé au départ, pour que vous puissiez le relire avant de l'activer. Quand une demande exige du code, l'IA peut écrire à la place une création qui exécute du code, décrite plus bas.
 
 ## Créer sur la page
 
@@ -71,7 +71,28 @@ Une fois la vérification passée, importez les deux fichiers de la même façon
 
 ## Ce qu'il ne peut pas faire
 
-Un plugin ne peut pas exécuter de JavaScript, réagir aux clics ou aux touches, charger quoi que ce soit depuis le réseau (polices, images, feuilles de style), lire ou réécrire le contenu d'un message, ni s'exécuter sur d'autres sites. Si une demande exige l'une de ces choses, les consignes de rédaction demandent à l'IA de le dire clairement et de construire la version la plus proche qui fonctionne.
+Un plugin déclaratif ne peut pas exécuter de JavaScript, réagir aux clics ou aux touches, charger quoi que ce soit depuis le réseau (polices, images, feuilles de style), lire ou réécrire le contenu d'un message, ni s'exécuter sur d'autres sites. Quand seul du code peut le faire, l'IA écrit une création qui exécute du code, décrite plus bas. Aucune création ne peut s'exécuter sur d'autres sites ni modifier les réglages de Voyager ; pour une telle demande, les consignes de rédaction demandent à l'IA de le dire clairement et de construire la version la plus proche qui fonctionne.
+
+## Créations qui exécutent du code
+
+Quand le CSS et les modifications de page ne suffisent pas, par exemple pour compter vos messages ou réagir à un clic, l'IA peut écrire une création qui exécute du JavaScript. Voyager l'exécute comme script utilisateur de Chrome, uniquement sur les sites qu'elle indique et uniquement après que vous avez lu son code.
+
+### L'activer
+
+La relecture signale une telle création par le badge **Exécute du code**.
+
+- **La lire** : la relecture indique les sites où elle s'exécute et affiche tout son code source. Elle peut lire tout ce qui se trouve sur ces pages, et Voyager ne peut pas l'empêcher d'envoyer ailleurs ce qu'elle lit : n'installez que du code auquel vous faites confiance.
+- **Installer et activer** : active exactement le code que vous avez lu. Une version ultérieure de l'IA reste désactivée jusqu'à une nouvelle relecture, et l'interrupteur n'est jamais synchronisé avec vos autres appareils.
+- **Réglage unique** : Chrome ne laisse une extension exécuter ce code qu'après votre autorisation. Choisissez **Ouvrir la page de détails de Voyager**, activez-y **Autoriser les scripts utilisateur** (Allow User Scripts ; avant Chrome 138, le **Mode développeur** en haut de `chrome://extensions`), puis revenez et choisissez **C'est activé**.
+- **Navigateurs** : Chrome ou Edge pour ordinateur, version 133 ou ultérieure. Sur Safari, Firefox et mobile, elle reste installée mais en pause ; demandez à l'IA une version qui change seulement l'apparence de la page.
+
+### Garder la main
+
+Dans **Mes créations**, chacune affiche **Activée, sur cet appareil uniquement**, **Désactivée** ou **En pause** avec la raison.
+
+- **Tout arrêter** : **Arrêter toutes les créations qui exécutent du code**, dans **Mes créations** ou l'onglet **Créer** du panneau, les arrête toutes d'un coup ; **Reprendre** les relance.
+- **Pages ouvertes** : une page déjà ouverte continue de les exécuter jusqu'à son rechargement. **Recharger cette page** le fait pour l'onglet actuel.
+- **Blocages** : si une page cesse de répondre après l'exécution de ces créations, Voyager les désactive et les nomme dans un avis au prochain chargement de la page. Une fois la création corrigée, relisez-la dans **Mes créations** et réactivez-la.
 
 ## Règles vérifiées à l'import
 

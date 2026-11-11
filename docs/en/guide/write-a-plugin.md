@@ -4,7 +4,7 @@ Create mode turns one sentence into a plugin. You say what should change, an AI 
 
 A local plugin is a plugin you make for yourself. It changes how Gemini, AI Studio, ChatGPT, Claude, DeepSeek or Kimi looks or is laid out, it lives only in your browser, and it needs no pull request and no copy of the Voyager source.
 
-Like every Voyager plugin, it is declarative: a `plugin.json` manifest plus CSS. It runs no code of its own. Voyager checks it on import, applies its changes, and removes every change when you turn it off. An imported plugin starts switched off, so you can review it first.
+Most creations are declarative: a `plugin.json` manifest plus CSS that runs no code of its own. Voyager checks it on import, applies its changes, and removes every change when you turn it off. An imported plugin starts switched off, so you can review it first. When a request needs code, the AI can write a creation that runs code instead, described below.
 
 ## Create on the page
 
@@ -71,7 +71,28 @@ When it passes, import both files the same way, with **Import files** under **Mo
 
 ## What it cannot do
 
-A plugin cannot run JavaScript, react to clicks or keys, load anything from the network (fonts, images, stylesheets), read or rewrite what a message says, or run on other sites. If a request needs any of that, the authoring material tells the AI to say so and to build the closest version that works.
+A declarative plugin cannot run JavaScript, react to clicks or keys, load anything from the network (fonts, images, stylesheets), read or rewrite what a message says, or run on other sites. When only code would do, the AI writes a creation that runs code, described below. No creation can run on other sites or change Voyager's own settings; for a request like that, the authoring material tells the AI to say so and to build the closest version that works.
+
+## Creations that run code
+
+When CSS and page changes can't do what you asked, such as counting your messages or reacting to a click, the AI can write a creation that runs JavaScript. Voyager runs it through Chrome's user scripts, only on the sites it lists, and only after you have read it.
+
+### Turning one on
+
+The review marks such a creation with a **Runs code** badge.
+
+- **Read it**: the review lists the sites it runs on and shows its full source. It can read everything on those pages, and Voyager cannot stop it from sending what it reads elsewhere, so install only code you trust.
+- **Install and turn on**: turns on exactly the code you read. A later version from the AI stays off until you review it again, and the switch never syncs to your other devices.
+- **One-time switch**: Chrome lets an extension run such code only after you allow it. Choose **Open Voyager's details page**, turn on **Allow User Scripts** there (before Chrome 138, **Developer mode** at the top of `chrome://extensions`), then come back and choose **I turned it on**.
+- **Browsers**: desktop Chrome or Edge 133 or newer. On Safari, Firefox and phones it stays installed but paused; ask the AI for a version that only changes how the page looks.
+
+### Staying in control
+
+In **My creations**, each one shows **On, this device only**, **Off**, or **Paused** with the reason.
+
+- **Stop all**: **Stop all creations that run code**, in **My creations** or the panel's **Create** tab, stops every one at once; **Resume** starts them again.
+- **Open pages**: a page that is already open keeps running them until it reloads. **Reload this page** does that for the current tab.
+- **Freezes**: if a page stops responding after these creations ran on it, Voyager turns them off and names them in a notice the next time the page loads. Once the creation is fixed, review it in **My creations** and turn it back on.
 
 ## Rules the import checks
 

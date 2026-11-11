@@ -72,7 +72,7 @@
     "tier": {
       "type": "string",
       "enum": ["declarative", "scripted"],
-      "description": "`declarative` ships only data (CSS + JSON) interpreted by the bundled engine. `scripted` is reserved for a later advanced tier with no runtime yet; a scripted plugin is skipped entirely."
+      "description": "`declarative` ships only data (CSS + JSON) interpreted by the bundled engine. `scripted` carries JavaScript in `contributes.script` and contributes nothing else. Only a local plugin installed through Create mode may be scripted: catalogs, `plugin:check` and `create-voyager-plugin check` refuse it. Voyager runs it through `chrome.userScripts` on desktop Chrome or Edge 133+ with \"Allow User Scripts\" on, off until the user reviews its full source; see https://voyager.nagi.fun/create/scripted.md."
     },
     "matches": {
       "type": "array",
@@ -187,7 +187,7 @@
     },
     "contributions": {
       "type": "object",
-      "description": "Everything the plugin adds to the page. New capabilities arrive as new keys here — a plugin never runs code of its own.",
+      "description": "Everything the plugin adds to the page. New capabilities arrive as new keys here. A declarative plugin never runs code of its own; a scripted one contributes only `script`.",
       "properties": {
         "styles": {
           "type": "array",
@@ -197,6 +197,15 @@
           "type": "array",
           "maxItems": 500,
           "items": { "$ref": "#/$defs/domOperation" }
+        },
+        "script": {
+          "type": "object",
+          "description": "Scripted tier only, and then the only key in contributes: the JavaScript Voyager registers as a user script in the plugin's own isolated world, top frame, at document idle, on every full load of a matched page.",
+          "required": ["source"],
+          "additionalProperties": false,
+          "properties": {
+            "source": { "type": "string", "minLength": 1, "maxLength": 200000 }
+          }
         },
         "settings": {
           "type": "object",

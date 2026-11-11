@@ -4,7 +4,7 @@ O modo criação transforma uma frase num plugin. Diz o que deve mudar, uma IA e
 
 Um plugin local é um plugin que cria para si. Altera o aspeto ou a disposição do Gemini, AI Studio, ChatGPT, Claude, DeepSeek ou Kimi, vive apenas no seu navegador e não precisa de nenhuma pull request nem de uma cópia do código-fonte do Voyager.
 
-Como todos os plugins do Voyager, é declarativo: um manifest `plugin.json` mais CSS. Não executa código próprio. O Voyager verifica-o ao importar, aplica as alterações e remove-as todas quando o desativa. Um plugin importado começa desativado, para que o possa rever primeiro.
+A maioria das criações é declarativa: um manifest `plugin.json` mais CSS, sem código próprio. O Voyager verifica-o ao importar, aplica as alterações e remove-as todas quando o desativa. Um plugin importado começa desativado, para que o possa rever primeiro. Quando um pedido precisa de código, a IA pode escrever em vez disso uma criação que executa código, descrita abaixo.
 
 ## Criar na página
 
@@ -71,7 +71,28 @@ Quando passar, importe os dois ficheiros da mesma forma, com **Importar arquivos
 
 ## O que não pode fazer
 
-Um plugin não pode executar JavaScript, reagir a cliques ou teclas, carregar nada da rede (tipos de letra, imagens, folhas de estilo), ler ou reescrever o que uma mensagem diz, nem correr noutros sites. Se um pedido precisar de alguma destas coisas, o material de autoria diz à IA para o dizer claramente e para construir a versão mais próxima que funcione.
+Um plugin declarativo não pode executar JavaScript, reagir a cliques ou teclas, carregar nada da rede (tipos de letra, imagens, folhas de estilo), ler ou reescrever o que uma mensagem diz, nem correr noutros sites. Quando só código resolve, a IA escreve uma criação que executa código, descrita abaixo. Nenhuma criação pode correr noutros sites nem mudar as definições do próprio Voyager; perante um pedido assim, o material de autoria diz à IA para o dizer claramente e para construir a versão mais próxima que funcione.
+
+## Criações que executam código
+
+Quando o CSS e as alterações de página não chegam, por exemplo para contar as suas mensagens ou reagir a um clique, a IA pode escrever uma criação que executa JavaScript. O Voyager executa-a como script de utilizador do Chrome, apenas nos sites que indica e só depois de ter lido o código.
+
+### Ativá-la
+
+A revisão marca uma criação assim com o distintivo **Executa código**.
+
+- **Leia-a**: a revisão mostra os sites onde corre e o código-fonte completo. Ela pode ler tudo o que está nessas páginas, e o Voyager não consegue impedir que envie para outro lado o que lê, por isso instale apenas código em que confia.
+- **Instalar e ativar**: ativa exatamente o código que leu. Uma versão posterior da IA fica desativada até a rever de novo, e o interruptor nunca é sincronizado com os seus outros dispositivos.
+- **Interruptor único**: o Chrome só deixa uma extensão executar este código depois de o permitir. Escolha **Abrir a página de detalhes do Voyager**, ative lá **Permitir scripts do utilizador** (Allow User Scripts; antes do Chrome 138, o **Modo de programador** no topo de `chrome://extensions`), volte e escolha **Já ativei**.
+- **Navegadores**: Chrome ou Edge para computador, versão 133 ou posterior. No Safari, no Firefox e em telemóveis fica instalada mas em pausa; peça à IA uma versão que só mude o aspeto da página.
+
+### Manter o controlo
+
+Em **Minhas criações**, cada uma mostra **Ativada, só neste dispositivo**, **Desativada** ou **Em pausa** com o motivo.
+
+- **Parar tudo**: **Parar todas as criações que executam código**, em **Minhas criações** ou no separador **Criar** do painel, para todas de uma vez; **Retomar** volta a iniciá-las.
+- **Páginas abertas**: uma página já aberta continua a executá-las até ser recarregada. **Recarregar esta página** faz isso no separador atual.
+- **Bloqueios**: se uma página deixar de responder depois de estas criações correrem nela, o Voyager desativa-as e indica-as num aviso na próxima vez que a página carregar. Depois de corrigida, reveja-a em **Minhas criações** e volte a ativá-la.
 
 ## Regras verificadas na importação
 

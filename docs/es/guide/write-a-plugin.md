@@ -4,7 +4,7 @@ El modo creación convierte una frase en un plugin. Dices qué quieres cambiar, 
 
 Un plugin local es un plugin que haces para ti. Cambia el aspecto o la disposición de Gemini, AI Studio, ChatGPT, Claude, DeepSeek o Kimi, vive solo en tu navegador y no necesita ninguna pull request ni una copia del código fuente de Voyager.
 
-Como todos los plugins de Voyager, es declarativo: un manifest `plugin.json` más CSS. No ejecuta código propio. Voyager lo revisa al importarlo, aplica sus cambios y los retira todos cuando lo desactivas. Un plugin importado empieza desactivado, así que puedes revisarlo antes de encenderlo.
+La mayoría de las creaciones son declarativas: un manifest `plugin.json` más CSS, sin código propio. Voyager lo revisa al importarlo, aplica sus cambios y los retira todos cuando lo desactivas. Un plugin importado empieza desactivado, así que puedes revisarlo antes de encenderlo. Cuando una petición necesita código, la IA puede escribir en su lugar una creación que ejecuta código, descrita más abajo.
 
 ## Crear en la página
 
@@ -71,7 +71,28 @@ Cuando pase, importa los dos archivos del mismo modo, con **Importar archivos** 
 
 ## Qué no puede hacer
 
-Un plugin no puede ejecutar JavaScript, reaccionar a clics o teclas, cargar nada desde la red (fuentes, imágenes, hojas de estilo), leer ni reescribir lo que dice un mensaje, ni ejecutarse en otros sitios. Si una petición necesita algo de eso, el material de redacción le indica a la IA que lo diga claramente y que construya la versión más cercana que sí funcione.
+Un plugin declarativo no puede ejecutar JavaScript, reaccionar a clics o teclas, cargar nada desde la red (fuentes, imágenes, hojas de estilo), leer ni reescribir lo que dice un mensaje, ni ejecutarse en otros sitios. Cuando solo el código sirve, la IA escribe una creación que ejecuta código, descrita más abajo. Ninguna creación puede ejecutarse en otros sitios ni cambiar los ajustes de Voyager; ante una petición así, el material de redacción le indica a la IA que lo diga claramente y que construya la versión más cercana que sí funcione.
+
+## Creaciones que ejecutan código
+
+Cuando el CSS y los cambios de página no bastan, por ejemplo para contar tus mensajes o reaccionar a un clic, la IA puede escribir una creación que ejecuta JavaScript. Voyager la ejecuta como script de usuario de Chrome, solo en los sitios que indica y solo después de que hayas leído su código.
+
+### Activarla
+
+La revisión marca una creación así con la insignia **Ejecuta código**.
+
+- **Léela**: la revisión muestra los sitios donde se ejecuta y su código fuente completo. Puede leer todo lo que hay en esas páginas, y Voyager no puede impedir que envíe a otro lugar lo que lee, así que instala solo código en el que confíes.
+- **Instalar y activar**: activa exactamente el código que leíste. Una versión posterior de la IA queda desactivada hasta que la revises de nuevo, y el interruptor nunca se sincroniza con tus otros dispositivos.
+- **Interruptor único**: Chrome solo deja que una extensión ejecute este código después de que lo permitas. Elige **Abrir la página de detalles de Voyager**, activa allí **Permitir scripts de usuario** (Allow User Scripts; antes de Chrome 138, el **Modo de desarrollador** arriba en `chrome://extensions`), vuelve y elige **Ya lo activé**.
+- **Navegadores**: Chrome o Edge de escritorio 133 o posterior. En Safari, Firefox y móviles queda instalada pero en pausa; pide a la IA una versión que solo cambie el aspecto de la página.
+
+### Mantener el control
+
+En **Mis creaciones**, cada una muestra **Activada, solo en este dispositivo**, **Desactivada** o **En pausa** con el motivo.
+
+- **Detener todo**: **Detener todas las creaciones que ejecutan código**, en **Mis creaciones** o en la pestaña **Crear** del panel, las detiene todas a la vez; **Reanudar** las vuelve a iniciar.
+- **Páginas abiertas**: una página que ya está abierta las sigue ejecutando hasta que se recarga. **Recargar esta página** lo hace con la pestaña actual.
+- **Bloqueos**: si una página deja de responder después de que estas creaciones se ejecutaran en ella, Voyager las desactiva y las nombra en un aviso la próxima vez que se cargue la página. Cuando esté corregida, revísala en **Mis creaciones** y vuelve a activarla.
 
 ## Reglas que comprueba la importación
 

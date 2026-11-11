@@ -20,10 +20,10 @@ Both constraints point at the same answer → **declarative-first** plugins.
 
 ## Two tiers
 
-| Tier                    | Ships                       | Store-safe                     | Runs on                   | Status                                                                                     |
-| ----------------------- | --------------------------- | ------------------------------ | ------------------------- | ------------------------------------------------------------------------------------------ |
-| `declarative` (default) | CSS + JSON (`domOps`)       | ✅ everywhere, remote-loadable | Chrome / Firefox / Safari | **implemented**                                                                            |
-| `scripted` (advanced)   | JS via `chrome.userScripts` | gated toggle, no Safari        | Chrome / Edge             | gate, data and background runtime implemented, no UI yet ([scripted/](scripted/README.md)) |
+| Tier                    | Ships                       | Store-safe                     | Runs on                   | Status                                                                                                      |
+| ----------------------- | --------------------------- | ------------------------------ | ------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `declarative` (default) | CSS + JSON (`domOps`)       | ✅ everywhere, remote-loadable | Chrome / Firefox / Safari | **implemented**                                                                                             |
+| `scripted` (advanced)   | JS via `chrome.userScripts` | gated toggle, no Safari        | Chrome / Edge             | **implemented** for local plugins from Create mode, after a source review ([scripted/](scripted/README.md)) |
 
 ## Architecture
 
@@ -90,8 +90,9 @@ EntitlementProvider  ─► entitled?         │  styles + domOps, reversible, 
   owns `mergePluginRecords`, the rules that pick which copy of a plugin id wins.
 - **`scripted/`** — the local-only scripted tier: its types, enable state,
   run state, planned registrations, availability, crash guard and prelude;
-  `src/pages/background/scriptedCreations/` registers them. No UI turns one on
-  yet. See [scripted/README.md](scripted/README.md).
+  `src/pages/background/scriptedCreations/` registers them, and the Create
+  review, My creations and the panel turn one on, pause or stop it. See
+  [scripted/README.md](scripted/README.md).
 - **`local/`** — user-imported declarative plugins: the `local.*` id namespace,
   the import gate, storage, the read-only `LocalPluginSource` and the inspect
   summary the popup shows, plus Create mode. Create mode reads a plugin back
@@ -279,7 +280,7 @@ rules they keep are in [builtin/README.md](builtin/README.md).
 - **Full setting UI coverage.** The schema accepts boolean/string/color/select;
   the popup currently renders boolean switches, number/range controls and select
   controls, while string and color controls remain future work.
-- **Scripted UI**: review, enable and crash notices for the gated `chrome.userScripts` tier.
+- **Scripted tier on Firefox**: its `userScripts` API differs, and AMO allows it only for user script managers.
 - **Account + Stripe entitlement**.
 
 ## Platform notes
@@ -294,4 +295,4 @@ rules they keep are in [builtin/README.md](builtin/README.md).
   ([runtime/README.md](runtime/README.md)). Google Drive sync is off wherever the
   browser has no identity API to sign in with, as on Firefox for Android
   (`core/utils/googleDriveSignIn.ts`).
-- **Chrome/Edge**: full support, including the future gated `scripted` tier.
+- **Chrome/Edge**: full support, including the gated `scripted` tier (Chrome/Edge 133+, "Allow User Scripts" on).
