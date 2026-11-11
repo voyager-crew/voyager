@@ -29,6 +29,8 @@ export enum CleanupPositions {
   CleanupPanelShell,
   /** Create mode's composer fill and reply controls; the panel it opens stops just before. */
   CleanupCreateMode,
+  /** The page's loaded confirmation, crash notices and reload request for creations that run code. */
+  CleanupScriptedPageGuard,
   CleanupBrandTheme,
   CleanupRemoteAnnouncements,
   CleanupStorageQuotaWarning,

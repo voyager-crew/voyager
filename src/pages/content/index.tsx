@@ -353,6 +353,7 @@ function handleVisibilityChange(): void {
     // The Voyager panel's floating entry, window and shortcut, with every plugin on or off.
     if (!isPluginSubframe) void mountForPage(NATIVE_FEATURES.panelShell);
     if (!isPluginSubframe) void mountForPage(NATIVE_FEATURES.createMode);
+    if (!isPluginSubframe) void mountForPage(NATIVE_FEATURES.scriptedPageGuard);
 
     registerPageErrorHandlers(cleanupManager);
     const onStorageChanged = (

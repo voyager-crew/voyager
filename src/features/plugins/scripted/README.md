@@ -5,10 +5,10 @@ Part of the [Plugin ecosystem overview](../README.md).
 A scripted plugin is a local plugin that carries JavaScript, run through
 `chrome.userScripts`, off by default and turned on only after the user reviews its
 source. This folder holds the gate's types, the device-local enable state, the
-planned registrations, the availability probe, the crash guard's transition and
-the prelude. The background runtime that applies them is
-`src/pages/background/scriptedCreations/`. No popup, panel or page shows a
-scripted plugin yet, so nothing can turn one on.
+planned registrations and the registrar, the availability probe, the crash
+guard's transition, the prelude and the client the popup and panel use. The
+background runtime that applies them is `src/pages/background/scriptedCreations/`;
+the page side is `src/pages/content/scriptedGuard/`.
 
 ## The gate
 
@@ -20,12 +20,14 @@ scripted plugin yet, so nothing can turn one on.
   every local rule (`local.*` id, `matches` inside the supported sites). A
   scripted manifest contributes its script only: no styles, `domOps` (so no
   `native` ops), settings or `theme`, and at most 200,000 characters of source.
-- Import, paste, Create mode replies, `LocalPluginSource` and the popup list use
-  the default gate, so a stored scripted plugin is invisible to the declarative
-  path and its `gvPluginsState` entry stays `enabled: false`: the import writes it
-  off, `enableLocalPluginIfUnchanged` refuses it, and a Drive restore never
-  switches a local plugin on. With `allowScripted` off the gate still lists a
-  refused plugin's other problems.
+- The user's own paths pass it: `importLocalPlugin` (file, paste and a reviewed
+  reply), `checkPluginReply` (the popup paste and the panel review),
+  `classifyReplyBlock` (Create mode's page controls) and the My creations list.
+  `LocalPluginSource` skips a scripted record without reading it, so
+  `PluginHost` never mounts one and its `gvPluginsState` entry stays
+  `enabled: false`: the import writes it off, `enableLocalPluginIfUnchanged`
+  refuses it, and a Drive restore never switches a local plugin on. With
+  `allowScripted` off the gate still lists a refused plugin's other problems.
 
 ## Enable state
 
@@ -66,7 +68,7 @@ Chrome and Edge builds only; they alone ask for the `userScripts` permission
   `getScripts()` in a try/catch: a throw, or a missing `chrome.userScripts`, is
   `toggle-off`, naming "Allow User Scripts" from Chrome 138 and Developer mode
   before it. The probe reads `chrome.userScripts` on every call, never a cached copy.
-- **Registrar** (`scriptedCreations/registrar.ts`). Each pass diffs `getScripts()`
+- **Registrar** (`registrar.ts`). Each pass diffs `getScripts()`
   against `desiredUserScripts`: it unregisters ids the plan lacks, updates those
   that differ and registers the missing ones, one plugin per call so one refusal
   cannot block the rest. Before registering it configures the plugin's world with
@@ -102,4 +104,55 @@ Chrome and Edge builds only; they alone ask for the `userScripts` permission
   tab) from extension pages or our top-frame content script; `loaded` from that
   content script only, for its own tab. A content script calls
   `scriptedLoadedMessage()` `SCRIPTED_LOADED_DELAY_MS` after `readyState` is
-  `complete`. Nothing sends `loaded` yet.
+  `complete`.
+
+## The page
+
+`src/pages/content/scriptedGuard/` is a permanent page service on Chrome and
+Edge, top frame only, on every site creations can target. Once the document is
+complete it waits `SCRIPTED_LOADED_DELAY_MS` on a timer, which fires only on a
+free main thread, and sends `loaded`; it sends it again after each same-document
+navigation (`navigatesuccess`, `popstate`), so a `loading` tab update Chrome
+reports for an in-app navigation is confirmed too. Teardown cancels a pending
+send. On start it toasts the crash notices whose URL has this page's origin,
+naming each creation turned off (all of them when one freeze named several),
+and asks the background to clear each. It also answers
+`SCRIPTED_RELOAD_PAGE_REQUEST`, the popup's or panel's relayed "Reload this
+page" click, the only reload it makes.
+
+## Popup and panel
+
+- **Review.** A scripted manifest's preview carries `script`, and
+  `LocalPluginPreviewSummary` shows a **Runs code** badge, the sites, one
+  warning (it can read everything on those pages and Voyager cannot stop it
+  sending what it reads) and the full source, left to right and selectable,
+  instead of changes. Voyager never summarises code. The popup paste and the
+  panel review both end in **Install and turn on**: the import lands off like
+  any other, then `enableScriptedWithSiteAccess` (`pages/popup/utils/`) binds
+  the enable to `scriptedReviewHash` of the manifest on screen, asking for the
+  site's optional host access in the same click. `changed` refreshes the review.
+- **Rows.** My creations shows each scripted creation's run state (**On, this
+  device only**, **Off** or **Paused** with its reason), **Turn off**, and
+  **Review and turn on**, which shows the source and warning before **Turn on**.
+  A paused creation is never removed.
+- **Availability.** `ScriptedSetupCard` shows the one-time steps for
+  `toggle-off` (open the details page through `openDetails`, the address as
+  selectable text when the browser refuses; **Allow User Scripts**, or Developer
+  mode before Chrome 138; **I turned it on**) and, for `unsupported`, that this
+  browser cannot run them and to ask the AI for a version that only restyles.
+  No install is offered there.
+- **Kill switch.** `ScriptedStopAll` in My creations and the panel's Create tab
+  calls `setScriptedStopped`, shows the stopped state with **Resume**, and right
+  after a stop says open pages keep running them until reloaded, with **Reload
+  this page** (the popup reloads the active tab, the panel relays the request).
+- **The toggle flip.** Chrome exposes `chrome.userScripts` only to contexts
+  created after the user allowed user scripts, so the worker that was running
+  may not see it. `createScriptedClient` (`client.ts`) probes in the popup or
+  panel itself; when this page sees the API and the background does not, it
+  runs the registrar from here and reports this page's status. The background's
+  pass returns while its API is missing, so the two never write together, and
+  a restarted worker takes over. The panel frame may itself predate the flip,
+  so **I turned it on** in the panel also loads the panel page again in a
+  hidden child frame (`pages/panel/create/scriptedProbe.ts`), which probes,
+  reconciles and posts its status back. Until the worker restarts, its crash
+  guard sees no registrations, so a freeze in that window is not caught.

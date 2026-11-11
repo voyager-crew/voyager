@@ -14,6 +14,7 @@ import { startPreventAutoScrollBridge } from './preventAutoScroll/index';
 import { startRenderedQuoteStyling } from './quoteReply/renderedQuotes';
 import { startRemoteAnnouncements } from './remoteAnnouncements/index';
 import { startResearchPackReceiver } from './researchPack/receiver';
+import { startScriptedPageGuard } from './scriptedGuard/index';
 import { startSelectionToolbarHost } from './selectionToolbar/host';
 import { startStorageQuotaWarningToast } from './storageQuotaWarning';
 import { startHistoryTimestampPageService } from './timestamp/historyTimestampPageService';
@@ -121,6 +122,12 @@ export const NATIVE_FEATURES = {
     id: 'create-mode',
     position: CleanupPositions.CleanupCreateMode,
     start: () => startCreateMode(),
+  },
+  /** Confirms each load to the crash guard; it must run with every plugin off, like the runtime. */
+  scriptedPageGuard: {
+    id: 'scripted-page-guard',
+    position: CleanupPositions.CleanupScriptedPageGuard,
+    start: () => startScriptedPageGuard(),
   },
 } as const satisfies Record<string, NativeFeature>;
 
