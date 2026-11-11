@@ -9,6 +9,7 @@ import { logger } from '@/core/services/LoggerService';
 
 import { type DesiredUserScript, desiredUserScripts } from './desired';
 import { SCRIPTED_PRELUDE_FILE } from './prelude/file';
+import { scriptedRunState } from './state';
 import type { UserScriptsApi } from './status';
 import type { ScriptedPlugin, ScriptedStateV1, UserScriptsAvailability } from './types';
 
@@ -89,15 +90,25 @@ export async function reconcileUserScripts(deps: ScriptedRegistrarDeps): Promise
   }
 
   const current = new Map(existing.map((script) => [script.id, script]));
+  const byId = new Map(plugins.map((plugin) => [plugin.manifest.id, plugin]));
+  // A plugin turned off while this pass awaited must not register: read the state again just before.
+  const stillRuns = async (id: string): Promise<boolean> => {
+    const plugin = byId.get(id);
+    return (
+      !!plugin && scriptedRunState(plugin, await deps.readState(), availability).kind === 'running'
+    );
+  };
   for (const plan of desired) {
     const script = toRegisteredUserScript(plan);
     await attempt('world setup', plan.id, () =>
       api.configureWorld({ worldId: plan.worldId, csp: SCRIPTED_WORLD_CSP, messaging: false }),
     );
     const registered = current.get(plan.id);
+    if (registered && comparable(registered) === comparable(script)) continue;
+    if (!(await stillRuns(plan.id))) continue;
     if (!registered) {
       await attempt('register', plan.id, () => api.register([script]));
-    } else if (comparable(registered) !== comparable(script)) {
+    } else {
       await attempt('update', plan.id, () => api.update([script]));
     }
   }

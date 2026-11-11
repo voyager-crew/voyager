@@ -77,7 +77,10 @@ Chrome and Edge builds only; they alone ask for the `userScripts` permission
   cannot block the rest. Before registering it configures the plugin's world with
   `messaging: false` and `SCRIPTED_WORLD_CSP`. Every registration is
   `[prelude file, source]` in that world, top frame only, at `document_idle`;
-  never `MAIN`. Passes run one at a time, and requests during a pass share one
+  never `MAIN`. Right before each `register` or `update` it reads the scripted
+  state again, so a plugin turned off or re-imported while the pass awaited is
+  not registered; the background and an extension page run the same pass.
+  Passes run one at a time, and requests during a pass share one
   queued pass that reads storage when it starts. Triggers: worker start,
   `runtime.onInstalled` (an update clears user scripts), local changes to the
   manifests or the scripted state, permission changes and `gv.scripted.recheck`.

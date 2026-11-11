@@ -156,6 +156,30 @@ describe('reconcileUserScripts', () => {
     expect([...fake.scripts.keys()]).toEqual(['local.me.removed']);
   });
 
+  it('registers nothing the user turned off while the pass was setting up its world', async () => {
+    const { counter, state } = await twoPlugins();
+    const fake = fakeUserScripts();
+    let current: ScriptedStateV1 = enabling(counter);
+    let release = () => {};
+    const held = new Promise<void>((resolve) => (release = resolve));
+    const configure = fake.api.configureWorld.bind(fake.api);
+    fake.api.configureWorld = (async (properties: chrome.userScripts.WorldProperties) => {
+      await held;
+      return configure(properties);
+    }) as typeof fake.api.configureWorld;
+
+    const pass = reconcileUserScripts({
+      ...deps(fake.api, [counter], state),
+      readState: async () => current,
+    });
+    await Promise.resolve();
+    current = EMPTY_SCRIPTED_STATE;
+    release();
+    await pass;
+
+    expect(fake.scripts.size).toBe(0);
+  });
+
   it('one plugin Chrome refuses does not keep the others from registering', async () => {
     const { counter, clicks, state } = await twoPlugins();
     const fake = fakeUserScripts();
@@ -179,12 +203,17 @@ describe('createScriptedRegistrar', () => {
     const firstHeld = new Promise<void>((resolve) => {
       releaseFirst = resolve;
     });
+    let reads = 0;
     const registrar = createScriptedRegistrar({
       ...deps(fake.api, [counter, clicks], state),
-      readState: async () => {
+      readPlugins: async () => {
         passes += 1;
+        return [counter, clicks];
+      },
+      readState: async () => {
+        reads += 1;
         const seen = current;
-        if (passes === 1) await firstHeld;
+        if (reads === 1) await firstHeld;
         return seen;
       },
     });
