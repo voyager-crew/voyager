@@ -1,7 +1,7 @@
 /* The rail's ground on sites that stamp a scheme: `--timeline-rail-film`
    (public/contentStyle.css), shared with the style-guide replica. */
 html[data-gv-scheme] .gemini-timeline-bar:not(.timeline-no-container)::before {
-  background-color: var(--timeline-rail-film);
+  background-color: var(--gv-theme-timeline, var(--timeline-rail-film));
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
@@ -45,7 +45,7 @@ html[data-gv-scheme] .gemini-timeline-bar:not(.timeline-no-container)::before {
   transform: translateX(-50%);
   width: var(--timeline-bar-width, 4px);
   border-radius: calc(var(--timeline-bar-width, 4px) / 2);
-  background-color: var(--timeline-bar-bg);
+  background-color: var(--gv-theme-timeline, var(--timeline-bar-bg));
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   box-shadow: 0 2px 12px oklch(0 0 0 / 0.06);
@@ -109,7 +109,7 @@ html[data-gv-scheme] .gemini-timeline-bar:not(.timeline-no-container)::before {
   height: var(--timeline-dot-size);
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background-color: var(--timeline-dot-color);
+  background-color: var(--gv-theme-timeline, var(--timeline-dot-color));
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease;
@@ -211,7 +211,7 @@ html[data-gv-scheme] .gemini-timeline-bar:not(.timeline-no-container)::before {
   height: 2px;
   border-radius: 9999px;
   clip-path: none;
-  background-color: var(--timeline-dot-color);
+  background-color: var(--gv-theme-timeline, var(--timeline-dot-color));
   box-shadow: none;
   filter: none;
   opacity: var(--gv-timeline-ruler-opacity);
@@ -330,7 +330,7 @@ html[data-gv-scheme] .gemini-timeline-bar:not(.timeline-no-container)::before {
   height: 3px;
   border-radius: 1px;
   clip-path: none;
-  background-color: var(--timeline-dot-color);
+  background-color: var(--gv-theme-timeline, var(--timeline-dot-color));
   box-shadow: none;
   filter: none;
   opacity: 0.72;

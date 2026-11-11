@@ -39,16 +39,16 @@ This skill is split into files. The links below are relative to this SKILL.md; w
 - "version": "1.0.0"; raise it when you change the plugin. "author": "me". "license": "MIT".
 - "engine": the lowest Voyager version the plugin needs, as ">=1.0.0" or ">=" the sinceEngine of every primitive it uses. This build is Voyager 2.3.2.
 - "category": one of render-fix, theme, layout, readability, productivity, integration, other.
-- Write "name" and "description" in the language of the user. "i18n" translations are optional for a local plugin.
+- Write "name" and "description" in the language of the user. "i18n" translations are optional.
 - Optional: "$schema": "https://voyager.nagi.fun/plugin.schema.json" lets an editor check the file as you type. The import gate is stricter than the schema; `check` is the authority.
 
 ## Styles
 
 - "contributes.styles": [{ "file": "style.css" }] with the CSS in style.css beside plugin.json. The popup’s Import files takes exactly one .json file: the user picks plugin.json and its .css files, nothing else. Paste JSON only takes inlined CSS ([{ "css": "..." }]).
 - CSS may not load anything, not even from the same site: no @import, image-set(), image(), cross-fade() or src(), and url() only with a #fragment or a png, jpeg, gif, webp or avif data: URI (never SVG).
-- Scope every rule under a class your plugin adds (see addClass), so nothing else changes. Site styles often win on specificity: add !important where a rule does not apply.
+- Scope every rule under a class your plugin adds (see addClass), so nothing else changes. Add !important where site styles win.
 - Light or dark only rules: scope them with html[data-gv-scheme='dark'] or html[data-gv-scheme='light'], never with the site's own theme classes.
-- To recolour Voyager’s own panels, menus and dialogs on any site, set these in one unscoped :root { } rule (it covers light and dark), never its gv- classes: --gv-theme-surface (their background), --gv-theme-hover (hovered rows), --gv-theme-text (their text), --gv-theme-text-muted (secondary text, icons), --gv-theme-border (borders), --gv-theme-accent (buttons, selection, focus), --gv-theme-accent-fg (text on accent), --gv-theme-accent-hue (accent OKLCH hue, a number), --gv-theme-danger (delete).
+- To recolour Voyager’s panels and timeline on any site, set these in one unscoped :root { } rule (light and dark alike), never its gv- classes: --gv-theme-surface (background), --gv-theme-hover (hovered rows), --gv-theme-text (text), --gv-theme-text-muted (secondary text, icons), --gv-theme-border (borders), --gv-theme-accent (buttons, selection, focus), --gv-theme-accent-fg (text on accent), --gv-theme-accent-hue (accent OKLCH hue, a number), --gv-theme-danger (delete), --gv-theme-timeline (rail and dots on the site’s background).
 
 ## Page changes
 
@@ -57,7 +57,7 @@ This skill is split into files. The links below are relative to this SKILL.md; w
   - setAttribute: { "op": "setAttribute", "target": { "kind": "semantic", "key": "userTurn" }, "name": "data-gv-plugin", "value": "my-change" }
   - setStyle: { "op": "setStyle", "target": { "kind": "semantic", "key": "userTurn" }, "styles": { "max-width": "960px" } }
   - hide: { "op": "hide", "target": { "kind": "semantic", "key": "userTurn" } }
-- "target": prefer { "kind": "semantic", "key": <anchor> } with an anchor the target site declares. Use a plain CSS selector string only for something no anchor names; it breaks on a redesign.
+- "target": prefer { "kind": "semantic", "key": <anchor> } with an anchor the target site declares. Use a CSS selector string only where no anchor fits; it breaks on a redesign.
 - addClass "className": exactly one class that starts with "gv-"; use "gv-plugin-<plugin-name>". Then style that class in "contributes.styles".
 - setAttribute "name" must be one of: title, role, lang, dir, hidden, tabindex, draggable, spellcheck, translate, style, data-*, aria-*. Never href, src, on*, class or id. Values may not contain an external URL.
 - setStyle "styles": CSS property -> value, custom properties (--gv-…) included; values may not load anything either. A value ending in !important needs engine ">=1.9.0".

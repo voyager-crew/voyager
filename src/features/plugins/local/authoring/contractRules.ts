@@ -65,7 +65,7 @@ export function manifestSection(
       '- "version": "1.0.0"; raise it when you change the plugin. "author": "me". "license": "MIT".',
       `- "engine": the lowest Voyager version the plugin needs, as ">=1.0.0" or ">=" the sinceEngine of every primitive it uses. ${refs.engine ?? `This build is Voyager ${EFFECTIVE_PLUGIN_ENGINE_VERSION}.`}`,
       `- "category": one of ${PLUGIN_CATEGORIES.join(', ')}.`,
-      `- Write "name" and "description" in ${audience === 'chat' ? 'the language the message names; if none, the language of the request' : 'the language of the user'}. "i18n" translations are optional for a local plugin.`,
+      `- Write "name" and "description" in ${audience === 'chat' ? 'the language the message names; if none, the language of the request' : 'the language of the user'}. "i18n" translations are optional.`,
       ...(audience === 'agent'
         ? [
             '- Optional: "$schema": "https://voyager.nagi.fun/plugin.schema.json" lets an editor check the file as you type. The import gate is stricter than the schema; `check` is the authority.',
@@ -85,7 +85,7 @@ export function stylesSection(audience: ContractAudience): ContractSection {
           ]
         : ['- "contributes.styles": a list of { "css": "..." } with the CSS inlined as a string.']),
       '- CSS may not load anything, not even from the same site: no @import, image-set(), image(), cross-fade() or src(), and url() only with a #fragment or a png, jpeg, gif, webp or avif data: URI (never SVG).',
-      '- Scope every rule under a class your plugin adds (see addClass), so nothing else changes. Site styles often win on specificity: add !important where a rule does not apply.',
+      '- Scope every rule under a class your plugin adds (see addClass), so nothing else changes. Add !important where site styles win.',
       "- Light or dark only rules: scope them with html[data-gv-scheme='dark'] or html[data-gv-scheme='light'], never with the site's own theme classes.",
       themeVariablesLine(),
     ],
@@ -97,7 +97,7 @@ export function themeVariablesLine(): string {
   const names = THEME_VARIABLES.map(
     ({ role, meaning }) => `${themeVariableName(role)} (${meaning})`,
   ).join(', ');
-  return `- To recolour Voyager’s own panels, menus and dialogs on any site, set these in one unscoped :root { } rule (it covers light and dark), never its gv- classes: ${names}.`;
+  return `- To recolour Voyager’s panels and timeline on any site, set these in one unscoped :root { } rule (light and dark alike), never its gv- classes: ${names}.`;
 }
 
 export function pageChangesSection(
@@ -113,7 +113,7 @@ export function pageChangesSection(
       ...AUTHORING_OP_KINDS.map(
         (kind) => `  - ${kind}: ${inlineJson(AUTHORING_OP_TEMPLATES[kind](target))}`,
       ),
-      '- "target": prefer { "kind": "semantic", "key": <anchor> } with an anchor the target site declares. Use a plain CSS selector string only for something no anchor names; it breaks on a redesign.',
+      '- "target": prefer { "kind": "semantic", "key": <anchor> } with an anchor the target site declares. Use a CSS selector string only where no anchor fits; it breaks on a redesign.',
       '- addClass "className": exactly one class that starts with "gv-"; use "gv-plugin-<plugin-name>". Then style that class in "contributes.styles".',
       `- setAttribute "name" must be one of: ${allowedAttributeText()}. Never href, src, on*, class or id. Values may not contain an external URL.`,
       '- setStyle "styles": CSS property -> value, custom properties (--gv-…) included; values may not load anything either. A value ending in !important needs engine ">=1.9.0".',

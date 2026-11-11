@@ -48,6 +48,19 @@ describe('public theme variables', () => {
     expect(offenders).toEqual([]);
   });
 
+  it('let the timeline role reach only the timeline’s own marks on the host page', () => {
+    const mark =
+      /^(html\[data-gv-scheme(='dark')?\] )?(\.gemini-timeline-bar|\.timeline-dot|\.timeline-left-slider::before)/;
+    const offenders = shippedStylesheets().flatMap((css) =>
+      [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+        .map(([, selector, body]) => ({ selector: selector.trim(), body }))
+        .filter(({ body }) => /var\(\s*--gv-theme-timeline\s*,/.test(body))
+        .filter(({ selector }) => !selector.split(',').every((part) => mark.test(part.trim())))
+        .map(({ selector }) => selector),
+    );
+    expect(offenders).toEqual([]);
+  });
+
   it('are never set by Voyager itself, so a creation that sets one always wins', () => {
     for (const css of shippedStylesheets()) expect(css).not.toMatch(/--gv-theme-[a-z-]+\s*:/);
   });

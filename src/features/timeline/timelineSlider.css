@@ -21,12 +21,12 @@
   top: 0;
   bottom: 0;
   width: 2px;
-  background: oklch(0.14 0.004 285 / 0.08);
+  background: var(--gv-theme-timeline, oklch(0.14 0.004 285 / 0.08));
   border-radius: 9999px;
 }
 
 html[data-gv-scheme='dark'] .timeline-left-slider::before {
-  background: oklch(0.92 0.004 250 / 0.1);
+  background: var(--gv-theme-timeline, oklch(0.92 0.004 250 / 0.1));
 }
 
 .timeline-left-handle {
