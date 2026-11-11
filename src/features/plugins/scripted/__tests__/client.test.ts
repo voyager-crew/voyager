@@ -46,6 +46,20 @@ describe('the popup and panel view of scripted creations', () => {
     expect(sendMessage).toHaveBeenCalledWith({ type: 'gv.scripted.recheck' });
   });
 
+  it('registers nothing whose world Chrome refused to configure, and says it is paused', async () => {
+    await enabledPlugin();
+    const fake = fakeUserScripts();
+    fake.state.failConfigureWorld = true;
+    (chrome as { userScripts?: unknown }).userScripts = fake.api;
+    backgroundSees('toggle-off');
+
+    const status = await createScriptedClient().refresh('recheck');
+    expect([...fake.scripts.keys()]).toEqual([]);
+    expect(status.plugins).toEqual([
+      { id: SCRIPTED_ID, runState: { kind: 'paused', reason: 'world-setup' } },
+    ]);
+  });
+
   it('leaves registrations to the background when it sees the API', async () => {
     await enabledPlugin();
     const fake = fakeUserScripts();

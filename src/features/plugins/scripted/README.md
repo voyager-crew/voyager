@@ -75,7 +75,12 @@ Chrome and Edge builds only; they alone ask for the `userScripts` permission
   against `desiredUserScripts`: it unregisters ids the plan lacks, updates those
   that differ and registers the missing ones, one plugin per call so one refusal
   cannot block the rest. Before registering it configures the plugin's world with
-  `messaging: false` and `SCRIPTED_WORLD_CSP`. Every registration is
+  `messaging: false` and `SCRIPTED_WORLD_CSP`; when Chrome refuses, the plugin
+  is not registered (a registration it had is removed) and its status reads
+  `paused: world-setup` until a later pass succeeds. Chrome keeps a world's
+  configuration after its script is gone and caps how many it keeps, so each
+  pass resets every configuration no remaining registration uses, whoever
+  removed the script. Every registration is
   `[prelude file, source]` in that world, top frame only, at `document_idle`;
   never `MAIN`. Right before each `register` or `update` it reads the scripted
   state again, so a plugin turned off or re-imported while the pass awaited is

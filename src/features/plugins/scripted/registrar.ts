@@ -54,18 +54,64 @@ function comparable(script: RegisteredUserScript): string {
   ]);
 }
 
-async function attempt(label: string, id: string, work: () => Promise<void>): Promise<void> {
+async function attempt(label: string, id: string, work: () => Promise<void>): Promise<boolean> {
   try {
     await work();
+    return true;
   } catch (error) {
     logger.warn(`Scripted plugin ${label} failed`, { id, error: String(error) });
+    return false;
   }
 }
 
-/** One pass. Never throws; when the API is missing or refuses to list, it changes nothing. */
-export async function reconcileUserScripts(deps: ScriptedRegistrarDeps): Promise<void> {
+/** Ids of the stale registrations Chrome removed. */
+async function unregisterStale(
+  api: UserScriptsApi,
+  stale: readonly string[],
+): Promise<Set<string>> {
+  if (!stale.length) return new Set();
+  try {
+    await api.unregister({ ids: [...stale] });
+    return new Set(stale);
+  } catch {
+    const removed = new Set<string>();
+    for (const id of stale) {
+      if (await attempt('unregister', id, () => api.unregister({ ids: [id] }))) removed.add(id);
+    }
+    return removed;
+  }
+}
+
+/**
+ * Chrome keeps a world's configuration after its script is gone, up to a
+ * limit, so a world no registration uses is reset; one still in use keeps its CSP.
+ */
+async function resetUnusedWorlds(api: UserScriptsApi, inUse: ReadonlySet<string>): Promise<void> {
+  let worlds: chrome.userScripts.WorldProperties[];
+  try {
+    worlds = await api.getWorldConfigurations();
+  } catch (error) {
+    logger.warn('Scripted world list failed', { error: String(error) });
+    return;
+  }
+  for (const { worldId } of worlds) {
+    if (worldId && !inUse.has(worldId)) {
+      await attempt('world reset', worldId, () => api.resetWorldConfiguration(worldId));
+    }
+  }
+}
+
+/**
+ * One pass. Never throws; when the API is missing or refuses to list, it
+ * changes nothing. Returns the ids it left unregistered because their world
+ * could not be configured.
+ */
+export async function reconcileUserScripts(
+  deps: ScriptedRegistrarDeps,
+): Promise<ReadonlySet<string>> {
+  const unconfigured = new Set<string>();
   const api = deps.userScripts();
-  if (!api) return;
+  if (!api) return unconfigured;
   const [availability, plugins, state] = await Promise.all([
     deps.readAvailability(),
     deps.readPlugins(),
@@ -76,18 +122,23 @@ export async function reconcileUserScripts(deps: ScriptedRegistrarDeps): Promise
   try {
     existing = await api.getScripts();
   } catch {
-    return;
+    return unconfigured;
   }
 
   const wanted = new Map(desired.map((script) => [script.id, script]));
-  const stale = existing.filter((script) => !wanted.has(script.id)).map((script) => script.id);
-  if (stale.length) {
-    try {
-      await api.unregister({ ids: stale });
-    } catch {
-      for (const id of stale) await attempt('unregister', id, () => api.unregister({ ids: [id] }));
-    }
-  }
+  const removed = await unregisterStale(
+    api,
+    existing.filter((script) => !wanted.has(script.id)).map((script) => script.id),
+  );
+  await resetUnusedWorlds(
+    api,
+    new Set([
+      ...desired.map((plan) => plan.worldId),
+      ...existing.flatMap((script) =>
+        script.worldId && !removed.has(script.id) ? [script.worldId] : [],
+      ),
+    ]),
+  );
 
   const current = new Map(existing.map((script) => [script.id, script]));
   const byId = new Map(plugins.map((plugin) => [plugin.manifest.id, plugin]));
@@ -100,10 +151,17 @@ export async function reconcileUserScripts(deps: ScriptedRegistrarDeps): Promise
   };
   for (const plan of desired) {
     const script = toRegisteredUserScript(plan);
-    await attempt('world setup', plan.id, () =>
+    const registered = current.get(plan.id);
+    const configured = await attempt('world setup', plan.id, () =>
       api.configureWorld({ worldId: plan.worldId, csp: SCRIPTED_WORLD_CSP, messaging: false }),
     );
-    const registered = current.get(plan.id);
+    if (!configured) {
+      // Without its world's CSP the plugin must not run at all.
+      unconfigured.add(plan.id);
+      if (registered)
+        await attempt('unregister', plan.id, () => api.unregister({ ids: [plan.id] }));
+      continue;
+    }
     if (registered && comparable(registered) === comparable(script)) continue;
     if (!(await stillRuns(plan.id))) continue;
     if (!registered) {
@@ -112,6 +170,7 @@ export async function reconcileUserScripts(deps: ScriptedRegistrarDeps): Promise
       await attempt('update', plan.id, () => api.update([script]));
     }
   }
+  return unconfigured;
 }
 
 /**
@@ -121,19 +180,23 @@ export async function reconcileUserScripts(deps: ScriptedRegistrarDeps): Promise
  */
 export function createScriptedRegistrar(deps: ScriptedRegistrarDeps): {
   reconcile(): Promise<void>;
+  /** Ids the last finished pass could not set up a world for, so they do not run. */
+  unconfigured(): ReadonlySet<string>;
 } {
   let chain: Promise<void> = Promise.resolve();
   let queued: Promise<void> | null = null;
+  let unconfigured: ReadonlySet<string> = new Set();
   return {
     reconcile() {
       if (queued) return queued;
-      const pass = chain.then(() => {
+      const pass = chain.then(async () => {
         queued = null;
-        return reconcileUserScripts(deps);
+        unconfigured = await reconcileUserScripts(deps);
       });
       queued = pass;
       chain = pass.catch(() => {});
       return pass;
     },
+    unconfigured: () => unconfigured,
   };
 }

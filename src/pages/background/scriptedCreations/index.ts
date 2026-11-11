@@ -29,10 +29,6 @@ import { handleScriptedMessage } from './messages';
 const LOADS = StorageKeys.PLUGIN_SCRIPTED_LOADS;
 const ALARM_PREFIX = 'gv.scripted.load:';
 
-async function readStatus(): Promise<ScriptedStatus> {
-  return readScriptedStatus(await readAvailabilityHere());
-}
-
 async function unregisterIds(ids: readonly string[]): Promise<void> {
   const api = userScriptsHere();
   if (!api) return;
@@ -106,6 +102,8 @@ export function startScriptedCreations(): void {
     userScripts: userScriptsHere,
   });
   const guard = runs ? startRuntime(registrar) : undefined;
+  const readStatus = async (): Promise<ScriptedStatus> =>
+    readScriptedStatus(await readAvailabilityHere(), registrar.unconfigured());
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const reply = handleScriptedMessage(message, sender, {

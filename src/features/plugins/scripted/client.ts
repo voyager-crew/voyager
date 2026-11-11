@@ -27,6 +27,7 @@ const PAUSE_REASONS: readonly ScriptedPauseReason[] = [
   'stopped-all',
   'crash-guard',
   'needs-review',
+  'world-setup',
 ];
 const BROWSERS = ['safari', 'firefox', 'mobile', 'old'] as const;
 
@@ -113,7 +114,7 @@ export function createScriptedClient(): ScriptedClient {
       if (background?.availability.kind === 'available') return background;
       if (here.kind === 'available') {
         await registrar.reconcile();
-        return readScriptedStatus(here);
+        return readScriptedStatus(here, registrar.unconfigured());
       }
       return background ?? readScriptedStatus(here);
     },

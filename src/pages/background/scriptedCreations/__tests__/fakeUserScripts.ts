@@ -7,7 +7,7 @@ type World = chrome.userScripts.WorldProperties;
 export function fakeUserScripts(initial: Script[] = []) {
   const scripts = new Map(initial.map((script) => [script.id, structuredClone(script)]));
   const worlds = new Map<string, World>();
-  const state = { failGetScripts: false };
+  const state = { failGetScripts: false, failConfigureWorld: false };
   const api: UserScriptsApi = {
     async getScripts() {
       if (state.failGetScripts) throw new Error('userScripts not allowed');
@@ -29,7 +29,14 @@ export function fakeUserScripts(initial: Script[] = []) {
       for (const id of ids) scripts.delete(id);
     },
     async configureWorld(properties: World) {
+      if (state.failConfigureWorld) throw new Error('Too many world configurations');
       worlds.set(properties.worldId ?? '', structuredClone(properties));
+    },
+    async getWorldConfigurations() {
+      return [...worlds.values()].map((world) => structuredClone(world));
+    },
+    async resetWorldConfiguration(worldId?: string) {
+      worlds.delete(worldId ?? '');
     },
   } as UserScriptsApi;
   return { api, scripts, worlds, state };

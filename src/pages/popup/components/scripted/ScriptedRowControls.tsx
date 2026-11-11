@@ -25,6 +25,7 @@ export const PAUSE_REASON_KEYS: Readonly<Record<ScriptedPauseReason, Translation
   'stopped-all': 'scriptedPausedStopped',
   'crash-guard': 'scriptedPausedCrash',
   'needs-review': 'scriptedPausedReview',
+  'world-setup': 'scriptedPausedWorldSetup',
 };
 
 export function runStateText(t: Translate, state: ScriptedRunState): string {

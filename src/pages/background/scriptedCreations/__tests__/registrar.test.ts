@@ -151,8 +151,12 @@ describe('reconcileUserScripts', () => {
     const { counter, state } = await twoPlugins();
     const fake = fakeUserScripts([{ id: 'local.me.removed', js: [{ code: 'x' }] }]);
     fake.state.failGetScripts = true;
-    await expect(reconcileUserScripts(deps(fake.api, [counter], state))).resolves.toBeUndefined();
-    await expect(reconcileUserScripts(deps(undefined, [counter], state))).resolves.toBeUndefined();
+    await expect(reconcileUserScripts(deps(fake.api, [counter], state))).resolves.toEqual(
+      new Set(),
+    );
+    await expect(reconcileUserScripts(deps(undefined, [counter], state))).resolves.toEqual(
+      new Set(),
+    );
     expect([...fake.scripts.keys()]).toEqual(['local.me.removed']);
   });
 
@@ -178,6 +182,34 @@ describe('reconcileUserScripts', () => {
     await pass;
 
     expect(fake.scripts.size).toBe(0);
+  });
+
+  it('resets the world of every plugin that no longer runs, however its script left', async () => {
+    const { counter, clicks, state } = await twoPlugins();
+    const fake = fakeUserScripts();
+    await reconcileUserScripts(deps(fake.api, [counter, clicks], state));
+    const clicksWorld = fake.scripts.get(CLICKS)!.worldId!;
+    expect(fake.worlds.size).toBe(2);
+
+    // The crash guard unregisters a script itself before turning the plugin off.
+    await fake.api.unregister({ ids: [COUNTER] });
+    await reconcileUserScripts(deps(fake.api, [counter, clicks], enabling(clicks)));
+    expect([...fake.worlds.keys()]).toEqual([clicksWorld]);
+
+    await reconcileUserScripts(deps(fake.api, [counter, clicks], EMPTY_SCRIPTED_STATE));
+    expect(fake.worlds.size).toBe(0);
+  });
+
+  it('unregisters a running plugin whose world can no longer be configured', async () => {
+    const { counter, state } = await twoPlugins();
+    const fake = fakeUserScripts();
+    await reconcileUserScripts(deps(fake.api, [counter], state));
+    fake.state.failConfigureWorld = true;
+    const registrar = createScriptedRegistrar(deps(fake.api, [counter], state));
+    await registrar.reconcile();
+
+    expect(fake.scripts.size).toBe(0);
+    expect([...registrar.unconfigured()]).toEqual([COUNTER]);
   });
 
   it('one plugin Chrome refuses does not keep the others from registering', async () => {

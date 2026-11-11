@@ -11,11 +11,17 @@ import { readPlatformFormFactor } from '@/core/utils/formFactor';
 import { chromeMajorVersion, probeUserScripts } from './availability';
 import type { ScriptedStatus } from './messages';
 import { loadScriptedPlugins, loadScriptedState, scriptedRunState } from './state';
-import type { UserScriptsAvailability } from './types';
+import type { ScriptedRunState, UserScriptsAvailability } from './types';
 
 export type UserScriptsApi = Pick<
   typeof chrome.userScripts,
-  'configureWorld' | 'getScripts' | 'register' | 'unregister' | 'update'
+  | 'configureWorld'
+  | 'getScripts'
+  | 'getWorldConfigurations'
+  | 'register'
+  | 'resetWorldConfiguration'
+  | 'unregister'
+  | 'update'
 >;
 
 /** This context's `chrome.userScripts`, read now: never cache it. */
@@ -32,17 +38,27 @@ export async function readAvailabilityHere(): Promise<UserScriptsAvailability> {
   });
 }
 
+const WORLD_SETUP: ScriptedRunState = { kind: 'paused', reason: 'world-setup' };
+
+/** `unconfigured`: plugins the registrar here left unregistered because their world setup failed. */
 export async function readScriptedStatus(
   availability: UserScriptsAvailability,
+  unconfigured: ReadonlySet<string> = new Set(),
 ): Promise<ScriptedStatus> {
   const [plugins, state] = await Promise.all([loadScriptedPlugins(), loadScriptedState()]);
   return {
     ok: true,
     availability,
     stopped: state.stopped,
-    plugins: plugins.map((plugin) => ({
-      id: plugin.manifest.id,
-      runState: scriptedRunState(plugin, state, availability),
-    })),
+    plugins: plugins.map((plugin) => {
+      const runState = scriptedRunState(plugin, state, availability);
+      return {
+        id: plugin.manifest.id,
+        runState:
+          runState.kind === 'running' && unconfigured.has(plugin.manifest.id)
+            ? WORLD_SETUP
+            : runState,
+      };
+    }),
   };
 }

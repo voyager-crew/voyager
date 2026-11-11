@@ -4434,6 +4434,10 @@
     "message": "cambió desde que la activaste; revísala de nuevo",
     "description": "Pause reason: its code or sites changed since the user turned it on"
   },
+  "scriptedPausedWorldSetup": {
+    "message": "el navegador no pudo preparar su espacio aislado, así que no se ejecuta",
+    "description": "Pause reason: the browser would not set up the isolated world the creation's code runs in, so Voyager did not register it"
+  },
   "scriptedSetupTitle": {
     "message": "Un paso antes de que funcionen las creaciones que ejecutan código",
     "description": "Title of the card that explains the one-time browser toggle for creations that run code"

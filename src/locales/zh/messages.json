@@ -4434,6 +4434,10 @@
     "message": "开启之后它有改动，请重新查看",
     "description": "Pause reason: its code or sites changed since the user turned it on"
   },
+  "scriptedPausedWorldSetup": {
+    "message": "浏览器未能为它准备隔离环境，所以它没有运行",
+    "description": "Pause reason: the browser would not set up the isolated world the creation's code runs in, so Voyager did not register it"
+  },
   "scriptedSetupTitle": {
     "message": "还差一步，运行代码的创造才能工作",
     "description": "Title of the card that explains the one-time browser toggle for creations that run code"

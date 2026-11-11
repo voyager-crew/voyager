@@ -4434,6 +4434,10 @@
     "message": "オンにした後に変更されました。もう一度確認してください",
     "description": "Pause reason: its code or sites changed since the user turned it on"
   },
+  "scriptedPausedWorldSetup": {
+    "message": "ブラウザーが専用の分離環境を用意できなかったため、実行されていません",
+    "description": "Pause reason: the browser would not set up the isolated world the creation's code runs in, so Voyager did not register it"
+  },
   "scriptedSetupTitle": {
     "message": "コードを実行する作品を動かすには、あと 1 ステップ",
     "description": "Title of the card that explains the one-time browser toggle for creations that run code"

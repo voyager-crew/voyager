@@ -78,7 +78,9 @@ export type ScriptedPauseReason =
   | 'unsupported'
   | 'stopped-all'
   | 'crash-guard'
-  | 'needs-review';
+  | 'needs-review'
+  /** The browser refused to set up its isolated world, so it is not registered. */
+  | 'world-setup';
 
 export type ScriptedRunState =
   | { readonly kind: 'off' }

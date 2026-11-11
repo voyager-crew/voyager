@@ -4434,6 +4434,10 @@
     "message": "켠 뒤로 바뀌었습니다. 다시 확인하세요",
     "description": "Pause reason: its code or sites changed since the user turned it on"
   },
+  "scriptedPausedWorldSetup": {
+    "message": "브라우저가 전용 격리 공간을 준비하지 못해 실행되지 않습니다",
+    "description": "Pause reason: the browser would not set up the isolated world the creation's code runs in, so Voyager did not register it"
+  },
   "scriptedSetupTitle": {
     "message": "코드를 실행하는 창작물을 쓰려면 한 단계가 더 필요합니다",
     "description": "Title of the card that explains the one-time browser toggle for creations that run code"
