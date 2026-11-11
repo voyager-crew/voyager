@@ -194,6 +194,40 @@ describe('Create mode controls under reply code blocks', () => {
     expect(controlText(controls()[0])).toContain('Send the problems back to the AI');
   });
 
+  /** A conversation ChatGPT keeps mounted, hidden, ahead of the one on screen. */
+  function cachedConversation(userText: string, blocks: readonly string[]): void {
+    const cached = document.createElement('main');
+    cached.style.display = 'none';
+    cached.innerHTML = '<div class="user"></div><div class="assistant"></div>';
+    cached.querySelector('.user')!.textContent = userText;
+    for (const text of blocks) {
+      const block = document.createElement('div');
+      block.className = 'code';
+      block.innerHTML = '<pre><code></code></pre>';
+      block.querySelector('code')!.textContent = text;
+      cached.querySelector('.assistant')!.append(block);
+    }
+    document.body.append(cached);
+  }
+
+  it('gives an ordinary chat no control while a hidden earlier Create chat stays mounted', async () => {
+    chat('Here is some JSON I found', [plugin()]);
+    cachedConversation(MARKER, [plugin()]);
+    start();
+    await settle();
+    expect(controls()).toHaveLength(0);
+  });
+
+  it('never lets a hidden conversation’s block count as the latest version', async () => {
+    chat(MARKER, [plugin()]);
+    cachedConversation(MARKER, [plugin({ version: '2.0.0' })]);
+    start();
+    await settle();
+
+    expect(controls()).toHaveLength(1);
+    expect(controlText(controls()[0])).toContain('Preview and install');
+  });
+
   it('reads a pre inside a reply where the site declares no code block anchor', async () => {
     chat(MARKER, [plugin()]);
     start(SITE());

@@ -6,7 +6,9 @@
  * no control appears; the popup's paste path covers any other chat.
  *
  * Blocks are the site's `codeBlock` anchor inside an assistant turn, or a
- * `pre` inside one where the site declares no anchor.
+ * `pre` inside one where the site declares no anchor. Both the marker and the
+ * blocks are read only from the conversation on screen: ChatGPT keeps earlier
+ * conversations mounted under hidden ancestors, as the export reader knows.
  */
 import { pageSemanticSelector } from '@/core/selectors/semanticSnapshot';
 import { isCreationChatText } from '@/features/plugins/local/creation/creationMarker';
@@ -22,6 +24,7 @@ import { resolveSemanticElements } from '@/features/plugins/runtime/semanticElem
 import type { SiteAdapter } from '@/features/plugins/types';
 import { onCachedLanguageChange } from '@/utils/i18n';
 
+import { isRendered } from '../export/adapter/chatgptThread';
 import { type ReplyControl, type ReplyControlAction, createReplyControl } from './replyControl';
 
 export const RESCAN_DELAY_MS = 300;
@@ -52,9 +55,9 @@ function replyBlocks(doc: Document, adapter: SiteAdapter): Element[] {
   const replies = queryAll(doc, selector(adapter, 'assistantTurn', doc));
   const inReply = (block: Element) => replies.some((reply) => reply.contains(block));
   const anchor = selector(adapter, 'codeBlock', doc);
-  if (!anchor) return replies.flatMap((reply) => queryAll(reply, 'pre'));
+  if (!anchor) return replies.flatMap((reply) => queryAll(reply, 'pre')).filter(isRendered);
   const blocks = resolveSemanticElements(doc, adapter, 'codeBlock') ?? queryAll(doc, anchor);
-  return blocks.filter(inReply);
+  return blocks.filter((block) => inReply(block) && isRendered(block));
 }
 
 function blockText(block: Element): string {
@@ -92,7 +95,10 @@ export function startReplyControls(deps: ReplyControlsDeps): () => void {
 
   const candidates = (installed: LocalPluginRecordMap): Map<Element, CreationCandidate> => {
     const userTurns = queryAll(doc, selector(adapter, 'userTurn', doc));
-    if (!userTurns.some((turn) => isCreationChatText(turn.textContent ?? ''))) return new Map();
+    const isCreationChat = userTurns.some(
+      (turn) => isCreationChatText(turn.textContent ?? '') && isRendered(turn),
+    );
+    if (!isCreationChat) return new Map();
     const found: { element: Element; block: CreationBlock }[] = [];
     for (const element of replyBlocks(doc, adapter)) {
       const text = blockText(element);
