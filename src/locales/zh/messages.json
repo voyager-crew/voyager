@@ -3022,15 +3022,39 @@
     "description": "Create mode label under a code block that a later block in the chat replaces"
   },
   "createModeRejectedNote": {
-    "message": "暂时装不了这个插件。",
+    "message": "暂时装不了这个插件。{reason}",
     "description": "Create mode note under a plugin code block that the import gate refuses"
   },
+  "createModeReasonNotPlugin": {
+    "message": "它没有按 Voyager 的插件格式来写。",
+    "description": "Create mode: why a reply's JSON cannot be installed; it is in a format of the AI's own, not a Voyager plugin"
+  },
+  "createModeReasonNoSite": {
+    "message": "它没写明用在哪个网站。",
+    "description": "Create mode: why a reply's plugin cannot be installed; it has no matches (the sites it runs on)"
+  },
+  "createModeReasonBadSite": {
+    "message": "它指定的网站 Voyager 不支持。",
+    "description": "Create mode: why a reply's plugin cannot be installed; its matches name a site Voyager does not support"
+  },
+  "createModeReasonNoChange": {
+    "message": "它没写明要改页面上的什么。",
+    "description": "Create mode: why a reply's plugin cannot be installed; it has no contributes (what it changes)"
+  },
+  "createModeReasonBadChange": {
+    "message": "其中有一项改动不被允许。",
+    "description": "Create mode: why a reply's plugin cannot be installed; something under contributes breaks a rule"
+  },
+  "createModeReasonOther": {
+    "message": "有些信息缺失或填错了。",
+    "description": "Create mode: why a reply's plugin cannot be installed, when no more specific reason applies"
+  },
   "createModeSendProblems": {
-    "message": "把问题发回给 AI",
+    "message": "让它修复",
     "description": "Create mode button: put the gate's problems in the composer for the AI; nothing is sent"
   },
   "createModeProblemsFilled": {
-    "message": "问题已填入输入框，准备好后再发送。",
+    "message": "修复请求已填入输入框，准备好后再发送。",
     "description": "Create mode toast: the problems are in the composer, unsent"
   },
   "createModeFixIntro": {

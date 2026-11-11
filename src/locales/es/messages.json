@@ -3022,15 +3022,39 @@
     "description": "Create mode label under a code block that a later block in the chat replaces"
   },
   "createModeRejectedNote": {
-    "message": "Aún no se puede instalar.",
+    "message": "Aún no se puede instalar. {reason}",
     "description": "Create mode note under a plugin code block that the import gate refuses"
   },
+  "createModeReasonNotPlugin": {
+    "message": "No sigue el formato de plugins de Voyager.",
+    "description": "Create mode: why a reply's JSON cannot be installed; it is in a format of the AI's own, not a Voyager plugin"
+  },
+  "createModeReasonNoSite": {
+    "message": "No indica en qué sitio funciona.",
+    "description": "Create mode: why a reply's plugin cannot be installed; it has no matches (the sites it runs on)"
+  },
+  "createModeReasonBadSite": {
+    "message": "Apunta a un sitio que Voyager no admite.",
+    "description": "Create mode: why a reply's plugin cannot be installed; its matches name a site Voyager does not support"
+  },
+  "createModeReasonNoChange": {
+    "message": "No indica qué cambiar en la página.",
+    "description": "Create mode: why a reply's plugin cannot be installed; it has no contributes (what it changes)"
+  },
+  "createModeReasonBadChange": {
+    "message": "Uno de sus cambios no está permitido.",
+    "description": "Create mode: why a reply's plugin cannot be installed; something under contributes breaks a rule"
+  },
+  "createModeReasonOther": {
+    "message": "Faltan datos o algunos son incorrectos.",
+    "description": "Create mode: why a reply's plugin cannot be installed, when no more specific reason applies"
+  },
   "createModeSendProblems": {
-    "message": "Devolver los problemas a la IA",
+    "message": "Pedir que lo corrija",
     "description": "Create mode button: put the gate's problems in the composer for the AI; nothing is sent"
   },
   "createModeProblemsFilled": {
-    "message": "Los problemas están en el cuadro de mensaje. Envíalos cuando quieras.",
+    "message": "La petición de corrección está en el cuadro de mensaje. Envíala cuando quieras.",
     "description": "Create mode toast: the problems are in the composer, unsent"
   },
   "createModeFixIntro": {

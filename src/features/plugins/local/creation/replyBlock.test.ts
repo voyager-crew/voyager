@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { canonicalJson } from '@/core/utils/canonicalHash';
+
 import { formatJson } from '../authoring/jsonText';
 import { buildPluginContract } from '../authoring/pluginContract';
 import { authoringSites } from '../authoringSites';
@@ -93,12 +95,25 @@ const invalidBlocks: readonly (readonly [string, string])[] = [
   ['an unknown op', variant({ contributes: { domOps: [{ op: 'eval', code: 'x' }] } })],
 ];
 
+/** Measured on Gemini's Flash: a format of its own, which the old gate showed nothing for. */
+const INVENTED_FORMAT = JSON.stringify({
+  name: 'Wide chat',
+  description: 'Makes the chat wider',
+  version: '1.0',
+  target: 'gemini',
+  minEngineVersion: '1.0.0',
+  css: '.conversation{max-width:100%}',
+});
+
+const attemptBlocks: readonly (readonly [string, string])[] = [
+  ['JSON with no matches', '{ "contributes": {} }'],
+  ['JSON with no contributes', '{ "matches": [] }'],
+  ['a format of the AI’s own', INVENTED_FORMAT],
+];
+
 const notPluginBlocks: readonly (readonly [string, string])[] = [
   ['prose', 'Here is your plugin'],
   ['a JSON array', '[1, 2, 3]'],
-  ['JSON with no matches', '{ "contributes": {} }'],
-  ['JSON with no contributes', '{ "matches": [] }'],
-  ['an unrelated JSON object', '{ "name": "package", "version": "1.0.0" }'],
   ['broken JSON', '{ "matches": [, "contributes": {} }'],
   ['a block over the import ceiling', `{${' '.repeat(MAX_LOCAL_PLUGIN_IMPORT_CHARS)}}`],
 ];
@@ -106,7 +121,7 @@ const notPluginBlocks: readonly (readonly [string, string])[] = [
 const FENCED_REPLY = ['a whole fenced reply', `\`\`\`json\n${TEXT}\n\`\`\``] as const;
 
 describe('classifying a code block of a Create reply', () => {
-  it.each([...exampleBlocks, ...invalidBlocks, ...notPluginBlocks])(
+  it.each([...exampleBlocks, ...invalidBlocks, ...attemptBlocks, ...notPluginBlocks])(
     'agrees with the real import on %s',
     async (_label, text) => {
       const verdict = classifyReplyBlock(text, {});
@@ -125,7 +140,7 @@ describe('classifying a code block of a Create reply', () => {
     for (const [, text] of chat) expect(classifyReplyBlock(text, {}).kind).toBe('installable');
   });
 
-  it.each(invalidBlocks)('rejects a plugin with %s and says where', (_label, text) => {
+  it.each([...invalidBlocks, ...attemptBlocks])('rejects %s and says where', (_label, text) => {
     const verdict = classifyReplyBlock(text, {});
     expect(verdict.kind).toBe('rejected');
     if (verdict.kind === 'rejected') expect(verdict.issues.length).toBeGreaterThan(0);
@@ -183,6 +198,24 @@ describe('classifying a code block of a Create reply', () => {
     expect(classifyReplyBlock(variant({ description: 'Rounder' }), records)).toMatchObject({
       install: { kind: 'update', previousVersion: '1.0.0' },
     });
+  });
+
+  it('calls a block installed when the browser stored its keys in another order', async () => {
+    const records = await install(TEXT);
+    // Chrome's storage hands objects back with their keys sorted.
+    const reread = Object.fromEntries(
+      Object.entries(records).map(([id, record]) => [
+        id,
+        {
+          ...record,
+          manifest: JSON.parse(canonicalJson(record.manifest)) as typeof record.manifest,
+        },
+      ]),
+    );
+    expect(JSON.stringify(reread['local.me.rounded'].manifest)).not.toBe(
+      JSON.stringify(records['local.me.rounded'].manifest),
+    );
+    expect(classifyReplyBlock(TEXT, reread)).toMatchObject({ install: { kind: 'installed' } });
   });
 
   it('matches an id written with or without the local prefix', async () => {

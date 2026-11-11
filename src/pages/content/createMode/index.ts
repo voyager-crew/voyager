@@ -4,10 +4,11 @@
  * - the panel's "Create on this page" opens a new chat here and fills its
  *   composer with the creation message (`local/creationMessage.ts`). Voyager
  *   never sends it; the user reviews it and presses send.
- * - in that chat, each plugin code block in a reply gets a control
+ * - in that chat, each JSON object in a reply gets a control
  *   (`replyControls.ts`). "Preview" holds the block and opens the panel, which
  *   fetches it once (`gv.create.pending`), checks it again and installs it;
- *   "Send the problems back" appends the gate's problems to the composer.
+ *   under a block the gate refuses, a plain reason and "Ask it to fix", which
+ *   appends the gate's problems to the composer.
  *
  * The panel reaches this module only through the background's tab relay,
  * never through window messages.

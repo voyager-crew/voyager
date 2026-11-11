@@ -147,8 +147,8 @@ describe('Create mode controls under reply code blocks', () => {
     expect(document.body.innerHTML).toBe(before);
   });
 
-  it('gives a block still streaming, or code that is no plugin, no control', async () => {
-    chat(MARKER, [plugin().slice(0, 80), '{"hello": "world"}', 'const x = 1;']);
+  it('gives a block still streaming, or code that is no JSON object, no control', async () => {
+    chat(MARKER, [plugin().slice(0, 80), '[1, 2]', 'const x = 1;']);
     start();
     await settle();
     expect(controls()).toHaveLength(0);
@@ -187,11 +187,30 @@ describe('Create mode controls under reply code blocks', () => {
     expect(controlText(controls()[0])).toContain('Preview update');
   });
 
-  it('offers to send the problems back under a plugin the gate refuses', async () => {
-    chat(MARKER, [plugin({ name: '' })]);
+  it('says why a refused plugin cannot install and offers to ask for a fix', async () => {
+    chat(MARKER, [plugin({ matches: ['https://example.com/*'] })]);
     start();
     await settle();
-    expect(controlText(controls()[0])).toContain('Send the problems back to the AI');
+    const [control] = controls();
+    expect(controlText(control)).toContain(
+      'Can’t install this yet. It targets a site Voyager doesn’t support.',
+    );
+    expect(controlButton(control)?.textContent).toBe('Ask it to fix');
+  });
+
+  it('answers JSON in a format of the AI’s own instead of staying silent', async () => {
+    chat(MARKER, [JSON.stringify({ name: 'Wide chat', target: 'gemini', css: '.a{}' })]);
+    start();
+    await settle();
+    const [control] = controls();
+    expect(controlText(control)).toContain('It isn’t written in Voyager’s plugin format.');
+
+    vi.mocked(isUserEvent).mockReturnValue(true);
+    controlButton(control)!.click();
+    expect(onAction).toHaveBeenCalledWith(
+      'problems',
+      expect.objectContaining({ verdict: expect.objectContaining({ kind: 'rejected' }) }),
+    );
   });
 
   /** A conversation ChatGPT keeps mounted, hidden, ahead of the one on screen. */

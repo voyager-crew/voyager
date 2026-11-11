@@ -3022,15 +3022,39 @@
     "description": "Create mode label under a code block that a later block in the chat replaces"
   },
   "createModeRejectedNote": {
-    "message": "لا يمكن تثبيت هذه بعد.",
+    "message": "لا يمكن تثبيت هذه بعد. {reason}",
     "description": "Create mode note under a plugin code block that the import gate refuses"
   },
+  "createModeReasonNotPlugin": {
+    "message": "لم تُكتب بصيغة إضافات Voyager.",
+    "description": "Create mode: why a reply's JSON cannot be installed; it is in a format of the AI's own, not a Voyager plugin"
+  },
+  "createModeReasonNoSite": {
+    "message": "لا تحدد الموقع الذي تعمل عليه.",
+    "description": "Create mode: why a reply's plugin cannot be installed; it has no matches (the sites it runs on)"
+  },
+  "createModeReasonBadSite": {
+    "message": "تستهدف موقعًا لا يدعمه Voyager.",
+    "description": "Create mode: why a reply's plugin cannot be installed; its matches name a site Voyager does not support"
+  },
+  "createModeReasonNoChange": {
+    "message": "لا تحدد ما الذي تغيّره في الصفحة.",
+    "description": "Create mode: why a reply's plugin cannot be installed; it has no contributes (what it changes)"
+  },
+  "createModeReasonBadChange": {
+    "message": "أحد تغييراتها غير مسموح به.",
+    "description": "Create mode: why a reply's plugin cannot be installed; something under contributes breaks a rule"
+  },
+  "createModeReasonOther": {
+    "message": "بعض بياناتها ناقصة أو خاطئة.",
+    "description": "Create mode: why a reply's plugin cannot be installed, when no more specific reason applies"
+  },
   "createModeSendProblems": {
-    "message": "أرسل المشكلات إلى الذكاء الاصطناعي",
+    "message": "اطلب منه إصلاحها",
     "description": "Create mode button: put the gate's problems in the composer for the AI; nothing is sent"
   },
   "createModeProblemsFilled": {
-    "message": "المشكلات في مربع الرسالة. أرسلها عندما تكون جاهزًا.",
+    "message": "طلب الإصلاح في مربع الرسالة. أرسله عندما تكون جاهزًا.",
     "description": "Create mode toast: the problems are in the composer, unsent"
   },
   "createModeFixIntro": {

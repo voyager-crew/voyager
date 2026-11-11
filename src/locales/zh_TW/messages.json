@@ -3022,15 +3022,39 @@
     "description": "Create mode label under a code block that a later block in the chat replaces"
   },
   "createModeRejectedNote": {
-    "message": "暫時裝不了這個外掛。",
+    "message": "暫時裝不了這個外掛。{reason}",
     "description": "Create mode note under a plugin code block that the import gate refuses"
   },
+  "createModeReasonNotPlugin": {
+    "message": "它沒有照 Voyager 的外掛格式撰寫。",
+    "description": "Create mode: why a reply's JSON cannot be installed; it is in a format of the AI's own, not a Voyager plugin"
+  },
+  "createModeReasonNoSite": {
+    "message": "它沒寫明用在哪個網站。",
+    "description": "Create mode: why a reply's plugin cannot be installed; it has no matches (the sites it runs on)"
+  },
+  "createModeReasonBadSite": {
+    "message": "它指定的網站 Voyager 不支援。",
+    "description": "Create mode: why a reply's plugin cannot be installed; its matches name a site Voyager does not support"
+  },
+  "createModeReasonNoChange": {
+    "message": "它沒寫明要改頁面上的什麼。",
+    "description": "Create mode: why a reply's plugin cannot be installed; it has no contributes (what it changes)"
+  },
+  "createModeReasonBadChange": {
+    "message": "其中有一項改動不被允許。",
+    "description": "Create mode: why a reply's plugin cannot be installed; something under contributes breaks a rule"
+  },
+  "createModeReasonOther": {
+    "message": "有些資訊缺漏或填錯了。",
+    "description": "Create mode: why a reply's plugin cannot be installed, when no more specific reason applies"
+  },
   "createModeSendProblems": {
-    "message": "把問題回傳給 AI",
+    "message": "請它修正",
     "description": "Create mode button: put the gate's problems in the composer for the AI; nothing is sent"
   },
   "createModeProblemsFilled": {
-    "message": "問題已填入輸入框，準備好後再送出。",
+    "message": "修正請求已填入輸入框，準備好後再送出。",
     "description": "Create mode toast: the problems are in the composer, unsent"
   },
   "createModeFixIntro": {

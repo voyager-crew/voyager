@@ -3022,15 +3022,39 @@
     "description": "Create mode label under a code block that a later block in the chat replaces"
   },
   "createModeRejectedNote": {
-    "message": "Пока нельзя установить.",
+    "message": "Пока нельзя установить. {reason}",
     "description": "Create mode note under a plugin code block that the import gate refuses"
   },
+  "createModeReasonNotPlugin": {
+    "message": "Он написан не в формате плагинов Voyager.",
+    "description": "Create mode: why a reply's JSON cannot be installed; it is in a format of the AI's own, not a Voyager plugin"
+  },
+  "createModeReasonNoSite": {
+    "message": "В нём не указано, для какого сайта он.",
+    "description": "Create mode: why a reply's plugin cannot be installed; it has no matches (the sites it runs on)"
+  },
+  "createModeReasonBadSite": {
+    "message": "Он рассчитан на сайт, который Voyager не поддерживает.",
+    "description": "Create mode: why a reply's plugin cannot be installed; its matches name a site Voyager does not support"
+  },
+  "createModeReasonNoChange": {
+    "message": "В нём не указано, что менять на странице.",
+    "description": "Create mode: why a reply's plugin cannot be installed; it has no contributes (what it changes)"
+  },
+  "createModeReasonBadChange": {
+    "message": "Одно из его изменений не разрешено.",
+    "description": "Create mode: why a reply's plugin cannot be installed; something under contributes breaks a rule"
+  },
+  "createModeReasonOther": {
+    "message": "Некоторые данные отсутствуют или указаны неверно.",
+    "description": "Create mode: why a reply's plugin cannot be installed, when no more specific reason applies"
+  },
   "createModeSendProblems": {
-    "message": "Вернуть проблемы ИИ",
+    "message": "Попросить исправить",
     "description": "Create mode button: put the gate's problems in the composer for the AI; nothing is sent"
   },
   "createModeProblemsFilled": {
-    "message": "Проблемы в поле ввода. Отправьте, когда будете готовы.",
+    "message": "Просьба об исправлении в поле ввода. Отправьте, когда будете готовы.",
     "description": "Create mode toast: the problems are in the composer, unsent"
   },
   "createModeFixIntro": {

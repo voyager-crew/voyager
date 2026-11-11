@@ -4,8 +4,11 @@
  * calls installable is one `checkPluginReply` and `importLocalPlugin` accept:
  * it runs the same size cap, style-entry cap and `validateLocalManifest`. A
  * reply has no CSS files beside it, so a `styles[].file` entry fails the gate
- * here as it fails the file read there.
+ * here as it fails the file read there. Every JSON object is read as an
+ * attempt, so one the gate refuses is `rejected` with the gate's issues.
  */
+import { canonicalJson } from '@/core/utils/canonicalHash';
+
 import type { ManifestIssue } from '../../manifest/validate';
 import { MAX_LOCAL_PLUGIN_IMPORT_CHARS, MAX_LOCAL_PLUGIN_STYLES } from '../localPluginFiles';
 import { toLocalPluginId } from '../localPluginId';
@@ -33,7 +36,8 @@ function installState(
   record: LocalPluginRecord | undefined,
 ): CreationInstall {
   if (!record) return { kind: 'new' };
-  if (JSON.stringify(record.manifest) === JSON.stringify(stored)) return { kind: 'installed' };
+  // Chrome's storage gives objects back with their keys sorted; compare content, not order.
+  if (canonicalJson(record.manifest) === canonicalJson(stored)) return { kind: 'installed' };
   const version = record.manifest.version;
   return { kind: 'update', previousVersion: typeof version === 'string' ? version : null };
 }
@@ -48,7 +52,8 @@ export function classifyReplyBlock(text: string, installed: LocalPluginRecordMap
   } catch {
     return NONE;
   }
-  if (!isRecord(parsed) || !('contributes' in parsed) || !('matches' in parsed)) return NONE;
+  // In a Create chat a JSON object is an attempt at a plugin: one the gate refuses still gets a reason.
+  if (!isRecord(parsed)) return NONE;
 
   const manifestId = typeof parsed.id === 'string' ? toLocalPluginId(parsed.id) : null;
   if (hasTooManyStyles(parsed)) return { kind: 'rejected', manifestId, issues: TOO_MANY_STYLES };

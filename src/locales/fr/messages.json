@@ -3022,15 +3022,39 @@
     "description": "Create mode label under a code block that a later block in the chat replaces"
   },
   "createModeRejectedNote": {
-    "message": "Impossible de l’installer pour l’instant.",
+    "message": "Impossible de l’installer pour l’instant. {reason}",
     "description": "Create mode note under a plugin code block that the import gate refuses"
   },
+  "createModeReasonNotPlugin": {
+    "message": "Il ne suit pas le format des plugins Voyager.",
+    "description": "Create mode: why a reply's JSON cannot be installed; it is in a format of the AI's own, not a Voyager plugin"
+  },
+  "createModeReasonNoSite": {
+    "message": "Il n’indique pas sur quel site il s’applique.",
+    "description": "Create mode: why a reply's plugin cannot be installed; it has no matches (the sites it runs on)"
+  },
+  "createModeReasonBadSite": {
+    "message": "Il vise un site que Voyager ne prend pas en charge.",
+    "description": "Create mode: why a reply's plugin cannot be installed; its matches name a site Voyager does not support"
+  },
+  "createModeReasonNoChange": {
+    "message": "Il n’indique pas ce qu’il faut changer sur la page.",
+    "description": "Create mode: why a reply's plugin cannot be installed; it has no contributes (what it changes)"
+  },
+  "createModeReasonBadChange": {
+    "message": "L’une de ses modifications n’est pas autorisée.",
+    "description": "Create mode: why a reply's plugin cannot be installed; something under contributes breaks a rule"
+  },
+  "createModeReasonOther": {
+    "message": "Certaines informations manquent ou sont incorrectes.",
+    "description": "Create mode: why a reply's plugin cannot be installed, when no more specific reason applies"
+  },
   "createModeSendProblems": {
-    "message": "Renvoyer les problèmes à l’IA",
+    "message": "Lui demander de corriger",
     "description": "Create mode button: put the gate's problems in the composer for the AI; nothing is sent"
   },
   "createModeProblemsFilled": {
-    "message": "Les problèmes sont dans la zone de saisie. Envoyez-les quand vous voulez.",
+    "message": "La demande de correction est dans la zone de saisie. Envoyez-la quand vous voulez.",
     "description": "Create mode toast: the problems are in the composer, unsent"
   },
   "createModeFixIntro": {

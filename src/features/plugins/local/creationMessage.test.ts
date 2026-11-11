@@ -9,6 +9,8 @@ import { inlinesCreatePage } from './authoring/inlineCreatePage';
 import { WRITE_PLUGIN_SKILL_URL, createPageFile, createPageUrl } from './authoring/skillLink';
 import { MAX_PLUGIN_REQUEST_CHARS, authoringSites } from './authoringSites';
 import { isCreationChatText } from './creation/creationMarker';
+import { buildCreationFixMessage } from './creation/fixMessage';
+import { classifyReplyBlock } from './creation/replyBlock';
 import { PLUGIN_CHECK_COMMAND, buildAgentHandoff, buildCreationMessage } from './creationMessage';
 
 const LOCALES_DIR = join(process.cwd(), 'src/locales');
@@ -141,6 +143,13 @@ describe('text Voyager places in a composer', () => {
       expect(buildCreationMessage(TRICKY_REQUEST, site, t), site.id).not.toContain('```');
     }
     expect(t('createModeFixIntro')).not.toContain('```');
+  });
+
+  it.each(locales)('holds no triple backtick in the fix request in %s', (_locale, t) => {
+    const invented = JSON.stringify({ name: 'Wide chat', target: 'gemini', css: '.a{}' });
+    const verdict = classifyReplyBlock(invented, {});
+    if (verdict.kind !== 'rejected') throw new Error('fixture must be refused');
+    expect(buildCreationFixMessage(verdict.issues, t('createModeFixIntro'))).not.toContain('```');
   });
 });
 

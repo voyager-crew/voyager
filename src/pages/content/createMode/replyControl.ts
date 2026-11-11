@@ -6,6 +6,7 @@
  */
 import { GV_RTL_CLASS } from '@/core/utils/rtl';
 import { isUserEvent } from '@/core/utils/userEvent';
+import { rejectionReason } from '@/features/plugins/local/creation/rejectionReason';
 import type { CreationCandidate } from '@/features/plugins/local/creation/types';
 import { getTranslationSync } from '@/utils/i18n';
 import type { TranslationKey } from '@/utils/translations';
@@ -173,8 +174,10 @@ export function createReplyControl(
     if (view.kind === 'status') {
       parts.push(state(doc, view.done ? 'done' : 'earlier', getTranslationSync(view.label)));
     } else {
-      if (view.action === 'problems') {
-        parts.push(state(doc, 'problem', getTranslationSync('createModeRejectedNote')));
+      if (view.action === 'problems' && candidate.verdict.kind === 'rejected') {
+        const reason = getTranslationSync(rejectionReason(candidate.verdict.issues));
+        const note = getTranslationSync('createModeRejectedNote').replace('{reason}', () => reason);
+        parts.push(state(doc, 'problem', note));
       }
       const button = doc.createElement('button');
       button.type = 'button';

@@ -12,7 +12,7 @@ export type CreationInstall =
   | { readonly kind: 'installed' };
 
 export type CreationVerdict =
-  /** Not JSON, or JSON that is not a plugin manifest. */
+  /** Not a JSON object: prose, other code, or a block still streaming. */
   | { readonly kind: 'none' }
   | {
       readonly kind: 'installable';
