@@ -5,30 +5,30 @@
  * system stack on every site: a floating layer that borrowed 'Google Sans'
  * would fall back to Arial wherever the host does not ship it. */
 :root {
-  --gv-ui-surface: oklch(0.995 0.002 250);
-  --gv-ui-surface-hover: oklch(0.97 0.003 250);
-  --gv-ui-hover: oklch(0.14 0.004 285 / 0.06);
-  --gv-ui-text: oklch(0.14 0.004 285);
-  --gv-ui-text-muted: oklch(0.45 0.01 270);
-  --gv-ui-border: oklch(0.92 0.004 250 / 0.7);
+  --gv-ui-surface: var(--gv-theme-surface, oklch(0.995 0.002 250));
+  --gv-ui-surface-hover: var(--gv-theme-hover, oklch(0.97 0.003 250));
+  --gv-ui-hover: var(--gv-theme-hover, oklch(0.14 0.004 285 / 0.06));
+  --gv-ui-text: var(--gv-theme-text, oklch(0.14 0.004 285));
+  --gv-ui-text-muted: var(--gv-theme-text-muted, oklch(0.45 0.01 270));
+  --gv-ui-border: var(--gv-theme-border, oklch(0.92 0.004 250 / 0.7));
   --gv-ui-shadow: 0 6px 20px oklch(0 0 0 / 0.16);
   --gv-ui-primary: var(--gv-pm-brand, var(--gv-pm-brand-default, oklch(0.601 0.1 140)));
   --gv-ui-primary-fg: var(--gv-pm-brand-fg, var(--gv-pm-brand-fg-default, #ffffff));
   --gv-ui-focus-ring: var(--gv-pm-brand, var(--gv-pm-brand-default, oklch(0.601 0.1 140)));
-  --gv-ui-danger: oklch(0.55 0.19 25);
+  --gv-ui-danger: var(--gv-theme-danger, oklch(0.55 0.19 25));
   --gv-ui-warning: oklch(0.7 0.14 70);
   --gv-ui-font:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 :root[data-gv-scheme='dark'] {
-  --gv-ui-surface: oklch(0.29 0.006 285);
-  --gv-ui-surface-hover: oklch(0.33 0.006 285);
-  --gv-ui-hover: oklch(0.92 0.004 250 / 0.08);
-  --gv-ui-text: oklch(0.92 0.004 250);
-  --gv-ui-text-muted: oklch(0.72 0.01 270);
-  --gv-ui-border: oklch(0.38 0.008 285 / 0.7);
+  --gv-ui-surface: var(--gv-theme-surface, oklch(0.29 0.006 285));
+  --gv-ui-surface-hover: var(--gv-theme-hover, oklch(0.33 0.006 285));
+  --gv-ui-hover: var(--gv-theme-hover, oklch(0.92 0.004 250 / 0.08));
+  --gv-ui-text: var(--gv-theme-text, oklch(0.92 0.004 250));
+  --gv-ui-text-muted: var(--gv-theme-text-muted, oklch(0.72 0.01 270));
+  --gv-ui-border: var(--gv-theme-border, oklch(0.38 0.008 285 / 0.7));
   --gv-ui-shadow: 0 6px 20px oklch(0 0 0 / 0.28);
-  --gv-ui-danger: oklch(0.72 0.15 25);
+  --gv-ui-danger: var(--gv-theme-danger, oklch(0.72 0.15 25));
   --gv-ui-warning: oklch(0.8 0.13 75);
 }

@@ -19,10 +19,10 @@
 }
 
 html[data-gv-scheme='dark'] .gv-folder-settings-menu {
-  --gv-folder-settings-text: oklch(0.92 0.004 250);
-  --gv-folder-settings-muted: oklch(0.76 0.006 250);
-  --gv-folder-settings-hover: oklch(0.92 0.004 250 / 0.08);
-  --gv-folder-settings-border: oklch(0.3 0.008 285 / 0.7);
+  --gv-folder-settings-text: var(--gv-theme-text, oklch(0.92 0.004 250));
+  --gv-folder-settings-muted: var(--gv-theme-text-muted, oklch(0.76 0.006 250));
+  --gv-folder-settings-hover: var(--gv-theme-hover, oklch(0.92 0.004 250 / 0.08));
+  --gv-folder-settings-border: var(--gv-theme-border, oklch(0.3 0.008 285 / 0.7));
   --gv-folder-settings-segments: oklch(0.24 0.008 285 / 0.8);
   --gv-folder-settings-option: oklch(0.76 0.006 250);
   --gv-folder-settings-selected: oklch(0.34 0.01 285);

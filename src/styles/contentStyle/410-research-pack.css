@@ -3,9 +3,9 @@
    ======================================== */
 
 .gv-rp-root {
-  --gv-rp-bg: oklch(0.995 0.002 250);
-  --gv-rp-fg: oklch(0.14 0.004 285);
-  --gv-rp-muted: oklch(0.45 0.01 270);
+  --gv-rp-bg: var(--gv-theme-surface, oklch(0.995 0.002 250));
+  --gv-rp-fg: var(--gv-theme-text, oklch(0.14 0.004 285));
+  --gv-rp-muted: var(--gv-theme-text-muted, oklch(0.45 0.01 270));
   --gv-rp-border: oklch(0.9 0.004 250);
   --gv-rp-surface: oklch(0.97 0.003 250);
   --gv-rp-accent: var(--gv-pm-brand, var(--gv-pm-brand-default));
@@ -17,9 +17,9 @@
 
 @media (prefers-color-scheme: dark) {
   html:not([data-gv-scheme]) .gv-rp-root {
-    --gv-rp-bg: oklch(0.2 0.008 285);
-    --gv-rp-fg: oklch(0.92 0.004 250);
-    --gv-rp-muted: oklch(0.72 0.01 270);
+    --gv-rp-bg: var(--gv-theme-surface, oklch(0.2 0.008 285));
+    --gv-rp-fg: var(--gv-theme-text, oklch(0.92 0.004 250));
+    --gv-rp-muted: var(--gv-theme-text-muted, oklch(0.72 0.01 270));
     --gv-rp-border: oklch(0.32 0.008 285);
     --gv-rp-surface: oklch(0.25 0.008 285);
     --gv-rp-error: oklch(0.72 0.15 25);
@@ -28,9 +28,9 @@
 }
 
 html[data-gv-scheme='dark'] .gv-rp-root {
-  --gv-rp-bg: oklch(0.2 0.008 285);
-  --gv-rp-fg: oklch(0.92 0.004 250);
-  --gv-rp-muted: oklch(0.72 0.01 270);
+  --gv-rp-bg: var(--gv-theme-surface, oklch(0.2 0.008 285));
+  --gv-rp-fg: var(--gv-theme-text, oklch(0.92 0.004 250));
+  --gv-rp-muted: var(--gv-theme-text-muted, oklch(0.72 0.01 270));
   --gv-rp-border: oklch(0.32 0.008 285);
   --gv-rp-surface: oklch(0.25 0.008 285);
   --gv-rp-error: oklch(0.72 0.15 25);

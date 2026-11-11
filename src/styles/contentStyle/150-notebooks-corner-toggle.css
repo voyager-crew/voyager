@@ -59,7 +59,7 @@ expandable-section.gv-folders-anchor-host:hover > .gv-folders-anchor-toggle,
 
 /* Dark theme */
 html[data-gv-scheme='dark'] .gv-folders-anchor-toggle {
-  color: #e8eaed;
+  color: var(--gv-theme-text, #e8eaed);
 }
 
 html[data-gv-scheme='dark'] .gv-folders-anchor-toggle:hover {

@@ -22,6 +22,7 @@
  * source of truth for "which site am I on".
  */
 import { StorageKeys } from '@/core/types/common';
+import { type ThemeRole, themeVariableName } from '@/core/ui/themeVariables';
 import { subscribeHostCatalog } from '@/features/plugins/remote/hostCatalogCache';
 import { catalogHostFromUrl } from '@/features/plugins/remote/hostCatalogPolicy';
 import {
@@ -50,6 +51,15 @@ const BRAND_HUE_VAR = '--gv-pm-brand-h';
  * at once; per-platform styling needs to name the platform.
  */
 const PLATFORM_ATTR = 'data-gv-platform';
+
+/**
+ * A site accent set inline on the root outranks any stylesheet, so the public
+ * `--gv-theme-*` colours a creation sets (see `themeVariables.ts`) take over
+ * through the inline value itself.
+ */
+function themed(role: ThemeRole, value: string): string {
+  return `var(${themeVariableName(role)}, ${value})`;
+}
 
 /** Per-site custom accent overrides: Record<siteId, colorString>. */
 export type AccentColorMap = Readonly<Record<string, string>>;
@@ -187,10 +197,10 @@ export function applyBrandTheme(
   else root.removeAttribute(PLATFORM_ATTR);
   if (color) {
     root.classList.add(PLATFORM_THEME_CLASS);
-    root.style.setProperty(BRAND_VAR, color);
-    root.style.setProperty(BRAND_FG_VAR, readableForeground(color));
+    root.style.setProperty(BRAND_VAR, themed('accent', color));
+    root.style.setProperty(BRAND_FG_VAR, themed('accent-fg', readableForeground(color)));
     const hue = accentHue(color);
-    if (hue !== null) root.style.setProperty(BRAND_HUE_VAR, `${hue}`);
+    if (hue !== null) root.style.setProperty(BRAND_HUE_VAR, themed('accent-hue', `${hue}`));
     else root.style.removeProperty(BRAND_HUE_VAR);
   } else {
     root.classList.remove(PLATFORM_THEME_CLASS);

@@ -42,7 +42,7 @@
   background: transparent;
   border: none;
   padding: 0;
-  color: #e5e7eb;
+  color: var(--gv-theme-text, #e5e7eb);
   text-align: left;
   white-space: normal;
   word-break: break-word;
@@ -113,24 +113,24 @@ html[data-gv-scheme='dark'] .gv-md-collapsed::after {
  * own the gesture. */
 .gv-pm-pin {
   background: transparent;
-  color: rgba(229, 231, 235, 0.5);
+  color: var(--gv-theme-text-muted, rgba(229, 231, 235, 0.5));
 }
 
 .gv-pm-pin:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #e5e7eb;
+  color: var(--gv-theme-text, #e5e7eb);
 }
 
 .gv-pm-reorder {
   background: transparent;
-  color: rgba(229, 231, 235, 0.5);
+  color: var(--gv-theme-text-muted, rgba(229, 231, 235, 0.5));
   cursor: grab;
   touch-action: none;
 }
 
 .gv-pm-reorder:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #e5e7eb;
+  color: var(--gv-theme-text, #e5e7eb);
 }
 
 /* The press is preventDefault'ed, so :active never lands during a drag — the
@@ -175,24 +175,24 @@ html[data-gv-scheme='dark'] .gv-md-collapsed::after {
  * outranks everything here. */
 html[data-gv-scheme='light'] .gv-pm-reorder,
 html[data-gv-scheme='light'] .gv-pm-pin {
-  color: rgba(31, 41, 55, 0.4);
+  color: var(--gv-theme-text-muted, rgba(31, 41, 55, 0.4));
 }
 
 html[data-gv-scheme='light'] .gv-pm-reorder:hover,
 html[data-gv-scheme='light'] .gv-pm-pin:hover {
   background: rgba(0, 0, 0, 0.06);
-  color: #1f2937;
+  color: var(--gv-theme-text, #1f2937);
 }
 
 html[data-gv-scheme='dark'] .gv-pm-reorder,
 html[data-gv-scheme='dark'] .gv-pm-pin {
-  color: rgba(229, 231, 235, 0.5);
+  color: var(--gv-theme-text-muted, rgba(229, 231, 235, 0.5));
 }
 
 html[data-gv-scheme='dark'] .gv-pm-reorder:hover,
 html[data-gv-scheme='dark'] .gv-pm-pin:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #e5e7eb;
+  color: var(--gv-theme-text, #e5e7eb);
 }
 
 html[data-gv-scheme='light'] .gv-pm-item {
@@ -205,7 +205,7 @@ html[data-gv-scheme='light'] .gv-pm-item:hover {
 }
 
 html[data-gv-scheme='light'] .gv-pm-item-text {
-  color: #1f2937;
+  color: var(--gv-theme-text, #1f2937);
 }
 
 html[data-gv-scheme='dark'] .gv-pm-item {
@@ -218,7 +218,7 @@ html[data-gv-scheme='dark'] .gv-pm-item:hover {
 }
 
 html[data-gv-scheme='dark'] .gv-pm-item-text {
-  color: #e5e7eb;
+  color: var(--gv-theme-text, #e5e7eb);
 }
 
 .gv-pm-edit,
@@ -238,12 +238,12 @@ html[data-gv-scheme='dark'] .gv-pm-item-text {
 
 .gv-pm-edit {
   background: transparent;
-  color: rgba(229, 231, 235, 0.5);
+  color: var(--gv-theme-text-muted, rgba(229, 231, 235, 0.5));
 }
 
 .gv-pm-edit:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #e5e7eb;
+  color: var(--gv-theme-text, #e5e7eb);
 }
 
 .gv-pm-item + .gv-pm-item {
@@ -307,73 +307,73 @@ html[data-gv-scheme='dark'] .gv-pm-chip {
 
 .gv-pm-del {
   background: transparent;
-  color: rgba(229, 231, 235, 0.5);
+  color: var(--gv-theme-text-muted, rgba(229, 231, 235, 0.5));
   border: none;
   position: relative;
 }
 
 .gv-pm-del.armed {
   background: rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
+  color: var(--gv-theme-danger, #fca5a5);
 }
 
 .gv-pm-del:hover {
   background: rgba(239, 68, 68, 0.12);
-  color: #fca5a5;
+  color: var(--gv-theme-danger, #fca5a5);
 }
 
 html[data-gv-scheme='light'] .gv-pm-edit {
   background: transparent;
   border: none;
-  color: rgba(31, 41, 55, 0.4);
+  color: var(--gv-theme-text-muted, rgba(31, 41, 55, 0.4));
 }
 
 html[data-gv-scheme='light'] .gv-pm-edit:hover {
   background: rgba(0, 0, 0, 0.06);
-  color: #1f2937;
+  color: var(--gv-theme-text, #1f2937);
 }
 
 html[data-gv-scheme='light'] .gv-pm-del {
   background: transparent;
-  color: rgba(31, 41, 55, 0.4);
+  color: var(--gv-theme-text-muted, rgba(31, 41, 55, 0.4));
   border: none;
 }
 
 html[data-gv-scheme='light'] .gv-pm-del:hover {
   background: rgba(239, 68, 68, 0.08);
-  color: #dc2626;
+  color: var(--gv-theme-danger, #dc2626);
 }
 
 html[data-gv-scheme='light'] .gv-pm-del.armed {
   background: rgba(239, 68, 68, 0.15);
-  color: #dc2626;
+  color: var(--gv-theme-danger, #dc2626);
 }
 
 html[data-gv-scheme='dark'] .gv-pm-edit {
   background: transparent;
   border: none;
-  color: rgba(229, 231, 235, 0.5);
+  color: var(--gv-theme-text-muted, rgba(229, 231, 235, 0.5));
 }
 
 html[data-gv-scheme='dark'] .gv-pm-edit:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #e5e7eb;
+  color: var(--gv-theme-text, #e5e7eb);
 }
 
 html[data-gv-scheme='dark'] .gv-pm-del {
   background: transparent;
-  color: rgba(229, 231, 235, 0.5);
+  color: var(--gv-theme-text-muted, rgba(229, 231, 235, 0.5));
   border: none;
 }
 
 html[data-gv-scheme='dark'] .gv-pm-del:hover {
   background: rgba(239, 68, 68, 0.12);
-  color: #fca5a5;
+  color: var(--gv-theme-danger, #fca5a5);
 }
 
 html[data-gv-scheme='dark'] .gv-pm-del.armed {
   background: rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
+  color: var(--gv-theme-danger, #fca5a5);
 }
 
 .gv-pm-edit::before,

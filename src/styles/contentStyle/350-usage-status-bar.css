@@ -19,9 +19,9 @@
   font-size: 11px;
   line-height: 1;
   /* dark theme defaults */
-  background: oklch(0.21 0.008 285 / 0.85);
-  color: rgba(232, 234, 237, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--gv-theme-surface, oklch(0.21 0.008 285 / 0.85));
+  color: var(--gv-theme-text, rgba(232, 234, 237, 0.9));
+  border: 1px solid var(--gv-theme-border, rgba(255, 255, 255, 0.08));
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -44,9 +44,9 @@
 
 html[data-gv-scheme='light'] .gv-usage-pill,
 html[data-gv-scheme='light'] .gv-claude-usage-pill {
-  background: oklch(0.995 0.002 250 / 0.9);
-  color: rgba(31, 31, 31, 0.86);
-  border-color: rgba(0, 0, 0, 0.08);
+  background: var(--gv-theme-surface, oklch(0.995 0.002 250 / 0.9));
+  color: var(--gv-theme-text, rgba(31, 31, 31, 0.86));
+  border-color: var(--gv-theme-border, rgba(0, 0, 0, 0.08));
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
 }
 

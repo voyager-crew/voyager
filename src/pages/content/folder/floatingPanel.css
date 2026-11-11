@@ -14,7 +14,7 @@
   display: flex !important;
   flex-direction: column !important;
   background: #1f2025 !important;
-  color: #e8eaed !important;
+  color: var(--gv-theme-text, #e8eaed) !important;
   border-radius: 14px !important;
   border: 1px solid rgba(129, 140, 248, 0.35) !important;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4) !important;
@@ -148,7 +148,7 @@
 
 :host([data-gv-scheme='light']) {
   background: #ffffff !important;
-  color: #1f2937 !important;
+  color: var(--gv-theme-text, #1f2937) !important;
   border-color: rgba(99, 102, 241, 0.28) !important;
   box-shadow: 0 16px 48px rgba(15, 23, 42, 0.22) !important;
 }
@@ -337,7 +337,7 @@
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: #25262d;
-  color: #e8eaed;
+  color: var(--gv-theme-text, #e8eaed);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
 }
 
@@ -369,8 +369,8 @@
 }
 
 .gv-floating-folder-panel__color-section {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--gv-theme-border, rgba(255, 255, 255, 0.08));
+  border-bottom: 1px solid var(--gv-theme-border, rgba(255, 255, 255, 0.08));
   margin: 4px 0;
   padding: 7px 8px;
 }
@@ -422,12 +422,12 @@
 :host([data-gv-scheme='light']) .gv-floating-folder-panel__inline-input {
   background: #ffffff;
   border-color: rgba(59, 130, 246, 0.34);
-  color: #1f2937;
+  color: var(--gv-theme-text, #1f2937);
 }
 
 :host([data-gv-scheme='light']) .gv-floating-folder-panel__context-menu {
   background: #ffffff;
-  color: #1f2937;
+  color: var(--gv-theme-text, #1f2937);
   border-color: rgba(15, 23, 42, 0.12);
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2);
 }

@@ -54,8 +54,8 @@ html[data-gv-scheme='dark'] .gv-folder-activity-list {
 }
 
 :host([data-gv-scheme='dark']) .gv-folder-activity-list {
-  --gv-folder-activity-text: #e5e7eb;
-  --gv-folder-activity-muted: #9ca3af;
+  --gv-folder-activity-text: var(--gv-theme-text, #e5e7eb);
+  --gv-folder-activity-muted: var(--gv-theme-text-muted, #9ca3af);
   --gv-folder-activity-hover: rgba(255, 255, 255, 0.075);
   --gv-folder-activity-selected: rgba(255, 255, 255, 0.1);
 }
@@ -194,7 +194,7 @@ html[data-gv-scheme='dark'] .gv-folder-activity-list {
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: #9ca3af;
+  color: var(--gv-theme-text-muted, #9ca3af);
   cursor: pointer;
   opacity: 0;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);

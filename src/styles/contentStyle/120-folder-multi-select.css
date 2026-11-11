@@ -187,12 +187,12 @@
 
 /* Delete button specific styling */
 .gv-multi-select-delete-btn {
-  color: #ef4444;
+  color: var(--gv-theme-danger, #ef4444);
 }
 
 .gv-multi-select-delete-btn:hover {
   background-color: rgba(239, 68, 68, 0.12);
-  color: #dc2626;
+  color: var(--gv-theme-danger, #dc2626);
   transform: scale(1.05);
 }
 
@@ -265,7 +265,7 @@
   height: 24px;
   border: none;
   background: transparent;
-  color: #9ca3af;
+  color: var(--gv-theme-text-muted, #9ca3af);
   cursor: pointer;
   display: flex;
   align-items: center;

@@ -52,18 +52,18 @@
   /* Same pinned stack as the panel: the host page's font must not leak in. */
   font-family: var(--gv-ui-font);
   font-size: 13px;
-  background: oklch(0.2 0.008 285);
-  color: oklch(0.92 0.004 250);
-  border: 1px solid oklch(0.3 0.008 285 / 0.7);
+  background: var(--gv-theme-surface, oklch(0.2 0.008 285));
+  color: var(--gv-theme-text, oklch(0.92 0.004 250));
+  border: 1px solid var(--gv-theme-border, oklch(0.3 0.008 285 / 0.7));
   box-shadow: 0 8px 26px oklch(0 0 0 / 0.32);
   scrollbar-width: thin;
   scrollbar-color: oklch(0.92 0.004 250 / 0.22) transparent;
 }
 
 .gv-pm-fill[data-gv-theme='light'] {
-  background: oklch(0.995 0.002 250);
-  color: oklch(0.14 0.004 285);
-  border-color: oklch(0.92 0.004 250 / 0.7);
+  background: var(--gv-theme-surface, oklch(0.995 0.002 250));
+  color: var(--gv-theme-text, oklch(0.14 0.004 285));
+  border-color: var(--gv-theme-border, oklch(0.92 0.004 250 / 0.7));
   box-shadow: 0 8px 26px oklch(0 0 0 / 0.12);
   scrollbar-color: oklch(0.14 0.004 285 / 0.22) transparent;
 }

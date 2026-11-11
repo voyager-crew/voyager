@@ -127,7 +127,7 @@
   font-size: 0;
   line-height: 1;
   background: oklch(0.2 0.008 285 / 0.72);
-  color: oklch(0.92 0.004 250);
+  color: var(--gv-theme-text, oklch(0.92 0.004 250));
   box-shadow: 0 4px 10px oklch(0 0 0 / 0.2);
   pointer-events: none;
   opacity: 0;
@@ -197,7 +197,7 @@
   /* Inherit the panel foreground rather than restating a hex per theme. */
   color: inherit;
   background: oklch(0.14 0.004 285 / 0.03);
-  border: 1px solid oklch(0.92 0.004 250 / 0.9);
+  border: 1px solid var(--gv-theme-border, oklch(0.92 0.004 250 / 0.9));
   outline: none;
   transition:
     border-color 0.15s ease,
@@ -237,7 +237,7 @@ html[data-gv-scheme='light'] .gv-pm-input-text,
 html[data-gv-scheme='light'] .gv-pm-input-tags,
 html[data-gv-scheme='light'] .gv-pm-input-name {
   background: oklch(0.14 0.004 285 / 0.03);
-  border-color: oklch(0.92 0.004 250 / 0.9);
+  border-color: var(--gv-theme-border, oklch(0.92 0.004 250 / 0.9));
 }
 
 .gv-pm-add-actions {

@@ -1,8 +1,8 @@
 /* Folder Context Menu */
 /* ── Folder Context Menu ── */
 .gv-folder-menu {
-  background: oklch(0.995 0.002 250);
-  border: 1px solid oklch(0.92 0.004 250 / 0.7);
+  background: var(--gv-theme-surface, oklch(0.995 0.002 250));
+  border: 1px solid var(--gv-theme-border, oklch(0.92 0.004 250 / 0.7));
   border-radius: 14px;
   box-shadow:
     0 12px 40px oklch(0 0 0 / 0.1),
@@ -25,8 +25,8 @@
 
 @media (prefers-color-scheme: dark) {
   .gv-folder-menu {
-    background: oklch(0.2 0.008 285);
-    border-color: oklch(0.3 0.008 285 / 0.7);
+    background: var(--gv-theme-surface, oklch(0.2 0.008 285));
+    border-color: var(--gv-theme-border, oklch(0.3 0.008 285 / 0.7));
     box-shadow:
       0 12px 40px oklch(0 0 0 / 0.35),
       0 4px 16px oklch(0 0 0 / 0.2);
@@ -34,16 +34,16 @@
 }
 
 html[data-gv-scheme='dark'] .gv-folder-menu {
-  background: oklch(0.2 0.008 285);
-  border-color: oklch(0.3 0.008 285 / 0.7);
+  background: var(--gv-theme-surface, oklch(0.2 0.008 285));
+  border-color: var(--gv-theme-border, oklch(0.3 0.008 285 / 0.7));
   box-shadow:
     0 12px 40px oklch(0 0 0 / 0.35),
     0 4px 16px oklch(0 0 0 / 0.2);
 }
 
 html[data-gv-scheme='light'] .gv-folder-menu {
-  background: oklch(0.995 0.002 250);
-  border-color: oklch(0.92 0.004 250 / 0.7);
+  background: var(--gv-theme-surface, oklch(0.995 0.002 250));
+  border-color: var(--gv-theme-border, oklch(0.92 0.004 250 / 0.7));
   box-shadow:
     0 12px 40px oklch(0 0 0 / 0.1),
     0 4px 16px oklch(0 0 0 / 0.05);
@@ -56,7 +56,7 @@ html[data-gv-scheme='light'] .gv-folder-menu {
   padding: 9px 14px;
   border: none;
   background: transparent;
-  color: oklch(0.14 0.004 285);
+  color: var(--gv-theme-text, oklch(0.14 0.004 285));
   text-align: left;
   cursor: pointer;
   border-radius: 9px;
@@ -66,32 +66,32 @@ html[data-gv-scheme='light'] .gv-folder-menu {
 }
 
 .gv-folder-menu-item:hover {
-  background: oklch(0.14 0.004 285 / 0.06);
+  background: var(--gv-theme-hover, oklch(0.14 0.004 285 / 0.06));
 }
 
 @media (prefers-color-scheme: dark) {
   .gv-folder-menu-item {
-    color: oklch(0.92 0.004 250);
+    color: var(--gv-theme-text, oklch(0.92 0.004 250));
   }
   .gv-folder-menu-item:hover {
-    background: oklch(0.92 0.004 250 / 0.08);
+    background: var(--gv-theme-hover, oklch(0.92 0.004 250 / 0.08));
   }
 }
 
 html[data-gv-scheme='dark'] .gv-folder-menu-item {
-  color: oklch(0.92 0.004 250);
+  color: var(--gv-theme-text, oklch(0.92 0.004 250));
 }
 
 html[data-gv-scheme='dark'] .gv-folder-menu-item:hover {
-  background: oklch(0.92 0.004 250 / 0.08);
+  background: var(--gv-theme-hover, oklch(0.92 0.004 250 / 0.08));
 }
 
 html[data-gv-scheme='light'] .gv-folder-menu-item {
-  color: oklch(0.14 0.004 285);
+  color: var(--gv-theme-text, oklch(0.14 0.004 285));
 }
 
 html[data-gv-scheme='light'] .gv-folder-menu-item:hover {
-  background: oklch(0.14 0.004 285 / 0.06);
+  background: var(--gv-theme-hover, oklch(0.14 0.004 285 / 0.06));
 }
 
 /* Inline-SVG icon slot inside .gv-folder-menu-item (used when an item ships its
@@ -114,8 +114,8 @@ html[data-gv-scheme='light'] .gv-folder-menu-item:hover {
 /* ── Color Picker Dialog ── */
 .gv-color-picker-dialog {
   position: fixed;
-  background: oklch(0.995 0.002 250);
-  border: 1px solid oklch(0.92 0.004 250 / 0.7);
+  background: var(--gv-theme-surface, oklch(0.995 0.002 250));
+  border: 1px solid var(--gv-theme-border, oklch(0.92 0.004 250 / 0.7));
   border-radius: 14px;
   padding: 12px;
   box-shadow:
@@ -141,8 +141,8 @@ html[data-gv-scheme='light'] .gv-folder-menu-item:hover {
 
 @media (prefers-color-scheme: dark) {
   .gv-color-picker-dialog {
-    background: oklch(0.2 0.008 285);
-    border-color: oklch(0.3 0.008 285 / 0.7);
+    background: var(--gv-theme-surface, oklch(0.2 0.008 285));
+    border-color: var(--gv-theme-border, oklch(0.3 0.008 285 / 0.7));
     box-shadow:
       0 12px 40px oklch(0 0 0 / 0.35),
       0 4px 16px oklch(0 0 0 / 0.2);
@@ -150,16 +150,16 @@ html[data-gv-scheme='light'] .gv-folder-menu-item:hover {
 }
 
 html[data-gv-scheme='dark'] .gv-color-picker-dialog {
-  background: oklch(0.2 0.008 285);
-  border-color: oklch(0.3 0.008 285 / 0.7);
+  background: var(--gv-theme-surface, oklch(0.2 0.008 285));
+  border-color: var(--gv-theme-border, oklch(0.3 0.008 285 / 0.7));
   box-shadow:
     0 12px 40px oklch(0 0 0 / 0.35),
     0 4px 16px oklch(0 0 0 / 0.2);
 }
 
 html[data-gv-scheme='light'] .gv-color-picker-dialog {
-  background: oklch(0.995 0.002 250);
-  border-color: oklch(0.92 0.004 250 / 0.7);
+  background: var(--gv-theme-surface, oklch(0.995 0.002 250));
+  border-color: var(--gv-theme-border, oklch(0.92 0.004 250 / 0.7));
 }
 
 .gv-color-picker-item {
@@ -282,7 +282,7 @@ html[data-gv-scheme='light'] .gv-color-picker-dialog {
 }
 
 .gv-folder-inline-cancel:hover {
-  color: #ef4444;
+  color: var(--gv-theme-danger, #ef4444);
   background-color: rgba(239, 68, 68, 0.1);
 }
 
@@ -323,8 +323,8 @@ html[data-gv-scheme='light'] .gv-color-picker-dialog {
 }
 
 .gv-folder-dialog {
-  background: oklch(0.995 0.002 250);
-  border: 1px solid oklch(0.92 0.004 250 / 0.7);
+  background: var(--gv-theme-surface, oklch(0.995 0.002 250));
+  border: 1px solid var(--gv-theme-border, oklch(0.92 0.004 250 / 0.7));
   border-radius: 18px;
   box-shadow:
     0 16px 48px oklch(0 0 0 / 0.12),
@@ -350,8 +350,8 @@ html[data-gv-scheme='light'] .gv-color-picker-dialog {
 
 @media (prefers-color-scheme: dark) {
   .gv-folder-dialog {
-    background: oklch(0.2 0.008 285);
-    border-color: oklch(0.3 0.008 285 / 0.7);
+    background: var(--gv-theme-surface, oklch(0.2 0.008 285));
+    border-color: var(--gv-theme-border, oklch(0.3 0.008 285 / 0.7));
     box-shadow:
       0 16px 48px oklch(0 0 0 / 0.4),
       0 6px 20px oklch(0 0 0 / 0.25);
@@ -359,42 +359,42 @@ html[data-gv-scheme='light'] .gv-color-picker-dialog {
 }
 
 html[data-gv-scheme='dark'] .gv-folder-dialog {
-  background: oklch(0.2 0.008 285);
-  border-color: oklch(0.3 0.008 285 / 0.7);
+  background: var(--gv-theme-surface, oklch(0.2 0.008 285));
+  border-color: var(--gv-theme-border, oklch(0.3 0.008 285 / 0.7));
   box-shadow:
     0 16px 48px oklch(0 0 0 / 0.4),
     0 6px 20px oklch(0 0 0 / 0.25);
 }
 
 html[data-gv-scheme='light'] .gv-folder-dialog {
-  background: oklch(0.995 0.002 250);
-  border-color: oklch(0.92 0.004 250 / 0.7);
+  background: var(--gv-theme-surface, oklch(0.995 0.002 250));
+  border-color: var(--gv-theme-border, oklch(0.92 0.004 250 / 0.7));
 }
 
 .gv-folder-dialog-title {
-  color: oklch(0.14 0.004 285);
+  color: var(--gv-theme-text, oklch(0.14 0.004 285));
   font-size: 17px;
   font-weight: 800;
   letter-spacing: -0.02em;
   padding: 16px 18px 12px 18px;
-  border-bottom: 1px solid oklch(0.92 0.004 250 / 0.5);
+  border-bottom: 1px solid var(--gv-theme-border, oklch(0.92 0.004 250 / 0.5));
 }
 
 @media (prefers-color-scheme: dark) {
   .gv-folder-dialog-title {
-    color: oklch(0.92 0.004 250);
-    border-bottom-color: oklch(0.3 0.008 285 / 0.5);
+    color: var(--gv-theme-text, oklch(0.92 0.004 250));
+    border-bottom-color: var(--gv-theme-border, oklch(0.3 0.008 285 / 0.5));
   }
 }
 
 html[data-gv-scheme='dark'] .gv-folder-dialog-title {
-  color: oklch(0.92 0.004 250);
-  border-bottom-color: oklch(0.3 0.008 285 / 0.5);
+  color: var(--gv-theme-text, oklch(0.92 0.004 250));
+  border-bottom-color: var(--gv-theme-border, oklch(0.3 0.008 285 / 0.5));
 }
 
 html[data-gv-scheme='light'] .gv-folder-dialog-title {
-  color: oklch(0.14 0.004 285);
-  border-bottom-color: oklch(0.92 0.004 250 / 0.5);
+  color: var(--gv-theme-text, oklch(0.14 0.004 285));
+  border-bottom-color: var(--gv-theme-border, oklch(0.92 0.004 250 / 0.5));
 }
 
 .gv-folder-dialog-search {
@@ -403,7 +403,7 @@ html[data-gv-scheme='light'] .gv-folder-dialog-title {
   border: 1px solid oklch(0.86 0.008 250 / 0.9);
   border-radius: 10px;
   background: oklch(0.98 0.002 250);
-  color: oklch(0.14 0.004 285);
+  color: var(--gv-theme-text, oklch(0.14 0.004 285));
   font: inherit;
   font-size: 13px;
   line-height: 1.3;
@@ -418,7 +418,7 @@ html[data-gv-scheme='light'] .gv-folder-dialog-title {
 html[data-gv-scheme='dark'] .gv-folder-dialog-search {
   background: oklch(0.24 0.008 285);
   border-color: oklch(0.36 0.008 285 / 0.9);
-  color: oklch(0.92 0.004 250);
+  color: var(--gv-theme-text, oklch(0.92 0.004 250));
 }
 
 html[data-gv-scheme='dark'] .gv-folder-dialog-search:focus {
@@ -443,7 +443,7 @@ html[data-gv-scheme='dark'] .gv-folder-dialog-search:focus {
   padding: 10px 12px;
   border: none;
   background: transparent;
-  color: oklch(0.14 0.004 285);
+  color: var(--gv-theme-text, oklch(0.14 0.004 285));
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -453,32 +453,32 @@ html[data-gv-scheme='dark'] .gv-folder-dialog-search:focus {
 }
 
 .gv-folder-dialog-item:not(:disabled):hover {
-  background: oklch(0.14 0.004 285 / 0.06);
+  background: var(--gv-theme-hover, oklch(0.14 0.004 285 / 0.06));
 }
 
 @media (prefers-color-scheme: dark) {
   .gv-folder-dialog-item {
-    color: oklch(0.92 0.004 250);
+    color: var(--gv-theme-text, oklch(0.92 0.004 250));
   }
   .gv-folder-dialog-item:not(:disabled):hover {
-    background: oklch(0.92 0.004 250 / 0.08);
+    background: var(--gv-theme-hover, oklch(0.92 0.004 250 / 0.08));
   }
 }
 
 html[data-gv-scheme='dark'] .gv-folder-dialog-item {
-  color: oklch(0.92 0.004 250);
+  color: var(--gv-theme-text, oklch(0.92 0.004 250));
 }
 
 html[data-gv-scheme='dark'] .gv-folder-dialog-item:not(:disabled):hover {
-  background: oklch(0.92 0.004 250 / 0.08);
+  background: var(--gv-theme-hover, oklch(0.92 0.004 250 / 0.08));
 }
 
 html[data-gv-scheme='light'] .gv-folder-dialog-item {
-  color: oklch(0.14 0.004 285);
+  color: var(--gv-theme-text, oklch(0.14 0.004 285));
 }
 
 html[data-gv-scheme='light'] .gv-folder-dialog-item:not(:disabled):hover {
-  background: oklch(0.14 0.004 285 / 0.06);
+  background: var(--gv-theme-hover, oklch(0.14 0.004 285 / 0.06));
 }
 
 .gv-folder-dialog-item:disabled {
@@ -512,33 +512,33 @@ html[data-gv-scheme='light'] .gv-folder-dialog-item:not(:disabled):hover {
 }
 
 .gv-folder-dialog-item-path {
-  color: oklch(0.5 0.01 285);
+  color: var(--gv-theme-text-muted, oklch(0.5 0.01 285));
   font-size: 11px;
   font-weight: 500;
   text-align: right;
 }
 
 html[data-gv-scheme='dark'] .gv-folder-dialog-item-path {
-  color: oklch(0.72 0.01 285);
+  color: var(--gv-theme-text-muted, oklch(0.72 0.01 285));
 }
 
 .gv-folder-dialog-empty {
   padding: 26px 12px;
-  color: oklch(0.5 0.01 285);
+  color: var(--gv-theme-text-muted, oklch(0.5 0.01 285));
   font-size: 13px;
   text-align: center;
 }
 
 html[data-gv-scheme='dark'] .gv-folder-dialog-empty {
-  color: oklch(0.72 0.01 285);
+  color: var(--gv-theme-text-muted, oklch(0.72 0.01 285));
 }
 
 .gv-folder-dialog-cancel {
   padding: 12px 18px;
   border: none;
-  border-top: 1px solid oklch(0.92 0.004 250 / 0.5);
+  border-top: 1px solid var(--gv-theme-border, oklch(0.92 0.004 250 / 0.5));
   background: transparent;
-  color: oklch(0.14 0.004 285);
+  color: var(--gv-theme-text, oklch(0.14 0.004 285));
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -547,13 +547,13 @@ html[data-gv-scheme='dark'] .gv-folder-dialog-empty {
 }
 
 .gv-folder-dialog-cancel:hover {
-  background: oklch(0.14 0.004 285 / 0.06);
+  background: var(--gv-theme-hover, oklch(0.14 0.004 285 / 0.06));
 }
 
 @media (prefers-color-scheme: dark) {
   .gv-folder-dialog-cancel {
-    color: oklch(0.92 0.004 250);
-    border-top-color: oklch(0.3 0.008 285 / 0.5);
+    color: var(--gv-theme-text, oklch(0.92 0.004 250));
+    border-top-color: var(--gv-theme-border, oklch(0.3 0.008 285 / 0.5));
   }
   .gv-folder-dialog-cancel:hover {
     background: oklch(0.92 0.004 250 / 0.06);
@@ -561,8 +561,8 @@ html[data-gv-scheme='dark'] .gv-folder-dialog-empty {
 }
 
 html[data-gv-scheme='dark'] .gv-folder-dialog-cancel {
-  color: oklch(0.92 0.004 250);
-  border-top-color: oklch(0.3 0.008 285 / 0.5);
+  color: var(--gv-theme-text, oklch(0.92 0.004 250));
+  border-top-color: var(--gv-theme-border, oklch(0.3 0.008 285 / 0.5));
 }
 
 html[data-gv-scheme='dark'] .gv-folder-dialog-cancel:hover {
@@ -570,10 +570,10 @@ html[data-gv-scheme='dark'] .gv-folder-dialog-cancel:hover {
 }
 
 html[data-gv-scheme='light'] .gv-folder-dialog-cancel {
-  color: oklch(0.14 0.004 285);
-  border-top-color: oklch(0.92 0.004 250 / 0.5);
+  color: var(--gv-theme-text, oklch(0.14 0.004 285));
+  border-top-color: var(--gv-theme-border, oklch(0.92 0.004 250 / 0.5));
 }
 
 html[data-gv-scheme='light'] .gv-folder-dialog-cancel:hover {
-  background: oklch(0.14 0.004 285 / 0.06);
+  background: var(--gv-theme-hover, oklch(0.14 0.004 285 / 0.06));
 }

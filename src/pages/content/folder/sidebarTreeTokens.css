@@ -79,7 +79,7 @@
   --gv-folder-tree-star-hover-bg: rgba(251, 191, 36, 0.12);
   --gv-folder-tree-star-active-hover-bg: rgba(251, 191, 36, 0.15);
   --gv-folder-tree-remove-hover-bg: rgba(239, 68, 68, 0.12);
-  --gv-folder-tree-remove-hover-color: #ef4444;
+  --gv-folder-tree-remove-hover-color: var(--gv-theme-danger, #ef4444);
   --gv-folder-tree-drop-ring: inset 0 0 0 1px rgba(66, 133, 244, 0.36);
 
   --gv-folder-tree-body-padding: 0 0 4px;
@@ -110,7 +110,7 @@
   --gv-folder-tree-save-hover-bg: rgba(16, 185, 129, 0.1);
   --gv-folder-tree-save-hover-color: #10b981;
   --gv-folder-tree-cancel-hover-bg: rgba(239, 68, 68, 0.1);
-  --gv-folder-tree-cancel-hover-color: #ef4444;
+  --gv-folder-tree-cancel-hover-color: var(--gv-theme-danger, #ef4444);
 
   --gv-folder-tree-empty-height: 220px;
   --gv-folder-tree-empty-direction: column;

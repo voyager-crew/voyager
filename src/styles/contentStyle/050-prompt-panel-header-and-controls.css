@@ -10,29 +10,29 @@
      larger on Claude/ChatGPT, and oversized on Gemini too) — keeps the Add
      button and all panel text consistent across every platform. */
   font-size: 14px;
-  --gv-pm-surface: oklch(0.995 0.002 250);
+  --gv-pm-surface: var(--gv-theme-surface, oklch(0.995 0.002 250));
   border-radius: 18px;
-  background: oklch(0.995 0.002 250);
-  border: 1px solid oklch(0.92 0.004 250 / 0.7);
+  background: var(--gv-theme-surface, oklch(0.995 0.002 250));
+  border: 1px solid var(--gv-theme-border, oklch(0.92 0.004 250 / 0.7));
   box-shadow: none;
   /* The panel must stay above both its trigger and the floating usage bar. */
   z-index: 2147483200;
-  color: oklch(0.14 0.004 285);
+  color: var(--gv-theme-text, oklch(0.14 0.004 285));
   font-family: var(--gv-ui-font);
 }
 
 html[data-gv-scheme='dark'] .gv-pm-panel {
-  --gv-pm-surface: oklch(0.2 0.008 285);
-  background: oklch(0.2 0.008 285);
-  color: oklch(0.92 0.004 250);
-  border-color: oklch(0.3 0.008 285 / 0.7);
+  --gv-pm-surface: var(--gv-theme-surface, oklch(0.2 0.008 285));
+  background: var(--gv-theme-surface, oklch(0.2 0.008 285));
+  color: var(--gv-theme-text, oklch(0.92 0.004 250));
+  border-color: var(--gv-theme-border, oklch(0.3 0.008 285 / 0.7));
 }
 
 html[data-gv-scheme='light'] .gv-pm-panel {
-  --gv-pm-surface: oklch(0.995 0.002 250);
-  background: oklch(0.995 0.002 250);
-  color: oklch(0.14 0.004 285);
-  border-color: oklch(0.92 0.004 250 / 0.7);
+  --gv-pm-surface: var(--gv-theme-surface, oklch(0.995 0.002 250));
+  background: var(--gv-theme-surface, oklch(0.995 0.002 250));
+  color: var(--gv-theme-text, oklch(0.14 0.004 285));
+  border-color: var(--gv-theme-border, oklch(0.92 0.004 250 / 0.7));
 }
 
 .gv-hidden {
@@ -45,7 +45,7 @@ html[data-gv-scheme='light'] .gv-pm-panel {
   justify-content: space-between;
   padding: 16px 18px;
   gap: 6px;
-  border-bottom: 1px solid oklch(0.92 0.004 250 / 0.5);
+  border-bottom: 1px solid var(--gv-theme-border, oklch(0.92 0.004 250 / 0.5));
   cursor: default;
 }
 
@@ -53,7 +53,7 @@ html[data-gv-scheme='light'] .gv-pm-panel {
   font-weight: 800;
   font-size: 17px;
   letter-spacing: -0.02em;
-  color: oklch(0.14 0.004 285);
+  color: var(--gv-theme-text, oklch(0.14 0.004 285));
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -64,11 +64,11 @@ html[data-gv-scheme='light'] .gv-pm-panel {
 }
 
 html[data-gv-scheme='dark'] .gv-pm-title {
-  color: oklch(0.92 0.004 250);
+  color: var(--gv-theme-text, oklch(0.92 0.004 250));
 }
 
 html[data-gv-scheme='light'] .gv-pm-title {
-  color: oklch(0.14 0.004 285);
+  color: var(--gv-theme-text, oklch(0.14 0.004 285));
 }
 
 /* The panel's name is drawn as the Voyager wordmark (src/core/icons/voyagerWordmark.ts);
@@ -108,7 +108,7 @@ html[data-gv-scheme='light'] .gv-pm-title {
   font-weight: 600;
   letter-spacing: 0.01em;
   text-decoration: none;
-  border: 1px solid oklch(0.92 0.004 250 / 0.5);
+  border: 1px solid var(--gv-theme-border, oklch(0.92 0.004 250 / 0.5));
   transition:
     background 160ms ease,
     border-color 160ms ease;

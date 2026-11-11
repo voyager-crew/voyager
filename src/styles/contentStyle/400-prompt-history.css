@@ -62,7 +62,7 @@ html[data-gv-scheme='dark'] .gv-ph-trigger {
   max-height: min(70vh, 560px, calc(100dvh - 144px));
   overflow: hidden;
   font-size: 14px;
-  --gv-pm-surface: oklch(0.995 0.002 250);
+  --gv-pm-surface: var(--gv-theme-surface, oklch(0.995 0.002 250));
   border-radius: 18px;
   background: var(--gv-pm-surface);
   border: 1px solid var(--gv-ui-border);
@@ -73,7 +73,7 @@ html[data-gv-scheme='dark'] .gv-ph-trigger {
 }
 
 html[data-gv-scheme='dark'] .gv-ph-panel {
-  --gv-pm-surface: oklch(0.2 0.008 285);
+  --gv-pm-surface: var(--gv-theme-surface, oklch(0.2 0.008 285));
 }
 
 .gv-ph-panel:focus-visible {

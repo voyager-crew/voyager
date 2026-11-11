@@ -22,6 +22,21 @@ afterEach(() => {
   document.documentElement.style.removeProperty('--gv-pm-brand-h');
 });
 
+const PUBLIC_ROLE = {
+  '--gv-pm-brand': 'accent',
+  '--gv-pm-brand-fg': 'accent-fg',
+  '--gv-pm-brand-h': 'accent-hue',
+} as const;
+
+/** The site value set inline on the root, read through the public variable it yields to. */
+function siteAccent(name: keyof typeof PUBLIC_ROLE): string {
+  const inline = document.documentElement.style.getPropertyValue(name);
+  if (inline === '') return '';
+  const prefix = `var(--gv-theme-${PUBLIC_ROLE[name]}, `;
+  expect(inline.startsWith(prefix) && inline.endsWith(')'), inline).toBe(true);
+  return inline.slice(prefix.length, -1);
+}
+
 const themedPlugin = (brand: string, matches: string[]): PluginManifest => ({
   id: 'x.themed',
   name: 'Themed',
@@ -69,7 +84,7 @@ describe('resolveBrandColor with a published site override', () => {
 
   it('paints the override colour on the document root', () => {
     applyBrandTheme('https://claude.ai/chat/1', [], document, {}, remoteClaude);
-    expect(document.documentElement.style.getPropertyValue('--gv-pm-brand')).toBe('#112233');
+    expect(siteAccent('--gv-pm-brand')).toBe('#112233');
     expect(document.documentElement.classList.contains(PLATFORM_THEME_CLASS)).toBe(true);
   });
 });
@@ -175,20 +190,30 @@ describe('applyBrandTheme', () => {
   it('sets the themed class + --gv-pm-brand on the root for a themed site', () => {
     applyBrandTheme('https://claude.ai/x', [], document);
     expect(document.documentElement.classList.contains(PLATFORM_THEME_CLASS)).toBe(true);
-    expect(document.documentElement.style.getPropertyValue('--gv-pm-brand')).toBe('#d97757');
+    expect(siteAccent('--gv-pm-brand')).toBe('#d97757');
+  });
+
+  it('lets a creation’s public accent variables outrank the inline site accent', () => {
+    applyBrandTheme('https://claude.ai/x', [], document);
+    const style = document.documentElement.style;
+    expect(style.getPropertyValue('--gv-pm-brand')).toBe('var(--gv-theme-accent, #d97757)');
+    expect(style.getPropertyValue('--gv-pm-brand-fg')).toBe('var(--gv-theme-accent-fg, #ffffff)');
+    expect(style.getPropertyValue('--gv-pm-brand-h')).toMatch(
+      /^var\(--gv-theme-accent-hue, [\d.]+\)$/,
+    );
   });
 
   it('applies the DeepSeek adapter colour to the Voyager UI root', () => {
     applyBrandTheme('https://chat.deepseek.com/a/chat/s/1', [], document);
     expect(document.documentElement.classList.contains(PLATFORM_THEME_CLASS)).toBe(true);
-    expect(document.documentElement.style.getPropertyValue('--gv-pm-brand')).toBe('#4d6bfe');
-    expect(document.documentElement.style.getPropertyValue('--gv-pm-brand-fg')).toBe('#ffffff');
+    expect(siteAccent('--gv-pm-brand')).toBe('#4d6bfe');
+    expect(siteAccent('--gv-pm-brand-fg')).toBe('#ffffff');
   });
 
   it('adds no accent on Gemini, but still names the platform', () => {
     applyBrandTheme('https://gemini.google.com/app', [], document);
     expect(document.documentElement.className).toBe('');
-    expect(document.documentElement.style.getPropertyValue('--gv-pm-brand')).toBe('');
+    expect(siteAccent('--gv-pm-brand')).toBe('');
     // A rule that belongs to one platform needs to name it. gv-platform-themed
     // only says "declares a brand", which three platforms do at once.
     expect(document.documentElement.getAttribute('data-gv-platform')).toBe('gemini');
@@ -211,32 +236,32 @@ describe('applyBrandTheme', () => {
     applyBrandTheme('https://claude.ai/x', [], document);
     applyBrandTheme('https://gemini.google.com/app', [], document);
     expect(document.documentElement.classList.contains(PLATFORM_THEME_CLASS)).toBe(false);
-    expect(document.documentElement.style.getPropertyValue('--gv-pm-brand')).toBe('');
-    expect(document.documentElement.style.getPropertyValue('--gv-pm-brand-fg')).toBe('');
+    expect(siteAccent('--gv-pm-brand')).toBe('');
+    expect(siteAccent('--gv-pm-brand-fg')).toBe('');
   });
 
   it('sets a luminance-matched --gv-pm-brand-fg alongside the brand', () => {
     applyBrandTheme('https://claude.ai/x', [], document); // #d97757 → white ink
-    expect(document.documentElement.style.getPropertyValue('--gv-pm-brand-fg')).toBe('#ffffff');
+    expect(siteAccent('--gv-pm-brand-fg')).toBe('#ffffff');
   });
 
   it('applies a per-site override (incl. on Gemini) with a readable foreground', () => {
     applyBrandTheme('https://gemini.google.com/app', [], document, { gemini: '#A7C080' });
     expect(document.documentElement.classList.contains(PLATFORM_THEME_CLASS)).toBe(true);
-    expect(document.documentElement.style.getPropertyValue('--gv-pm-brand')).toBe('#A7C080');
+    expect(siteAccent('--gv-pm-brand')).toBe('#A7C080');
     // Light sage → dark ink, not white.
-    expect(document.documentElement.style.getPropertyValue('--gv-pm-brand-fg')).not.toBe('#ffffff');
+    expect(siteAccent('--gv-pm-brand-fg')).not.toBe('#ffffff');
   });
 
   it('injects --gv-pm-brand-h so the tinted accent palette re-hues to the custom colour', () => {
     applyBrandTheme('https://gemini.google.com/app', [], document, { gemini: '#3a6df0' });
-    const hue = parseFloat(document.documentElement.style.getPropertyValue('--gv-pm-brand-h'));
+    const hue = parseFloat(siteAccent('--gv-pm-brand-h'));
     expect(Number.isFinite(hue)).toBe(true);
     expect(hue).toBeGreaterThanOrEqual(0);
     expect(hue).toBeLessThanOrEqual(360);
     // Clearing removes it so the theme-aware default hue stands again.
     applyBrandTheme('https://gemini.google.com/app', [], document);
-    expect(document.documentElement.style.getPropertyValue('--gv-pm-brand-h')).toBe('');
+    expect(siteAccent('--gv-pm-brand-h')).toBe('');
   });
 });
 
