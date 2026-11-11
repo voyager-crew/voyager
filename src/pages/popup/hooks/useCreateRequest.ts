@@ -29,20 +29,20 @@ export const CREATE_REQUEST_INPUT_ID = 'gv-create-request';
 
 /**
  * The Create card's one sentence and target site, and the text each copy
- * button hands over. The site starts as the active tab's; with no supported
- * tab the picker shows a default that nothing is compared against until the
- * user picks one.
+ * button hands over. The site follows the active tab's, which may resolve
+ * after the card mounts, until the user picks one. With no supported tab the
+ * picker shows a default that nothing is compared against.
  */
 export function useCreateRequest(activeUrl: string | undefined, t: CreateTranslate) {
   const sites = authoringSites();
   const [request, setRequestText] = useState('');
-  const [picked, setPicked] = useState(() => {
-    const activeSite = authoringSiteForUrl(activeUrl);
-    return { id: activeSite?.id ?? sites[0]?.id ?? '', chosen: activeSite !== null };
-  });
+  const [pickedId, setPickedId] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<CreateCopyOutcome | null>(null);
 
-  const site = sites.find((candidate) => candidate.id === picked.id) ?? null;
+  const activeSite = authoringSiteForUrl(activeUrl);
+  const siteId = pickedId ?? activeSite?.id ?? sites[0]?.id ?? '';
+  const chosen = pickedId !== null || activeSite !== null;
+  const site = sites.find((candidate) => candidate.id === siteId) ?? null;
 
   const setRequest = (value: string): void => {
     setRequestText(value);
@@ -50,7 +50,7 @@ export function useCreateRequest(activeUrl: string | undefined, t: CreateTransla
   };
 
   const pickSite = (id: string): void => {
-    setPicked({ id, chosen: true });
+    setPickedId(id);
     setOutcome(null);
   };
 
@@ -69,10 +69,10 @@ export function useCreateRequest(activeUrl: string | undefined, t: CreateTransla
     sites,
     request,
     setRequest,
-    siteId: picked.id,
+    siteId,
     pickSite,
     /** The site a pasted reply is compared with: only one the tab or the user chose. */
-    targetSite: picked.chosen ? site : null,
+    targetSite: chosen ? site : null,
     canCopy: site !== null && request.trim() !== '',
     copy,
     outcome,
