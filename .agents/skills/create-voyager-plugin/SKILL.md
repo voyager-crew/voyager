@@ -122,6 +122,10 @@ A native feature becomes a packaged official plugin that keeps its old setting a
   literal — a hard-coded hue is how the Vim HUD stayed Gemini green on DeepSeek.
   A rule for one platform only keys off `html[data-gv-platform='<id>']`;
   `gv-platform-themed` means "some brand applies" and three sites share it.
+- A creation recolours Voyager's own UI through the public, never-set
+  `--gv-theme-*` roles in `src/core/ui/themeVariables.ts`. A new chrome colour
+  reads `var(--gv-theme-<role>, <value>)`; `themeVariables.test.ts` keeps the
+  list and the styles in step.
 - Never hand-edit `dist_*` or `docs/public/catalog`; `catalog:build` writes the
   published catalog.
 
