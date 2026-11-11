@@ -82,7 +82,7 @@ When CSS and page changes can't do what you asked, such as counting your message
 The review marks such a creation with a **Runs code** badge.
 
 - **Read it**: the review lists the sites it runs on and shows its full source. It can read everything on those pages, and Voyager cannot stop it from sending what it reads elsewhere, so install only code you trust.
-- **Install and turn on**: turns on exactly the code you read. A later version from the AI stays off until you review it again, and the switch never syncs to your other devices.
+- **Install and turn on**: turns on exactly the code you read. If its code or sites change later, it pauses until you review it again, and the switch never syncs to your other devices.
 - **One-time switch**: Chrome lets an extension run such code only after you allow it. Choose **Open Voyager's details page**, turn on **Allow User Scripts** there (before Chrome 138, **Developer mode** at the top of `chrome://extensions`), then come back and choose **I turned it on**.
 - **Browsers**: desktop Chrome or Edge 133 or newer. On Safari, Firefox and phones it stays installed but paused; ask the AI for a version that only changes how the page looks.
 

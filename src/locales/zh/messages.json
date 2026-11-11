@@ -4359,7 +4359,7 @@
     "description": "Badge on a creation that runs JavaScript, in its review and its row"
   },
   "scriptedWarning": {
-    "message": "这个创造会在 {sites} 上运行代码。它能读取这些页面上的一切，包括你的对话，而 Voyager 无法阻止它把读到的内容发到别处。只有信任它时才打开。",
+    "message": "这个创造会在 {sites} 上运行代码。它能读取这些页面上的一切，包括你的对话，而 Voyager 无法阻止它把读到的内容发到别处。只有信任它时才开启。",
     "description": "The one warning shown above the full source of a creation that runs code; {sites} is a list of site names"
   },
   "scriptedSourceLabel": {
@@ -4367,19 +4367,19 @@
     "description": "Label above the full source code of a creation that runs code"
   },
   "scriptedInstallNote": {
-    "message": "装好后立即打开，只在这台设备上生效。你随时可以在「我的创造」或面板的「创造」标签里停止所有运行代码的创造。",
+    "message": "装好后立即开启，只在这台设备上生效。你随时可以在「我的创造」或面板的「创造」标签里停止所有运行代码的创造。",
     "description": "Under the review of a creation that runs code, before Install and turn on"
   },
   "scriptedInstallAndTurnOn": {
-    "message": "安装并打开",
+    "message": "安装并开启",
     "description": "Button under the review of a pasted reply that runs code"
   },
   "scriptedReviewAndTurnOn": {
-    "message": "查看并打开",
+    "message": "查看并开启",
     "description": "Button on an off creation that runs code: opens its full code before it can be turned on"
   },
   "scriptedTurnOn": {
-    "message": "打开",
+    "message": "开启",
     "description": "Button that turns on a creation that runs code after its review"
   },
   "scriptedTurnOff": {
@@ -4387,7 +4387,7 @@
     "description": "Button on a creation that runs code and is on"
   },
   "scriptedTurnedOn": {
-    "message": "已打开，只在这台设备上生效。",
+    "message": "已开启，只在这台设备上生效。",
     "description": "After installing a creation that runs code from a pasted reply"
   },
   "scriptedTurnOnDenied": {
@@ -4395,15 +4395,15 @@
     "description": "The browser did not grant site access, so a creation that runs code stays off"
   },
   "scriptedTurnOnFailed": {
-    "message": "Voyager 没能打开它，请再试一次。",
+    "message": "Voyager 没能开启它，请再试一次。",
     "description": "Voyager could not save the on state of a creation that runs code"
   },
   "scriptedChangedSinceReview": {
-    "message": "你查看期间它变了，所以没有打开任何东西。请先看一下现在显示的代码，再试一次。",
+    "message": "你查看期间它变了，所以没有开启任何东西。请先看一下现在显示的代码，再试一次。",
     "description": "A creation that runs code changed after its review opened, so nothing was turned on"
   },
   "scriptedStateOn": {
-    "message": "已打开，仅限这台设备",
+    "message": "已开启，仅限这台设备",
     "description": "Row state of a creation that runs code and is running"
   },
   "scriptedStateOff": {
@@ -4431,7 +4431,7 @@
     "description": "Pause reason: Voyager turned it off because a page stopped responding while it ran"
   },
   "scriptedPausedReview": {
-    "message": "打开之后它有改动，请重新查看",
+    "message": "开启之后它有改动，请重新查看",
     "description": "Pause reason: its code or sites changed since the user turned it on"
   },
   "scriptedSetupTitle": {
@@ -4451,7 +4451,7 @@
     "description": "Setup step 2 before Chrome 138: the Developer mode switch on the Extensions page; keep the English name in parentheses"
   },
   "scriptedSetupStepBack": {
-    "message": "回到这里，点「我打开了」。",
+    "message": "回到这里，点「我已开启」。",
     "description": "Setup step 3 for creations that run code"
   },
   "scriptedSetupOpen": {
@@ -4463,7 +4463,7 @@
     "description": "Shown when the browser refused to open the details page; the address follows"
   },
   "scriptedSetupDone": {
-    "message": "我打开了",
+    "message": "我已开启",
     "description": "Button the user presses after turning on the browser toggle; checks again"
   },
   "scriptedSetupChecking": {
@@ -4507,11 +4507,11 @@
     "description": "Button that undoes Stop all creations that run code"
   },
   "scriptedCrashOne": {
-    "message": "「{name}」运行时这个页面停止响应，Voyager 已把它关掉。重新打开前，请先在「我的创造」里查看它。",
+    "message": "「{name}」运行时这个页面停止响应，Voyager 已把它关掉。重新开启前，请先在「我的创造」里查看它。",
     "description": "Page notice after a freeze: one creation that runs code was turned off; {name} is its name"
   },
   "scriptedCrashMany": {
-    "message": "{names} 运行时这个页面停止响应，Voyager 已把它们关掉，其中任何一个都可能是原因。重新打开前，请先在「我的创造」里查看。",
+    "message": "{names} 运行时这个页面停止响应，Voyager 已把它们关掉，其中任何一个都可能是原因。重新开启前，请先在「我的创造」里查看。",
     "description": "Page notice after a freeze: several creations that run code were turned off; {names} lists them"
   }
 }

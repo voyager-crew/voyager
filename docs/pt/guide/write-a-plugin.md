@@ -83,12 +83,12 @@ A revisão marca uma criação assim com o distintivo **Executa código**.
 
 - **Leia-a**: a revisão mostra os sites onde corre e o código-fonte completo. Ela pode ler tudo o que está nessas páginas, e o Voyager não consegue impedir que envie para outro lado o que lê, por isso instale apenas código em que confia.
 - **Instalar e ativar**: ativa exatamente o código que leu. Uma versão posterior da IA fica desativada até a rever de novo, e o interruptor nunca é sincronizado com os seus outros dispositivos.
-- **Interruptor único**: o Chrome só deixa uma extensão executar este código depois de o permitir. Escolha **Abrir a página de detalhes do Voyager**, ative lá **Permitir scripts do utilizador** (Allow User Scripts; antes do Chrome 138, o **Modo de programador** no topo de `chrome://extensions`), volte e escolha **Já ativei**.
+- **Interruptor único**: o Chrome só deixa uma extensão executar este código depois de o permitir. Escolha **Abrir a página de detalhes do Voyager**, ative lá **Permitir scripts de usuário** (Allow User Scripts; antes do Chrome 138, o **Modo do desenvolvedor** no topo de `chrome://extensions`), volte e escolha **Já ativei**.
 - **Navegadores**: Chrome ou Edge para computador, versão 133 ou posterior. No Safari, no Firefox e em telemóveis fica instalada mas em pausa; peça à IA uma versão que só mude o aspeto da página.
 
 ### Manter o controlo
 
-Em **Minhas criações**, cada uma mostra **Ativada, só neste dispositivo**, **Desativada** ou **Em pausa** com o motivo.
+Em **Minhas criações**, cada uma mostra **Ativada, só neste dispositivo**, **Desativada** ou **Pausada** com o motivo.
 
 - **Parar tudo**: **Parar todas as criações que executam código**, em **Minhas criações** ou no separador **Criar** do painel, para todas de uma vez; **Retomar** volta a iniciá-las.
 - **Páginas abertas**: uma página já aberta continua a executá-las até ser recarregada. **Recarregar esta página** faz isso no separador atual.

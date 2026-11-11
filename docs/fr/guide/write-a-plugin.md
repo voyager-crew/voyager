@@ -83,7 +83,7 @@ La relecture signale une telle création par le badge **Exécute du code**.
 
 - **La lire** : la relecture indique les sites où elle s'exécute et affiche tout son code source. Elle peut lire tout ce qui se trouve sur ces pages, et Voyager ne peut pas l'empêcher d'envoyer ailleurs ce qu'elle lit : n'installez que du code auquel vous faites confiance.
 - **Installer et activer** : active exactement le code que vous avez lu. Une version ultérieure de l'IA reste désactivée jusqu'à une nouvelle relecture, et l'interrupteur n'est jamais synchronisé avec vos autres appareils.
-- **Réglage unique** : Chrome ne laisse une extension exécuter ce code qu'après votre autorisation. Choisissez **Ouvrir la page de détails de Voyager**, activez-y **Autoriser les scripts utilisateur** (Allow User Scripts ; avant Chrome 138, le **Mode développeur** en haut de `chrome://extensions`), puis revenez et choisissez **C'est activé**.
+- **Réglage unique** : Chrome ne laisse une extension exécuter ce code qu'après votre autorisation. Choisissez **Ouvrir la page de détails de Voyager**, activez-y **Autoriser les scripts utilisateur** (Allow User Scripts ; avant Chrome 138, le **Mode développeur** en haut de `chrome://extensions`), puis revenez et choisissez **Je l’ai activé**.
 - **Navigateurs** : Chrome ou Edge pour ordinateur, version 133 ou ultérieure. Sur Safari, Firefox et mobile, elle reste installée mais en pause ; demandez à l'IA une version qui change seulement l'apparence de la page.
 
 ### Garder la main

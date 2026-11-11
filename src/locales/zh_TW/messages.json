@@ -4451,7 +4451,7 @@
     "description": "Setup step 2 before Chrome 138: the Developer mode switch on the Extensions page; keep the English name in parentheses"
   },
   "scriptedSetupStepBack": {
-    "message": "回到這裡，按「我開啟了」。",
+    "message": "回到這裡，按「我已開啟」。",
     "description": "Setup step 3 for creations that run code"
   },
   "scriptedSetupOpen": {
@@ -4463,7 +4463,7 @@
     "description": "Shown when the browser refused to open the details page; the address follows"
   },
   "scriptedSetupDone": {
-    "message": "我開啟了",
+    "message": "我已開啟",
     "description": "Button the user presses after turning on the browser toggle; checks again"
   },
   "scriptedSetupChecking": {
