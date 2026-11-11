@@ -2862,16 +2862,12 @@
     "description": "Source label for a plugin the user imported locally"
   },
   "localPluginsTitle": {
-    "message": "Extensions locales",
-    "description": "Popup plugin page: title of the card for user-imported plugins"
+    "message": "Mes créations",
+    "description": "Popup: title of the My creations card, the user's own plugins and Create mode"
   },
   "localPluginsDescription": {
-    "message": "Importez une extension déclarative que vous avez écrite : un manifeste JSON avec son CSS intégré, ou le manifeste sélectionné avec ses fichiers .css. Elle passe les mêmes contrôles que les extensions officielles et reste désactivée jusqu'à ce que vous l'activiez.",
-    "description": "Popup plugin page: what importing a local plugin does"
-  },
-  "localPluginsNativeHint": {
-    "message": "Exécutez vos propres CSS et ajustements de page sur ce site. Les extensions importées restent désactivées jusqu'à ce que vous les activiez.",
-    "description": "Native popup (Gemini / AI Studio): hint on the collapsed Local plugins entry"
+    "message": "Mode création : dites ce qui doit changer, et une IA l’écrit sous forme de plugin. Voyager le vérifie et l’importe désactivé.",
+    "description": "Popup My creations card: what Create mode does, in one or two short sentences"
   },
   "localPluginsImportFiles": {
     "message": "Importer des fichiers",
@@ -2894,8 +2890,8 @@
     "description": "Popup plugin page: close the paste text box"
   },
   "localPluginsEmpty": {
-    "message": "Aucune extension locale pour l'instant.",
-    "description": "Popup plugin page: no local plugin is installed"
+    "message": "Aucune création pour l’instant.",
+    "description": "Popup My creations card: shown when the user has no creations yet"
   },
   "localPluginsImported": {
     "message": "{name} {version} importée. Elle est désactivée : vérifiez ce qu'elle fait ci-dessous, puis activez-la dans la liste des extensions.",
@@ -2933,14 +2929,6 @@
     "message": "Ce plugin a été réimporté pendant son activation : il reste désactivé. Vérifiez la nouvelle version, puis réactivez-le.",
     "description": "A local plugin was re-imported while the user was enabling it, so it was not enabled"
   },
-  "localPluginDescribeOpen": {
-    "message": "Décrire une modification",
-    "description": "Button that opens the one-sentence plugin flow"
-  },
-  "localPluginDescribeHint": {
-    "message": "Décrivez en une phrase ce qui doit changer sur un site. Voyager rédige un prompt que vous envoyez vous-même à l’IA de votre choix, puis vérifie la réponse que vous collez ici. Voyager n’envoie rien de lui-même.",
-    "description": "Explains the one-sentence plugin flow and that Voyager sends nothing"
-  },
   "localPluginDescribeRequestLabel": {
     "message": "Que faut-il changer ?",
     "description": "Label of the one-sentence request field"
@@ -2953,41 +2941,41 @@
     "message": "Site",
     "description": "Label of the target-site picker"
   },
-  "localPluginDescribeBuildPrompt": {
-    "message": "Rédiger le prompt",
-    "description": "Button that writes the AI prompt"
-  },
-  "localPluginDescribePromptLabel": {
-    "message": "Prompt pour votre IA",
-    "description": "Label of the generated prompt"
-  },
-  "localPluginDescribePromptHint": {
-    "message": "Collez-le vous-même dans le chat d’une IA, puis collez sa réponse complète ci-dessous.",
-    "description": "Tells the user to send the prompt themselves and paste the reply"
-  },
-  "localPluginDescribeCopy": {
-    "message": "Copier le prompt",
-    "description": "Button that copies the prompt"
-  },
   "localPluginDescribeCopied": {
     "message": "Copié",
     "description": "Shown after the prompt was copied"
   },
   "localPluginDescribeCopyFailed": {
-    "message": "Copie impossible. Sélectionnez le prompt et copiez-le vous-même.",
-    "description": "Shown when the clipboard refused the prompt"
+    "message": "Impossible de copier. Sélectionnez le texte ci-dessous et copiez-le vous-même.",
+    "description": "Shown when the clipboard refused a Create mode copy; the text is shown below to select"
   },
-  "localPluginSkillHint": {
-    "message": "Vous utilisez un agent de code ? Donnez-lui la skill de plugins de Voyager : il écrit plugin.json et style.css et les vérifie hors ligne ; choisissez ensuite les deux avec Importer des fichiers.",
-    "description": "Points coding-agent users at the public write-voyager-plugin skill"
+  "createModeCopyForChat": {
+    "message": "Copier pour ce chat",
+    "description": "Create mode button: copies the message for the AI chat on the current site"
   },
-  "localPluginSkillCopy": {
-    "message": "Copier le lien de la skill",
-    "description": "Button that copies the skill link"
+  "createModeCopyForAgent": {
+    "message": "Copier pour un agent local",
+    "description": "Create mode button: copies the instructions for a coding agent on the user's computer"
   },
-  "localPluginSkillCopyFailed": {
-    "message": "Copie impossible. Copiez ce lien vous-même :",
-    "description": "Shown with the link when the clipboard refused it"
+  "createModeChatHint": {
+    "message": "Collez-le dans le chat IA de ce site. L’IA lit la page de Voyager et répond avec le plugin.",
+    "description": "Create mode hint under the copy buttons: what to do with the chat message"
+  },
+  "createModeAgentHint": {
+    "message": "Donnez-le à votre agent de code, puis ajoutez les fichiers qu’il renvoie avec « {importFiles} », dans « {more} ».",
+    "description": "Create mode hint after copying for an agent. Keep {more} (the More ways to add label) and {importFiles} (the Import files label)"
+  },
+  "createModeMoreWays": {
+    "message": "Autres façons d’ajouter",
+    "description": "Disclosure in the My creations card that reveals Import files and Paste JSON"
+  },
+  "createModeCtaLead": {
+    "message": "Vous ne trouvez pas votre bonheur ?",
+    "description": "Line at the end of the plugin list, before the Create your own link"
+  },
+  "createModeCtaAction": {
+    "message": "Créez le vôtre",
+    "description": "Link at the end of the plugin list: scrolls to the Create mode field"
   },
   "createModeChatMessage": {
     "message": "Lis d’abord {pageUrl}, puis écris un plugin Voyager pour {site} qui fait ce que je demande ci-dessous. Mon moteur de plugins Voyager est en version {engine} : n’utilise rien de plus récent. Réponds avec exactement un bloc ```json qui contient le plugin complet.\n\nMa demande :\n{request}",
@@ -2998,8 +2986,8 @@
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
   "localPluginDescribeReplyLabel": {
-    "message": "Réponse de l’IA",
-    "description": "Label of the field for the AI reply"
+    "message": "Collez la réponse de l’IA",
+    "description": "Label of the field where the user pastes the AI reply"
   },
   "localPluginDescribeReplyPlaceholder": {
     "message": "Collez toute la réponse, ou seulement son JSON",
@@ -3146,7 +3134,7 @@
     "description": "Warning: the plugin does not run on the site the user picked"
   },
   "localPluginWarnTheme": {
-    "message": "Change la couleur d’accent de Voyager, ce que le prompt demandait à l’IA d’éviter.",
+    "message": "Change la couleur d’accent de Voyager, ce que Voyager a demandé à l’IA d’éviter.",
     "description": "Warning: the plugin changes the accent color although the prompt asked not to"
   },
   "localPluginWarnReplaces": {
@@ -3282,7 +3270,7 @@
     "description": "Note on a plugin that cannot run because it starts the same page-wide feature more than once"
   },
   "officialFeaturePausedByLocal": {
-    "message": "En pause sur cette page : votre extension locale « {name} » fait déjà la même chose. Désactivez celle dont vous n’avez pas besoin.",
+    "message": "En pause sur cette page : votre création « {name} » fait déjà la même chose. Désactivez celle dont vous n’avez pas besoin.",
     "description": "Note under a Gemini / AI Studio setting (formula copy, Vim mode) that is on but paused because a local plugin already runs the same feature; {name} is that plugin's name"
   },
   "pluginBlockedByOfficialSetting": {

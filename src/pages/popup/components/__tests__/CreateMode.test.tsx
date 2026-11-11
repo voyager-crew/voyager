@@ -4,73 +4,16 @@ import { type Root, createRoot } from 'react-dom/client';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import { type TranslationKey, loadTranslations } from '@/utils/translations';
 
 import { LocalPluginsPanel } from '../LocalPluginsPanel';
+import { AUTHORED, button, fenced, field, flush, setValue } from './createModeTestKit';
 
 const t = (key: string) => key;
+const en = await loadTranslations('en');
+const english = (key: string) => en[key as TranslationKey] ?? key;
 
-const AUTHORED = {
-  id: 'me.narrow',
-  name: 'Narrow messages',
-  version: '1.0.0',
-  description: 'Narrower user messages on Claude',
-  author: 'Me',
-  category: 'layout',
-  license: 'MIT',
-  engine: '>=1.0.0',
-  tier: 'declarative',
-  matches: ['https://claude.ai/*'],
-  contributes: {
-    styles: [{ css: '.gv-plugin-narrow{max-width:640px}' }],
-    domOps: [
-      {
-        op: 'addClass',
-        target: { kind: 'semantic', key: 'userTurn' },
-        className: 'gv-plugin-narrow',
-      },
-    ],
-  },
-};
-
-const fenced = (value: unknown) =>
-  `Sure! Here is your plugin:\n\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\`\n\nEnable it in Voyager.`;
-
-function button(container: HTMLElement, text: string): HTMLButtonElement {
-  const found = Array.from(container.querySelectorAll('button')).find((candidate) =>
-    candidate.textContent?.includes(text),
-  );
-  if (!found) throw new Error(`no button ${text}`);
-  return found;
-}
-
-function field(container: HTMLElement, placeholder: string): HTMLTextAreaElement {
-  const found = container.querySelector<HTMLTextAreaElement>(
-    `textarea[placeholder="${placeholder}"]`,
-  );
-  if (!found) throw new Error(`no field ${placeholder}`);
-  return found;
-}
-
-function setValue(element: HTMLTextAreaElement | HTMLSelectElement, value: string): void {
-  const proto =
-    element instanceof HTMLSelectElement
-      ? HTMLSelectElement.prototype
-      : HTMLTextAreaElement.prototype;
-  Object.getOwnPropertyDescriptor(proto, 'value')?.set?.call(element, value);
-  element.dispatchEvent(
-    new Event(element instanceof HTMLSelectElement ? 'change' : 'input', {
-      bubbles: true,
-    }),
-  );
-}
-
-async function flush(): Promise<void> {
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 0));
-  });
-}
-
-describe('describe a change → prompt → pasted reply → preview → import', () => {
+describe('Create mode: one sentence → copied for an AI → pasted reply → preview → import', () => {
   let container: HTMLDivElement;
   let root: Root;
   let memory: Record<string, unknown>;
@@ -119,10 +62,9 @@ describe('describe a change → prompt → pasted reply → preview → import',
     (chrome.storage.local.set as unknown as Mock).mockReset();
   });
 
-  async function openComposer(activeUrl?: string): Promise<void> {
-    await act(async () => root.render(<LocalPluginsPanel t={t} activeUrl={activeUrl} />));
+  async function openComposer(activeUrl?: string, translate = t): Promise<void> {
+    await act(async () => root.render(<LocalPluginsPanel t={translate} activeUrl={activeUrl} />));
     await flush();
-    await act(async () => button(container, 'localPluginDescribeOpen').click());
   }
 
   async function checkReply(reply: string): Promise<void> {
@@ -131,54 +73,71 @@ describe('describe a change → prompt → pasted reply → preview → import',
     await flush();
   }
 
-  it('preselects the active tab’s site and copies a prompt carrying the request', async () => {
-    await openComposer('https://claude.ai/chat/abc');
+  async function writeRequest(request: string): Promise<void> {
+    await act(async () =>
+      setValue(field(container, 'localPluginDescribeRequestPlaceholder'), request),
+    );
+  }
+
+  async function copy(label: string): Promise<void> {
+    await act(async () => button(container, label).click());
+    await flush();
+  }
+
+  it('shows the request field at rest and copies the chat message for the active tab’s site', async () => {
+    await openComposer('https://claude.ai/chat/abc', english);
     const select = container.querySelector('select') as HTMLSelectElement;
     expect(select.selectedOptions[0]?.textContent).toBe('Claude');
+    expect(button(container, english('createModeCopyForChat')).disabled).toBe(true);
 
     await act(async () =>
       setValue(
-        field(container, 'localPluginDescribeRequestPlaceholder'),
+        field(container, english('localPluginDescribeRequestPlaceholder')),
         'Make my messages narrower',
       ),
     );
-    await act(async () => button(container, 'localPluginDescribeBuildPrompt').click());
-    const prompt = container.querySelector<HTMLTextAreaElement>('textarea[readonly]');
-    expect(prompt?.value).toContain('Make my messages narrower');
-    expect(prompt?.value).toContain('https://claude.ai/*');
+    await copy(english('createModeCopyForChat'));
+    const message = String(writeText.mock.lastCall?.[0]);
+    expect(message).toContain('Make my messages narrower');
+    expect(message).toContain('https://voyager.nagi.fun/create/claude.md');
+    expect(message).toContain('```json');
+    expect(container.textContent).toContain(english('localPluginDescribeCopied'));
 
-    await act(async () => button(container, 'localPluginDescribeCopy').click());
-    await flush();
-    expect(writeText).toHaveBeenCalledWith(prompt?.value);
-    expect(container.textContent).toContain('localPluginDescribeCopied');
-
-    // Changing the site discards the prompt written for the old one.
+    // A new site makes the copied text stale, so the button offers to copy again.
     await act(async () => setValue(select, 'chatgpt'));
-    expect(container.querySelector('textarea[readonly]')).toBeNull();
-  });
-
-  it('copies the public plugin skill link for a coding agent, opening nothing', async () => {
-    await openComposer();
-    await act(async () => button(container, 'localPluginSkillCopy').click());
-    await flush();
-    expect(writeText).toHaveBeenCalledWith(
-      'https://voyager.nagi.fun/skills/write-voyager-plugin/SKILL.md',
+    expect(container.textContent).not.toContain(english('localPluginDescribeCopied'));
+    await copy(english('createModeCopyForChat'));
+    expect(String(writeText.mock.lastCall?.[0])).toContain(
+      'https://voyager.nagi.fun/create/chatgpt.md',
     );
-    expect(
-      container.querySelector('[data-testid="local-plugin-skill-link"]')?.textContent,
-    ).toContain('localPluginDescribeCopied');
   });
 
-  it('shows the skill link to copy by hand when the clipboard refuses it', async () => {
+  it('copies a coding agent handoff that names the skill, the check and the files to import', async () => {
+    await openComposer('https://chat.deepseek.com/', english);
+    await act(async () =>
+      setValue(field(container, english('localPluginDescribeRequestPlaceholder')), 'Hide the logo'),
+    );
+    await copy(english('createModeCopyForAgent'));
+    const handoff = String(writeText.mock.lastCall?.[0]);
+    expect(handoff).toContain('Hide the logo');
+    expect(handoff).toContain('DeepSeek');
+    expect(handoff).toContain('https://voyager.nagi.fun/skills/write-voyager-plugin/SKILL.md');
+    expect(handoff).toContain('npx create-voyager-plugin@latest check');
+    expect(container.textContent).toContain(english('localPluginsImportFiles'));
+    expect(container.textContent).toContain(english('createModeMoreWays'));
+  });
+
+  it('leaves the text on screen to copy by hand when the clipboard refuses it', async () => {
     writeText.mockRejectedValueOnce(new Error('denied'));
-    await openComposer();
-    await act(async () => button(container, 'localPluginSkillCopy').click());
-    await flush();
-    const link = container.querySelector<HTMLInputElement>(
-      '[data-testid="local-plugin-skill-link"] input[readonly]',
+    await openComposer('https://claude.ai/new');
+    await writeRequest('Narrower messages');
+    await copy('createModeCopyForAgent');
+    const fallback = container.querySelector<HTMLTextAreaElement>('textarea[readonly]');
+    expect(fallback?.value).toBe(String(writeText.mock.lastCall?.[0]));
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
+      'localPluginDescribeCopyFailed',
     );
-    expect(link?.value).toBe('https://voyager.nagi.fun/skills/write-voyager-plugin/SKILL.md');
-    expect(container.textContent).toContain('localPluginSkillCopyFailed');
+    expect(container.textContent).not.toContain('localPluginDescribeCopied');
   });
 
   it('shows why a reply was refused and stores nothing', async () => {
@@ -212,7 +171,7 @@ describe('describe a change → prompt → pasted reply → preview → import',
   });
 
   it('previews a pasted reply in a fresh popup, imports it off, and warns on a re-import', async () => {
-    // No prompt in this session: the popup closed while the user was in their AI tab.
+    // Nothing copied in this session: the popup closed while the user was in their AI tab.
     await openComposer();
     await checkReply(fenced(AUTHORED));
 
@@ -269,8 +228,8 @@ describe('describe a change → prompt → pasted reply → preview → import',
     ).toBe(false);
   });
 
-  it('compares a pasted reply with the selected site, live, without a prompt in this popup', async () => {
-    // Fresh popup on Gemini: the site defaults to the active tab, no prompt was written here.
+  it('compares a pasted reply with the selected site, live, with nothing copied in this popup', async () => {
+    // Fresh popup on Gemini: the site defaults to the active tab, nothing was copied here.
     await openComposer('https://gemini.google.com/app');
     await checkReply(fenced(AUTHORED));
     const warnings = () =>
@@ -433,12 +392,10 @@ describe('describe a change → prompt → pasted reply → preview → import',
     expect(button(container, 'localPluginDescribeCheck').disabled).toBe(false);
   });
 
-  it('warns when the reply does not run on the site the prompt was written for', async () => {
+  it('warns when the reply does not run on the site the message was copied for', async () => {
     await openComposer('https://chatgpt.com/');
-    await act(async () =>
-      setValue(field(container, 'localPluginDescribeRequestPlaceholder'), 'Narrower messages'),
-    );
-    await act(async () => button(container, 'localPluginDescribeBuildPrompt').click());
+    await writeRequest('Narrower messages');
+    await copy('createModeCopyForChat');
     await checkReply(fenced(AUTHORED));
     expect(container.querySelector('[data-testid="local-plugin-warnings"]')?.textContent).toContain(
       'localPluginWarnNotOnSite',
@@ -449,9 +406,7 @@ describe('describe a change → prompt → pasted reply → preview → import',
     const value = `--gv-plugin-pad:${'0 '.repeat(150)};display:none`;
     const fill = (key: string) =>
       key === 'localPluginChangeSetAttribute' ? `${key} {name}="{value}"` : key;
-    await act(async () => root.render(<LocalPluginsPanel t={fill} />));
-    await flush();
-    await act(async () => button(container, 'localPluginDescribeOpen').click());
+    await openComposer(undefined, fill);
     await checkReply(
       fenced({
         ...AUTHORED,

@@ -7,15 +7,16 @@ A user can run a declarative plugin they wrote without publishing it:
 1. Write `plugin.json` as in "Authoring a declarative plugin" ([overview](../README.md)), plus its `style.css` (or inline the CSS
    as `{ "css": "..." }`). Any lowercase reverse-dotted `id` works; it is stored
    as `local.<id>`.
-2. Open the popup and find **Local plugins**: on Claude, ChatGPT or DeepSeek it
-   sits on the plugin page; on Gemini and AI Studio it is a settings card
-   (collapsed until opened, or until a local plugin targets the page, which
-   then also shows its toggle and settings). By default it follows cloud sync
-   and the eight plugin topic cards and comes before folders through general
-   (`NATIVE_POPUP_SECTION_IDS` in `pages/popup/utils/nativeSiteCapabilities.ts`);
-   users can reorder it. Choose **Import files** (pick
-   the manifest together with its `.css` files) or **Paste JSON** (a manifest
-   with its CSS inlined).
+2. Open the popup and find **My creations** (`LocalPluginsPanel`): on Claude,
+   ChatGPT, DeepSeek or Kimi it sits under the plugin list; on Gemini and AI
+   Studio it is a settings card right below cloud sync by default
+   (`NATIVE_POPUP_SECTION_IDS` in `pages/popup/utils/nativeSiteCapabilities.ts`),
+   which users can reorder, and a local plugin that targets the page adds its
+   toggle and settings under it. A "Create your own" line at the end of each
+   plugin list scrolls to the card and focuses its Create field. Under the list
+   of creations, **More ways to add** holds **Import files** (pick the manifest
+   together with its `.css` files) and **Paste JSON** (a manifest with its CSS
+   inlined).
 3. A rejected import lists every problem as `path: message` and leaves the
    installed version untouched. An accepted one is stored **disabled** and its
    inspect view shows the sites it matches, the CSS size, every page change,
@@ -28,7 +29,7 @@ A user can run a declarative plugin they wrote without publishing it:
    ones do (D7). **Export** downloads the stored manifest with CSS inlined;
    **Remove** deletes it with its enable state and settings.
 
-**Writing it with an AI.** Describe a change, Create mode, the plugin contract and
+**Writing it with an AI.** Create mode, the reply check, the plugin contract and
 its generated outputs, and the offline CLI: [authoring/README.md](authoring/README.md).
 
 The gate (`local/validateLocalManifest.ts`) is the remote catalog's gate plus

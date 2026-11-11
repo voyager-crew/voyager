@@ -112,6 +112,8 @@ export interface PluginManagerProps {
    * and shows and writes the page host's coverage entry, not plugin state.
    */
   readonly promptSwitch?: PromptSwitch | null;
+  /** The last line of the card, after the list and its catalog controls. */
+  readonly footer?: ReactNode;
 }
 
 /**
@@ -132,6 +134,7 @@ export function PluginManager({
   timelineRail,
   officialRows,
   promptSwitch,
+  footer,
 }: PluginManagerProps) {
   const { t, language } = useLanguage();
   const { currentSiteId, currentSiteLabel } = usePluginSite(activeUrl);
@@ -365,6 +368,7 @@ export function PluginManager({
           refreshing={refreshing}
           {...catalog}
         />
+        {footer}
       </CardContent>
     </Card>
   );

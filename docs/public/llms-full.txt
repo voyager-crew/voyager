@@ -291,8 +291,8 @@ Add any site in the extension popup and the Prompt Manager follows you there, in
 
 Anyone can make a local plugin: a declarative `plugin.json` manifest plus CSS that changes how a supported site looks or is laid out. It runs no code, lives only in the browser, and needs no pull request. Voyager checks it on import, it starts switched off, and turning it off reverts every change.
 
-- **Describe it**: in the popup's Local plugins card, describe the change in one sentence, copy the generated prompt to any AI chat and paste its reply back. Voyager sends nothing itself.
-- **Coding agent**: give the agent https://voyager.nagi.fun/skills/write-voyager-plugin/SKILL.md, the full authoring contract (manifest fields, per-site anchors, primitives, limits). The agent writes `plugin.json` and `style.css`; the user imports both with Import files.
+- **In the chat**: in the popup's My creations card, write one sentence, Copy for this chat, paste it in that AI chat. The AI reads https://voyager.nagi.fun/create/<site>.md and replies with JSON to paste back.
+- **Coding agent**: Copy for a local agent points it at https://voyager.nagi.fun/skills/write-voyager-plugin/SKILL.md. It writes `plugin.json` and `style.css` to import.
 - **By hand**: `npx create-voyager-plugin@latest init my-plugin --site <gemini|aistudio|chatgpt|claude|deepseek>`, then `npx create-voyager-plugin@latest check my-plugin`, which runs the popup's import checks offline and exits 0 when the plugin would import.
 
 A plugin can add scoped `gv-` classes and CSS, set safe attributes and inline styles, hide elements, and offer boolean, number or select settings that reach CSS through `{{key}}` tokens. On ChatGPT, Claude and DeepSeek it can also enable Voyager primitives and tint Voyager's UI. It cannot run JavaScript, react to events, load network resources, read or rewrite message text, or run on unsupported sites.

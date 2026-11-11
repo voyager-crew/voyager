@@ -5,10 +5,12 @@ import { CHATGPT_EXPORT_PLUGIN_ID } from '@/features/plugins/builtin/chatgptExpo
 import type { TranslationKey } from '@/utils/translations';
 
 import { CHATGPT_LOCAL_BRIDGE_PLUGIN_ID } from '../hooks/useBridgeStatus';
+import { popupSectionAnchorId } from '../hooks/usePopupSections';
 import type { PromptDataTransferController } from '../hooks/usePromptDataTransfer';
 import type { PromptSwitch } from '../hooks/usePromptSwitch';
 import { ChatGptBridgeCard } from './ChatGptBridgeCard';
 import { ChatGptExportCard } from './ChatGptExportCard';
+import { CreateYourOwnLine } from './CreateYourOwnLine';
 import { LocalPluginsPanel } from './LocalPluginsPanel';
 import { PluginManager } from './PluginManager';
 import { PromptDataTransfer } from './PromptDataTransfer';
@@ -18,6 +20,7 @@ export function PluginSiteSettings({
   promptDataTransfer,
   plugins,
   exportEntry,
+  dir,
   t,
 }: {
   /** Prompt Manager's switch on the open page; null where no catalog plugin binds its host. */
@@ -30,6 +33,8 @@ export function PluginSiteSettings({
     activeTabId: number | null;
     onOpened?: () => void;
   };
+  /** The popup sets no direction, so the My creations card mirrors itself for RTL languages. */
+  dir?: 'rtl';
   t: (key: TranslationKey) => string;
 }) {
   // Listed only where the exporter's `matches` cover the active tab (ChatGPT).
@@ -58,8 +63,14 @@ export function PluginSiteSettings({
         </CardContent>
       </Card>
       <div style={{ order: -1 }} className="flex flex-col gap-4">
-        <PluginManager {...plugins} promptSwitch={promptSwitch} />
-        <LocalPluginsPanel t={t} activeUrl={plugins.activeUrl} />
+        <PluginManager
+          {...plugins}
+          promptSwitch={promptSwitch}
+          footer={<CreateYourOwnLine dir={dir} t={t} />}
+        />
+        <div id={popupSectionAnchorId('localPlugins')}>
+          <LocalPluginsPanel dir={dir} t={t} activeUrl={plugins.activeUrl} />
+        </div>
       </div>
     </>
   );

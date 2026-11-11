@@ -60,17 +60,13 @@ describe('NativeLocalPluginsSection', () => {
       ),
     );
 
-  it('stays one collapsed entry on Gemini until opened, then shows the import card', async () => {
+  it('shows the My creations card at rest, with no toggles while nothing targets this page', async () => {
     await render([]);
-    expect(container.textContent).toContain('localPluginsTitle');
-    expect(container.querySelector('[data-testid="local-plugins-panel"]')).toBeNull();
-
-    await act(async () => (container.querySelector('button') as HTMLButtonElement).click());
     expect(container.querySelector('[data-testid="local-plugins-panel"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="plugin-manager"]')).toBeNull();
   });
 
-  it('opens with toggles for the local plugins that target this page, and only those', async () => {
+  it('adds toggles for the local plugins that target this page, and only those', async () => {
     await render([plugin('local.me.tweak'), plugin('voyager.not-local')]);
     expect(container.querySelector('[data-testid="plugin-manager"]')?.textContent).toBe(
       'local.me.tweak',

@@ -196,7 +196,7 @@ describe('Popup settings integration', () => {
       },
     };
     await mount();
-    // The page targets a local plugin, so the entry opens with its toggle and the import card.
+    // The page targets a local plugin, so its toggle shows beside the My creations card.
     expect(container.textContent).toContain('My Gemini tweak');
     expect(container.textContent).toContain(en.localPluginsTitle);
     expect(container.querySelector('#folder-enabled')).not.toBeNull();
@@ -270,13 +270,17 @@ describe('Popup settings integration', () => {
     }
   });
 
-  it('keeps the native local plugins entry off plugin sites, which have their own plugin page', async () => {
+  it('shows one My creations card with its Create field open, on Gemini and on a plugin site', async () => {
+    const createFields = () =>
+      [...container.querySelectorAll('textarea')].filter(
+        (field) => field.labels?.[0]?.textContent === en.localPluginDescribeRequestLabel,
+      );
     await mount();
-    expect(container.textContent).toContain(en.localPluginsNativeHint);
+    expect(createFields()).toHaveLength(1);
     await unmount();
     extensionApi.tabs.query.mockResolvedValue([{ id: 9, url: 'https://claude.ai/new' }]);
     await mount();
-    expect(container.textContent).not.toContain(en.localPluginsNativeHint);
+    expect(createFields()).toHaveLength(1);
     expect(container.textContent).toContain(en.localPluginsTitle);
   });
 

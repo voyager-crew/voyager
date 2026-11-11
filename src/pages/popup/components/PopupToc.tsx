@@ -29,14 +29,21 @@ function prefersReducedMotion(): boolean {
 
 /**
  * Bring a section's card to the top of the popup, just below the sticky
- * header, and move focus to its title so the keyboard continues from there.
+ * header, and move focus to its title, or to the field `focusId` names inside
+ * it, so the keyboard continues from there.
  */
-export function scrollToPopupSection(id: PopupSectionId, header: HTMLElement | null): void {
+export function scrollToPopupSection(
+  id: PopupSectionId,
+  header: HTMLElement | null,
+  focusId?: string,
+): void {
   const target = document.getElementById(popupSectionAnchorId(id));
   if (!target) return;
-  // A card without a title (the collapsed Local plugins card) takes focus itself.
-  const landing = target.querySelector<HTMLElement>('h2, h3') ?? target;
-  if (!landing.hasAttribute('tabindex')) landing.setAttribute('tabindex', '-1');
+  const named = focusId ? document.getElementById(focusId) : null;
+  const field = named && target.contains(named) ? named : null;
+  // A card without a title takes focus itself.
+  const landing = field ?? target.querySelector<HTMLElement>('h2, h3') ?? target;
+  if (!field && !landing.hasAttribute('tabindex')) landing.setAttribute('tabindex', '-1');
   landing.focus({ preventScroll: true });
   target.style.scrollMarginTop = `${(header?.offsetHeight ?? 0) + SCROLL_GAP_PX}px`;
   target.scrollIntoView({ block: 'start', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });

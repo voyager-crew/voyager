@@ -17,6 +17,7 @@ import { isPluginEnabled } from '@/features/plugins/storage/pluginDefaults';
 import { AiStudioEnableCard } from './components/AiStudioEnableCard';
 import { CatalogTimelineOptions } from './components/CatalogTimelineOptions';
 import { CloudSyncSettings } from './components/CloudSyncSettings';
+import { TopicCardsCreateLine } from './components/CreateYourOwnLine';
 import { DiagnosticsExportCard } from './components/DiagnosticsExportCard';
 import { FolderSettingsCard } from './components/FolderSettingsCard';
 import { KeyboardShortcutSettings } from './components/KeyboardShortcutSettings';
@@ -345,6 +346,7 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
               // toolbar popup should get out of the way of the opened dialog.
               onOpened: sourceTabId === undefined ? () => window.close() : undefined,
             }}
+            dir={rtl}
             t={t}
           />
         )}
@@ -420,7 +422,8 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
           language={language}
           t={t}
         />
-        {/* Gemini / AI Studio have no plugin page; local plugins get one section here. */}
+        {!isPluginSite && <TopicCardsCreateLine sections={sections} dir={rtl} t={t} />}
+        {/* Gemini / AI Studio have no plugin page; My creations gets one section here. */}
         {wrapSection(
           'localPlugins',
           <NativeLocalPluginsSection
@@ -432,6 +435,7 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
               blockedUpdates: plugins.pluginBlockedUpdates,
               statuses: plugins.pluginStatuses,
             }}
+            dir={rtl}
             t={t}
           />,
         )}

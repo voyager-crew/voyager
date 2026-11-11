@@ -1,29 +1,35 @@
 # 撰寫自己的外掛
 
+創造模式能把一句話變成外掛：你說想改什麼，AI 來寫外掛，Voyager 檢查後再匯入。它在 Voyager popup 的「我的創造」卡片裡，做出來的是本機外掛。
+
 本機外掛是你為自己做的外掛：它能改變 Gemini、AI Studio、ChatGPT、Claude、DeepSeek 或 Kimi 的外觀與版面，只存在你的瀏覽器裡，不需要發 PR，也不需要 Voyager 的原始碼。
 
 和所有 Voyager 外掛一樣，它是宣告式的：一份 `plugin.json` 清單加上 CSS，本身不執行任何程式碼。Voyager 會在匯入時檢查它、套用它的修改，關閉時再把所有修改全部還原。匯入的外掛預設是關閉的，你可以先看過一遍再開啟。
 
 ## 三種做法
 
-### 用一句話描述，交給任何 AI 來寫
+三種做法最後都回到「我的創造」。在 Gemini 和 AI Studio 上，它是一張設定卡片，預設緊接在「雲端同步」下方，你也可以調整它的位置；popup 頂部的「跳至」目錄能直接跳過去。在 ChatGPT、Claude、DeepSeek 和 Kimi 上，它在外掛清單下方。外掛清單末尾的「自己創造一個」會直接帶你到它的輸入框。
 
-1. 打開想要改造的網站，打開 Voyager popup，找到「本機外掛」卡片（在 Gemini 和 AI Studio 上，它是設定裡的最後一項）。
-2. 選擇「用一句話改造介面」，寫下一句話（例如「讓我的訊息窄一點，並隱藏側邊欄」），再選擇「產生提示詞」。
-3. 自己把提示詞複製到任何 AI 對話裡，再把它的完整回覆貼回來，選擇「檢查回覆」。
-4. Voyager 會用白話說明這個外掛改了什麼。匯入之後，到外掛清單裡把它開啟。
+前兩種做法都從一句話開始。在「想改什麼？」下面寫一句話（例如「讓我的訊息窄一點，並隱藏側邊欄」）。下方的「網站」預設是目前分頁的網站；外掛要用在別的網站時，改一下即可。
 
-Voyager 不會把提示詞送到任何地方：要用哪個 AI 由你決定，文字也由你自己來回搬。
+### 複製到目前對話
 
-### 交給程式設計 Agent
+1. 選擇「複製到目前對話」，把訊息貼到該網站的 AI 對話裡。
+2. AI 會先讀 Voyager 為該網站準備的說明頁（例如 `https://voyager.nagi.fun/create/claude.md`），然後只回覆一個 JSON 程式碼區塊。AI 必須能打開連結。
+3. 把完整回覆貼到「貼上 AI 的回覆」，選擇「檢查回覆」。
+4. Voyager 會用白話說明這個外掛改了什麼。選擇「匯入」，再到外掛清單裡把它開啟。在 Gemini 和 AI Studio 上，它的開關就在卡片下方。
 
-如果你在用程式設計 Agent（Claude Code、Codex、Cursor 等），把 Voyager 的外掛 skill 給它：
+Voyager 自己不會送出任何東西。訊息由你貼過去，回覆也由你帶回來。
+
+### 複製給本機 Agent
+
+如果你在用程式設計 Agent（Claude Code、Codex、Cursor 等），選擇「複製給本機 Agent」，把這段文字交給它。文字會請 Agent 按照 Voyager 的外掛 skill 來寫：
 
 ```text
 https://voyager.nagi.fun/skills/write-voyager-plugin/SKILL.md
 ```
 
-在「本機外掛」卡片裡打開「用一句話改造介面」，就會看到「複製 skill 連結」按鈕。這個 skill 收錄了完整的規範：清單欄位、每個網站宣告了哪些東西、可用的原語，以及外掛做不到的事。告訴 Agent 你想要的修改，它會建立資料夾、寫好 `plugin.json` 和 `style.css`，並在離線狀態下完成檢查。接著在 popup 裡選擇「匯入檔案」，選取這兩個檔案就行了。
+這個 skill 收錄了完整的規範：清單欄位、每個網站宣告了哪些東西、可用的原語，以及外掛做不到的事。Agent 會寫好 `plugin.json` 和 `style.css`，執行 `npx create-voyager-plugin@latest check` 直到通過，再把兩個檔案交回給你。在「我的創造」裡展開「更多新增方式」，選擇「匯入檔案」，選取這兩個檔案就行了。
 
 想讓 Agent 一直帶著這個 skill，可以把檔案存成 Agent skills 資料夾下的 `write-voyager-plugin/SKILL.md`（Claude Code 是 `~/.claude/skills/`）。
 
@@ -40,6 +46,8 @@ npx create-voyager-plugin@latest check my-plugin
 `init` 會產生一份已經能通過檢查的 `plugin.json` 和 `style.css`，另外附上一份寫有該網站規則的 `AGENTS.md`。`--site` 可以填 `gemini`、`aistudio`、`chatgpt`、`claude`、`deepseek` 或 `kimi`。
 
 `check` 會離線執行和 popup 匯入時完全相同的檢查。外掛能順利匯入時以結束代碼 0 結束，否則每個問題輸出一行 `path: message`。加上 `--json` 可以取得機器可讀的輸出。
+
+檢查通過後，同樣在「更多新增方式」裡用「匯入檔案」匯入這兩個檔案。
 
 ## 外掛能做什麼
 
@@ -68,7 +76,7 @@ Gemini 個人版現已支援本機 `turnNavigator`：設定 `params.dataBackend:
 
 ## 分享
 
-本機外掛只存在你的瀏覽器裡；想搬到別的地方用，就在外掛清單裡匯出它的 JSON。如果它對大家都有幫助，可以提議收進官方外掛目錄，流程請見[外掛貢獻說明](./plugin-contribution.md)。
+本機外掛只存在你的瀏覽器裡。想搬到別的地方用，就在「我的創造」清單裡對它選擇「匯出」，再到那邊匯入這個 JSON 檔案。如果它對大家都有幫助，可以提議收進官方外掛目錄，流程請見[外掛貢獻說明](./plugin-contribution.md)。
 
 所有網站每頁只能執行一個傳送快捷鍵外掛；已有外掛占用傳送模式時，另一個顯示衝突並暫停。可選 `mode`（需要 `"engine": ">=1.9.0"`）為 `ctrlEnterSends`（預設）或 `enterSends`。輸入法確認鍵不會觸發傳送。Gemini 和 AI Studio 現已開放，支援模式見下文。
 

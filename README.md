@@ -118,8 +118,8 @@ Gemini also gets [Deep Research export](https://voyager.nagi.fun/en/guide/deep-r
 
 A plugin you write lives only in your browser and needs no pull request.
 
-- **Describe it.** In the popup's **Local plugins** card, choose **Describe a change**, write one sentence, and carry the prompt to any AI you like. Voyager checks the reply and shows what it changes before you import it.
-- **Hand it to a coding agent.** Give Claude Code, Codex or Cursor the skill at `https://voyager.nagi.fun/skills/write-voyager-plugin/SKILL.md`.
+- **Ask the AI you are chatting with.** In the popup's **My creations** card, write one sentence and choose **Copy for this chat**. Paste it into the chat; Voyager checks the reply and shows what it changes before you import it.
+- **Hand it to a coding agent.** **Copy for a local agent** gives Claude Code, Codex or Cursor your request and the skill at `https://voyager.nagi.fun/skills/write-voyager-plugin/SKILL.md`.
 - **Write it by hand.** `npx create-voyager-plugin@latest init my-plugin --site claude`, then `check` runs the same checks as the import.
 
 A plugin cannot run scripts, load anything from the network or read what your messages say. [What a plugin can do](https://voyager.nagi.fun/en/guide/write-a-plugin)

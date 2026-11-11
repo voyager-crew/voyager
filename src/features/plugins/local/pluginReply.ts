@@ -1,5 +1,5 @@
 /**
- * Read an AI's reply to the authoring prompt (`pluginAuthoringPrompt.ts`): find
+ * Read an AI's reply to the Create mode message (`creationMessage.ts`): find
  * the one manifest in it, then run the same read and gate as a pasted
  * `plugin.json` (`readLocalPluginFiles`, `validateLocalManifest`). Nothing here
  * installs anything; the popup previews the result and imports the exact

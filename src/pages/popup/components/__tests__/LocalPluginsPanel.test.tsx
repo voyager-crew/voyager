@@ -96,7 +96,9 @@ describe('LocalPluginsPanel import flow', () => {
   });
 
   async function pasteAndImport(manifest: Record<string, unknown>): Promise<void> {
-    const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+    const textarea = container.querySelector(
+      'textarea[aria-label="localPluginsPasteLabel"]',
+    ) as HTMLTextAreaElement;
     await act(async () => setTextarea(textarea, JSON.stringify(manifest)));
     await act(async () => button(container, 'localPluginsCheckAndImport').click());
     await flush();
@@ -107,6 +109,7 @@ describe('LocalPluginsPanel import flow', () => {
     await flush();
     expect(container.textContent).toContain('localPluginsEmpty');
 
+    await act(async () => button(container, 'createModeMoreWays').click());
     await act(async () => button(container, 'localPluginsPasteJson').click());
     await pasteAndImport(authored());
 

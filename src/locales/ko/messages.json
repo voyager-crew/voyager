@@ -2862,16 +2862,12 @@
     "description": "Source label for a plugin the user imported locally"
   },
   "localPluginsTitle": {
-    "message": "로컬 플러그인",
-    "description": "Popup plugin page: title of the card for user-imported plugins"
+    "message": "내 창작물",
+    "description": "Popup: title of the My creations card, the user's own plugins and Create mode"
   },
   "localPluginsDescription": {
-    "message": "직접 작성한 선언형 플러그인을 가져옵니다. CSS를 포함한 매니페스트 JSON을 고르거나, 매니페스트와 .css 파일을 함께 선택하세요. 공식 플러그인과 같은 검사를 거치며, 직접 켜기 전까지 꺼진 상태로 유지됩니다.",
-    "description": "Popup plugin page: what importing a local plugin does"
-  },
-  "localPluginsNativeHint": {
-    "message": "이 사이트에서 직접 만든 CSS와 페이지 조정을 실행합니다. 가져온 플러그인은 직접 켜기 전까지 꺼져 있습니다.",
-    "description": "Native popup (Gemini / AI Studio): hint on the collapsed Local plugins entry"
+    "message": "창작 모드: 바꾸고 싶은 점을 말하면 AI가 플러그인으로 만들어 줍니다. Voyager가 검사한 뒤 꺼진 상태로 가져옵니다.",
+    "description": "Popup My creations card: what Create mode does, in one or two short sentences"
   },
   "localPluginsImportFiles": {
     "message": "파일 가져오기",
@@ -2894,8 +2890,8 @@
     "description": "Popup plugin page: close the paste text box"
   },
   "localPluginsEmpty": {
-    "message": "아직 로컬 플러그인이 없습니다.",
-    "description": "Popup plugin page: no local plugin is installed"
+    "message": "아직 만든 것이 없습니다.",
+    "description": "Popup My creations card: shown when the user has no creations yet"
   },
   "localPluginsImported": {
     "message": "{name} {version}을(를) 가져왔습니다. 지금은 꺼져 있습니다. 아래에서 동작을 확인한 뒤 플러그인 목록에서 켜세요.",
@@ -2933,14 +2929,6 @@
     "message": "켜는 도중 이 플러그인을 다시 가져와서 꺼진 상태로 유지됩니다. 새 버전을 확인한 뒤 다시 켜 주세요.",
     "description": "A local plugin was re-imported while the user was enabling it, so it was not enabled"
   },
-  "localPluginDescribeOpen": {
-    "message": "한 문장으로 화면 바꾸기",
-    "description": "Button that opens the one-sentence plugin flow"
-  },
-  "localPluginDescribeHint": {
-    "message": "사이트에서 바꾸고 싶은 점을 한 문장으로 적어 주세요. Voyager가 프롬프트를 만들어 드리면 원하는 AI에 직접 보내고, 받은 답변을 붙여 넣으면 Voyager가 검사합니다. Voyager가 스스로 보내는 것은 없습니다.",
-    "description": "Explains the one-sentence plugin flow and that Voyager sends nothing"
-  },
   "localPluginDescribeRequestLabel": {
     "message": "무엇을 바꿀까요?",
     "description": "Label of the one-sentence request field"
@@ -2953,41 +2941,41 @@
     "message": "사이트",
     "description": "Label of the target-site picker"
   },
-  "localPluginDescribeBuildPrompt": {
-    "message": "프롬프트 만들기",
-    "description": "Button that writes the AI prompt"
-  },
-  "localPluginDescribePromptLabel": {
-    "message": "AI에게 보낼 프롬프트",
-    "description": "Label of the generated prompt"
-  },
-  "localPluginDescribePromptHint": {
-    "message": "원하는 AI 채팅에 직접 붙여 넣은 뒤, 받은 답변 전체를 아래에 붙여 넣으세요.",
-    "description": "Tells the user to send the prompt themselves and paste the reply"
-  },
-  "localPluginDescribeCopy": {
-    "message": "프롬프트 복사",
-    "description": "Button that copies the prompt"
-  },
   "localPluginDescribeCopied": {
     "message": "복사됨",
     "description": "Shown after the prompt was copied"
   },
   "localPluginDescribeCopyFailed": {
-    "message": "복사하지 못했습니다. 프롬프트를 선택해 직접 복사하세요.",
-    "description": "Shown when the clipboard refused the prompt"
+    "message": "복사하지 못했습니다. 아래 텍스트를 선택해 직접 복사하세요.",
+    "description": "Shown when the clipboard refused a Create mode copy; the text is shown below to select"
   },
-  "localPluginSkillHint": {
-    "message": "코딩 에이전트를 쓰고 있나요? Voyager 플러그인 skill을 건네면 plugin.json과 style.css를 작성하고 오프라인으로 검사합니다. 그다음 「파일 가져오기」로 두 파일을 고르세요.",
-    "description": "Points coding-agent users at the public write-voyager-plugin skill"
+  "createModeCopyForChat": {
+    "message": "이 채팅용으로 복사",
+    "description": "Create mode button: copies the message for the AI chat on the current site"
   },
-  "localPluginSkillCopy": {
-    "message": "skill 링크 복사",
-    "description": "Button that copies the skill link"
+  "createModeCopyForAgent": {
+    "message": "로컬 에이전트용으로 복사",
+    "description": "Create mode button: copies the instructions for a coding agent on the user's computer"
   },
-  "localPluginSkillCopyFailed": {
-    "message": "복사하지 못했습니다. 이 링크를 직접 복사하세요:",
-    "description": "Shown with the link when the clipboard refused it"
+  "createModeChatHint": {
+    "message": "이 사이트의 AI 채팅에 붙여 넣으세요. AI가 Voyager 페이지를 읽고 플러그인으로 답합니다.",
+    "description": "Create mode hint under the copy buttons: what to do with the chat message"
+  },
+  "createModeAgentHint": {
+    "message": "코딩 에이전트에게 건넨 뒤, 돌려받은 파일을 ‘{more}’의 ‘{importFiles}’로 추가하세요.",
+    "description": "Create mode hint after copying for an agent. Keep {more} (the More ways to add label) and {importFiles} (the Import files label)"
+  },
+  "createModeMoreWays": {
+    "message": "다른 추가 방법",
+    "description": "Disclosure in the My creations card that reveals Import files and Paste JSON"
+  },
+  "createModeCtaLead": {
+    "message": "원하는 기능이 없나요?",
+    "description": "Line at the end of the plugin list, before the Create your own link"
+  },
+  "createModeCtaAction": {
+    "message": "직접 만들기",
+    "description": "Link at the end of the plugin list: scrolls to the Create mode field"
   },
   "createModeChatMessage": {
     "message": "먼저 {pageUrl} 를 읽은 다음, 아래 요청대로 동작하는 {site}용 Voyager 플러그인을 작성해 주세요. 제 Voyager 플러그인 엔진은 {engine}이니 그보다 새로운 기능은 쓰지 마세요. 답장에는 플러그인 전체를 담은 ```json 블록을 딱 하나만 넣어 주세요.\n\n요청:\n{request}",
@@ -2998,8 +2986,8 @@
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
   "localPluginDescribeReplyLabel": {
-    "message": "AI의 답변",
-    "description": "Label of the field for the AI reply"
+    "message": "AI 답변 붙여넣기",
+    "description": "Label of the field where the user pastes the AI reply"
   },
   "localPluginDescribeReplyPlaceholder": {
     "message": "답변 전체 또는 JSON 부분만 붙여 넣기",
@@ -3146,7 +3134,7 @@
     "description": "Warning: the plugin does not run on the site the user picked"
   },
   "localPluginWarnTheme": {
-    "message": "Voyager 강조 색상을 바꿉니다. 프롬프트는 AI에게 이렇게 하지 말라고 했습니다.",
+    "message": "Voyager 강조 색상을 바꿉니다. Voyager는 AI에게 이렇게 하지 말라고 요청했습니다.",
     "description": "Warning: the plugin changes the accent color although the prompt asked not to"
   },
   "localPluginWarnReplaces": {
@@ -3282,7 +3270,7 @@
     "description": "Note on a plugin that cannot run because it starts the same page-wide feature more than once"
   },
   "officialFeaturePausedByLocal": {
-    "message": "이 페이지에서 일시 중지됨: 로컬 플러그인 ‘{name}’이(가) 이미 같은 일을 하고 있습니다. 필요 없는 쪽을 끄세요.",
+    "message": "이 페이지에서 일시 중지됨: 내 창작물 ‘{name}’이(가) 이미 같은 일을 하고 있습니다. 필요 없는 쪽을 끄세요.",
     "description": "Note under a Gemini / AI Studio setting (formula copy, Vim mode) that is on but paused because a local plugin already runs the same feature; {name} is that plugin's name"
   },
   "pluginBlockedByOfficialSetting": {

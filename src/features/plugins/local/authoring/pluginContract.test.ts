@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { attributeNameIssue } from '../../manifest/sinkGuards';
+import { OP_KINDS } from '../../manifest/validate';
 import { PRIMITIVE_CONTRACTS } from '../../verbs/contracts';
 import { authoringSites } from '../authoringSites';
 import { readLocalPluginFiles } from '../localPluginFiles';
@@ -7,8 +9,13 @@ import { validateLocalManifest } from '../validateLocalManifest';
 import type { ContractAudience } from './contractRules';
 import { formatJson } from './jsonText';
 import { buildPluginContract, renderExample, renderSections } from './pluginContract';
-import type { PluginExample } from './pluginExamples';
-import { allowsAnyPrimitive, allowsPrimitive } from './siteFacts';
+import {
+  AUTHORING_OP_KINDS,
+  AUTHORING_OP_TEMPLATES,
+  type PluginExample,
+  buildPluginExample,
+} from './pluginExamples';
+import { allowsAnyPrimitive, allowsPrimitive, siteAnchors } from './siteFacts';
 
 const sites = authoringSites();
 const audiences: readonly ContractAudience[] = ['chat', 'agent'];
@@ -114,6 +121,37 @@ describe('plugin contract', () => {
       '\n',
     );
     expect(text).toMatch(/Claude does not declare [^\n]*thinkingBlock/);
+  });
+
+  it.each(sites.map((site) => [site.label, site] as const))(
+    'offers on %s only ops that import, each with a template the gate accepts',
+    (_label, site) => {
+      expect([...AUTHORING_OP_KINDS, 'native'].sort()).toEqual([...OP_KINDS].sort());
+      const key = siteAnchors(site)[0];
+      expect(key).toBeDefined();
+      for (const kind of AUTHORING_OP_KINDS) {
+        const op = AUTHORING_OP_TEMPLATES[kind]({ kind: 'semantic', key: key! });
+        const manifest = {
+          ...buildPluginExample(site),
+          contributes: { styles: [{ css: '.gv-plugin-my-change{opacity:.9}' }], domOps: [op] },
+        };
+        const result = validateLocalManifest(manifest);
+        expect(result.success ? [] : result.error).toEqual([]);
+      }
+    },
+  );
+
+  it('names only attributes the gate allows, and refuses href', () => {
+    const text = renderSections(buildPluginContract(sites[0], { audience: 'chat' }).sections);
+    const line = text.find((entry) => entry.includes('setAttribute "name" must be'));
+    const names = line!
+      .replace(/.*must be one of: /, '')
+      .replace(/\. Never.*/, '')
+      .split(', ')
+      .map((name) => name.replace(/\*$/, 'x'));
+    expect(names.length).toBeGreaterThan(2);
+    for (const name of names) expect(attributeNameIssue(name)).toBeNull();
+    expect(attributeNameIssue('href')).not.toBeNull();
   });
 
   it('renders file examples as plugin.json and style.css blocks that parse back', () => {

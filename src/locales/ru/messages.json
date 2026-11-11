@@ -2862,16 +2862,12 @@
     "description": "Source label for a plugin the user imported locally"
   },
   "localPluginsTitle": {
-    "message": "Локальные плагины",
-    "description": "Popup plugin page: title of the card for user-imported plugins"
+    "message": "Мои создания",
+    "description": "Popup: title of the My creations card, the user's own plugins and Create mode"
   },
   "localPluginsDescription": {
-    "message": "Импортируйте собственный декларативный плагин: JSON-манифест со встроенным CSS или манифест вместе с его файлами .css. Он проходит те же проверки, что и официальные плагины, и остаётся выключенным, пока вы его не включите.",
-    "description": "Popup plugin page: what importing a local plugin does"
-  },
-  "localPluginsNativeHint": {
-    "message": "Запускайте собственный CSS и настройки страницы на этом сайте. Импортированные плагины остаются выключенными, пока вы их не включите.",
-    "description": "Native popup (Gemini / AI Studio): hint on the collapsed Local plugins entry"
+    "message": "Режим создания: опишите, что изменить, и ИИ напишет это как плагин. Voyager проверит его и импортирует выключенным.",
+    "description": "Popup My creations card: what Create mode does, in one or two short sentences"
   },
   "localPluginsImportFiles": {
     "message": "Импорт файлов",
@@ -2894,8 +2890,8 @@
     "description": "Popup plugin page: close the paste text box"
   },
   "localPluginsEmpty": {
-    "message": "Локальных плагинов пока нет.",
-    "description": "Popup plugin page: no local plugin is installed"
+    "message": "Вы пока ничего не создали.",
+    "description": "Popup My creations card: shown when the user has no creations yet"
   },
   "localPluginsImported": {
     "message": "{name} {version} импортирован. Он выключен: посмотрите ниже, что он делает, затем включите его в списке плагинов.",
@@ -2933,14 +2929,6 @@
     "message": "Плагин был повторно импортирован, пока вы его включали, поэтому он остался выключенным. Проверьте новую версию и включите его снова.",
     "description": "A local plugin was re-imported while the user was enabling it, so it was not enabled"
   },
-  "localPluginDescribeOpen": {
-    "message": "Описать изменение",
-    "description": "Button that opens the one-sentence plugin flow"
-  },
-  "localPluginDescribeHint": {
-    "message": "Опишите одной фразой, что изменить на сайте. Voyager составит промпт, который вы сами отправите любому ИИ, а затем проверит ответ, вставленный сюда. Сам Voyager ничего не отправляет.",
-    "description": "Explains the one-sentence plugin flow and that Voyager sends nothing"
-  },
   "localPluginDescribeRequestLabel": {
     "message": "Что изменить?",
     "description": "Label of the one-sentence request field"
@@ -2953,41 +2941,41 @@
     "message": "Сайт",
     "description": "Label of the target-site picker"
   },
-  "localPluginDescribeBuildPrompt": {
-    "message": "Составить промпт",
-    "description": "Button that writes the AI prompt"
-  },
-  "localPluginDescribePromptLabel": {
-    "message": "Промпт для ИИ",
-    "description": "Label of the generated prompt"
-  },
-  "localPluginDescribePromptHint": {
-    "message": "Вставьте его в чат любого ИИ сами, а затем вставьте сюда весь ответ.",
-    "description": "Tells the user to send the prompt themselves and paste the reply"
-  },
-  "localPluginDescribeCopy": {
-    "message": "Скопировать промпт",
-    "description": "Button that copies the prompt"
-  },
   "localPluginDescribeCopied": {
     "message": "Скопировано",
     "description": "Shown after the prompt was copied"
   },
   "localPluginDescribeCopyFailed": {
-    "message": "Не удалось скопировать. Выделите промпт и скопируйте его вручную.",
-    "description": "Shown when the clipboard refused the prompt"
+    "message": "Не удалось скопировать. Выделите текст ниже и скопируйте его сами.",
+    "description": "Shown when the clipboard refused a Create mode copy; the text is shown below to select"
   },
-  "localPluginSkillHint": {
-    "message": "Работаете с агентом для программирования? Дайте ему skill плагинов Voyager: он напишет plugin.json и style.css и проверит их офлайн, а затем выберите оба файла через «Импорт файлов».",
-    "description": "Points coding-agent users at the public write-voyager-plugin skill"
+  "createModeCopyForChat": {
+    "message": "Копировать для этого чата",
+    "description": "Create mode button: copies the message for the AI chat on the current site"
   },
-  "localPluginSkillCopy": {
-    "message": "Копировать ссылку на skill",
-    "description": "Button that copies the skill link"
+  "createModeCopyForAgent": {
+    "message": "Копировать для локального агента",
+    "description": "Create mode button: copies the instructions for a coding agent on the user's computer"
   },
-  "localPluginSkillCopyFailed": {
-    "message": "Не удалось скопировать. Скопируйте ссылку вручную:",
-    "description": "Shown with the link when the clipboard refused it"
+  "createModeChatHint": {
+    "message": "Вставьте это в чат с ИИ на этом сайте. ИИ прочитает страницу Voyager и ответит плагином.",
+    "description": "Create mode hint under the copy buttons: what to do with the chat message"
+  },
+  "createModeAgentHint": {
+    "message": "Передайте это агенту для кода, а файлы, которые он вернёт, добавьте через «{importFiles}» в разделе «{more}».",
+    "description": "Create mode hint after copying for an agent. Keep {more} (the More ways to add label) and {importFiles} (the Import files label)"
+  },
+  "createModeMoreWays": {
+    "message": "Другие способы добавить",
+    "description": "Disclosure in the My creations card that reveals Import files and Paste JSON"
+  },
+  "createModeCtaLead": {
+    "message": "Не нашли нужное?",
+    "description": "Line at the end of the plugin list, before the Create your own link"
+  },
+  "createModeCtaAction": {
+    "message": "Создайте своё",
+    "description": "Link at the end of the plugin list: scrolls to the Create mode field"
   },
   "createModeChatMessage": {
     "message": "Сначала прочитай {pageUrl}, затем напиши плагин Voyager для {site}, который делает то, о чём я прошу ниже. Мой движок плагинов Voyager версии {engine}, поэтому не используй ничего новее. Ответь ровно одним блоком ```json с полным плагином.\n\nМой запрос:\n{request}",
@@ -2998,8 +2986,8 @@
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
   "localPluginDescribeReplyLabel": {
-    "message": "Ответ ИИ",
-    "description": "Label of the field for the AI reply"
+    "message": "Вставьте ответ ИИ",
+    "description": "Label of the field where the user pastes the AI reply"
   },
   "localPluginDescribeReplyPlaceholder": {
     "message": "Вставьте весь ответ или только его JSON",
@@ -3146,7 +3134,7 @@
     "description": "Warning: the plugin does not run on the site the user picked"
   },
   "localPluginWarnTheme": {
-    "message": "Меняет акцентный цвет Voyager, хотя промпт просил ИИ этого не делать.",
+    "message": "Меняет акцентный цвет Voyager, хотя Voyager просил ИИ этого не делать.",
     "description": "Warning: the plugin changes the accent color although the prompt asked not to"
   },
   "localPluginWarnReplaces": {
@@ -3282,7 +3270,7 @@
     "description": "Note on a plugin that cannot run because it starts the same page-wide feature more than once"
   },
   "officialFeaturePausedByLocal": {
-    "message": "Приостановлено на этой странице: ваш локальный плагин «{name}» уже делает то же самое. Отключите лишнее.",
+    "message": "Приостановлено на этой странице: ваше создание «{name}» уже делает то же самое. Отключите лишнее.",
     "description": "Note under a Gemini / AI Studio setting (formula copy, Vim mode) that is on but paused because a local plugin already runs the same feature; {name} is that plugin's name"
   },
   "pluginBlockedByOfficialSetting": {

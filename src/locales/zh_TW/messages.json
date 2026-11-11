@@ -2862,16 +2862,12 @@
     "description": "Source label for a plugin the user imported locally"
   },
   "localPluginsTitle": {
-    "message": "本機外掛",
-    "description": "Popup plugin page: title of the card for user-imported plugins"
+    "message": "我的創造",
+    "description": "Popup: title of the My creations card, the user's own plugins and Create mode"
   },
   "localPluginsDescription": {
-    "message": "匯入你自己撰寫的宣告式外掛：內嵌 CSS 的清單 JSON，或同時選取清單與它的 .css 檔案。它與官方外掛經過相同的檢查，在你手動開啟之前保持關閉。",
-    "description": "Popup plugin page: what importing a local plugin does"
-  },
-  "localPluginsNativeHint": {
-    "message": "在此網站上執行你自己撰寫的 CSS 與頁面調整。匯入的外掛在你開啟之前保持關閉。",
-    "description": "Native popup (Gemini / AI Studio): hint on the collapsed Local plugins entry"
+    "message": "創造模式：說出你想改什麼，AI 會把它寫成外掛。Voyager 檢查後再匯入，匯入後預設關閉。",
+    "description": "Popup My creations card: what Create mode does, in one or two short sentences"
   },
   "localPluginsImportFiles": {
     "message": "匯入檔案",
@@ -2894,8 +2890,8 @@
     "description": "Popup plugin page: close the paste text box"
   },
   "localPluginsEmpty": {
-    "message": "尚無本機外掛。",
-    "description": "Popup plugin page: no local plugin is installed"
+    "message": "還沒有任何創造。",
+    "description": "Popup My creations card: shown when the user has no creations yet"
   },
   "localPluginsImported": {
     "message": "已匯入 {name} {version}。它目前是關閉的：先在下方查看它會做什麼，再到外掛清單中開啟。",
@@ -2933,14 +2929,6 @@
     "message": "開啟過程中這個外掛被重新匯入了，所以它維持關閉。請先檢查新版本，再重新開啟。",
     "description": "A local plugin was re-imported while the user was enabling it, so it was not enabled"
   },
-  "localPluginDescribeOpen": {
-    "message": "用一句話改造介面",
-    "description": "Button that opens the one-sentence plugin flow"
-  },
-  "localPluginDescribeHint": {
-    "message": "用一句話說出你想怎麼改網站。Voyager 會寫好一段提示詞，由你自己傳給任何 AI，再檢查你貼回來的回覆。Voyager 本身不會送出任何內容。",
-    "description": "Explains the one-sentence plugin flow and that Voyager sends nothing"
-  },
   "localPluginDescribeRequestLabel": {
     "message": "想改什麼？",
     "description": "Label of the one-sentence request field"
@@ -2953,41 +2941,41 @@
     "message": "網站",
     "description": "Label of the target-site picker"
   },
-  "localPluginDescribeBuildPrompt": {
-    "message": "產生提示詞",
-    "description": "Button that writes the AI prompt"
-  },
-  "localPluginDescribePromptLabel": {
-    "message": "要傳給 AI 的提示詞",
-    "description": "Label of the generated prompt"
-  },
-  "localPluginDescribePromptHint": {
-    "message": "自己把它貼到任何 AI 對話中，再把完整回覆貼到下方。",
-    "description": "Tells the user to send the prompt themselves and paste the reply"
-  },
-  "localPluginDescribeCopy": {
-    "message": "複製提示詞",
-    "description": "Button that copies the prompt"
-  },
   "localPluginDescribeCopied": {
     "message": "已複製",
     "description": "Shown after the prompt was copied"
   },
   "localPluginDescribeCopyFailed": {
-    "message": "複製失敗。請選取提示詞後自行複製。",
-    "description": "Shown when the clipboard refused the prompt"
+    "message": "複製失敗。請選取下方文字自行複製。",
+    "description": "Shown when the clipboard refused a Create mode copy; the text is shown below to select"
   },
-  "localPluginSkillHint": {
-    "message": "在用程式開發 Agent？把 Voyager 的外掛 skill 交給它：它會寫好 plugin.json 和 style.css 並離線檢查，之後用「匯入檔案」選取這兩個檔案即可。",
-    "description": "Points coding-agent users at the public write-voyager-plugin skill"
+  "createModeCopyForChat": {
+    "message": "複製到目前對話",
+    "description": "Create mode button: copies the message for the AI chat on the current site"
   },
-  "localPluginSkillCopy": {
-    "message": "複製 skill 連結",
-    "description": "Button that copies the skill link"
+  "createModeCopyForAgent": {
+    "message": "複製給本機 Agent",
+    "description": "Create mode button: copies the instructions for a coding agent on the user's computer"
   },
-  "localPluginSkillCopyFailed": {
-    "message": "複製失敗，請手動複製這個連結：",
-    "description": "Shown with the link when the clipboard refused it"
+  "createModeChatHint": {
+    "message": "貼到這個網站的 AI 對話裡，它會讀取 Voyager 的說明頁，然後回覆外掛。",
+    "description": "Create mode hint under the copy buttons: what to do with the chat message"
+  },
+  "createModeAgentHint": {
+    "message": "交給你的程式設計 Agent，再到「{more}」裡用「{importFiles}」匯入它交回的檔案。",
+    "description": "Create mode hint after copying for an agent. Keep {more} (the More ways to add label) and {importFiles} (the Import files label)"
+  },
+  "createModeMoreWays": {
+    "message": "更多新增方式",
+    "description": "Disclosure in the My creations card that reveals Import files and Paste JSON"
+  },
+  "createModeCtaLead": {
+    "message": "找不到想要的？",
+    "description": "Line at the end of the plugin list, before the Create your own link"
+  },
+  "createModeCtaAction": {
+    "message": "自己創造一個",
+    "description": "Link at the end of the plugin list: scrolls to the Create mode field"
   },
   "createModeChatMessage": {
     "message": "請先閱讀 {pageUrl}，再為 {site} 寫一個 Voyager 外掛，實現我下面的需求。我的 Voyager 外掛引擎版本是 {engine}，請不要用比它更新的功能。回覆時只給一個 ```json 程式碼區塊，內含完整的外掛。\n\n我的需求：\n{request}",
@@ -2998,8 +2986,8 @@
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
   "localPluginDescribeReplyLabel": {
-    "message": "AI 的回覆",
-    "description": "Label of the field for the AI reply"
+    "message": "貼上 AI 的回覆",
+    "description": "Label of the field where the user pastes the AI reply"
   },
   "localPluginDescribeReplyPlaceholder": {
     "message": "貼上完整回覆，或只貼上其中的 JSON",
@@ -3146,7 +3134,7 @@
     "description": "Warning: the plugin does not run on the site the user picked"
   },
   "localPluginWarnTheme": {
-    "message": "會修改 Voyager 的強調色，而提示詞要求 AI 不要這樣做。",
+    "message": "會修改 Voyager 的強調色，而 Voyager 要求過 AI 不要這樣做。",
     "description": "Warning: the plugin changes the accent color although the prompt asked not to"
   },
   "localPluginWarnReplaces": {
@@ -3282,7 +3270,7 @@
     "description": "Note on a plugin that cannot run because it starts the same page-wide feature more than once"
   },
   "officialFeaturePausedByLocal": {
-    "message": "已在此頁面暫停：你的本機外掛「{name}」已經在做同樣的事。關掉不需要的那個即可。",
+    "message": "已在此頁面暫停：你的創造「{name}」已經在做同樣的事。關掉不需要的那個即可。",
     "description": "Note under a Gemini / AI Studio setting (formula copy, Vim mode) that is on but paused because a local plugin already runs the same feature; {name} is that plugin's name"
   },
   "pluginBlockedByOfficialSetting": {

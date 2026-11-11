@@ -1,29 +1,35 @@
 # Escribe tu propio plugin
 
+El modo creación convierte una frase en un plugin. Dices qué quieres cambiar, una IA escribe el plugin y Voyager lo revisa antes de que lo importes. El modo creación está en la tarjeta **Mis creaciones** del popup de Voyager, y lo que crea es un plugin local.
+
 Un plugin local es un plugin que haces para ti. Cambia el aspecto o la disposición de Gemini, AI Studio, ChatGPT, Claude, DeepSeek o Kimi, vive solo en tu navegador y no necesita ninguna pull request ni una copia del código fuente de Voyager.
 
 Como todos los plugins de Voyager, es declarativo: un manifest `plugin.json` más CSS. No ejecuta código propio. Voyager lo revisa al importarlo, aplica sus cambios y los retira todos cuando lo desactivas. Un plugin importado empieza desactivado, así que puedes revisarlo antes de encenderlo.
 
 ## Tres formas de crearlo
 
-### Descríbelo y deja que cualquier IA lo escriba
+Las tres formas terminan en **Mis creaciones**. En Gemini y AI Studio es una tarjeta de ajustes, justo debajo de **Sincronización en Nube** salvo que la muevas, y **Ir a**, arriba del popup, enlaza con ella. En ChatGPT, Claude, DeepSeek y Kimi está debajo de la lista de plugins. **Crea el tuyo**, al final de la lista de plugins, te lleva a su primer campo.
 
-1. Abre el sitio que quieres cambiar, abre el popup de Voyager y busca la tarjeta **Complementos locales** (en Gemini y AI Studio es la última entrada de los ajustes).
-2. Elige **Describir un cambio**, escribe una frase («Haz mis mensajes más estrechos y oculta la barra lateral») y elige **Redactar el prompt**.
-3. Copia tú mismo el prompt en el chat de IA que prefieras, pega de vuelta su respuesta completa y elige **Revisar respuesta**.
-4. Voyager te explica con palabras sencillas qué cambia el plugin. Impórtalo y actívalo en la lista de plugins.
+Las dos primeras formas parten de una frase. Escríbela en **¿Qué quieres cambiar?** («Haz mis mensajes más estrechos y oculta la barra lateral»). El campo **Sitio** de debajo empieza con el sitio de tu pestaña actual; cámbialo si el plugin es para otro sitio.
 
-Voyager nunca envía el prompt a ningún sitio: tú eliges la IA y llevas el texto de un lado a otro.
+### Copiar para este chat
 
-### Pásaselo a un agente de código
+1. Elige **Copiar para este chat** y pega el mensaje en el chat de IA de ese sitio.
+2. La IA lee la página de Voyager para ese sitio, como `https://voyager.nagi.fun/create/claude.md`, y responde con un único bloque de código JSON. La IA tiene que poder abrir enlaces.
+3. Pega la respuesta completa en **Pega la respuesta de la IA** y elige **Revisar respuesta**.
+4. Voyager te explica con palabras sencillas qué cambia el plugin. Elige **Importar** y actívalo en la lista de plugins. En Gemini y AI Studio su interruptor aparece justo debajo de la tarjeta.
 
-Si usas un agente de código (Claude Code, Codex, Cursor y similares), dale la skill de plugins de Voyager:
+Voyager no envía nada por su cuenta. Tú pegas el mensaje y tú traes la respuesta de vuelta.
+
+### Copiar para un agente local
+
+Si usas un agente de código (Claude Code, Codex, Cursor y similares), elige **Copiar para un agente local** y dale el texto al agente. El texto le pide que siga la skill de plugins de Voyager:
 
 ```text
 https://voyager.nagi.fun/skills/write-voyager-plugin/SKILL.md
 ```
 
-En la tarjeta **Complementos locales**, abre **Describir un cambio** y encontrarás el botón **Copiar enlace de la skill**. La skill contiene el contrato completo: los campos del manifest, lo que declara cada sitio, las primitivas y lo que un plugin no puede hacer. Pídele al agente el cambio que quieres; creará una carpeta, escribirá `plugin.json` y `style.css` y los comprobará sin conexión. Después elige **Importar archivos** en el popup y selecciona los dos archivos.
+La skill contiene el contrato completo: los campos del manifest, lo que declara cada sitio, las primitivas y lo que un plugin no puede hacer. El agente escribe `plugin.json` y `style.css`, ejecuta `npx create-voyager-plugin@latest check` hasta que pasen y te devuelve los dos archivos. En **Mis creaciones**, abre **Más formas de añadir**, elige **Importar archivos** y selecciona los dos archivos.
 
 Para tener la skill siempre instalada, guarda el archivo como `write-voyager-plugin/SKILL.md` en la carpeta de skills de tu agente (en Claude Code, `~/.claude/skills/`).
 
@@ -40,6 +46,8 @@ npx create-voyager-plugin@latest check my-plugin
 `init` genera un `plugin.json` y un `style.css` que ya pasan las comprobaciones, además de un `AGENTS.md` con las reglas de ese sitio. `--site` acepta `gemini`, `aistudio`, `chatgpt`, `claude`, `deepseek` o `kimi`.
 
 `check` ejecuta sin conexión las mismas comprobaciones que la importación del popup. Termina con código 0 cuando el plugin se podría importar y, si no, imprime una línea `path: message` por cada problema. Añade `--json` para obtener una salida legible por máquinas.
+
+Cuando pase, importa los dos archivos del mismo modo, con **Importar archivos** dentro de **Más formas de añadir**.
 
 ## Qué puede hacer un plugin
 
@@ -68,7 +76,7 @@ Las traducciones (`i18n`) son opcionales.
 
 ## Compartirlo
 
-Un plugin local se queda en tu navegador; exporta su JSON desde la lista de plugins para llevarlo a otro lugar. Si puede ser útil para todos, proponlo para el catálogo oficial: [Contribuir plugins](./plugin-contribution.md) describe ese camino.
+Un plugin local se queda en tu navegador. Para llevarlo a otro lugar, elige **Exportar** en él dentro de la lista de **Mis creaciones** y luego importa allí el archivo JSON. Si puede ser útil para todos, proponlo para el catálogo oficial: [Contribuir plugins](./plugin-contribution.md) describe ese camino.
 
 En todos los sitios solo se ejecuta un plugin de atajo de envío por página. Si uno ya ocupa el modo de envío, otro muestra un conflicto y queda en pausa. El parámetro opcional `mode` (requiere `"engine": ">=1.9.0"`) es `ctrlEnterSends` (predeterminado) o `enterSends`. Confirmar el IME no envía el mensaje. Gemini y AI Studio ya lo permiten; los modos admitidos se describen abajo.
 

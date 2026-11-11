@@ -2862,16 +2862,12 @@
     "description": "Source label for a plugin the user imported locally"
   },
   "localPluginsTitle": {
-    "message": "本地插件",
-    "description": "Popup plugin page: title of the card for user-imported plugins"
+    "message": "我的创造",
+    "description": "Popup: title of the My creations card, the user's own plugins and Create mode"
   },
   "localPluginsDescription": {
-    "message": "导入你自己编写的声明式插件：内联了 CSS 的清单 JSON，或同时选中清单和它的 .css 文件。它与官方插件经过相同的检查，在你手动开启之前保持关闭。",
-    "description": "Popup plugin page: what importing a local plugin does"
-  },
-  "localPluginsNativeHint": {
-    "message": "在此网站上运行你自己编写的 CSS 和页面调整。导入的插件在你开启之前保持关闭。",
-    "description": "Native popup (Gemini / AI Studio): hint on the collapsed Local plugins entry"
+    "message": "创造模式：说出你想改什么，AI 会把它写成插件。Voyager 检查后再导入，导入后默认关闭。",
+    "description": "Popup My creations card: what Create mode does, in one or two short sentences"
   },
   "localPluginsImportFiles": {
     "message": "导入文件",
@@ -2894,8 +2890,8 @@
     "description": "Popup plugin page: close the paste text box"
   },
   "localPluginsEmpty": {
-    "message": "还没有本地插件。",
-    "description": "Popup plugin page: no local plugin is installed"
+    "message": "还没有创造。",
+    "description": "Popup My creations card: shown when the user has no creations yet"
   },
   "localPluginsImported": {
     "message": "已导入 {name} {version}。它目前是关闭的：先在下方查看它会做什么，再到插件列表中开启。",
@@ -2933,14 +2929,6 @@
     "message": "开启过程中这个插件被重新导入了，所以它保持关闭。请先检查新版本，再重新开启。",
     "description": "A local plugin was re-imported while the user was enabling it, so it was not enabled"
   },
-  "localPluginDescribeOpen": {
-    "message": "用一句话改造界面",
-    "description": "Button that opens the one-sentence plugin flow"
-  },
-  "localPluginDescribeHint": {
-    "message": "用一句话说出你想怎么改网站。Voyager 会写好一段提示词，由你自己发给任意 AI，再检查你粘贴回来的回复。Voyager 自己不会发送任何内容。",
-    "description": "Explains the one-sentence plugin flow and that Voyager sends nothing"
-  },
   "localPluginDescribeRequestLabel": {
     "message": "想改什么？",
     "description": "Label of the one-sentence request field"
@@ -2953,41 +2941,41 @@
     "message": "网站",
     "description": "Label of the target-site picker"
   },
-  "localPluginDescribeBuildPrompt": {
-    "message": "生成提示词",
-    "description": "Button that writes the AI prompt"
-  },
-  "localPluginDescribePromptLabel": {
-    "message": "发给 AI 的提示词",
-    "description": "Label of the generated prompt"
-  },
-  "localPluginDescribePromptHint": {
-    "message": "自己把它粘贴到任意 AI 对话里，再把完整回复粘贴到下面。",
-    "description": "Tells the user to send the prompt themselves and paste the reply"
-  },
-  "localPluginDescribeCopy": {
-    "message": "复制提示词",
-    "description": "Button that copies the prompt"
-  },
   "localPluginDescribeCopied": {
     "message": "已复制",
     "description": "Shown after the prompt was copied"
   },
   "localPluginDescribeCopyFailed": {
-    "message": "复制失败。请选中提示词后手动复制。",
-    "description": "Shown when the clipboard refused the prompt"
+    "message": "复制失败。请选中下面的文字手动复制。",
+    "description": "Shown when the clipboard refused a Create mode copy; the text is shown below to select"
   },
-  "localPluginSkillHint": {
-    "message": "在用编程 Agent？把 Voyager 的插件 skill 交给它：它会写好 plugin.json 和 style.css 并离线检查，之后用「导入文件」选中这两个文件即可。",
-    "description": "Points coding-agent users at the public write-voyager-plugin skill"
+  "createModeCopyForChat": {
+    "message": "复制到当前对话",
+    "description": "Create mode button: copies the message for the AI chat on the current site"
   },
-  "localPluginSkillCopy": {
-    "message": "复制 skill 链接",
-    "description": "Button that copies the skill link"
+  "createModeCopyForAgent": {
+    "message": "复制给本地 Agent",
+    "description": "Create mode button: copies the instructions for a coding agent on the user's computer"
   },
-  "localPluginSkillCopyFailed": {
-    "message": "复制失败，请手动复制这个链接：",
-    "description": "Shown with the link when the clipboard refused it"
+  "createModeChatHint": {
+    "message": "粘贴到这个网站的 AI 对话里，它会读取 Voyager 的说明页，然后回复插件。",
+    "description": "Create mode hint under the copy buttons: what to do with the chat message"
+  },
+  "createModeAgentHint": {
+    "message": "交给你的编程 Agent，再到「{more}」里用「{importFiles}」导入它交回的文件。",
+    "description": "Create mode hint after copying for an agent. Keep {more} (the More ways to add label) and {importFiles} (the Import files label)"
+  },
+  "createModeMoreWays": {
+    "message": "更多添加方式",
+    "description": "Disclosure in the My creations card that reveals Import files and Paste JSON"
+  },
+  "createModeCtaLead": {
+    "message": "没找到想要的？",
+    "description": "Line at the end of the plugin list, before the Create your own link"
+  },
+  "createModeCtaAction": {
+    "message": "自己创造一个",
+    "description": "Link at the end of the plugin list: scrolls to the Create mode field"
   },
   "createModeChatMessage": {
     "message": "请先阅读 {pageUrl}，然后为 {site} 写一个 Voyager 插件，实现我下面的需求。我的 Voyager 插件引擎版本是 {engine}，不要用比它更新的功能。回复时只给一个 ```json 代码块，里面是完整的插件。\n\n我的需求：\n{request}",
@@ -2998,8 +2986,8 @@
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
   "localPluginDescribeReplyLabel": {
-    "message": "AI 的回复",
-    "description": "Label of the field for the AI reply"
+    "message": "粘贴 AI 的回复",
+    "description": "Label of the field where the user pastes the AI reply"
   },
   "localPluginDescribeReplyPlaceholder": {
     "message": "粘贴完整回复，或只粘贴其中的 JSON",
@@ -3146,7 +3134,7 @@
     "description": "Warning: the plugin does not run on the site the user picked"
   },
   "localPluginWarnTheme": {
-    "message": "会修改 Voyager 的强调色，而提示词要求 AI 不要这样做。",
+    "message": "会修改 Voyager 的强调色，而 Voyager 要求过 AI 不要这样做。",
     "description": "Warning: the plugin changes the accent color although the prompt asked not to"
   },
   "localPluginWarnReplaces": {
@@ -3282,7 +3270,7 @@
     "description": "Note on a plugin that cannot run because it starts the same page-wide feature more than once"
   },
   "officialFeaturePausedByLocal": {
-    "message": "已在此页面暂停：你的本地插件“{name}”已经在做同样的事。关掉不需要的那个即可。",
+    "message": "已在此页面暂停：你的创造“{name}”已经在做同样的事。关掉不需要的那个即可。",
     "description": "Note under a Gemini / AI Studio setting (formula copy, Vim mode) that is on but paused because a local plugin already runs the same feature; {name} is that plugin's name"
   },
   "pluginBlockedByOfficialSetting": {

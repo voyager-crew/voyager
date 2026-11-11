@@ -2862,16 +2862,12 @@
     "description": "Source label for a plugin the user imported locally"
   },
   "localPluginsTitle": {
-    "message": "ローカルプラグイン",
-    "description": "Popup plugin page: title of the card for user-imported plugins"
+    "message": "マイ作品",
+    "description": "Popup: title of the My creations card, the user's own plugins and Create mode"
   },
   "localPluginsDescription": {
-    "message": "自作の宣言型プラグインをインポートします。CSS を埋め込んだマニフェスト JSON か、マニフェストと .css ファイルをまとめて選択してください。公式プラグインと同じチェックを通り、オンにするまで無効のままです。",
-    "description": "Popup plugin page: what importing a local plugin does"
-  },
-  "localPluginsNativeHint": {
-    "message": "このサイトで自作の CSS やページ調整を実行します。インポートしたプラグインは、オンにするまで無効のままです。",
-    "description": "Native popup (Gemini / AI Studio): hint on the collapsed Local plugins entry"
+    "message": "作成モード：変えたいことを書くと、AI がプラグインにします。Voyager がチェックし、オフの状態でインポートします。",
+    "description": "Popup My creations card: what Create mode does, in one or two short sentences"
   },
   "localPluginsImportFiles": {
     "message": "ファイルをインポート",
@@ -2894,8 +2890,8 @@
     "description": "Popup plugin page: close the paste text box"
   },
   "localPluginsEmpty": {
-    "message": "ローカルプラグインはまだありません。",
-    "description": "Popup plugin page: no local plugin is installed"
+    "message": "まだ作品はありません。",
+    "description": "Popup My creations card: shown when the user has no creations yet"
   },
   "localPluginsImported": {
     "message": "{name} {version} をインポートしました。現在はオフです。下で動作を確認してから、プラグイン一覧でオンにしてください。",
@@ -2933,14 +2929,6 @@
     "message": "オンにしている間にこのプラグインが再インポートされたため、オフのままです。新しいバージョンを確認してから、もう一度オンにしてください。",
     "description": "A local plugin was re-imported while the user was enabling it, so it was not enabled"
   },
-  "localPluginDescribeOpen": {
-    "message": "ひとことで画面を変える",
-    "description": "Button that opens the one-sentence plugin flow"
-  },
-  "localPluginDescribeHint": {
-    "message": "サイトをどう変えたいかを一文で書いてください。Voyager がプロンプトを作成するので、好きな AI にご自身で送り、返ってきた回答を貼り付けるとチェックします。Voyager が自分から何かを送信することはありません。",
-    "description": "Explains the one-sentence plugin flow and that Voyager sends nothing"
-  },
   "localPluginDescribeRequestLabel": {
     "message": "何を変えますか？",
     "description": "Label of the one-sentence request field"
@@ -2953,41 +2941,41 @@
     "message": "サイト",
     "description": "Label of the target-site picker"
   },
-  "localPluginDescribeBuildPrompt": {
-    "message": "プロンプトを作成",
-    "description": "Button that writes the AI prompt"
-  },
-  "localPluginDescribePromptLabel": {
-    "message": "AI に送るプロンプト",
-    "description": "Label of the generated prompt"
-  },
-  "localPluginDescribePromptHint": {
-    "message": "ご自身で好きな AI のチャットに貼り付け、返ってきた回答全体を下に貼り付けてください。",
-    "description": "Tells the user to send the prompt themselves and paste the reply"
-  },
-  "localPluginDescribeCopy": {
-    "message": "プロンプトをコピー",
-    "description": "Button that copies the prompt"
-  },
   "localPluginDescribeCopied": {
     "message": "コピーしました",
     "description": "Shown after the prompt was copied"
   },
   "localPluginDescribeCopyFailed": {
-    "message": "コピーできませんでした。プロンプトを選択して手動でコピーしてください。",
-    "description": "Shown when the clipboard refused the prompt"
+    "message": "コピーできませんでした。下のテキストを選択して自分でコピーしてください。",
+    "description": "Shown when the clipboard refused a Create mode copy; the text is shown below to select"
   },
-  "localPluginSkillHint": {
-    "message": "コーディングエージェントを使っていますか？Voyager のプラグイン skill を渡せば、plugin.json と style.css を書いてオフラインでチェックします。あとは「ファイルをインポート」で両方を選ぶだけです。",
-    "description": "Points coding-agent users at the public write-voyager-plugin skill"
+  "createModeCopyForChat": {
+    "message": "このチャット用にコピー",
+    "description": "Create mode button: copies the message for the AI chat on the current site"
   },
-  "localPluginSkillCopy": {
-    "message": "skill のリンクをコピー",
-    "description": "Button that copies the skill link"
+  "createModeCopyForAgent": {
+    "message": "ローカルエージェント用にコピー",
+    "description": "Create mode button: copies the instructions for a coding agent on the user's computer"
   },
-  "localPluginSkillCopyFailed": {
-    "message": "コピーできませんでした。このリンクを手動でコピーしてください：",
-    "description": "Shown with the link when the clipboard refused it"
+  "createModeChatHint": {
+    "message": "このサイトの AI チャットに貼り付けてください。AI が Voyager のページを読み、プラグインを返します。",
+    "description": "Create mode hint under the copy buttons: what to do with the chat message"
+  },
+  "createModeAgentHint": {
+    "message": "コーディングエージェントに渡し、返ってきたファイルを「{more}」の「{importFiles}」で追加します。",
+    "description": "Create mode hint after copying for an agent. Keep {more} (the More ways to add label) and {importFiles} (the Import files label)"
+  },
+  "createModeMoreWays": {
+    "message": "ほかの追加方法",
+    "description": "Disclosure in the My creations card that reveals Import files and Paste JSON"
+  },
+  "createModeCtaLead": {
+    "message": "ほしいものが見つからない？",
+    "description": "Line at the end of the plugin list, before the Create your own link"
+  },
+  "createModeCtaAction": {
+    "message": "自分で作る",
+    "description": "Link at the end of the plugin list: scrolls to the Create mode field"
   },
   "createModeChatMessage": {
     "message": "まず {pageUrl} を読んでから、下の依頼どおりに動く {site} 用の Voyager プラグインを書いてください。私の Voyager プラグインエンジンは {engine} なので、それより新しい機能は使わないでください。返信はプラグイン全体を入れた ```json ブロックをちょうど 1 つだけにしてください。\n\n依頼：\n{request}",
@@ -2998,8 +2986,8 @@
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
   "localPluginDescribeReplyLabel": {
-    "message": "AI の回答",
-    "description": "Label of the field for the AI reply"
+    "message": "AI の回答を貼り付け",
+    "description": "Label of the field where the user pastes the AI reply"
   },
   "localPluginDescribeReplyPlaceholder": {
     "message": "回答全体、または JSON 部分だけを貼り付け",
@@ -3146,7 +3134,7 @@
     "description": "Warning: the plugin does not run on the site the user picked"
   },
   "localPluginWarnTheme": {
-    "message": "Voyager のアクセントカラーを変更します。プロンプトでは AI にそうしないよう指示していました。",
+    "message": "Voyager のアクセントカラーを変更します。Voyager は AI にそうしないよう指示していました。",
     "description": "Warning: the plugin changes the accent color although the prompt asked not to"
   },
   "localPluginWarnReplaces": {
@@ -3282,7 +3270,7 @@
     "description": "Note on a plugin that cannot run because it starts the same page-wide feature more than once"
   },
   "officialFeaturePausedByLocal": {
-    "message": "このページでは一時停止中：ローカルプラグイン「{name}」がすでに同じ処理をしています。不要なほうをオフにしてください。",
+    "message": "このページでは一時停止中：あなたの作品「{name}」がすでに同じ処理をしています。不要なほうをオフにしてください。",
     "description": "Note under a Gemini / AI Studio setting (formula copy, Vim mode) that is on but paused because a local plugin already runs the same feature; {name} is that plugin's name"
   },
   "pluginBlockedByOfficialSetting": {

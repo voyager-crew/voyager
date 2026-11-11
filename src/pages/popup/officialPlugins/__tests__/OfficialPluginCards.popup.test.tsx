@@ -134,6 +134,24 @@ describe('the official plugin topic cards', () => {
       expect(scrolled[1].options).toEqual({ block: 'start', behavior: 'auto' });
     });
 
+    it.each([
+      ['after the topic cards on Gemini', undefined],
+      ['at the end of the plugin list on Claude', 'https://claude.ai/new'],
+    ])('leads from %s to the Create field, focused', async (_where, url) => {
+      if (url) extensionApi.tabs.query.mockResolvedValue([{ id: 9, url }]);
+      await mount();
+      const links = [...container.querySelectorAll('button')].filter(
+        (button) => button.textContent === en.createModeCtaAction,
+      );
+      expect(links).toHaveLength(1);
+      await act(async () => links[0].click());
+      const field = document.activeElement as HTMLTextAreaElement;
+      expect(field.tagName).toBe('TEXTAREA');
+      expect(field.labels?.[0]?.textContent).toBe(en.localPluginDescribeRequestLabel);
+      expect(field.tabIndex).toBe(0);
+      expect(scrolled.at(-1)?.element.contains(field)).toBe(true);
+    });
+
     it('leaves out the cards a site does not show', async () => {
       extensionApi.tabs.query.mockResolvedValue([{ id: 8, url: AI_STUDIO }]);
       await mount();
