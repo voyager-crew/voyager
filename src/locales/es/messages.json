@@ -2978,12 +2978,12 @@
     "description": "Link at the end of the plugin list: scrolls to the Create mode field"
   },
   "createModeChatMessage": {
-    "message": "Lee primero {pageUrl} y luego escribe un plugin de Voyager para {site} que haga lo que pido abajo. Mi motor de plugins de Voyager es la versión {engine}, así que no uses nada más reciente. Responde con exactamente un bloque ```json que contenga el plugin completo.\n\nMi petición:\n{request}",
-    "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine}, {request} and ```json unchanged"
+    "message": "Lee primero {pageUrl} y luego escribe un plugin de Voyager para {site} que haga lo que pido abajo. Mi motor de plugins de Voyager es la versión {engine}, así que no uses nada más reciente. Responde con un único bloque de código json que contenga el plugin completo.\n\nMi petición:\n{request}",
+    "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine} and {request} unchanged, and write no triple backtick: ChatGPT's composer turns one into a code box that swallows the rest"
   },
   "createModeChatMessageInline": {
-    "message": "Escribe un plugin de Voyager para {site} que haga lo que pido al final de este mensaje. Tus instrucciones son la página {pageUrl}, copiada entera entre las líneas ===== de abajo, así que no hace falta abrirla. Mi motor de plugins de Voyager es la versión {engine}, así que no uses nada más reciente. Responde con exactamente un bloque ```json que contenga el plugin completo.\n\n===== Instrucciones =====\n\n{page}\n\n===== Fin de las instrucciones =====\n\nMi petición:\n{request}",
-    "description": "Create mode on a site whose chat AI cannot open links (Gemini): the message Voyager puts in the chat composer, carrying the instructions page itself. Keep {pageUrl}, {site}, {engine}, {page}, {request}, ===== and ```json unchanged"
+    "message": "Escribe un plugin de Voyager para {site} que haga lo que pido al final de este mensaje. Tus instrucciones son la página {pageUrl}, copiada entera entre las líneas ===== de abajo, así que no hace falta abrirla. Mi motor de plugins de Voyager es la versión {engine}, así que no uses nada más reciente. Responde con un único bloque de código json que contenga el plugin completo.\n\n===== Instrucciones =====\n\n{page}\n\n===== Fin de las instrucciones =====\n\nMi petición:\n{request}",
+    "description": "Create mode on a site whose chat AI cannot open links (Gemini): the message Voyager puts in the chat composer, carrying the instructions page itself. Keep {pageUrl}, {site}, {engine}, {page}, {request} and ===== unchanged, and write no triple backtick"
   },
   "createModeAgentHandoff": {
     "message": "Escribe un plugin de Voyager para {site} que haga lo que pido abajo, siguiendo la skill de {skillUrl}. Mi motor de plugins de Voyager es la versión {engine}, así que no uses nada más reciente. Antes de entregármelo, ejecuta `{checkCommand}` hasta que pase. Después dame plugin.json y style.css para añadirlos con «{importFiles}» en la ventana emergente de Voyager.\n\nMi petición:\n{request}",
@@ -3034,8 +3034,8 @@
     "description": "Create mode toast: the problems are in the composer, unsent"
   },
   "createModeFixIntro": {
-    "message": "Voyager no pudo instalar ese plugin. Corrige estos problemas y responde de nuevo con el plugin completo en un solo bloque ```json:",
-    "description": "Create mode: first line of the message to the AI listing the gate's problems; keep ```json unchanged"
+    "message": "Voyager no pudo instalar ese plugin. Corrige estos problemas y responde de nuevo con el plugin completo en un solo bloque de código json:",
+    "description": "Create mode: first line of the message to the AI listing the gate's problems. Write no triple backtick: it goes into the chat composer"
   },
   "localPluginDescribeReplyLabel": {
     "message": "Pega la respuesta de la IA",

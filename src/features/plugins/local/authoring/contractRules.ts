@@ -190,7 +190,7 @@ export function impossibleSection(
         : []),
       'If the request needs any of this, do not invent fields or ops: the import refuses them. Start your reply with one line "NOT POSSIBLE: <what and why>", then build the closest version this contract allows and say what it leaves out.',
       audience === 'chat'
-        ? 'Give that version in the one ```json block; reply with no block only when nothing helps.'
+        ? 'Give that version in the one json code block; reply with no block only when nothing helps.'
         : 'When nothing declarative helps, stop there and write no files.',
     ],
   };

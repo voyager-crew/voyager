@@ -8,6 +8,7 @@ import { validateLocalManifest } from '../validateLocalManifest';
 import { renderWriteVoyagerPluginSkillFiles } from './authoringDocs';
 import { renderCreatePages } from './createPages';
 import { offeredPrimitiveNames } from './primitivesSection';
+import { SCRIPTED_PAGE_FILE } from './scriptedContract';
 import { siteAnchors } from './siteFacts';
 import { WRITE_PLUGIN_SKILL_BASE_URL, createPageFile } from './skillLink';
 
@@ -19,7 +20,9 @@ const cases = DEFAULT_ADAPTERS.map(
 );
 
 function jsonBlocks(text: string): unknown[] {
-  return [...text.matchAll(/```json\n([\s\S]*?)\n```/g)].map((match) => JSON.parse(match[1]));
+  return [...text.matchAll(/(?:^ {4}.*\n)+/gm)].map((match) =>
+    JSON.parse(match[0].replace(/^ {4}/gm, '')),
+  );
 }
 
 describe('create pages', () => {
@@ -35,7 +38,7 @@ describe('create pages', () => {
     for (const pattern of site.matches) expect(page).toContain(`- ${pattern}\n`);
     for (const key of siteAnchors(site)) expect(page).toContain(`- ${key}: `);
     expect(page).toContain(`engine ${EFFECTIVE_PLUGIN_ENGINE_VERSION}`);
-    expect(page).toContain('exactly one ```json fenced code block');
+    expect(page).toContain('exactly one fenced code block labeled json');
   });
 
   it.each(cases)('show %s one example the local gate accepts', (_label, site, page) => {
@@ -64,6 +67,12 @@ describe('create pages', () => {
       for (const url of urls) {
         expect(skillFiles.has(url.slice(WRITE_PLUGIN_SKILL_BASE_URL.length)), url).toBe(true);
       }
+    }
+  });
+
+  it('hold no code fence, since a page may be pasted into a composer', () => {
+    for (const [path, page] of pages) {
+      if (path !== SCRIPTED_PAGE_FILE) expect(page, path).not.toContain('```');
     }
   });
 

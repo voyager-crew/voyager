@@ -45,7 +45,7 @@ describe('creation message', () => {
       expect(message.endsWith(`\n${TRICKY_REQUEST}`)).toBe(true);
       const wrapper = message.slice(0, -TRICKY_REQUEST.length);
       expect(wrapper).toContain(EFFECTIVE_PLUGIN_ENGINE_VERSION);
-      expect(wrapper).toContain('```json');
+      expect(wrapper).toContain('json');
       expect(wrapper).not.toMatch(/\{\w+\}/);
       expect(wrapper.length).toBeLessThan(500);
     },
@@ -101,7 +101,7 @@ describe('creation message on a site whose AI cannot open links', () => {
       expect(wrapper.split(page)).toHaveLength(2);
       const [intro, outro] = wrapper.split(page);
       expect(intro).toContain(EFFECTIVE_PLUGIN_ENGINE_VERSION);
-      expect(intro).toContain('```json');
+      expect(intro).toContain('json');
       expect(intro).toContain(gemini.label);
       expect(intro).toContain(createPageUrl(gemini.id));
       expect(`${intro}${outro}`).not.toMatch(/\{\w+\}/);
@@ -109,6 +109,16 @@ describe('creation message on a site whose AI cannot open links', () => {
       expect(isCreationChatText(message)).toBe(true);
     },
   );
+});
+
+describe('text Voyager places in a composer', () => {
+  // ChatGPT's composer turns ``` into a code box that swallows the rest of the message.
+  it.each(locales)('holds no triple backtick in %s', (_locale, t) => {
+    for (const site of sites) {
+      expect(buildCreationMessage(TRICKY_REQUEST, site, t), site.id).not.toContain('```');
+    }
+    expect(t('createModeFixIntro')).not.toContain('```');
+  });
 });
 
 describe('agent handoff', () => {

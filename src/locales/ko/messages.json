@@ -2978,12 +2978,12 @@
     "description": "Link at the end of the plugin list: scrolls to the Create mode field"
   },
   "createModeChatMessage": {
-    "message": "먼저 {pageUrl} 를 읽은 다음, 아래 요청대로 동작하는 {site}용 Voyager 플러그인을 작성해 주세요. 제 Voyager 플러그인 엔진은 {engine}이니 그보다 새로운 기능은 쓰지 마세요. 답장에는 플러그인 전체를 담은 ```json 블록을 딱 하나만 넣어 주세요.\n\n요청:\n{request}",
-    "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine}, {request} and ```json unchanged"
+    "message": "먼저 {pageUrl} 를 읽은 다음, 아래 요청대로 동작하는 {site}용 Voyager 플러그인을 작성해 주세요. 제 Voyager 플러그인 엔진은 {engine}이니 그보다 새로운 기능은 쓰지 마세요. 답장에는 플러그인 전체를 담은 json 코드 블록을 딱 하나만 넣어 주세요.\n\n요청:\n{request}",
+    "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine} and {request} unchanged, and write no triple backtick: ChatGPT's composer turns one into a code box that swallows the rest"
   },
   "createModeChatMessageInline": {
-    "message": "이 메시지 맨 끝의 요청대로 동작하는 {site}용 Voyager 플러그인을 작성해 주세요. 지침은 {pageUrl} 페이지이며, 아래 ===== 줄 사이에 전문을 그대로 붙여 두었으니 열 필요가 없습니다. 제 Voyager 플러그인 엔진은 {engine}이니 그보다 새로운 기능은 쓰지 마세요. 답장에는 플러그인 전체를 담은 ```json 블록을 딱 하나만 넣어 주세요.\n\n===== 지침 =====\n\n{page}\n\n===== 지침 끝 =====\n\n요청:\n{request}",
-    "description": "Create mode on a site whose chat AI cannot open links (Gemini): the message Voyager puts in the chat composer, carrying the instructions page itself. Keep {pageUrl}, {site}, {engine}, {page}, {request}, ===== and ```json unchanged"
+    "message": "이 메시지 맨 끝의 요청대로 동작하는 {site}용 Voyager 플러그인을 작성해 주세요. 지침은 {pageUrl} 페이지이며, 아래 ===== 줄 사이에 전문을 그대로 붙여 두었으니 열 필요가 없습니다. 제 Voyager 플러그인 엔진은 {engine}이니 그보다 새로운 기능은 쓰지 마세요. 답장에는 플러그인 전체를 담은 json 코드 블록을 딱 하나만 넣어 주세요.\n\n===== 지침 =====\n\n{page}\n\n===== 지침 끝 =====\n\n요청:\n{request}",
+    "description": "Create mode on a site whose chat AI cannot open links (Gemini): the message Voyager puts in the chat composer, carrying the instructions page itself. Keep {pageUrl}, {site}, {engine}, {page}, {request} and ===== unchanged, and write no triple backtick"
   },
   "createModeAgentHandoff": {
     "message": "{skillUrl} 의 skill을 따라, 아래 요청대로 동작하는 {site}용 Voyager 플러그인을 작성해 주세요. 제 Voyager 플러그인 엔진은 {engine}이니 그보다 새로운 기능은 쓰지 마세요. 넘겨주기 전에 `{checkCommand}` 를 실행해 통과할 때까지 고쳐 주세요. 그런 다음 plugin.json과 style.css를 주시면 Voyager 팝업의 \"{importFiles}\"로 추가하겠습니다.\n\n요청:\n{request}",
@@ -3034,8 +3034,8 @@
     "description": "Create mode toast: the problems are in the composer, unsent"
   },
   "createModeFixIntro": {
-    "message": "Voyager가 그 플러그인을 설치하지 못했습니다. 아래 문제를 고친 뒤 플러그인 전체를 ```json 블록 하나에 담아 다시 답해 주세요:",
-    "description": "Create mode: first line of the message to the AI listing the gate's problems; keep ```json unchanged"
+    "message": "Voyager가 그 플러그인을 설치하지 못했습니다. 아래 문제를 고친 뒤 플러그인 전체를 json 코드 블록 하나에 담아 다시 답해 주세요:",
+    "description": "Create mode: first line of the message to the AI listing the gate's problems. Write no triple backtick: it goes into the chat composer"
   },
   "localPluginDescribeReplyLabel": {
     "message": "AI 답변 붙여넣기",

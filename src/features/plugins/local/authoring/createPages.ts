@@ -8,6 +8,10 @@
  * reference, a site's primitive caveats and the other examples stay in the
  * public skill, behind pointers that say when to open them, so the page stays
  * short enough to be read whole.
+ *
+ * A page holds no triple backtick: on some sites the page itself goes into the
+ * composer (`inlineCreatePage.ts`), where a fence turns the rest of the
+ * message into a code box. Its example is an indented code block instead.
  */
 import type { SiteAdapter } from '../../types';
 import {
@@ -17,13 +21,14 @@ import {
   skillSiteFile,
 } from './authoringDocs';
 import { type ContractRefs, type ContractSection, IN_DOCUMENT_REFS } from './contractRules';
+import { formatJson } from './jsonText';
 import {
   SITE_SECTION_PREFIX,
   buildPluginContract,
-  renderExample,
   renderSections,
   siteSection,
 } from './pluginContract';
+import type { PluginExample } from './pluginExamples';
 import { PRIMITIVES_TITLE, offeredPrimitiveNames } from './primitivesSection';
 import { SCRIPTED_PAGE_FILE } from './scriptedContract';
 import { renderScriptedPage } from './scriptedPage';
@@ -55,9 +60,16 @@ function primitivePointerSection(site: SiteAdapter): ContractSection {
 const REPLY_FORMAT: ContractSection = {
   title: 'Reply format',
   lines: [
-    'Reply with exactly one ```json fenced code block holding the complete manifest, CSS inlined, and no other code block. The user pastes it into Voyager, so write no files or commands.',
+    'Reply with exactly one fenced code block labeled json, holding the complete manifest with CSS inlined, and no other code block. The user pastes it into Voyager, so write no files or commands.',
   ],
 };
+
+/** The example's manifest as an indented code block; a chat example inlines its CSS. */
+function renderIndentedExample(example: PluginExample): string[] {
+  if (example.css !== undefined) throw new Error('a chat example inlines its CSS');
+  const manifest = formatJson(example.manifest).split('\n');
+  return [`### ${example.title}`, '', ...manifest.map((line) => `    ${line}`), ''];
+}
 
 /** The chat page for one site. */
 export function renderCreatePage(site: SiteAdapter): string {
@@ -80,7 +92,7 @@ export function renderCreatePage(site: SiteAdapter): string {
     ...renderSections(sections),
     '## Example (adapt it; do not copy its purpose)',
     '',
-    ...renderExample(example),
+    ...renderIndentedExample(example),
     `Read ${WRITE_PLUGIN_SKILL_BASE_URL}${SKILL_EXAMPLES_FILE} ${EXAMPLES_CONDITION} Inline their style.css as { "css": "..." } and use this page’s "matches" and anchors.`,
     '',
     ...renderSections([REPLY_FORMAT]),

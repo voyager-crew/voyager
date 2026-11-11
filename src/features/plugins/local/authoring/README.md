@@ -29,7 +29,10 @@ version and command filled in one pass:
   `buildCreationMessage(request, site, t)`, for the chat of the site the plugin
   targets (the page filling it builds it with its own site): read `createPageUrl(site.id)` first,
   write a plugin for that site, the user's plugin engine version as a ceiling,
-  reply with exactly one ```json block.
+  reply with a single json code block. Nothing Voyager puts in a composer
+  (this message, the inlined create page, `createModeFixIntro`) holds a triple
+  backtick: ChatGPT's composer opens a code box at one and swallows the rest.
+  The chat pages show their example as an indented code block for that reason.
 - **Copy for a local agent**: `buildAgentHandoff(request, site, t)`, for a
   coding agent: the site, `WRITE_PLUGIN_SKILL_URL`, the engine, run
   `npx create-voyager-plugin@latest check` before handing back, and return

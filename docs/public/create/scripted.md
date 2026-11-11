@@ -110,4 +110,4 @@ The user needs desktop Chrome or Edge 133 or later, with "Allow User Scripts" tu
 
 ## Reply format
 
-Exactly one ```json fenced code block with the complete manifest, as the create page says.
+Exactly one fenced code block labeled json with the complete manifest, as the create page says.

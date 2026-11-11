@@ -111,7 +111,7 @@ export function renderScriptedPage(sites: readonly SiteAdapter[]): string {
     ...renderExample(buildScriptedExample(site), 3),
     '## Reply format',
     '',
-    'Exactly one ```json fenced code block with the complete manifest, as the create page says.',
+    'Exactly one fenced code block labeled json with the complete manifest, as the create page says.',
     '',
   ].join('\n');
 }

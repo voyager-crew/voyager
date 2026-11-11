@@ -87,43 +87,41 @@ A scripted plugin carries JavaScript for behavior CSS, the page changes and the 
 These limits are on the plugin’s own fields and CSS. A primitive in the Primitives list above runs Voyager’s code and may lift one of them: read that list before answering NOT POSSIBLE, and use a primitive when the target site declares the keys it reads.
 A scripted plugin (see "Plugins that run code") may run code and logic, never the other limits.
 If the request needs any of this, do not invent fields or ops: the import refuses them. Start your reply with one line "NOT POSSIBLE: <what and why>", then build the closest version this contract allows and say what it leaves out.
-Give that version in the one ```json block; reply with no block only when nothing helps.
+Give that version in the one json code block; reply with no block only when nothing helps.
 
 ## Example (adapt it; do not copy its purpose)
 
 ### A class on an anchor, styled by CSS
 
-```json
-{
-  "id": "me.rounded-turns",
-  "name": "Rounded turns",
-  "version": "1.0.0",
-  "description": "Round the corners of each message",
-  "author": "me",
-  "category": "readability",
-  "license": "MIT",
-  "engine": ">=1.0.0",
-  "tier": "declarative",
-  "matches": ["https://www.kimi.com/*"],
-  "contributes": {
-    "styles": [
-      {
-        "css": ".gv-plugin-rounded-turn { border-radius: 16px; }html[data-gv-scheme='dark'] .gv-plugin-rounded-turn { outline: 1px solid #ffffff22; }"
+    {
+      "id": "me.rounded-turns",
+      "name": "Rounded turns",
+      "version": "1.0.0",
+      "description": "Round the corners of each message",
+      "author": "me",
+      "category": "readability",
+      "license": "MIT",
+      "engine": ">=1.0.0",
+      "tier": "declarative",
+      "matches": ["https://www.kimi.com/*"],
+      "contributes": {
+        "styles": [
+          {
+            "css": ".gv-plugin-rounded-turn { border-radius: 16px; }html[data-gv-scheme='dark'] .gv-plugin-rounded-turn { outline: 1px solid #ffffff22; }"
+          }
+        ],
+        "domOps": [
+          {
+            "op": "addClass",
+            "target": { "kind": "semantic", "key": "userTurn" },
+            "className": "gv-plugin-rounded-turn"
+          }
+        ]
       }
-    ],
-    "domOps": [
-      {
-        "op": "addClass",
-        "target": { "kind": "semantic", "key": "userTurn" },
-        "className": "gv-plugin-rounded-turn"
-      }
-    ]
-  }
-}
-```
+    }
 
 Read https://voyager.nagi.fun/skills/write-voyager-plugin/examples.md when the plugin needs a setting the user adjusts in the popup, or calls a primitive: it has a worked example of each. Inline their style.css as { "css": "..." } and use this page’s "matches" and anchors.
 
 ## Reply format
 
-Reply with exactly one ```json fenced code block holding the complete manifest, CSS inlined, and no other code block. The user pastes it into Voyager, so write no files or commands.
+Reply with exactly one fenced code block labeled json, holding the complete manifest with CSS inlined, and no other code block. The user pastes it into Voyager, so write no files or commands.

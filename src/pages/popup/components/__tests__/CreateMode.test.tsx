@@ -100,7 +100,8 @@ describe('Create mode: one sentence → copied for an AI → pasted reply → pr
     const message = String(writeText.mock.lastCall?.[0]);
     expect(message).toContain('Make my messages narrower');
     expect(message).toContain('https://voyager.nagi.fun/create/claude.md');
-    expect(message).toContain('```json');
+    expect(message).toContain('json code block');
+    expect(message).not.toContain('```');
     expect(container.textContent).toContain(english('localPluginDescribeCopied'));
 
     // A new site makes the copied text stale, so the button offers to copy again.
