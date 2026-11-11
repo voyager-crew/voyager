@@ -5,8 +5,10 @@ import { describe, expect, it } from 'vitest';
 import type { TranslationKey } from '@/utils/translations';
 
 import { EFFECTIVE_PLUGIN_ENGINE_VERSION } from '../verbs/contracts';
-import { WRITE_PLUGIN_SKILL_URL, createPageUrl } from './authoring/skillLink';
+import { inlinesCreatePage } from './authoring/inlineCreatePage';
+import { WRITE_PLUGIN_SKILL_URL, createPageFile, createPageUrl } from './authoring/skillLink';
 import { MAX_PLUGIN_REQUEST_CHARS, authoringSites } from './authoringSites';
+import { isCreationChatText } from './creation/creationMarker';
 import { PLUGIN_CHECK_COMMAND, buildAgentHandoff, buildCreationMessage } from './creationMessage';
 
 const LOCALES_DIR = join(process.cwd(), 'src/locales');
@@ -20,6 +22,8 @@ const locales = readdirSync(LOCALES_DIR).map((locale) => {
 const english = locales.find(([locale]) => locale === 'en')![1];
 const sites = authoringSites();
 const claude = sites.find((site) => site.id === 'claude')!;
+const gemini = sites.find((site) => site.id === 'gemini')!;
+const linkedSites = sites.filter((site) => !inlinesCreatePage(site.id));
 
 // Text a template engine would treat as a placeholder or a replacement pattern.
 const TRICKY_REQUEST = 'Show {engine} and $& in a badge on {site}';
@@ -47,12 +51,64 @@ describe('creation message', () => {
     },
   );
 
+  it.each(
+    locales.flatMap(([locale, t]) =>
+      linkedSites.map((site) => [locale, site.label, site, t] as const),
+    ),
+  )(
+    'links the page in %s on %s, the message unchanged since links were the only form',
+    (_locale, _label, site, t) => {
+      const expected = t('createModeChatMessage')
+        .split('{pageUrl}')
+        .join(createPageUrl(site.id))
+        .split('{site}')
+        .join(site.label)
+        .split('{engine}')
+        .join(EFFECTIVE_PLUGIN_ENGINE_VERSION)
+        .split('{request}')
+        .join(TRICKY_REQUEST);
+      expect(buildCreationMessage(TRICKY_REQUEST, site, t)).toBe(expected);
+    },
+  );
+
   it('keeps no more of the request than the composer field accepts', () => {
     const request = 'x'.repeat(MAX_PLUGIN_REQUEST_CHARS + 50);
     const message = buildCreationMessage(request, claude, english);
     expect(message).toContain('x'.repeat(MAX_PLUGIN_REQUEST_CHARS));
     expect(message).not.toContain('x'.repeat(MAX_PLUGIN_REQUEST_CHARS + 1));
   });
+});
+
+describe('creation message on a site whose AI cannot open links', () => {
+  const page = readFileSync(
+    join(process.cwd(), 'docs/public/create', createPageFile(gemini.id)),
+    'utf8',
+  );
+  const request = `${TRICKY_REQUEST} and {page} and {request}`;
+
+  it('is Gemini, and only Gemini', () => {
+    expect(sites.filter((site) => inlinesCreatePage(site.id)).map((site) => site.id)).toEqual([
+      'gemini',
+    ]);
+  });
+
+  it.each(locales)(
+    'carries the published page, then the request verbatim and last, in %s',
+    (_locale, t) => {
+      const message = buildCreationMessage(`  ${request}\n`, gemini, t);
+      expect(message.endsWith(`\n${request}`)).toBe(true);
+      const wrapper = message.slice(0, -request.length);
+      expect(wrapper.split(page)).toHaveLength(2);
+      const [intro, outro] = wrapper.split(page);
+      expect(intro).toContain(EFFECTIVE_PLUGIN_ENGINE_VERSION);
+      expect(intro).toContain('```json');
+      expect(intro).toContain(gemini.label);
+      expect(intro).toContain(createPageUrl(gemini.id));
+      expect(`${intro}${outro}`).not.toMatch(/\{\w+\}/);
+      expect(outro.length).toBeLessThan(100);
+      expect(isCreationChatText(message)).toBe(true);
+    },
+  );
 });
 
 describe('agent handoff', () => {

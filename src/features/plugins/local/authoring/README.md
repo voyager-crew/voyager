@@ -16,7 +16,11 @@ reply back in one case only: on the page, in a chat where a user message
 links a create page (`isCreationChatText`), which every creation message
 does. Anywhere else the user pastes the reply into the popup. Every web chat
 AI is assumed to browse, so the message for it stays short and the contract
-lives on a page it reads. `local/creationMessage.ts` builds both texts from
+lives on a page it reads, except on a site in `inlineCreatePage.ts`, whose
+default chat AI cannot open a link (Gemini's Flash): there the message carries
+`renderCreatePage(site)`, the published page's own text, between marked lines,
+names the page URL (the Create chat marker) and ends with the request
+(`createModeChatMessageInline`). `local/creationMessage.ts` builds both texts from
 i18n wrapper sentences (`createModeChatMessage`, `createModeAgentHandoff`)
 with the request (trimmed, at most `MAX_PLUGIN_REQUEST_CHARS`), URLs, engine
 version and command filled in one pass:

@@ -6,7 +6,9 @@
  *
  * - `buildCreationMessage`: for the chat AI on the site the plugin targets. It
  *   points at that site's chat page (`authoring/createPages.ts`) instead of
- *   carrying the contract, since every chat AI is assumed to browse.
+ *   carrying the contract, except on a site whose chat AI cannot open a link
+ *   (`authoring/inlineCreatePage.ts`): there it carries the page, then the
+ *   request.
  * - `buildAgentHandoff`: for a local coding agent, which follows the public
  *   skill and checks its files offline before handing them back.
  */
@@ -14,6 +16,8 @@ import type { TranslationKey } from '@/utils/translations';
 
 import type { SiteAdapter } from '../types';
 import { EFFECTIVE_PLUGIN_ENGINE_VERSION } from '../verbs/contracts';
+import { renderCreatePage } from './authoring/createPages';
+import { inlinesCreatePage } from './authoring/inlineCreatePage';
 import { PLUGIN_CLI_PACKAGE, WRITE_PLUGIN_SKILL_URL, createPageUrl } from './authoring/skillLink';
 import { MAX_PLUGIN_REQUEST_CHARS } from './authoringSites';
 
@@ -34,12 +38,14 @@ function requestText(request: string): string {
 
 /** The message Voyager places in the chat composer of `site`. */
 export function buildCreationMessage(request: string, site: SiteAdapter, t: Translate): string {
-  return fill(t('createModeChatMessage'), {
+  const values = {
     pageUrl: createPageUrl(site.id),
     site: site.label,
     engine: EFFECTIVE_PLUGIN_ENGINE_VERSION,
     request: requestText(request),
-  });
+  };
+  if (!inlinesCreatePage(site.id)) return fill(t('createModeChatMessage'), values);
+  return fill(t('createModeChatMessageInline'), { ...values, page: renderCreatePage(site) });
 }
 
 /** The text the user copies to a local coding agent to write a plugin for `site`. */

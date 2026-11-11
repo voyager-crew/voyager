@@ -58,6 +58,15 @@ export const PLUGINS_SITE_KNOWLEDGE_EXCEPTIONS: readonly SiteKnowledgeException[
     reason: 'ChatGPT notification composer-root proof.',
   },
   {
+    file: 'src/features/plugins/local/authoring/inlineCreatePage.ts',
+    kind: 'platform-branch',
+    values: {
+      gemini: 1,
+    },
+    reason:
+      "Create mode sites whose default chat AI cannot open a link, so the creation message carries the create page; a fact about the site's AI, not its page.",
+  },
+  {
     file: 'src/features/plugins/local/authoring/siteFacts.ts',
     kind: 'presentation',
     values: {
