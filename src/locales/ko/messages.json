@@ -2978,11 +2978,11 @@
     "description": "Link at the end of the plugin list: scrolls to the Create mode field"
   },
   "createModeChatMessage": {
-    "message": "먼저 {pageUrl} 를 읽은 다음, 아래 요청대로 동작하는 {site}용 Voyager 플러그인을 작성해 주세요. 제 Voyager 버전은 {engine}이니 그보다 새로운 기능은 쓰지 마세요. 답장에는 플러그인 전체를 담은 json 코드 블록을 딱 하나만 넣어 주세요.\n\n요청:\n{request}",
+    "message": "먼저 {pageUrl} 를 읽은 다음, 아래 요청대로 동작하는 {site}용 Voyager 플러그인을 작성해 주세요. 제 Voyager 버전은 {engine}이니 그보다 새로운 기능은 쓰지 마세요. 답장에는 플러그인 전체를 담은 json 코드 블록을 딱 하나만 넣어 주세요. 플러그인 이름과 설명은 한국어로 써 주세요.\n\n요청:\n{request}",
     "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine} and {request} unchanged, and write no triple backtick: ChatGPT's composer turns one into a code box that swallows the rest"
   },
   "createModeChatMessageInline": {
-    "message": "이 메시지 맨 끝의 요청대로 동작하는 {site}용 Voyager 플러그인을 작성해 주세요. 지침은 {pageUrl} 페이지이며, 아래 ===== 줄 사이에 전문을 그대로 붙여 두었으니 열 필요가 없습니다. 제 Voyager 버전은 {engine}이니 그보다 새로운 기능은 쓰지 마세요. 답장에는 플러그인 전체를 담은 json 코드 블록을 딱 하나만 넣어 주세요.\n\n===== 지침 =====\n\n{page}\n\n===== 지침 끝 =====\n\n요청:\n{request}",
+    "message": "이 메시지 맨 끝의 요청대로 동작하는 {site}용 Voyager 플러그인을 작성해 주세요. 지침은 {pageUrl} 페이지이며, 아래 ===== 줄 사이에 전문을 그대로 붙여 두었으니 열 필요가 없습니다. 제 Voyager 버전은 {engine}이니 그보다 새로운 기능은 쓰지 마세요. 답장에는 플러그인 전체를 담은 json 코드 블록을 딱 하나만 넣어 주세요. 플러그인 이름과 설명은 한국어로 써 주세요.\n\n===== 지침 =====\n\n{page}\n\n===== 지침 끝 =====\n\n요청:\n{request}",
     "description": "Create mode on a site whose chat AI cannot open links (Gemini): the message Voyager puts in the chat composer, carrying the instructions page itself. Keep {pageUrl}, {site}, {engine}, {page}, {request} and ===== unchanged, and write no triple backtick"
   },
   "createModeAgentHandoff": {

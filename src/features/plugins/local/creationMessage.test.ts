@@ -71,6 +71,29 @@ describe('creation message', () => {
     },
   );
 
+  // The create page writes name and description in the language the message names.
+  const UI_LANGUAGE: Readonly<Record<string, string>> = {
+    en: 'English',
+    zh: '简体中文',
+    zh_TW: '繁體中文',
+    ja: '日本語',
+    ko: '한국어',
+    fr: 'français',
+    es: 'español',
+    pt: 'português',
+    ru: 'русском',
+    ar: 'بالعربية',
+  };
+
+  it.each(locales)('names the Voyager UI language in %s, on every site', (locale, t) => {
+    expect(UI_LANGUAGE[locale], `add ${locale} to UI_LANGUAGE`).toBeDefined();
+    for (const site of sites) {
+      const message = buildCreationMessage(TRICKY_REQUEST, site, t);
+      const [wrapper] = message.split('\n\n');
+      expect(wrapper, site.id).toContain(UI_LANGUAGE[locale]);
+    }
+  });
+
   it('keeps no more of the request than the composer field accepts', () => {
     const request = 'x'.repeat(MAX_PLUGIN_REQUEST_CHARS + 50);
     const message = buildCreationMessage(request, claude, english);

@@ -2978,11 +2978,11 @@
     "description": "Link at the end of the plugin list: scrolls to the Create mode field"
   },
   "createModeChatMessage": {
-    "message": "まず {pageUrl} を読んでから、下の依頼どおりに動く {site} 用の Voyager プラグインを書いてください。私の Voyager のバージョンは {engine} なので、それより新しい機能は使わないでください。返信はプラグイン全体を入れた json コードブロック 1 つだけにしてください。\n\n依頼：\n{request}",
+    "message": "まず {pageUrl} を読んでから、下の依頼どおりに動く {site} 用の Voyager プラグインを書いてください。私の Voyager のバージョンは {engine} なので、それより新しい機能は使わないでください。返信はプラグイン全体を入れた json コードブロック 1 つだけにしてください。プラグインの名前と説明は日本語で書いてください。\n\n依頼：\n{request}",
     "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine} and {request} unchanged, and write no triple backtick: ChatGPT's composer turns one into a code box that swallows the rest"
   },
   "createModeChatMessageInline": {
-    "message": "このメッセージの最後にある依頼どおりに動く {site} 用の Voyager プラグインを書いてください。手順は {pageUrl} のページで、下の ===== 行の間にそのまま全文を貼ってあるので、開く必要はありません。私の Voyager のバージョンは {engine} なので、それより新しい機能は使わないでください。返信はプラグイン全体を入れた json コードブロック 1 つだけにしてください。\n\n===== 手順 =====\n\n{page}\n\n===== 手順ここまで =====\n\n依頼：\n{request}",
+    "message": "このメッセージの最後にある依頼どおりに動く {site} 用の Voyager プラグインを書いてください。手順は {pageUrl} のページで、下の ===== 行の間にそのまま全文を貼ってあるので、開く必要はありません。私の Voyager のバージョンは {engine} なので、それより新しい機能は使わないでください。返信はプラグイン全体を入れた json コードブロック 1 つだけにしてください。プラグインの名前と説明は日本語で書いてください。\n\n===== 手順 =====\n\n{page}\n\n===== 手順ここまで =====\n\n依頼：\n{request}",
     "description": "Create mode on a site whose chat AI cannot open links (Gemini): the message Voyager puts in the chat composer, carrying the instructions page itself. Keep {pageUrl}, {site}, {engine}, {page}, {request} and ===== unchanged, and write no triple backtick"
   },
   "createModeAgentHandoff": {

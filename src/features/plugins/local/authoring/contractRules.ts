@@ -63,7 +63,7 @@ export function manifestSection(
       '- "version": "1.0.0"; raise it when you change the plugin. "author": "me". "license": "MIT".',
       `- "engine": the lowest Voyager version the plugin needs, as ">=1.0.0" or ">=" the sinceEngine of every primitive it uses. ${refs.engine ?? `This build is Voyager ${EFFECTIVE_PLUGIN_ENGINE_VERSION}.`}`,
       `- "category": one of ${PLUGIN_CATEGORIES.join(', ')}.`,
-      `- Write "name" and "description" in the language of the ${audience === 'chat' ? 'request' : 'user'}. "i18n" translations are optional for a local plugin.`,
+      `- Write "name" and "description" in ${audience === 'chat' ? 'the language the message names; if none, the language of the request' : 'the language of the user'}. "i18n" translations are optional for a local plugin.`,
       ...(audience === 'agent'
         ? [
             '- Optional: "$schema": "https://voyager.nagi.fun/plugin.schema.json" lets an editor check the file as you type. The import gate is stricter than the schema; `check` is the authority.',

@@ -2978,11 +2978,11 @@
     "description": "Link at the end of the plugin list: scrolls to the Create mode field"
   },
   "createModeChatMessage": {
-    "message": "Read {pageUrl} first, then write a Voyager plugin for {site} that does what I ask below. My Voyager version is {engine}, so use nothing newer. Reply with a single json code block that holds the complete plugin.\n\nMy request:\n{request}",
+    "message": "Read {pageUrl} first, then write a Voyager plugin for {site} that does what I ask below. My Voyager version is {engine}, so use nothing newer. Reply with a single json code block that holds the complete plugin. Write its name and description in English.\n\nMy request:\n{request}",
     "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine} and {request} unchanged, and write no triple backtick: ChatGPT's composer turns one into a code box that swallows the rest"
   },
   "createModeChatMessageInline": {
-    "message": "Write a Voyager plugin for {site} that does what I ask at the end of this message. Your instructions are the page {pageUrl}, copied in full between the ===== lines below, so you do not need to open it. My Voyager version is {engine}, so use nothing newer. Reply with a single json code block that holds the complete plugin.\n\n===== Instructions =====\n\n{page}\n\n===== End of instructions =====\n\nMy request:\n{request}",
+    "message": "Write a Voyager plugin for {site} that does what I ask at the end of this message. Your instructions are the page {pageUrl}, copied in full between the ===== lines below, so you do not need to open it. My Voyager version is {engine}, so use nothing newer. Reply with a single json code block that holds the complete plugin. Write its name and description in English.\n\n===== Instructions =====\n\n{page}\n\n===== End of instructions =====\n\nMy request:\n{request}",
     "description": "Create mode on a site whose chat AI cannot open links (Gemini): the message Voyager puts in the chat composer, carrying the instructions page itself. Keep {pageUrl}, {site}, {engine}, {page}, {request} and ===== unchanged, and write no triple backtick"
   },
   "createModeAgentHandoff": {

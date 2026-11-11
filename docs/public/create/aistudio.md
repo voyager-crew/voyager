@@ -32,7 +32,7 @@ No "theme" on AI Studio.
 - "version": "1.0.0"; raise it when you change the plugin. "author": "me". "license": "MIT".
 - "engine": the lowest Voyager version the plugin needs, as ">=1.0.0" or ">=" the sinceEngine of every primitive it uses. Never go above the user’s Voyager version.
 - "category": one of render-fix, theme, layout, readability, productivity, integration, other.
-- Write "name" and "description" in the language of the request. "i18n" translations are optional for a local plugin.
+- Write "name" and "description" in the language the message names; if none, the language of the request. "i18n" translations are optional for a local plugin.
 
 ## Styles
 
