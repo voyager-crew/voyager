@@ -131,25 +131,44 @@ describe('enableScriptedIfUnchanged', () => {
 });
 
 describe('re-importing an enabled scripted plugin', () => {
-  it('pauses it for review in the import write alone, leaving its review untouched', async () => {
+  it('lands off in the import write alone, an identical re-import too', async () => {
     const plugin = await install('count()');
     await enableScriptedIfUnchanged(SCRIPTED_ID, plugin.reviewHash);
-    const reviewed = structuredClone(storage.memory[SCRIPTED]);
     const writes = storage.writes.length;
 
-    await install('countAndSendEverywhere()');
+    await install('count()');
 
     expect(storage.writes.length).toBe(writes + 1);
-    expect(storage.writes.at(-1)).not.toHaveProperty(SCRIPTED);
-    expect(storage.memory[SCRIPTED]).toEqual(reviewed);
-    expect(await runState()).toBe('paused:needs-review');
+    expect(storage.writes.at(-1)).toHaveProperty(SCRIPTED);
+    expect(await runState()).toBe('off');
   });
 
-  it('pauses it when only the sites it runs on change', async () => {
+  it('never brings back an earlier enable when the earlier version is imported again', async () => {
+    const first = await install('count()');
+    await enableScriptedIfUnchanged(SCRIPTED_ID, first.reviewHash);
+    await install('countAndSendEverywhere()');
+    expect(await runState()).toBe('off');
+    await install('count()');
+    expect(await runState()).toBe('off');
+  });
+
+  it('lands off when only the sites it runs on change', async () => {
     const plugin = await install('count()');
     await enableScriptedIfUnchanged(SCRIPTED_ID, plugin.reviewHash);
     await install('count()', { matches: ['https://chatgpt.com/*', 'https://claude.ai/*'] });
-    expect(await runState()).toBe('paused:needs-review');
+    expect(await runState()).toBe('off');
+  });
+
+  it('keeps the crash notice of the version a freeze turned off', async () => {
+    await install('count()');
+    storage.memory[SCRIPTED] = {
+      ...EMPTY_SCRIPTED_STATE,
+      crashNotices: {
+        [SCRIPTED_ID]: { at: 9, url: 'https://chatgpt.com/', withIds: [SCRIPTED_ID] },
+      },
+    };
+    await install('fixedCount()');
+    expect(await runState()).toBe('paused:crash-guard');
   });
 });
 

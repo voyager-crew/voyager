@@ -23,7 +23,7 @@ import { logger } from '@/core/services/LoggerService';
 import { StorageKeys } from '@/core/types/common';
 import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContext';
 
-import { withoutScriptedPlugin } from '../scripted/parseState';
+import { withoutScriptedEnable, withoutScriptedPlugin } from '../scripted/parseState';
 import {
   type PluginStateEntry,
   readPluginStateStrict,
@@ -129,10 +129,12 @@ export interface SaveLocalPluginOptions {
 
 /**
  * Store a VALIDATED manifest under its (namespaced) id, replacing any previous
- * version, and switch the plugin off in the SAME storage write. One write means
- * no observer (a page's PluginHost, another popup) can ever see the new
- * version under an old `enabled: true`, and a popup closed mid-import leaves
- * either the old state or the new disabled one. Callers validate first: a
+ * version, and switch the plugin off in the SAME storage write, a scripted
+ * plugin's device-local enable included, so every import lands off, an
+ * identical one too. One write means no observer (a page's PluginHost, the
+ * scripted registrar, another popup) can ever see the new version under an
+ * old enable, and a popup closed mid-import leaves either the old state or the
+ * new disabled one. Callers validate first: a
  * failed import never reaches this, so the previous version stays in place.
  * Rejects, writing nothing, when either read or the write fails.
  */
@@ -166,9 +168,12 @@ export async function saveLocalPluginRecord(
       importedAt: previous?.importedAt ?? now,
       updatedAt: now,
     };
+    const scripted = await local.get({ [StorageKeys.PLUGIN_SCRIPTED_STATE]: {} });
+    const nextScripted = withoutScriptedEnable(scripted?.[StorageKeys.PLUGIN_SCRIPTED_STATE], id);
     await local.set({
       [KEY]: { ...stored, [id]: record },
       [StorageKeys.PLUGINS_STATE]: withPluginDisabled(state, id, now),
+      ...(nextScripted ? { [StorageKeys.PLUGIN_SCRIPTED_STATE]: nextScripted } : {}),
     });
   });
 }

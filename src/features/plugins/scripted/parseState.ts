@@ -76,3 +76,13 @@ export function withoutScriptedPlugin(stored: unknown, id: string): ScriptedStat
   delete crashNotices[id];
   return { ...state, enabled, crashNotices };
 }
+
+/** The stored state without one plugin's enable entry, or undefined when it has none. */
+export function withoutScriptedEnable(stored: unknown, id: string): ScriptedStateV1 | undefined {
+  if (isNewerScriptedState(stored)) return undefined;
+  const state = parseScriptedState(stored);
+  if (!Object.hasOwn(state.enabled, id)) return undefined;
+  const enabled = { ...state.enabled };
+  delete enabled[id];
+  return { ...state, enabled };
+}

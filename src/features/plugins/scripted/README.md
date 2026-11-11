@@ -35,10 +35,13 @@ the page side is `src/pages/content/scriptedGuard/`.
   is `device-local` in `settingsBackupPolicies.ts`: no settings file, Drive upload
   or restore reads or writes it. `PLUGIN_SCRIPTED_LOADS` is the crash guard's
   `transient` page-load record, written by the background only.
+- Every import lands off, an identical re-import included, as declarative ones
+  do: `saveLocalPluginRecord` drops the plugin's enable entry in the import's
+  own single write, under the same lock, keeping any crash notice.
 - An enable entry stores the review hash: SHA-256 of the canonical JSON of the
   plugin's `matches` and source (`scriptedReviewHash`). A plugin runs only while
-  its stored content hashes to that value, so a re-import that changes either
-  pauses it as `needs-review` in the import's own single write.
+  its stored content hashes to that value; content that changed by any other
+  path pauses it as `needs-review`.
 - `enableScriptedIfUnchanged(id, seen)` hashes the stored record under the
   plugin-storage lock and writes only when it equals `seen`.
   `disableScripted`, `setScriptedStopped` (the kill switch) and

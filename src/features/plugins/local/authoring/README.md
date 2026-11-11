@@ -55,7 +55,8 @@ ceiling both copies share.
   source is shown with a plain warning that it can change anything, hiding
   included, since reading its effect would be a guess. It builds on `inspectPlugin`, and
   the same inspect view opens under it on demand. **Import** hands the exact previewed
-  object to `importLocalPlugin`, so it lands disabled and follows the re-import
+  object to `importLocalPlugin`, so it lands disabled (a scripted one loses its
+  device-local enable too, even on an identical re-import) and follows the re-import
   rules in [../README.md](../README.md), but only over the install the preview saw: if the same id was
   installed, changed or removed meanwhile, nothing is written and the preview
   is refreshed for a new review.
