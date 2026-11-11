@@ -7,6 +7,30 @@
     "message": "사이트",
     "description": "Panel tab that lists the sites Voyager can reach"
   },
+  "panelTabCreate": {
+    "message": "만들기",
+    "description": "Panel tab where the user asks the page's AI to write a plugin (Create mode)"
+  },
+  "panelCreateIntro": {
+    "message": "이 사이트에서 바꾸고 싶은 점을 적으세요. 여기의 AI가 플러그인을 쓰고, Voyager가 답변에서 바로 설치를 제안합니다.",
+    "description": "Create tab: what Create mode does, above the request field"
+  },
+  "panelCreateUnsupported": {
+    "message": "만들기 모드는 아직 이 사이트에서 쓸 수 없습니다.",
+    "description": "Create tab on a website where Create mode does not run"
+  },
+  "panelCreateHint": {
+    "message": "‘이 페이지에서 만들기’를 누르면 여기서 새 채팅을 열고 요청을 입력창에 넣습니다. 확인한 뒤 직접 보내세요.",
+    "description": "Create tab: what the Create on this page button does; nothing is sent"
+  },
+  "panelCreateOnPage": {
+    "message": "이 페이지에서 만들기",
+    "description": "Create tab button: open a new chat on this page with the creation message"
+  },
+  "panelCreateUnavailable": {
+    "message": "이 페이지가 응답하지 않았습니다. 새로고침한 뒤 다시 시도하세요.",
+    "description": "Create tab: the page's content script did not answer the request"
+  },
   "panelTabsLabel": {
     "message": "패널 구역",
     "description": "Accessible name of the panel tab list"

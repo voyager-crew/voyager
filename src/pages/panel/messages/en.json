@@ -7,6 +7,30 @@
     "message": "Sites",
     "description": "Panel tab that lists the sites Voyager can reach"
   },
+  "panelTabCreate": {
+    "message": "Create",
+    "description": "Panel tab where the user asks the page's AI to write a plugin (Create mode)"
+  },
+  "panelCreateIntro": {
+    "message": "Say what should change on this site. The AI here writes a plugin for it, and Voyager offers to install it from the reply.",
+    "description": "Create tab: what Create mode does, above the request field"
+  },
+  "panelCreateUnsupported": {
+    "message": "Create mode doesn’t run on this website yet.",
+    "description": "Create tab on a website where Create mode does not run"
+  },
+  "panelCreateHint": {
+    "message": "Create on this page opens a new chat here with your request in the message box. Read it, then send it yourself.",
+    "description": "Create tab: what the Create on this page button does; nothing is sent"
+  },
+  "panelCreateOnPage": {
+    "message": "Create on this page",
+    "description": "Create tab button: open a new chat on this page with the creation message"
+  },
+  "panelCreateUnavailable": {
+    "message": "This page didn’t answer. Reload it, then try again.",
+    "description": "Create tab: the page's content script did not answer the request"
+  },
   "panelTabsLabel": {
     "message": "Panel sections",
     "description": "Accessible name of the panel tab list"

@@ -249,7 +249,8 @@ export const query = <T extends Element = HTMLElement>(selector: string) =>
 export const byId = (id: string) => document.getElementById(id);
 /** A feature row's switch; feature ids contain dots, so look them up by id. */
 export const rowSwitch = (pluginId: string) => byId(`panel-row-${pluginId}`) as HTMLButtonElement;
-export const tab = (name: 'features' | 'sites') => byId(`panel-tab-${name}`) as HTMLButtonElement;
+export const tab = (name: 'features' | 'sites' | 'create') =>
+  byId(`panel-tab-${name}`) as HTMLButtonElement;
 export const rowNames = () =>
   Array.from(container.querySelectorAll('[data-row] .rn')).map((name) => name.textContent);
 

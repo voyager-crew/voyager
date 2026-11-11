@@ -1,0 +1,80 @@
+/* The 创造 tab: the request card and the review of a reply; logical sides for RTL. */
+.create {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 560px;
+  margin-inline: auto;
+  padding-block: 8px;
+}
+
+.create-ask,
+.create-review {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 1px 2px rgb(15 20 30 / 0.03);
+}
+
+.create-intro,
+.create-status {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.create-status.bad {
+  color: var(--danger);
+}
+
+.create-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.create-field {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.create-field:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--ink) 55%, transparent);
+  outline-offset: 1px;
+}
+
+.create-field::placeholder {
+  color: var(--ink-3);
+}
+
+.create-field:disabled {
+  opacity: 0.6;
+}
+
+.create-field.mono,
+.create-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}
+
+.create-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}

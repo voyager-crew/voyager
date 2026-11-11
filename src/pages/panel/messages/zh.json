@@ -7,6 +7,30 @@
     "message": "网站",
     "description": "Panel tab that lists the sites Voyager can reach"
   },
+  "panelTabCreate": {
+    "message": "创造",
+    "description": "Panel tab where the user asks the page's AI to write a plugin (Create mode)"
+  },
+  "panelCreateIntro": {
+    "message": "说说这个网站上想改什么。这里的 AI 会写一个插件，Voyager 会在它的回复下提示你安装。",
+    "description": "Create tab: what Create mode does, above the request field"
+  },
+  "panelCreateUnsupported": {
+    "message": "创造模式暂不支持这个网站。",
+    "description": "Create tab on a website where Create mode does not run"
+  },
+  "panelCreateHint": {
+    "message": "点“在此页创造”会在这里新建对话，把请求填进输入框。检查后再自行发送。",
+    "description": "Create tab: what the Create on this page button does; nothing is sent"
+  },
+  "panelCreateOnPage": {
+    "message": "在此页创造",
+    "description": "Create tab button: open a new chat on this page with the creation message"
+  },
+  "panelCreateUnavailable": {
+    "message": "这个页面没有响应。刷新后再试。",
+    "description": "Create tab: the page's content script did not answer the request"
+  },
   "panelTabsLabel": {
     "message": "分区",
     "description": "Accessible name of the panel tab list"

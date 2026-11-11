@@ -7,6 +7,30 @@
     "message": "サイト",
     "description": "Panel tab that lists the sites Voyager can reach"
   },
+  "panelTabCreate": {
+    "message": "作成",
+    "description": "Panel tab where the user asks the page's AI to write a plugin (Create mode)"
+  },
+  "panelCreateIntro": {
+    "message": "このサイトで変えたいことを書いてください。ここの AI がプラグインを書き、Voyager がその返信からインストールを提案します。",
+    "description": "Create tab: what Create mode does, above the request field"
+  },
+  "panelCreateUnsupported": {
+    "message": "作成モードはまだこのサイトでは使えません。",
+    "description": "Create tab on a website where Create mode does not run"
+  },
+  "panelCreateHint": {
+    "message": "「このページで作成」を押すと、ここで新しいチャットを開き、依頼を入力欄に入れます。確認してからご自身で送信してください。",
+    "description": "Create tab: what the Create on this page button does; nothing is sent"
+  },
+  "panelCreateOnPage": {
+    "message": "このページで作成",
+    "description": "Create tab button: open a new chat on this page with the creation message"
+  },
+  "panelCreateUnavailable": {
+    "message": "このページから応答がありませんでした。再読み込みしてから、もう一度お試しください。",
+    "description": "Create tab: the page's content script did not answer the request"
+  },
   "panelTabsLabel": {
     "message": "パネルの区分",
     "description": "Accessible name of the panel tab list"

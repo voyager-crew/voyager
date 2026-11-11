@@ -9,6 +9,7 @@ import './styles/panel.css';
 import './styles/rows.css';
 import './styles/fontSize.css';
 import './styles/sync.css';
+import './styles/create.css';
 
 startPanelBootstrap(async (session, signal) => {
   // The first frame already speaks Voyager's language.

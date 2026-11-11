@@ -12,6 +12,8 @@ import { PanelToast } from './components/PanelToast';
 import { ADD_WEBSITE_INPUT_ID, SitesView, siteSwitchId } from './components/SitesView';
 import { SyncSheet } from './components/SyncSheet';
 import { type PanelTabId, TopBar, panelTabId, panelViewId } from './components/TopBar';
+import { CreateView } from './create/CreateView';
+import { useCreateHandoff } from './create/useCreateHandoff';
 import { filterPanelGroups, groupPanelRows } from './features/featureRows';
 import { EscapeLayers } from './hooks/escapeLayers';
 import { openFullSettings } from './hooks/panelRequests';
@@ -118,6 +120,7 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
     t,
   });
   const groups = filterPanelGroups(groupPanelRows(model.rows, t), search.state.query);
+  const handoff = useCreateHandoff({ context, requestTab: tab.requestTab, close: shell.close, t });
 
   // The active tab takes focus as the panel opens; its ring waits for a key press.
   useOpeningFocus(useCallback(() => tabButtons.current.features, []));
@@ -214,6 +217,8 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
               shell={shell}
               emptyText={t('panelNoMatches')}
             />
+          ) : view === 'create' ? (
+            <CreateView handoff={handoff} t={t} />
           ) : (
             <SitesView
               rows={model.siteRows}
@@ -247,7 +252,8 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
 
 /**
  * The Voyager panel inside the page: 功能 and 网站 for the open site or any
- * site Voyager can reach, read and written through the popup's own hooks.
+ * site Voyager can reach, read and written through the popup's own hooks, and
+ * 创造 for a plugin the page's AI writes.
  * Esc closes what is open inside, then the panel.
  */
 export function PanelApp({ session }: { session: PanelSession }) {

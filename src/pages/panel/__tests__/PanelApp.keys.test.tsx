@@ -125,13 +125,20 @@ describe('keyboard', () => {
     expect(shortcut.defaultPrevented).toBe(true);
   });
 
-  it('arrow keys move between the two tabs', async () => {
+  it('arrow keys move between the tabs in order and wrap at either end', async () => {
     await mount();
     tab('features').focus();
     await press('ArrowRight');
 
     expect(tab('sites').getAttribute('aria-selected')).toBe('true');
     expect(document.activeElement).toBe(tab('sites'));
+
+    await press('ArrowRight');
+    expect(document.activeElement).toBe(tab('create'));
+    await press('ArrowRight');
+    expect(document.activeElement).toBe(tab('features'));
+    await press('ArrowLeft');
+    expect(tab('create').getAttribute('aria-selected')).toBe('true');
   });
 });
 

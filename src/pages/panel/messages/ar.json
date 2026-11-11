@@ -7,6 +7,30 @@
     "message": "المواقع",
     "description": "Panel tab that lists the sites Voyager can reach"
   },
+  "panelTabCreate": {
+    "message": "إنشاء",
+    "description": "Panel tab where the user asks the page's AI to write a plugin (Create mode)"
+  },
+  "panelCreateIntro": {
+    "message": "قل ما الذي يجب أن يتغير في هذا الموقع. يكتب الذكاء الاصطناعي هنا إضافة لذلك، ويعرض Voyager تثبيتها من الرد.",
+    "description": "Create tab: what Create mode does, above the request field"
+  },
+  "panelCreateUnsupported": {
+    "message": "وضع الإنشاء لا يعمل على هذا الموقع بعد.",
+    "description": "Create tab on a website where Create mode does not run"
+  },
+  "panelCreateHint": {
+    "message": "يفتح «إنشاء في هذه الصفحة» محادثة جديدة هنا وطلبك في مربع الرسالة. اقرأه ثم أرسله بنفسك.",
+    "description": "Create tab: what the Create on this page button does; nothing is sent"
+  },
+  "panelCreateOnPage": {
+    "message": "إنشاء في هذه الصفحة",
+    "description": "Create tab button: open a new chat on this page with the creation message"
+  },
+  "panelCreateUnavailable": {
+    "message": "لم تستجب هذه الصفحة. أعد تحميلها ثم حاول مرة أخرى.",
+    "description": "Create tab: the page's content script did not answer the request"
+  },
   "panelTabsLabel": {
     "message": "أقسام اللوحة",
     "description": "Accessible name of the panel tab list"

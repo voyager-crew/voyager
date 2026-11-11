@@ -56,6 +56,8 @@ export function createPanelFrame(url: string, bootstrap: PanelFrameBootstrap): P
   const iframe = document.createElement('iframe');
   iframe.className = 'gv-ps-frame';
   iframe.title = 'Voyager';
+  // Lets the panel copy Create mode's handoff; a host policy that forbids it leaves the text to select.
+  iframe.allow = 'clipboard-write';
   iframe.src = url;
   element.appendChild(iframe);
   document.body.appendChild(element);

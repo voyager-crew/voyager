@@ -12,11 +12,12 @@ import { type PanelSite, letterTileHue } from '../sites/panelSites';
 import { PanelMenu } from './PanelMenu';
 import { SiteLogo } from './SiteMark';
 
-export type PanelTabId = 'features' | 'sites';
-export const PANEL_TABS: readonly PanelTabId[] = ['features', 'sites'];
+export type PanelTabId = 'features' | 'sites' | 'create';
+export const PANEL_TABS: readonly PanelTabId[] = ['features', 'sites', 'create'];
 const TAB_LABELS: Readonly<Record<PanelTabId, TranslationKey>> = {
   features: 'panelTabFeatures',
   sites: 'panelTabSites',
+  create: 'panelTabCreate',
 };
 const MASCOT = 'mascot-logo.png';
 
@@ -107,7 +108,7 @@ function useDrag(shell: PanelShell) {
   };
 }
 
-/** The 56px top bar: brand and site switcher, the two tabs, search, cloud and full settings. */
+/** The 56px top bar: brand and site switcher, the tabs, search, cloud and full settings. */
 export function TopBar({
   own,
   viewed,
@@ -203,10 +204,15 @@ export function TopBar({
             tabIndex={tab === id ? 0 : -1}
             onClick={() => onTab(id)}
             onKeyDown={(event) => {
-              // Two tabs: either arrow moves to the other one.
               if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
               event.preventDefault();
-              const next = id === 'features' ? 'sites' : 'features';
+              // Arrows follow reading order, so they flip on a right-to-left page.
+              const forward =
+                (event.key === 'ArrowRight') ===
+                (getComputedStyle(event.currentTarget).direction !== 'rtl');
+              const at = PANEL_TABS.indexOf(id);
+              const next =
+                PANEL_TABS[(at + (forward ? 1 : PANEL_TABS.length - 1)) % PANEL_TABS.length];
               onTab(next);
               tabButtons.current?.[next]?.focus();
             }}
