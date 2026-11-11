@@ -199,6 +199,14 @@
     "message": "{name} 제거",
     "description": "Accessible name of the remove button on a creation in the Features tab; {name} is the creation"
   },
+  "panelCreationNothingMatches": {
+    "message": "켜져 있지만 이 페이지에서 일치하는 요소가 없습니다",
+    "description": "My creations row: the creation is on, but none of its style rules or page changes match anything on the page being viewed"
+  },
+  "panelCreationAskFix": {
+    "message": "수정 요청하기",
+    "description": "My creations row button: open a new chat on this page with a request to the AI to fix this creation (filled, not sent)"
+  },
   "panelCreationRemoveAsk": {
     "message": "이 브라우저에서 {name}을(를) 제거할까요? 되돌릴 수 없습니다.",
     "description": "Features tab: asked under a creation before removing it; {name} is the creation"

@@ -36,6 +36,7 @@ import {
 } from '@/pages/popup/utils/visualEffectsAvailability';
 import { type TranslationKey, getLoadedTranslations } from '@/utils/translations';
 
+import { codeProblem, restylingProblem, useCreationChecks } from './features/creationProblems';
 import {
   type PanelRow,
   type RowTexts,
@@ -211,6 +212,18 @@ export function usePanelModel({
   const english = useCallback((key: TranslationKey) => getLoadedTranslations('en')[key] ?? key, []);
   const texts: RowTexts = { language, t, english };
   const statusById = new Map(plugins.pluginStatuses.map((status) => [status.id, status]));
+  // Restyling creations the page runs: whether each finds anything there.
+  const creationChecks = useCreationChecks(
+    viewedTab.requestTab,
+    viewed.url,
+    catalog.flatMap((plugin) => {
+      const status = statusById.get(plugin.id);
+      const running = status?.kind === 'mounted' || status?.kind === 'no-effect';
+      return isLocalPluginId(plugin.id) && running
+        ? [{ id: plugin.id, version: plugin.version }]
+        : [];
+    }),
+  );
   const floatingName = t('panelFloatingButton');
   const rows: PanelRow[] = [
     {
@@ -258,7 +271,12 @@ export function usePanelModel({
     if (prompt) rows.push({ ...row, switchId: PROMPT_SWITCH_ID });
     else if (isLocalPluginId(plugin.id)) {
       const remove = () => removeCreation(plugin.id, row.name);
-      rows.push({ ...row, creation: { remove, code: null } });
+      const problem = restylingProblem(
+        row.enabled,
+        statusById.get(plugin.id),
+        creationChecks.get(plugin.id),
+      );
+      rows.push({ ...row, creation: { remove, code: null, problem } });
     } else rows.push(row);
   }
   for (const { manifest } of localEntries) {
@@ -271,6 +289,7 @@ export function usePanelModel({
       state: runStateText(t, state),
       turnOff: () => void scripted.turnOff(manifest.id),
       remove: () => removeCreation(manifest.id, row.name),
+      problem: viewingPage ? codeProblem(state) : null,
     });
     rows.push(row);
   }

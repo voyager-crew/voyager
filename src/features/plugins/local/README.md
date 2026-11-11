@@ -39,6 +39,17 @@ the page side is `pages/content/createMode/`. **Install and turn on** there
 imports exactly the reviewed object the same way, disabled, then switches on
 only that version.
 
+**When an installed creation does nothing.** The panel's My creations asks the
+page it sits on which installed restyling creations find any element there
+(`gv.create.check`, `pages/content/createMode/creationCheck.ts`). A creation
+that is on, reported running and matched nothing in this version, or one that
+runs code and froze a page (the crash guard paused it), offers **Ask it to
+fix**: the page opens a new Create chat filled with what it saw, the page
+outline unless the Create tab's switch is off, and the plugin as installed
+(`creation/installedFix.ts`); the user sends it. Rules on hover or focus
+states, pseudo-elements and at-rules count as unjudged, not as misses. Code
+that throws is not reported: user scripts have no channel back to Voyager.
+
 The gate (`local/validateLocalManifest.ts`) is the remote catalog's gate plus
 local-only rules, never a weaker one: `validateManifest` with the CSS and
 rendered-sink guards, `tier: "declarative"` only unless the caller admits a

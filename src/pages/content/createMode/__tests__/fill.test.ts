@@ -2,6 +2,7 @@
 // @vitest-environment-options { "url": "https://gemini.google.com/u/1/app/0123456789abcdef" }
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { StorageKeys } from '@/core/types/common';
 import { createPageUrl } from '@/features/plugins/local/authoring/skillLink';
 import { installNativeEditingMock } from '@/tests/nativeEditing';
 
@@ -291,6 +292,67 @@ describe('the panel asking this page to create', () => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS + FILL_CONFIRM_MS);
     expect(composerText(composer)).toContain('Round my messages');
     expect(composerText(composer)).not.toContain('Site: Gemini');
+  });
+
+  describe('asking the AI to fix an installed creation', () => {
+    const ID = 'local.me.narrow';
+    const installed = {
+      [ID]: {
+        manifest: {
+          id: ID,
+          name: 'Narrow column',
+          version: '1.0.0',
+          description: 'd',
+          author: 'me',
+          category: 'layout',
+          license: 'MIT',
+          engine: '>=1.0.0',
+          tier: 'declarative',
+          matches: ['https://gemini.google.com/*'],
+          contributes: { styles: [{ css: '.convo-v1 { max-width: 60rem }' }] },
+        },
+        importedAt: 1,
+        updatedAt: 1,
+      },
+    };
+    const fix = { type: 'gv.create.fix', id: ID, problem: 'nothing-matches', structure: false };
+
+    const askLater = async (message: unknown): Promise<unknown> => {
+      let reply: unknown;
+      const kept = listener?.(message, {}, (value) => (reply = value));
+      expect(kept).toBe(true);
+      await vi.advanceTimersByTimeAsync(0);
+      return reply;
+    };
+
+    beforeEach(() => {
+      vi.mocked(chrome.storage.local.get).mockResolvedValue({
+        [StorageKeys.PLUGIN_LOCAL_MANIFESTS]: installed,
+      } as never);
+    });
+
+    it('fills a new Create chat with the plugin as installed, and does not send it', async () => {
+      const { composer, sendClicked } = page();
+      stop = startCreateMode({ find: () => composer });
+
+      expect(await askLater(fix)).toEqual({ ok: true });
+      await vi.advanceTimersByTimeAsync(SETTLE_MS + FILL_CONFIRM_MS);
+      const text = composerText(composer);
+      expect(text).toContain(createPageUrl('gemini'));
+      expect(text).toContain('"id": "local.me.narrow"');
+      expect(sendClicked).not.toHaveBeenCalled();
+    });
+
+    it('refuses while the composer holds a draft', async () => {
+      const { composer } = page();
+      composer.innerHTML = '<p>half a thought</p>';
+      stop = startCreateMode({ find: () => composer });
+
+      expect(await askLater(fix)).toEqual({ ok: false, reason: 'busy' });
+      await vi.advanceTimersByTimeAsync(SETTLE_MS);
+      expect(location.pathname).toBe(CHAT);
+      expect(composerText(composer)).toBe('half a thought');
+    });
   });
 
   it('ignores a request without a sentence', () => {

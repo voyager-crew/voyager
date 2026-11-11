@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 
+import type { CreationProblem } from '@/features/plugins/local/creation/creationChecks';
 import { isFontSizeSetting } from '@/features/plugins/runtime/fontSizeSetting';
 import { pluginIncompatibleNote } from '@/features/plugins/runtime/pluginIncompatibleNote';
 import type { PluginStatus } from '@/features/plugins/runtime/pluginStatus';
@@ -80,6 +81,8 @@ export interface PanelCreation {
   /** Removes it from this browser; false when storage refused. */
   readonly remove: () => Promise<boolean>;
   readonly code: PanelCodeCreation | null;
+  /** What this page showed wrong with it, offering "Ask it to fix"; null when nothing did. */
+  readonly problem: CreationProblem | null;
 }
 
 /**
@@ -284,6 +287,7 @@ export function codeCreationRow(
     readonly state: string;
     readonly turnOff: () => void;
     readonly remove: () => Promise<boolean>;
+    readonly problem: CreationProblem | null;
   },
 ): PanelRow {
   const name = displayName(pickLocalized(manifest, 'name', inputs.language));
@@ -300,7 +304,11 @@ export function codeCreationRow(
     toggle: (next) => {
       if (!next) inputs.turnOff();
     },
-    creation: { remove: inputs.remove, code: { manifest, state: inputs.state } },
+    creation: {
+      remove: inputs.remove,
+      code: { manifest, state: inputs.state },
+      problem: inputs.problem,
+    },
   };
 }
 

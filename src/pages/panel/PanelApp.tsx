@@ -15,6 +15,7 @@ import { type PanelTabId, TopBar, panelTabId, panelViewId } from './components/T
 import { CreateView } from './create/CreateView';
 import { CreationReview } from './create/CreationReview';
 import { useCreateHandoff } from './create/useCreateHandoff';
+import { useCreationFix } from './create/useCreationFix';
 import { useCreationReview } from './create/useCreationReview';
 import { usePanelScripted } from './create/usePanelScripted';
 import { filterPanelGroups, groupPanelRows } from './features/featureRows';
@@ -126,6 +127,13 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
   });
   const groups = filterPanelGroups(groupPanelRows(model.rows, t), search.state.query);
   const handoff = useCreateHandoff({ context, requestTab: tab.requestTab, close: shell.close, t });
+  const askFix = useCreationFix({
+    requestTab: viewingPage ? tab.requestTab : null,
+    structure: handoff.structure,
+    close: shell.close,
+    toast: show,
+    t,
+  });
 
   // The active tab takes focus as the panel opens; its ring waits for a key press.
   useOpeningFocus(useCallback(() => tabButtons.current.features, []));
@@ -225,7 +233,7 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
               groups={groups}
               previewing={viewingPage}
               shell={shell}
-              creations={{ scripted, activeUrl: viewed.url, t }}
+              creations={{ scripted, activeUrl: viewed.url, askFix, t }}
               emptyText={t('panelNoMatches')}
             />
           ) : view === 'create' ? (

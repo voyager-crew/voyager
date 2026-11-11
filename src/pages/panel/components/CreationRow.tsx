@@ -10,6 +10,7 @@ import type { ScriptedCreations } from '@/pages/popup/hooks/useScriptedCreations
 import type { TranslationKey } from '@/utils/translations';
 
 import { PANEL_ROW_SCRIPTED_LOOK as LOOK } from '../create/scriptedLook';
+import type { AskFix } from '../create/useCreationFix';
 import {
   CREATIONS_GROUP,
   type PanelCodeCreation,
@@ -28,6 +29,8 @@ export interface CreationContext {
   readonly scripted: ScriptedCreations;
   /** The site being viewed, whose access a turn-on asks for. */
   readonly activeUrl: string;
+  /** "Ask it to fix" on the page the panel sits on; null where there is none to ask. */
+  readonly askFix: AskFix | null;
   readonly t: Translate;
 }
 
@@ -67,7 +70,9 @@ function CodeReview({
  * A creation in My creations: a feature row with a remove action. One that
  * runs code shows the popup's mark and run state; while it is not on, its
  * switch gives way to "Review and turn on", which opens its code in the flow
- * below the row. Removing asks first, in the same place.
+ * below the row. Removing asks first, in the same place. On the page the
+ * panel sits on, a restyling creation that is on but matches nothing there,
+ * or code that froze a page, offers "Ask it to fix".
  */
 export function CreationRow({
   row,
@@ -82,8 +87,8 @@ export function CreationRow({
   shell: PanelShell;
   context: CreationContext;
 }) {
-  const { t } = context;
-  const { code } = creation;
+  const { t, askFix } = context;
+  const { code, problem } = creation;
   const [open, setOpen] = useState<'review' | 'remove' | null>(null);
   const removeButton = useRef<HTMLButtonElement>(null);
   const cancelButton = useRef<HTMLButtonElement>(null);
@@ -115,6 +120,25 @@ export function CreationRow({
     requestAnimationFrame(() => document.getElementById(rowSwitchId(row))?.focus());
   };
 
+  // A paused creation that runs code already says why; a restyling one needs the line.
+  const fix =
+    problem && askFix ? (
+      <button type="button" className="cr-review" onClick={() => askFix(row.id, problem)}>
+        {t('panelCreationAskFix')}
+      </button>
+    ) : null;
+  const review = reviewable ? (
+    <button
+      type="button"
+      className="cr-review"
+      aria-expanded={reviewing}
+      aria-controls={reviewing ? moreId : undefined}
+      onClick={() => toggle('review')}
+    >
+      {t(reviewing ? 'localPluginsHideDetails' : 'scriptedReviewAndTurnOn')}
+    </button>
+  ) : null;
+
   return (
     <>
       <FeatureRow
@@ -122,11 +146,13 @@ export function CreationRow({
         previewing={previewing}
         shell={shell}
         sub={
-          code && (
+          code ? (
             <>
               <ScriptedBadge look={LOOK} t={t} />
               <span data-testid="scripted-state">{code.state}</span>
             </>
+          ) : (
+            fix && <span className="cr-problem">{t('panelCreationNothingMatches')}</span>
           )
         }
         actions={
@@ -143,18 +169,14 @@ export function CreationRow({
           </button>
         }
         instead={
-          reviewable ? (
-            <button
-              type="button"
-              className="cr-review"
-              aria-expanded={reviewing}
-              aria-controls={reviewing ? moreId : undefined}
-              onClick={() => toggle('review')}
-            >
-              {t(reviewing ? 'localPluginsHideDetails' : 'scriptedReviewAndTurnOn')}
-            </button>
+          review ? (
+            <span className="cr-acts">
+              {review}
+              {fix}
+            </span>
           ) : undefined
         }
+        below={review ? undefined : fix}
       />
       {open === 'remove' && (
         <div id={moreId} className="cr-more" role="group" aria-label={row.name}>

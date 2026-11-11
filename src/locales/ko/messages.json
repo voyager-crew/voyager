@@ -3065,6 +3065,10 @@
     "message": "요청을 시작한 페이지의 구조입니다. Voyager가 읽은 것으로, 구조만 담겨 있고 텍스트는 없습니다. 추측하지 말고 이 구조에 맞춰 플러그인을 작성하고, 이 요소들이 없는 페이지에서는 아무것도 바꾸지 않게 해 주세요.",
     "description": "Create mode: the lines before the page structure Voyager puts at the top of the creation message (tags and attributes only, no text from the page). Write no triple backtick: it goes into the chat composer"
   },
+  "createModeFixInstalledIntro": {
+    "message": "먼저 {pageUrl}을(를) 읽어 주세요. 이 Voyager 플러그인은 설치되어 있지만 지금 보고 있는 페이지에서 작동하지 않습니다. 아래는 Voyager가 이 페이지에서 확인한 내용과 설치된 그대로의 플러그인입니다. 고친 뒤 플러그인 전체를 json 코드 블록 하나에 담아 다시 답해 주세요.",
+    "description": "Create mode: first lines of the message My creations' Ask it to fix puts in a new chat. What Voyager saw on the page and the plugin's JSON follow it. Keep {pageUrl} unchanged and write no triple backtick: it goes into the chat composer"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "AI 답변 붙여넣기",
     "description": "Label of the field where the user pastes the AI reply"

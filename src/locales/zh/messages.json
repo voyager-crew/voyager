@@ -3065,6 +3065,10 @@
     "message": "这是我发起请求时所在页面的结构，由 Voyager 读取（只有结构，不含页面上的任何文字）。请按这个结构写插件，不要凭猜测；在缺少这些元素的页面上，插件不应做任何改动。",
     "description": "Create mode: the lines before the page structure Voyager puts at the top of the creation message (tags and attributes only, no text from the page). Write no triple backtick: it goes into the chat composer"
   },
+  "createModeFixInstalledIntro": {
+    "message": "请先阅读 {pageUrl}。这个 Voyager 插件已经安装，但在我当前的页面上不起作用。下面是 Voyager 在这个页面上看到的情况，以及插件当前安装的版本。请修好它，然后把完整插件放进唯一一个 json 代码块里重新回复。",
+    "description": "Create mode: first lines of the message My creations' Ask it to fix puts in a new chat. What Voyager saw on the page and the plugin's JSON follow it. Keep {pageUrl} unchanged and write no triple backtick: it goes into the chat composer"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "粘贴 AI 的回复",
     "description": "Label of the field where the user pastes the AI reply"

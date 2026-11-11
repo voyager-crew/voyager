@@ -199,6 +199,14 @@
     "message": "Remove {name}",
     "description": "Accessible name of the remove button on a creation in the Features tab; {name} is the creation"
   },
+  "panelCreationNothingMatches": {
+    "message": "On, but nothing on this page matches it",
+    "description": "My creations row: the creation is on, but none of its style rules or page changes match anything on the page being viewed"
+  },
+  "panelCreationAskFix": {
+    "message": "Ask it to fix",
+    "description": "My creations row button: open a new chat on this page with a request to the AI to fix this creation (filled, not sent)"
+  },
   "panelCreationRemoveAsk": {
     "message": "Remove {name} from this browser? You can’t undo this.",
     "description": "Features tab: asked under a creation before removing it; {name} is the creation"

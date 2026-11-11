@@ -398,6 +398,25 @@ label.rn {
   transform: scale(0.96);
 }
 
+/* On, but the page shows it does nothing: the warning's dot before the plain sentence. */
+.cr-problem::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 6px;
+  border-radius: 50%;
+  background: var(--wait);
+  vertical-align: 1px;
+}
+
+/* Review and Ask it to fix side by side, wrapping on a narrow panel. */
+.cr-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+}
+
 /* A review or a removal opens under its row, in the card, aligned with the names. */
 .cr-more {
   display: flex;

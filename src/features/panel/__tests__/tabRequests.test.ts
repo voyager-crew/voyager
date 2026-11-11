@@ -43,6 +43,23 @@ describe('Create mode requests through the panel tab relay', () => {
     });
   });
 
+  it('passes a fix request on with only its creation, problem and structure choice', () => {
+    expect(
+      parsePanelTabRequest({
+        type: 'gv.create.fix',
+        id: 'local.me.narrow',
+        problem: 'froze',
+        structure: true,
+        manifest: { contributes: {} },
+      }),
+    ).toEqual({ type: 'gv.create.fix', id: 'local.me.narrow', problem: 'froze', structure: true });
+    expect(parsePanelTabRequest({ type: 'gv.create.fix', id: 'x', problem: 'eval' })).toBeNull();
+    expect(parsePanelTabRequest({ type: 'gv.create.fix', problem: 'froze' })).toBeNull();
+    expect(parsePanelTabRequest({ type: 'gv.create.check', ids: ['x'] })).toEqual({
+      type: 'gv.create.check',
+    });
+  });
+
   it('keeps the pending-review request payload-free', () => {
     expect(parsePanelTabRequest({ type: 'gv.create.pending', candidate: { text: '{}' } })).toEqual({
       type: 'gv.create.pending',

@@ -3065,6 +3065,10 @@
     "message": "Voici comment est construite la page d’où j’ai lancé la demande, telle que Voyager l’a lue (la structure seulement, aucun de ses textes). Écrivez le plugin pour cette structure plutôt que de deviner, et faites qu’il ne change rien sur une page où ces éléments manquent.",
     "description": "Create mode: the lines before the page structure Voyager puts at the top of the creation message (tags and attributes only, no text from the page). Write no triple backtick: it goes into the chat composer"
   },
+  "createModeFixInstalledIntro": {
+    "message": "Lisez d’abord {pageUrl}. Ce plugin Voyager est installé, mais il ne fonctionne pas sur la page où je suis. Voici ce que Voyager a vu sur cette page, puis le plugin tel qu’il est installé. Corrigez-le, puis renvoyez le plugin complet dans un seul bloc de code json.",
+    "description": "Create mode: first lines of the message My creations' Ask it to fix puts in a new chat. What Voyager saw on the page and the plugin's JSON follow it. Keep {pageUrl} unchanged and write no triple backtick: it goes into the chat composer"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "Collez la réponse de l’IA",
     "description": "Label of the field where the user pastes the AI reply"

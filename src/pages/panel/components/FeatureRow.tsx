@@ -20,6 +20,7 @@ export function FeatureRow({
   sub,
   actions,
   instead,
+  below,
 }: {
   row: PanelRow;
   previewing: boolean;
@@ -28,6 +29,8 @@ export function FeatureRow({
   actions?: React.ReactNode;
   /** Shown under the name in place of the switch, which then is not drawn. */
   instead?: React.ReactNode;
+  /** Shown under the name beside the switch, such as an action for a problem. */
+  below?: React.ReactNode;
 }) {
   const Icon = row.icon;
   const off = !row.enabled;
@@ -47,11 +50,12 @@ export function FeatureRow({
       <span className="ri" aria-hidden="true">
         <Icon size={18} strokeWidth={1.75} />
       </span>
-      {sub || instead ? (
+      {sub || instead || below ? (
         <span className="rs">
           {name}
           {sub && <span className="sub cr-sub">{sub}</span>}
           {instead}
+          {below}
         </span>
       ) : (
         name

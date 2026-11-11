@@ -3065,6 +3065,10 @@
     "message": "هذه بنية الصفحة التي بدأت منها كما قرأها Voyager (البنية فقط، دون أي نص منها). اكتب الإضافة لهذه البنية بدل التخمين، واجعلها لا تغيّر شيئًا في صفحة تخلو من هذه العناصر.",
     "description": "Create mode: the lines before the page structure Voyager puts at the top of the creation message (tags and attributes only, no text from the page). Write no triple backtick: it goes into the chat composer"
   },
+  "createModeFixInstalledIntro": {
+    "message": "اقرأ {pageUrl} أولًا. إضافة Voyager هذه مثبّتة لكنها لا تعمل في الصفحة التي أنا فيها. في الأسفل ما رآه Voyager في هذه الصفحة والإضافة كما هي مثبّتة. أصلحها، ثم أعد إرسال الإضافة كاملة في كتلة شيفرة json واحدة فقط.",
+    "description": "Create mode: first lines of the message My creations' Ask it to fix puts in a new chat. What Voyager saw on the page and the plugin's JSON follow it. Keep {pageUrl} unchanged and write no triple backtick: it goes into the chat composer"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "الصق رد الذكاء الاصطناعي",
     "description": "Label of the field where the user pastes the AI reply"

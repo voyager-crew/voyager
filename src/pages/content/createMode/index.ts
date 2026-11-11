@@ -6,6 +6,10 @@
  *   the outline of the page it started on unless the user left that out
  *   (`pageOutline.ts`; `gv.create.outline` shows the panel the same text).
  *   Voyager never sends it; the user reviews it and presses send.
+ * - My creations asks which installed restyling creations find anything on
+ *   this page (`gv.create.check`), and "Ask it to fix" opens a new chat the
+ *   same way with what the page showed and the plugin as installed
+ *   (`gv.create.fix`, `creationRequests.ts`).
  * - in that chat, each JSON object in a reply gets a control
  *   (`replyControls.ts`). "Preview" holds the block and opens the panel, which
  *   fetches it once (`gv.create.pending`), checks it again and installs it;
@@ -23,6 +27,11 @@ import { insertIntoComposer } from '@/core/services/composer';
 import { isEmptyComposer } from '@/core/services/composer/emptyComposer';
 import { createToaster } from '@/core/ui/toast/toaster';
 import { authoringSiteForUrl } from '@/features/plugins/local/authoringSites';
+import {
+  CREATION_CHECK_MESSAGES,
+  type CreationFixRequest,
+  parseCreationFixRequest,
+} from '@/features/plugins/local/creation/creationChecks';
 import { buildCreationFixMessage } from '@/features/plugins/local/creation/fixMessage';
 import {
   CREATE_MODE_MESSAGES,
@@ -41,6 +50,7 @@ import type { TranslationKey } from '@/utils/translations';
 import { findChatInput } from '../chatInput';
 import type { StopNativeFeature } from '../featureLifecycle';
 import { voyagerPanelOpener } from '../panelShell/opener';
+import { checkInstalledCreations, installedFixMessage } from './creationRequests';
 import { startCreationFill } from './fill';
 import type { FillResult } from './fillMachine';
 import { createModelWarningReader } from './geminiModel';
@@ -85,14 +95,15 @@ export function startCreateMode(deps: CreateModeDeps = {}): StopNativeFeature {
     });
   };
 
-  const begin = (request: string, structure: boolean): CreateStartReply => {
-    // Leaving a chat with a typed message could lose it, so refuse before moving.
+  // Leaving a chat with a typed message could lose it, so refuse before moving.
+  const composerBusy = (): boolean => {
     const current = find();
-    if (current && !isEmptyComposer(current)) return { ok: false, reason: 'busy' };
-    // Read now, before the new chat replaces the page the request started on.
-    const outline = structure ? buildPageOutline(document, site, location.href) : null;
+    return current !== null && !isEmptyComposer(current);
+  };
+
+  const openFilled = (message: string): CreateStartReply => {
     stopFill?.();
-    stopFill = startCreationFill(buildCreationMessage(request, site, getTranslationSync, outline), {
+    stopFill = startCreationFill(message, {
       target,
       find,
       notify: (result) => {
@@ -103,6 +114,27 @@ export function startCreateMode(deps: CreateModeDeps = {}): StopNativeFeature {
   };
 
   const readModelWarning = createModelWarningReader(site.id);
+
+  const begin = (request: string, structure: boolean): CreateStartReply => {
+    if (composerBusy()) return { ok: false, reason: 'busy' };
+    // Read now, before the new chat replaces the page the request started on.
+    const outline = structure ? buildPageOutline(document, site, location.href) : null;
+    return openFilled(buildCreationMessage(request, site, getTranslationSync, outline));
+  };
+
+  const page = () => ({ doc: document, site, url: location.href });
+
+  const askToFix = async (request: CreationFixRequest): Promise<CreateStartReply> => {
+    if (composerBusy()) return { ok: false, reason: 'busy' };
+    const message = installedFixMessage(
+      page(),
+      await loadLocalPluginRecords(),
+      request,
+      getTranslationSync,
+    );
+    return message ? openFilled(message) : { ok: false, reason: 'unsupported' };
+  };
+
   const pending = createPendingReview();
   const openReview = deps.openReview ?? (() => voyagerPanelOpener.openReview());
 
@@ -147,12 +179,24 @@ export function startCreateMode(deps: CreateModeDeps = {}): StopNativeFeature {
       sendResponse(begin(start.request, start.structure));
       return;
     }
-    if (typeof message !== 'object' || message === null || !('type' in message)) return;
-    if (message.type === CREATE_MODE_MESSAGES.pending) sendResponse({ candidate: pending.take() });
-    if (message.type === CREATE_MODE_MESSAGES.model)
+    const fix = parseCreationFixRequest(message);
+    if (fix) {
+      void askToFix(fix).then(sendResponse);
+      return true;
+    }
+    const type =
+      typeof message === 'object' && message !== null && 'type' in message && message.type;
+    if (type === CREATE_MODE_MESSAGES.pending) sendResponse({ candidate: pending.take() });
+    else if (type === CREATE_MODE_MESSAGES.model)
       sendResponse({ warning: readModelWarning?.() ?? null });
-    if (message.type === CREATE_MODE_MESSAGES.outline)
+    else if (type === CREATE_MODE_MESSAGES.outline)
       sendResponse({ outline: buildPageOutline(document, site, location.href) });
+    else if (type === CREATION_CHECK_MESSAGES.check) {
+      void loadLocalPluginRecords().then((records) =>
+        sendResponse({ checks: checkInstalledCreations(page(), records) }),
+      );
+      return true;
+    }
   };
   chrome.runtime.onMessage.addListener(listener);
 

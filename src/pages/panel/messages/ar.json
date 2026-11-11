@@ -199,6 +199,14 @@
     "message": "إزالة {name}",
     "description": "Accessible name of the remove button on a creation in the Features tab; {name} is the creation"
   },
+  "panelCreationNothingMatches": {
+    "message": "مفعّلة، لكن لا شيء في هذه الصفحة يطابقها",
+    "description": "My creations row: the creation is on, but none of its style rules or page changes match anything on the page being viewed"
+  },
+  "panelCreationAskFix": {
+    "message": "اطلب إصلاحها",
+    "description": "My creations row button: open a new chat on this page with a request to the AI to fix this creation (filled, not sent)"
+  },
   "panelCreationRemoveAsk": {
     "message": "هل تريد إزالة {name} من هذا المتصفح؟ لا يمكن التراجع عن ذلك.",
     "description": "Features tab: asked under a creation before removing it; {name} is the creation"

@@ -199,6 +199,14 @@
     "message": "移除 {name}",
     "description": "Accessible name of the remove button on a creation in the Features tab; {name} is the creation"
   },
+  "panelCreationNothingMatches": {
+    "message": "已开启，但这个页面上没有它能匹配的内容",
+    "description": "My creations row: the creation is on, but none of its style rules or page changes match anything on the page being viewed"
+  },
+  "panelCreationAskFix": {
+    "message": "请 AI 修复",
+    "description": "My creations row button: open a new chat on this page with a request to the AI to fix this creation (filled, not sent)"
+  },
   "panelCreationRemoveAsk": {
     "message": "要从这个浏览器移除 {name} 吗？移除后无法撤销。",
     "description": "Features tab: asked under a creation before removing it; {name} is the creation"

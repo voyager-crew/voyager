@@ -3065,6 +3065,10 @@
     "message": "依頼を始めたページの構造です。Voyager が読み取ったもので、構造だけを含み、テキストは含みません。推測せずにこの構造に合わせてプラグインを書き、これらの要素がないページでは何も変えないようにしてください。",
     "description": "Create mode: the lines before the page structure Voyager puts at the top of the creation message (tags and attributes only, no text from the page). Write no triple backtick: it goes into the chat composer"
   },
+  "createModeFixInstalledIntro": {
+    "message": "まず {pageUrl} を読んでください。この Voyager プラグインはインストール済みですが、今開いているページでは動いていません。以下は Voyager がこのページで確認した内容と、インストールされているプラグインです。直したうえで、プラグイン全体をもう一度 json コードブロック 1 つだけで返してください。",
+    "description": "Create mode: first lines of the message My creations' Ask it to fix puts in a new chat. What Voyager saw on the page and the plugin's JSON follow it. Keep {pageUrl} unchanged and write no triple backtick: it goes into the chat composer"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "AI の回答を貼り付け",
     "description": "Label of the field where the user pastes the AI reply"

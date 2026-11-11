@@ -3065,6 +3065,10 @@
     "message": "This is how the page I started from is built, as Voyager read it (structure only, none of its text). Write the plugin for this structure rather than guessing, and make it change nothing on a page where these elements are missing.",
     "description": "Create mode: the lines before the page structure Voyager puts at the top of the creation message (tags and attributes only, no text from the page). Write no triple backtick: it goes into the chat composer"
   },
+  "createModeFixInstalledIntro": {
+    "message": "Read {pageUrl} first. This Voyager plugin is installed but doesn’t work on the page I’m on. Below are what Voyager saw on this page and the plugin as it is installed. Fix it, then reply with the whole plugin again in a single json code block.",
+    "description": "Create mode: first lines of the message My creations' Ask it to fix puts in a new chat. What Voyager saw on the page and the plugin's JSON follow it. Keep {pageUrl} unchanged and write no triple backtick: it goes into the chat composer"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "Paste the AI’s reply",
     "description": "Label of the field where the user pastes the AI reply"
