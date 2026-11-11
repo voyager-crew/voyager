@@ -51,18 +51,24 @@ export interface ScriptedStateV1 {
   readonly crashNotices: Readonly<Record<string, ScriptedCrashNotice>>;
 }
 
+/** A scripted plugin as it ran on one page load: the review hash of the code registered then. */
+export interface LoadedScript {
+  readonly id: string;
+  readonly reviewHash: ScriptHash;
+}
+
 /** One tab's page load, `StorageKeys.PLUGIN_SCRIPTED_LOADS` keyed by tab id; background-only writer. */
 export type ScriptedLoadRecord =
   | {
       readonly status: 'loading';
       readonly url: string;
-      readonly ids: readonly string[];
+      readonly plugins: readonly LoadedScript[];
       readonly startedAt: number;
     }
   | {
       readonly status: 'suspect';
       readonly url: string;
-      readonly ids: readonly string[];
+      readonly plugins: readonly LoadedScript[];
       readonly startedAt: number;
     }
   | { readonly status: 'confirmed'; readonly url: string; readonly at: number };

@@ -9,7 +9,7 @@ import { StorageKeys } from '@/core/types/common';
 import { getVoyagerBuildTarget } from '@/core/utils/browser';
 import { parseScriptedLoads } from '@/features/plugins/scripted/crashGuard';
 import type { ScriptedStatus } from '@/features/plugins/scripted/messages';
-import { createScriptedRegistrar } from '@/features/plugins/scripted/registrar';
+import { createScriptedRegistrar, loadedScriptsFor } from '@/features/plugins/scripted/registrar';
 import {
   clearScriptedCrashNotice,
   loadScriptedPlugins,
@@ -21,7 +21,7 @@ import {
   readScriptedStatus,
   userScriptsHere,
 } from '@/features/plugins/scripted/status';
-import { matchesAnyPattern } from '@/features/plugins/sites/matchPattern';
+import type { LoadedScript } from '@/features/plugins/scripted/types';
 
 import { createCrashGuard } from './guard';
 import { handleScriptedMessage } from './messages';
@@ -39,14 +39,12 @@ async function unregisterIds(ids: readonly string[]): Promise<void> {
   }
 }
 
-async function runningIdsFor(url: string | undefined): Promise<string[]> {
+async function runningFor(url: string | undefined): Promise<LoadedScript[]> {
   const api = userScriptsHere();
   if (!api || !url) return [];
   try {
-    const scripts = await api.getScripts();
-    return scripts
-      .filter((script) => matchesAnyPattern(url, script.matches ?? []))
-      .map((script) => script.id);
+    const [scripts, plugins] = await Promise.all([api.getScripts(), loadScriptedPlugins()]);
+    return loadedScriptsFor(url, scripts, plugins);
   } catch {
     return [];
   }
@@ -57,7 +55,8 @@ function startRuntime(registrar: ReturnType<typeof createScriptedRegistrar>) {
     now: () => Date.now(),
     readLoads: async () => parseScriptedLoads((await chrome.storage.local.get(LOADS))?.[LOADS]),
     writeLoads: (records) => chrome.storage.local.set({ [LOADS]: records }),
-    runningIdsFor,
+    runningFor,
+    readState: loadScriptedState,
     unregister: unregisterIds,
     recordCrash: recordScriptedCrash,
     scheduleSuspectCheck: (tab, when) =>
@@ -79,10 +78,9 @@ function startRuntime(registrar: ReturnType<typeof createScriptedRegistrar>) {
   chrome.runtime.onInstalled.addListener(() => void registrar.reconcile());
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== 'local') return;
-    if (
-      Object.hasOwn(changes, StorageKeys.PLUGIN_LOCAL_MANIFESTS) ||
-      Object.hasOwn(changes, StorageKeys.PLUGIN_SCRIPTED_STATE)
-    ) {
+    const records = changes[StorageKeys.PLUGIN_LOCAL_MANIFESTS];
+    if (records) void guard.recordsChanged(records.oldValue, records.newValue);
+    if (records || Object.hasOwn(changes, StorageKeys.PLUGIN_SCRIPTED_STATE)) {
       void registrar.reconcile();
     }
   });

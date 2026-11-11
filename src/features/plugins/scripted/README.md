@@ -97,7 +97,8 @@ Chrome and Edge builds only; they alone ask for the `userScripts` permission
   raises any `setInterval` delay below 50 ms to 50 ms.
 - **Crash guard** (`crashGuard.ts`, `scriptedCreations/guard.ts`). A persisted pure
   transition over each tab's `ScriptedLoadRecord`, so a worker restart keeps it.
-  A `loading` tab update records the plugins registered for that URL, and an alarm
+  A `loading` tab update records the plugins registered for that URL, each with
+  the review hash of the code registered then (`loadedScriptsFor`), and an alarm
   at 30 s marks a load that is still unconfirmed `suspect`. The page's
   `gv.scripted.loaded` confirms it. A crash is any of these, and every plugin
   that ran on the load is named in it:
@@ -106,9 +107,12 @@ Chrome and Edge builds only; they alone ask for the `userScripts` permission
   - the browser starts again after such a load.
 
   A quicker reload keeps the first load's start time, so reloading a frozen page
-  every few seconds still adds up to a crash. On a crash the guard unregisters
-  those plugins first, then `recordScriptedCrash` turns each one still on off and
-  stores a crash notice.
+  every few seconds still adds up to a crash. Only the same code counts: a crash
+  names each plugin with its hash, the guard unregisters only those still turned
+  on with that hash, first, then `recordScriptedCrash` turns those off and stores
+  a crash notice. A replacement reviewed and turned on since keeps running, and a
+  re-import or removal (any change to a stored record) takes the plugin out of
+  every load record.
 
 - **Messages** (`messages.ts`, handled in `scriptedCreations/messages.ts`):
   `status`, `recheck`, `clearNotice` and `openDetails` (a `chrome://extensions/?id=`

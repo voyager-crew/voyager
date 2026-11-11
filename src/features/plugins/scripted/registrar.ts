@@ -7,11 +7,17 @@
  */
 import { logger } from '@/core/services/LoggerService';
 
+import { matchesAnyPattern } from '../sites/matchPattern';
 import { type DesiredUserScript, desiredUserScripts } from './desired';
 import { SCRIPTED_PRELUDE_FILE } from './prelude/file';
 import { scriptedRunState } from './state';
 import type { UserScriptsApi } from './status';
-import type { ScriptedPlugin, ScriptedStateV1, UserScriptsAvailability } from './types';
+import type {
+  LoadedScript,
+  ScriptedPlugin,
+  ScriptedStateV1,
+  UserScriptsAvailability,
+} from './types';
 
 export type { UserScriptsApi } from './status';
 
@@ -41,6 +47,33 @@ export function toRegisteredUserScript(desired: DesiredUserScript): RegisteredUs
     world: desired.world,
     worldId: desired.worldId,
   };
+}
+
+const sameSites = (a: readonly string[], b: readonly string[]): boolean =>
+  a.length === b.length && a.every((pattern) => b.includes(pattern));
+
+/**
+ * What a load of `url` runs: each registration that injects there and still
+ * holds its plugin's stored code, with that code's review hash. A registration
+ * of older code the registrar has not replaced yet is left out; nothing turned
+ * that code on.
+ */
+export function loadedScriptsFor(
+  url: string,
+  registered: readonly RegisteredUserScript[],
+  plugins: readonly ScriptedPlugin[],
+): LoadedScript[] {
+  const byId = new Map(plugins.map((plugin) => [plugin.manifest.id, plugin]));
+  return registered.flatMap((script) => {
+    const plugin = byId.get(script.id);
+    const matches = script.matches ?? [];
+    if (!plugin || !matchesAnyPattern(url, matches)) return [];
+    const code = script.js?.find((source) => source.code !== undefined)?.code;
+    return code === plugin.manifest.contributes.script.source &&
+      sameSites(matches, plugin.manifest.matches)
+      ? [{ id: plugin.manifest.id, reviewHash: plugin.reviewHash }]
+      : [];
+  });
 }
 
 function comparable(script: RegisteredUserScript): string {

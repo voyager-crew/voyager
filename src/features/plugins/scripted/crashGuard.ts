@@ -12,7 +12,7 @@
  * writer, applies one event at a time.
  */
 import { isLocalPluginId } from '../local/localPluginId';
-import type { ScriptedLoadRecord } from './types';
+import { type LoadedScript, type ScriptedLoadRecord, parseScriptHash } from './types';
 
 /** A reload or close sooner than this after the load started is the user's, not a freeze. */
 export const CRASH_GRACE_MS = 10_000;
@@ -20,18 +20,18 @@ export const CRASH_GRACE_MS = 10_000;
 export const CRASH_SUSPECT_MS = 30_000;
 
 export type CrashGuardEvent =
-  /** This tab started a document load; `ids` are the scripted plugins that will run on it. */
+  /** This tab started a document load; `plugins` are the scripted plugins that will run on it. */
   | {
       readonly type: 'load';
       readonly url: string;
-      readonly ids: readonly string[];
+      readonly plugins: readonly LoadedScript[];
       readonly at: number;
     }
   /** The page told the background it loaded and its main thread is free. */
   | { readonly type: 'confirm'; readonly url: string; readonly at: number }
   | { readonly type: 'alarm'; readonly at: number }
-  /** Another tab started a load that runs `ids`. */
-  | { readonly type: 'peer-load'; readonly ids: readonly string[]; readonly at: number }
+  /** Another tab started a load that runs `plugins`. */
+  | { readonly type: 'peer-load'; readonly plugins: readonly LoadedScript[]; readonly at: number }
   /** The tab closed, or the browser session it belonged to ended. */
   | { readonly type: 'close'; readonly at: number };
 
@@ -39,7 +39,7 @@ export interface ScriptedCrash {
   readonly at: number;
   readonly url: string;
   /** Every plugin that ran on the load that never confirmed; any of them may be the cause. */
-  readonly ids: readonly string[];
+  readonly plugins: readonly LoadedScript[];
 }
 
 export interface CrashGuardResult {
@@ -53,12 +53,21 @@ function unconfirmed(record: ScriptedLoadRecord | undefined): record is Unconfir
   return record?.status === 'loading' || record?.status === 'suspect';
 }
 
-function crashOf(record: Unconfirmed, at: number): ScriptedCrash {
-  return { at, url: record.url, ids: record.ids };
+/** The same code: a re-import under the same id is another plugin as far as a crash goes. */
+function includes(plugins: readonly LoadedScript[], plugin: LoadedScript): boolean {
+  return plugins.some((other) => other.id === plugin.id && other.reviewHash === plugin.reviewHash);
 }
 
-function loading(url: string, ids: readonly string[], startedAt: number): ScriptedLoadRecord {
-  return { status: 'loading', url, ids, startedAt };
+function crashOf(record: Unconfirmed, at: number): ScriptedCrash {
+  return { at, url: record.url, plugins: record.plugins };
+}
+
+function loading(
+  url: string,
+  plugins: readonly LoadedScript[],
+  startedAt: number,
+): ScriptedLoadRecord {
+  return { status: 'loading', url, plugins, startedAt };
 }
 
 export function crashGuardTransition(
@@ -67,13 +76,13 @@ export function crashGuardTransition(
 ): CrashGuardResult {
   switch (event.type) {
     case 'load': {
-      const next = event.ids.length ? event.ids : undefined;
+      const next = event.plugins.length ? event.plugins : undefined;
       if (!unconfirmed(record)) {
         return { record: next && loading(event.url, next, event.at) };
       }
       if (event.at - record.startedAt >= CRASH_GRACE_MS) {
         const crash = crashOf(record, event.at);
-        const survivors = next?.filter((id) => !crash.ids.includes(id));
+        const survivors = next?.filter((plugin) => !includes(crash.plugins, plugin));
         return {
           record: survivors?.length ? loading(event.url, survivors, event.at) : undefined,
           crash,
@@ -97,7 +106,10 @@ export function crashGuardTransition(
             : record,
       };
     case 'peer-load':
-      if (record?.status === 'suspect' && record.ids.some((id) => event.ids.includes(id))) {
+      if (
+        record?.status === 'suspect' &&
+        record.plugins.some((plugin) => includes(event.plugins, plugin))
+      ) {
         return { record: undefined, crash: crashOf(record, event.at) };
       }
       return { record };
@@ -150,7 +162,7 @@ export function crashGuardStep(
       if (other === tab) continue;
       const peer = crashGuardTransition(record, {
         type: 'peer-load',
-        ids: event.ids,
+        plugins: event.plugins,
         at: event.at,
       });
       withRecord(next, other, peer.record);
@@ -159,12 +171,29 @@ export function crashGuardStep(
   }
   let ownRecord = own.record;
   if (ownRecord?.status === 'loading' && crashes.length) {
-    const disabled = new Set(crashes.flatMap((crash) => crash.ids));
-    const ids = ownRecord.ids.filter((id) => !disabled.has(id));
-    ownRecord = ids.length ? { ...ownRecord, ids } : undefined;
+    const crashed = crashes.flatMap((crash) => crash.plugins);
+    const plugins = ownRecord.plugins.filter((plugin) => !includes(crashed, plugin));
+    ownRecord = plugins.length ? { ...ownRecord, plugins } : undefined;
   }
   withRecord(next, tab, ownRecord);
   return { records: next, crashes };
+}
+
+/**
+ * Every record without the plugins `ids` names, after they were re-imported or
+ * removed: what ran before is no longer what the user has, so no crash names it.
+ */
+export function crashGuardForget(records: ScriptedLoads, ids: readonly string[]): ScriptedLoads {
+  const next: Record<string, ScriptedLoadRecord> = {};
+  for (const [tab, record] of Object.entries(records)) {
+    if (!unconfirmed(record)) {
+      next[tab] = record;
+      continue;
+    }
+    const plugins = record.plugins.filter((plugin) => !ids.includes(plugin.id));
+    if (plugins.length) next[tab] = { ...record, plugins };
+  }
+  return next;
 }
 
 /** Every open record after the browser session ended: each tab closed at `at`. */
@@ -184,12 +213,15 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
-function parseIds(value: unknown): string[] | undefined {
+function parsePlugins(value: unknown): LoadedScript[] | undefined {
   if (!Array.isArray(value)) return undefined;
-  const ids = value.filter(
-    (id: unknown): id is string => typeof id === 'string' && isLocalPluginId(id),
-  );
-  return ids.length ? ids : undefined;
+  const plugins: LoadedScript[] = [];
+  for (const entry of value as unknown[]) {
+    if (!isRecord(entry) || typeof entry.id !== 'string' || !isLocalPluginId(entry.id)) continue;
+    const reviewHash = parseScriptHash(entry.reviewHash);
+    if (reviewHash) plugins.push({ id: entry.id, reviewHash });
+  }
+  return plugins.length ? plugins : undefined;
 }
 
 function parseLoadRecord(value: unknown): ScriptedLoadRecord | undefined {
@@ -199,9 +231,9 @@ function parseLoadRecord(value: unknown): ScriptedLoadRecord | undefined {
     return isFiniteNumber(value.at) ? { status: 'confirmed', url, at: value.at } : undefined;
   }
   if (value.status !== 'loading' && value.status !== 'suspect') return undefined;
-  const ids = parseIds(value.ids);
-  if (!ids || !isFiniteNumber(value.startedAt)) return undefined;
-  return { status: value.status, url, ids, startedAt: value.startedAt };
+  const plugins = parsePlugins(value.plugins);
+  if (!plugins || !isFiniteNumber(value.startedAt)) return undefined;
+  return { status: value.status, url, plugins, startedAt: value.startedAt };
 }
 
 /** Stored load records from `unknown`, keyed by tab id; an unreadable entry is dropped. */

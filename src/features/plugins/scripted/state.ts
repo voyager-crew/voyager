@@ -152,15 +152,25 @@ export function disableScripted(id: string): Promise<boolean> {
   });
 }
 
-/** The crash guard's verdict: each plugin it names that is still on turns off and gets a notice. */
+/**
+ * The ids a crash may turn off: those still on with the code that ran on the
+ * load. A plugin re-imported and turned on again since runs other code.
+ */
+export function crashedAndStillOn(crash: ScriptedCrash, state: ScriptedStateV1): string[] {
+  return crash.plugins
+    .filter((plugin) => state.enabled[plugin.id]?.reviewHash === plugin.reviewHash)
+    .map((plugin) => plugin.id);
+}
+
+/** The crash guard's verdict: each plugin it names that still runs that code turns off with a notice. */
 export function recordScriptedCrash(crash: ScriptedCrash): Promise<boolean> {
-  return updateScriptedState('recordScriptedCrash', { ids: crash.ids }, (current) => {
+  const withIds = crash.plugins.map((plugin) => plugin.id);
+  return updateScriptedState('recordScriptedCrash', { ids: withIds }, (current) => {
     const enabled = { ...current.enabled };
     const crashNotices = { ...current.crashNotices };
-    for (const id of crash.ids) {
-      if (!Object.hasOwn(enabled, id)) continue;
+    for (const id of crashedAndStillOn(crash, current)) {
       delete enabled[id];
-      crashNotices[id] = { at: crash.at, url: crash.url, withIds: [...crash.ids] };
+      crashNotices[id] = { at: crash.at, url: crash.url, withIds };
     }
     return { ...current, enabled, crashNotices };
   });
