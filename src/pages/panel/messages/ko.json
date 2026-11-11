@@ -79,6 +79,10 @@
     "message": "바꾸고 싶으면 이 채팅에서 AI에게 말하세요. 새 버전을 Voyager가 답변 아래에서 제안합니다.",
     "description": "Create tab: how to change the installed plugin again"
   },
+  "panelCreateFoundIn": {
+    "message": "{features}의 {creations}에 있습니다.",
+    "description": "Create tab, after an install: where the creation is now; {features} is the Features tab name, {creations} the My creations group name"
+  },
   "panelCreateFailed": {
     "message": "설치하지 못했습니다. 아무것도 바뀌지 않았습니다.",
     "description": "Create tab: the install failed; nothing was installed"
@@ -158,6 +162,18 @@
   "panelRemoveWebsite": {
     "message": "{site} 삭제",
     "description": "Accessible name of the remove button of an added website; {site} is its host"
+  },
+  "panelCreationRemove": {
+    "message": "{name} 제거",
+    "description": "Accessible name of the remove button on a creation in the Features tab; {name} is the creation"
+  },
+  "panelCreationRemoveAsk": {
+    "message": "이 브라우저에서 {name}을(를) 제거할까요? 되돌릴 수 없습니다.",
+    "description": "Features tab: asked under a creation before removing it; {name} is the creation"
+  },
+  "panelRemoveCreationFailed": {
+    "message": "Voyager가 {name}을(를) 제거하지 못했습니다. 다시 시도하세요.",
+    "description": "Toast: storage refused to remove a creation; {name} is the creation"
   },
   "panelSyncShared": {
     "message": "공통",

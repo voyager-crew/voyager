@@ -79,6 +79,10 @@
     "message": "変えたいところがあれば、このチャットで AI に伝えてください。新しい版を Voyager が返信の下で提案します。",
     "description": "Create tab: how to change the installed plugin again"
   },
+  "panelCreateFoundIn": {
+    "message": "「{features}」の「{creations}」にあります。",
+    "description": "Create tab, after an install: where the creation is now; {features} is the Features tab name, {creations} the My creations group name"
+  },
   "panelCreateFailed": {
     "message": "インストールできませんでした。何も変更していません。",
     "description": "Create tab: the install failed; nothing was installed"
@@ -158,6 +162,18 @@
   "panelRemoveWebsite": {
     "message": "{site} を削除",
     "description": "Accessible name of the remove button of an added website; {site} is its host"
+  },
+  "panelCreationRemove": {
+    "message": "{name} を削除",
+    "description": "Accessible name of the remove button on a creation in the Features tab; {name} is the creation"
+  },
+  "panelCreationRemoveAsk": {
+    "message": "このブラウザから {name} を削除しますか？元に戻せません。",
+    "description": "Features tab: asked under a creation before removing it; {name} is the creation"
+  },
+  "panelRemoveCreationFailed": {
+    "message": "{name} を削除できませんでした。もう一度お試しください。",
+    "description": "Toast: storage refused to remove a creation; {name} is the creation"
   },
   "panelSyncShared": {
     "message": "共通",

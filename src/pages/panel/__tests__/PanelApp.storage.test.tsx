@@ -20,10 +20,8 @@ import {
   mount,
   posted,
   postedKinds,
-  rowNames,
   rowSwitch,
   sync,
-  writeElsewhere,
 } from './panelHarness';
 
 vi.mock('webextension-polyfill', async () => ({
@@ -153,38 +151,5 @@ describe('sliders', () => {
     expect(posted).toEqual([]);
     expect(writesOf(StorageKeys.CHAT_WIDTH)).toHaveLength(1);
     expect(sync[StorageKeys.CHAT_WIDTH]).toBe(80);
-  });
-});
-
-describe('rows come from manifests', () => {
-  it('a plugin installed while the panel is open appears as a row with the default icon', async () => {
-    await mount();
-    expect(rowNames()).not.toContain('My Gemini tweak');
-
-    await writeElsewhere('local', {
-      [StorageKeys.PLUGIN_LOCAL_MANIFESTS]: {
-        'local.me.gemini-tweak': {
-          manifest: {
-            id: 'local.me.gemini-tweak',
-            name: 'My Gemini tweak',
-            version: '1.0.0',
-            description: 'd',
-            author: 'me',
-            category: 'layout',
-            license: 'MIT',
-            engine: '>=1.0.0',
-            tier: 'declarative',
-            matches: ['https://gemini.google.com/*'],
-            contributes: { styles: [{ css: '.gv-x{color:red}' }] },
-          },
-          importedAt: 1,
-          updatedAt: 1,
-        },
-      },
-    });
-
-    expect(rowNames()).toContain('My Gemini tweak');
-    const icon = container.querySelector('[data-row="local.me.gemini-tweak"] .ri svg');
-    expect(icon?.classList.contains('lucide-puzzle')).toBe(true);
   });
 });

@@ -4371,7 +4371,7 @@
     "description": "Label above the full source code of a creation that runs code"
   },
   "scriptedInstallNote": {
-    "message": "바로 켜지며 이 기기에서만 적용됩니다. 코드를 실행하는 창작물은 내 창작물이나 패널의 만들기 탭에서 언제든 모두 멈출 수 있습니다.",
+    "message": "바로 켜지며 이 기기에서만 적용됩니다. 코드를 실행하는 창작물은 내 창작물에서 언제든 모두 멈출 수 있습니다.",
     "description": "Under the review of a creation that runs code, before Install and turn on"
   },
   "scriptedInstallAndTurnOn": {
@@ -4496,7 +4496,7 @@
   },
   "scriptedStopAll": {
     "message": "코드를 실행하는 창작물 모두 멈추기",
-    "description": "Kill switch button in My creations and the panel’s Create tab"
+    "description": "Kill switch button at the end of My creations, in the popup and the panel’s Features tab"
   },
   "scriptedStoppedAll": {
     "message": "코드를 실행하는 창작물이 멈춰 있습니다.",

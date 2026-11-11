@@ -17,3 +17,15 @@ export const PANEL_SCRIPTED_LOOK: ScriptedLook = {
   primary: 'pri',
   secondary: 'sec',
 };
+
+/**
+ * The same parts inside a Features card, where nothing may draw a second box:
+ * the fold and the setup steps lose their frames and mark themselves with the
+ * warning's edge instead (`rows.css`).
+ */
+export const PANEL_ROW_SCRIPTED_LOOK: ScriptedLook = {
+  ...PANEL_SCRIPTED_LOOK,
+  badge: 'create-badge cr-mark',
+  disclosure: 'cr-fold',
+  card: 'cr-note',
+};

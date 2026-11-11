@@ -4371,7 +4371,7 @@
     "description": "Label above the full source code of a creation that runs code"
   },
   "scriptedInstallNote": {
-    "message": "Оно включится сразу и только на этом устройстве. Остановить все создания, запускающие код, можно в любой момент в «Моих созданиях» или на вкладке «Создать» в панели.",
+    "message": "Оно включится сразу и только на этом устройстве. Остановить все создания, запускающие код, можно в любой момент в «Моих созданиях».",
     "description": "Under the review of a creation that runs code, before Install and turn on"
   },
   "scriptedInstallAndTurnOn": {
@@ -4496,7 +4496,7 @@
   },
   "scriptedStopAll": {
     "message": "Остановить все создания, запускающие код",
-    "description": "Kill switch button in My creations and the panel’s Create tab"
+    "description": "Kill switch button at the end of My creations, in the popup and the panel’s Features tab"
   },
   "scriptedStoppedAll": {
     "message": "Создания, запускающие код, остановлены.",

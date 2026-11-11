@@ -160,6 +160,12 @@ export function CreationReview({
           <p className="create-note" role="status">
             {fillPlaceholders(t(on ? 'panelCreateInstalledOn' : 'panelCreateInstalledOff'), name)}
           </p>
+          <p className="create-note">
+            {fillPlaceholders(t('panelCreateFoundIn'), {
+              features: t('panelTabFeatures'),
+              creations: t('localPluginsTitle'),
+            })}
+          </p>
           {state.reload && <p className="create-note">{t('panelCreateReload')}</p>}
           {on && isScriptedManifest(state.manifest) && setup}
           {on && <p className="create-note">{t('panelCreateChangeAgain')}</p>}

@@ -4371,7 +4371,7 @@
     "description": "Label above the full source code of a creation that runs code"
   },
   "scriptedInstallNote": {
-    "message": "装好后立即开启，只在这台设备上生效。你随时可以在「我的创造」或面板的「创造」标签里停止所有运行代码的创造。",
+    "message": "装好后立即开启，只在这台设备上生效。你随时可以在「我的创造」里停止所有运行代码的创造。",
     "description": "Under the review of a creation that runs code, before Install and turn on"
   },
   "scriptedInstallAndTurnOn": {
@@ -4496,7 +4496,7 @@
   },
   "scriptedStopAll": {
     "message": "停止所有运行代码的创造",
-    "description": "Kill switch button in My creations and the panel’s Create tab"
+    "description": "Kill switch button at the end of My creations, in the popup and the panel’s Features tab"
   },
   "scriptedStoppedAll": {
     "message": "运行代码的创造已全部停止。",

@@ -90,7 +90,7 @@ A revisão marca uma criação assim com o distintivo **Executa código**.
 
 Em **Minhas criações**, cada uma mostra **Ativada, só neste dispositivo**, **Desativada** ou **Pausada** com o motivo.
 
-- **Parar tudo**: **Parar todas as criações que executam código**, em **Minhas criações** ou no separador **Criar** do painel, para todas de uma vez; **Retomar** volta a iniciá-las.
+- **Parar tudo**: **Parar todas as criações que executam código**, no fim de **Minhas criações** (o cartão do popup ou o separador **Recursos** do painel), para todas de uma vez; **Retomar** volta a iniciá-las.
 - **Páginas abertas**: uma página já aberta continua a executá-las até ser recarregada. **Recarregar esta página** faz isso no separador atual.
 - **Bloqueios**: se uma página deixar de responder depois de estas criações correrem nela, o Voyager desativa-as e indica-as num aviso na próxima vez que a página carregar. Depois de corrigida, reveja-a em **Minhas criações** e volte a ativá-la.
 

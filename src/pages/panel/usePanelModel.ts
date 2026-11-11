@@ -5,18 +5,25 @@ import { CircleDot } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getVoyagerBuildTarget, isSafari } from '@/core/utils/browser';
 import type { PanelSessionId } from '@/features/panel/protocol';
+import { isLocalPluginId } from '@/features/plugins/local/localPluginId';
+import { removeLocalPlugin } from '@/features/plugins/local/localPluginImport';
 import { compatibleSettingWrite } from '@/features/plugins/runtime/resolvePluginSettings';
+import { isScriptedManifest } from '@/features/plugins/scripted/types';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
+import { matchesAnyPattern } from '@/features/plugins/sites/matchPattern';
+import { isScriptedOn, runStateText } from '@/pages/popup/components/scripted/ScriptedRowControls';
 import { usePluginAccess } from '@/pages/popup/components/usePluginAccess';
 import { usePluginPreferences } from '@/pages/popup/components/usePluginPreferences';
 import type { CurrentTab } from '@/pages/popup/hooks/currentTab';
 import { COVERAGE_REFUSAL_MESSAGES } from '@/pages/popup/hooks/useCustomWebsites';
+import { useLocalPluginEntries } from '@/pages/popup/hooks/useLocalPlugins';
 import { usePopupPlugins } from '@/pages/popup/hooks/usePopupPlugins';
 import {
   PROMPT_MANAGER_STORAGE_DEFAULTS,
   usePromptManagerSettings,
 } from '@/pages/popup/hooks/usePromptManagerSettings';
 import { PROMPT_SWITCH_ID } from '@/pages/popup/hooks/usePromptSwitch';
+import type { ScriptedCreations } from '@/pages/popup/hooks/useScriptedCreations';
 import { useSiteAccess } from '@/pages/popup/hooks/useSiteAccess';
 import { useSitePluginRuns } from '@/pages/popup/hooks/useSitePluginRuns';
 import type { UndoOffer, WithdrawUndoOffer } from '@/pages/popup/hooks/useUndoToast';
@@ -33,9 +40,11 @@ import {
   type PanelRow,
   type RowTexts,
   catalogPanelRow,
+  codeCreationRow,
   officialPanelRow,
 } from './features/featureRows';
 import { openSiteAccessFallback } from './hooks/panelRequests';
+import { fillPlaceholders } from './panelText';
 import type { PanelSite } from './sites/panelSites';
 
 const OFFICIAL_IDS: ReadonlySet<string> = new Set(Object.values(OFFICIAL_PLUGIN_IDS));
@@ -72,12 +81,16 @@ export interface PanelModelInputs {
   readonly viewingPage: boolean;
   readonly shortcut: string;
   readonly toast: (offer: UndoOffer) => WithdrawUndoOffer;
+  /** Creations that run code: their run states and Turn off, as the popup reads them. */
+  readonly scripted: ScriptedCreations;
 }
 
 /**
  * Everything the panel shows, read and written through the popup's own hooks:
  * the same plugin list, switches, legacy bindings, coverage and site access,
- * for the site being viewed.
+ * for the site being viewed. Creations for that site are rows too: the
+ * restyling ones through the same switch as any plugin, those that run code
+ * from the stored list with the popup's run state.
  */
 export function usePanelModel({
   sessionId,
@@ -86,6 +99,7 @@ export function usePanelModel({
   viewingPage,
   shortcut,
   toast,
+  scripted,
 }: PanelModelInputs) {
   const { t, language } = useLanguage();
   const viewedTab = useMemo<CurrentTab>(
@@ -171,6 +185,24 @@ export function usePanelModel({
     ),
   });
 
+  // Scripted creations never reach the plugin list, so they come from storage.
+  const localEntries = useLocalPluginEntries();
+  const removeCreation = useCallback(
+    async (id: string, name: string): Promise<boolean> => {
+      try {
+        await removeLocalPlugin(id);
+        return true;
+      } catch {
+        toast({
+          message: fillPlaceholders(t('panelRemoveCreationFailed'), { name }),
+          tone: 'error',
+        });
+        return false;
+      }
+    },
+    [t, toast],
+  );
+
   useRefusalToast(access.deniedId && t('pluginPermissionDenied'), toast);
   useRefusalToast(access.unsupportedId && t('pluginUnsupportedPlatform'), toast);
   useRefusalToast(access.enableRefusal && t(access.enableRefusal.key), toast);
@@ -223,7 +255,24 @@ export function usePanelModel({
         ),
     });
     // The popup's undo for Prompt Manager hands focus back to the switch with this id.
-    rows.push(prompt ? { ...row, switchId: PROMPT_SWITCH_ID } : row);
+    if (prompt) rows.push({ ...row, switchId: PROMPT_SWITCH_ID });
+    else if (isLocalPluginId(plugin.id)) {
+      const remove = () => removeCreation(plugin.id, row.name);
+      rows.push({ ...row, creation: { remove, code: null } });
+    } else rows.push(row);
+  }
+  for (const { manifest } of localEntries) {
+    if (!manifest || !isScriptedManifest(manifest)) continue;
+    if (!matchesAnyPattern(viewed.url, manifest.matches)) continue;
+    const state = scripted.runState(manifest.id) ?? { kind: 'off' };
+    const row = codeCreationRow(manifest, {
+      language,
+      on: isScriptedOn(state),
+      state: runStateText(t, state),
+      turnOff: () => void scripted.turnOff(manifest.id),
+      remove: () => removeCreation(manifest.id, row.name),
+    });
+    rows.push(row);
   }
 
   return {

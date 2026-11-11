@@ -90,7 +90,7 @@ La revisión marca una creación así con la insignia **Ejecuta código**.
 
 En **Mis creaciones**, cada una muestra **Activada, solo en este dispositivo**, **Desactivada** o **En pausa** con el motivo.
 
-- **Detener todo**: **Detener todas las creaciones que ejecutan código**, en **Mis creaciones** o en la pestaña **Crear** del panel, las detiene todas a la vez; **Reanudar** las vuelve a iniciar.
+- **Detener todo**: **Detener todas las creaciones que ejecutan código**, al final de **Mis creaciones** (la tarjeta del popup o la pestaña **Funciones** del panel), las detiene todas a la vez; **Reanudar** las vuelve a iniciar.
 - **Páginas abiertas**: una página que ya está abierta las sigue ejecutando hasta que se recarga. **Recargar esta página** lo hace con la pestaña actual.
 - **Bloqueos**: si una página deja de responder después de que estas creaciones se ejecutaran en ella, Voyager las desactiva y las nombra en un aviso la próxima vez que se cargue la página. Cuando esté corregida, revísala en **Mis creaciones** y vuelve a activarla.
 

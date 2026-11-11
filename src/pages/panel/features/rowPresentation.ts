@@ -4,6 +4,7 @@ import {
   ArrowDownToLine,
   Baseline,
   Bell,
+  Braces,
   Brain,
   ChartLine,
   ChevronsDownUp,
@@ -40,6 +41,7 @@ import {
   Shapes,
   Sigma,
   Snowflake,
+  Sparkle,
   Sparkles,
   SquareCode,
   Stethoscope,
@@ -55,8 +57,12 @@ import {
   WrapText,
 } from 'lucide-react';
 
+import { isLocalPluginId } from '@/features/plugins/local/localPluginId';
 import type { PluginManifest } from '@/features/plugins/types';
 import type { OfficialPluginTopicId } from '@/pages/popup/officialPlugins/officialPluginRegistry';
+
+/** The user's own plugins (`local.*`), made in Create mode or imported. */
+export const CREATIONS_GROUP = 'creations';
 
 interface RowPresentation {
   readonly icon: LucideIcon;
@@ -144,8 +150,10 @@ function presentationFor(pluginId: string): RowPresentation | undefined {
   return undefined;
 }
 
-export function rowIcon(pluginId: string): LucideIcon {
-  return presentationFor(pluginId)?.icon ?? DEFAULT_ROW_ICON;
+/** A creation's icon says whether it runs code; its id is the user's and names nothing here. */
+export function rowIcon(plugin: Pick<PluginManifest, 'id' | 'tier'>): LucideIcon {
+  if (isLocalPluginId(plugin.id)) return plugin.tier === 'scripted' ? Braces : Sparkle;
+  return presentationFor(plugin.id)?.icon ?? DEFAULT_ROW_ICON;
 }
 
 const CATEGORY_TOPICS: Readonly<Record<string, OfficialPluginTopicId>> = {
@@ -157,8 +165,14 @@ const CATEGORY_TOPICS: Readonly<Record<string, OfficialPluginTopicId>> = {
   productivity: 'pluginsInput',
 };
 
-/** The group of a plugin row that has no official entry. */
-export function rowTopic(plugin: Pick<PluginManifest, 'id' | 'category'>): OfficialPluginTopicId {
+/**
+ * The group of a plugin row with no official entry: My creations for the
+ * user's own, whatever category its author wrote, else an official topic.
+ */
+export function rowGroup(
+  plugin: Pick<PluginManifest, 'id' | 'category'>,
+): OfficialPluginTopicId | typeof CREATIONS_GROUP {
+  if (isLocalPluginId(plugin.id)) return CREATIONS_GROUP;
   return (
     presentationFor(plugin.id)?.topic ?? CATEGORY_TOPICS[plugin.category] ?? 'pluginsConversations'
   );

@@ -90,7 +90,7 @@ La relecture signale une telle création par le badge **Exécute du code**.
 
 Dans **Mes créations**, chacune affiche **Activée, sur cet appareil uniquement**, **Désactivée** ou **En pause** avec la raison.
 
-- **Tout arrêter** : **Arrêter toutes les créations qui exécutent du code**, dans **Mes créations** ou l'onglet **Créer** du panneau, les arrête toutes d'un coup ; **Reprendre** les relance.
+- **Tout arrêter** : **Arrêter toutes les créations qui exécutent du code**, en bas de **Mes créations** (la carte du popup ou l'onglet **Fonctions** du panneau), les arrête toutes d'un coup ; **Reprendre** les relance.
 - **Pages ouvertes** : une page déjà ouverte continue de les exécuter jusqu'à son rechargement. **Recharger cette page** le fait pour l'onglet actuel.
 - **Blocages** : si une page cesse de répondre après l'exécution de ces créations, Voyager les désactive et les nomme dans un avis au prochain chargement de la page. Une fois la création corrigée, relisez-la dans **Mes créations** et réactivez-la.
 

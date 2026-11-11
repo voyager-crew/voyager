@@ -351,6 +351,162 @@ label.rn {
   animation: breathe 1.2s ease-in-out infinite;
 }
 
+/* ---------- my creations ---------- */
+/* The mark and the state read as one line that wraps, instead of clipping a pause reason. */
+.sub.cr-sub {
+  display: block;
+  margin-top: 1px;
+  white-space: normal;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.create-badge.cr-mark {
+  margin-inline: 0 6px;
+  padding-block: 0;
+  line-height: 17px;
+  vertical-align: 1px;
+}
+
+.row .x[aria-expanded='true'] {
+  opacity: 1;
+}
+
+/* Under the state, while a creation that runs code waits for its review: it has no switch. */
+.cr-review {
+  align-self: flex-start;
+  margin-block: 6px 2px;
+  height: 28px;
+  padding-inline: 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--chip);
+  font-size: 13px;
+  white-space: nowrap;
+  transition:
+    background-color 0.15s ease,
+    transform 0.2s var(--spring);
+}
+
+/* A hovered row takes the chip's color, so the chip steps up a shade to stay visible. */
+.cr-review:hover,
+.row:hover .cr-review {
+  background: var(--chip-hover);
+}
+
+.cr-review:active {
+  transform: scale(0.96);
+}
+
+/* A review or a removal opens under its row, in the card, aligned with the names. */
+.cr-more {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-block: 2px 14px;
+  padding-inline: 44px 12px;
+}
+
+.cr-more + .row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  inset-inline: 44px 0;
+  height: 1px;
+  background: var(--hair);
+}
+
+/* The source folds under its label with no frame: the card is the only box. */
+.cr-fold > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  min-height: 28px;
+  font-size: 13px;
+  font-weight: 500;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cr-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.cr-fold > summary::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-inline: 2px;
+  border-block-end: 1.5px solid var(--ink-2);
+  border-inline-end: 1.5px solid var(--ink-2);
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+
+[dir='rtl'] .cr-fold > summary::before {
+  transform: rotate(45deg);
+}
+
+.cr-fold[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+[dir='rtl'] .cr-fold[open] > summary::before {
+  transform: rotate(-45deg);
+}
+
+.cr-fold > summary:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--ink) 55%, transparent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.cr-fold > .create-code {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--tile);
+}
+
+/* Setup steps and the stopped notice: the warning's edge, not a box of their own. */
+.cr-note {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-inline-start: 12px;
+  border-inline-start: 3px solid var(--wait);
+}
+
+/* The kill switch closes the card, on the names' edge, under a row's hairline. */
+.cr-foot {
+  position: relative;
+  padding-block: 10px;
+  padding-inline: 44px 12px;
+}
+
+.cr-foot::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  inset-inline: 44px 0;
+  height: 1px;
+  background: var(--hair);
+}
+
+.cr-foot > .create-actions {
+  justify-content: flex-start;
+  margin-inline-start: 0;
+}
+
+.cr-foot > .create-actions > .sec {
+  height: 30px;
+  padding-inline: 12px;
+  color: var(--danger);
+}
+
 /* ---------- sites ---------- */
 .sites {
   display: grid;

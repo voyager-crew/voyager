@@ -90,7 +90,7 @@ The review marks such a creation with a **Runs code** badge.
 
 In **My creations**, each one shows **On, this device only**, **Off**, or **Paused** with the reason.
 
-- **Stop all**: **Stop all creations that run code**, in **My creations** or the panel's **Create** tab, stops every one at once; **Resume** starts them again.
+- **Stop all**: **Stop all creations that run code**, at the end of **My creations** (the popup card, or the panel's **Features** tab), stops every one at once; **Resume** starts them again.
 - **Open pages**: a page that is already open keeps running them until it reloads. **Reload this page** does that for the current tab.
 - **Freezes**: if a page stops responding after these creations ran on it, Voyager turns them off and names them in a notice the next time the page loads. Once the creation is fixed, review it in **My creations** and turn it back on.
 
