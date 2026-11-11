@@ -71,8 +71,8 @@ export function newChatTarget(siteId: string): NewChatTarget | null {
 
 const trimSlash = (path: string): string => path.replace(/\/+$/, '');
 
-export function isOnNewChat(target: NewChatTarget, location: Location): boolean {
-  return trimSlash(location.pathname) === trimSlash(target.path(location));
+export function samePath(a: string, b: string): boolean {
+  return trimSlash(a) === trimSlash(b);
 }
 
 /** The site's own click sequence, as a sidebar row is opened elsewhere. */

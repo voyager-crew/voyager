@@ -146,6 +146,47 @@ describe('filling a new chat with the creation message', () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
+  it("never writes into another account's new chat the user switched to while it opened", async () => {
+    const { composer } = page();
+    // A new-chat link Gemini has not answered yet.
+    const link = document.createElement('a');
+    link.setAttribute('data-test-id', 'new-chat-button');
+    link.addEventListener('click', (event) => event.preventDefault());
+    document.querySelector('bard-sidenav')!.append(link);
+    stop = startCreationFill(MESSAGE, {
+      target: NEW_CHAT_TARGETS.gemini,
+      find: () => composer,
+      notify,
+    });
+    history.pushState({}, '', '/u/2/app');
+    await vi.advanceTimersByTimeAsync(FILL_CONFIRM_MS + SETTLE_MS);
+
+    expect(location.pathname).toBe('/u/2/app');
+    expect(composerText(composer)).toBe('');
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('does not move a user who opened another chat before the new chat arrived', async () => {
+    const { composer } = page();
+    const link = document.createElement('a');
+    link.setAttribute('data-test-id', 'new-chat-button');
+    link.addEventListener('click', (event) => event.preventDefault());
+    document.querySelector('bard-sidenav')!.append(link);
+    stop = startCreationFill(MESSAGE, {
+      target: NEW_CHAT_TARGETS.gemini,
+      find: () => composer,
+      notify,
+    });
+    history.pushState({}, '', '/u/1/app/fedcba9876543210');
+    const pushState = vi.spyOn(history, 'pushState');
+    await vi.advanceTimersByTimeAsync(FILL_CONFIRM_MS + SETTLE_MS);
+
+    expect(location.pathname).toBe('/u/1/app/fedcba9876543210');
+    expect(pushState).not.toHaveBeenCalled();
+    expect(composerText(composer)).toBe('');
+    expect(notify).not.toHaveBeenCalled();
+  });
+
   it('stays on the page and says so where the site offers no way to a new chat', async () => {
     const { composer } = page();
     const pushState = vi.spyOn(history, 'pushState');

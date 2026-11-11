@@ -4,12 +4,13 @@ import { startMachine } from '@/features/plugins/runtime/stateMachine';
 
 import {
   type FillEvent,
+  type FillPlace,
   type FillResult,
   type FillState,
   fillEffects,
   fillTransition,
 } from './fillMachine';
-import { type NewChatTarget, clickNativeControl, isOnNewChat, navigateInApp } from './newChat';
+import { type NewChatTarget, clickNativeControl, navigateInApp, samePath } from './newChat';
 
 export const FILL_POLL_MS = 150;
 export const FILL_CONFIRM_MS = 1_200;
@@ -31,10 +32,18 @@ export function startCreationFill(message: string, deps: CreationFillDeps): () =
   const { target } = deps;
   const startDocument = document;
   const insert = deps.insert ?? ((composer, text) => insertIntoComposer(composer, text, 'append'));
-  const onNewChat = () => document === startDocument && isOnNewChat(target, location);
-  const initial: FillState = onNewChat()
-    ? { status: 'waiting', previous: null, stable: 0 }
-    : { status: 'opening' };
+  // Bound to the account and route the request started on: any other move is the user's own.
+  const from = location.pathname;
+  const to = target.path(location);
+  const where = (): FillPlace => {
+    if (document !== startDocument) return 'elsewhere';
+    if (samePath(location.pathname, to)) return 'new-chat';
+    return samePath(location.pathname, from) ? 'start' : 'elsewhere';
+  };
+  const initial: FillState =
+    where() === 'new-chat'
+      ? { status: 'waiting', previous: null, stable: 0 }
+      : { status: 'opening' };
   const machine = startMachine<FillState, FillEvent>(
     {
       id: 'createModeFill',
@@ -43,14 +52,14 @@ export function startCreationFill(message: string, deps: CreationFillDeps): () =
         pollMs: FILL_POLL_MS,
         confirmMs: FILL_CONFIRM_MS,
         timeoutMs: FILL_TIMEOUT_MS,
-        onNewChat,
+        where,
         openWithControl: () => {
           const control = target.link(document);
           if (!control) return false;
           clickNativeControl(control);
           return true;
         },
-        openWithHistory: () => target.history && navigateInApp(target.path(location)),
+        openWithHistory: () => target.history && navigateInApp(to),
         find: deps.find,
         empty: isEmptyComposer,
         insert: (composer) => insert(composer, message),

@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { act } from 'react';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
@@ -10,6 +12,7 @@ import {
   click,
   en,
   extensionApi,
+  flush,
   local,
   mount,
   query,
@@ -183,5 +186,87 @@ describe('reviewing a reply picked on the page', () => {
     expect(review()?.textContent).toContain(en.localPluginsRejected);
     expect(button(en.panelCreateInstall)).toBeNull();
     expect(stored()).toBeUndefined();
+  });
+});
+
+/** The page as the user picks on it: each pick replaces the held one, and a fetch takes it. */
+function pagePicks() {
+  let held: string | null = null;
+  let answerGate: Promise<void> | null = null;
+  extensionApi.runtime.sendMessage.mockImplementation(
+    async (message: { type?: string; payload?: { request?: { type?: string } } }) => {
+      if (message?.type !== PANEL_MESSAGE.tabRequest) return undefined;
+      if (message.payload?.request?.type !== 'gv.create.pending')
+        return { ok: true, response: undefined };
+      const candidate = held ? { text: held, siteId: 'gemini' } : null;
+      held = null;
+      const gate = answerGate;
+      answerGate = null;
+      await gate;
+      return { ok: true, response: { candidate } };
+    },
+  );
+  return {
+    pick(text: string) {
+      held = text;
+    },
+    /** The next fetch takes the pick at once but answers only on release. */
+    delayNextAnswer(): () => void {
+      let release = () => {};
+      answerGate = new Promise((resolve) => (release = resolve));
+      return release;
+    },
+  };
+}
+
+const FIRST = reply({ name: 'First pick' });
+const SECOND = reply({ name: 'Second pick', version: '2.0.0' });
+
+describe('a newer pick while the review is busy', () => {
+  it('reviews the newer pick made while the earlier one was still being fetched', async () => {
+    const page = pagePicks();
+    page.pick(FIRST);
+    const release = page.delayNextAnswer();
+    await mount({ ...GEMINI, creationRequest: 1 });
+
+    page.pick(SECOND);
+    await updateContext({ ...GEMINI, creationRequest: 2 });
+    await act(async () => {
+      release();
+      await flush();
+    });
+
+    expect(review()?.textContent).toContain('Second pick');
+    expect(review()?.textContent).not.toContain('First pick');
+    await click(button(en.panelCreateInstall));
+    expect(stored()?.manifest.version).toBe('2.0.0');
+  });
+
+  it('reviews a pick made during an install once the install finished', async () => {
+    const page = pagePicks();
+    page.pick(FIRST);
+    await mount({ ...GEMINI, creationRequest: 1 });
+    const set = extensionApi.storage.local.set.getMockImplementation()!;
+    let release = () => {};
+    const writing = new Promise<void>((resolve) => (release = resolve));
+    extensionApi.storage.local.set.mockImplementation(
+      async (updates: Record<string, unknown>, callback?: unknown) => {
+        if (StorageKeys.PLUGIN_LOCAL_MANIFESTS in updates) await writing;
+        return set(updates, callback);
+      },
+    );
+
+    await click(button(en.panelCreateInstall));
+    page.pick(SECOND);
+    await updateContext({ ...GEMINI, creationRequest: 2 });
+    await act(async () => {
+      release();
+      await flush();
+      await flush();
+    });
+
+    expect(stored()?.manifest.version).toBe('1.0.0');
+    expect(review()?.textContent).toContain('Second pick');
+    expect(button(en.panelCreateUpdate)).not.toBeNull();
   });
 });

@@ -4,8 +4,10 @@
  *
  * opening (the new chat is on its way) → waiting (the composer settles) →
  * writing → ended. The page may navigate at any point; every phase checks the
- * route again, so nothing is written once the tab left the new-chat page. The
- * message only ever goes into an empty composer, and nothing is sent.
+ * route again against the account and new-chat path fixed at the start, so a
+ * move anywhere else ends the fill: nothing is written and the page is not
+ * moved again. The message only ever goes into an empty composer, and nothing
+ * is sent.
  */
 import type { StateEffects } from '@/features/plugins/runtime/stateMachine';
 
@@ -18,8 +20,11 @@ export type FillResult =
   | 'busy'
   | 'no-new-chat'
   | 'no-composer'
-  /** The page left the new-chat page, or the feature stopped: say nothing. */
+  /** The tab went anywhere but the new chat, or the feature stopped: say nothing. */
   | 'left';
+
+/** Where the tab is: the new chat it was sent to, the page it started on, or anywhere else. */
+export type FillPlace = 'new-chat' | 'start' | 'elsewhere';
 
 export type FillState =
   | { readonly status: 'opening' }
@@ -53,7 +58,7 @@ export interface FillPorts {
   /** How long the site's own control may take before the History API stands in. */
   readonly confirmMs: number;
   readonly timeoutMs: number;
-  onNewChat(): boolean;
+  where(): FillPlace;
   /** Press the site's new-chat control; false when there is none. */
   openWithControl(): boolean;
   /** Same-document navigation, where the site allows it; false otherwise. */
@@ -67,24 +72,25 @@ export interface FillPorts {
 export function fillEffects(ports: FillPorts): StateEffects<FillState, FillEvent> {
   return {
     opening: (stay) => {
-      const fallback = () => {
-        if (ports.onNewChat()) stay.send({ type: 'arrived' });
-        else if (!ports.openWithHistory()) stay.send({ type: 'finish', result: 'no-new-chat' });
+      /** True when the tab is no longer on the page the fill started on. */
+      const moved = (): boolean => {
+        const place = ports.where();
+        if (place === 'new-chat') stay.send({ type: 'arrived' });
+        else if (place === 'elsewhere') stay.send({ type: 'finish', result: 'left' });
+        return place !== 'start';
       };
-      stay.scope.timer(
-        () => {
-          if (ports.onNewChat()) stay.send({ type: 'arrived' });
-        },
-        ports.pollMs,
-        { repeat: true },
-      );
+      const fallback = () => {
+        if (!moved() && !ports.openWithHistory())
+          stay.send({ type: 'finish', result: 'no-new-chat' });
+      };
+      stay.scope.timer(moved, ports.pollMs, { repeat: true });
       stay.scope.timer(() => stay.send({ type: 'finish', result: 'no-new-chat' }), ports.timeoutMs);
       if (ports.openWithControl()) stay.scope.timer(fallback, ports.confirmMs);
       else fallback();
     },
     waiting: (stay) => {
       const poll = () => {
-        if (!ports.onNewChat()) stay.send({ type: 'finish', result: 'left' });
+        if (ports.where() !== 'new-chat') stay.send({ type: 'finish', result: 'left' });
         else stay.send({ type: 'composer', composer: ports.find() });
       };
       stay.scope.timer(poll, ports.pollMs, { repeat: true });
@@ -93,7 +99,7 @@ export function fillEffects(ports: FillPorts): StateEffects<FillState, FillEvent
     },
     writing: (stay) => {
       const { composer } = stay.state();
-      if (!ports.onNewChat()) return stay.send({ type: 'finish', result: 'left' });
+      if (ports.where() !== 'new-chat') return stay.send({ type: 'finish', result: 'left' });
       if (!composer.isConnected || ports.find() !== composer)
         return stay.send({ type: 'finish', result: 'no-composer' });
       if (!ports.empty(composer)) return stay.send({ type: 'finish', result: 'busy' });
