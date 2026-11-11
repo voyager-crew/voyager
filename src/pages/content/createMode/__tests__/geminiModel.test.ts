@@ -64,19 +64,18 @@ describe('the Gemini model Create mode warns about', () => {
     expect(readWarning()).toBeNull();
   });
 
-  it('takes the thinking level from the applied default only for the model it was set with', () => {
+  it('judges the applied default, the model the new chat will get, over the one shown', () => {
     const flash = applied({ kind: 'id', id: 'f', name: '3.8 Flash', pill: 'Flash' }, LOW);
-    expect(readModelFacts(['Flash'], flash)).toEqual({ model: 'Flash', thinking: 'Low' });
-    const argon = applied({ kind: 'id', id: 'a', name: '4 Argon' }, LOW);
-    expect(readModelFacts(['Flash'], argon)).toEqual({ model: 'Flash', thinking: null });
-  });
-
-  it('falls back to the applied default when the button cannot be read', () => {
-    const flash = applied({ kind: 'id', id: 'f', name: '3.8 Flash', pill: 'Flash' }, LOW);
-    expect(geminiModelWarning(readModelFacts([], flash))).toMatchObject({
+    expect(geminiModelWarning(readModelFacts(['Argon'], flash))).toMatchObject({
       model: 'Flash',
       thinking: 'Low',
     });
+    const argon = applied({ kind: 'id', id: 'a', name: '4 Argon' }, LOW);
+    expect(geminiModelWarning(readModelFacts(['Flash'], argon))).toBeNull();
+  });
+
+  it('reads the button when no default is applied, and nothing when neither is there', () => {
+    expect(readModelFacts(['Flash', 'High'], null)).toEqual({ model: 'Flash', thinking: 'High' });
     expect(readModelFacts([], null)).toEqual({ model: null, thinking: null });
   });
 

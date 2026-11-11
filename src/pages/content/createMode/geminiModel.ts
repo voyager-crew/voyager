@@ -5,13 +5,12 @@
  * before the user writes. The model names live in Gemini's site folder
  * (`catalog/sites/gemini/create-mode.json`), the one place to update them.
  *
- * Each fact comes from the first source that has it:
- * 1. the model button, as the default-model feature reads it: its first line
- *    is the model, a second line the thinking level (Gemini shows none at its
- *    default level);
- * 2. the default model and thinking level, while that feature applies them
- *    to new chats on this page; a stored thinking level only for the model it
- *    was stored with;
+ * Create mode opens a new chat, so the facts are the ones that chat will have:
+ * 1. the default model and thinking level, while that feature applies them
+ *    to new chats on this page;
+ * 2. otherwise the model button, as the default-model feature reads it: its
+ *    first line is the model, a second line the thinking level (Gemini shows
+ *    none at its default level);
  * 3. nothing: no warning.
  */
 import { getGeminiSelectorView } from '@/core/gemini/selectors';
@@ -65,13 +64,11 @@ export function readModelFacts(
 ): ModelFacts {
   const [shown, ...rest] = lines;
   const stored = defaults?.model ?? null;
-  const model = shown ?? (stored ? (stored.pill ?? stored.name) : null);
-  const shownThinking = rest.join(' ').trim() || null;
-  const storedThinking =
-    defaults?.thinking && stored && model && defaults.modelMatchesLines(stored, [model])
-      ? defaults.thinking.label
-      : null;
-  return { model, thinking: shownThinking ?? storedThinking };
+  // Create mode opens a new chat, and a new chat gets the applied default.
+  if (stored) {
+    return { model: stored.pill ?? stored.name, thinking: defaults?.thinking?.label ?? null };
+  }
+  return { model: shown ?? null, thinking: rest.join(' ').trim() || null };
 }
 
 export function geminiModelWarning(facts: ModelFacts): CreateModelWarning | null {
