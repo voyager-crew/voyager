@@ -16,10 +16,10 @@ function readSurfaceStyles(): string {
   ].join('\n');
 }
 
-/** Every declaration of `name`, in source order. */
+/** Every declaration of `name`, in source order, as the default a public `--gv-theme-*` hook falls back to. */
 function declarations(css: string, name: string): string[] {
   return [...css.matchAll(new RegExp(`${name}\\s*:\\s*([^;]+);`, 'g'))].map((match) =>
-    match[1].trim(),
+    match[1].trim().replace(/^var\(--gv-theme-[a-z-]+,\s*(.*)\)$/, '$1'),
   );
 }
 
