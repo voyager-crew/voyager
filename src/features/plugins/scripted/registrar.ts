@@ -32,8 +32,12 @@ export interface ScriptedRegistrarDeps {
 /**
  * No connection, frame, image or font of the world's own; only packaged
  * extension scripts. A plugin's code is injected, not loaded, so it still runs.
+ * Inline styles are allowed: without them the `<style>` element the authoring
+ * page tells a plugin to add gets no sheet, and what it draws lands unstyled at
+ * the end of the page. A `url()` in that CSS still falls under `default-src`.
  */
-export const SCRIPTED_WORLD_CSP = "default-src 'none'; script-src 'self'";
+export const SCRIPTED_WORLD_CSP =
+  "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'";
 
 type RegisteredUserScript = chrome.userScripts.RegisteredUserScript;
 

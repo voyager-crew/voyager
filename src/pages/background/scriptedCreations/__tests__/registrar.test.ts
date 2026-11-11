@@ -89,6 +89,19 @@ describe('reconcileUserScripts', () => {
     expect(new Set(scripts.map((script) => script.worldId)).size).toBe(2);
   });
 
+  it('lets a plugin style what it adds while keeping every network source closed', () => {
+    const directives = Object.fromEntries(
+      SCRIPTED_WORLD_CSP.split(';').map((part) => {
+        const [name, ...values] = part.trim().split(/\s+/);
+        return [name, values];
+      }),
+    );
+    expect(directives['style-src']).toEqual(["'unsafe-inline'"]);
+    expect(directives['default-src']).toEqual(["'none'"]);
+    for (const name of ['connect-src', 'img-src', 'font-src', 'frame-src', 'media-src'])
+      expect(directives[name]).toBeUndefined();
+  });
+
   it('reaches the same registrations from empty, stale and partly wrong starting points', async () => {
     const { counter, clicks, state } = await twoPlugins();
     const fromEmpty = fakeUserScripts();
