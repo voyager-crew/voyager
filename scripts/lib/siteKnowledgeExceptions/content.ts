@@ -90,6 +90,20 @@ export const CONTENT_SITE_KNOWLEDGE_EXCEPTIONS: readonly SiteKnowledgeException[
     reason: 'native Gemini selector view for context capture.',
   },
   {
+    file: 'src/pages/content/createMode/newChat.ts',
+    kind: 'platform-branch',
+    values: {
+      gemini: 1,
+      aistudio: 1,
+      chatgpt: 1,
+      claude: 1,
+      deepseek: 1,
+      kimi: 1,
+    },
+    reason:
+      "Create mode's per-site new-chat path and control, read by the fill machine before any plugin adapter runs.",
+  },
+  {
     file: 'src/pages/content/draftSave/geminiDraftSendDetection.ts',
     kind: 'site-owned-module',
     values: {
