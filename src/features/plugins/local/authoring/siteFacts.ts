@@ -21,20 +21,31 @@ import {
 import type { SiteAdapter } from '../../types';
 
 /**
- * Caveats no adapter field carries. Keyed by site id; a site without notes
- * needs none.
+ * Caveats no adapter field carries, keyed by site id; a site without notes
+ * needs none. `primitives` notes matter only to a plugin that calls one, so a
+ * short page can leave them to the site file.
  */
-const SITE_NOTES: Readonly<Record<string, readonly string[]>> = {
-  gemini: [
-    'The `sidebar` anchor also matches Voyager’s own folder panel (`.gv-folder-container`). To change only Gemini’s navigation rail, target `bard-sidenav` with a CSS selector.',
-    '`draftSave` keys drafts as `gvDraft_` plus the full pathname, including `/u/<index>/` and Gem routes. Different account slots have different keys; changing email within the same slot still shares stored drafts.',
-    'On consumer gemini.google.com, `turnNavigator` requires literal `params: { "dataBackend": "shared" }` and the engine version shown in its primitive reference. All matches must stay on that host: no Business or mixed catalog sites. It shares Voyager’s existing stars, levels, collapse state and native account/turn identity; do not set turn, turnItem, conversationIdPattern, conversationIdAttribute or accountIdAttributes. Enterprise and custom-website coverage still refuse this rail at the native start point.',
-  ],
-  aistudio: [
-    'The `sidebar` anchor is Voyager’s own folder panel on AI Studio, not AI Studio’s navigation. Use a CSS selector for AI Studio’s own panels.',
-    'Voyager’s AI Studio switch governs plugins too: while Voyager is off on AI Studio, nothing mounts.',
-    'On AI Studio, `sendShortcut` requires `params: { "mode": "enterSends" }`: Enter sends, Ctrl/Cmd+Enter inserts a newline, and Shift/Alt+Enter keep the host behavior.',
-  ],
+const SITE_NOTES: Readonly<
+  Record<string, { readonly page: readonly string[]; readonly primitives: readonly string[] }>
+> = {
+  gemini: {
+    page: [
+      'The `sidebar` anchor also matches Voyager’s own folder panel (`.gv-folder-container`). To change only Gemini’s navigation rail, target `bard-sidenav` with a CSS selector.',
+    ],
+    primitives: [
+      '`draftSave` keys drafts as `gvDraft_` plus the full pathname, including `/u/<index>/` and Gem routes. Different account slots have different keys; changing email within the same slot still shares stored drafts.',
+      'On consumer gemini.google.com, `turnNavigator` requires literal `params: { "dataBackend": "shared" }` and the engine version shown in its primitive reference. All matches must stay on that host: no Business or mixed catalog sites. It shares Voyager’s existing stars, levels, collapse state and native account/turn identity; do not set turn, turnItem, conversationIdPattern, conversationIdAttribute or accountIdAttributes. Enterprise and custom-website coverage still refuse this rail at the native start point.',
+    ],
+  },
+  aistudio: {
+    page: [
+      'The `sidebar` anchor is Voyager’s own folder panel on AI Studio, not AI Studio’s navigation. Use a CSS selector for AI Studio’s own panels.',
+      'Voyager’s AI Studio switch governs plugins too: while Voyager is off on AI Studio, nothing mounts.',
+    ],
+    primitives: [
+      'On AI Studio, `sendShortcut` requires `params: { "mode": "enterSends" }`: Enter sends, Ctrl/Cmd+Enter inserts a newline, and Shift/Alt+Enter keep the host behavior.',
+    ],
+  },
 };
 
 /** The popup setting behind each feature a packaged official plugin runs. */
@@ -190,15 +201,62 @@ export function anchorLines(site: SiteAdapter): string[] {
   return anchors.map((key) => `- ${key}: ${SEMANTIC_KEY_DESCRIPTIONS[key]}`);
 }
 
-/** The facts section body for one site. */
-export function siteFactLines(
-  site: SiteAdapter,
-  options: { primitives: boolean; theme: boolean },
-): string[] {
-  const missing = SEMANTIC_SELECTOR_KEYS.filter((key) => typeof site.selectors[key] !== 'string');
-  const restricted = forbidsTheme(site) && !allowsAnyPrimitive(site);
+/**
+ * What only a plugin that calls a primitive on `site` needs: how each shares
+ * the page with Voyager's own setting, and the site's caveats for them.
+ */
+export function primitiveDetailLines(site: SiteAdapter): string[] {
   const allowed = localPrimitives(site);
-  const notes = SITE_NOTES[site.id] ?? [];
+  const notes = SITE_NOTES[site.id]?.primitives ?? [];
+  return [
+    ...(allowed === 'all' ? [] : sharedRuntimeLines(site, allowed)),
+    ...(notes.length > 0 ? ['', ...notes.map((note) => `- ${note}`)] : []),
+  ];
+}
+
+interface SiteFactOptions {
+  readonly primitives: boolean;
+  readonly theme: boolean;
+  /**
+   * `false` leaves out the allowed-primitive list and `primitiveDetailLines`,
+   * for a document that lists the primitives itself and points at the site
+   * file for the rest.
+   */
+  readonly primitiveDetails?: boolean;
+}
+
+/** What the site allows beyond CSS and the four page changes: primitives and a theme. */
+function allowanceLines(site: SiteAdapter, options: SiteFactOptions): string[] {
+  if (forbidsTheme(site) && !allowsAnyPrimitive(site)) {
+    return [
+      '',
+      `No "theme" and no "native" op on ${site.label}: CSS and the four page changes only.`,
+    ];
+  }
+  if (!options.primitives) return [];
+  const allowed = localPrimitives(site);
+  const noTheme = forbidsTheme(site) ? ' No "theme".' : '';
+  if (allowed !== 'all') {
+    if (options.primitiveDetails === false) {
+      return forbidsTheme(site) ? ['', `No "theme" on ${site.label}.`] : [];
+    }
+    return [
+      '',
+      `${site.label} allows only these primitives (native ops): ${[...allowed].sort().join(', ')}.${noTheme}`,
+    ];
+  }
+  return [
+    '',
+    options.theme
+      ? `Primitives (native ops) and an optional "theme" accent are allowed on ${site.label}.`
+      : `Primitives (native ops) are allowed on ${site.label}.`,
+  ];
+}
+
+/** The facts section body for one site. */
+export function siteFactLines(site: SiteAdapter, options: SiteFactOptions): string[] {
+  const missing = SEMANTIC_SELECTOR_KEYS.filter((key) => typeof site.selectors[key] !== 'string');
+  const notes = SITE_NOTES[site.id]?.page ?? [];
   return [
     '"matches" must use these URL patterns (all of them, or a subset):',
     ...site.matches.map((pattern) => `- ${pattern}`),
@@ -211,22 +269,8 @@ export function siteFactLines(
           `${site.label} does not declare ${missing.join(', ')}: a plugin that relies on one of these is refused. Use a CSS selector instead.`,
         ]
       : []),
-    ...(restricted
-      ? ['', `No "theme" and no "native" op on ${site.label}: CSS and the four page changes only.`]
-      : options.primitives && allowed !== 'all'
-        ? [
-            '',
-            `${site.label} allows only these primitives (native ops): ${[...allowed].sort().join(', ')}.${forbidsTheme(site) ? ' No "theme".' : ''}`,
-            ...sharedRuntimeLines(site, allowed),
-          ]
-        : options.primitives
-          ? [
-              '',
-              options.theme
-                ? `Primitives (native ops) and an optional "theme" accent are allowed on ${site.label}.`
-                : `Primitives (native ops) are allowed on ${site.label}.`,
-            ]
-          : []),
+    ...allowanceLines(site, options),
     ...(notes.length > 0 ? ['', ...notes.map((note) => `- ${note}`)] : []),
+    ...(options.primitives && options.primitiveDetails !== false ? primitiveDetailLines(site) : []),
   ];
 }

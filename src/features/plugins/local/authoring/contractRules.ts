@@ -34,6 +34,8 @@ export interface ContractSection {
 export interface ContractRefs {
   readonly sites: string;
   readonly primitives: string;
+  /** Which engine version the reader writes for; this build's when absent. */
+  readonly engine?: string;
 }
 
 export const IN_DOCUMENT_REFS: ContractRefs = {
@@ -57,9 +59,9 @@ export function manifestSection(
     title: 'Manifest contract',
     lines: [
       `- Required non-empty string fields: ${REQUIRED_STRINGS.join(', ')}. Also "tier": "declarative", "matches" (see ${refs.sites}) and "contributes".`,
-      `- "id": a short lowercase reverse-dotted slug such as "me.short-name" (a-z, 0-9, ".", "_", "-"). Voyager stores it as "${LOCAL_PLUGIN_ID_PREFIX}<id>"; you do not add that prefix.`,
+      `- "id": a lowercase reverse-dotted slug such as "me.short-name" (a-z, 0-9, ".", "_", "-"). Voyager stores it as "${LOCAL_PLUGIN_ID_PREFIX}<id>" itself.`,
       '- "version": "1.0.0"; raise it when you change the plugin. "author": "me". "license": "MIT".',
-      `- "engine": ">=1.0.0", or ">=" the sinceEngine of every primitive the plugin uses. This build's plugin engine is ${EFFECTIVE_PLUGIN_ENGINE_VERSION}.`,
+      `- "engine": ">=1.0.0", or ">=" the sinceEngine of every primitive the plugin uses. ${refs.engine ?? `This build's plugin engine is ${EFFECTIVE_PLUGIN_ENGINE_VERSION}.`}`,
       `- "category": one of ${PLUGIN_CATEGORIES.join(', ')}.`,
       `- Write "name" and "description" in the language of the ${audience === 'chat' ? 'request' : 'user'}. "i18n" translations are optional for a local plugin.`,
       ...(audience === 'agent'
@@ -80,7 +82,7 @@ export function stylesSection(audience: ContractAudience): ContractSection {
             '- "contributes.styles": [{ "file": "style.css" }] with the CSS in style.css beside plugin.json. The popup’s Import files takes exactly one .json file: the user picks plugin.json and its .css files, nothing else. Paste JSON only takes inlined CSS ([{ "css": "..." }]).',
           ]
         : ['- "contributes.styles": a list of { "css": "..." } with the CSS inlined as a string.']),
-      '- CSS may not load anything, not even from the same site: no @import, image-set(), image(), cross-fade() or src(), and url() only with a #fragment or a png, jpeg, gif, webp or avif data: URI (never SVG). No web fonts, no remote images.',
+      '- CSS may not load anything, not even from the same site: no @import, image-set(), image(), cross-fade() or src(), and url() only with a #fragment or a png, jpeg, gif, webp or avif data: URI (never SVG).',
       '- Scope every rule under a class your plugin adds (see addClass), so nothing else changes. Site styles often win on specificity: add !important where a rule does not apply.',
       "- Light or dark only rules: scope them with html[data-gv-scheme='dark'] or html[data-gv-scheme='light'], never with the site's own theme classes.",
     ],
@@ -103,7 +105,7 @@ export function pageChangesSection(
       '- "target": prefer { "kind": "semantic", "key": <anchor> } with an anchor the target site declares. Use a plain CSS selector string only for something no anchor names; it breaks on a redesign.',
       '- addClass "className": exactly one class that starts with "gv-"; use "gv-plugin-<plugin-name>". Then style that class in "contributes.styles".',
       `- setAttribute "name" must be one of: ${allowedAttributeText()}. Never href, src, on*, class or id. Values may not contain an external URL.`,
-      '- setStyle "styles": CSS property -> value, custom properties (--gv-…) included; values may not load anything either. A value may end in !important; engines before 1.9.0 drop such a value, so require engine ">=1.9.0" when the plugin relies on it.',
+      '- setStyle "styles": CSS property -> value, custom properties (--gv-…) included; values may not load anything either. A value ending in !important needs engine ">=1.9.0".',
     ],
   };
 }
@@ -112,12 +114,10 @@ export function settingsSection(): ContractSection {
   return {
     title: 'Settings (optional)',
     lines: [
-      `- "contributes.settings": { "<key>": { "type", "label", "default", … } }. Types: ${LOCAL_SETTING_TYPES.join(', ')}. string and color settings are refused: the popup has no control for them yet.`,
-      '- number: the popup shows a slider from "min" to "max" (0 and 100 when omitted), with optional "minLabel" and "maxLabel" at its ends.',
-      '- select: "options": [{ "value": "…", "label": "…" }] with at least one option and unique values, and a "default" that is one of the values.',
-      '- Optional "enabledBy": "<booleanKey>" keeps a number, select or boolean control visible but disabled unless that other boolean setting of the same plugin resolves to true. That boolean has no enabledBy of its own (one level only). It changes only the popup control, so gate page behavior with the boolean too. It needs no higher engine floor: engine 1.7.0 just leaves the control enabled.',
-      '- Use a setting through a {{key}} token in CSS text, a setStyle value or a setAttribute value; Voyager substitutes the current value (the default until the user changes it). A common pattern: setStyle sets a custom property from the setting, and the CSS reads var(...).',
-      '- A boolean renders as "true" or "false": set data-gv-… to "{{key}}" with setAttribute and style [data-gv-…=\'true\'].',
+      `- "contributes.settings": { "<key>": { "type", "label", "default", … } }. Types: ${LOCAL_SETTING_TYPES.join(', ')} (the popup has no control for string or color).`,
+      '- number: a slider from "min" to "max" (0 and 100 when omitted), with optional "minLabel" and "maxLabel" at its ends. select: "options": [{ "value": "…", "label": "…" }], at least one, unique values, and a "default" that is one of them.',
+      '- Optional "enabledBy": "<booleanKey>" disables a control in the popup until that boolean setting is true (one level: the boolean has no enabledBy). It needs no engine floor and does not change the page, so gate page behavior with the boolean too.',
+      '- Use a setting through a {{key}} token in CSS text, a setStyle value or a setAttribute value; Voyager substitutes the current value. A common pattern: setStyle sets a custom property from the setting, and the CSS reads var(...). A boolean renders as "true" or "false": set data-gv-… to "{{key}}" with setAttribute and style [data-gv-…=\'true\'].',
     ],
   };
 }
@@ -131,9 +131,9 @@ export function localRulesSection(
     lines: [
       `- "matches" may only use the URL patterns of a site Voyager supports (see ${refs.sites}).`,
       '- Every semantic key the plugin relies on must be declared by every site its "matches" cover.',
-      '- On Gemini and AI Studio: no "theme", and a "native" op only for the primitives listed for that site (Voyager runs its other features there itself).',
       ...(audience === 'agent'
         ? [
+            '- On Gemini and AI Studio: no "theme", and a "native" op only for the primitives listed for that site (Voyager runs its other features there itself).',
             '- "theme": { "brand": "#rrggbb" } optionally recolors Voyager’s own UI on Claude, ChatGPT, DeepSeek or Kimi. "requires" is optional: native ops already imply "requires.handlers". "requires.formFactors" defaults to ["desktop", "mobile"]; write ["desktop"] only for a plugin that cannot work on a phone.',
             '- The site-check route fields ("routeWords", "accountSlots", "conversationRoutes") and the Prompt Manager "prompt" section come only from Voyager’s packaged site.json, so a local plugin cannot set them.',
           ]
@@ -180,7 +180,7 @@ export function impossibleSection(
       // Without this, an agent reading the list answers NOT POSSIBLE for a copy button or count badge a primitive ships.
       ...(primitives
         ? [
-            `These limits are on the plugin’s own fields and CSS. A primitive in ${refs.primitives} runs Voyager’s code and may provide one of them (a copy button, a count, a saved draft, a quote into the composer…): read that list before answering NOT POSSIBLE, and use the primitive when the target site declares the keys it reads.`,
+            `These limits are on the plugin’s own fields and CSS. A primitive in ${refs.primitives} runs Voyager’s code and may lift one of them: read that list before answering NOT POSSIBLE, and use a primitive when the target site declares the keys it reads.`,
           ]
         : []),
       'If the request needs any of this, do not invent fields or ops: the import refuses them. Start your reply with one line "NOT POSSIBLE: <what and why>", then build the closest version this contract allows and say what it leaves out.',

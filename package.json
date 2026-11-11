@@ -44,7 +44,7 @@
     "commitlint": "commitlint --edit $GIT_PARAMS",
     "catalog:build": "bun scripts/build-plugin-catalog.ts",
     "cli:build": "bun packages/create-voyager-plugin/build.ts",
-    "skills:build": "bun run cli:build && node packages/create-voyager-plugin/dist/cli.mjs skill --out docs/public/skills/write-voyager-plugin",
+    "skills:build": "bun run cli:build && node packages/create-voyager-plugin/dist/cli.mjs skill --out docs/public/skills/write-voyager-plugin && node packages/create-voyager-plugin/dist/cli.mjs create-pages --out docs/public/create",
     "plugin:new": "bun scripts/plugin-new.ts",
     "selectors:check": "bun scripts/check-locator-contracts.ts",
     "panel:check": "bun scripts/check-panel-apis.ts",

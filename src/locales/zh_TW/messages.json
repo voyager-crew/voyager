@@ -2989,6 +2989,14 @@
     "message": "複製失敗，請手動複製這個連結：",
     "description": "Shown with the link when the clipboard refused it"
   },
+  "createModeChatMessage": {
+    "message": "請先閱讀 {pageUrl}，再為 {site} 寫一個 Voyager 外掛，實現我下面的需求。我的 Voyager 外掛引擎版本是 {engine}，請不要用比它更新的功能。回覆時只給一個 ```json 程式碼區塊，內含完整的外掛。\n\n我的需求：\n{request}",
+    "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine}, {request} and ```json unchanged"
+  },
+  "createModeAgentHandoff": {
+    "message": "依照 {skillUrl} 裡的 skill，為 {site} 寫一個 Voyager 外掛，實現我下面的需求。我的 Voyager 外掛引擎版本是 {engine}，請不要用比它更新的功能。交付前執行 `{checkCommand}`，直到通過為止。然後把 plugin.json 和 style.css 給我，我會在 Voyager 彈出視窗裡用「{importFiles}」匯入。\n\n我的需求：\n{request}",
+    "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "AI 的回覆",
     "description": "Label of the field for the AI reply"

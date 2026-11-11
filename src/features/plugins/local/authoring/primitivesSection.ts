@@ -17,6 +17,15 @@ const PRIMITIVE_NOTES: Readonly<Record<string, string>> = {
     'It claims one composer send mode for the entire page: while one plugin holds it, another reports a conflict and stays paused; turn the holder off to hand the mode over.',
 };
 
+export const PRIMITIVES_TITLE = 'Primitives';
+
+/** The names of the primitives a plugin on `site` may call, sorted. */
+export function offeredPrimitiveNames(site: SiteAdapter): string[] {
+  return listPrimitiveReferences()
+    .filter((primitive) => allowsPrimitive(site, primitive.name))
+    .map((primitive) => primitive.name);
+}
+
 function paramLine(param: PrimitiveParamReference): string {
   const since = param.sinceEngine ? `, since ${param.sinceEngine}` : '';
   const required = param.required ? ', required' : '';
@@ -57,5 +66,5 @@ export function primitivesSection(site: SiteAdapter): ContractSection {
     printed.push({ name: primitive.name, params });
     lines.push(...primitive.params.map(paramLine));
   }
-  return { title: 'Primitives', lines };
+  return { title: PRIMITIVES_TITLE, lines };
 }

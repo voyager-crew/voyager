@@ -22,6 +22,7 @@ import { CORPUS, type CorpusCase } from './corpus';
 const PACKAGE_DIR = resolve(__dirname, '..');
 const ROOT = resolve(PACKAGE_DIR, '../..');
 const SKILL_DIR = join(ROOT, 'docs/public/skills/write-voyager-plugin');
+const CREATE_DIR = join(ROOT, 'docs/public/create');
 
 let work = '';
 let cli = '';
@@ -172,6 +173,19 @@ describe('create-voyager-plugin bundle', () => {
     for (const path of committed) {
       expect(readFileSync(join(out, path), 'utf8'), path).toBe(
         readFileSync(join(SKILL_DIR, path), 'utf8'),
+      );
+    }
+  });
+
+  it('writes the committed chat pages with create-pages --out', () => {
+    const out = join(work, 'create');
+    expect(run('create-pages', '--out', out).code).toBe(0);
+    const committed = listSkillMarkdown(CREATE_DIR);
+    expect(committed.length).toBe(DEFAULT_ADAPTERS.length);
+    expect(listSkillMarkdown(out)).toEqual(committed);
+    for (const path of committed) {
+      expect(readFileSync(join(out, path), 'utf8'), path).toBe(
+        readFileSync(join(CREATE_DIR, path), 'utf8'),
       );
     }
   });

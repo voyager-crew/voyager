@@ -28,62 +28,8 @@ A user can run a declarative plugin they wrote without publishing it:
    ones do (D7). **Export** downloads the stored manifest with CSS inlined;
    **Remove** deletes it with its enable state and settings.
 
-**Describe a change in one sentence.** The same panel can write the manifest
-with any AI the user already uses, while Voyager itself stays offline:
-
-- `local/pluginAuthoringPrompt.ts` turns the sentence and a chosen site (the
-  active tab's when supported) into a self-contained prompt: the request, the
-  plugin contract for that site (see "One contract, four outputs" below), and
-  "reply with exactly one ```json block".
-- The user copies the prompt and sends it themselves. Voyager never sends it,
-  opens or deep-links an AI page, reads one back, or makes a request.
-- `local/pluginReply.ts` takes the pasted reply (bounded, linear fence scan;
-  one ```json or unlabeled block, or bare JSON; zero or several blocks are
-  refused by name) through `readLocalPluginFiles` and the gate without
-  installing it. The popup closes while the user is in their AI tab, so this
-  step works on its own in a fresh popup.
-- `local/pluginPreview.ts` describes the result in plain terms (sites, each
-  change, warnings for hidden content via `hide`, `hidden` or a hiding inline
-  style, raw selectors, a replaced version, a
-  reply that misses the selected site (the active tab's, or the user's pick;
-  recomputed when the picker changes, no prompt needed), and a `theme` the
-  prompt asked the AI to leave out; a primitive is listed as a change, not
-  flagged, because the prompt offers it where the gate accepts it). CSS is not summarized: its full
-  source is shown with a plain warning that it can change anything, hiding
-  included, since reading its effect would be a guess. It builds on `inspectPlugin`, and
-  the same inspect view opens under it on demand. **Import** hands the exact previewed
-  object to `importLocalPlugin`, so it lands disabled and follows the re-import
-  rules above, but only over the install the preview saw: if the same id was
-  installed, changed or removed meanwhile, nothing is written and the preview
-  is refreshed for a new review.
-
-**One contract, four outputs.** `local/authoring/pluginContract.ts`
-(`buildPluginContract(site, { audience })`) is the single description of what a
-local plugin may contain: manifest fields, styles, page changes, settings, the
-local rules, the site's anchors and notes, the primitives (read only through
-`primitiveReference.ts`), what is not possible, and examples. Four outputs
-render it:
-
-- the popup prompt above (`audience: 'chat'`: inline CSS, no `theme`, primitives
-  where the site allows them, plus a pointer to the public skill for an AI that
-  can browse; the pasted contract wins where the two differ);
-- the public agent skill `docs/public/skills/write-voyager-plugin/SKILL.md`
-  (`authoringDocs.ts`), committed and served at
-  `https://voyager.nagi.fun/skills/write-voyager-plugin/SKILL.md`. Regenerate it
-  with `bun run skills:build`; `authoringDocs.test.ts` fails while it is stale,
-  so a new primitive, a changed `site.json` or a changed local rule shows up
-  there;
-- the `AGENTS.md` that `create-voyager-plugin init` writes next to a new plugin;
-- the examples, which `pluginContract.test.ts` runs through
-  `validateLocalManifest` (file examples through `readLocalPluginFiles`) for
-  every site and both audiences, so no output can teach what the gate refuses.
-
-`packages/create-voyager-plugin/` bundles the same gate and the bundled site
-adapters into one dependency-free Node file (`bun run cli:build`): `init` writes
-a passing `plugin.json`, `style.css` and `AGENTS.md`, and `check` runs
-`readLocalPluginFiles` plus `validateLocalManifest` offline, exit 0 or 1. Its
-tests hold it to parity with the in-process gate over a corpus. The package
-version follows the extension (`scripts/bump-version.js`).
+**Writing it with an AI.** Describe a change, Create mode, the plugin contract and
+its generated outputs, and the offline CLI: [authoring/README.md](authoring/README.md).
 
 The gate (`local/validateLocalManifest.ts`) is the remote catalog's gate plus
 local-only rules, never a weaker one: `validateManifest` with the CSS and

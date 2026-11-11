@@ -14,7 +14,6 @@
  * The text is machine-facing and stays in English; it asks for `name` and
  * `description` in the language of the user's request.
  */
-import { SiteRegistry, DEFAULT_ADAPTERS } from '../sites/registry';
 import type { SiteAdapter } from '../types';
 import { buildPluginContract, renderExample, renderSections } from './authoring/pluginContract';
 import { WRITE_PLUGIN_SKILL_URL } from './authoring/skillLink';
@@ -26,20 +25,7 @@ export {
   buildPluginExample,
 } from './authoring/pluginExamples';
 export { siteAnchors } from './authoring/siteFacts';
-
-/** Ceiling on the one-sentence request. */
-export const MAX_PLUGIN_REQUEST_CHARS = 1000;
-
-/** Sites a plugin may target: every plugin platform and native surface this build knows. */
-export function authoringSites(): readonly SiteAdapter[] {
-  return DEFAULT_ADAPTERS;
-}
-
-/** The supported site of a page URL, or null. */
-export function authoringSiteForUrl(url: string | undefined): SiteAdapter | null {
-  if (!url) return null;
-  return SiteRegistry.createDefault().resolveByUrl(url);
-}
+export { MAX_PLUGIN_REQUEST_CHARS, authoringSiteForUrl, authoringSites } from './authoringSites';
 
 /** The full prompt for one request and target site. */
 export function buildPluginAuthoringPrompt(request: string, site: SiteAdapter): string {

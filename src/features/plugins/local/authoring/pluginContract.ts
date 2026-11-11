@@ -1,9 +1,9 @@
 /**
  * `buildPluginContract(site, options)`: everything an author (an AI in a chat
  * tab, or a coding agent) needs to write a local plugin for one site, as text
- * sections plus worked examples. The popup prompt, the scaffold's AGENTS.md
- * and the public SKILL.md are all rendered from it, and the examples are
- * tested against the import gate, so the four never disagree.
+ * sections plus worked examples. The popup prompt, the per-site chat pages,
+ * the scaffold's AGENTS.md and the public skill are all rendered from it, and
+ * the examples are tested against the import gate, so they never disagree.
  */
 
 import type { SiteAdapter } from '../../types';
@@ -47,12 +47,20 @@ export function offersPrimitives(site: SiteAdapter): boolean {
   return allowsAnyPrimitive(site);
 }
 
-export function siteSection(site: SiteAdapter, audience: ContractAudience): ContractSection {
+export const SITE_SECTION_PREFIX = 'Target site: ';
+
+/** `primitiveDetails: false` leaves the primitive list and its caveats to another document. */
+export function siteSection(
+  site: SiteAdapter,
+  audience: ContractAudience,
+  { primitiveDetails = true }: { primitiveDetails?: boolean } = {},
+): ContractSection {
   return {
-    title: `Target site: ${site.label}`,
+    title: `${SITE_SECTION_PREFIX}${site.label}`,
     lines: siteFactLines(site, {
       primitives: offersPrimitives(site),
       theme: audience === 'agent',
+      primitiveDetails,
     }),
   };
 }

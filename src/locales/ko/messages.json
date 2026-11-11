@@ -2989,6 +2989,14 @@
     "message": "복사하지 못했습니다. 이 링크를 직접 복사하세요:",
     "description": "Shown with the link when the clipboard refused it"
   },
+  "createModeChatMessage": {
+    "message": "먼저 {pageUrl} 를 읽은 다음, 아래 요청대로 동작하는 {site}용 Voyager 플러그인을 작성해 주세요. 제 Voyager 플러그인 엔진은 {engine}이니 그보다 새로운 기능은 쓰지 마세요. 답장에는 플러그인 전체를 담은 ```json 블록을 딱 하나만 넣어 주세요.\n\n요청:\n{request}",
+    "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine}, {request} and ```json unchanged"
+  },
+  "createModeAgentHandoff": {
+    "message": "{skillUrl} 의 skill을 따라, 아래 요청대로 동작하는 {site}용 Voyager 플러그인을 작성해 주세요. 제 Voyager 플러그인 엔진은 {engine}이니 그보다 새로운 기능은 쓰지 마세요. 넘겨주기 전에 `{checkCommand}` 를 실행해 통과할 때까지 고쳐 주세요. 그런 다음 plugin.json과 style.css를 주시면 Voyager 팝업의 \"{importFiles}\"로 추가하겠습니다.\n\n요청:\n{request}",
+    "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "AI의 답변",
     "description": "Label of the field for the AI reply"

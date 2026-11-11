@@ -2989,6 +2989,14 @@
     "message": "コピーできませんでした。このリンクを手動でコピーしてください：",
     "description": "Shown with the link when the clipboard refused it"
   },
+  "createModeChatMessage": {
+    "message": "まず {pageUrl} を読んでから、下の依頼どおりに動く {site} 用の Voyager プラグインを書いてください。私の Voyager プラグインエンジンは {engine} なので、それより新しい機能は使わないでください。返信はプラグイン全体を入れた ```json ブロックをちょうど 1 つだけにしてください。\n\n依頼：\n{request}",
+    "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine}, {request} and ```json unchanged"
+  },
+  "createModeAgentHandoff": {
+    "message": "{skillUrl} のスキルに従って、下の依頼どおりに動く {site} 用の Voyager プラグインを書いてください。私の Voyager プラグインエンジンは {engine} なので、それより新しい機能は使わないでください。渡す前に `{checkCommand}` を実行し、通るまで直してください。そのあと plugin.json と style.css をください。Voyager のポップアップの「{importFiles}」で追加します。\n\n依頼：\n{request}",
+    "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "AI の回答",
     "description": "Label of the field for the AI reply"

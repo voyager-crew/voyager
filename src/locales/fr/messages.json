@@ -2989,6 +2989,14 @@
     "message": "Copie impossible. Copiez ce lien vous-même :",
     "description": "Shown with the link when the clipboard refused it"
   },
+  "createModeChatMessage": {
+    "message": "Lis d’abord {pageUrl}, puis écris un plugin Voyager pour {site} qui fait ce que je demande ci-dessous. Mon moteur de plugins Voyager est en version {engine} : n’utilise rien de plus récent. Réponds avec exactement un bloc ```json qui contient le plugin complet.\n\nMa demande :\n{request}",
+    "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine}, {request} and ```json unchanged"
+  },
+  "createModeAgentHandoff": {
+    "message": "Écris un plugin Voyager pour {site} qui fait ce que je demande ci-dessous, en suivant la skill de {skillUrl}. Mon moteur de plugins Voyager est en version {engine} : n’utilise rien de plus récent. Avant de me le rendre, lance `{checkCommand}` jusqu’à ce qu’il passe. Donne-moi ensuite plugin.json et style.css pour que je les ajoute avec « {importFiles} » dans la fenêtre de Voyager.\n\nMa demande :\n{request}",
+    "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "Réponse de l’IA",
     "description": "Label of the field for the AI reply"

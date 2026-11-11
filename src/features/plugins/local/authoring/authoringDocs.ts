@@ -2,8 +2,8 @@
  * The documents a coding agent reads, rendered from the plugin contract:
  * - the public skill (every site; `bun run skills:build` writes its files to
  *   `docs/public/skills/write-voyager-plugin/`): SKILL.md with the rules every
- *   plugin needs, plus `sites/<site>.md` and `primitives.md`, which only some
- *   requests reach and SKILL.md links, and
+ *   plugin needs and one example, plus `sites/<site>.md`, `primitives.md` and
+ *   `examples.md`, which only some requests reach and SKILL.md links, and
  * - the `AGENTS.md` that `create-voyager-plugin init` writes into a plugin
  *   folder (one site, one self-contained file).
  * Both take the sites explicitly so the CLI, which has no Vite glob, renders
@@ -12,8 +12,14 @@
 import type { SiteAdapter } from '../../types';
 import { authoringWorkflowSection } from './authoringWorkflow';
 import type { ContractRefs, ContractSection } from './contractRules';
-import { buildPluginContract, renderExample, renderSections, siteSection } from './pluginContract';
-import { primitivesSection } from './primitivesSection';
+import {
+  SITE_SECTION_PREFIX,
+  buildPluginContract,
+  renderExample,
+  renderSections,
+  siteSection,
+} from './pluginContract';
+import { PRIMITIVES_TITLE, primitivesSection } from './primitivesSection';
 import { isUnrestrictedSite, restrictsPrimitives } from './siteFacts';
 import {
   WRITE_PLUGIN_SKILL_BASE_URL,
@@ -27,6 +33,11 @@ const INTRO = [
 
 export const SKILL_ENTRY_FILE = 'SKILL.md';
 export const SKILL_PRIMITIVES_FILE = 'primitives.md';
+export const SKILL_EXAMPLES_FILE = 'examples.md';
+
+/** When an author needs the examples beyond the first: the condition every pointer to them states. */
+export const EXAMPLES_CONDITION =
+  'when the plugin needs a setting the user adjusts in the popup, or calls a primitive: it has a worked example of each.';
 
 /** A site's file in the skill folder, relative to SKILL.md. */
 export function skillSiteFile(site: SiteAdapter): string {
@@ -48,7 +59,8 @@ function referenceSite(sites: readonly SiteAdapter[]): SiteAdapter {
 /** The sections every site shares: the contract without its site facts and primitive list. */
 function sharedSections(sections: readonly ContractSection[]): ContractSection[] {
   return sections.filter(
-    (section) => !section.title.startsWith('Target site: ') && section.title !== 'Primitives',
+    (section) =>
+      !section.title.startsWith(SITE_SECTION_PREFIX) && section.title !== PRIMITIVES_TITLE,
   );
 }
 
@@ -76,6 +88,7 @@ function indexSection(sites: readonly SiteAdapter[]): ContractSection {
       '- Before you write or fix a plugin, read the site file of every site it targets. It has the URL patterns "matches" must use, the semantic anchors the site declares, which primitives run there and the site’s caveats:',
       ...sites.map((site) => `  - ${site.label}: [${skillSiteFile(site)}](${skillSiteFile(site)})`),
       `- Read [${SKILL_PRIMITIVES_FILE}](${SKILL_PRIMITIVES_FILE}) when the request needs behavior that CSS and the four page changes cannot give: copy buttons, counters, collapsing long content, diagrams (Mermaid, ECharts, WaveDrom), saving drafts, send shortcuts, a conversation timeline, formula copy, Vim input or rendering the user’s own LaTeX. Always read it before answering NOT POSSIBLE.`,
+      `- Read [${SKILL_EXAMPLES_FILE}](${SKILL_EXAMPLES_FILE}) ${EXAMPLES_CONDITION}`,
     ],
   };
 }
@@ -89,6 +102,8 @@ export function renderWriteVoyagerPluginSkillFiles(
     refs: SKILL_REFS,
   });
   const siteIds = sites.map((site) => site.id).join(', ');
+  const [firstExample, ...moreExamples] = reference.examples;
+  if (!firstExample) throw new Error('the plugin contract has no example');
   const skill = [
     '---',
     `name: ${WRITE_PLUGIN_SKILL_NAME}`,
@@ -104,9 +119,17 @@ export function renderWriteVoyagerPluginSkillFiles(
     ...renderSections([indexSection(sites)]),
     ...renderSections([authoringWorkflowSection({ scaffolded: false, siteIds })]),
     ...renderSections(sharedSections(reference.sections)),
-    `## Examples (for ${reference.site.label}; on another site use the "matches" and anchors from its site file)`,
+    `## Example (for ${reference.site.label}; on another site use the "matches" and anchors from its site file)`,
     '',
-    ...reference.examples.flatMap((example) => renderExample(example)),
+    ...renderExample(firstExample, 3),
+  ].join('\n');
+
+  const examples = [
+    '# More Voyager plugin examples',
+    '',
+    `Part of the ${WRITE_PLUGIN_SKILL_NAME} skill: the rules are in [${SKILL_ENTRY_FILE}](${SKILL_ENTRY_FILE}). These examples target ${reference.site.label}; on another site use the "matches" and anchors from its site file, and call only the primitives that site file lists.`,
+    '',
+    ...moreExamples.flatMap((example) => renderExample(example, 2)),
   ].join('\n');
 
   const restricted = labelList(
@@ -125,6 +148,7 @@ export function renderWriteVoyagerPluginSkillFiles(
   const files = new Map<string, string>([
     [SKILL_ENTRY_FILE, skill],
     [SKILL_PRIMITIVES_FILE, primitives],
+    [SKILL_EXAMPLES_FILE, examples],
   ]);
   for (const site of sites) {
     files.set(

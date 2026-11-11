@@ -2989,6 +2989,14 @@
     "message": "Не удалось скопировать. Скопируйте ссылку вручную:",
     "description": "Shown with the link when the clipboard refused it"
   },
+  "createModeChatMessage": {
+    "message": "Сначала прочитай {pageUrl}, затем напиши плагин Voyager для {site}, который делает то, о чём я прошу ниже. Мой движок плагинов Voyager версии {engine}, поэтому не используй ничего новее. Ответь ровно одним блоком ```json с полным плагином.\n\nМой запрос:\n{request}",
+    "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine}, {request} and ```json unchanged"
+  },
+  "createModeAgentHandoff": {
+    "message": "Напиши плагин Voyager для {site}, который делает то, о чём я прошу ниже, по skill из {skillUrl}. Мой движок плагинов Voyager версии {engine}, поэтому не используй ничего новее. Прежде чем отдать результат, запускай `{checkCommand}`, пока проверка не пройдёт. Потом дай мне plugin.json и style.css, чтобы я добавил их через «{importFiles}» во всплывающем окне Voyager.\n\nМой запрос:\n{request}",
+    "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "Ответ ИИ",
     "description": "Label of the field for the AI reply"

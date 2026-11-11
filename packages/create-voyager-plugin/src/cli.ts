@@ -10,13 +10,14 @@ import { DEFAULT_ADAPTERS } from '../../../src/features/plugins/sites/registry';
 import { EFFECTIVE_PLUGIN_ENGINE_VERSION } from '../../../src/features/plugins/verbs/contracts';
 import { checkPluginDir, formatIssue } from './check';
 import { initPluginDir } from './init';
-import { writeSkillDir } from './skill';
+import { writeCreatePagesDir, writeSkillDir } from './skill';
 
 const USAGE = `Usage: create-voyager-plugin <command>
 
   init [dir] --site <site> [--force]  Write plugin.json, style.css and AGENTS.md
   check [dir] [--json]                Run the popup's import checks (exit 0 = imports)
   skill [--out <dir>]                 Print the write-voyager-plugin skill, or write its files
+  create-pages --out <dir>            Write the page a chat AI reads for each site
   --version                           Print the Voyager and plugin engine versions
 
 Sites: ${DEFAULT_ADAPTERS.map((site) => site.id).join(', ')}
@@ -98,6 +99,13 @@ function runSkill(args: ParsedArgs): number {
   return 0;
 }
 
+function runCreatePages(args: ParsedArgs): number {
+  const out = stringFlag(args, '--out');
+  if (!out) throw new UsageError('create-pages needs --out <dir>');
+  writeCreatePagesDir(out, DEFAULT_ADAPTERS);
+  return 0;
+}
+
 async function main(argv: readonly string[]): Promise<number> {
   const args = parseArgs(argv);
   if (args.flags.has('--version') || args.flags.has('-v')) {
@@ -116,6 +124,7 @@ async function main(argv: readonly string[]): Promise<number> {
   if (command === 'check') return runCheck(commandArgs);
   if (command === 'init') return runInit(commandArgs);
   if (command === 'skill') return runSkill(commandArgs);
+  if (command === 'create-pages') return runCreatePages(commandArgs);
   throw new UsageError(`unknown command "${command}"`);
 }
 

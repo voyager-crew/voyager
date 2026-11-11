@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { PluginManifest } from '../types';
-import { authoringSites } from './pluginAuthoringPrompt';
+import { authoringSites } from './authoringSites';
 import { previewPlugin } from './pluginPreview';
 import { validateLocalManifest } from './validateLocalManifest';
 

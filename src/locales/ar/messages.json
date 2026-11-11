@@ -2989,6 +2989,14 @@
     "message": "تعذّر النسخ. انسخ هذا الرابط بنفسك:",
     "description": "Shown with the link when the clipboard refused it"
   },
+  "createModeChatMessage": {
+    "message": "اقرأ {pageUrl} أولًا، ثم اكتب إضافة Voyager لموقع {site} تنفّذ ما أطلبه أدناه. إصدار محرك إضافات Voyager لديّ هو {engine}، فلا تستخدم شيئًا أحدث منه. أجب بكتلة ```json واحدة فقط تحتوي الإضافة كاملة.\n\nطلبي:\n{request}",
+    "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine}, {request} and ```json unchanged"
+  },
+  "createModeAgentHandoff": {
+    "message": "اكتب إضافة Voyager لموقع {site} تنفّذ ما أطلبه أدناه، متّبعًا الـ skill في {skillUrl}. إصدار محرك إضافات Voyager لديّ هو {engine}، فلا تستخدم شيئًا أحدث منه. قبل أن تسلّمني النتيجة، شغّل `{checkCommand}` حتى ينجح. ثم أعطني plugin.json وstyle.css لأضيفهما عبر «{importFiles}» في نافذة Voyager المنبثقة.\n\nطلبي:\n{request}",
+    "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "رد الذكاء الاصطناعي",
     "description": "Label of the field for the AI reply"

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { PRIMITIVE_CONTRACTS } from '../../verbs/contracts';
+import { authoringSites } from '../authoringSites';
 import { readLocalPluginFiles } from '../localPluginFiles';
-import { authoringSites } from '../pluginAuthoringPrompt';
 import { validateLocalManifest } from '../validateLocalManifest';
 import type { ContractAudience } from './contractRules';
 import { formatJson } from './jsonText';

@@ -7,6 +7,7 @@ import { EFFECTIVE_PLUGIN_ENGINE_VERSION } from '../../verbs/contracts';
 import { validateLocalManifest } from '../validateLocalManifest';
 import {
   SKILL_ENTRY_FILE,
+  SKILL_EXAMPLES_FILE,
   SKILL_PRIMITIVES_FILE,
   renderScaffoldAgents,
   renderWriteVoyagerPluginSkillFiles,
@@ -75,6 +76,21 @@ describe('write-voyager-plugin skill', () => {
       const text = files.get(skillSiteFile(site))!;
       for (const pattern of site.matches) expect(text).toContain(`- ${pattern}\n`);
       for (const key of siteAnchors(site)) expect(text).toContain(`- ${key}: `);
+    }
+  });
+
+  it('keeps one example in SKILL.md and the rest, all importable, in examples.md', () => {
+    const inline = jsonBlocks(skill);
+    const more = jsonBlocks(files.get(SKILL_EXAMPLES_FILE)!);
+    expect(inline).toHaveLength(1);
+    expect(more.length).toBeGreaterThan(0);
+    for (const manifest of [...inline, ...more] as { contributes: object }[]) {
+      // Style files are not inlined here; the gate checks the rest of the manifest.
+      const result = validateLocalManifest({
+        ...manifest,
+        contributes: { ...manifest.contributes, styles: [] },
+      });
+      expect(result.success ? [] : result.error).toEqual([]);
     }
   });
 
