@@ -132,13 +132,13 @@ function isNext(value: string): boolean {
 function stampFields(
   file: EngineFile,
   fields: readonly VersionField[],
-  releasedVersion: string,
+  releaseVersion: string,
 ): string {
   let result = file.source;
   for (const field of [...fields].sort((a, b) => b.start - a.start)) {
     if (!isNext(field.value)) continue;
     const quote = file.source[field.start];
-    const value = resolveEngineVersion(field.value, releasedVersion);
+    const value = resolveEngineVersion(field.value, releaseVersion);
     result = `${result.slice(0, field.start)}${quote}${value}${quote}${result.slice(field.end)}`;
   }
   return result;
@@ -157,41 +157,21 @@ export function unreleasedPluginEngineIssues(root: string): string[] {
   return issues;
 }
 
-/** Prepare every replacement before writing, so malformed data cannot partly stamp a release. */
-export function preparePluginEngineRelease(root: string): PluginEngineReleasePlan {
-  const constantsPath = join(root, 'src/features/plugins/constants.ts');
-  const constants = readFileSync(constantsPath, 'utf8');
-  const constantsFile: EngineFile = { path: constantsPath, source: constants, kind: 'contract' };
-  const constantsSource = parseSource(constantsFile);
-  let declaration: VersionField | null = null;
-  function findConstant(node: ts.Node): void {
-    if (
-      ts.isVariableDeclaration(node) &&
-      ts.isIdentifier(node.name) &&
-      node.name.text === 'PLUGIN_ENGINE_VERSION' &&
-      node.initializer
-    ) {
-      declaration = literalField(node.initializer, constantsSource, node.name.text);
-    }
-    ts.forEachChild(node, findConstant);
-  }
-  findConstant(constantsSource);
-  if (!declaration) throw new Error('PLUGIN_ENGINE_VERSION declaration not found');
-  const releasedDeclaration = declaration as VersionField;
-  const releasedVersion = releasedDeclaration.value;
-  const nextVersion = resolveEngineVersion('next', releasedVersion);
+/**
+ * Stamp every `next` declaration with the extension version being released, the
+ * version that ships it. Every replacement is prepared before any write, so
+ * malformed data cannot partly stamp a release.
+ */
+export function preparePluginEngineRelease(
+  root: string,
+  releaseVersion: string,
+): PluginEngineReleasePlan {
   const updates: { path: string; source: string }[] = [];
-
   for (const file of engineFiles(root)) {
-    const source = stampFields(file, versionFields(file), releasedVersion);
+    const source = stampFields(file, versionFields(file), releaseVersion);
     if (source !== file.source) updates.push({ path: file.path, source });
   }
-  if (updates.length === 0) return { engineVersion: null, updates };
-  updates.push({
-    path: constantsPath,
-    source: `${constants.slice(0, releasedDeclaration.start)}${constants[releasedDeclaration.start]}${nextVersion}${constants[releasedDeclaration.start]}${constants.slice(releasedDeclaration.end)}`,
-  });
-  return { engineVersion: nextVersion, updates };
+  return { engineVersion: updates.length > 0 ? releaseVersion : null, updates };
 }
 
 export function applyPluginEngineRelease(plan: PluginEngineReleasePlan): void {

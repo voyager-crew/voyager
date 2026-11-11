@@ -78,19 +78,18 @@ bun run bump {VERSION}
 
 The bump also stamps raw `sinceEngine: 'next'` declarations in primitive
 contracts, their imported data modules, and baselines (including later-added parameters), and `engine:
-">=next"` in catalog plugin manifests. They become the next minor engine
-version, and `src/features/plugins/constants.ts` records that released engine.
-When no `next` declaration exists, the engine version stays unchanged regardless
-of the extension version. Never hand-bump the plugin engine or choose the
-engine version while authoring an unreleased primitive.
+">=next"` in catalog plugin manifests with the version being released, because
+the plugin engine version is the extension version
+(`src/features/plugins/constants.ts` reads it from `package.json`). Never type
+an engine version by hand.
 
 When `next` declarations land after a version was already bumped,
 `plugin:release:check` fails. Run `bun run bump {VERSION}` again with the same
 version: it leaves the five version sources unchanged and stamps only the new
 declarations. The bump does not touch prose or tests: replace `>=next` in
-`docs/**` with the stamped engine, and move test fixtures that pin `>=next`
-for a capability this release ships to that engine (`>=next` now means the
-engine after it).
+`docs/**` with the stamped version, and move test fixtures that pin `>=next`
+for a capability this release ships to that version (`>=next` now means the
+release after it).
 
 Do not manually edit the Xcode project version during a normal release. Verify all values after the bump:
 
@@ -150,7 +149,7 @@ git add \
   packages/create-voyager-plugin/package.json \
   Voyager/Voyager.xcodeproj/project.pbxproj \
   src/pages/content/changelog/notes/{VERSION}/
-git diff --name-only -- src/features/plugins/constants.ts \
+git diff --name-only -- \
   ':(glob)src/features/plugins/verbs/**/*.ts' \
   ':(glob)src/features/plugins/verbs/*/paramsBaseline.json' \
   ':(glob)src/features/plugins/catalog/**/plugin.json'

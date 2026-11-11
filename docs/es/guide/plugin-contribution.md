@@ -130,7 +130,7 @@ La línea `$schema` es opcional y solo sirve a tu editor: apunta al JSON Schema 
 - Mantén `matches` limitado a los sitios donde el plugin realmente necesita ejecutarse.
 - Un plugin puede listar varios hosts en `matches` solo si el `site.json` de su sitio los cubre todos (por ejemplo chatgpt.com y chat.openai.com); para cubrir otro sitio, añade un plugin en la carpeta de ese sitio.
 - Valores recomendados para `category`: `render-fix`, `theme`, `layout`, `readability`, `productivity`, `integration` u `other`.
-- Indica en `engine` la versión del motor de plugins que necesitas. Los plugins oficiales sirven como referencia.
+- Indica en `engine` la versión mínima de Voyager que necesita el plugin. Los plugins oficiales sirven como referencia.
 - Añade `i18n` para chino, inglés y otros idiomas comunes cuando sea posible.
 
 ## Límites de CSS y recursos

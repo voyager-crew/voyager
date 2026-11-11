@@ -78,9 +78,6 @@ const voyagerSeams: Bun.BunPlugin = {
 };
 
 export async function buildCli(outdir: string): Promise<string> {
-  const version = (
-    JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { version: string }
-  ).version;
   const result = await Bun.build({
     entrypoints: [join(PACKAGE_DIR, 'src/cli.ts')],
     outdir,
@@ -88,7 +85,6 @@ export async function buildCli(outdir: string): Promise<string> {
     target: 'node',
     format: 'esm',
     banner: '#!/usr/bin/env node',
-    define: { __VOYAGER_VERSION__: JSON.stringify(version) },
     minify: { whitespace: false, identifiers: false, syntax: true },
     plugins: [voyagerSeams],
   });

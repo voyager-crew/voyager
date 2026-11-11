@@ -34,10 +34,11 @@ describe('create pages', () => {
     }
   });
 
-  it.each(cases)('give %s its URL patterns, anchors and engine version', (_label, site, page) => {
+  it.each(cases)('give %s its URL patterns, anchors and Voyager version', (_label, site, page) => {
     for (const pattern of site.matches) expect(page).toContain(`- ${pattern}\n`);
     for (const key of siteAnchors(site)) expect(page).toContain(`- ${key}: `);
-    expect(page).toContain(`engine ${EFFECTIVE_PLUGIN_ENGINE_VERSION}`);
+    expect(page).toContain(`This page follows Voyager ${EFFECTIVE_PLUGIN_ENGINE_VERSION}:`);
+    expect(page).toContain('the lowest Voyager version the plugin needs');
     expect(page).toContain('exactly one fenced code block labeled json');
   });
 

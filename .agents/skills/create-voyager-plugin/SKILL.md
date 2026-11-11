@@ -71,11 +71,15 @@ A native feature becomes a packaged official plugin that keeps its old setting a
   the catalog manifest. A plugin that works only with an unreleased fix to a
   released primitive also declares `">=next"`: merging to `main` publishes the
   catalog before the fix ships, and the `sinceEngine` check cannot see fixes.
-  Never hand-bump `PLUGIN_ENGINE_VERSION`: it records
-  the released engine, and `bun run bump` stamps all `next` entries at release.
-  Contributor checks and catalog publishing resolve the shared next version
-  (released + one minor, patch zero); published snapshots contain only concrete
-  versions. That ordering is the point: an old build then says "update
+  `engine` is the lowest Voyager version the plugin needs; the engine version
+  is the extension version (`PLUGIN_ENGINE_VERSION` reads `package.json`).
+  Floors in the 1.x range predate that and stay valid. Never write a floor
+  above 1.11.0 and at most 2.3.1: Voyager 2.3.1 reports engine 1.11.0, so it
+  would refuse the plugin (`engineVersion.test.ts`). `bun run bump` stamps all
+  `next` entries with the version it releases. Contributor checks and catalog
+  publishing resolve `next` to the default next release (next patch, rolling
+  over at 10); published snapshots contain only concrete versions. That
+  ordering is the point: an old build then says "update
   Voyager" (`needs-engine`) instead of `needs-handler`, which is left meaning a
   real configuration mistake. `requires.handlers` is optional, since every
   `native` op already counts as a required handler (`pluginStatus.ts`); list a

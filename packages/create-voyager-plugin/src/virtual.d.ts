@@ -5,6 +5,3 @@ declare module 'voyager:site-entries' {
   const entries: readonly BundledSiteEntry[];
   export default entries;
 }
-
-/** The Voyager version this CLI was built from (root package.json). */
-declare const __VOYAGER_VERSION__: string;

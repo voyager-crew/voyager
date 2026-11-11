@@ -140,7 +140,7 @@ describe('create-voyager-plugin init', () => {
 });
 
 describe('create-voyager-plugin bundle', () => {
-  it('reports the Voyager version it follows and its plugin engine', () => {
+  it('reports the Voyager version it was built from and checks for', () => {
     const root = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as {
       version: string;
     };
@@ -152,8 +152,9 @@ describe('create-voyager-plugin bundle', () => {
     expect(pkg.dependencies).toBeUndefined();
     const result = run('--version');
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain(`Voyager ${root.version}`);
-    expect(result.stdout).toContain(`plugin engine ${EFFECTIVE_PLUGIN_ENGINE_VERSION}`);
+    expect(result.stdout).toBe(
+      `create-voyager-plugin ${root.version} (checks plugins for Voyager ${EFFECTIVE_PLUGIN_ENGINE_VERSION})\n`,
+    );
   });
 
   it('needs no browser API and imports nothing but Node built-ins', () => {

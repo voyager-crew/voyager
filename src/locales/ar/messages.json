@@ -2978,15 +2978,15 @@
     "description": "Link at the end of the plugin list: scrolls to the Create mode field"
   },
   "createModeChatMessage": {
-    "message": "اقرأ {pageUrl} أولًا، ثم اكتب إضافة Voyager لموقع {site} تنفّذ ما أطلبه أدناه. إصدار محرك إضافات Voyager لديّ هو {engine}، فلا تستخدم شيئًا أحدث منه. أجب بكتلة شيفرة json واحدة فقط تحتوي الإضافة كاملة.\n\nطلبي:\n{request}",
+    "message": "اقرأ {pageUrl} أولًا، ثم اكتب إضافة Voyager لموقع {site} تنفّذ ما أطلبه أدناه. إصدار Voyager لديّ هو {engine}، فلا تستخدم شيئًا أحدث منه. أجب بكتلة شيفرة json واحدة فقط تحتوي الإضافة كاملة.\n\nطلبي:\n{request}",
     "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine} and {request} unchanged, and write no triple backtick: ChatGPT's composer turns one into a code box that swallows the rest"
   },
   "createModeChatMessageInline": {
-    "message": "اكتب إضافة Voyager لموقع {site} تنفّذ ما أطلبه في آخر هذه الرسالة. تعليماتك هي الصفحة {pageUrl}، منسوخة كاملة بين سطري ===== أدناه، فلا حاجة إلى فتحها. إصدار محرك إضافات Voyager لديّ هو {engine}، فلا تستخدم شيئًا أحدث منه. أجب بكتلة شيفرة json واحدة فقط تحتوي الإضافة كاملة.\n\n===== التعليمات =====\n\n{page}\n\n===== نهاية التعليمات =====\n\nطلبي:\n{request}",
+    "message": "اكتب إضافة Voyager لموقع {site} تنفّذ ما أطلبه في آخر هذه الرسالة. تعليماتك هي الصفحة {pageUrl}، منسوخة كاملة بين سطري ===== أدناه، فلا حاجة إلى فتحها. إصدار Voyager لديّ هو {engine}، فلا تستخدم شيئًا أحدث منه. أجب بكتلة شيفرة json واحدة فقط تحتوي الإضافة كاملة.\n\n===== التعليمات =====\n\n{page}\n\n===== نهاية التعليمات =====\n\nطلبي:\n{request}",
     "description": "Create mode on a site whose chat AI cannot open links (Gemini): the message Voyager puts in the chat composer, carrying the instructions page itself. Keep {pageUrl}, {site}, {engine}, {page}, {request} and ===== unchanged, and write no triple backtick"
   },
   "createModeAgentHandoff": {
-    "message": "اكتب إضافة Voyager لموقع {site} تنفّذ ما أطلبه أدناه، متّبعًا الـ skill في {skillUrl}. إصدار محرك إضافات Voyager لديّ هو {engine}، فلا تستخدم شيئًا أحدث منه. قبل أن تسلّمني النتيجة، شغّل `{checkCommand}` حتى ينجح. ثم أعطني plugin.json وstyle.css لأضيفهما عبر «{importFiles}» في نافذة Voyager المنبثقة.\n\nطلبي:\n{request}",
+    "message": "اكتب إضافة Voyager لموقع {site} تنفّذ ما أطلبه أدناه، متّبعًا الـ skill في {skillUrl}. إصدار Voyager لديّ هو {engine}، فلا تستخدم شيئًا أحدث منه. قبل أن تسلّمني النتيجة، شغّل `{checkCommand}` حتى ينجح. ثم أعطني plugin.json وstyle.css لأضيفهما عبر «{importFiles}» في نافذة Voyager المنبثقة.\n\nطلبي:\n{request}",
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
   "createModeFilled": {

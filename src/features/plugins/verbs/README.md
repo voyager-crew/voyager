@@ -186,12 +186,15 @@ any folder whose contract and implementation disagree. The primitive enums in
 `docs/public/plugin.schema.json` are generated: run `bun run skills:build`
 after adding a primitive (it also refreshes the public skill).
 
-`PLUGIN_ENGINE_VERSION` records the released engine version and is never
-hand-bumped by a contributor. A new primitive or optional parameter declares
-`sinceEngine: 'next'`; its dependent catalog plugin uses `"engine": ">=next"`.
-The shared resolver maps `next` to the released engine plus one minor, patch
-zero (1.8.0 → 1.9.0). While any contract or param is `next`, this tree runs that
-effective engine version, so its bundled unreleased plugins are usable.
+`PLUGIN_ENGINE_VERSION` is the extension version, read from `package.json`;
+nobody types it. Voyager 2.3.1 and older reported a separate engine number
+(last 1.11.0), so `sinceEngine` values and floors in that 1.x range are history
+that every later Voyager satisfies. A new primitive or optional parameter
+declares `sinceEngine: 'next'`; its dependent catalog plugin uses
+`"engine": ">=next"`. The shared resolver maps `next` to the release `bun run
+bump` makes by default (`nextReleaseVersion`: next patch, rolling over at 10,
+so 2.3.1 → 2.3.2). While any contract or param is `next`, this tree runs that
+version, so its bundled unreleased plugins are usable.
 
 A manifest that uses a primitive must set an `engine` range whose **minimum** is
 at least its resolved `sinceEngine`, and `bun run catalog:build` fails the build
@@ -202,9 +205,8 @@ mistaking it for a remote kill switch. Local imports require concrete versions;
 the public authoring skill and CLI scaffold document resolved primitive floors.
 
 `bun run bump` stamps all unpublished contracts, param baselines and dependent
-catalog manifest ranges, and advances the engine only when `next` exists. A
-release gate rejects any remaining `next`; extension-version bumps without
-unpublished engine additions leave the engine version unchanged.
+catalog manifest ranges with the version it releases, explicit or default. A
+release gate rejects any remaining `next`.
 
 The primitive engine floor makes an older Voyager report `needs-engine`
 ("update Voyager") instead of `needs-handler`, which means a configuration

@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import { nextReleaseVersion } from '../src/features/plugins/engineVersion.ts';
 import { applyPluginEngineRelease, preparePluginEngineRelease } from './lib/pluginEngineRelease.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -37,25 +38,6 @@ function updateJsonVersion(filePath, version) {
   fs.writeFileSync(filePath, updated);
 }
 
-// Logic to bump version with rollover at 10
-function bumpVersion(version) {
-  let [major, minor, patch] = version.split('.').map(Number);
-
-  patch += 1;
-
-  if (patch > 9) {
-    patch = 0;
-    minor += 1;
-  }
-
-  if (minor > 9) {
-    minor = 0;
-    major += 1;
-  }
-
-  return `${major}.${minor}.${patch}`;
-}
-
 async function main() {
   try {
     console.log('Reading current version...');
@@ -64,13 +46,13 @@ async function main() {
 
     console.log(`Current version: ${currentVersion}`);
 
-    const newVersion = explicitVersion ?? bumpVersion(currentVersion);
+    const newVersion = explicitVersion ?? nextReleaseVersion(currentVersion);
     if (!/^\d+\.\d+\.\d+$/.test(newVersion)) {
       throw new Error(`Invalid version: ${newVersion}`);
     }
     console.log(`New version:     ${newVersion}`);
 
-    const engineRelease = preparePluginEngineRelease(path.resolve(__dirname, '..'));
+    const engineRelease = preparePluginEngineRelease(path.resolve(__dirname, '..'), newVersion);
 
     // Update package.json
     updateJsonVersion(packageJsonPath, newVersion);
@@ -110,7 +92,7 @@ async function main() {
     applyPluginEngineRelease(engineRelease);
     if (engineRelease.engineVersion) {
       console.log(
-        `Stamped plugin engine ${engineRelease.engineVersion} in ${engineRelease.updates.length} files`,
+        `Stamped next as ${engineRelease.engineVersion} in ${engineRelease.updates.length} files`,
       );
     }
 

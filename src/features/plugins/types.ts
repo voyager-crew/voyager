@@ -343,7 +343,7 @@ export interface PluginManifest {
   /** SPDX expression (e.g. `MIT`, `GPL-3.0-or-later`, `Proprietary`). */
   readonly license: string;
   readonly homepage?: string;
-  /** Semver range the plugin requires of the host engine (e.g. `>=1.0.0`). */
+  /** The lowest Voyager version the plugin needs, as a range (e.g. `>=1.0.0`). */
   readonly engine: string;
   readonly tier: PluginTier;
   /** URL match patterns the plugin applies to (glob subset of Chrome match patterns). */

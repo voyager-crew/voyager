@@ -130,7 +130,7 @@ catalog 里的插件属于单个站点文件夹，它的每个 `matches` 都必�
 - `matches` 尽量收窄，只匹配插件真正需要生效的网站。
 - `matches` 只有在所属站点的 `site.json` 全部覆盖时，才能列出多个主机（例如 chatgpt.com 和 chat.openai.com）；要支持其他站点，请在该站点的文件夹里新增插件。
 - `category` 建议使用 `render-fix`、`theme`、`layout`、`readability`、`productivity`、`integration` 或 `other`。
-- `engine` 写清楚需要的插件引擎版本。官方插件可参考当前目录中的示例。
+- `engine` 写插件需要的最低 Voyager 版本。官方插件可参考当前目录中的示例。
 - `i18n` 推荐补齐中文、英文和其他常用语言的名称、描述、设置项文案。
 
 ## CSS 与资源限制

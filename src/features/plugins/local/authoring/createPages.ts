@@ -37,7 +37,7 @@ import { WRITE_PLUGIN_SKILL_BASE_URL, createPageFile } from './skillLink';
 
 const PAGE_REFS: ContractRefs = {
   ...IN_DOCUMENT_REFS,
-  engine: 'Never go above the user’s engine version.',
+  engine: 'Never go above the user’s Voyager version.',
 };
 
 function primitivePointerSection(site: SiteAdapter): ContractSection {
@@ -87,7 +87,7 @@ export function renderCreatePage(site: SiteAdapter): string {
     '',
     'Voyager is a browser extension for AI chat sites. A Voyager plugin is a JSON manifest plus CSS that restyles or rearranges the page through reversible changes; Voyager checks it strictly on import. It runs no code of its own, unless it is the scripted kind below.',
     '',
-    `The user’s message gives their request and their Voyager plugin engine version. This page follows engine ${contract.engineVersion}: use nothing whose sinceEngine is above the user’s version.`,
+    `The user’s message gives their request and their Voyager version. This page follows Voyager ${contract.engineVersion}: use nothing whose sinceEngine is above the user’s version.`,
     '',
     ...renderSections(sections),
     '## Example (adapt it; do not copy its purpose)',

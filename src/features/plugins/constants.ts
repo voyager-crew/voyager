@@ -7,12 +7,18 @@
  * add a `plugin-` segment so they never clash with first-party Voyager classes.
  */
 
+import { version } from '../../../package.json';
+
 /**
- * Last released plugin engine. Contributors use `next`; `bun run bump` stamps
- * that batch and advances this constant independently of the extension version.
- * Runtime checks use EFFECTIVE_PLUGIN_ENGINE_VERSION from verbs/contracts.ts.
+ * The plugin engine ships inside the extension, so its version is Voyager's:
+ * package.json, which `bun run bump` advances and the build copies into the
+ * manifest. Releases up to 2.3.1 reported a separate engine number (last
+ * 1.11.0); floors and `sinceEngine` values in that 1.x range keep their meaning
+ * and every later Voyager satisfies them. Contributors write `next` for the
+ * coming release. Runtime checks use EFFECTIVE_PLUGIN_ENGINE_VERSION from
+ * verbs/contracts.ts.
  */
-export const PLUGIN_ENGINE_VERSION = '1.11.0';
+export const PLUGIN_ENGINE_VERSION: string = version;
 
 /** Manifest format major this engine understands (D9). */
 export const PLUGIN_MANIFEST_FORMAT = 1;

@@ -2978,15 +2978,15 @@
     "description": "Link at the end of the plugin list: scrolls to the Create mode field"
   },
   "createModeChatMessage": {
-    "message": "请先阅读 {pageUrl}，然后为 {site} 写一个 Voyager 插件，实现我下面的需求。我的 Voyager 插件引擎版本是 {engine}，不要用比它更新的功能。回复时只给一个 json 代码块，里面是完整的插件。\n\n我的需求：\n{request}",
+    "message": "请先阅读 {pageUrl}，然后为 {site} 写一个 Voyager 插件，实现我下面的需求。我的 Voyager 版本是 {engine}，不要用比它更新的功能。回复时只给一个 json 代码块，里面是完整的插件。\n\n我的需求：\n{request}",
     "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine} and {request} unchanged, and write no triple backtick: ChatGPT's composer turns one into a code box that swallows the rest"
   },
   "createModeChatMessageInline": {
-    "message": "请为 {site} 写一个 Voyager 插件，实现本条消息末尾的需求。你要遵循的说明是 {pageUrl} 这个页面，已完整复制在下面两行 ===== 之间，不用再打开。我的 Voyager 插件引擎版本是 {engine}，不要用比它更新的功能。回复时只给一个 json 代码块，里面是完整的插件。\n\n===== 说明 =====\n\n{page}\n\n===== 说明结束 =====\n\n我的需求：\n{request}",
+    "message": "请为 {site} 写一个 Voyager 插件，实现本条消息末尾的需求。你要遵循的说明是 {pageUrl} 这个页面，已完整复制在下面两行 ===== 之间，不用再打开。我的 Voyager 版本是 {engine}，不要用比它更新的功能。回复时只给一个 json 代码块，里面是完整的插件。\n\n===== 说明 =====\n\n{page}\n\n===== 说明结束 =====\n\n我的需求：\n{request}",
     "description": "Create mode on a site whose chat AI cannot open links (Gemini): the message Voyager puts in the chat composer, carrying the instructions page itself. Keep {pageUrl}, {site}, {engine}, {page}, {request} and ===== unchanged, and write no triple backtick"
   },
   "createModeAgentHandoff": {
-    "message": "按照 {skillUrl} 里的 skill，为 {site} 写一个 Voyager 插件，实现我下面的需求。我的 Voyager 插件引擎版本是 {engine}，不要用比它更新的功能。交付前运行 `{checkCommand}`，直到通过为止。然后把 plugin.json 和 style.css 给我，我会在 Voyager 弹窗里用「{importFiles}」导入。\n\n我的需求：\n{request}",
+    "message": "按照 {skillUrl} 里的 skill，为 {site} 写一个 Voyager 插件，实现我下面的需求。我的 Voyager 版本是 {engine}，不要用比它更新的功能。交付前运行 `{checkCommand}`，直到通过为止。然后把 plugin.json 和 style.css 给我，我会在 Voyager 弹窗里用「{importFiles}」导入。\n\n我的需求：\n{request}",
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
   "createModeFilled": {

@@ -2978,15 +2978,15 @@
     "description": "Link at the end of the plugin list: scrolls to the Create mode field"
   },
   "createModeChatMessage": {
-    "message": "Сначала прочитай {pageUrl}, затем напиши плагин Voyager для {site}, который делает то, о чём я прошу ниже. Мой движок плагинов Voyager версии {engine}, поэтому не используй ничего новее. Ответь одним блоком кода json с полным плагином.\n\nМой запрос:\n{request}",
+    "message": "Сначала прочитай {pageUrl}, затем напиши плагин Voyager для {site}, который делает то, о чём я прошу ниже. У меня Voyager версии {engine}, поэтому не используй ничего новее. Ответь одним блоком кода json с полным плагином.\n\nМой запрос:\n{request}",
     "description": "Create mode: the message Voyager puts in the chat composer. Keep {pageUrl}, {site}, {engine} and {request} unchanged, and write no triple backtick: ChatGPT's composer turns one into a code box that swallows the rest"
   },
   "createModeChatMessageInline": {
-    "message": "Напиши плагин Voyager для {site}, который делает то, о чём я прошу в конце этого сообщения. Твои инструкции — страница {pageUrl}, целиком скопированная между строками ===== ниже, так что открывать её не нужно. Мой движок плагинов Voyager версии {engine}, поэтому не используй ничего новее. Ответь одним блоком кода json с полным плагином.\n\n===== Инструкции =====\n\n{page}\n\n===== Конец инструкций =====\n\nМой запрос:\n{request}",
+    "message": "Напиши плагин Voyager для {site}, который делает то, о чём я прошу в конце этого сообщения. Твои инструкции — страница {pageUrl}, целиком скопированная между строками ===== ниже, так что открывать её не нужно. У меня Voyager версии {engine}, поэтому не используй ничего новее. Ответь одним блоком кода json с полным плагином.\n\n===== Инструкции =====\n\n{page}\n\n===== Конец инструкций =====\n\nМой запрос:\n{request}",
     "description": "Create mode on a site whose chat AI cannot open links (Gemini): the message Voyager puts in the chat composer, carrying the instructions page itself. Keep {pageUrl}, {site}, {engine}, {page}, {request} and ===== unchanged, and write no triple backtick"
   },
   "createModeAgentHandoff": {
-    "message": "Напиши плагин Voyager для {site}, который делает то, о чём я прошу ниже, по skill из {skillUrl}. Мой движок плагинов Voyager версии {engine}, поэтому не используй ничего новее. Прежде чем отдать результат, запускай `{checkCommand}`, пока проверка не пройдёт. Потом дай мне plugin.json и style.css, чтобы я добавил их через «{importFiles}» во всплывающем окне Voyager.\n\nМой запрос:\n{request}",
+    "message": "Напиши плагин Voyager для {site}, который делает то, о чём я прошу ниже, по skill из {skillUrl}. У меня Voyager версии {engine}, поэтому не используй ничего новее. Прежде чем отдать результат, запускай `{checkCommand}`, пока проверка не пройдёт. Потом дай мне plugin.json и style.css, чтобы я добавил их через «{importFiles}» во всплывающем окне Voyager.\n\nМой запрос:\n{request}",
     "description": "Create mode: the text the user copies to a local coding agent. Keep {site}, {skillUrl}, {engine}, {checkCommand}, {importFiles} and {request} unchanged"
   },
   "createModeFilled": {

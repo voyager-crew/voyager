@@ -15,7 +15,7 @@ and never becomes required; `sinceEngine` never changes after publication; anyth
 under a **new name**, because `handler` carries no version suffix.
 `verbs/contracts.test.ts` enforces this against each folder's committed
 baseline. An entry with `sinceEngine: "next"` is unpublished; the release bump
-stamps it to a concrete engine version before the D9 publication guard applies.
+stamps it to the Voyager version it releases before the D9 publication guard applies.
 A primitive PR also needs parametric tests over **two sites'**
 fixtures, so the behavior is proven to be site-independent rather than one
 site's code with a name on it.
@@ -33,9 +33,10 @@ and usually lands in the same PR.
    only types and data modules (`../contractTypes`, `../codeBlockDiagramParams`);
    `primitiveFolders.test.ts` fails otherwise. Set `sinceEngine: 'next'` for a
    new primitive (and a new optional param added to a shipped primitive).
-   `PLUGIN_ENGINE_VERSION` records the released engine; never hand-bump it.
-   The shared resolver uses released + one minor, patch zero for `next`, and
-   the tree runs that effective engine while any contract or param is `next`.
+   `PLUGIN_ENGINE_VERSION` is the extension version from `package.json`.
+   The shared resolver uses the default next release (next patch, rolling over
+   at 10) for `next`, and the tree runs that version while any contract or param
+   is `next`.
 2. `verbs/<name>/index.ts`: export the primitive, with
    `contract: getPrimitiveContract('<name>')!`, the `validateParams` guard
    (hand-written, no schema library, per D17) and `activate(scope, params, context)`. Register

@@ -130,7 +130,7 @@ src/features/plugins/catalog/
 - `matches`는 좁게 유지하고, 플러그인이 실제로 필요한 사이트만 포함하세요.
 - `matches`에 여러 호스트를 나열할 수 있는 것은 해당 사이트의 `site.json`이 모두 포함할 때뿐입니다(예: chatgpt.com과 chat.openai.com). 다른 사이트를 다루려면 그 사이트 폴더에 플러그인을 추가하세요.
 - `category`는 `render-fix`, `theme`, `layout`, `readability`, `productivity`, `integration`, `other`를 권장합니다.
-- 필요한 플러그인 엔진 버전을 `engine`에 명확히 적으세요. 공식 플러그인을 예시로 참고할 수 있습니다.
+- 플러그인에 필요한 최소 Voyager 버전을 `engine`에 명확히 적으세요. 공식 플러그인을 예시로 참고할 수 있습니다.
 - `i18n`에는 가능하면 중국어, 영어, 기타 자주 쓰이는 언어의 이름, 설명, 설정 문구를 추가하세요.
 
 ## CSS와 리소스 제한

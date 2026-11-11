@@ -130,7 +130,7 @@ src/features/plugins/catalog/
 - `matches` はできるだけ狭くし、本当に必要なサイトだけに一致させます。
 - `matches` に複数のホストを書けるのは、そのサイトの `site.json` がすべてをカバーしている場合だけです（例：chatgpt.com と chat.openai.com）。別のサイトに対応するには、そのサイトのフォルダにプラグインを追加してください。
 - `category` は `render-fix`、`theme`、`layout`、`readability`、`productivity`、`integration`、`other` を推奨します。
-- 必要なプラグインエンジンのバージョンを `engine` に明記します。公式プラグインを参考にできます。
+- プラグインに必要な最低限の Voyager バージョンを `engine` に明記します。公式プラグインを参考にできます。
 - `i18n` には中国語、英語、その他よく使われる言語の名前、説明、設定文言をできるだけ追加してください。
 
 ## CSS とリソース制限

@@ -8,8 +8,8 @@
  * else registers a plugin: `catalog/sites/index.ts` discovers the files.
  *
  * The manifest copies `matches` straight from the site's `site.json`, so the
- * plugin starts inside its own site (plan D18), and pins `engine` to the engine
- * version this build ships, so a plugin that later calls a primitive already
+ * plugin starts inside its own site (plan D18), and pins `engine` to the newest
+ * floor this build's release meets, so a plugin that later calls a primitive already
  * declares a range no older than that primitive's `sinceEngine` (D9).
  *
  * The scaffold is a starting point, not an approval: fill in the copy, write
@@ -27,7 +27,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PLUGIN_ENGINE_VERSION } from '../src/features/plugins/constants';
+import { RELEASED_ENGINE_FLOOR } from '../src/features/plugins/engineVersion';
 import { usesCatalogDataStores } from '../src/features/plugins/sites/hostPolicy';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -69,7 +69,7 @@ export interface ScaffoldOptions {
   readonly segment: string;
   /** Print the plan and write nothing. */
   readonly dryRun?: boolean;
-  /** Engine version the manifest requires; defaults to this build's. */
+  /** Voyager version the manifest requires; defaults to this build's. */
   readonly engineVersion?: string;
 }
 
@@ -383,7 +383,7 @@ export function scaffoldPlugin(options: ScaffoldOptions): ScaffoldResult {
   assertSegment(segment);
 
   const site = readSite(catalogDir, options.site);
-  const engineVersion = options.engineVersion ?? PLUGIN_ENGINE_VERSION;
+  const engineVersion = options.engineVersion ?? RELEASED_ENGINE_FLOOR;
   const pluginDir = join(catalogDir, 'sites', site.dir, 'plugins', segment);
   if (existsSync(pluginDir)) {
     throw new Error(`Refusing to overwrite ${pluginDir}: the directory already exists.`);

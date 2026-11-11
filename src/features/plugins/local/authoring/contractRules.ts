@@ -34,7 +34,7 @@ export interface ContractSection {
 export interface ContractRefs {
   readonly sites: string;
   readonly primitives: string;
-  /** Which engine version the reader writes for; this build's when absent. */
+  /** Which Voyager version the reader writes for; this build's when absent. */
   readonly engine?: string;
 }
 
@@ -61,7 +61,7 @@ export function manifestSection(
       `- Required non-empty string fields: ${REQUIRED_STRINGS.join(', ')}. Also "tier": "declarative", "matches" (see ${refs.sites}) and "contributes".`,
       `- "id": a lowercase reverse-dotted slug such as "me.short-name" (a-z, 0-9, ".", "_", "-"). Voyager stores it as "${LOCAL_PLUGIN_ID_PREFIX}<id>" itself.`,
       '- "version": "1.0.0"; raise it when you change the plugin. "author": "me". "license": "MIT".',
-      `- "engine": ">=1.0.0", or ">=" the sinceEngine of every primitive the plugin uses. ${refs.engine ?? `This build's plugin engine is ${EFFECTIVE_PLUGIN_ENGINE_VERSION}.`}`,
+      `- "engine": the lowest Voyager version the plugin needs, as ">=1.0.0" or ">=" the sinceEngine of every primitive it uses. ${refs.engine ?? `This build is Voyager ${EFFECTIVE_PLUGIN_ENGINE_VERSION}.`}`,
       `- "category": one of ${PLUGIN_CATEGORIES.join(', ')}.`,
       `- Write "name" and "description" in the language of the ${audience === 'chat' ? 'request' : 'user'}. "i18n" translations are optional for a local plugin.`,
       ...(audience === 'agent'

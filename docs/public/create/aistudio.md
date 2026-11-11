@@ -2,7 +2,7 @@
 
 Voyager is a browser extension for AI chat sites. A Voyager plugin is a JSON manifest plus CSS that restyles or rearranges the page through reversible changes; Voyager checks it strictly on import. It runs no code of its own, unless it is the scripted kind below.
 
-The user’s message gives their request and their Voyager plugin engine version. This page follows engine 1.11.0: use nothing whose sinceEngine is above the user’s version.
+The user’s message gives their request and their Voyager version. This page follows Voyager 2.3.1: use nothing whose sinceEngine is above the user’s version.
 
 ## Target site: AI Studio
 
@@ -30,7 +30,7 @@ No "theme" on AI Studio.
 - Required non-empty string fields: id, name, version, description, author, category, license, engine. Also "tier": "declarative", "matches" (see the target site section) and "contributes".
 - "id": a lowercase reverse-dotted slug such as "me.short-name" (a-z, 0-9, ".", "_", "-"). Voyager stores it as "local.<id>" itself.
 - "version": "1.0.0"; raise it when you change the plugin. "author": "me". "license": "MIT".
-- "engine": ">=1.0.0", or ">=" the sinceEngine of every primitive the plugin uses. Never go above the user’s engine version.
+- "engine": the lowest Voyager version the plugin needs, as ">=1.0.0" or ">=" the sinceEngine of every primitive it uses. Never go above the user’s Voyager version.
 - "category": one of render-fix, theme, layout, readability, productivity, integration, other.
 - Write "name" and "description" in the language of the request. "i18n" translations are optional for a local plugin.
 

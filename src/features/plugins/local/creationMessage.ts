@@ -1,7 +1,7 @@
 /**
  * The two texts Create mode hands to an AI on the user's behalf. The user sees
  * both in their own composer or clipboard, so the wrapper sentences come from
- * the user's locale; the request, URLs, engine version and command are
+ * the user's locale; the request, URLs, Voyager version and command are
  * interpolated untranslated.
  *
  * - `buildCreationMessage`: for the chat AI on the site the plugin targets. It

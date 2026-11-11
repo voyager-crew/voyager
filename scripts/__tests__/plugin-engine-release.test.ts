@@ -33,8 +33,8 @@ function fixture(): string {
     'scripts/bump-version.js',
     'scripts/plugin-release-check.ts',
     'scripts/lib/pluginEngineRelease.ts',
+    constantsPath,
     'src/features/plugins/engineVersion.ts',
-    'src/features/plugins/semver.ts',
   ]) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     copyFileSync(join(repoRoot, path), join(root, path));
@@ -52,7 +52,6 @@ function fixture(): string {
     'Voyager/Voyager.xcodeproj/project.pbxproj',
     'MARKETING_VERSION = 1.9.9;\nCURRENT_PROJECT_VERSION = 1.9.9;\n',
   );
-  write(root, constantsPath, "export const PLUGIN_ENGINE_VERSION = '1.7.3';\n");
   write(
     root,
     contractPath,
@@ -124,18 +123,20 @@ describe('plugin engine release stamping', () => {
     expect(readFileSync(join(root, 'Voyager/Voyager.xcodeproj/project.pbxproj'), 'utf8')).toBe(
       'MARKETING_VERSION = 2.0.0;\nCURRENT_PROJECT_VERSION = 2.0.0;\n',
     );
-    expect(readFileSync(join(root, constantsPath), 'utf8')).toContain("= '1.8.0'");
-    expect(readFileSync(join(root, contractPath), 'utf8')).toContain("sinceEngine: '1.8.0'");
+    expect(readFileSync(join(root, constantsPath), 'utf8')).toBe(
+      readFileSync(join(repoRoot, constantsPath), 'utf8'),
+    );
+    expect(readFileSync(join(root, contractPath), 'utf8')).toContain("sinceEngine: '2.0.0'");
     expect(json(root, baselinePath)).toEqual({
-      sinceEngine: '1.8.0',
-      params: { extra: { sinceEngine: '1.8.0', type: 'boolean', required: false } },
+      sinceEngine: '2.0.0',
+      params: { extra: { sinceEngine: '2.0.0', type: 'boolean', required: false } },
     });
     expect(json(root, 'src/features/plugins/verbs/shipped/paramsBaseline.json')).toEqual({
       sinceEngine: '1.0.0',
-      params: { extra: { sinceEngine: '1.8.0', type: 'boolean', required: false } },
+      params: { extra: { sinceEngine: '2.0.0', type: 'boolean', required: false } },
     });
     expect(json(root, pluginPath)).toEqual({
-      engine: '>=1.8.0',
+      engine: '>=2.0.0',
       description: "Keep next and sinceEngine: 'next' in user data",
     });
     const after = run(root, 'scripts/plugin-release-check.ts');
@@ -146,6 +147,20 @@ describe('plugin engine release stamping', () => {
     expect(second.status, second.stderr).toBe(0);
     expect(json(root, 'package.json').version).toBe('3.4.5');
     expect(readFileSync(join(root, constantsPath), 'utf8')).toBe(constants);
+  });
+
+  it('stamps next with an explicit release version, and again on a re-bump to the same version', () => {
+    const root = fixture();
+    const bump = run(root, 'scripts/bump-version.js', ['2.4.0', '--no-format']);
+    expect(bump.status, bump.stderr).toBe(0);
+    expect(readFileSync(join(root, contractPath), 'utf8')).toContain("sinceEngine: '2.4.0'");
+    expect(json(root, pluginPath).engine).toBe('>=2.4.0');
+
+    write(root, pluginPath, '{"engine":">=next"}');
+    const rebump = run(root, 'scripts/bump-version.js', ['2.4.0', '--no-format']);
+    expect(rebump.status, rebump.stderr).toBe(0);
+    expect(json(root, 'package.json').version).toBe('2.4.0');
+    expect(json(root, pluginPath)).toEqual({ engine: '>=2.4.0' });
   });
 
   it('catches an unpublished parameter even when its primitive and plugin are already released', () => {
@@ -169,7 +184,6 @@ describe('plugin engine release stamping', () => {
     const result = run(root, 'scripts/bump-version.js', ['--no-format']);
     expect(result.status, result.stderr).toBe(1);
     expect(json(root, 'package.json').version).toBe('1.9.9');
-    expect(readFileSync(join(root, constantsPath), 'utf8')).toContain("= '1.7.3'");
     expect(readFileSync(join(root, contractPath), 'utf8')).toContain("sinceEngine: 'next'");
     const gate = run(root, 'scripts/plugin-release-check.ts');
     expect(gate.status, gate.stderr).toBe(1);
@@ -212,16 +226,16 @@ describe('plugin engine release stamping', () => {
     const bump = run(root, 'scripts/bump-version.js', ['--no-format']);
     expect(bump.status, bump.stderr).toBe(0);
     expect(readFileSync(join(root, contractPath), 'utf8')).toBe(
-      contract.replace('"sinceEngine": `next`', '"sinceEngine": `1.8.0`'),
+      contract.replace('"sinceEngine": `next`', '"sinceEngine": `2.0.0`'),
     );
     expect(readFileSync(join(root, sharedPath), 'utf8')).toBe(
-      shared.replace("'sinceEngine': `next`", "'sinceEngine': `1.8.0`"),
+      shared.replace("'sinceEngine': `next`", "'sinceEngine': `2.0.0`"),
     );
     expect(readFileSync(join(root, untouchedPath), 'utf8')).toBe(
       "export const userData = { sinceEngine: 'next' };\n",
     );
     expect(readFileSync(join(root, pluginPath), 'utf8')).toBe(
-      plugin.replace('"engine": ">=next"', '"engine": ">=1.8.0"'),
+      plugin.replace('"engine": ">=next"', '"engine": ">=2.0.0"'),
     );
     const after = run(root, 'scripts/plugin-release-check.ts');
     expect(after.status, after.stderr).toBe(0);

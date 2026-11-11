@@ -148,7 +148,7 @@ The `$schema` line is optional and only for your editor: it points at the manife
 - Keep `matches` narrow. Match only the websites where the plugin really needs to run.
 - A plugin's `matches` may list several hosts only when its site's `site.json` covers all of them (for example chatgpt.com and chat.openai.com); to cover another site, add a plugin in that site's folder.
 - Recommended `category` values: `render-fix`, `theme`, `layout`, `readability`, `productivity`, `integration`, or `other`.
-- Set `engine` to the plugin engine version you require. Official plugins can be used as examples.
+- Set `engine` to the lowest Voyager version the plugin needs. Official plugins can be used as examples.
 - Add `i18n` for Chinese, English, and other common languages when possible.
 
 ## CSS and resource limits

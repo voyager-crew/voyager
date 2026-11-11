@@ -4,6 +4,7 @@
  * `check` applies the popup's import rules after resolving contributor
  * engine notation.
  */
+import { PLUGIN_ENGINE_VERSION } from '../../../src/features/plugins/constants';
 import { renderWriteVoyagerPluginSkill } from '../../../src/features/plugins/local/authoring/authoringDocs';
 import { WRITE_PLUGIN_SKILL_URL } from '../../../src/features/plugins/local/authoring/skillLink';
 import { DEFAULT_ADAPTERS } from '../../../src/features/plugins/sites/registry';
@@ -18,7 +19,7 @@ const USAGE = `Usage: create-voyager-plugin <command>
   check [dir] [--json]                Run the popup's import checks (exit 0 = imports)
   skill [--out <dir>]                 Print the write-voyager-plugin skill, or write its files
   create-pages --out <dir>            Write the page a chat AI reads for each site
-  --version                           Print the Voyager and plugin engine versions
+  --version                           Print its version and the Voyager version it checks for
 
 Sites: ${DEFAULT_ADAPTERS.map((site) => site.id).join(', ')}
 Guide: ${WRITE_PLUGIN_SKILL_URL}`;
@@ -110,7 +111,7 @@ async function main(argv: readonly string[]): Promise<number> {
   const args = parseArgs(argv);
   if (args.flags.has('--version') || args.flags.has('-v')) {
     process.stdout.write(
-      `create-voyager-plugin ${__VOYAGER_VERSION__} (Voyager ${__VOYAGER_VERSION__}, plugin engine ${EFFECTIVE_PLUGIN_ENGINE_VERSION})\n`,
+      `create-voyager-plugin ${PLUGIN_ENGINE_VERSION} (checks plugins for Voyager ${EFFECTIVE_PLUGIN_ENGINE_VERSION})\n`,
     );
     return 0;
   }

@@ -4,8 +4,11 @@ import { join, relative, sep } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { PLUGIN_ENGINE_VERSION } from '@/features/plugins/constants';
+import { LAST_SEPARATE_ENGINE } from '@/features/plugins/engineVersion';
 import { validateManifest } from '@/features/plugins/manifest/validate';
+import { engineSatisfied } from '@/features/plugins/semver';
 import { resolveStyleFileContributions } from '@/features/plugins/sources/styleFiles';
+import { PRIMITIVE_CONTRACTS } from '@/features/plugins/verbs/contracts';
 
 import { DEFAULT_CATALOG_DIR, PLUGIN_I18N_LOCALES, parseArgs, scaffoldPlugin } from '../plugin-new';
 
@@ -56,7 +59,7 @@ describe('plugin:new scaffold', () => {
     expect(validation.success ? [] : validation.error).toEqual([]);
   });
 
-  it('copies the site matches, names the site class and pins the current engine', () => {
+  it('copies the site matches, names the site class and pins the newest floor released clients meet', () => {
     const catalogDir = makeCatalogCopy();
     const result = scaffoldPlugin({ catalogDir, site: 'deepseek', segment: 'reading-guide' });
 
@@ -66,7 +69,16 @@ describe('plugin:new scaffold', () => {
     ) as { matches: readonly string[] };
 
     expect(manifest.matches).toEqual(site.matches);
-    expect(manifest.engine).toBe(`>=${PLUGIN_ENGINE_VERSION}`);
+    const engine = manifest.engine as string;
+    const floor = engine.replace(/^>=/, '');
+    for (const contract of PRIMITIVE_CONTRACTS) {
+      expect(engineSatisfied(`>=${contract.sinceEngine}`, floor), contract.name).toBe(true);
+    }
+    expect(engineSatisfied(engine, PLUGIN_ENGINE_VERSION)).toBe(true);
+    expect(
+      engineSatisfied(engine, LAST_SEPARATE_ENGINE.voyager) &&
+        !engineSatisfied(engine, LAST_SEPARATE_ENGINE.engine),
+    ).toBe(false);
     expect(manifest.tier).toBe('declarative');
     expect(JSON.stringify(manifest.contributes)).toContain('gv-plugin-deepseek-reading-guide');
     expect(readFileSync(join(result.pluginDir, 'style.css'), 'utf8')).toContain(

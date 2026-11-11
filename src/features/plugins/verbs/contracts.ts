@@ -4,7 +4,7 @@
  * A primitive is first-party behaviour shipped inside the extension that a
  * declarative plugin can invoke through `{ "op": "native", "handler": "<name>",
  * "params": {…} }`. Each `verbs/<name>/contract.ts` states what it is called,
- * which engine version first shipped it and what parameters it accepts; this
+ * which version first shipped it and what parameters it accepts; this
  * module collects them, sorted by name, without importing any implementation,
  * so that:
  *   - `scripts/build-plugin-catalog.ts` (Bun, no DOM) can check a manifest's
@@ -34,7 +34,7 @@ export const SOURCE_PRIMITIVE_CONTRACTS: readonly PrimitiveContract[] = loadPrim
   PRIMITIVE_CONTRACT_MODULES,
 );
 
-/** A development tree runs the batch it contains; a stamped release runs its released engine. */
+/** A development tree with `next` declarations runs the coming release; a stamped release runs its own version. */
 export const EFFECTIVE_PLUGIN_ENGINE_VERSION = SOURCE_PRIMITIVE_CONTRACTS.some(
   (contract) =>
     contract.sinceEngine === 'next' ||

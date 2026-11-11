@@ -62,8 +62,9 @@ describe('write-voyager-plugin skill', () => {
     }
   });
 
-  it('gives local authors concrete primitive versions and this tree’s effective engine', () => {
-    expect(skill).toContain(`plugin engine ${EFFECTIVE_PLUGIN_ENGINE_VERSION}`);
+  it('gives local authors concrete primitive versions and this tree’s Voyager version', () => {
+    expect(skill).toContain(`Voyager ${EFFECTIVE_PLUGIN_ENGINE_VERSION}.`);
+    expect(skill).not.toContain('plugin engine');
     const primitives = files.get(SKILL_PRIMITIVES_FILE)!;
     for (const text of files.values()) expect(text).not.toMatch(/sinceEngine next|>=next/);
     const primitiveFloors = [...primitives.matchAll(/^- \w+ \(sinceEngine ([^)]+)\):/gm)];

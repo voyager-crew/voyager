@@ -22,19 +22,19 @@ default chat AI cannot open a link (Gemini's Flash): there the message carries
 names the page URL (the Create chat marker) and ends with the request
 (`createModeChatMessageInline`). `local/creationMessage.ts` builds both texts from
 i18n wrapper sentences (`createModeChatMessage`, `createModeAgentHandoff`)
-with the request (trimmed, at most `MAX_PLUGIN_REQUEST_CHARS`), URLs, engine
+with the request (trimmed, at most `MAX_PLUGIN_REQUEST_CHARS`), URLs, Voyager
 version and command filled in one pass:
 
 - **Copy for this chat** and **Create on this page**:
   `buildCreationMessage(request, site, t)`, for the chat of the site the plugin
   targets (the page filling it builds it with its own site): read `createPageUrl(site.id)` first,
-  write a plugin for that site, the user's plugin engine version as a ceiling,
+  write a plugin for that site, the user's Voyager version as a ceiling,
   reply with a single json code block. Nothing Voyager puts in a composer
   (this message, the inlined create page, `createModeFixIntro`) holds a triple
   backtick: ChatGPT's composer opens a code box at one and swallows the rest.
   The chat pages show their example as an indented code block for that reason.
 - **Copy for a local agent**: `buildAgentHandoff(request, site, t)`, for a
-  coding agent: the site, `WRITE_PLUGIN_SKILL_URL`, the engine, run
+  coding agent: the site, `WRITE_PLUGIN_SKILL_URL`, the Voyager version, run
   `npx create-voyager-plugin@latest check` before handing back, and return
   `plugin.json` plus `style.css` for **Import files** (under **More ways to
   add** in the same card).
@@ -128,8 +128,8 @@ outputs render it:
   for the Create mode message. Each inlines what every request needs and one
   example, lists the primitive names that run there, and points at the
   skill's `primitives.md`, `sites/<site>.md` (primitive caveats) and
-  `examples.md` with the condition for opening each. It states the engine it
-  was generated from and tells the AI to stay at or below the user's;
+  `examples.md` with the condition for opening each. It states the Voyager
+  version it was generated from and tells the AI to stay at or below the user's;
 - the shared scripted page `docs/public/create/scripted.md` (`scriptedPage.ts`),
   which every chat page points at (`scriptedSection`) for a request that needs
   code: the `tier: "scripted"` shape, how `chrome.userScripts` runs it, the

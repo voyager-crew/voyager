@@ -130,7 +130,7 @@ catalog 裡的外掛屬於單一網站資料夾，它的每個 `matches` 都必�
 - `matches` 盡量收窄，只匹配外掛真正需要生效的網站。
 - `matches` 只有在所屬網站的 `site.json` 全部涵蓋時，才能列出多個主機（例如 chatgpt.com 和 chat.openai.com）；要支援其他網站，請在該網站的資料夾新增外掛。
 - `category` 建議使用 `render-fix`、`theme`、`layout`、`readability`、`productivity`、`integration` 或 `other`。
-- `engine` 寫清楚需要的外掛引擎版本。官方外掛可參考目前目錄中的範例。
+- `engine` 寫外掛需要的最低 Voyager 版本。官方外掛可參考目前目錄中的範例。
 - `i18n` 推薦補齊中文、英文和其他常用語言的名稱、描述、設定項文案。
 
 ## CSS 與資源限制
