@@ -11,6 +11,7 @@ import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContex
 import { sanitizeLocalPluginRecords } from '../local/localPluginStore';
 import { validateLocalManifest } from '../local/validateLocalManifest';
 import { withPluginStorageLock } from '../storage/pluginStorageLock';
+import type { ScriptedCrash } from './crashGuard';
 import { EMPTY_SCRIPTED_STATE, isNewerScriptedState, parseScriptedState } from './parseState';
 import {
   type ScriptHash,
@@ -44,6 +45,23 @@ export async function readScriptedPlugin(stored: unknown): Promise<ScriptedPlugi
   if (!result.success || !isScriptedManifest(result.data.manifest)) return undefined;
   const manifest = result.data.manifest;
   return { manifest, reviewHash: await scriptedReviewHash(manifest) };
+}
+
+/** Every stored local plugin that passes the scripted gate, unreadable ones skipped. */
+export async function loadScriptedPlugins(): Promise<ScriptedPlugin[]> {
+  const local = localArea();
+  if (!local) return [];
+  try {
+    const stored = await local.get({ [MANIFESTS]: {} });
+    const records = Object.values(sanitizeLocalPluginRecords(stored?.[MANIFESTS]));
+    const plugins = await Promise.all(records.map((record) => readScriptedPlugin(record.manifest)));
+    return plugins.filter((plugin): plugin is ScriptedPlugin => plugin !== undefined);
+  } catch (error) {
+    if (!isExtensionContextInvalidatedError(error)) {
+      logger.warn('loadScriptedPlugins failed', { error: String(error) });
+    }
+    return [];
+  }
 }
 
 export async function loadScriptedState(): Promise<ScriptedStateV1> {
@@ -131,6 +149,28 @@ export function disableScripted(id: string): Promise<boolean> {
     const enabled = { ...current.enabled };
     delete enabled[id];
     return { ...current, enabled };
+  });
+}
+
+/** The crash guard's verdict: each plugin it names that is still on turns off and gets a notice. */
+export function recordScriptedCrash(crash: ScriptedCrash): Promise<boolean> {
+  return updateScriptedState('recordScriptedCrash', { ids: crash.ids }, (current) => {
+    const enabled = { ...current.enabled };
+    const crashNotices = { ...current.crashNotices };
+    for (const id of crash.ids) {
+      if (!Object.hasOwn(enabled, id)) continue;
+      delete enabled[id];
+      crashNotices[id] = { at: crash.at, url: crash.url, withIds: [...crash.ids] };
+    }
+    return { ...current, enabled, crashNotices };
+  });
+}
+
+export function clearScriptedCrashNotice(id: string): Promise<boolean> {
+  return updateScriptedState('clearScriptedCrashNotice', { id }, (current) => {
+    const crashNotices = { ...current.crashNotices };
+    delete crashNotices[id];
+    return { ...current, crashNotices };
   });
 }
 
