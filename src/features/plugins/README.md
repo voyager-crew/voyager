@@ -20,10 +20,10 @@ Both constraints point at the same answer → **declarative-first** plugins.
 
 ## Two tiers
 
-| Tier                    | Ships                       | Store-safe                     | Runs on                   | Status                                                                       |
-| ----------------------- | --------------------------- | ------------------------------ | ------------------------- | ---------------------------------------------------------------------------- |
-| `declarative` (default) | CSS + JSON (`domOps`)       | ✅ everywhere, remote-loadable | Chrome / Firefox / Safari | **implemented**                                                              |
-| `scripted` (advanced)   | JS via `chrome.userScripts` | gated toggle, no Safari        | Chrome / Firefox          | gate and data implemented, runtime not yet ([scripted/](scripted/README.md)) |
+| Tier                    | Ships                       | Store-safe                     | Runs on                   | Status                                                                                     |
+| ----------------------- | --------------------------- | ------------------------------ | ------------------------- | ------------------------------------------------------------------------------------------ |
+| `declarative` (default) | CSS + JSON (`domOps`)       | ✅ everywhere, remote-loadable | Chrome / Firefox / Safari | **implemented**                                                                            |
+| `scripted` (advanced)   | JS via `chrome.userScripts` | gated toggle, no Safari        | Chrome / Edge             | gate, data and background runtime implemented, no UI yet ([scripted/](scripted/README.md)) |
 
 ## Architecture
 
@@ -89,8 +89,9 @@ EntitlementProvider  ─► entitled?         │  styles + domOps, reversible, 
   the user's locally imported plugins, and a future paid (Stripe/account) store. `sources/defaultSources.ts` also
   owns `mergePluginRecords`, the rules that pick which copy of a plugin id wins.
 - **`scripted/`** — the local-only scripted tier: its types, enable state,
-  run state and planned registrations. Nothing runs it yet. See
-  [scripted/README.md](scripted/README.md).
+  run state, planned registrations, availability, crash guard and prelude;
+  `src/pages/background/scriptedCreations/` registers them. No UI turns one on
+  yet. See [scripted/README.md](scripted/README.md).
 - **`local/`** — user-imported declarative plugins: the `local.*` id namespace,
   the import gate, storage, the read-only `LocalPluginSource` and the inspect
   summary the popup shows. See [local/README.md](local/README.md).
@@ -275,7 +276,7 @@ rules they keep are in [builtin/README.md](builtin/README.md).
 - **Full setting UI coverage.** The schema accepts boolean/string/color/select;
   the popup currently renders boolean switches, number/range controls and select
   controls, while string and color controls remain future work.
-- **Scripted runtime** via gated `chrome.userScripts`.
+- **Scripted UI**: review, enable and crash notices for the gated `chrome.userScripts` tier.
 - **Account + Stripe entitlement**.
 
 ## Platform notes

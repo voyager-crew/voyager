@@ -1,4 +1,5 @@
 import { ManifestV3Export, crx } from '@crxjs/vite-plugin';
+import { build as buildWithEsbuild } from 'esbuild';
 import { existsSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { Plugin, defineConfig, mergeConfig } from 'vite';
@@ -11,6 +12,10 @@ import {
   shouldPruneDevBuildAssets,
 } from './scripts/dev-build-assets';
 import { type DevBuildLock, acquireDevBuildLock } from './scripts/dev-build-lock';
+import {
+  SCRIPTED_PRELUDE_ENTRY,
+  SCRIPTED_PRELUDE_FILE,
+} from './src/features/plugins/scripted/prelude/file';
 import baseConfig, { baseBuildOptions, baseManifest } from './vite.config.base';
 
 const isDev = process.env.__DEV__ === 'true';
@@ -78,6 +83,31 @@ function devBuildReadyPlugin(): Plugin | null {
     closeBundle: releaseBuildLock,
   };
 }
+// chrome.userScripts injects this before each scripted plugin's source, in that plugin's
+// world. A classic script with no imports; Firefox and Safari builds never ship it.
+function scriptedPreludeAsset(): Plugin {
+  return {
+    name: 'voyager-scripted-prelude',
+    apply: 'build',
+    async generateBundle() {
+      const result = await buildWithEsbuild({
+        entryPoints: [resolve(__dirname, SCRIPTED_PRELUDE_ENTRY)],
+        bundle: true,
+        write: false,
+        format: 'iife',
+        platform: 'browser',
+        target: 'chrome133',
+        minify: !isDev,
+      });
+      this.emitFile({
+        type: 'asset',
+        fileName: SCRIPTED_PRELUDE_FILE,
+        source: result.outputFiles[0].text,
+      });
+    },
+  };
+}
+
 const chromeSharedContentScripts = (
   baseManifest as unknown as { content_scripts?: Array<Record<string, unknown>> }
 ).content_scripts;
@@ -111,6 +141,9 @@ export const chromeManifest = {
     // so every install gets predictable local capacity; Voyager's own
     // 25/50/100 MB soft cap still bounds actual usage.
     'unlimitedStorage',
+    // Scripted local plugins (src/features/plugins/scripted/). Inert until the user turns on
+    // "Allow User Scripts" (Developer mode before Chrome 138) for this extension.
+    'userScripts',
   ],
   // Edge builds reuse this Chrome manifest.
   optional_permissions: (
@@ -140,6 +173,7 @@ export default mergeConfig(
           injectCss: true,
         },
       }),
+      scriptedPreludeAsset(),
       devBuildReadyPlugin(),
     ],
     build: {

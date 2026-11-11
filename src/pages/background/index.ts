@@ -27,6 +27,7 @@ import { startResearchPackOwner } from './researchPackOwner';
 import { createResponseNotifications } from './responseNotifications';
 import { registerBackgroundRuntimeMessages } from './runtimeMessages';
 import { startSafariAppLanguageHandoff } from './safariAppLanguage';
+import { startScriptedCreations } from './scriptedCreations';
 import { createSiteAccessRegistration } from './siteAccessRegistration';
 import { createStarredMessagesHandler } from './starredMessages';
 import { registerUpdateRefreshPrompt } from './updateRefreshPrompt';
@@ -52,6 +53,7 @@ startChatGptTemporaryHandoffBackgroundService();
 startStorageQuotaWarningBackgroundService();
 startResearchPackOwner();
 startQueueOwners();
+startScriptedCreations();
 // Local Bridge to `voyager serve`: inert until the builtin is on and a pairing exists.
 const handleBridgeMessage = startBridgeOwner({
   refreshCatalog: (host) => hostCatalogRefresher.refresh(host),

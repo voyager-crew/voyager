@@ -118,6 +118,17 @@ describe('manifest permissions', () => {
     expect(chromeManifest.optional_permissions).not.toContain('unlimitedStorage');
   });
 
+  it('asks for userScripts on Chrome and Edge only', () => {
+    // Edge packages are generated from the Chrome build manifest.
+    expect(chromeManifest.permissions).toContain('userScripts');
+    expect(manifestChrome.permissions).not.toContain('userScripts');
+    expect(manifestDev.permissions).not.toContain('userScripts');
+    for (const manifest of [firefoxManifest, safariManifest]) {
+      expect(manifest.permissions).not.toContain('userScripts');
+      expect(manifest.optional_permissions ?? []).not.toContain('userScripts');
+    }
+  });
+
   it('runs Chrome and Edge usage bridges as native MAIN-world scripts', () => {
     const scripts = chromeManifest.content_scripts?.filter((entry) => entry.world === 'MAIN') ?? [];
     expect(scripts.map((entry) => entry.js?.[0])).toEqual([

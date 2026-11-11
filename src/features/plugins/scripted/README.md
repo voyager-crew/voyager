@@ -2,11 +2,13 @@
 
 Part of the [Plugin ecosystem overview](../README.md).
 
-A scripted plugin is a local plugin that carries JavaScript, meant to run through
+A scripted plugin is a local plugin that carries JavaScript, run through
 `chrome.userScripts`, off by default and turned on only after the user reviews its
-source. This folder holds the gate's types, the device-local enable state and the
-registrations a later registrar applies. Nothing runs a script yet: no build calls
-`chrome.userScripts`, asks for its permission or shows a scripted plugin.
+source. This folder holds the gate's types, the device-local enable state, the
+planned registrations, the availability probe, the crash guard's transition and
+the prelude. The background runtime that applies them is
+`src/pages/background/scriptedCreations/`. No popup, panel or page shows a
+scripted plugin yet, so nothing can turn one on.
 
 ## The gate
 
@@ -30,7 +32,7 @@ registrations a later registrar applies. Nothing runs a script yet: no build cal
 - `StorageKeys.PLUGIN_SCRIPTED_STATE` (`ScriptedStateV1`, `chrome.storage.local`)
   is `device-local` in `settingsBackupPolicies.ts`: no settings file, Drive upload
   or restore reads or writes it. `PLUGIN_SCRIPTED_LOADS` is the crash guard's
-  `transient` page-load record; nothing writes it yet.
+  `transient` page-load record, written by the background only.
 - An enable entry stores the review hash: SHA-256 of the canonical JSON of the
   plugin's `matches` and source (`scriptedReviewHash`). A plugin runs only while
   its stored content hashes to that value, so a re-import that changes either
@@ -52,3 +54,52 @@ hash mismatch, then `unsupported`, `user-scripts-off` and `stopped-all`, else
 its id and `matches`, `allFrames: false`, `runAt: 'document_idle'`,
 `world: 'USER_SCRIPT'`, a `worldId` derived from the id, and the source. The
 registrar adds the packaged prelude and the world configuration.
+
+## Background runtime
+
+Chrome and Edge builds only; they alone ask for the `userScripts` permission
+(`vite.config.chrome.ts`). Firefox and Safari answer `gv.scripted.status` with
+`unsupported` and register nothing.
+
+- **Availability** (`availability.ts`). `unsupported` on Safari, Firefox, phones
+  and Chrome before 133 (per-plugin worlds need `worldId`). Otherwise
+  `getScripts()` in a try/catch: a throw, or a missing `chrome.userScripts`, is
+  `toggle-off`, naming "Allow User Scripts" from Chrome 138 and Developer mode
+  before it. The probe reads `chrome.userScripts` on every call, never a cached copy.
+- **Registrar** (`scriptedCreations/registrar.ts`). Each pass diffs `getScripts()`
+  against `desiredUserScripts`: it unregisters ids the plan lacks, updates those
+  that differ and registers the missing ones, one plugin per call so one refusal
+  cannot block the rest. Before registering it configures the plugin's world with
+  `messaging: false` and `SCRIPTED_WORLD_CSP`. Every registration is
+  `[prelude file, source]` in that world, top frame only, at `document_idle`;
+  never `MAIN`. Passes run one at a time, and requests during a pass share one
+  queued pass that reads storage when it starts. Triggers: worker start,
+  `runtime.onInstalled` (an update clears user scripts), local changes to the
+  manifests or the scripted state, permission changes and `gv.scripted.recheck`.
+- **Prelude** (`prelude/`). The Chrome build bundles `prelude/entry.ts` alone into
+  `scripted-prelude.js` at the package root. It is a Rollup asset of the Chrome
+  config, not a `public/` file, so Firefox and Safari never ship it and Safari's
+  Xcode resource list is unaffected. In the plugin's world only, it disconnects a
+  `MutationObserver` whose callback runs more than 200 times in a second, and
+  raises any `setInterval` delay below 50 ms to 50 ms.
+- **Crash guard** (`crashGuard.ts`, `scriptedCreations/guard.ts`). A persisted pure
+  transition over each tab's `ScriptedLoadRecord`, so a worker restart keeps it.
+  A `loading` tab update records the plugins registered for that URL, and an alarm
+  at 30 s marks a load that is still unconfirmed `suspect`. The page's
+  `gv.scripted.loaded` confirms it. A crash is any of these, and every plugin
+  that ran on the load is named in it:
+  - the tab loads again, or closes, at least 10 s after a load that never confirmed;
+  - another tab loads one of a suspect tab's plugins;
+  - the browser starts again after such a load.
+
+  A quicker reload keeps the first load's start time, so reloading a frozen page
+  every few seconds still adds up to a crash. On a crash the guard unregisters
+  those plugins first, then `recordScriptedCrash` turns each one still on off and
+  stores a crash notice.
+
+- **Messages** (`messages.ts`, handled in `scriptedCreations/messages.ts`):
+  `status`, `recheck`, `clearNotice` and `openDetails` (a `chrome://extensions/?id=`
+  tab) from extension pages or our top-frame content script; `loaded` from that
+  content script only, for its own tab. A content script calls
+  `scriptedLoadedMessage()` `SCRIPTED_LOADED_DELAY_MS` after `readyState` is
+  `complete`. Nothing sends `loaded` yet.
