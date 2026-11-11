@@ -27,6 +27,22 @@
     "message": "Crear en esta página",
     "description": "Create tab button: open a new chat on this page with the creation message"
   },
+  "panelCreateWeakModel": {
+    "message": "{model} de {site} no suele poder escribir un plugin.",
+    "description": "Create tab warning title: {site} is the chat site (Gemini), {model} the model it shows (Flash), which usually cannot write a plugin"
+  },
+  "panelCreateWeakModelThinking": {
+    "message": "{model} de {site} con razonamiento {thinking} no suele poder escribir un plugin.",
+    "description": "Create tab warning title with the thinking level: {site} the chat site, {model} the model, {thinking} its thinking level as the site names it (Low)"
+  },
+  "panelCreateWeakModelAdvice": {
+    "message": "Elige {suggested} o un modelo más potente en el menú de modelos de {site}, o pasa tu petición a un agente de programación local. Aun así puedes crear en esta página.",
+    "description": "Create tab warning: the two ways out; {suggested} is a stronger model on the site (Argon), {site} the chat site. Creating on the page stays possible"
+  },
+  "panelCreateCheckModel": {
+    "message": "Volver a comprobar",
+    "description": "Create tab warning button: read the model the page shows again, after the user changed it"
+  },
   "panelCreateUnavailable": {
     "message": "Esta página no respondió. Recárgala y vuelve a intentarlo.",
     "description": "Create tab: the page's content script did not answer the request"

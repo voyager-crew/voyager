@@ -27,6 +27,22 @@
     "message": "このページで作成",
     "description": "Create tab button: open a new chat on this page with the creation message"
   },
+  "panelCreateWeakModel": {
+    "message": "{site} の {model} では、たいていプラグインを書けません。",
+    "description": "Create tab warning title: {site} is the chat site (Gemini), {model} the model it shows (Flash), which usually cannot write a plugin"
+  },
+  "panelCreateWeakModelThinking": {
+    "message": "{site} の {model}（思考レベル {thinking}）では、たいていプラグインを書けません。",
+    "description": "Create tab warning title with the thinking level: {site} the chat site, {model} the model, {thinking} its thinking level as the site names it (Low)"
+  },
+  "panelCreateWeakModelAdvice": {
+    "message": "{site} のモデルメニューで {suggested} 以上のモデルを選ぶか、依頼をローカルのコーディングエージェントに渡してください。このままこのページで作成することもできます。",
+    "description": "Create tab warning: the two ways out; {suggested} is a stronger model on the site (Argon), {site} the chat site. Creating on the page stays possible"
+  },
+  "panelCreateCheckModel": {
+    "message": "もう一度確認",
+    "description": "Create tab warning button: read the model the page shows again, after the user changed it"
+  },
   "panelCreateUnavailable": {
     "message": "このページから応答がありませんでした。再読み込みしてから、もう一度お試しください。",
     "description": "Create tab: the page's content script did not answer the request"

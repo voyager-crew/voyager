@@ -11,7 +11,21 @@ export const CREATE_MODE_MESSAGES = {
   start: 'gv.create.start',
   /** Hand over, once, the reply block the user chose to review. */
   pending: 'gv.create.pending',
+  /** The page's chat model, when it is one that usually cannot write a plugin. */
+  model: 'gv.create.model',
 } as const;
+
+/** A chat model on the page that usually cannot write a plugin, as the page reads it. */
+export interface CreateModelWarning {
+  /** The model's name as the site shows it. */
+  readonly model: string;
+  /** Its thinking level, only when the page or the applied default says it; never guessed. */
+  readonly thinking: string | null;
+  /** A model on the site that can, to choose instead. */
+  readonly suggested: string;
+}
+
+const MAX_MODEL_LABEL_CHARS = 80;
 
 export type CreateStartRequest = {
   readonly type: typeof CREATE_MODE_MESSAGES.start;
@@ -62,4 +76,19 @@ export function parseCreatePendingReply(value: unknown): CreationReviewCandidate
   if (typeof text !== 'string' || !text || text.length > MAX_LOCAL_PLUGIN_IMPORT_CHARS) return null;
   if (typeof siteId !== 'string' || !siteId || siteId.length > 64) return null;
   return { text, siteId };
+}
+
+function modelLabel(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const label = value.trim();
+  return label && label.length <= MAX_MODEL_LABEL_CHARS ? label : null;
+}
+
+/** The warning in a reply to `model`; null when there is none, or the reply is malformed. */
+export function parseCreateModelReply(value: unknown): CreateModelWarning | null {
+  if (!isRecord(value) || !isRecord(value.warning)) return null;
+  const model = modelLabel(value.warning.model);
+  const suggested = modelLabel(value.warning.suggested);
+  if (!model || !suggested) return null;
+  return { model, thinking: modelLabel(value.warning.thinking), suggested };
 }

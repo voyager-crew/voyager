@@ -8,6 +8,7 @@ import { isInlineThinkingItem } from './modelPickerMetadata';
 import {
   readModelChoice,
   readModelPicker,
+  readModelTrigger,
   readNestedThinkingChoice,
   readThinkingChoice,
 } from './modelPickerOperations';
@@ -281,14 +282,7 @@ export class ModelPicker {
   }
 
   private readTrigger() {
-    return readModelPicker(
-      this.readView(),
-      (dom) => {
-        const button = dom.findSelectorButton();
-        return { button, lines: readPickerPill(button) };
-      },
-      (value) => Boolean(value.button && value.lines.length),
-    );
+    return readModelTrigger(this.readView());
   }
 
   public describeItem(item: HTMLElement, view?: GeminiSelectorView) {

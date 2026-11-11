@@ -168,6 +168,20 @@
   border-inline-start: 3px solid var(--wait);
 }
 
+/* The page's chat model usually cannot write a creation: a marked note in the flow, not a box. */
+.create-model-warn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.create-model-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block-start: 6px;
+}
+
 .create-strong {
   margin: 0;
   font-size: 13px;

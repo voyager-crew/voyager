@@ -27,6 +27,22 @@
     "message": "이 페이지에서 만들기",
     "description": "Create tab button: open a new chat on this page with the creation message"
   },
+  "panelCreateWeakModel": {
+    "message": "{site}의 {model}은(는) 대개 플러그인을 쓰지 못합니다.",
+    "description": "Create tab warning title: {site} is the chat site (Gemini), {model} the model it shows (Flash), which usually cannot write a plugin"
+  },
+  "panelCreateWeakModelThinking": {
+    "message": "{site}의 {model}(사고 수준 {thinking})은(는) 대개 플러그인을 쓰지 못합니다.",
+    "description": "Create tab warning title with the thinking level: {site} the chat site, {model} the model, {thinking} its thinking level as the site names it (Low)"
+  },
+  "panelCreateWeakModelAdvice": {
+    "message": "{site}의 모델 메뉴에서 {suggested} 이상의 모델을 고르거나, 요청을 로컬 코딩 에이전트에게 맡기세요. 이 페이지에서 그대로 만들 수도 있습니다.",
+    "description": "Create tab warning: the two ways out; {suggested} is a stronger model on the site (Argon), {site} the chat site. Creating on the page stays possible"
+  },
+  "panelCreateCheckModel": {
+    "message": "다시 확인",
+    "description": "Create tab warning button: read the model the page shows again, after the user changed it"
+  },
   "panelCreateUnavailable": {
     "message": "이 페이지가 응답하지 않았습니다. 새로고침한 뒤 다시 시도하세요.",
     "description": "Create tab: the page's content script did not answer the request"

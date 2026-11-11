@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { MAX_PLUGIN_REQUEST_CHARS } from '@/features/plugins/local/authoringSites';
 import type { TranslationKey } from '@/utils/translations';
 
+import { ModelWarning } from './ModelWarning';
 import type { CreateHandoff, CreateHandoffOutcome } from './useCreateHandoff';
 
 export const CREATE_REQUEST_ID = 'panel-create-request';
@@ -48,8 +49,20 @@ export function CreateView({
   t: Translate;
   children?: React.ReactNode;
 }) {
-  const { outcome, site } = handoff;
+  const { outcome, site, warning, checkModel } = handoff;
   const problem = outcome?.kind === 'refused' || outcome?.kind === 'copyFailed';
+  const copyLabel =
+    outcome?.kind === 'copied' ? t('localPluginDescribeCopied') : t('createModeCopyForAgent');
+
+  // Read the page's model as the tab opens, and again when the user comes back from the page.
+  useEffect(() => {
+    if (!site) return;
+    void checkModel();
+    const recheck = () => void checkModel();
+    window.addEventListener('focus', recheck);
+    return () => window.removeEventListener('focus', recheck);
+  }, [site, checkModel]);
+
   return (
     <div className="create">
       {children}
@@ -64,6 +77,17 @@ export function CreateView({
         <p id={`${CREATE_REQUEST_ID}-intro`} className="create-intro">
           {t(site ? 'panelCreateIntro' : 'panelCreateUnsupported')}
         </p>
+        {site && warning && (
+          <ModelWarning
+            warning={warning}
+            siteLabel={site.label}
+            copyLabel={copyLabel}
+            canCopy={handoff.ready}
+            onCheck={() => void checkModel()}
+            onCopy={() => void handoff.copyForAgent()}
+            t={t}
+          />
+        )}
         <textarea
           ref={fit}
           id={CREATE_REQUEST_ID}
@@ -88,16 +112,16 @@ export function CreateView({
             {statusText(t, outcome)}
           </p>
           <div className="create-actions">
-            <button
-              type="button"
-              className="sec"
-              disabled={!handoff.ready}
-              onClick={() => void handoff.copyForAgent()}
-            >
-              {outcome?.kind === 'copied'
-                ? t('localPluginDescribeCopied')
-                : t('createModeCopyForAgent')}
-            </button>
+            {!warning && (
+              <button
+                type="button"
+                className="sec"
+                disabled={!handoff.ready}
+                onClick={() => void handoff.copyForAgent()}
+              >
+                {copyLabel}
+              </button>
+            )}
             <button
               type="button"
               className="pri"

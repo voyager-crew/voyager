@@ -27,6 +27,22 @@
     "message": "在此页创造",
     "description": "Create tab button: open a new chat on this page with the creation message"
   },
+  "panelCreateWeakModel": {
+    "message": "{site} 的 {model} 通常写不出插件。",
+    "description": "Create tab warning title: {site} is the chat site (Gemini), {model} the model it shows (Flash), which usually cannot write a plugin"
+  },
+  "panelCreateWeakModelThinking": {
+    "message": "{site} 的 {model}（思考强度 {thinking}）通常写不出插件。",
+    "description": "Create tab warning title with the thinking level: {site} the chat site, {model} the model, {thinking} its thinking level as the site names it (Low)"
+  },
+  "panelCreateWeakModelAdvice": {
+    "message": "在 {site} 的模型菜单里选 {suggested} 或更强的模型，或者把需求交给本地编程 Agent。也仍然可以在此页创造。",
+    "description": "Create tab warning: the two ways out; {suggested} is a stronger model on the site (Argon), {site} the chat site. Creating on the page stays possible"
+  },
+  "panelCreateCheckModel": {
+    "message": "重新检查",
+    "description": "Create tab warning button: read the model the page shows again, after the user changed it"
+  },
   "panelCreateUnavailable": {
     "message": "这个页面没有响应。刷新后再试。",
     "description": "Create tab: the page's content script did not answer the request"

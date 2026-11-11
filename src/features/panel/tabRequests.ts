@@ -18,6 +18,7 @@ export const PANEL_TAB_REQUEST_TYPES = [
   'gv.account.getContext',
   CHATGPT_EXPORT_OPEN_MESSAGE,
   CREATE_MODE_MESSAGES.pending,
+  CREATE_MODE_MESSAGES.model,
   SCRIPTED_RELOAD_PAGE_REQUEST,
 ] as const;
 

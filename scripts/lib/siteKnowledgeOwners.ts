@@ -232,6 +232,12 @@ export const SITE_KNOWLEDGE_OWNERS: readonly SiteKnowledgeOwner[] = [
   },
   {
     kind: 'file',
+    path: 'src/pages/content/createMode/geminiModel.ts',
+    site: 'gemini',
+    reason: 'Gemini chat models Create mode warns about.',
+  },
+  {
+    kind: 'file',
     path: 'src/pages/content/draftSave/geminiDraftPolicy.ts',
     site: 'gemini',
     reason: 'Gemini native draft persistence policy.',

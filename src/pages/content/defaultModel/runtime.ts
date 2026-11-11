@@ -50,6 +50,11 @@ export class DefaultModelSession {
     this.autoApply.start();
   }
 
+  /** The defaults this session applies to new chats, once it runs. */
+  public get applied(): DefaultModelPreferences | null {
+    return this.state === 'running' ? this.preferences : null;
+  }
+
   public stop(): void {
     if (this.state === 'stopped') return;
     this.state = 'stopped';
@@ -58,6 +63,14 @@ export class DefaultModelSession {
     this.stars.stop();
     this.toaster.destroy();
   }
+}
+
+/**
+ * The default model and thinking level new chats on this page get, or null
+ * while the feature is off here. Read by Create mode, which opens a new chat.
+ */
+export function appliedDefaultModel(): DefaultModelPreferences | null {
+  return activeSession?.applied ?? null;
 }
 
 /**

@@ -5,7 +5,7 @@ import {
 } from '@/core/gemini/selectors';
 
 import { ModelPickerDom } from './modelPickerDom';
-import { hasRemotePickerProfile } from './modelPickerSelectors';
+import { hasRemotePickerProfile, readPickerPill } from './modelPickerSelectors';
 import type { DefaultModelSetting } from './preferences';
 
 /** One pure operation selects its complete view before any event or preference write. */
@@ -18,6 +18,22 @@ export function readModelPicker<T>(
     hasRemotePickerProfile(view) ? view : getBundledGeminiSelectorView(),
     (current) => read(new ModelPickerDom(current)),
     usable,
+  );
+}
+
+/**
+ * The picker button and its visible lines, read without opening anything: the
+ * model's short name, then the thinking level when Gemini shows one (it omits
+ * the line at its default level).
+ */
+export function readModelTrigger(view: GeminiSelectorView) {
+  return readModelPicker(
+    view,
+    (dom) => {
+      const button = dom.findSelectorButton();
+      return { button, lines: readPickerPill(button) };
+    },
+    (value) => Boolean(value.button && value.lines.length),
   );
 }
 

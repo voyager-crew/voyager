@@ -10,6 +10,10 @@
  *   under a block the gate refuses, a plain reason and "Ask it to fix", which
  *   appends the gate's problems to the composer.
  *
+ * The panel also asks which chat model the page shows (`gv.create.model`,
+ * `geminiModel.ts`), to warn before the user writes for a model that usually
+ * cannot write a plugin.
+ *
  * The panel reaches this module only through the background's tab relay,
  * never through window messages.
  */
@@ -37,6 +41,7 @@ import type { StopNativeFeature } from '../featureLifecycle';
 import { voyagerPanelOpener } from '../panelShell/opener';
 import { startCreationFill } from './fill';
 import type { FillResult } from './fillMachine';
+import { createModelWarningReader } from './geminiModel';
 import { newChatTarget } from './newChat';
 import { createPendingReview } from './pending';
 import type { ReplyControlAction } from './replyControl';
@@ -92,6 +97,7 @@ export function startCreateMode(deps: CreateModeDeps = {}): StopNativeFeature {
     return { ok: true };
   };
 
+  const readModelWarning = createModelWarningReader(site.id);
   const pending = createPendingReview();
   const openReview = deps.openReview ?? (() => voyagerPanelOpener.openReview());
 
@@ -136,13 +142,10 @@ export function startCreateMode(deps: CreateModeDeps = {}): StopNativeFeature {
       sendResponse(begin(start.request));
       return;
     }
-    if (
-      typeof message === 'object' &&
-      message !== null &&
-      'type' in message &&
-      message.type === CREATE_MODE_MESSAGES.pending
-    )
-      sendResponse({ candidate: pending.take() });
+    if (typeof message !== 'object' || message === null || !('type' in message)) return;
+    if (message.type === CREATE_MODE_MESSAGES.pending) sendResponse({ candidate: pending.take() });
+    if (message.type === CREATE_MODE_MESSAGES.model)
+      sendResponse({ warning: readModelWarning?.() ?? null });
   };
   chrome.runtime.onMessage.addListener(listener);
 
