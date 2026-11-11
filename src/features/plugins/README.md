@@ -20,10 +20,10 @@ Both constraints point at the same answer → **declarative-first** plugins.
 
 ## Two tiers
 
-| Tier                    | Ships                       | Store-safe                     | Runs on                   | Status                                          |
-| ----------------------- | --------------------------- | ------------------------------ | ------------------------- | ----------------------------------------------- |
-| `declarative` (default) | CSS + JSON (`domOps`)       | ✅ everywhere, remote-loadable | Chrome / Firefox / Safari | **implemented**                                 |
-| `scripted` (advanced)   | JS via `chrome.userScripts` | gated toggle, no Safari        | Chrome / Firefox          | reserved (gated, runtime is a future milestone) |
+| Tier                    | Ships                       | Store-safe                     | Runs on                   | Status                                                                       |
+| ----------------------- | --------------------------- | ------------------------------ | ------------------------- | ---------------------------------------------------------------------------- |
+| `declarative` (default) | CSS + JSON (`domOps`)       | ✅ everywhere, remote-loadable | Chrome / Firefox / Safari | **implemented**                                                              |
+| `scripted` (advanced)   | JS via `chrome.userScripts` | gated toggle, no Safari        | Chrome / Firefox          | gate and data implemented, runtime not yet ([scripted/](scripted/README.md)) |
 
 ## Architecture
 
@@ -88,6 +88,9 @@ EntitlementProvider  ─► entitled?         │  styles + domOps, reversible, 
   features, bundled official declarative plugins, the per-host remote catalog,
   the user's locally imported plugins, and a future paid (Stripe/account) store. `sources/defaultSources.ts` also
   owns `mergePluginRecords`, the rules that pick which copy of a plugin id wins.
+- **`scripted/`** — the local-only scripted tier: its types, enable state,
+  run state and planned registrations. Nothing runs it yet. See
+  [scripted/README.md](scripted/README.md).
 - **`local/`** — user-imported declarative plugins: the `local.*` id namespace,
   the import gate, storage, the read-only `LocalPluginSource` and the inspect
   summary the popup shows. See [local/README.md](local/README.md).

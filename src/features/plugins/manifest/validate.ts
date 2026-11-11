@@ -27,6 +27,7 @@ import type {
 import { PRIMITIVE_NAME_PATTERN } from '../verbs/contracts';
 import { isRecord, isString, nonEmptyString } from './jsonGuards';
 import { nativeParamTemplateIssues } from './primitiveChecks';
+import { readScriptContribution } from './scriptedChecks';
 import { renderSettingTemplate, styleSheetIssue } from './sinkGuards';
 import { normalizeOp, renderedOpIsSafe } from './validateDomOp';
 
@@ -408,7 +409,15 @@ function normalizeFormFactors(
   return FORM_FACTORS.filter((formFactor) => raw.includes(formFactor));
 }
 
-export function validateManifest(input: unknown): Result<PluginManifest, ManifestIssue[]> {
+export interface ValidateManifestOptions {
+  /** Admit `tier: "scripted"` with its `contributes.script`. Only the local gate passes it. */
+  readonly allowScripted?: boolean;
+}
+
+export function validateManifest(
+  input: unknown,
+  options: ValidateManifestOptions = {},
+): Result<PluginManifest, ManifestIssue[]> {
   if (!isRecord(input)) {
     return { success: false, error: [{ path: '', message: 'manifest must be an object' }] };
   }
@@ -449,6 +458,7 @@ export function validateManifest(input: unknown): Result<PluginManifest, Manifes
   }
 
   const contributes = normalizeContributions(input.contributes, issues);
+  const script = readScriptContribution(input, options.allowScripted === true, issues);
 
   let theme: PluginTheme | undefined;
   if (input.theme !== undefined) {
@@ -475,7 +485,7 @@ export function validateManifest(input: unknown): Result<PluginManifest, Manifes
     engine: input.engine as string,
     tier: input.tier as PluginTier,
     matches: (input.matches as string[]).slice(),
-    contributes,
+    contributes: script ? { ...contributes, script } : contributes,
     ...(theme ? { theme } : {}),
     ...(typeof input.format === 'number' ? { format: input.format } : {}),
     ...(requires ? { requires } : {}),

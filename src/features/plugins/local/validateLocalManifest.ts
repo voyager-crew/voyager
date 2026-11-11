@@ -6,7 +6,9 @@
  *   - `validateManifest` with its CSS and rendered-sink guards, exactly as a
  *     remote catalog entry gets it;
  *   - the id is forced into the `local.*` namespace;
- *   - `tier` must be `declarative` (no plugin-supplied JS, ever);
+ *   - `tier` must be `declarative` unless the caller passes `allowScripted`,
+ *     which admits a `scripted` plugin that contributes only its script
+ *     (`manifest/scriptedChecks.ts`, `scripted/README.md`);
  *   - every `native` op names a primitive this build ships, with params that
  *     match its published spec, and `engine` admits no build older than it
  *     (the same rule `plugin:check` applies to official plugins);
@@ -55,6 +57,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** How a refused scripted plugin is read, so its other problems are listed too. */
+function asDeclarative(raw: Record<string, unknown>): Record<string, unknown> {
+  if (!isRecord(raw.contributes)) return { ...raw, tier: 'declarative' };
+  const contributes = { ...raw.contributes };
+  delete contributes.script;
+  return { ...raw, tier: 'declarative', contributes };
+}
+
 export interface ValidateLocalManifestOptions {
   /**
    * `enforce` (default) refuses what the packaged host policy refuses: the
@@ -62,6 +72,8 @@ export interface ValidateLocalManifestOptions {
    * for re-reading plugins the user already stored.
    */
   readonly hostPolicy?: 'enforce' | 'defer';
+  /** Admit a `scripted` plugin; only a caller that handles one passes it. */
+  readonly allowScripted?: boolean;
 }
 
 export function validateLocalManifest(
@@ -98,11 +110,14 @@ export function validateLocalManifest(
       });
     }
   }
-  if (input.tier === 'scripted') {
+  const refusedScripted = input.tier === 'scripted' && options.allowScripted !== true;
+  if (refusedScripted) {
     issues.push({ path: 'tier', message: 'local plugins must be declarative' });
   }
 
-  const result = validateManifest(raw);
+  const result = refusedScripted
+    ? validateManifest(asDeclarative(raw))
+    : validateManifest(raw, { allowScripted: options.allowScripted });
   if (!result.success) return { success: false, error: [...issues, ...result.error] };
   const manifest = result.data;
 
