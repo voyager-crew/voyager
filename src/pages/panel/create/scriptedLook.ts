@@ -20,8 +20,8 @@ export const PANEL_SCRIPTED_LOOK: ScriptedLook = {
 
 /**
  * The same parts inside a Features card, where nothing may draw a second box:
- * the fold and the setup steps lose their frames and mark themselves with the
- * warning's edge instead (`rows.css`).
+ * the fold and the setup steps lose their frames and sit as plain text in the
+ * card's flow (`rows.css`).
  */
 export const PANEL_ROW_SCRIPTED_LOOK: ScriptedLook = {
   ...PANEL_SCRIPTED_LOOK,

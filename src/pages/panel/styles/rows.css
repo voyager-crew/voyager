@@ -490,13 +490,20 @@ label.rn {
   background: var(--tile);
 }
 
-/* Setup steps and the stopped notice: the warning's edge, not a box of their own. */
+/* Setup steps and the stopped notice: plain text in the card's flow, under their own title. */
 .cr-note {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-inline-start: 12px;
-  border-inline-start: 3px solid var(--wait);
+}
+
+/* Under a row, the warning mark sits in the rows' icon column and the text on the names' edge. */
+.cr-more .create-warn {
+  padding-inline-start: 0;
+}
+
+.cr-more .create-warn::before {
+  inset-inline-start: -29px;
 }
 
 /* The kill switch closes the card, on the names' edge, under a row's hairline. */

@@ -189,9 +189,25 @@
   font-size: 12px;
 }
 
+/*
+ * Text to weigh before turning something on: a warning mark hangs in the
+ * site mark's column, on the first line, and the text keeps its own colour.
+ */
 .create-warn {
-  padding-inline-start: 12px;
-  border-inline-start: 3px solid var(--wait);
+  position: relative;
+  padding-inline-start: 26px;
+}
+
+.create-warn::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  inset-inline-start: 0;
+  width: 16px;
+  height: 16px;
+  background: var(--warn-mark);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E")
+    center / 15px no-repeat;
 }
 
 /* The page's chat model usually cannot write a creation: the site's mark, then a note in the flow. */
