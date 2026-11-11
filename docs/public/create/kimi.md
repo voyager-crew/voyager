@@ -1,6 +1,6 @@
 # Write a Voyager plugin for Kimi
 
-Voyager is a browser extension for AI chat sites. A Voyager plugin is a JSON manifest plus CSS that restyles or rearranges the page through reversible changes; Voyager checks it strictly on import and runs no code from it.
+Voyager is a browser extension for AI chat sites. A Voyager plugin is a JSON manifest plus CSS that restyles or rearranges the page through reversible changes; Voyager checks it strictly on import. It runs no code of its own, unless it is the scripted kind below.
 
 The user’s message gives their request and their Voyager plugin engine version. This page follows engine 1.11.0: use nothing whose sinceEngine is above the user’s version.
 
@@ -71,6 +71,10 @@ Primitives are behavior Voyager ships as code, called as { "op": "native", "hand
 
 Read https://voyager.nagi.fun/skills/write-voyager-plugin/primitives.md when the request needs behavior that CSS and the page changes cannot give, such as one of these, and always before answering NOT POSSIBLE. It has each primitive’s params and engine floor.
 
+## Plugins that run code
+
+A scripted plugin carries JavaScript for behavior CSS, the page changes and the primitives cannot give, such as reacting to clicks, counting or remembering something across visits. Read https://voyager.nagi.fun/create/scripted.md when the request needs such behavior, before answering NOT POSSIBLE. Use the declarative tier whenever it suffices: a scripted plugin needs desktop Chrome or Edge 133 or later, with "Allow User Scripts" turned on for Voyager on its details page in chrome://extensions (Developer mode before Chrome 138), and the user reads all of its code before turning it on.
+
 ## What a plugin cannot do
 
 - It cannot run JavaScript or any code of its own: no event handlers, clicks, timers or keyboard shortcuts.
@@ -81,8 +85,9 @@ Read https://voyager.nagi.fun/skills/write-voyager-plugin/primitives.md when the
 - It cannot run on sites other than those listed, or change Voyager’s own settings.
 
 These limits are on the plugin’s own fields and CSS. A primitive in the Primitives list above runs Voyager’s code and may lift one of them: read that list before answering NOT POSSIBLE, and use a primitive when the target site declares the keys it reads.
+A scripted plugin (see "Plugins that run code") may run code and logic, never the other limits.
 If the request needs any of this, do not invent fields or ops: the import refuses them. Start your reply with one line "NOT POSSIBLE: <what and why>", then build the closest version this contract allows and say what it leaves out.
-Give that version in the one ```json block; reply with no block only when nothing declarative helps.
+Give that version in the one ```json block; reply with no block only when nothing helps.
 
 ## Example (adapt it; do not copy its purpose)
 

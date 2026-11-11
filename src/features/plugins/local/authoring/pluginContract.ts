@@ -23,6 +23,7 @@ import {
 import { formatJson } from './jsonText';
 import { type PluginExample, buildPluginExamples } from './pluginExamples';
 import { primitivesSection } from './primitivesSection';
+import { scriptedSection } from './scriptedContract';
 import { allowsAnyPrimitive, siteAnchors, siteFactLines } from './siteFacts';
 
 export interface PluginContractOptions {
@@ -84,6 +85,7 @@ export function buildPluginContract(
       localRulesSection(audience, { primitives, refs }),
       ...(primitives ? [primitivesSection(site)] : []),
       ...(audience === 'agent' ? [selectorsSection()] : []),
+      scriptedSection(audience, { primitives }),
       impossibleSection(audience, { primitives, refs }),
     ],
     examples: buildPluginExamples(site, {

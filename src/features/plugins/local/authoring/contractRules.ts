@@ -183,9 +183,14 @@ export function impossibleSection(
             `These limits are on the plugin’s own fields and CSS. A primitive in ${refs.primitives} runs Voyager’s code and may lift one of them: read that list before answering NOT POSSIBLE, and use a primitive when the target site declares the keys it reads.`,
           ]
         : []),
+      ...(audience === 'chat'
+        ? [
+            'A scripted plugin (see "Plugins that run code") may run code and logic, never the other limits.',
+          ]
+        : []),
       'If the request needs any of this, do not invent fields or ops: the import refuses them. Start your reply with one line "NOT POSSIBLE: <what and why>", then build the closest version this contract allows and say what it leaves out.',
       audience === 'chat'
-        ? 'Give that version in the one ```json block; reply with no block only when nothing declarative helps.'
+        ? 'Give that version in the one ```json block; reply with no block only when nothing helps.'
         : 'When nothing declarative helps, stop there and write no files.',
     ],
   };

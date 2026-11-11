@@ -100,11 +100,11 @@ panel takes nothing from window messages.
   appends `buildCreationFixMessage` to the composer, after a blank line below
   any draft, and sends nothing.
 
-**One contract, four outputs.** `local/authoring/pluginContract.ts`
+**One contract, five outputs.** `local/authoring/pluginContract.ts`
 (`buildPluginContract(site, { audience, refs })`) is the single description of
 what a local plugin may contain: manifest fields, styles, page changes,
 settings, the local rules, the site's anchors and notes, the primitives (read
-only through `primitiveReference.ts`), what is not possible, and examples. Four
+only through `primitiveReference.ts`), the scripted tier, what is not possible, and examples. Five
 outputs render it:
 
 - the per-site chat pages `docs/public/create/<site>.md` (`createPages.ts`,
@@ -114,6 +114,12 @@ outputs render it:
   skill's `primitives.md`, `sites/<site>.md` (primitive caveats) and
   `examples.md` with the condition for opening each. It states the engine it
   was generated from and tells the AI to stay at or below the user's;
+- the shared scripted page `docs/public/create/scripted.md` (`scriptedPage.ts`),
+  which every chat page points at (`scriptedSection`) for a request that needs
+  code: the `tier: "scripted"` shape, how `chrome.userScripts` runs it, the
+  rules the prelude enforces, the browser it needs, each site's selectors and
+  one example. Agent outputs say instead that only Create mode makes a
+  scripted plugin, because `check` refuses the tier;
 - the public agent skill `docs/public/skills/write-voyager-plugin/`
   (`authoringDocs.ts`): `SKILL.md` with one example, plus `sites/<site>.md`,
   `primitives.md` and `examples.md` behind pointers, served at

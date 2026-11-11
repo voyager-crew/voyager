@@ -181,7 +181,8 @@ describe('create-voyager-plugin bundle', () => {
     const out = join(work, 'create');
     expect(run('create-pages', '--out', out).code).toBe(0);
     const committed = listSkillMarkdown(CREATE_DIR);
-    expect(committed.length).toBe(DEFAULT_ADAPTERS.length);
+    // One page per site plus the shared scripted page.
+    expect(committed.length).toBe(DEFAULT_ADAPTERS.length + 1);
     expect(listSkillMarkdown(out)).toEqual(committed);
     for (const path of committed) {
       expect(readFileSync(join(out, path), 'utf8'), path).toBe(

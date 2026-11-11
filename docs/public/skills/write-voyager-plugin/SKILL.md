@@ -84,6 +84,10 @@ This skill is split into files. The links below are relative to this SKILL.md; w
 - Prefer data-testid, aria-*, role and stable element names. Avoid generated class names (hashes such as css-1x2y3z): they change with every site deploy.
 - Do not guess selectors you cannot verify: tell the user which ones to check.
 
+## Plugins that run code
+
+Voyager also has a scripted tier (JavaScript run through Chrome's userScripts API), but only Create mode makes one for now: the user asks in Voyager's panel (Create tab) on the chat site, the chat AI writes it from https://voyager.nagi.fun/create/scripted.md, and Voyager shows its full source before it can be turned on. `create-voyager-plugin check` refuses "tier": "scripted", so write declarative plugins here. When only code would do, say so in your NOT POSSIBLE line and point the user to Create mode.
+
 ## What a plugin cannot do
 
 - It cannot run JavaScript or any code of its own: no event handlers, clicks, timers or keyboard shortcuts.
