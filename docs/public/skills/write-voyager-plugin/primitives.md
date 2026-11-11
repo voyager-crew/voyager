@@ -46,6 +46,7 @@ A primitive is behavior Voyager ships as code; a plugin can only call it by name
   - conversationIdAttribute (string, since 1.5.0): Attribute holding the conversation id that conversationIdPattern captures from the URL, on an ancestor of each turn or inside its turnItem. When set, it is the only thing that lets a turn be starred: the id must name the current conversation; a turn without one stays unstarrable.
   - accountIdAttributes (string[], since 1.5.0): Ordered attributes on document.documentElement identifying the loaded account. Stars hash their values together; missing values leave the star untagged.
   - turnItem (selector, since 1.5.0): Element wrapping one exchange (prompt and reply). conversationIdAttribute is looked up inside it when no ancestor of the turn carries it.
+  - reply (selector, since 2.3.2): Elements holding one assistant reply each. A reply that follows another reply with no user turn between them, such as a scheduled task’s later runs, gets its own marker labelled with its text. Omit it and only user turns are marked.
   - conversationIdPattern (string): Path regular expression whose first group is the conversation id; defaults to the site adapter's conversationIdPattern.
   - scrollContainer (selector): Element that scrolls the conversation; defaults to the site adapter's scrollContainer, else auto-detected.
   - yieldWhen (selector): While this matches (an open side panel, an artifact frame), the onboarding guide stays closed.

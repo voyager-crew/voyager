@@ -8,6 +8,7 @@ import type { TimelineMarker } from '../../types';
 import { createCatalogTimelineStoragePolicy } from './CatalogTimelineStorage';
 import { CatalogTurnOwnership } from './CatalogTurnOwnership';
 import type { CatalogTimelineConfig } from './config';
+import { mountedTurnsWithLaterReplies } from './laterReplies';
 import type { CatalogSendTimestamps } from './sendTimestamps';
 import { turnSummary } from './turnHash';
 import { type Marker, type MountedTurn, mergeMountedTurns, rememberedMarkers } from './turnMerge';
@@ -34,7 +35,17 @@ export class CatalogTimelineAdapter implements TimelineAdapter {
     return this.turns.viewport(element);
   }
   timestamps(): TimelineTimestampOwner | null {
-    return this.sendTimes?.ownerFor(this.route.url) ?? null;
+    const owner = this.sendTimes?.ownerFor(this.route.url);
+    if (!owner) return null;
+    // A send time belongs to the prompt; a later reply shares its turn item and would repeat it.
+    return {
+      ...owner,
+      update: (previous, next) =>
+        owner.update(
+          previous,
+          next.filter((marker) => !this.turns.replyIds.has(marker.id)),
+        ),
+    };
   }
 }
 
@@ -75,6 +86,8 @@ class CatalogTimelineTurnSource implements TimelineTurnSource {
     return observer;
   }
   private known: Marker[] = [];
+  /** Markers that stand for a later reply rather than a prompt. */
+  replyIds: ReadonlySet<string> = new Set();
   private readonly originalStamps = new Map<HTMLElement, string | null>();
 
   constructor(
@@ -110,12 +123,15 @@ class CatalogTimelineTurnSource implements TimelineTurnSource {
     const container = this.root;
     if (!container) return { markers: [], mountedCount: 0 };
     const selector = this.config.turnSelector;
-    const mounted: MountedTurn[] = Array.from(container.querySelectorAll<HTMLElement>(selector))
-      .filter(renderedCheck())
-      .map((element) => ({
-        element,
-        summary: turnSummary(element),
-      }));
+    const replySelector = this.config.replySelector;
+    const mounted: MountedTurn[] = replySelector
+      ? mountedTurnsWithLaterReplies(container, selector, replySelector, renderedCheck())
+      : Array.from(container.querySelectorAll<HTMLElement>(selector))
+          .filter(renderedCheck())
+          .map((element) => ({
+            element,
+            summary: turnSummary(element),
+          }));
     for (const turn of mounted)
       if (!this.originalStamps.has(turn.element))
         this.originalStamps.set(turn.element, turn.element.getAttribute('data-gv-turn-id'));
@@ -152,7 +168,12 @@ class CatalogTimelineTurnSource implements TimelineTurnSource {
       marker.measuredAt = pass;
     }
     this.ownership.observe(mountedOwnershipTurns(mounted));
-    const assistantByElement = this.assistantSummaries(mounted, container);
+    this.replyIds = new Set(this.known.filter((marker) => marker.reply).map(({ id }) => id));
+    // A later reply's own text is its summary; the prompt's reply is still read up to the next prompt.
+    const assistantByElement = this.assistantSummaries(
+      mounted.filter((turn) => !turn.reply),
+      container,
+    );
     const markers = this.known.map((marker, index) => ({
       id: marker.id,
       element: marker.element,
@@ -190,7 +211,11 @@ class CatalogTimelineTurnSource implements TimelineTurnSource {
   }
 
   shouldRefresh(records: MutationRecord[]): boolean {
-    const selectors = [this.config.turnSelector, this.config.assistantTurnSelector]
+    const selectors = [
+      this.config.turnSelector,
+      this.config.assistantTurnSelector,
+      this.config.replySelector,
+    ]
       .filter(Boolean)
       .join(', ');
     const elementOf = (node: Node): Element | null =>
@@ -221,5 +246,6 @@ class CatalogTimelineTurnSource implements TimelineTurnSource {
     }
     this.originalStamps.clear();
     this.known = [];
+    this.replyIds = new Set();
   }
 }

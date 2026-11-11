@@ -127,17 +127,18 @@ describe('BUILTIN_PLUGINS', () => {
     expect(timeline?.i18n?.zh?.settings?.timelineStyle?.label).toBe('时间线样式');
   });
 
-  it("includes the ChatGPT timeline, which needs the engine that reads a turn's item", () => {
+  it('includes the ChatGPT timeline, which needs the engine that marks later replies', () => {
     const timeline = BUILTIN_PLUGINS.find((m) => m.id === 'voyager.chatgpt-timeline');
     expect(timeline).toBeDefined();
     expect(timeline?.matches).toEqual(['https://chatgpt.com/*', 'https://chat.openai.com/*']);
-    expect(timeline?.engine).toBe('>=1.6.0');
+    expect(timeline?.engine).toBe('>=next');
     expect(timeline?.contributes.domOps).toMatchObject([
       {
         op: 'native',
         handler: 'turnNavigator',
         params: {
           turnItem: '[data-turn-key]',
+          reply: '[data-dil-source-message-id]',
           conversationIdAttribute: 'data-chatgpt-selection-conversation-id',
         },
       },

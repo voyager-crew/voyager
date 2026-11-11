@@ -40,6 +40,11 @@
       "type": "string[]",
       "required": false,
       "sinceEngine": "1.5.0"
+    },
+    "reply": {
+      "type": "selector",
+      "required": false,
+      "sinceEngine": "next"
     }
   }
 }

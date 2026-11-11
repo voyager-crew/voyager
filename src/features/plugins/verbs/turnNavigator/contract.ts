@@ -38,6 +38,13 @@ export const contract: PrimitiveContract = {
       description:
         'Element wrapping one exchange (prompt and reply). conversationIdAttribute is looked up inside it when no ancestor of the turn carries it.',
     },
+    reply: {
+      type: 'selector',
+      required: false,
+      sinceEngine: 'next',
+      description:
+        'Elements holding one assistant reply each. A reply that follows another reply with no user turn between them, such as a scheduled task’s later runs, gets its own marker labelled with its text. Omit it and only user turns are marked.',
+    },
     conversationIdPattern: {
       type: 'string',
       required: false,

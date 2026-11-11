@@ -5,6 +5,8 @@ export interface CatalogTimelineConfig {
   readonly siteLabel: string;
   readonly turnSelector: string;
   readonly assistantTurnSelector?: string;
+  /** One assistant reply each; a reply after another reply with no prompt between gets a marker. */
+  readonly replySelector?: string;
   readonly conversationIdPattern?: string;
   readonly conversationIdAttribute?: string;
   readonly accountIdAttributes?: readonly string[];

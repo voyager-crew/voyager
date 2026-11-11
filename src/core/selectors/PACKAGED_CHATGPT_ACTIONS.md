@@ -16,6 +16,7 @@ Parts: [1](PACKAGED_CHATGPT.md), [2](PACKAGED_CHATGPT_SOURCES.md), [3](PACKAGED_
 | `modelPicker.trigger`    | A / online      | Opens the native model menu; native trigger metadata proves the action.                                                     |
 | `overlaySidebar`         | B / bundle copy | Sidebar bounds only position Voyager export UI. Online counterpart: `exportLayout.overlaySidebar`.                          |
 | `pickerLabelledTrigger`  | §6 / packaged   | ARIA-labelled native trigger is independent menu association evidence.                                                      |
+| `replyMessage`           | A / packaged    | Native message-ID grammar bounds one reply, so a timeline marker stands for exactly that reply.                             |
 | `replyActions`           | §6 / packaged   | Native reply-action evidence independently proves completion.                                                               |
 | `replyAlert`             | §6 / packaged   | ARIA alert evidence independently rejects failed replies.                                                                   |
 | `replyNotice`            | §6 / packaged   | Native notice evidence rejects incomplete or failed replies.                                                                |

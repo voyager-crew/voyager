@@ -29,6 +29,7 @@ export interface TurnNavigatorParams {
   readonly conversationIdAttribute?: string;
   readonly accountIdAttributes?: readonly string[];
   readonly turnItem?: string;
+  readonly reply?: string;
   readonly conversationIdPattern?: string;
   readonly scrollContainer?: string;
   readonly yieldWhen?: string;
@@ -38,7 +39,7 @@ export interface TurnNavigatorParams {
 const MAX_SELECTOR_LENGTH = 2_000;
 /** A plain lower-case attribute name: it is interpolated into `[name]`. */
 const ATTRIBUTE_NAME = /^[a-z][a-z0-9-]{0,63}$/;
-const SELECTOR_PARAMS = ['turn', 'turnItem', 'scrollContainer', 'yieldWhen'] as const;
+const SELECTOR_PARAMS = ['turn', 'turnItem', 'reply', 'scrollContainer', 'yieldWhen'] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -64,6 +65,7 @@ export const turnNavigatorPrimitive: Primitive<TurnNavigatorParams> = {
       conversationIdAttribute?: string;
       accountIdAttributes?: string[];
       turnItem?: string;
+      reply?: string;
       conversationIdPattern?: string;
       scrollContainer?: string;
       yieldWhen?: string;
@@ -219,6 +221,7 @@ export function activateTurnNavigator(
     conversationIdAttribute: params.conversationIdAttribute,
     accountIdAttributes: params.accountIdAttributes,
     turnItemSelector: params.turnItem,
+    replySelector: params.reply,
     get scrollContainerSelector() {
       return params.scrollContainer ?? adapter.selectors.scrollContainer;
     },

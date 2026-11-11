@@ -42,11 +42,14 @@ export interface Marker {
    */
   measuredAt?: number;
   dotElement: HTMLButtonElement | null;
+  /** A later reply with its own marker (`laterReplies`), not a prompt. */
+  reply?: true;
 }
 
 export interface MountedTurn {
   readonly element: HTMLElement;
   readonly summary: string;
+  readonly reply?: true;
 }
 
 export interface MountedEntry extends MountedTurn {
@@ -56,6 +59,11 @@ export interface MountedEntry extends MountedTurn {
 
 export function buildTurnId(text: string): string {
   return `c-${hashString(text)}`;
+}
+
+/** A reply hashes apart from prompts, so it never shifts a prompt's id or matches a prompt's star. */
+export function mountedHash(turn: MountedTurn): string {
+  return hashString(turn.reply ? `reply\n${turn.summary}` : turn.summary);
 }
 
 /**
@@ -240,7 +248,7 @@ export function rememberedMarkers(
   known: readonly Marker[],
   mounted: readonly MountedTurn[],
 ): Marker[] {
-  const current = new Map(mounted.map((turn) => [turn.element, hashString(turn.summary)]));
+  const current = new Map(mounted.map((turn) => [turn.element, mountedHash(turn)]));
   return known.filter(
     (marker) => !marker.element.isConnected || current.get(marker.element) === marker.hash,
   );
@@ -253,7 +261,7 @@ export function mergeMountedTurns(
 ): Marker[] {
   const mounted: MountedEntry[] = turns.map((turn) => ({
     ...turn,
-    hash: hashString(turn.summary),
+    hash: mountedHash(turn),
     center: centerOf(turn.element),
   }));
   if (!mounted.length) return known;
@@ -272,6 +280,7 @@ export function mergeMountedTurns(
       element: entry.element,
       center: entry.center,
       dotElement: null,
+      ...(entry.reply ? { reply: true as const } : {}),
     };
   };
 

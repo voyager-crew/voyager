@@ -23,6 +23,7 @@
   "assistantHeading": "h4[data-conversation-role]",
   "assistantMarkdown": "[data-markdown-text-style=\"assistant-message\"]",
   "turnItem": "[data-turn-key]",
+  "replyMessage": "[data-dil-source-message-id]",
   "turnStateAttribute": "data-talvt-turn-state",
   "turnStateComplete": "complete",
   "replyActions": "button",

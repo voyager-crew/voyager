@@ -92,6 +92,8 @@ export interface TimelineManifestOptions {
   readonly matches: readonly string[];
   /** `turnNavigator` params; selectors and the conversation id otherwise come from site.json. */
   readonly params: Readonly<Record<string, unknown>>;
+  /** At least the `sinceEngine` of every param set. */
+  readonly engine?: string;
 }
 
 /** A builtin site timeline: the `turnNavigator` primitive with the shared style and level settings. */
@@ -101,6 +103,7 @@ export function timelineManifest({
   version,
   matches,
   params,
+  engine = '>=1.6.0',
 }: TimelineManifestOptions): PluginManifest {
   const i18n: Record<string, PluginLocalization> = {};
   for (const [locale, copy] of Object.entries(LOCALIZED)) {
@@ -119,7 +122,7 @@ export function timelineManifest({
     author: 'voyager-official',
     category: 'productivity',
     license: 'GPL-3.0-or-later',
-    engine: '>=1.6.0',
+    engine,
     tier: 'declarative',
     matches,
     requires: {

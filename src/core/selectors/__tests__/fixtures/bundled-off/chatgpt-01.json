@@ -293,6 +293,7 @@
   ["actions-packaged.json/assistantHeading", "h4[data-conversation-role]"],
   ["actions-packaged.json/assistantMarkdown", "[data-markdown-text-style=\"assistant-message\"]"],
   ["actions-packaged.json/turnItem", "[data-turn-key]"],
+  ["actions-packaged.json/replyMessage", "[data-dil-source-message-id]"],
   ["actions-packaged.json/turnStateAttribute", "data-talvt-turn-state"],
   ["actions-packaged.json/turnStateComplete", "complete"],
   ["actions-packaged.json/replyActions", "button"],

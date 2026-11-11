@@ -20,9 +20,8 @@
  * A turn keeps the owner it was first seen with, remembered per element in a
  * WeakMap.
  */
-import { hashString } from '@/core/utils/hash';
 
-import type { MountedTurn } from './turnMerge';
+import { type MountedTurn, mountedHash } from './turnMerge';
 import { renderedCheck } from './turnVisibility';
 
 /** A turn on screen and its text hash. */
@@ -129,5 +128,5 @@ export class TurnOwnership {
 }
 
 export function mountedOwnershipTurns(mounted: readonly MountedTurn[]): ObservedTurn[] {
-  return mounted.map((turn) => ({ element: turn.element, hash: hashString(turn.summary) }));
+  return mounted.map((turn) => ({ element: turn.element, hash: mountedHash(turn) }));
 }
