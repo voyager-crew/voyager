@@ -4,7 +4,7 @@ import type { TranslationKey } from '@/utils/translations';
 
 import { LocalPluginCssSource } from './LocalPluginCssSource';
 import { changeText, warningText } from './localPluginPreviewText';
-import { ScriptedBadge, ScriptedSource } from './scripted/ScriptedSource';
+import { ScriptedBadge, ScriptedSource, SourceDisclosure } from './scripted/ScriptedSource';
 import { POPUP_SCRIPTED_LOOK, type ScriptedLook } from './scripted/scriptedLook';
 
 /** Class names per part, so the popup and the panel share what a review shows and differ in look. */
@@ -17,6 +17,8 @@ export interface PreviewLook {
   readonly list: string;
   /** The CSS source; the popup's own when omitted. */
   readonly css?: string;
+  /** Folds the CSS under its label in a `details` with this class, as the scripted look does. */
+  readonly disclosure?: string;
   readonly warnings: string;
   readonly warningsTitle: string;
   readonly scripted: ScriptedLook;
@@ -39,6 +41,13 @@ export function LocalPluginPreviewSummary({
   look: PreviewLook;
   t: (key: TranslationKey) => string;
 }) {
+  const css = (
+    <LocalPluginCssSource
+      css={preview.css}
+      label={t('localPluginInspectCss')}
+      className={look.css}
+    />
+  );
   return (
     <>
       <div>
@@ -67,11 +76,17 @@ export function LocalPluginPreviewSummary({
               ))}
             </ul>
           </div>
-          <LocalPluginCssSource
-            css={preview.css}
-            label={t('localPluginInspectCss')}
-            className={look.css}
-          />
+          {look.disclosure && preview.css.length > 0 ? (
+            <SourceDisclosure
+              label={t('localPluginInspectCss')}
+              disclosure={look.disclosure}
+              labelClass={look.label}
+            >
+              {css}
+            </SourceDisclosure>
+          ) : (
+            css
+          )}
         </>
       )}
       {preview.warnings.length > 0 && (

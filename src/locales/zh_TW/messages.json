@@ -3022,7 +3022,7 @@
     "description": "Create mode label under a code block that a later block in the chat replaces"
   },
   "createModeRejectedNote": {
-    "message": "Voyager 暫時裝不了這個外掛。",
+    "message": "暫時裝不了這個外掛。",
     "description": "Create mode note under a plugin code block that the import gate refuses"
   },
   "createModeSendProblems": {

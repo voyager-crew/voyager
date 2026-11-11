@@ -21,11 +21,12 @@ type Translate = (key: TranslationKey) => string;
 const PANEL_PREVIEW_LOOK: PreviewLook = {
   name: 'create-name',
   meta: 'create-meta',
-  description: 'create-intro',
+  description: 'create-desc',
   line: 'create-line',
   label: 'create-sub',
   list: 'create-list',
   css: 'create-code',
+  disclosure: 'create-fold',
   warnings: 'create-warn',
   warningsTitle: 'create-sub',
   scripted: PANEL_SCRIPTED_LOOK,
@@ -41,10 +42,19 @@ function Issues({ issues }: { issues: readonly ManifestIssue[] }) {
   );
 }
 
+const REVIEW_TITLE_ID = 'panel-create-review-title';
+
+/** The review sits in the tab's flow under a small title, with no box of its own. */
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="create-review" aria-label={title} data-testid="create-review">
-      <p className="create-label">{title}</p>
+    <section
+      className="create-review"
+      aria-labelledby={REVIEW_TITLE_ID}
+      data-testid="create-review"
+    >
+      <p id={REVIEW_TITLE_ID} className="create-kicker">
+        {title}
+      </p>
       {children}
     </section>
   );
@@ -62,9 +72,10 @@ export function CreationReview({
 }) {
   const { state, send, preview } = review;
   const setup = <ScriptedSetupCard scripted={scripted} look={PANEL_SCRIPTED_LOOK} t={t} />;
-  const done = (
+  // Cancel while an install is still a choice; Close once there is nothing left to cancel.
+  const dismiss = (label: 'localPluginsCancel' | 'commonClose') => (
     <button type="button" className="sec" onClick={() => send({ type: 'dismiss' })}>
-      {t('localPluginsCancel')}
+      {t(label)}
     </button>
   );
   switch (state.status) {
@@ -75,7 +86,7 @@ export function CreationReview({
     case 'installing':
       return (
         <Card title={t('panelCreateReviewTitle')}>
-          <p className="create-status" aria-live="polite">
+          <p className="create-note" aria-live="polite">
             {t(state.status === 'installing' ? 'panelCreateInstalling' : 'panelCreateChecking')}
           </p>
         </Card>
@@ -92,7 +103,7 @@ export function CreationReview({
       return (
         <Card title={t('panelCreateReviewTitle')}>
           {state.changed && (
-            <p className="create-status bad" role="alert">
+            <p className="create-note bad" role="alert">
               {t('localPluginChangedSinceReview')}
             </p>
           )}
@@ -106,12 +117,12 @@ export function CreationReview({
           )}
           {runsCode && setup}
           {!cannotRun && (
-            <p className="create-status">
+            <p className="create-note">
               {t(runsCode ? 'scriptedInstallNote' : 'panelCreateInstallNote')}
             </p>
           )}
           <div className="create-actions">
-            {done}
+            {dismiss('localPluginsCancel')}
             {!cannotRun && (
               <button type="button" className="pri" onClick={install}>
                 {t(update ? 'panelCreateUpdate' : 'panelCreateInstall')}
@@ -125,7 +136,7 @@ export function CreationReview({
       const { checked } = state;
       return (
         <Card title={t('panelCreateReviewTitle')}>
-          <div className="create-status bad" role="alert">
+          <div className="create-note bad" role="alert">
             {'problem' in checked ? (
               <p>{t(REPLY_PROBLEM_KEYS[checked.problem])}</p>
             ) : (
@@ -135,8 +146,8 @@ export function CreationReview({
               </>
             )}
           </div>
-          <p className="create-status">{t('panelCreateRejectedHint')}</p>
-          <div className="create-actions">{done}</div>
+          <p className="create-note">{t('panelCreateRejectedHint')}</p>
+          <div className="create-actions">{dismiss('commonClose')}</div>
         </Card>
       );
     }
@@ -146,14 +157,14 @@ export function CreationReview({
       const name = { name: state.manifest.name };
       return (
         <Card title={t('panelCreateReviewTitle')}>
-          <p className="create-status" role="status">
+          <p className="create-note" role="status">
             {fillPlaceholders(t(on ? 'panelCreateInstalledOn' : 'panelCreateInstalledOff'), name)}
           </p>
-          {state.reload && <p className="create-status">{t('panelCreateReload')}</p>}
+          {state.reload && <p className="create-note">{t('panelCreateReload')}</p>}
           {on && isScriptedManifest(state.manifest) && setup}
-          {on && <p className="create-status">{t('panelCreateChangeAgain')}</p>}
+          {on && <p className="create-note">{t('panelCreateChangeAgain')}</p>}
           <div className="create-actions">
-            {done}
+            {dismiss('commonClose')}
             {!on && (
               <button
                 type="button"
@@ -171,11 +182,11 @@ export function CreationReview({
     case 'failed':
       return (
         <Card title={t('panelCreateReviewTitle')}>
-          <div className="create-status bad" role="alert">
+          <div className="create-note bad" role="alert">
             <p>{t('panelCreateFailed')}</p>
             <Issues issues={state.issues} />
           </div>
-          <div className="create-actions">{done}</div>
+          <div className="create-actions">{dismiss('commonClose')}</div>
         </Card>
       );
     default: {

@@ -1,75 +1,87 @@
-/* The 创造 tab: the request card and the review of a reply; logical sides for RTL. */
+/*
+ * The 创造 tab: a writing sheet, then the review of a reply, all in the tab's
+ * one scroll. No box holds another; long sources fold open in the flow.
+ * Logical sides for RTL.
+ */
 .create {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  max-width: 560px;
+  gap: 32px;
+  max-width: 600px;
   margin-inline: auto;
-  padding-block: 8px;
+  padding-block: 12px 24px;
 }
 
 .create-ask,
 .create-review {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px;
-  background: var(--card);
+  gap: 12px;
+  min-width: 0;
+}
+
+/* ---------- the request ---------- */
+.create-label {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.create-intro {
+  margin: -6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+/* The writing surface: the Features cards' sheet, growing with its text instead of scrolling. */
+.create-sheet {
+  display: block;
+  width: 100%;
+  min-height: 196px;
+  padding: 16px 18px;
+  border: 1px solid transparent;
   border-radius: 14px;
+  background: var(--card);
   box-shadow:
     0 0 0 1px var(--line),
     0 1px 2px rgb(15 20 30 / 0.03);
-}
-
-.create-intro,
-.create-status {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--ink-2);
-}
-
-.create-status.bad {
-  color: var(--danger);
-}
-
-.create-label {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.create-field {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: 9px;
-  background: var(--tile);
-  box-shadow: inset 0 0 0 1px var(--line);
   color: var(--ink);
   font: inherit;
-  font-size: 13px;
-  line-height: 1.45;
-  resize: vertical;
+  font-size: 15px;
+  line-height: 1.6;
+  resize: none;
+  overflow: hidden;
+  field-sizing: content;
+  transition: box-shadow 0.15s ease;
 }
 
-.create-field:focus-visible {
-  outline: 2px solid color-mix(in oklch, var(--ink) 55%, transparent);
-  outline-offset: 1px;
+.create-sheet:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1.5px color-mix(in oklch, var(--ink) 45%, transparent),
+    0 0 0 5px color-mix(in oklch, var(--ink) 7%, transparent);
 }
 
-.create-field::placeholder {
+.create-sheet::placeholder {
   color: var(--ink-3);
 }
 
-.create-field:disabled {
+.create-sheet:disabled {
   opacity: 0.6;
 }
 
-.create-field.mono,
-.create-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
+.create-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 16px;
+}
+
+.create-foot .create-note {
+  flex: 1 1 220px;
+  padding-block-start: 6px;
 }
 
 .create-actions {
@@ -77,26 +89,61 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+  margin-inline-start: auto;
+}
+
+.create-note {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+.create-note.bad {
+  color: var(--danger);
+}
+
+.create-note p {
+  margin: 0;
+}
+
+/* ---------- the review ---------- */
+.create-kicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
 }
 
 .create-name {
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
+  line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
 .create-meta {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 400;
   color: var(--ink-3);
+}
+
+.create-desc {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
 }
 
 .create-line,
 .create-sub {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .create-sub {
@@ -104,40 +151,30 @@
 }
 
 .create-list {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   padding-inline-start: 18px;
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-
-.create-code {
-  max-height: 160px;
-  margin: 0;
-  padding: 8px 10px;
-  overflow: auto;
-  border-radius: 9px;
-  background: var(--tile);
-  box-shadow: inset 0 0 0 1px var(--line);
-  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
 .create-code-list {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .create-warn {
-  padding-inline-start: 10px;
+  padding-inline-start: 12px;
   border-inline-start: 3px solid var(--wait);
 }
 
-.create-status p {
+.create-strong {
   margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
-/* Creations that run code: the badge, the warning, the full source and the setup card. */
 .create-badge {
   display: inline-block;
   margin-inline-start: 6px;
@@ -150,27 +187,115 @@
   vertical-align: middle;
 }
 
-.create-strong {
-  font-weight: 500;
-  line-height: 1.5;
-}
-
-.create-script {
-  max-height: 240px;
-  white-space: pre;
-  overflow-wrap: normal;
+/* Source text, wrapped: its lines never open a second scroller. */
+.create-code {
+  margin: 0;
+  padding: 12px 14px;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   tab-size: 2;
   user-select: text;
 }
 
+/* A long source folded under its label; it opens in the flow and scrolls with the tab. */
+.create-fold {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--tile);
+}
+
+.create-fold > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding-inline: 12px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.create-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* A chevron that points along the reading direction when closed and down when open. */
+.create-fold > summary::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-inline: 2px;
+  border-block-end: 1.5px solid var(--ink-2);
+  border-inline-end: 1.5px solid var(--ink-2);
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+
+[dir='rtl'] .create-fold > summary::before {
+  transform: rotate(45deg);
+}
+
+.create-fold[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+[dir='rtl'] .create-fold[open] > summary::before {
+  transform: rotate(-45deg);
+}
+
+@media (hover: hover) {
+  .create-fold > summary:hover {
+    background: color-mix(in oklch, var(--ink) 4%, transparent);
+  }
+}
+
+.create-fold > summary:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--ink) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.create-fold[open] > summary {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+  border-block-end: 1px solid var(--line);
+}
+
+/* The copy a failed clipboard write leaves to select by hand. */
+.create-copy {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--tile);
+  resize: none;
+  overflow: hidden;
+  field-sizing: content;
+}
+
+/* Creations that run code: the one-time setup, steps and the address to paste. */
 .create-setup {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
   background: color-mix(in oklch, var(--wait) 10%, var(--card));
   box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--wait) 45%, transparent);
+}
+
+.create-setup-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .create-steps {
@@ -178,6 +303,9 @@
 }
 
 .create-address {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
   user-select: all;
   overflow-wrap: anywhere;
 }

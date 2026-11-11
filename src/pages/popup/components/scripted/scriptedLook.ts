@@ -5,8 +5,13 @@ export interface ScriptedLook {
   readonly badge: string;
   readonly warning: string;
   readonly label: string;
-  /** The full source: scrollable, selectable, left to right. */
+  /** The full source: selectable, left to right. */
   readonly source: string;
+  /**
+   * When set, the source sits folded under its label in a `details` with this
+   * class, and opens in the page flow; otherwise it shows open in its own box.
+   */
+  readonly disclosure?: string;
   readonly card: string;
   readonly title: string;
   readonly text: string;

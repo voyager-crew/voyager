@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { fillPlaceholders } from '@/utils/translations';
 import type { TranslationKey } from '@/utils/translations';
 
@@ -13,9 +15,38 @@ export function ScriptedBadge({ look, t }: { look: ScriptedLook; t: Translate })
   );
 }
 
+/** A long source under its label: folded in a `details` where the look asks for one. */
+export function SourceDisclosure({
+  label,
+  disclosure,
+  labelClass,
+  children,
+}: {
+  label: string;
+  disclosure: string | undefined;
+  labelClass: string;
+  children: ReactNode;
+}) {
+  if (!disclosure) {
+    return (
+      <div>
+        <p className={labelClass}>{label}</p>
+        {children}
+      </div>
+    );
+  }
+  return (
+    <details className={disclosure}>
+      <summary>{label}</summary>
+      {children}
+    </details>
+  );
+}
+
 /**
  * What a review shows for code: one plain warning and the full source.
  * Voyager does not summarise code, so nothing here describes what it does.
+ * The warning always shows; only the source body may fold.
  */
 export function ScriptedSource({
   source,
@@ -33,8 +64,11 @@ export function ScriptedSource({
       <p className={look.warning} data-testid="scripted-warning">
         {fillPlaceholders(t('scriptedWarning'), { sites: sites.join(', ') })}
       </p>
-      <div>
-        <p className={look.label}>{t('scriptedSourceLabel')}</p>
+      <SourceDisclosure
+        label={t('scriptedSourceLabel')}
+        disclosure={look.disclosure}
+        labelClass={look.label}
+      >
         <pre
           className={look.source}
           dir="ltr"
@@ -43,7 +77,7 @@ export function ScriptedSource({
         >
           {source}
         </pre>
-      </div>
+      </SourceDisclosure>
     </>
   );
 }

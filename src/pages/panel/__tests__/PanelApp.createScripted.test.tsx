@@ -103,6 +103,12 @@ describe('reviewing a reply that runs code', () => {
     expect(query('[data-testid="scripted-source"]')?.textContent).toBe(SOURCE);
     expect(query('[data-testid="scripted-source"]')?.getAttribute('dir')).toBe('ltr');
     expect(query('[data-testid="scripted-warning"]')?.textContent).toContain('Gemini');
+    // Only the source body folds: the badge and the warning stay on screen while it is closed.
+    const fold = query('[data-testid="scripted-source"]')?.closest('details');
+    expect(fold?.open).toBe(false);
+    expect(fold?.querySelector('summary')?.textContent).toBe(en.scriptedSourceLabel);
+    expect(query('[data-testid="scripted-badge"]')?.closest('details')).toBeNull();
+    expect(query('[data-testid="scripted-warning"]')?.closest('details')).toBeNull();
 
     await click(button(en.panelCreateInstall));
     expect(storedManifest()).toMatchObject({ id: ID, tier: 'scripted' });

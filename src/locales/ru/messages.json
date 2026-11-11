@@ -3022,7 +3022,7 @@
     "description": "Create mode label under a code block that a later block in the chat replaces"
   },
   "createModeRejectedNote": {
-    "message": "Voyager пока не может это установить.",
+    "message": "Пока нельзя установить.",
     "description": "Create mode note under a plugin code block that the import gate refuses"
   },
   "createModeSendProblems": {
