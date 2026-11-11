@@ -13,7 +13,7 @@ function shippedStylesheets(): string[] {
 }
 
 function readNames(css: string): string[] {
-  return [...css.matchAll(/var\(\s*(--gv-theme-[a-z-]+)\s*,/g)].map((match) => match[1]);
+  return [...css.matchAll(/var\(\s*(--gv-theme-[a-z-]+)\s*[,)]/g)].map((match) => match[1]);
 }
 
 describe('public theme variables', () => {
@@ -54,7 +54,7 @@ describe('public theme variables', () => {
     const offenders = shippedStylesheets().flatMap((css) =>
       [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
         .map(([, selector, body]) => ({ selector: selector.trim(), body }))
-        .filter(({ body }) => /var\(\s*--gv-theme-timeline\s*,/.test(body))
+        .filter(({ body }) => /var\(\s*--gv-theme-timeline\s*[,)]/.test(body))
         .filter(({ selector }) => !selector.split(',').every((part) => mark.test(part.trim())))
         .map(({ selector }) => selector),
     );
