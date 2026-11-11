@@ -78,7 +78,7 @@ async function startBackground(target: 'chrome' | 'safari') {
     scripting,
     notifications: { ...chrome.notifications, onClicked: event() },
     alarms: { ...chrome.alarms, create: vi.fn(async () => {}), onAlarm: event() },
-    tabs: { ...chrome.tabs, query: vi.fn(async () => []), onRemoved: event() },
+    tabs: { ...chrome.tabs, query: vi.fn(async () => []), onRemoved: event(), onUpdated: event() },
   });
 
   await import('../index');

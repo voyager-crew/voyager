@@ -43,6 +43,14 @@ export const PLUGIN_STORAGE_KEYS = {
   // inlined, re-validated on every read. Device-local; Drive backup of the
   // manifests is a follow-up (their enable state rides PLUGINS_STATE).
   PLUGIN_LOCAL_MANIFESTS: 'gvPluginLocalManifests',
+  // Scripted local plugins (chrome.storage.local, device-local, never backed up or
+  // synced). Shape: ScriptedStateV1 (src/features/plugins/scripted/types.ts): the
+  // kill switch, each enabled plugin's reviewed content hash, crash notices.
+  // Their gvPluginsState entries stay disabled.
+  PLUGIN_SCRIPTED_STATE: 'gvPluginScriptedState',
+  // Page loads the scripted crash guard is watching, keyed by tab id
+  // (chrome.storage.local, background-only writer, transient).
+  PLUGIN_SCRIPTED_LOADS: 'gvPluginScriptedLoads',
   // Per-site custom accent colour overrides (chrome.storage.sync, backed up).
   // Shape: Record<siteId, string> keyed by SiteAdapter id ('gemini' | 'claude'
   // | 'chatgpt' | 'aistudio' | ...). A site WITH an entry uses that

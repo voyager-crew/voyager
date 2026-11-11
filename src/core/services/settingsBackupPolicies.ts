@@ -465,6 +465,17 @@ export const NON_SETTINGS_BACKUP_POLICIES = {
     reason:
       'User-authored plugin manifests stay on this device; the user exports them from the popup. Their enable state rides the plugin-state Drive file.',
   },
+  [StorageKeys.PLUGIN_SCRIPTED_STATE]: {
+    storage: 'local',
+    disposition: 'device-local',
+    reason:
+      'Running a scripted plugin is a code review made on this device; no backup or restore carries it.',
+  },
+  [StorageKeys.PLUGIN_SCRIPTED_LOADS]: {
+    storage: 'local',
+    disposition: 'transient',
+    reason: 'Crash-guard records of page loads in open tabs mean nothing after the browser closes.',
+  },
   [StorageKeys.WATERMARK_NATIVE_NOTICE_SHOWN]: {
     storage: 'local',
     disposition: 'device-local',

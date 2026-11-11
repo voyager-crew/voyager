@@ -41,7 +41,8 @@ only that version.
 
 The gate (`local/validateLocalManifest.ts`) is the remote catalog's gate plus
 local-only rules, never a weaker one: `validateManifest` with the CSS and
-rendered-sink guards, `tier: "declarative"` only, `native` ops only for primitives
+rendered-sink guards, `tier: "declarative"` only (a caller may admit a
+[scripted](../scripted/README.md) plugin), `native` ops only for primitives
 this build ships with params that match their contract and an `engine` floor
 at or above their `sinceEngine` (`manifest/primitiveChecks.ts`, shared with
 `plugin:check`), and `matches` inside a plugin platform's `matches` or a native

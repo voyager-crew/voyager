@@ -211,6 +211,15 @@ describe('plugin-check', () => {
     expect(result.issues.join('\n')).toMatch(/invalid plugin manifest[\s\S]*tier/);
   });
 
+  it('rejects a scripted plugin, which only a reviewed local import may carry', async () => {
+    const dir = makeFixturePlugin({
+      manifest: { tier: 'scripted', contributes: { script: { source: 'count()' } } },
+    });
+    const result = await checkPluginDir(dir);
+    expect(result.ok).toBe(false);
+    expect(result.issues.join('\n')).toMatch(/invalid plugin manifest[\s\S]*tier: scripted/);
+  });
+
   it('reports a style file that fetches a remote resource', async () => {
     const pluginDir = makeFixturePlugin();
     writeFileSync(join(pluginDir, 'style.css'), "@import url('https://evil.example/x.css');\n");

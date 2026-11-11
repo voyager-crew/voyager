@@ -104,7 +104,7 @@ async function startNotificationBackground(
     },
     notifications: { ...chrome.notifications, onClicked: event() },
     alarms: { ...chrome.alarms, create: vi.fn(async () => {}), onAlarm: event() },
-    tabs: { ...chrome.tabs, onRemoved: event(), query: vi.fn(async () => []) },
+    tabs: { ...chrome.tabs, onRemoved: event(), onUpdated: event(), query: vi.fn(async () => []) },
   });
   vi.stubGlobal(
     'fetch',
@@ -203,6 +203,7 @@ describe('MV3 background startup', () => {
         notificationClick: event(),
         alarm: event(),
         tabRemoved: event(),
+        tabUpdated: event(),
       };
       vi.stubGlobal('chrome', {
         ...chrome,
@@ -234,7 +235,7 @@ describe('MV3 background startup', () => {
           }),
           onAlarm: events.alarm,
         },
-        tabs: { ...chrome.tabs, onRemoved: events.tabRemoved },
+        tabs: { ...chrome.tabs, onRemoved: events.tabRemoved, onUpdated: events.tabUpdated },
       });
       vi.stubGlobal(
         'fetch',

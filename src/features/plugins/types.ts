@@ -18,6 +18,7 @@
 import type { FormFactor } from '@/core/types/formFactor';
 import type { TranslationKey } from '@/utils/translations';
 
+import type { ScriptContribution } from './scripted/types';
 import type { BridgePolicySection } from './sites/sections/bridgePolicyData';
 import type { SiteExportConfig } from './sites/sections/exportData';
 import type { FolderSkin } from './sites/sections/folderSkinData';
@@ -252,6 +253,8 @@ export interface PluginContributions {
   readonly styles?: readonly StyleContribution[];
   readonly domOps?: readonly DomOperation[];
   readonly settings?: SettingsSchema;
+  /** Only on a `scripted` local plugin, which contributes nothing else. */
+  readonly script?: ScriptContribution;
 }
 
 // ---------------------------------------------------------------------------
@@ -262,8 +265,8 @@ export interface PluginContributions {
  * `declarative` = data only (CSS + JSON), interpreted by the engine. Store-safe
  * everywhere, remote-loadable, non-derivative.
  * `scripted` = ships JS; would run via `chrome.userScripts` (gated behind the
- * user's "Allow User Scripts" toggle) and is unavailable on Safari. Reserved for
- * an advanced tier with no runtime yet: such a plugin reports `needs-handler`.
+ * user's "Allow User Scripts" toggle) and is unavailable on Safari. Only the local
+ * gate admits it, on request; no build runs it yet (`scripted/README.md`).
  */
 export type PluginTier = 'declarative' | 'scripted';
 

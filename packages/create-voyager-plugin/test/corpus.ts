@@ -193,6 +193,11 @@ const PROBE: CorpusCase[] = [
   ),
   folder('b5-tier-scripted', false, base({ tier: 'scripted' })),
   folder(
+    'b5-scripted-with-source',
+    false,
+    base({ tier: 'scripted', contributes: { script: { source: 'document.title = "x";' } } }),
+  ),
+  folder(
     'b6-setting-renders-url',
     false,
     base({

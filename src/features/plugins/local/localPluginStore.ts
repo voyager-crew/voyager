@@ -23,6 +23,7 @@ import { logger } from '@/core/services/LoggerService';
 import { StorageKeys } from '@/core/types/common';
 import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContext';
 
+import { withoutScriptedPlugin } from '../scripted/parseState';
 import {
   type PluginStateEntry,
   readPluginStateStrict,
@@ -174,8 +175,9 @@ export async function saveLocalPluginRecord(
 
 /**
  * Delete one record together with its enable state and settings, in one write
- * so no toggle can slip in between. Rejects, writing nothing, when a read or
- * the write fails.
+ * so no toggle can slip in between. A scripted plugin also loses its review, so
+ * importing the same script again needs a new one. Rejects, writing nothing,
+ * when a read or the write fails.
  */
 export async function removeLocalPluginRecord(id: string): Promise<void> {
   const local = localArea();
@@ -188,7 +190,13 @@ export async function removeLocalPluginRecord(id: string): Promise<void> {
     delete next[id];
     const nextState: Record<string, PluginStateEntry> = { ...state };
     delete nextState[id];
-    await local.set({ [KEY]: next, [StorageKeys.PLUGINS_STATE]: nextState });
+    const scripted = await local.get({ [StorageKeys.PLUGIN_SCRIPTED_STATE]: {} });
+    const nextScripted = withoutScriptedPlugin(scripted?.[StorageKeys.PLUGIN_SCRIPTED_STATE], id);
+    await local.set({
+      [KEY]: next,
+      [StorageKeys.PLUGINS_STATE]: nextState,
+      ...(nextScripted ? { [StorageKeys.PLUGIN_SCRIPTED_STATE]: nextScripted } : {}),
+    });
   });
 }
 
