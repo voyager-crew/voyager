@@ -49,6 +49,32 @@ describe('scripted tier in the authoring material', () => {
     expect(extracted).toEqual({ ok: true, json: block });
   });
 
+  it('gives a ChatGPT reply selector that finds every reply on a scheduled task too', () => {
+    const listed = scriptedPage.match(
+      /- ChatGPT:\n(?:\s+- .*\n)*?\s+- reply \(one per AI reply\): `([^`]+)`/,
+    );
+    expect(listed).not.toBeNull();
+    const reply = listed![1];
+    // Shapes sanitized from chatgpt.com on 2026-11-11: an ordinary conversation
+    // (5 replies, 5 of each marker) and a scheduled task, whose replies carry
+    // no `data-chatgpt-selection-message-id` at all.
+    const ordinary = document.createElement('div');
+    ordinary.innerHTML = Array.from(
+      { length: 5 },
+      (_, index) =>
+        `<div data-turn-key=""><div data-user-message-bubble="true"></div><div data-chatgpt-selection-message-id="m${index}"><div data-dil-source-message-id="m${index}"><div data-dil-response=""></div></div></div></div>`,
+    ).join('');
+    const scheduled = document.createElement('div');
+    scheduled.innerHTML = `<div data-turn-key=""><div data-user-message-bubble="true"></div><div data-markdown-text-style="assistant-message">${[
+      'r1',
+      'r2',
+    ]
+      .map((id) => `<div data-dil-source-message-id="${id}"><div data-dil-response=""></div></div>`)
+      .join('')}</div></div>`;
+    expect(ordinary.querySelectorAll(reply)).toHaveLength(5);
+    expect(scheduled.querySelectorAll(reply)).toHaveLength(2);
+  });
+
   it('tells coding agents that check refuses the tier and Create mode makes it', () => {
     const skill = renderWriteVoyagerPluginSkillFiles(DEFAULT_ADAPTERS).get('SKILL.md')!;
     const agents = renderScaffoldAgents(DEFAULT_ADAPTERS[0]);

@@ -31,7 +31,7 @@ The user needs desktop Chrome or Edge 133 or later, with "Allow User Scripts" tu
 
 - Gemini:
   - userTurn: `.user-query-bubble-with-background, .user-query-bubble-container, .user-query-container, user-query-content .user-query-bubble-with-background, user-query-content, user-query, div[aria-label="User message"], article[data-author="user"], article[data-turn="user"], [data-message-author-role="user"], div[role="listitem"][data-user="true"]`
-  - assistantTurn: `[aria-label="Gemini response"], [data-message-author-role="assistant"], [data-message-author-role="model"], article[data-author="assistant"], article[data-turn="assistant"], article[data-turn="model"], model-response, .model-response, response-container, .response-container, .presented-response-container, div[role="listitem"]:not([data-user="true"])`
+  - reply (one per AI reply): `[aria-label="Gemini response"], [data-message-author-role="assistant"], [data-message-author-role="model"], article[data-author="assistant"], article[data-turn="assistant"], article[data-turn="model"], model-response, .model-response, response-container, .response-container, .presented-response-container, div[role="listitem"]:not([data-user="true"])`
   - codeBlock: `code-block`
   - composer: `input-area-v2, rich-textarea, .text-input-field`
   - sidebar: `bard-sidenav, .gv-folder-container`
@@ -40,14 +40,14 @@ The user needs desktop Chrome or Edge 133 or later, with "Allow User Scripts" tu
   - sendButton: `.send-button.submit button, .update-button button`
 - AI Studio:
   - userTurn: `.user-prompt-container, [data-turn-role="User"]`
-  - assistantTurn: `.model-prompt-container, [data-turn-role="Model"]`
+  - reply (one per AI reply): `.model-prompt-container, [data-turn-role="Model"]`
   - composer: `ms-prompt-box textarea[formcontrolname=promptText], ms-chunk-input textarea, textarea[aria-label]`
   - sidebar: `.gv-aistudio .gv-folder-container`
   - composerRoot: `ms-prompt-box`
   - sendButton: `ms-run-button > button`
 - ChatGPT:
   - userTurn: `[data-user-message-bubble], [data-message-author-role="user"]:not(:has([data-user-message-bubble]))`
-  - assistantTurn: `[data-chatgpt-selection-message-id]`
+  - reply (one per AI reply): `[data-dil-source-message-id]`
   - codeBlock: `[data-markdown-copy="code-block"]`
   - composer: `#prompt-textarea, [data-composer-markdown][contenteditable="true"]`
   - sidebar: `nav[aria-label], #stage-slideover-sidebar`
@@ -57,7 +57,7 @@ The user needs desktop Chrome or Edge 133 or later, with "Allow User Scripts" tu
   - sendButton: `form:has(#prompt-textarea, [data-composer-markdown]) button[type="submit"]`
 - Claude:
   - userTurn: `[data-testid="user-message"]`
-  - assistantTurn: `.font-claude-message, [data-testid="assistant-message"]`
+  - reply (one per AI reply): `.font-claude-message, [data-testid="assistant-message"]`
   - composer: `[data-testid="chat-input"][contenteditable="true"]`
   - sidebar: `nav[aria-label], [data-testid="menu-sidebar"], [data-testid="sidebar"]`
   - sidePanel: `iframe[src*="claudeusercontent.com"]`
@@ -66,7 +66,7 @@ The user needs desktop Chrome or Edge 133 or later, with "Allow User Scripts" tu
   - sendButton: `[data-testid="chat-input-send"]`
 - DeepSeek:
   - userTurn: `.ds-message:has(.ds-collapsible-text):not(:has(.ds-assistant-message-main-content, .ds-think-content))`
-  - assistantTurn: `.ds-message:has(.ds-assistant-message-main-content, .ds-think-content)`
+  - reply (one per AI reply): `.ds-message:has(.ds-assistant-message-main-content, .ds-think-content)`
   - thinkingBlock: `.ds-think-content`
   - codeBlock: `.md-code-block`
   - composer: `textarea.ds-scroll-area`
@@ -76,7 +76,7 @@ The user needs desktop Chrome or Edge 133 or later, with "Allow User Scripts" tu
   - sendButton: `div:has(> div > textarea.ds-scroll-area) div.ds-button--primary.ds-button--circle[role="button"]`
 - Kimi:
   - userTurn: `.segment-user`
-  - assistantTurn: `.segment-assistant`
+  - reply (one per AI reply): `.segment-assistant`
   - thinkingBlock: `.segment-assistant .thinking-container`
   - composer: `.chat-input-editor[contenteditable="true"][role="textbox"]`
   - sidebar: `aside.next-sidebar`

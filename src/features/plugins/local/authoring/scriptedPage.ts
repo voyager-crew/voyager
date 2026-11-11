@@ -9,6 +9,7 @@ import type { SiteAdapter } from '../../types';
 import { SKILL_PRIMITIVES_FILE } from './authoringDocs';
 import { renderExample } from './pluginContract';
 import type { PluginExample } from './pluginExamples';
+import { replyLocator } from './replyLocator';
 import { SCRIPTED_REQUIREMENT } from './scriptedContract';
 import { isUnrestrictedSite, siteAnchors } from './siteFacts';
 import { WRITE_PLUGIN_SKILL_BASE_URL } from './skillLink';
@@ -62,10 +63,18 @@ export function buildScriptedExample(site: SiteAdapter): PluginExample {
   };
 }
 
+/** A script finds replies with the site's reply locator, which can hold where `assistantTurn` does not. */
 function selectorLines(site: SiteAdapter): string[] {
   const anchors = siteAnchors(site);
   if (anchors.length === 0) return [`- ${site.label}: none declared`];
-  return [`- ${site.label}:`, ...anchors.map((key) => `  - ${key}: \`${site.selectors[key]}\``)];
+  return [
+    `- ${site.label}:`,
+    ...anchors.map((key) =>
+      key === 'assistantTurn'
+        ? `  - reply (one per AI reply): \`${replyLocator(site)}\``
+        : `  - ${key}: \`${site.selectors[key]}\``,
+    ),
+  ];
 }
 
 /** The shared page; the example targets the first site without primitive or theme limits. */

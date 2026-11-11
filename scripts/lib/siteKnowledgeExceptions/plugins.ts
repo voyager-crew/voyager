@@ -67,6 +67,15 @@ export const PLUGINS_SITE_KNOWLEDGE_EXCEPTIONS: readonly SiteKnowledgeException[
       "Create mode sites whose default chat AI cannot open a link, so the creation message carries the create page; a fact about the site's AI, not its page.",
   },
   {
+    file: 'src/features/plugins/local/authoring/replyLocator.ts',
+    kind: 'owner-read',
+    values: {
+      chatgpt: 1,
+    },
+    reason:
+      "Authors get ChatGPT's packaged reply marker, which holds on scheduled-task conversations where assistantTurn is absent.",
+  },
+  {
     file: 'src/features/plugins/local/authoring/siteFacts.ts',
     kind: 'presentation',
     values: {

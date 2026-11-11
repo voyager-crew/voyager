@@ -79,6 +79,14 @@ const SHARED_DATA_READS: readonly {
     reason:
       '§6 standard MathML/KaTeX source attributes and serialization are packaged grammar shared by math consumers.',
   },
+  {
+    files: ['src/features/plugins/local/authoring/replyLocator.ts'],
+    module: 'src/features/plugins/builtin/chatgptPageData',
+    names: ['chatgptPageData'],
+    sites: ['chatgpt'],
+    reason:
+      "Plugin authors get ChatGPT's packaged reply marker by site id; assistantTurn keeps its meaning for its consumers.",
+  },
 ];
 
 /** Native modules without a site in their name still have one reviewed page owner. */
