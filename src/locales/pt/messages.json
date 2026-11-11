@@ -3270,8 +3270,8 @@
     "description": "Shown when the online catalog has no entry for the current site"
   },
   "pluginNeedsNewerVoyager": {
-    "message": "Requer o motor de plugins {engine} do Voyager",
-    "description": "Note on a plugin this build cannot run because its engine range is newer; {engine} is the required engine range"
+    "message": "Requer o Voyager {engine}",
+    "description": "Note on a plugin this build cannot run because it needs a newer Voyager; {engine} is the required Voyager version range"
   },
   "pluginNeedsVoyagerUpdate": {
     "message": "Requer uma versão mais recente do Voyager para funcionar",

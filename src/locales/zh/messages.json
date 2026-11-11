@@ -3270,8 +3270,8 @@
     "description": "Shown when the online catalog has no entry for the current site"
   },
   "pluginNeedsNewerVoyager": {
-    "message": "需要 Voyager 插件引擎 {engine}",
-    "description": "Note on a plugin this build cannot run because its engine range is newer; {engine} is the required engine range"
+    "message": "需要 Voyager {engine}",
+    "description": "Note on a plugin this build cannot run because it needs a newer Voyager; {engine} is the required Voyager version range"
   },
   "pluginNeedsVoyagerUpdate": {
     "message": "需要更新版本的 Voyager 才能运行",

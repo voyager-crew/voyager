@@ -264,7 +264,7 @@ describe('PluginManager plugin status', () => {
     ];
     await renderManager({ statuses });
 
-    expect(container.textContent).toContain('Needs Voyager plugin engine >=2.0.0');
+    expect(container.textContent).toContain('Needs Voyager >=2.0.0');
     expect(container.textContent).not.toContain('{engine}');
     // Enabled in storage: turning it off is the one action that still makes sense.
     expect(pluginToggle().disabled).toBe(false);
@@ -279,7 +279,7 @@ describe('PluginManager plugin status', () => {
   it('falls back to the manifest engine range when the status omits it', async () => {
     await renderManager({ statuses: [{ ...READY, kind: 'needs-engine' }] });
 
-    expect(container.textContent).toContain('Needs Voyager plugin engine >=1.0.0');
+    expect(container.textContent).toContain('Needs Voyager >=1.0.0');
   });
 
   it('asks for a newer Voyager without a version for needs-handler', async () => {

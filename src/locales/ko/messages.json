@@ -3270,8 +3270,8 @@
     "description": "Shown when the online catalog has no entry for the current site"
   },
   "pluginNeedsNewerVoyager": {
-    "message": "Voyager 플러그인 엔진 {engine}이 필요합니다",
-    "description": "Note on a plugin this build cannot run because its engine range is newer; {engine} is the required engine range"
+    "message": "Voyager {engine}이 필요합니다",
+    "description": "Note on a plugin this build cannot run because it needs a newer Voyager; {engine} is the required Voyager version range"
   },
   "pluginNeedsVoyagerUpdate": {
     "message": "실행하려면 최신 버전의 Voyager가 필요합니다",
