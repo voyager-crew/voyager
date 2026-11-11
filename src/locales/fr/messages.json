@@ -4353,5 +4353,165 @@
   "update_refresh_later": {
     "message": "Plus tard",
     "description": "Button on the post-update refresh card that closes it without reloading"
+  },
+  "scriptedBadge": {
+    "message": "Exécute du code",
+    "description": "Badge on a creation that runs JavaScript, in its review and its row"
+  },
+  "scriptedWarning": {
+    "message": "Cette création exécute du code sur {sites}. Elle peut lire tout ce qui se trouve sur ces pages, vos conversations comprises, et Voyager ne peut pas l’empêcher d’envoyer ailleurs ce qu’elle lit. Ne l’activez que si vous lui faites confiance.",
+    "description": "The one warning shown above the full source of a creation that runs code; {sites} is a list of site names"
+  },
+  "scriptedSourceLabel": {
+    "message": "Son code complet",
+    "description": "Label above the full source code of a creation that runs code"
+  },
+  "scriptedInstallNote": {
+    "message": "Elle s’active tout de suite, sur cet appareil uniquement. Vous pouvez arrêter à tout moment toutes les créations qui exécutent du code depuis Mes créations ou l’onglet Créer du panneau.",
+    "description": "Under the review of a creation that runs code, before Install and turn on"
+  },
+  "scriptedInstallAndTurnOn": {
+    "message": "Installer et activer",
+    "description": "Button under the review of a pasted reply that runs code"
+  },
+  "scriptedReviewAndTurnOn": {
+    "message": "Vérifier et activer",
+    "description": "Button on an off creation that runs code: opens its full code before it can be turned on"
+  },
+  "scriptedTurnOn": {
+    "message": "Activer",
+    "description": "Button that turns on a creation that runs code after its review"
+  },
+  "scriptedTurnOff": {
+    "message": "Désactiver",
+    "description": "Button on a creation that runs code and is on"
+  },
+  "scriptedTurnedOn": {
+    "message": "Elle est activée, sur cet appareil uniquement.",
+    "description": "After installing a creation that runs code from a pasted reply"
+  },
+  "scriptedTurnOnDenied": {
+    "message": "Elle a besoin d’accéder à ce site pour fonctionner, et le navigateur ne l’a pas autorisé. Elle reste désactivée.",
+    "description": "The browser did not grant site access, so a creation that runs code stays off"
+  },
+  "scriptedTurnOnFailed": {
+    "message": "Voyager n’a pas pu l’activer. Réessayez.",
+    "description": "Voyager could not save the on state of a creation that runs code"
+  },
+  "scriptedChangedSinceReview": {
+    "message": "Elle a changé pendant que vous la vérifiiez, donc rien n’a été activé. Vérifiez le code affiché maintenant avant de réessayer.",
+    "description": "A creation that runs code changed after its review opened, so nothing was turned on"
+  },
+  "scriptedStateOn": {
+    "message": "Activée, sur cet appareil uniquement",
+    "description": "Row state of a creation that runs code and is running"
+  },
+  "scriptedStateOff": {
+    "message": "Désactivée",
+    "description": "Row state of a creation that runs code and is off"
+  },
+  "scriptedStatePaused": {
+    "message": "En pause",
+    "description": "Row state of a creation that runs code and cannot run now; a reason follows after a colon"
+  },
+  "scriptedPausedUserScriptsOff": {
+    "message": "« Autoriser les scripts utilisateur » (Allow User Scripts) est désactivé pour Voyager",
+    "description": "Pause reason: the browser toggle that lets extensions run code is off"
+  },
+  "scriptedPausedUnsupported": {
+    "message": "ce navigateur ne peut pas exécuter le code des créations",
+    "description": "Pause reason: this browser cannot run creations that use code"
+  },
+  "scriptedPausedStopped": {
+    "message": "toutes les créations qui exécutent du code sont arrêtées",
+    "description": "Pause reason: the user stopped every creation that runs code"
+  },
+  "scriptedPausedCrash": {
+    "message": "Voyager l’a désactivée car une page a cessé de répondre pendant qu’elle s’exécutait",
+    "description": "Pause reason: Voyager turned it off because a page stopped responding while it ran"
+  },
+  "scriptedPausedReview": {
+    "message": "elle a changé depuis que vous l’avez activée ; vérifiez-la à nouveau",
+    "description": "Pause reason: its code or sites changed since the user turned it on"
+  },
+  "scriptedSetupTitle": {
+    "message": "Une étape avant que les créations qui exécutent du code fonctionnent",
+    "description": "Title of the card that explains the one-time browser toggle for creations that run code"
+  },
+  "scriptedSetupStepOpen": {
+    "message": "Ouvrez la page de détails de Voyager dans les paramètres des extensions du navigateur.",
+    "description": "Setup step 1 for creations that run code"
+  },
+  "scriptedSetupStepAllow": {
+    "message": "Activez « Autoriser les scripts utilisateur » (Allow User Scripts).",
+    "description": "Setup step 2 from Chrome 138: the per-extension toggle; keep the English name in parentheses"
+  },
+  "scriptedSetupStepDevMode": {
+    "message": "Activez le « Mode développeur » (Developer mode) en haut de la page Extensions.",
+    "description": "Setup step 2 before Chrome 138: the Developer mode switch on the Extensions page; keep the English name in parentheses"
+  },
+  "scriptedSetupStepBack": {
+    "message": "Revenez ici et appuyez sur « Je l’ai activé ».",
+    "description": "Setup step 3 for creations that run code"
+  },
+  "scriptedSetupOpen": {
+    "message": "Ouvrir la page de détails de Voyager",
+    "description": "Button that opens Voyager’s page in the browser’s extension settings"
+  },
+  "scriptedSetupOpenFailed": {
+    "message": "Le navigateur ne l’a pas ouverte. Copiez cette adresse dans un nouvel onglet :",
+    "description": "Shown when the browser refused to open the details page; the address follows"
+  },
+  "scriptedSetupDone": {
+    "message": "Je l’ai activé",
+    "description": "Button the user presses after turning on the browser toggle; checks again"
+  },
+  "scriptedSetupChecking": {
+    "message": "Vérification…",
+    "description": "Button text while Voyager checks the browser toggle again"
+  },
+  "scriptedSetupStillOff": {
+    "message": "Voyager ne peut toujours pas exécuter de code ici. Vérifiez que l’interrupteur est activé. S’il l’est, fermez cette fenêtre et rouvrez-la.",
+    "description": "After “I turned it on”, the browser still does not let Voyager run code"
+  },
+  "scriptedUnsupported": {
+    "message": "Ce navigateur ne peut pas exécuter les créations qui utilisent du code.",
+    "description": "This browser (Safari, Firefox for now, or a phone) cannot run creations that use code"
+  },
+  "scriptedUnsupportedOld": {
+    "message": "Les créations qui utilisent du code nécessitent Chrome ou Edge 133 ou plus récent.",
+    "description": "Chrome or Edge is older than 133 and cannot run creations that use code"
+  },
+  "scriptedUnsupportedHint": {
+    "message": "Demandez à l’IA une version qui change seulement l’apparence de la page.",
+    "description": "Next step when this browser cannot run code: ask the AI for a declarative version"
+  },
+  "scriptedStopAll": {
+    "message": "Arrêter toutes les créations qui exécutent du code",
+    "description": "Kill switch button in My creations and the panel’s Create tab"
+  },
+  "scriptedStoppedAll": {
+    "message": "Les créations qui exécutent du code sont arrêtées.",
+    "description": "State after the kill switch: no creation that runs code runs"
+  },
+  "scriptedStoppedReload": {
+    "message": "Les pages déjà ouvertes continuent de les exécuter jusqu’à ce que vous les rechargiez.",
+    "description": "Right after stopping: pages already open keep running the code until reloaded"
+  },
+  "scriptedReloadPage": {
+    "message": "Recharger cette page",
+    "description": "Button that reloads the current page after stopping creations that run code"
+  },
+  "scriptedResume": {
+    "message": "Reprendre",
+    "description": "Button that undoes Stop all creations that run code"
+  },
+  "scriptedCrashOne": {
+    "message": "Voyager a désactivé « {name} » car cette page a cessé de répondre pendant qu’elle s’exécutait. Vérifiez-la dans Mes créations avant de la réactiver.",
+    "description": "Page notice after a freeze: one creation that runs code was turned off; {name} is its name"
+  },
+  "scriptedCrashMany": {
+    "message": "Voyager a désactivé {names} car cette page a cessé de répondre pendant qu’elles s’exécutaient. N’importe laquelle peut en être la cause. Vérifiez-les dans Mes créations avant de les réactiver.",
+    "description": "Page notice after a freeze: several creations that run code were turned off; {names} lists them"
   }
 }

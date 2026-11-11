@@ -1,4 +1,4 @@
-import type { UserScriptsApi } from '../registrar';
+import type { UserScriptsApi } from '@/features/plugins/scripted/registrar';
 
 type Script = chrome.userScripts.RegisteredUserScript;
 type World = chrome.userScripts.WorldProperties;

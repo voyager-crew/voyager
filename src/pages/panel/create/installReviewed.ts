@@ -5,8 +5,10 @@ import {
 } from '@/features/plugins/local/localPluginStore';
 import type { CheckedPluginReply } from '@/features/plugins/local/pluginReply';
 import type { ManifestIssue } from '@/features/plugins/manifest/validate';
+import { isScriptedManifest } from '@/features/plugins/scripted/types';
 import type { PluginManifest } from '@/features/plugins/types';
 import { setPluginEnabledWithSiteAccess } from '@/pages/popup/utils/pluginEnablement';
+import { enableScriptedWithSiteAccess } from '@/pages/popup/utils/scriptedEnablement';
 
 export type AcceptedReply = Extract<CheckedPluginReply, { ok: true }>;
 
@@ -16,7 +18,7 @@ export type InstallOutcome =
       readonly manifest: PluginManifest;
       /** False when the browser refused the site access it needs: installed, still off. */
       readonly enabled: boolean;
-      /** The version it replaced ran a native op, which keeps running until the page reloads (D7). */
+      /** The version it replaced ran a native op or code, which keeps running until the page reloads (D7). */
       readonly reload: boolean;
     }
   /** The install under this id changed since the review: nothing was enabled; review again. */
@@ -27,8 +29,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function hasNativeOp(manifest: unknown): boolean {
+function keepsRunning(manifest: unknown): boolean {
   if (!isRecord(manifest) || !isRecord(manifest.contributes)) return false;
+  if (manifest.tier === 'scripted') return true;
   const ops = manifest.contributes.domOps;
   return Array.isArray(ops) && ops.some((op) => isRecord(op) && op.op === 'native');
 }
@@ -52,17 +55,23 @@ export async function installReviewed(
     return imported.changedSinceReview
       ? { kind: 'changed' }
       : { kind: 'failed', issues: imported.issues };
-  const toggled = await setPluginEnabledWithSiteAccess(imported.manifest, true, pageUrl, () => {});
+  // A scripted plugin turns on bound to the hash of what was reviewed, never of what was stored.
+  const toggled = isScriptedManifest(checked.manifest)
+    ? await enableScriptedWithSiteAccess(checked.manifest, pageUrl)
+    : await setPluginEnabledWithSiteAccess(imported.manifest, true, pageUrl, () => {});
   if (toggled === 'changed') return { kind: 'changed' };
   return {
     kind: 'installed',
     manifest: imported.manifest,
     enabled: toggled === 'enabled',
-    reload: hasNativeOp(replaced?.manifest),
+    reload: keepsRunning(replaced?.manifest),
   };
 }
 
 /** A second click on "Turn on" when the first enable could not get site access. */
 export async function turnOnInstalled(manifest: PluginManifest, pageUrl: string): Promise<boolean> {
-  return (await setPluginEnabledWithSiteAccess(manifest, true, pageUrl, () => {})) === 'enabled';
+  const toggled = isScriptedManifest(manifest)
+    ? await enableScriptedWithSiteAccess(manifest, pageUrl)
+    : await setPluginEnabledWithSiteAccess(manifest, true, pageUrl, () => {});
+  return toggled === 'enabled';
 }

@@ -4353,5 +4353,165 @@
   "update_refresh_later": {
     "message": "Mais tarde",
     "description": "Button on the post-update refresh card that closes it without reloading"
+  },
+  "scriptedBadge": {
+    "message": "Executa código",
+    "description": "Badge on a creation that runs JavaScript, in its review and its row"
+  },
+  "scriptedWarning": {
+    "message": "Esta criação executa código em {sites}. Ela pode ler tudo o que há nessas páginas, incluindo suas conversas, e o Voyager não consegue impedir que envie o que lê para outro lugar. Ative-a só se confiar nela.",
+    "description": "The one warning shown above the full source of a creation that runs code; {sites} is a list of site names"
+  },
+  "scriptedSourceLabel": {
+    "message": "O código completo",
+    "description": "Label above the full source code of a creation that runs code"
+  },
+  "scriptedInstallNote": {
+    "message": "Ela é ativada na hora, só neste dispositivo. Você pode parar todas as criações que executam código a qualquer momento em Minhas criações ou na aba Criar do painel.",
+    "description": "Under the review of a creation that runs code, before Install and turn on"
+  },
+  "scriptedInstallAndTurnOn": {
+    "message": "Instalar e ativar",
+    "description": "Button under the review of a pasted reply that runs code"
+  },
+  "scriptedReviewAndTurnOn": {
+    "message": "Revisar e ativar",
+    "description": "Button on an off creation that runs code: opens its full code before it can be turned on"
+  },
+  "scriptedTurnOn": {
+    "message": "Ativar",
+    "description": "Button that turns on a creation that runs code after its review"
+  },
+  "scriptedTurnOff": {
+    "message": "Desativar",
+    "description": "Button on a creation that runs code and is on"
+  },
+  "scriptedTurnedOn": {
+    "message": "Está ativada, só neste dispositivo.",
+    "description": "After installing a creation that runs code from a pasted reply"
+  },
+  "scriptedTurnOnDenied": {
+    "message": "Ela precisa de acesso a este site para funcionar, e o navegador não concedeu. Continua desativada.",
+    "description": "The browser did not grant site access, so a creation that runs code stays off"
+  },
+  "scriptedTurnOnFailed": {
+    "message": "O Voyager não conseguiu ativá-la. Tente de novo.",
+    "description": "Voyager could not save the on state of a creation that runs code"
+  },
+  "scriptedChangedSinceReview": {
+    "message": "Ela mudou enquanto você revisava, então nada foi ativado. Revise o código mostrado agora antes de tentar de novo.",
+    "description": "A creation that runs code changed after its review opened, so nothing was turned on"
+  },
+  "scriptedStateOn": {
+    "message": "Ativada, só neste dispositivo",
+    "description": "Row state of a creation that runs code and is running"
+  },
+  "scriptedStateOff": {
+    "message": "Desativada",
+    "description": "Row state of a creation that runs code and is off"
+  },
+  "scriptedStatePaused": {
+    "message": "Pausada",
+    "description": "Row state of a creation that runs code and cannot run now; a reason follows after a colon"
+  },
+  "scriptedPausedUserScriptsOff": {
+    "message": "“Permitir scripts de usuário” (Allow User Scripts) está desativado para o Voyager",
+    "description": "Pause reason: the browser toggle that lets extensions run code is off"
+  },
+  "scriptedPausedUnsupported": {
+    "message": "este navegador não consegue executar código de criações",
+    "description": "Pause reason: this browser cannot run creations that use code"
+  },
+  "scriptedPausedStopped": {
+    "message": "todas as criações que executam código estão paradas",
+    "description": "Pause reason: the user stopped every creation that runs code"
+  },
+  "scriptedPausedCrash": {
+    "message": "o Voyager a desativou porque uma página parou de responder enquanto ela rodava",
+    "description": "Pause reason: Voyager turned it off because a page stopped responding while it ran"
+  },
+  "scriptedPausedReview": {
+    "message": "ela mudou desde que você a ativou; revise de novo",
+    "description": "Pause reason: its code or sites changed since the user turned it on"
+  },
+  "scriptedSetupTitle": {
+    "message": "Falta um passo para as criações que executam código funcionarem",
+    "description": "Title of the card that explains the one-time browser toggle for creations that run code"
+  },
+  "scriptedSetupStepOpen": {
+    "message": "Abra a página de detalhes do Voyager nas configurações de extensões do navegador.",
+    "description": "Setup step 1 for creations that run code"
+  },
+  "scriptedSetupStepAllow": {
+    "message": "Ative “Permitir scripts de usuário” (Allow User Scripts).",
+    "description": "Setup step 2 from Chrome 138: the per-extension toggle; keep the English name in parentheses"
+  },
+  "scriptedSetupStepDevMode": {
+    "message": "Ative o “Modo do desenvolvedor” (Developer mode) no topo da página Extensões.",
+    "description": "Setup step 2 before Chrome 138: the Developer mode switch on the Extensions page; keep the English name in parentheses"
+  },
+  "scriptedSetupStepBack": {
+    "message": "Volte aqui e toque em “Já ativei”.",
+    "description": "Setup step 3 for creations that run code"
+  },
+  "scriptedSetupOpen": {
+    "message": "Abrir a página de detalhes do Voyager",
+    "description": "Button that opens Voyager’s page in the browser’s extension settings"
+  },
+  "scriptedSetupOpenFailed": {
+    "message": "O navegador não abriu. Copie este endereço em uma nova aba:",
+    "description": "Shown when the browser refused to open the details page; the address follows"
+  },
+  "scriptedSetupDone": {
+    "message": "Já ativei",
+    "description": "Button the user presses after turning on the browser toggle; checks again"
+  },
+  "scriptedSetupChecking": {
+    "message": "Verificando…",
+    "description": "Button text while Voyager checks the browser toggle again"
+  },
+  "scriptedSetupStillOff": {
+    "message": "O Voyager ainda não consegue executar código aqui. Confira se a chave está ativada. Se estiver, feche esta janela e abra de novo.",
+    "description": "After “I turned it on”, the browser still does not let Voyager run code"
+  },
+  "scriptedUnsupported": {
+    "message": "Este navegador não consegue executar criações que usam código.",
+    "description": "This browser (Safari, Firefox for now, or a phone) cannot run creations that use code"
+  },
+  "scriptedUnsupportedOld": {
+    "message": "Criações que usam código precisam do Chrome ou Edge 133 ou mais recente.",
+    "description": "Chrome or Edge is older than 133 and cannot run creations that use code"
+  },
+  "scriptedUnsupportedHint": {
+    "message": "Peça à IA uma versão que só mude a aparência da página.",
+    "description": "Next step when this browser cannot run code: ask the AI for a declarative version"
+  },
+  "scriptedStopAll": {
+    "message": "Parar todas as criações que executam código",
+    "description": "Kill switch button in My creations and the panel’s Create tab"
+  },
+  "scriptedStoppedAll": {
+    "message": "As criações que executam código estão paradas.",
+    "description": "State after the kill switch: no creation that runs code runs"
+  },
+  "scriptedStoppedReload": {
+    "message": "As páginas que já estão abertas continuam executando até você recarregá-las.",
+    "description": "Right after stopping: pages already open keep running the code until reloaded"
+  },
+  "scriptedReloadPage": {
+    "message": "Recarregar esta página",
+    "description": "Button that reloads the current page after stopping creations that run code"
+  },
+  "scriptedResume": {
+    "message": "Retomar",
+    "description": "Button that undoes Stop all creations that run code"
+  },
+  "scriptedCrashOne": {
+    "message": "O Voyager desativou “{name}” porque esta página parou de responder enquanto ela rodava. Revise em Minhas criações antes de ativar de novo.",
+    "description": "Page notice after a freeze: one creation that runs code was turned off; {name} is its name"
+  },
+  "scriptedCrashMany": {
+    "message": "O Voyager desativou {names} porque esta página parou de responder enquanto elas rodavam. Qualquer uma pode ser a causa. Revise-as em Minhas criações antes de ativar de novo.",
+    "description": "Page notice after a freeze: several creations that run code were turned off; {names} lists them"
   }
 }

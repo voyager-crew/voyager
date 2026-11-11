@@ -19,6 +19,12 @@ export const SCRIPTED_MESSAGE = {
   openDetails: 'gv.scripted.openDetails',
 } as const;
 
+/**
+ * Popup or panel to the page's content script, through the allowlisted tab
+ * request: reload this page after the user clicked "Reload this page".
+ */
+export const SCRIPTED_RELOAD_PAGE_REQUEST = 'gv.scripted.reloadPage';
+
 export type ScriptedMessage =
   | { readonly type: typeof SCRIPTED_MESSAGE.status }
   | { readonly type: typeof SCRIPTED_MESSAGE.recheck }
@@ -42,6 +48,10 @@ export interface ScriptedStatus {
  * and a page a script froze never sends it.
  */
 export const SCRIPTED_LOADED_DELAY_MS = 3_000;
+
+export function scriptedClearNoticeMessage(id: string): ScriptedMessage {
+  return { type: SCRIPTED_MESSAGE.clearNotice, payload: { id } };
+}
 
 export function scriptedLoadedMessage(): ScriptedMessage {
   return { type: SCRIPTED_MESSAGE.loaded };

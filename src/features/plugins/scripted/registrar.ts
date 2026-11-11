@@ -6,18 +6,13 @@
  * against the plan rather than assuming what an earlier pass left.
  */
 import { logger } from '@/core/services/LoggerService';
-import { type DesiredUserScript, desiredUserScripts } from '@/features/plugins/scripted/desired';
-import { SCRIPTED_PRELUDE_FILE } from '@/features/plugins/scripted/prelude/file';
-import type {
-  ScriptedPlugin,
-  ScriptedStateV1,
-  UserScriptsAvailability,
-} from '@/features/plugins/scripted/types';
 
-export type UserScriptsApi = Pick<
-  typeof chrome.userScripts,
-  'configureWorld' | 'getScripts' | 'register' | 'unregister' | 'update'
->;
+import { type DesiredUserScript, desiredUserScripts } from './desired';
+import { SCRIPTED_PRELUDE_FILE } from './prelude/file';
+import type { UserScriptsApi } from './status';
+import type { ScriptedPlugin, ScriptedStateV1, UserScriptsAvailability } from './types';
+
+export type { UserScriptsApi } from './status';
 
 export interface ScriptedRegistrarDeps {
   readAvailability(): Promise<UserScriptsAvailability>;

@@ -34,6 +34,8 @@ export class LocalPluginSource implements PluginSource {
   async list(): Promise<readonly PluginManifest[]> {
     const manifests: PluginManifest[] = [];
     for (const [id, record] of Object.entries(await this.loadRecords())) {
+      // The background runs scripted plugins (`scripted/README.md`); this source never lists them.
+      if (record.manifest.tier === 'scripted') continue;
       const result = validateLocalManifest(record.manifest, undefined, { hostPolicy: 'defer' });
       if (result.success && result.data.manifest.id === id) {
         manifests.push(result.data.manifest);

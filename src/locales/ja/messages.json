@@ -4353,5 +4353,165 @@
   "update_refresh_later": {
     "message": "後で",
     "description": "Button on the post-update refresh card that closes it without reloading"
+  },
+  "scriptedBadge": {
+    "message": "コードを実行",
+    "description": "Badge on a creation that runs JavaScript, in its review and its row"
+  },
+  "scriptedWarning": {
+    "message": "この作品は {sites} でコードを実行します。チャットを含め、これらのページの内容をすべて読むことができ、読んだ内容をほかの場所へ送ることを Voyager は止められません。信頼できる場合にだけオンにしてください。",
+    "description": "The one warning shown above the full source of a creation that runs code; {sites} is a list of site names"
+  },
+  "scriptedSourceLabel": {
+    "message": "コード全文",
+    "description": "Label above the full source code of a creation that runs code"
+  },
+  "scriptedInstallNote": {
+    "message": "すぐにオンになります（このデバイスのみ）。コードを実行する作品は、マイ作品またはパネルの「作成」タブからいつでもすべて停止できます。",
+    "description": "Under the review of a creation that runs code, before Install and turn on"
+  },
+  "scriptedInstallAndTurnOn": {
+    "message": "インストールしてオン",
+    "description": "Button under the review of a pasted reply that runs code"
+  },
+  "scriptedReviewAndTurnOn": {
+    "message": "確認してオン",
+    "description": "Button on an off creation that runs code: opens its full code before it can be turned on"
+  },
+  "scriptedTurnOn": {
+    "message": "オンにする",
+    "description": "Button that turns on a creation that runs code after its review"
+  },
+  "scriptedTurnOff": {
+    "message": "オフにする",
+    "description": "Button on a creation that runs code and is on"
+  },
+  "scriptedTurnedOn": {
+    "message": "オンになりました（このデバイスのみ）。",
+    "description": "After installing a creation that runs code from a pasted reply"
+  },
+  "scriptedTurnOnDenied": {
+    "message": "動作にはこのサイトへのアクセスが必要ですが、ブラウザが許可しませんでした。オフのままです。",
+    "description": "The browser did not grant site access, so a creation that runs code stays off"
+  },
+  "scriptedTurnOnFailed": {
+    "message": "Voyager がオンにできませんでした。もう一度お試しください。",
+    "description": "Voyager could not save the on state of a creation that runs code"
+  },
+  "scriptedChangedSinceReview": {
+    "message": "確認中に変更されたため、何もオンにしていません。いま表示されているコードを確認してから、もう一度お試しください。",
+    "description": "A creation that runs code changed after its review opened, so nothing was turned on"
+  },
+  "scriptedStateOn": {
+    "message": "オン（このデバイスのみ）",
+    "description": "Row state of a creation that runs code and is running"
+  },
+  "scriptedStateOff": {
+    "message": "オフ",
+    "description": "Row state of a creation that runs code and is off"
+  },
+  "scriptedStatePaused": {
+    "message": "一時停止中",
+    "description": "Row state of a creation that runs code and cannot run now; a reason follows after a colon"
+  },
+  "scriptedPausedUserScriptsOff": {
+    "message": "Voyager の「ユーザー スクリプトを許可」（Allow User Scripts）がオフです",
+    "description": "Pause reason: the browser toggle that lets extensions run code is off"
+  },
+  "scriptedPausedUnsupported": {
+    "message": "このブラウザでは作品のコードを実行できません",
+    "description": "Pause reason: this browser cannot run creations that use code"
+  },
+  "scriptedPausedStopped": {
+    "message": "コードを実行する作品をすべて停止中です",
+    "description": "Pause reason: the user stopped every creation that runs code"
+  },
+  "scriptedPausedCrash": {
+    "message": "実行中にページが応答しなくなったため、Voyager がオフにしました",
+    "description": "Pause reason: Voyager turned it off because a page stopped responding while it ran"
+  },
+  "scriptedPausedReview": {
+    "message": "オンにした後に変更されました。もう一度確認してください",
+    "description": "Pause reason: its code or sites changed since the user turned it on"
+  },
+  "scriptedSetupTitle": {
+    "message": "コードを実行する作品を動かすには、あと 1 ステップ",
+    "description": "Title of the card that explains the one-time browser toggle for creations that run code"
+  },
+  "scriptedSetupStepOpen": {
+    "message": "ブラウザの拡張機能設定で Voyager の詳細ページを開きます。",
+    "description": "Setup step 1 for creations that run code"
+  },
+  "scriptedSetupStepAllow": {
+    "message": "「ユーザー スクリプトを許可」（Allow User Scripts）をオンにします。",
+    "description": "Setup step 2 from Chrome 138: the per-extension toggle; keep the English name in parentheses"
+  },
+  "scriptedSetupStepDevMode": {
+    "message": "拡張機能ページ上部の「デベロッパー モード」（Developer mode）をオンにします。",
+    "description": "Setup step 2 before Chrome 138: the Developer mode switch on the Extensions page; keep the English name in parentheses"
+  },
+  "scriptedSetupStepBack": {
+    "message": "ここに戻って「オンにしました」を押します。",
+    "description": "Setup step 3 for creations that run code"
+  },
+  "scriptedSetupOpen": {
+    "message": "Voyager の詳細ページを開く",
+    "description": "Button that opens Voyager’s page in the browser’s extension settings"
+  },
+  "scriptedSetupOpenFailed": {
+    "message": "ブラウザで開けませんでした。このアドレスを新しいタブに貼り付けてください：",
+    "description": "Shown when the browser refused to open the details page; the address follows"
+  },
+  "scriptedSetupDone": {
+    "message": "オンにしました",
+    "description": "Button the user presses after turning on the browser toggle; checks again"
+  },
+  "scriptedSetupChecking": {
+    "message": "確認中…",
+    "description": "Button text while Voyager checks the browser toggle again"
+  },
+  "scriptedSetupStillOff": {
+    "message": "まだここではコードを実行できません。スイッチがオンか確認してください。オンなら、このウィンドウを閉じて開き直してください。",
+    "description": "After “I turned it on”, the browser still does not let Voyager run code"
+  },
+  "scriptedUnsupported": {
+    "message": "このブラウザでは、コードを使う作品を実行できません。",
+    "description": "This browser (Safari, Firefox for now, or a phone) cannot run creations that use code"
+  },
+  "scriptedUnsupportedOld": {
+    "message": "コードを使う作品には Chrome または Edge 133 以降が必要です。",
+    "description": "Chrome or Edge is older than 133 and cannot run creations that use code"
+  },
+  "scriptedUnsupportedHint": {
+    "message": "ページの見た目だけを変えるバージョンを AI に頼んでください。",
+    "description": "Next step when this browser cannot run code: ask the AI for a declarative version"
+  },
+  "scriptedStopAll": {
+    "message": "コードを実行する作品をすべて停止",
+    "description": "Kill switch button in My creations and the panel’s Create tab"
+  },
+  "scriptedStoppedAll": {
+    "message": "コードを実行する作品は停止中です。",
+    "description": "State after the kill switch: no creation that runs code runs"
+  },
+  "scriptedStoppedReload": {
+    "message": "すでに開いているページでは、再読み込みするまで動き続けます。",
+    "description": "Right after stopping: pages already open keep running the code until reloaded"
+  },
+  "scriptedReloadPage": {
+    "message": "このページを再読み込み",
+    "description": "Button that reloads the current page after stopping creations that run code"
+  },
+  "scriptedResume": {
+    "message": "再開",
+    "description": "Button that undoes Stop all creations that run code"
+  },
+  "scriptedCrashOne": {
+    "message": "このページが「{name}」の実行中に応答しなくなったため、Voyager がオフにしました。もう一度オンにする前に、マイ作品で確認してください。",
+    "description": "Page notice after a freeze: one creation that runs code was turned off; {name} is its name"
+  },
+  "scriptedCrashMany": {
+    "message": "{names} の実行中にこのページが応答しなくなったため、Voyager がオフにしました。どれが原因かはわかりません。もう一度オンにする前に、マイ作品で確認してください。",
+    "description": "Page notice after a freeze: several creations that run code were turned off; {names} lists them"
   }
 }

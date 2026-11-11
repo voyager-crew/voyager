@@ -136,3 +136,48 @@
 .create-status p {
   margin: 0;
 }
+
+/* Creations that run code: the badge, the warning, the full source and the setup card. */
+.create-badge {
+  display: inline-block;
+  margin-inline-start: 6px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: color-mix(in oklch, var(--wait) 18%, transparent);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+.create-strong {
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.create-script {
+  max-height: 240px;
+  white-space: pre;
+  overflow-wrap: normal;
+  tab-size: 2;
+  user-select: text;
+}
+
+.create-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in oklch, var(--wait) 10%, var(--card));
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--wait) 45%, transparent);
+}
+
+.create-steps {
+  list-style: decimal;
+}
+
+.create-address {
+  user-select: all;
+  overflow-wrap: anywhere;
+}

@@ -4353,5 +4353,165 @@
   "update_refresh_later": {
     "message": "稍後",
     "description": "Button on the post-update refresh card that closes it without reloading"
+  },
+  "scriptedBadge": {
+    "message": "執行程式碼",
+    "description": "Badge on a creation that runs JavaScript, in its review and its row"
+  },
+  "scriptedWarning": {
+    "message": "這個創造會在 {sites} 上執行程式碼。它能讀取這些頁面上的一切，包括你的對話，而 Voyager 無法阻止它把讀到的內容傳到別處。只有信任它時才開啟。",
+    "description": "The one warning shown above the full source of a creation that runs code; {sites} is a list of site names"
+  },
+  "scriptedSourceLabel": {
+    "message": "完整程式碼",
+    "description": "Label above the full source code of a creation that runs code"
+  },
+  "scriptedInstallNote": {
+    "message": "裝好後立即開啟，只在這台裝置上生效。你隨時可以在「我的創造」或面板的「創造」分頁裡停止所有執行程式碼的創造。",
+    "description": "Under the review of a creation that runs code, before Install and turn on"
+  },
+  "scriptedInstallAndTurnOn": {
+    "message": "安裝並開啟",
+    "description": "Button under the review of a pasted reply that runs code"
+  },
+  "scriptedReviewAndTurnOn": {
+    "message": "檢視並開啟",
+    "description": "Button on an off creation that runs code: opens its full code before it can be turned on"
+  },
+  "scriptedTurnOn": {
+    "message": "開啟",
+    "description": "Button that turns on a creation that runs code after its review"
+  },
+  "scriptedTurnOff": {
+    "message": "關閉",
+    "description": "Button on a creation that runs code and is on"
+  },
+  "scriptedTurnedOn": {
+    "message": "已開啟，只在這台裝置上生效。",
+    "description": "After installing a creation that runs code from a pasted reply"
+  },
+  "scriptedTurnOnDenied": {
+    "message": "它需要存取這個網站才能執行，但瀏覽器沒有授權，所以保持關閉。",
+    "description": "The browser did not grant site access, so a creation that runs code stays off"
+  },
+  "scriptedTurnOnFailed": {
+    "message": "Voyager 沒能開啟它，請再試一次。",
+    "description": "Voyager could not save the on state of a creation that runs code"
+  },
+  "scriptedChangedSinceReview": {
+    "message": "你檢視期間它變了，所以沒有開啟任何東西。請先看一下現在顯示的程式碼，再試一次。",
+    "description": "A creation that runs code changed after its review opened, so nothing was turned on"
+  },
+  "scriptedStateOn": {
+    "message": "已開啟，僅限這台裝置",
+    "description": "Row state of a creation that runs code and is running"
+  },
+  "scriptedStateOff": {
+    "message": "已關閉",
+    "description": "Row state of a creation that runs code and is off"
+  },
+  "scriptedStatePaused": {
+    "message": "已暫停",
+    "description": "Row state of a creation that runs code and cannot run now; a reason follows after a colon"
+  },
+  "scriptedPausedUserScriptsOff": {
+    "message": "Voyager 的「允許使用者指令碼」（Allow User Scripts）沒有開啟",
+    "description": "Pause reason: the browser toggle that lets extensions run code is off"
+  },
+  "scriptedPausedUnsupported": {
+    "message": "這個瀏覽器無法執行創造裡的程式碼",
+    "description": "Pause reason: this browser cannot run creations that use code"
+  },
+  "scriptedPausedStopped": {
+    "message": "所有執行程式碼的創造都已停止",
+    "description": "Pause reason: the user stopped every creation that runs code"
+  },
+  "scriptedPausedCrash": {
+    "message": "執行時頁面停止回應，Voyager 已把它關掉",
+    "description": "Pause reason: Voyager turned it off because a page stopped responding while it ran"
+  },
+  "scriptedPausedReview": {
+    "message": "開啟之後它有改動，請重新檢視",
+    "description": "Pause reason: its code or sites changed since the user turned it on"
+  },
+  "scriptedSetupTitle": {
+    "message": "還差一步，執行程式碼的創造才能運作",
+    "description": "Title of the card that explains the one-time browser toggle for creations that run code"
+  },
+  "scriptedSetupStepOpen": {
+    "message": "在瀏覽器的擴充功能設定裡開啟 Voyager 的詳細資料頁面。",
+    "description": "Setup step 1 for creations that run code"
+  },
+  "scriptedSetupStepAllow": {
+    "message": "開啟「允許使用者指令碼」（Allow User Scripts）開關。",
+    "description": "Setup step 2 from Chrome 138: the per-extension toggle; keep the English name in parentheses"
+  },
+  "scriptedSetupStepDevMode": {
+    "message": "在擴充功能頁面頂端開啟「開發人員模式」（Developer mode）。",
+    "description": "Setup step 2 before Chrome 138: the Developer mode switch on the Extensions page; keep the English name in parentheses"
+  },
+  "scriptedSetupStepBack": {
+    "message": "回到這裡，按「我開啟了」。",
+    "description": "Setup step 3 for creations that run code"
+  },
+  "scriptedSetupOpen": {
+    "message": "開啟 Voyager 詳細資料頁面",
+    "description": "Button that opens Voyager’s page in the browser’s extension settings"
+  },
+  "scriptedSetupOpenFailed": {
+    "message": "瀏覽器沒有開啟它。把這個網址複製到新分頁裡：",
+    "description": "Shown when the browser refused to open the details page; the address follows"
+  },
+  "scriptedSetupDone": {
+    "message": "我開啟了",
+    "description": "Button the user presses after turning on the browser toggle; checks again"
+  },
+  "scriptedSetupChecking": {
+    "message": "正在檢查…",
+    "description": "Button text while Voyager checks the browser toggle again"
+  },
+  "scriptedSetupStillOff": {
+    "message": "Voyager 還是無法在這裡執行程式碼。請確認開關已經開啟；如果已開啟，關掉這個視窗再重新開啟。",
+    "description": "After “I turned it on”, the browser still does not let Voyager run code"
+  },
+  "scriptedUnsupported": {
+    "message": "這個瀏覽器無法執行使用程式碼的創造。",
+    "description": "This browser (Safari, Firefox for now, or a phone) cannot run creations that use code"
+  },
+  "scriptedUnsupportedOld": {
+    "message": "使用程式碼的創造需要 Chrome 或 Edge 133 以上版本。",
+    "description": "Chrome or Edge is older than 133 and cannot run creations that use code"
+  },
+  "scriptedUnsupportedHint": {
+    "message": "請 AI 改寫一個只改變頁面外觀的版本。",
+    "description": "Next step when this browser cannot run code: ask the AI for a declarative version"
+  },
+  "scriptedStopAll": {
+    "message": "停止所有執行程式碼的創造",
+    "description": "Kill switch button in My creations and the panel’s Create tab"
+  },
+  "scriptedStoppedAll": {
+    "message": "執行程式碼的創造已全部停止。",
+    "description": "State after the kill switch: no creation that runs code runs"
+  },
+  "scriptedStoppedReload": {
+    "message": "已經開啟的頁面會繼續執行它們，直到你重新整理頁面。",
+    "description": "Right after stopping: pages already open keep running the code until reloaded"
+  },
+  "scriptedReloadPage": {
+    "message": "重新整理這個頁面",
+    "description": "Button that reloads the current page after stopping creations that run code"
+  },
+  "scriptedResume": {
+    "message": "恢復",
+    "description": "Button that undoes Stop all creations that run code"
+  },
+  "scriptedCrashOne": {
+    "message": "「{name}」執行時這個頁面停止回應，Voyager 已把它關掉。重新開啟前，請先在「我的創造」裡檢視它。",
+    "description": "Page notice after a freeze: one creation that runs code was turned off; {name} is its name"
+  },
+  "scriptedCrashMany": {
+    "message": "{names} 執行時這個頁面停止回應，Voyager 已把它們關掉，其中任何一個都可能是原因。重新開啟前，請先在「我的創造」裡檢視。",
+    "description": "Page notice after a freeze: several creations that run code were turned off; {names} lists them"
   }
 }

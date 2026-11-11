@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { EMPTY_SCRIPTED_STATE } from '@/features/plugins/scripted/parseState';
 import { SCRIPTED_PRELUDE_FILE } from '@/features/plugins/scripted/prelude/file';
+import {
+  SCRIPTED_WORLD_CSP,
+  type ScriptedRegistrarDeps,
+  createScriptedRegistrar,
+  reconcileUserScripts,
+} from '@/features/plugins/scripted/registrar';
 import { readScriptedPlugin } from '@/features/plugins/scripted/state';
 import type {
   ScriptHash,
@@ -11,12 +17,6 @@ import type {
 } from '@/features/plugins/scripted/types';
 
 import { storedScripted } from '../../../../features/plugins/scripted/__tests__/fixtures';
-import {
-  SCRIPTED_WORLD_CSP,
-  type ScriptedRegistrarDeps,
-  createScriptedRegistrar,
-  reconcileUserScripts,
-} from '../registrar';
 import { fakeUserScripts } from './fakeUserScripts';
 
 const AVAILABLE: UserScriptsAvailability = { kind: 'available' };

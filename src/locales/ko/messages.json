@@ -4353,5 +4353,165 @@
   "update_refresh_later": {
     "message": "나중에",
     "description": "Button on the post-update refresh card that closes it without reloading"
+  },
+  "scriptedBadge": {
+    "message": "코드 실행",
+    "description": "Badge on a creation that runs JavaScript, in its review and its row"
+  },
+  "scriptedWarning": {
+    "message": "이 창작물은 {sites}에서 코드를 실행합니다. 대화를 포함해 그 페이지의 모든 내용을 읽을 수 있으며, 읽은 내용을 다른 곳으로 보내는 것을 Voyager가 막을 수 없습니다. 믿을 수 있을 때만 켜세요.",
+    "description": "The one warning shown above the full source of a creation that runs code; {sites} is a list of site names"
+  },
+  "scriptedSourceLabel": {
+    "message": "전체 코드",
+    "description": "Label above the full source code of a creation that runs code"
+  },
+  "scriptedInstallNote": {
+    "message": "바로 켜지며 이 기기에서만 적용됩니다. 코드를 실행하는 창작물은 내 창작물이나 패널의 만들기 탭에서 언제든 모두 멈출 수 있습니다.",
+    "description": "Under the review of a creation that runs code, before Install and turn on"
+  },
+  "scriptedInstallAndTurnOn": {
+    "message": "설치하고 켜기",
+    "description": "Button under the review of a pasted reply that runs code"
+  },
+  "scriptedReviewAndTurnOn": {
+    "message": "확인하고 켜기",
+    "description": "Button on an off creation that runs code: opens its full code before it can be turned on"
+  },
+  "scriptedTurnOn": {
+    "message": "켜기",
+    "description": "Button that turns on a creation that runs code after its review"
+  },
+  "scriptedTurnOff": {
+    "message": "끄기",
+    "description": "Button on a creation that runs code and is on"
+  },
+  "scriptedTurnedOn": {
+    "message": "켜졌습니다. 이 기기에서만 적용됩니다.",
+    "description": "After installing a creation that runs code from a pasted reply"
+  },
+  "scriptedTurnOnDenied": {
+    "message": "실행하려면 이 사이트에 대한 접근 권한이 필요한데 브라우저가 허용하지 않았습니다. 꺼진 상태로 둡니다.",
+    "description": "The browser did not grant site access, so a creation that runs code stays off"
+  },
+  "scriptedTurnOnFailed": {
+    "message": "Voyager가 켜지 못했습니다. 다시 시도하세요.",
+    "description": "Voyager could not save the on state of a creation that runs code"
+  },
+  "scriptedChangedSinceReview": {
+    "message": "확인하는 동안 바뀌어서 아무것도 켜지 않았습니다. 지금 보이는 코드를 확인한 뒤 다시 시도하세요.",
+    "description": "A creation that runs code changed after its review opened, so nothing was turned on"
+  },
+  "scriptedStateOn": {
+    "message": "켜짐, 이 기기에서만",
+    "description": "Row state of a creation that runs code and is running"
+  },
+  "scriptedStateOff": {
+    "message": "꺼짐",
+    "description": "Row state of a creation that runs code and is off"
+  },
+  "scriptedStatePaused": {
+    "message": "일시 중지됨",
+    "description": "Row state of a creation that runs code and cannot run now; a reason follows after a colon"
+  },
+  "scriptedPausedUserScriptsOff": {
+    "message": "Voyager의 ‘사용자 스크립트 허용’(Allow User Scripts)이 꺼져 있습니다",
+    "description": "Pause reason: the browser toggle that lets extensions run code is off"
+  },
+  "scriptedPausedUnsupported": {
+    "message": "이 브라우저에서는 창작물의 코드를 실행할 수 없습니다",
+    "description": "Pause reason: this browser cannot run creations that use code"
+  },
+  "scriptedPausedStopped": {
+    "message": "코드를 실행하는 창작물이 모두 멈춰 있습니다",
+    "description": "Pause reason: the user stopped every creation that runs code"
+  },
+  "scriptedPausedCrash": {
+    "message": "실행 중 페이지가 응답하지 않아 Voyager가 껐습니다",
+    "description": "Pause reason: Voyager turned it off because a page stopped responding while it ran"
+  },
+  "scriptedPausedReview": {
+    "message": "켠 뒤로 바뀌었습니다. 다시 확인하세요",
+    "description": "Pause reason: its code or sites changed since the user turned it on"
+  },
+  "scriptedSetupTitle": {
+    "message": "코드를 실행하는 창작물을 쓰려면 한 단계가 더 필요합니다",
+    "description": "Title of the card that explains the one-time browser toggle for creations that run code"
+  },
+  "scriptedSetupStepOpen": {
+    "message": "브라우저 확장 프로그램 설정에서 Voyager 세부정보 페이지를 엽니다.",
+    "description": "Setup step 1 for creations that run code"
+  },
+  "scriptedSetupStepAllow": {
+    "message": "‘사용자 스크립트 허용’(Allow User Scripts)을 켭니다.",
+    "description": "Setup step 2 from Chrome 138: the per-extension toggle; keep the English name in parentheses"
+  },
+  "scriptedSetupStepDevMode": {
+    "message": "확장 프로그램 페이지 상단의 ‘개발자 모드’(Developer mode)를 켭니다.",
+    "description": "Setup step 2 before Chrome 138: the Developer mode switch on the Extensions page; keep the English name in parentheses"
+  },
+  "scriptedSetupStepBack": {
+    "message": "여기로 돌아와 ‘켰어요’를 누릅니다.",
+    "description": "Setup step 3 for creations that run code"
+  },
+  "scriptedSetupOpen": {
+    "message": "Voyager 세부정보 페이지 열기",
+    "description": "Button that opens Voyager’s page in the browser’s extension settings"
+  },
+  "scriptedSetupOpenFailed": {
+    "message": "브라우저가 열지 않았습니다. 이 주소를 새 탭에 붙여 넣으세요:",
+    "description": "Shown when the browser refused to open the details page; the address follows"
+  },
+  "scriptedSetupDone": {
+    "message": "켰어요",
+    "description": "Button the user presses after turning on the browser toggle; checks again"
+  },
+  "scriptedSetupChecking": {
+    "message": "확인 중…",
+    "description": "Button text while Voyager checks the browser toggle again"
+  },
+  "scriptedSetupStillOff": {
+    "message": "아직 여기서는 코드를 실행할 수 없습니다. 스위치가 켜져 있는지 확인하세요. 켜져 있다면 이 창을 닫았다가 다시 여세요.",
+    "description": "After “I turned it on”, the browser still does not let Voyager run code"
+  },
+  "scriptedUnsupported": {
+    "message": "이 브라우저에서는 코드를 쓰는 창작물을 실행할 수 없습니다.",
+    "description": "This browser (Safari, Firefox for now, or a phone) cannot run creations that use code"
+  },
+  "scriptedUnsupportedOld": {
+    "message": "코드를 쓰는 창작물에는 Chrome 또는 Edge 133 이상이 필요합니다.",
+    "description": "Chrome or Edge is older than 133 and cannot run creations that use code"
+  },
+  "scriptedUnsupportedHint": {
+    "message": "페이지의 모양만 바꾸는 버전을 AI에게 요청하세요.",
+    "description": "Next step when this browser cannot run code: ask the AI for a declarative version"
+  },
+  "scriptedStopAll": {
+    "message": "코드를 실행하는 창작물 모두 멈추기",
+    "description": "Kill switch button in My creations and the panel’s Create tab"
+  },
+  "scriptedStoppedAll": {
+    "message": "코드를 실행하는 창작물이 멈춰 있습니다.",
+    "description": "State after the kill switch: no creation that runs code runs"
+  },
+  "scriptedStoppedReload": {
+    "message": "이미 열려 있는 페이지에서는 새로고침할 때까지 계속 실행됩니다.",
+    "description": "Right after stopping: pages already open keep running the code until reloaded"
+  },
+  "scriptedReloadPage": {
+    "message": "이 페이지 새로고침",
+    "description": "Button that reloads the current page after stopping creations that run code"
+  },
+  "scriptedResume": {
+    "message": "다시 시작",
+    "description": "Button that undoes Stop all creations that run code"
+  },
+  "scriptedCrashOne": {
+    "message": "‘{name}’ 실행 중에 이 페이지가 응답하지 않아 Voyager가 껐습니다. 다시 켜기 전에 내 창작물에서 확인하세요.",
+    "description": "Page notice after a freeze: one creation that runs code was turned off; {name} is its name"
+  },
+  "scriptedCrashMany": {
+    "message": "{names} 실행 중에 이 페이지가 응답하지 않아 Voyager가 껐습니다. 이 중 어느 것이 원인인지는 알 수 없습니다. 다시 켜기 전에 내 창작물에서 확인하세요.",
+    "description": "Page notice after a freeze: several creations that run code were turned off; {names} lists them"
   }
 }

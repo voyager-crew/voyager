@@ -6,6 +6,7 @@
  * ops are re-read here, because the preview names their targets in words. Pure.
  */
 import { decodeCssEscapes, stripCssComments } from '../manifest/sinkGuards';
+import { isScriptedManifest } from '../scripted/types';
 import { patternWithinAny } from '../sites/matchPattern';
 import { DEFAULT_ADAPTERS } from '../sites/registry';
 import type { DomOperation, PluginManifest, SelectorRef, SiteAdapter } from '../types';
@@ -49,6 +50,8 @@ export interface PluginPreview {
   readonly changes: readonly PluginPreviewChange[];
   /** Every stylesheet's full source, shown as is. */
   readonly css: readonly string[];
+  /** A scripted plugin's full source, shown as is; absent on every other tier. */
+  readonly script?: string;
   readonly warnings: readonly PluginPreviewWarning[];
 }
 
@@ -249,5 +252,6 @@ export function previewPlugin(
     changes,
     css: inspection.css,
     warnings,
+    ...(isScriptedManifest(manifest) ? { script: manifest.contributes.script.source } : {}),
   };
 }

@@ -10,6 +10,8 @@
  * popup may close at any moment, and a stale `enabled: true` entry (for
  * example restored from Drive, or the previous version's) must never switch on
  * code the user has not inspected yet. A failed write reports the failure.
+ * A scripted plugin is admitted too and lands off the same way: it runs only
+ * after `enableScriptedIfUnchanged` binds a review to its content.
  */
 import type { ManifestIssue } from '../manifest/validate';
 import type { PluginManifest } from '../types';
@@ -98,7 +100,7 @@ export async function importLocalPlugin(
   const previousVersion = rawId ? recordVersion(records[rawId]) : undefined;
   const previous = previousVersion ? { previousVersion } : {};
 
-  const result = validateLocalManifest(raw);
+  const result = validateLocalManifest(raw, undefined, { allowScripted: true });
   if (!result.success) return { ok: false, issues: result.error, ...previous };
 
   const { manifest } = result.data;

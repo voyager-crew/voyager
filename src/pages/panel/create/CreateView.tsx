@@ -1,8 +1,11 @@
 import React from 'react';
 
 import { MAX_PLUGIN_REQUEST_CHARS } from '@/features/plugins/local/authoringSites';
+import { ScriptedStopAll } from '@/pages/popup/components/scripted/ScriptedStopAll';
+import type { ScriptedCreations } from '@/pages/popup/hooks/useScriptedCreations';
 import type { TranslationKey } from '@/utils/translations';
 
+import { PANEL_SCRIPTED_LOOK } from './scriptedLook';
 import type { CreateHandoff, CreateHandoffOutcome } from './useCreateHandoff';
 
 export const CREATE_REQUEST_ID = 'panel-create-request';
@@ -26,14 +29,17 @@ function statusText(t: Translate, outcome: CreateHandoffOutcome | null): string 
 /**
  * The 创造 tab: one sentence, then "Create on this page" (a new chat here,
  * filled and left for the user to send) or a copy for a local coding agent.
- * `children` is the review of a reply the user chose on the page, if any.
+ * `children` is the review of a reply the user chose on the page, if any;
+ * the kill switch for creations that run code closes the tab.
  */
 export function CreateView({
   handoff,
+  scripted,
   t,
   children,
 }: {
   handoff: CreateHandoff;
+  scripted: ScriptedCreations;
   t: Translate;
   children?: React.ReactNode;
 }) {
@@ -100,6 +106,7 @@ export function CreateView({
           />
         )}
       </section>
+      <ScriptedStopAll scripted={scripted} look={PANEL_SCRIPTED_LOOK} t={t} />
     </div>
   );
 }

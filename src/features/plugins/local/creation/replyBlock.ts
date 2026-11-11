@@ -52,7 +52,7 @@ export function classifyReplyBlock(text: string, installed: LocalPluginRecordMap
 
   const manifestId = typeof parsed.id === 'string' ? toLocalPluginId(parsed.id) : null;
   if (hasTooManyStyles(parsed)) return { kind: 'rejected', manifestId, issues: TOO_MANY_STYLES };
-  const result = validateLocalManifest(parsed);
+  const result = validateLocalManifest(parsed, undefined, { allowScripted: true });
   if (!result.success) return { kind: 'rejected', manifestId, issues: result.error };
   const id = result.data.manifest.id;
   return {

@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { type MouseEvent } from 'react';
 
+import { isUserEvent } from '@/core/utils/userEvent';
 import type { ManifestIssue } from '@/features/plugins/manifest/validate';
+import { isScriptedManifest } from '@/features/plugins/scripted/types';
 import {
   LocalPluginPreviewSummary,
   type PreviewLook,
 } from '@/pages/popup/components/LocalPluginPreviewSummary';
 import { REPLY_PROBLEM_KEYS } from '@/pages/popup/components/localPluginPreviewText';
+import { ScriptedSetupCard } from '@/pages/popup/components/scripted/ScriptedSetupCard';
+import type { ScriptedCreations } from '@/pages/popup/hooks/useScriptedCreations';
 import type { TranslationKey } from '@/utils/translations';
 
 import { fillPlaceholders } from '../panelText';
+import { PANEL_SCRIPTED_LOOK } from './scriptedLook';
 import type { CreationReview as Review } from './useCreationReview';
 
 type Translate = (key: TranslationKey) => string;
@@ -23,6 +28,7 @@ const PANEL_PREVIEW_LOOK: PreviewLook = {
   css: 'create-code',
   warnings: 'create-warn',
   warningsTitle: 'create-sub',
+  scripted: PANEL_SCRIPTED_LOOK,
 };
 
 function Issues({ issues }: { issues: readonly ManifestIssue[] }) {
@@ -45,8 +51,17 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 /** The review of a reply picked on the page, then its install and switch-on. */
-export function CreationReview({ review, t }: { review: Review; t: Translate }) {
+export function CreationReview({
+  review,
+  scripted,
+  t,
+}: {
+  review: Review;
+  scripted: ScriptedCreations;
+  t: Translate;
+}) {
   const { state, send, preview } = review;
+  const setup = <ScriptedSetupCard scripted={scripted} look={PANEL_SCRIPTED_LOOK} t={t} />;
   const done = (
     <button type="button" className="sec" onClick={() => send({ type: 'dismiss' })}>
       {t('localPluginsCancel')}
@@ -68,6 +83,12 @@ export function CreationReview({ review, t }: { review: Review; t: Translate }) 
     case 'reviewing': {
       const { manifest } = state.checked;
       const update = state.checked.previousVersion !== undefined;
+      const runsCode = isScriptedManifest(manifest);
+      const cannotRun = runsCode && scripted.status?.availability.kind === 'unsupported';
+      // Turning on code takes the person's own click; a declarative install keeps its old path.
+      const install = (event: MouseEvent) => {
+        if (!runsCode || isUserEvent(event.nativeEvent)) send({ type: 'install' });
+      };
       return (
         <Card title={t('panelCreateReviewTitle')}>
           {state.changed && (
@@ -83,12 +104,19 @@ export function CreationReview({ review, t }: { review: Review; t: Translate }) 
               t={t}
             />
           )}
-          <p className="create-status">{t('panelCreateInstallNote')}</p>
+          {runsCode && setup}
+          {!cannotRun && (
+            <p className="create-status">
+              {t(runsCode ? 'scriptedInstallNote' : 'panelCreateInstallNote')}
+            </p>
+          )}
           <div className="create-actions">
             {done}
-            <button type="button" className="pri" onClick={() => send({ type: 'install' })}>
-              {t(update ? 'panelCreateUpdate' : 'panelCreateInstall')}
-            </button>
+            {!cannotRun && (
+              <button type="button" className="pri" onClick={install}>
+                {t(update ? 'panelCreateUpdate' : 'panelCreateInstall')}
+              </button>
+            )}
           </div>
         </Card>
       );
@@ -122,6 +150,7 @@ export function CreationReview({ review, t }: { review: Review; t: Translate }) 
             {fillPlaceholders(t(on ? 'panelCreateInstalledOn' : 'panelCreateInstalledOff'), name)}
           </p>
           {state.reload && <p className="create-status">{t('panelCreateReload')}</p>}
+          {on && isScriptedManifest(state.manifest) && setup}
           {on && <p className="create-status">{t('panelCreateChangeAgain')}</p>}
           <div className="create-actions">
             {done}

@@ -16,6 +16,7 @@ import { CreateView } from './create/CreateView';
 import { CreationReview } from './create/CreationReview';
 import { useCreateHandoff } from './create/useCreateHandoff';
 import { useCreationReview } from './create/useCreationReview';
+import { usePanelScripted } from './create/usePanelScripted';
 import { filterPanelGroups, groupPanelRows } from './features/featureRows';
 import { EscapeLayers } from './hooks/escapeLayers';
 import { openFullSettings } from './hooks/panelRequests';
@@ -139,6 +140,7 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
     requestTab: tab.requestTab,
     onReview: () => changeView('create'),
   });
+  const scripted = usePanelScripted(tab.requestTab);
   const viewSite = useCallback(
     (key: string) => {
       setViewedKey(key);
@@ -225,8 +227,8 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
               emptyText={t('panelNoMatches')}
             />
           ) : view === 'create' ? (
-            <CreateView handoff={handoff} t={t}>
-              <CreationReview review={review} t={t} />
+            <CreateView handoff={handoff} scripted={scripted} t={t}>
+              <CreationReview review={review} scripted={scripted} t={t} />
             </CreateView>
           ) : (
             <SitesView

@@ -2,25 +2,38 @@ import { useState } from 'react';
 
 import { Download, Trash2 } from 'lucide-react';
 
+import { isScriptedManifest } from '@/features/plugins/scripted/types';
 import type { TranslationKey } from '@/utils/translations';
 
 import { Button } from '../../../components/ui/button';
 import type { LocalPluginEntry } from '../hooks/useLocalPlugins';
+import type { ScriptedCreations } from '../hooks/useScriptedCreations';
 import { LocalPluginInspection } from './LocalPluginInspection';
 import { LocalPluginIssueList as IssueList } from './LocalPluginIssueList';
+import { ScriptedRowControls } from './scripted/ScriptedRowControls';
+import { ScriptedBadge } from './scripted/ScriptedSource';
+import { POPUP_SCRIPTED_LOOK } from './scripted/scriptedLook';
 
-/** One of the user's creations: inspect, export, or remove after a confirming click. */
+/**
+ * One of the user's creations: inspect, export, or remove after a confirming
+ * click. One that runs code also shows its state and turns on and off here.
+ */
 export function LocalPluginRow({
   entry,
   t,
   onExport,
   onRemove,
+  scripted,
+  activeUrl,
 }: {
   entry: LocalPluginEntry;
   t: (key: TranslationKey) => string;
   onExport: (entry: LocalPluginEntry) => void;
   onRemove: (id: string) => void;
+  scripted?: ScriptedCreations;
+  activeUrl?: string;
 }) {
+  const code = entry.manifest && isScriptedManifest(entry.manifest) ? entry.manifest : null;
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const name =
@@ -33,7 +46,10 @@ export function LocalPluginRow({
     <div className="border-border/60 rounded-lg border p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-sm leading-snug font-medium break-words">{name}</p>
+          <p className="text-sm leading-snug font-medium break-words">
+            {name}
+            {code && <ScriptedBadge look={POPUP_SCRIPTED_LOOK} t={t} />}
+          </p>
           <p className="text-muted-foreground font-mono text-[10px] break-all">
             {version ? `${entry.id} · v${version}` : entry.id}
           </p>
@@ -69,6 +85,9 @@ export function LocalPluginRow({
           </button>
         </div>
       </div>
+      {code && scripted && (
+        <ScriptedRowControls manifest={code} scripted={scripted} activeUrl={activeUrl} t={t} />
+      )}
       {confirming && (
         <div className="mt-2 flex items-center justify-end gap-2">
           <Button variant="outline" size="sm" onClick={() => setConfirming(false)}>

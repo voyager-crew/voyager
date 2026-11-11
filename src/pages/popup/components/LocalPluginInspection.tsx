@@ -1,10 +1,13 @@
 import { type ReactNode, useMemo } from 'react';
 
 import { inspectPlugin } from '@/features/plugins/local/inspectPlugin';
+import { isScriptedManifest } from '@/features/plugins/scripted/types';
 import type { PluginManifest } from '@/features/plugins/types';
 import type { TranslationKey } from '@/utils/translations';
 
 import { LocalPluginCssSource } from './LocalPluginCssSource';
+import { ScriptedSource } from './scripted/ScriptedSource';
+import { POPUP_SCRIPTED_LOOK } from './scripted/scriptedLook';
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -33,7 +36,8 @@ function Lines({ items, none }: { items: readonly string[]; none: string }) {
 /**
  * Inspect-before-enable view of a validated plugin: where it runs, its CSS in
  * full, each page change, every Voyager built-in it calls with its
- * params, and its settings.
+ * params, and its settings. A plugin that runs code shows where it runs, the
+ * warning and its full source.
  */
 export function LocalPluginInspection({
   manifest,
@@ -44,6 +48,24 @@ export function LocalPluginInspection({
 }) {
   const inspection = useMemo(() => inspectPlugin(manifest), [manifest]);
   const none = t('localPluginInspectNone');
+  if (isScriptedManifest(manifest)) {
+    return (
+      <div
+        className="border-border/60 bg-muted/30 mt-2 space-y-2 rounded-md border p-2.5"
+        data-testid="local-plugin-inspection"
+      >
+        <p className="text-muted-foreground text-[11px] leading-snug break-all">
+          {`${inspection.id} · v${inspection.version} · ${inspection.author}`}
+        </p>
+        <ScriptedSource
+          source={manifest.contributes.script.source}
+          sites={[...new Set(inspection.sites.map(({ pattern, site }) => site ?? pattern))]}
+          look={POPUP_SCRIPTED_LOOK}
+          t={t}
+        />
+      </div>
+    );
+  }
   return (
     <div
       className="border-border/60 bg-muted/30 mt-2 space-y-2 rounded-md border p-2.5"

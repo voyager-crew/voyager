@@ -4353,5 +4353,165 @@
   "update_refresh_later": {
     "message": "لاحقًا",
     "description": "Button on the post-update refresh card that closes it without reloading"
+  },
+  "scriptedBadge": {
+    "message": "يشغّل شيفرة",
+    "description": "Badge on a creation that runs JavaScript, in its review and its row"
+  },
+  "scriptedWarning": {
+    "message": "يشغّل هذا الإبداع شيفرة على {sites}. يمكنه قراءة كل ما في تلك الصفحات، بما فيها محادثاتك، ولا يستطيع Voyager منعه من إرسال ما يقرؤه إلى مكان آخر. لا تشغّله إلا إذا كنت تثق به.",
+    "description": "The one warning shown above the full source of a creation that runs code; {sites} is a list of site names"
+  },
+  "scriptedSourceLabel": {
+    "message": "شيفرته كاملة",
+    "description": "Label above the full source code of a creation that runs code"
+  },
+  "scriptedInstallNote": {
+    "message": "يعمل فورًا، على هذا الجهاز فقط. يمكنك إيقاف كل الإبداعات التي تشغّل شيفرة في أي وقت من «إبداعاتي» أو من تبويب «إبداع» في اللوحة.",
+    "description": "Under the review of a creation that runs code, before Install and turn on"
+  },
+  "scriptedInstallAndTurnOn": {
+    "message": "تثبيت وتشغيل",
+    "description": "Button under the review of a pasted reply that runs code"
+  },
+  "scriptedReviewAndTurnOn": {
+    "message": "راجِع ثم شغّل",
+    "description": "Button on an off creation that runs code: opens its full code before it can be turned on"
+  },
+  "scriptedTurnOn": {
+    "message": "تشغيل",
+    "description": "Button that turns on a creation that runs code after its review"
+  },
+  "scriptedTurnOff": {
+    "message": "إيقاف",
+    "description": "Button on a creation that runs code and is on"
+  },
+  "scriptedTurnedOn": {
+    "message": "يعمل الآن، على هذا الجهاز فقط.",
+    "description": "After installing a creation that runs code from a pasted reply"
+  },
+  "scriptedTurnOnDenied": {
+    "message": "يحتاج إلى إذن بالوصول إلى هذا الموقع ليعمل، ولم يمنحه المتصفح. سيبقى متوقفًا.",
+    "description": "The browser did not grant site access, so a creation that runs code stays off"
+  },
+  "scriptedTurnOnFailed": {
+    "message": "تعذّر على Voyager تشغيله. حاول مرة أخرى.",
+    "description": "Voyager could not save the on state of a creation that runs code"
+  },
+  "scriptedChangedSinceReview": {
+    "message": "تغيّر أثناء مراجعتك له، لذلك لم يُشغَّل شيء. راجِع الشيفرة المعروضة الآن قبل أن تحاول مجددًا.",
+    "description": "A creation that runs code changed after its review opened, so nothing was turned on"
+  },
+  "scriptedStateOn": {
+    "message": "يعمل، على هذا الجهاز فقط",
+    "description": "Row state of a creation that runs code and is running"
+  },
+  "scriptedStateOff": {
+    "message": "متوقف",
+    "description": "Row state of a creation that runs code and is off"
+  },
+  "scriptedStatePaused": {
+    "message": "متوقف مؤقتًا",
+    "description": "Row state of a creation that runs code and cannot run now; a reason follows after a colon"
+  },
+  "scriptedPausedUserScriptsOff": {
+    "message": "خيار «السماح بالنصوص البرمجية للمستخدم» (Allow User Scripts) متوقف لـ Voyager",
+    "description": "Pause reason: the browser toggle that lets extensions run code is off"
+  },
+  "scriptedPausedUnsupported": {
+    "message": "لا يستطيع هذا المتصفح تشغيل شيفرة الإبداعات",
+    "description": "Pause reason: this browser cannot run creations that use code"
+  },
+  "scriptedPausedStopped": {
+    "message": "كل الإبداعات التي تشغّل شيفرة متوقفة",
+    "description": "Pause reason: the user stopped every creation that runs code"
+  },
+  "scriptedPausedCrash": {
+    "message": "أوقفه Voyager لأن صفحة توقفت عن الاستجابة أثناء تشغيله",
+    "description": "Pause reason: Voyager turned it off because a page stopped responding while it ran"
+  },
+  "scriptedPausedReview": {
+    "message": "تغيّر منذ أن شغّلته؛ راجِعه مرة أخرى",
+    "description": "Pause reason: its code or sites changed since the user turned it on"
+  },
+  "scriptedSetupTitle": {
+    "message": "خطوة واحدة قبل أن تعمل الإبداعات التي تشغّل شيفرة",
+    "description": "Title of the card that explains the one-time browser toggle for creations that run code"
+  },
+  "scriptedSetupStepOpen": {
+    "message": "افتح صفحة تفاصيل Voyager في إعدادات الإضافات بالمتصفح.",
+    "description": "Setup step 1 for creations that run code"
+  },
+  "scriptedSetupStepAllow": {
+    "message": "فعّل خيار «السماح بالنصوص البرمجية للمستخدم» (Allow User Scripts).",
+    "description": "Setup step 2 from Chrome 138: the per-extension toggle; keep the English name in parentheses"
+  },
+  "scriptedSetupStepDevMode": {
+    "message": "فعّل «وضع المطوّر» (Developer mode) أعلى صفحة الإضافات.",
+    "description": "Setup step 2 before Chrome 138: the Developer mode switch on the Extensions page; keep the English name in parentheses"
+  },
+  "scriptedSetupStepBack": {
+    "message": "عُد إلى هنا واضغط «فعّلته».",
+    "description": "Setup step 3 for creations that run code"
+  },
+  "scriptedSetupOpen": {
+    "message": "افتح صفحة تفاصيل Voyager",
+    "description": "Button that opens Voyager’s page in the browser’s extension settings"
+  },
+  "scriptedSetupOpenFailed": {
+    "message": "لم يفتحها المتصفح. انسخ هذا العنوان في علامة تبويب جديدة:",
+    "description": "Shown when the browser refused to open the details page; the address follows"
+  },
+  "scriptedSetupDone": {
+    "message": "فعّلته",
+    "description": "Button the user presses after turning on the browser toggle; checks again"
+  },
+  "scriptedSetupChecking": {
+    "message": "جارٍ التحقق…",
+    "description": "Button text while Voyager checks the browser toggle again"
+  },
+  "scriptedSetupStillOff": {
+    "message": "ما زال Voyager لا يستطيع تشغيل الشيفرة هنا. تأكد من أن المفتاح مفعّل. إن كان مفعّلًا، أغلق هذه النافذة وافتحها من جديد.",
+    "description": "After “I turned it on”, the browser still does not let Voyager run code"
+  },
+  "scriptedUnsupported": {
+    "message": "لا يستطيع هذا المتصفح تشغيل الإبداعات التي تستخدم شيفرة.",
+    "description": "This browser (Safari, Firefox for now, or a phone) cannot run creations that use code"
+  },
+  "scriptedUnsupportedOld": {
+    "message": "تحتاج الإبداعات التي تستخدم شيفرة إلى Chrome أو Edge بالإصدار 133 أو أحدث.",
+    "description": "Chrome or Edge is older than 133 and cannot run creations that use code"
+  },
+  "scriptedUnsupportedHint": {
+    "message": "اطلب من الذكاء الاصطناعي نسخة تغيّر شكل الصفحة فقط.",
+    "description": "Next step when this browser cannot run code: ask the AI for a declarative version"
+  },
+  "scriptedStopAll": {
+    "message": "أوقف كل الإبداعات التي تشغّل شيفرة",
+    "description": "Kill switch button in My creations and the panel’s Create tab"
+  },
+  "scriptedStoppedAll": {
+    "message": "الإبداعات التي تشغّل شيفرة متوقفة.",
+    "description": "State after the kill switch: no creation that runs code runs"
+  },
+  "scriptedStoppedReload": {
+    "message": "تستمر الصفحات المفتوحة حاليًا في تشغيلها حتى تعيد تحميلها.",
+    "description": "Right after stopping: pages already open keep running the code until reloaded"
+  },
+  "scriptedReloadPage": {
+    "message": "أعِد تحميل هذه الصفحة",
+    "description": "Button that reloads the current page after stopping creations that run code"
+  },
+  "scriptedResume": {
+    "message": "استئناف",
+    "description": "Button that undoes Stop all creations that run code"
+  },
+  "scriptedCrashOne": {
+    "message": "أوقف Voyager «{name}» لأن هذه الصفحة توقفت عن الاستجابة أثناء تشغيله. راجِعه في «إبداعاتي» قبل أن تشغّله مجددًا.",
+    "description": "Page notice after a freeze: one creation that runs code was turned off; {name} is its name"
+  },
+  "scriptedCrashMany": {
+    "message": "أوقف Voyager ‏{names} لأن هذه الصفحة توقفت عن الاستجابة أثناء تشغيلها. قد يكون أي منها هو السبب. راجِعها في «إبداعاتي» قبل أن تشغّلها مجددًا.",
+    "description": "Page notice after a freeze: several creations that run code were turned off; {names} lists them"
   }
 }

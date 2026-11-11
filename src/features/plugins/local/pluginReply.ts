@@ -48,7 +48,7 @@ export async function checkPluginReply(
   if (!extracted.ok) return extracted;
   const read = await readLocalPluginFiles([{ name: 'plugin.json', text: extracted.json }]);
   if (!read.success) return { ok: false, issues: read.error };
-  const result = validateLocalManifest(read.data);
+  const result = validateLocalManifest(read.data, undefined, { allowScripted: true });
   if (!result.success) return { ok: false, issues: result.error };
   const { manifest } = result.data;
   const record = (await loadRecords())[manifest.id];

@@ -1,7 +1,8 @@
 /**
- * Which entry points admit a scripted plugin: only the local gate, and only
- * when its caller asks. Every declarative verdict is the same with or without
- * the request.
+ * Which entry points admit a scripted plugin: the local gate when its caller
+ * asks, and the user's own import and review paths that ask for it. The
+ * remote and bundled catalogs and the CLI never do. Every declarative verdict
+ * is the same with or without the request.
  */
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -11,7 +12,10 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 import { checkPluginDir } from '../../../../../packages/create-voyager-plugin/src/check';
 import { CORPUS } from '../../../../../packages/create-voyager-plugin/test/corpus';
 import type { BundledPluginEntry } from '../../catalog/sites';
+import { classifyReplyBlock } from '../../local/creation/replyBlock';
 import { readLocalPluginFiles } from '../../local/localPluginFiles';
+import { importLocalPlugin } from '../../local/localPluginImport';
+import { checkPluginReply } from '../../local/pluginReply';
 import { validateLocalManifest } from '../../local/validateLocalManifest';
 import { MAX_SCRIPT_SOURCE_CHARS } from '../../manifest/scriptedChecks';
 import { validateManifest } from '../../manifest/validate';
@@ -34,6 +38,17 @@ const ENTRY_POINTS: Record<string, EntryPoint> = {
   'local gate, scripted allowed': async (manifest) =>
     validateLocalManifest(manifest, undefined, { allowScripted: true }).success,
   'local gate, default': async (manifest) => validateLocalManifest(manifest).success,
+  'reply check (paste, panel review)': async (manifest) =>
+    (await checkPluginReply(JSON.stringify(manifest), async () => ({}))).ok,
+  'reply block (Create mode page)': async (manifest) =>
+    classifyReplyBlock(JSON.stringify(manifest), {}).kind === 'installable',
+  'import (file, paste, reviewed reply)': async (manifest) =>
+    (
+      await importLocalPlugin(manifest, {
+        loadRecords: async () => ({}),
+        installDisabled: async () => {},
+      })
+    ).ok,
   'remote catalog': async (manifest) =>
     validateHostCatalogFile({ format: 1, host: 'chatgpt.com', plugins: [manifest] }, 'chatgpt.com')!
       .manifests.length === 1,
@@ -59,6 +74,9 @@ const ENTRY_POINTS: Record<string, EntryPoint> = {
 const ADMITS_SCRIPTED: Record<string, boolean> = {
   'local gate, scripted allowed': true,
   'local gate, default': false,
+  'reply check (paste, panel review)': true,
+  'reply block (Create mode page)': true,
+  'import (file, paste, reviewed reply)': true,
   'remote catalog': false,
   'bundled catalog': false,
   'create-voyager-plugin check': false,

@@ -4,6 +4,8 @@ import type { TranslationKey } from '@/utils/translations';
 
 import { LocalPluginCssSource } from './LocalPluginCssSource';
 import { changeText, warningText } from './localPluginPreviewText';
+import { ScriptedBadge, ScriptedSource } from './scripted/ScriptedSource';
+import { POPUP_SCRIPTED_LOOK, type ScriptedLook } from './scripted/scriptedLook';
 
 /** Class names per part, so the popup and the panel share what a review shows and differ in look. */
 export interface PreviewLook {
@@ -17,11 +19,14 @@ export interface PreviewLook {
   readonly css?: string;
   readonly warnings: string;
   readonly warningsTitle: string;
+  readonly scripted: ScriptedLook;
 }
 
 /**
  * What a reviewed plugin does, in plain terms: its name and version, the sites
- * it runs on, each change, its CSS in full and anything to check first.
+ * it runs on, each change, its CSS in full and anything to check first. A
+ * plugin that runs code shows a badge, one warning and its full source instead
+ * of changes.
  */
 export function LocalPluginPreviewSummary({
   manifest,
@@ -42,6 +47,7 @@ export function LocalPluginPreviewSummary({
           <span className={look.meta} dir="ltr">
             {manifest.id} · v{manifest.version}
           </span>
+          {preview.script !== undefined && <ScriptedBadge look={look.scripted} t={t} />}
         </p>
         <p className={look.description}>{preview.description}</p>
       </div>
@@ -49,19 +55,25 @@ export function LocalPluginPreviewSummary({
         <span className={look.label}>{t('localPluginInspectSites')}: </span>
         {preview.sites.join(', ')}
       </p>
-      <div>
-        <p className={look.label}>{t('localPluginPreviewChanges')}</p>
-        <ul className={look.list}>
-          {preview.changes.map((change, index) => (
-            <li key={index}>{changeText(t, change)}</li>
-          ))}
-        </ul>
-      </div>
-      <LocalPluginCssSource
-        css={preview.css}
-        label={t('localPluginInspectCss')}
-        className={look.css}
-      />
+      {preview.script !== undefined ? (
+        <ScriptedSource source={preview.script} sites={preview.sites} look={look.scripted} t={t} />
+      ) : (
+        <>
+          <div>
+            <p className={look.label}>{t('localPluginPreviewChanges')}</p>
+            <ul className={look.list}>
+              {preview.changes.map((change, index) => (
+                <li key={index}>{changeText(t, change)}</li>
+              ))}
+            </ul>
+          </div>
+          <LocalPluginCssSource
+            css={preview.css}
+            label={t('localPluginInspectCss')}
+            className={look.css}
+          />
+        </>
+      )}
       {preview.warnings.length > 0 && (
         <div className={look.warnings} data-testid="local-plugin-warnings">
           <p className={look.warningsTitle}>{t('localPluginPreviewWarnings')}</p>
@@ -86,4 +98,5 @@ export const POPUP_PREVIEW_LOOK: PreviewLook = {
   list: 'mt-0.5 list-disc space-y-0.5 ps-4 text-[11px] break-words',
   warnings: 'text-warning',
   warningsTitle: 'text-[11px] font-medium',
+  scripted: POPUP_SCRIPTED_LOOK,
 };

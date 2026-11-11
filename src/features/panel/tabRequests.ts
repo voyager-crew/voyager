@@ -6,6 +6,7 @@ import {
   parseCreateStartRequest,
 } from '@/features/plugins/local/creation/messages';
 import { PLUGIN_STATUS_MESSAGE } from '@/features/plugins/runtime/messages';
+import { SCRIPTED_RELOAD_PAGE_REQUEST } from '@/features/plugins/scripted/messages';
 
 /** The popup's current top-frame requests. Never accept a destination tab from the panel. */
 export const PANEL_TAB_REQUEST_TYPES = [
@@ -17,6 +18,7 @@ export const PANEL_TAB_REQUEST_TYPES = [
   'gv.account.getContext',
   CHATGPT_EXPORT_OPEN_MESSAGE,
   CREATE_MODE_MESSAGES.pending,
+  SCRIPTED_RELOAD_PAGE_REQUEST,
 ] as const;
 
 type PanelTabRequestType = (typeof PANEL_TAB_REQUEST_TYPES)[number];

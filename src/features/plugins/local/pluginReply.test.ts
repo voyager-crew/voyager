@@ -111,11 +111,23 @@ describe('checking a reply without installing it', () => {
   });
 
   it('reports every gate issue for a manifest the gate refuses', async () => {
-    const bad = { ...MANIFEST, matches: ['https://example.com/*'], tier: 'scripted' };
+    const bad = { ...MANIFEST, tier: 'scripted' };
     const result = await checkPluginReply(JSON.stringify(bad), noRecords);
     expect('issues' in result && result.issues.map((issue) => issue.path)).toEqual(
-      expect.arrayContaining(['tier']),
+      expect.arrayContaining(['contributes.styles', 'contributes.script.source']),
     );
+  });
+
+  it('accepts a reply that runs code, with its source on the manifest', async () => {
+    const code = {
+      ...MANIFEST,
+      tier: 'scripted',
+      contributes: { script: { source: 'document.title = "hi";' } },
+    };
+    const result = await checkPluginReply(JSON.stringify(code), noRecords);
+    expect(result.ok && result.manifest.contributes.script).toEqual({
+      source: 'document.title = "hi";',
+    });
   });
 
   it('refuses a reply whose CSS would load from the page origin', async () => {

@@ -7,59 +7,34 @@
 import { logger } from '@/core/services/LoggerService';
 import { StorageKeys } from '@/core/types/common';
 import { getVoyagerBuildTarget } from '@/core/utils/browser';
-import { readPlatformFormFactor } from '@/core/utils/formFactor';
-import { chromeMajorVersion, probeUserScripts } from '@/features/plugins/scripted/availability';
 import { parseScriptedLoads } from '@/features/plugins/scripted/crashGuard';
 import type { ScriptedStatus } from '@/features/plugins/scripted/messages';
+import { createScriptedRegistrar } from '@/features/plugins/scripted/registrar';
 import {
   clearScriptedCrashNotice,
   loadScriptedPlugins,
   loadScriptedState,
   recordScriptedCrash,
-  scriptedRunState,
 } from '@/features/plugins/scripted/state';
-import type { UserScriptsAvailability } from '@/features/plugins/scripted/types';
+import {
+  readAvailabilityHere,
+  readScriptedStatus,
+  userScriptsHere,
+} from '@/features/plugins/scripted/status';
 import { matchesAnyPattern } from '@/features/plugins/sites/matchPattern';
 
 import { createCrashGuard } from './guard';
 import { handleScriptedMessage } from './messages';
-import { type UserScriptsApi, createScriptedRegistrar } from './registrar';
 
 const LOADS = StorageKeys.PLUGIN_SCRIPTED_LOADS;
 const ALARM_PREFIX = 'gv.scripted.load:';
 
-function userScriptsApi(): UserScriptsApi | undefined {
-  return (globalThis as { chrome?: { userScripts?: UserScriptsApi } }).chrome?.userScripts;
-}
-
-async function readAvailability(): Promise<UserScriptsAvailability> {
-  return probeUserScripts({
-    target: getVoyagerBuildTarget(),
-    formFactor: await readPlatformFormFactor(),
-    chromeMajor: chromeMajorVersion(globalThis.navigator?.userAgent ?? ''),
-    userScripts: userScriptsApi(),
-  });
-}
-
 async function readStatus(): Promise<ScriptedStatus> {
-  const [availability, plugins, state] = await Promise.all([
-    readAvailability(),
-    loadScriptedPlugins(),
-    loadScriptedState(),
-  ]);
-  return {
-    ok: true,
-    availability,
-    stopped: state.stopped,
-    plugins: plugins.map((plugin) => ({
-      id: plugin.manifest.id,
-      runState: scriptedRunState(plugin, state, availability),
-    })),
-  };
+  return readScriptedStatus(await readAvailabilityHere());
 }
 
 async function unregisterIds(ids: readonly string[]): Promise<void> {
-  const api = userScriptsApi();
+  const api = userScriptsHere();
   if (!api) return;
   try {
     await api.unregister({ ids: [...ids] });
@@ -69,7 +44,7 @@ async function unregisterIds(ids: readonly string[]): Promise<void> {
 }
 
 async function runningIdsFor(url: string | undefined): Promise<string[]> {
-  const api = userScriptsApi();
+  const api = userScriptsHere();
   if (!api || !url) return [];
   try {
     const scripts = await api.getScripts();
@@ -125,10 +100,10 @@ export function startScriptedCreations(): void {
   const target = getVoyagerBuildTarget();
   const runs = target === 'chrome' || target === 'edge';
   const registrar = createScriptedRegistrar({
-    readAvailability,
+    readAvailability: readAvailabilityHere,
     readPlugins: loadScriptedPlugins,
     readState: loadScriptedState,
-    userScripts: userScriptsApi,
+    userScripts: userScriptsHere,
   });
   const guard = runs ? startRuntime(registrar) : undefined;
 
