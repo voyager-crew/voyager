@@ -95,6 +95,12 @@
   /* The warning mark before text to weigh: the wait amber, a step darker to read on white. */
   --warn-mark: oklch(0.62 0.14 70);
   --idle: oklch(0.8 0.004 250);
+  /* Code under review: each at least 5:1 on --tile, comments included (they are consented to too). */
+  --code-comment: oklch(0.5 0.01 260);
+  --code-keyword: oklch(0.5 0.17 315);
+  --code-string: oklch(0.5 0.1 160);
+  --code-number: oklch(0.52 0.15 255);
+  --code-property: oklch(0.5 0.09 215);
   --menu-shadow: 0 12px 32px rgb(15 20 30 / 0.14), 0 0 0 1px rgb(15 20 30 / 0.06);
   --letter-ink: 0.45 0.09;
   --letter-bg: 0.95 0.03;
@@ -127,6 +133,11 @@ html[data-gv-scheme='dark'] {
   --tip-ink: oklch(0.2 0.004 270);
   --danger: oklch(0.7 0.16 27);
   --warn-mark: var(--wait);
+  --code-comment: oklch(0.74 0.01 260);
+  --code-keyword: oklch(0.79 0.12 315);
+  --code-string: oklch(0.8 0.11 160);
+  --code-number: oklch(0.8 0.1 255);
+  --code-property: oklch(0.82 0.08 215);
   --menu-shadow: 0 12px 32px rgb(0 0 0 / 0.45), 0 0 0 1px rgb(255 255 255 / 0.07);
   --letter-ink: 0.82 0.08;
   --letter-bg: 0.32 0.04;

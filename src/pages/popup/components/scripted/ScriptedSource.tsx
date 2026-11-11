@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { fillPlaceholders } from '@/utils/translations';
 import type { TranslationKey } from '@/utils/translations';
 
+import { HighlightedCode } from './HighlightedCode';
 import type { ScriptedLook } from './scriptedLook';
 
 type Translate = (key: TranslationKey) => string;
@@ -75,7 +76,7 @@ export function ScriptedSource({
           aria-label={t('scriptedSourceLabel')}
           data-testid="scripted-source"
         >
-          {source}
+          <HighlightedCode source={source} language="javascript" />
         </pre>
       </SourceDisclosure>
     </>

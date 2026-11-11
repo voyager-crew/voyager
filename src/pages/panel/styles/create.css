@@ -274,6 +274,29 @@
   user-select: text;
 }
 
+/* Syntax colour in a source (HighlightedCode); comments also slant, so colour is never the only cue. */
+.tok-comment {
+  color: var(--code-comment);
+  font-style: italic;
+  font-synthesis-style: none;
+}
+
+.tok-keyword {
+  color: var(--code-keyword);
+}
+
+.tok-string {
+  color: var(--code-string);
+}
+
+.tok-number {
+  color: var(--code-number);
+}
+
+.tok-property {
+  color: var(--code-property);
+}
+
 /* A long source folded under its label; it opens in the flow and scrolls with the tab. */
 .create-fold {
   border: 1px solid var(--line);

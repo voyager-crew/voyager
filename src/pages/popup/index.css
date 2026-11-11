@@ -18,3 +18,42 @@ body {
 .highlight-cloud-sync-control {
   padding-top: 2px;
 }
+
+/* Syntax colour in reviewed code (HighlightedCode): at least 5:1 on the code's background. */
+:root {
+  --code-comment: oklch(0.5 0.01 260);
+  --code-keyword: oklch(0.5 0.17 315);
+  --code-string: oklch(0.5 0.1 160);
+  --code-number: oklch(0.52 0.15 255);
+  --code-property: oklch(0.5 0.09 215);
+}
+
+.dark {
+  --code-comment: oklch(0.74 0.01 260);
+  --code-keyword: oklch(0.79 0.12 315);
+  --code-string: oklch(0.8 0.11 160);
+  --code-number: oklch(0.8 0.1 255);
+  --code-property: oklch(0.82 0.08 215);
+}
+
+.tok-comment {
+  color: var(--code-comment);
+  font-style: italic;
+  font-synthesis-style: none;
+}
+
+.tok-keyword {
+  color: var(--code-keyword);
+}
+
+.tok-string {
+  color: var(--code-string);
+}
+
+.tok-number {
+  color: var(--code-number);
+}
+
+.tok-property {
+  color: var(--code-property);
+}
