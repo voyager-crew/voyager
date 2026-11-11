@@ -30,6 +30,8 @@ A user can run a declarative plugin they wrote without publishing it:
 
 **Writing it with an AI.** Describe a change, Create mode, the plugin contract and
 its generated outputs, and the offline CLI: [authoring/README.md](authoring/README.md).
+Create mode's pure readers (the Create-chat marker, the code-block verdict
+against the same gate, latest block per id, the fix message) are in `creation/`.
 
 The gate (`local/validateLocalManifest.ts`) is the remote catalog's gate plus
 local-only rules, never a weaker one: `validateManifest` with the CSS and
