@@ -3061,6 +3061,10 @@
     "message": "تعذّر على Voyager تثبيت تلك الإضافة. أصلح هذه المشكلات، ثم أعد إرسال الإضافة كاملة في كتلة شيفرة json واحدة فقط:",
     "description": "Create mode: first line of the message to the AI listing the gate's problems. Write no triple backtick: it goes into the chat composer"
   },
+  "createModePageOutlineIntro": {
+    "message": "هذه بنية الصفحة التي بدأت منها كما قرأها Voyager (البنية فقط، دون أي نص منها). اكتب الإضافة لهذه البنية بدل التخمين، واجعلها لا تغيّر شيئًا في صفحة تخلو من هذه العناصر.",
+    "description": "Create mode: the lines before the page structure Voyager puts at the top of the creation message (tags and attributes only, no text from the page). Write no triple backtick: it goes into the chat composer"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "الصق رد الذكاء الاصطناعي",
     "description": "Label of the field where the user pastes the AI reply"

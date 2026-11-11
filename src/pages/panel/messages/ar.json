@@ -43,6 +43,22 @@
     "message": "تحقّق مرة أخرى",
     "description": "Create tab warning button: read the model the page shows again, after the user changed it"
   },
+  "panelCreateStructure": {
+    "message": "أضِف بنية هذه الصفحة، دون أي نص منها، حتى يكتب الذكاء الاصطناعي لما هو موجود فعلًا",
+    "description": "Create tab: label of the switch (on by default) that adds the structure of this page, without its text, to the request"
+  },
+  "panelCreateStructureShow": {
+    "message": "عرض ما يُضاف",
+    "description": "Create tab: fold that shows the exact page structure text added to the request"
+  },
+  "panelCreateStructureReading": {
+    "message": "جارٍ قراءة هذه الصفحة…",
+    "description": "Create tab: the page structure is being read from the page"
+  },
+  "panelCreateStructureUnavailable": {
+    "message": "لم تستجب هذه الصفحة. أعد تحميلها لترى ما يُضاف.",
+    "description": "Create tab: the page did not answer when asked for its structure"
+  },
   "panelCreateUnavailable": {
     "message": "لم تستجب هذه الصفحة. أعد تحميلها ثم حاول مرة أخرى.",
     "description": "Create tab: the page's content script did not answer the request"

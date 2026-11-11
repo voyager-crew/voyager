@@ -66,8 +66,39 @@ describe('the Create tab', () => {
     expect(requests).toHaveBeenCalledWith({
       type: 'gv.create.start',
       request: 'Round my messages',
+      structure: true,
     });
     expect(closes()).toBe(1);
+  });
+
+  it('shows the exact page structure it adds, and leaves it out once switched off', async () => {
+    const outline = 'Site: Gemini. Path: /app\n- userTurn: 0';
+    const requests = vi.fn();
+    extensionApi.runtime.sendMessage.mockImplementation(
+      async (message: { type?: string; payload?: { request?: unknown } }) => {
+        if (message?.type !== PANEL_MESSAGE.tabRequest) return undefined;
+        const request = message.payload?.request as { type?: string } | undefined;
+        if (request?.type === 'gv.create.outline') return { ok: true, response: { outline } };
+        if (request?.type !== 'gv.create.start') return { ok: true, response: undefined };
+        requests(request);
+        return { ok: true, response: { ok: true } };
+      },
+    );
+    await mount(GEMINI);
+    await click(tab('create'));
+    const fold = query<HTMLDetailsElement>('.create-structure details')!;
+    await act(async () => {
+      fold.open = true;
+      fold.dispatchEvent(new Event('toggle'));
+      await flush();
+    });
+    expect(query('[data-testid="page-structure"]')?.textContent).toBe(outline);
+
+    await click(byId('panel-create-structure'));
+    expect(query('.create-structure details')).toBeNull();
+    await write('Round my messages');
+    await click(button(en.panelCreateOnPage));
+    expect(requests).toHaveBeenCalledWith(expect.objectContaining({ structure: false }));
   });
 
   it('stays open and says why when the page has a draft in its composer', async () => {

@@ -3061,6 +3061,10 @@
     "message": "Voyager не смог установить этот плагин. Исправьте эти проблемы и пришлите весь плагин заново ровно в одном блоке кода json:",
     "description": "Create mode: first line of the message to the AI listing the gate's problems. Write no triple backtick: it goes into the chat composer"
   },
+  "createModePageOutlineIntro": {
+    "message": "Так устроена страница, с которой отправлен запрос, по данным Voyager (только структура, без текста). Пишите плагин под эту структуру, а не наугад, и сделайте так, чтобы на странице без этих элементов он ничего не менял.",
+    "description": "Create mode: the lines before the page structure Voyager puts at the top of the creation message (tags and attributes only, no text from the page). Write no triple backtick: it goes into the chat composer"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "Вставьте ответ ИИ",
     "description": "Label of the field where the user pastes the AI reply"

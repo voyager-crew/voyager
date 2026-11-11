@@ -43,6 +43,22 @@
     "message": "Verificar de novo",
     "description": "Create tab warning button: read the model the page shows again, after the user changed it"
   },
+  "panelCreateStructure": {
+    "message": "Adicionar como esta página é feita, sem nada do texto dela, para a IA escrever para o que existe aqui",
+    "description": "Create tab: label of the switch (on by default) that adds the structure of this page, without its text, to the request"
+  },
+  "panelCreateStructureShow": {
+    "message": "Ver o que é adicionado",
+    "description": "Create tab: fold that shows the exact page structure text added to the request"
+  },
+  "panelCreateStructureReading": {
+    "message": "Lendo esta página…",
+    "description": "Create tab: the page structure is being read from the page"
+  },
+  "panelCreateStructureUnavailable": {
+    "message": "Esta página não respondeu. Recarregue-a para ver o que é adicionado.",
+    "description": "Create tab: the page did not answer when asked for its structure"
+  },
   "panelCreateUnavailable": {
     "message": "Esta página não respondeu. Recarregue e tente de novo.",
     "description": "Create tab: the page's content script did not answer the request"

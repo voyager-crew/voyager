@@ -43,6 +43,22 @@
     "message": "Проверить снова",
     "description": "Create tab warning button: read the model the page shows again, after the user changed it"
   },
+  "panelCreateStructure": {
+    "message": "Добавить устройство этой страницы, без её текста, чтобы ИИ писал под то, что на ней есть",
+    "description": "Create tab: label of the switch (on by default) that adds the structure of this page, without its text, to the request"
+  },
+  "panelCreateStructureShow": {
+    "message": "Посмотреть, что добавится",
+    "description": "Create tab: fold that shows the exact page structure text added to the request"
+  },
+  "panelCreateStructureReading": {
+    "message": "Читаем эту страницу…",
+    "description": "Create tab: the page structure is being read from the page"
+  },
+  "panelCreateStructureUnavailable": {
+    "message": "Страница не ответила. Перезагрузите её, чтобы увидеть, что добавится.",
+    "description": "Create tab: the page did not answer when asked for its structure"
+  },
   "panelCreateUnavailable": {
     "message": "Страница не ответила. Перезагрузите её и попробуйте снова.",
     "description": "Create tab: the page's content script did not answer the request"

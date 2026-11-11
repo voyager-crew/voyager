@@ -3061,6 +3061,10 @@
     "message": "Voyager 無法安裝這個外掛。請修正下列問題，然後把完整外掛放進唯一一個 json 程式碼區塊重新回覆：",
     "description": "Create mode: first line of the message to the AI listing the gate's problems. Write no triple backtick: it goes into the chat composer"
   },
+  "createModePageOutlineIntro": {
+    "message": "這是我發起請求時所在頁面的結構，由 Voyager 讀取（只有結構，不含頁面上的任何文字）。請依這個結構寫外掛，不要憑猜測；在缺少這些元素的頁面上，外掛不應做任何更動。",
+    "description": "Create mode: the lines before the page structure Voyager puts at the top of the creation message (tags and attributes only, no text from the page). Write no triple backtick: it goes into the chat composer"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "貼上 AI 的回覆",
     "description": "Label of the field where the user pastes the AI reply"

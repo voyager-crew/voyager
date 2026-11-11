@@ -13,6 +13,8 @@ export const CREATE_MODE_MESSAGES = {
   pending: 'gv.create.pending',
   /** The page's chat model, when it is one that usually cannot write a plugin. */
   model: 'gv.create.model',
+  /** The page outline a creation message would carry from this page now. */
+  outline: 'gv.create.outline',
 } as const;
 
 /** A chat model on the page that usually cannot write a plugin, as the page reads it. */
@@ -27,9 +29,14 @@ export interface CreateModelWarning {
 
 const MAX_MODEL_LABEL_CHARS = 80;
 
+/** Ceiling on the page outline a creation message carries (`pages/content/createMode/pageOutline.ts`). */
+export const MAX_PAGE_OUTLINE_CHARS = 3000;
+
 export type CreateStartRequest = {
   readonly type: typeof CREATE_MODE_MESSAGES.start;
   readonly request: string;
+  /** Attach the outline of the page the request starts on. */
+  readonly structure: boolean;
 };
 
 /** Why the page refused before doing anything: no Create mode here, or text already in the composer. */
@@ -58,7 +65,16 @@ export function parseCreateRequestText(value: unknown): string | null {
 export function parseCreateStartRequest(value: unknown): CreateStartRequest | null {
   if (!isRecord(value) || value.type !== CREATE_MODE_MESSAGES.start) return null;
   const request = parseCreateRequestText(value.request);
-  return request ? { type: CREATE_MODE_MESSAGES.start, request } : null;
+  return request
+    ? { type: CREATE_MODE_MESSAGES.start, request, structure: value.structure === true }
+    : null;
+}
+
+/** The outline text, or null when the page sent none or something else. */
+export function parseCreateOutlineReply(value: unknown): string | null {
+  if (!isRecord(value) || typeof value.outline !== 'string') return null;
+  const { outline } = value;
+  return outline && outline.length <= MAX_PAGE_OUTLINE_CHARS ? outline : null;
 }
 
 export function parseCreateStartReply(value: unknown): CreateStartReply | null {

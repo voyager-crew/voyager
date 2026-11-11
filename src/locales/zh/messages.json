@@ -3061,6 +3061,10 @@
     "message": "Voyager 没能安装这个插件。请修复下面的问题，然后把完整插件放进唯一一个 json 代码块里重新回复：",
     "description": "Create mode: first line of the message to the AI listing the gate's problems. Write no triple backtick: it goes into the chat composer"
   },
+  "createModePageOutlineIntro": {
+    "message": "这是我发起请求时所在页面的结构，由 Voyager 读取（只有结构，不含页面上的任何文字）。请按这个结构写插件，不要凭猜测；在缺少这些元素的页面上，插件不应做任何改动。",
+    "description": "Create mode: the lines before the page structure Voyager puts at the top of the creation message (tags and attributes only, no text from the page). Write no triple backtick: it goes into the chat composer"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "粘贴 AI 的回复",
     "description": "Label of the field where the user pastes the AI reply"

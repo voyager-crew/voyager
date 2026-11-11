@@ -39,6 +39,19 @@ version and command filled in one pass:
   `plugin.json` plus `style.css` for **Import files** (under **More ways to
   add** in the same card).
 
+**The page's structure.** **Create on this page** also puts the outline of
+the page it starts on at the top of the message, read before the new chat
+replaces that page (`pages/content/createMode/pageOutline.ts`): the site's
+anchors with how many elements each matches now, the reply locator
+(`authoring/replyLocator.ts`, which the scripted page lists too), and a
+pruned outline around the last reply and the last user message. It is
+structure only: `outlinePolicy.ts` is the one whitelist of what an element
+may show (tag, `data-*`/`aria-*` names, a few plain values and class tokens,
+never text, ids, URLs or anything inside the composer), and the outline
+stays under `MAX_PAGE_OUTLINE_CHARS`. The Create tab says so in one switch,
+on each time the panel opens, with the exact text folded under it
+(`gv.create.outline`, asked again whenever the page moves).
+
 A refused clipboard write leaves the text on screen to select. The popup side
 is `pages/popup/hooks/useCreateRequest.ts` and `components/CreateModeRequest.tsx`;
 the panel side is `pages/panel/create/useCreateHandoff.ts` and `CreateView.tsx`.

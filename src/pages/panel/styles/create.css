@@ -72,6 +72,32 @@
   opacity: 0.6;
 }
 
+/* The page structure a request carries: its switch and sentence, then the exact text folded. */
+.create-structure {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.create-structure-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.create-structure-row > .sw {
+  flex: none;
+}
+
+.create-structure-label {
+  padding-block-start: 1px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  text-wrap: pretty;
+  cursor: pointer;
+}
+
 .create-foot {
   display: flex;
   flex-wrap: wrap;

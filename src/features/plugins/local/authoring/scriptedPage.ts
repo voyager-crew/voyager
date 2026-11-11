@@ -106,6 +106,7 @@ export function renderScriptedPage(sites: readonly SiteAdapter[]): string {
     '- Read the page’s text only for what the request needs, and keep it on the page. To remember something across visits, use one localStorage key named after the plugin.',
     '- Write clean, readable source: the user reads all of it before turning the plugin on. One comment line at the top saying what it does, short functions, plain names, no minified or obfuscated code.',
     '- Find elements with the selectors below where one fits (they can change when the site is redesigned), and handle their absence: return quietly when an element is missing.',
+    '- When the user’s message includes the structure of the page they started from, write for that structure instead of assumptions about the site. On a page without the elements the plugin works on (one with no conversation, say), it adds and changes nothing.',
     '',
     '## Where it runs',
     '',

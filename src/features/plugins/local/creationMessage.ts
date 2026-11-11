@@ -36,16 +36,27 @@ function requestText(request: string): string {
   return request.trim().slice(0, MAX_PLUGIN_REQUEST_CHARS);
 }
 
-/** The message Voyager places in the chat composer of `site`. */
-export function buildCreationMessage(request: string, site: SiteAdapter, t: Translate): string {
+/**
+ * The message Voyager places in the chat composer of `site`. With the outline
+ * of the page the request started on, the outline comes first, so the request
+ * stays last where a weak model weighs it most.
+ */
+export function buildCreationMessage(
+  request: string,
+  site: SiteAdapter,
+  t: Translate,
+  outline: string | null = null,
+): string {
   const values = {
     pageUrl: createPageUrl(site.id),
     site: site.label,
     engine: EFFECTIVE_PLUGIN_ENGINE_VERSION,
     request: requestText(request),
   };
-  if (!inlinesCreatePage(site.id)) return fill(t('createModeChatMessage'), values);
-  return fill(t('createModeChatMessageInline'), { ...values, page: renderCreatePage(site) });
+  const message = inlinesCreatePage(site.id)
+    ? fill(t('createModeChatMessageInline'), { ...values, page: renderCreatePage(site) })
+    : fill(t('createModeChatMessage'), values);
+  return outline ? `${t('createModePageOutlineIntro')}\n\n${outline}\n\n${message}` : message;
 }
 
 /** The text the user copies to a local coding agent to write a plugin for `site`. */

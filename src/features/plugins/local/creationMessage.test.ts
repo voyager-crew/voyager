@@ -136,6 +136,19 @@ describe('creation message on a site whose AI cannot open links', () => {
   );
 });
 
+describe('the page outline in a creation message', () => {
+  const outline = 'Site: Gemini. Path: /app/*\n- userTurn: 2';
+
+  it.each(locales)('comes first in %s, so the request stays last', (_locale, t) => {
+    for (const site of sites) {
+      const message = buildCreationMessage('Round my messages', site, t, outline);
+      expect(message.startsWith(`${t('createModePageOutlineIntro')}\n\n${outline}\n\n`)).toBe(true);
+      expect(message.endsWith('Round my messages')).toBe(true);
+      expect(isCreationChatText(message)).toBe(true);
+    }
+  });
+});
+
 describe('text Voyager places in a composer', () => {
   // ChatGPT's composer turns ``` into a code box that swallows the rest of the message.
   it.each(locales)('holds no triple backtick in %s', (_locale, t) => {
@@ -143,6 +156,7 @@ describe('text Voyager places in a composer', () => {
       expect(buildCreationMessage(TRICKY_REQUEST, site, t), site.id).not.toContain('```');
     }
     expect(t('createModeFixIntro')).not.toContain('```');
+    expect(t('createModePageOutlineIntro')).not.toContain('```');
   });
 
   it.each(locales)('holds no triple backtick in the fix request in %s', (_locale, t) => {

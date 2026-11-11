@@ -43,6 +43,22 @@
     "message": "重新检查",
     "description": "Create tab warning button: read the model the page shows again, after the user changed it"
   },
+  "panelCreateStructure": {
+    "message": "附上这个页面的结构（不含任何文字），让 AI 按页面的实际情况来写",
+    "description": "Create tab: label of the switch (on by default) that adds the structure of this page, without its text, to the request"
+  },
+  "panelCreateStructureShow": {
+    "message": "查看附上的内容",
+    "description": "Create tab: fold that shows the exact page structure text added to the request"
+  },
+  "panelCreateStructureReading": {
+    "message": "正在读取这个页面…",
+    "description": "Create tab: the page structure is being read from the page"
+  },
+  "panelCreateStructureUnavailable": {
+    "message": "这个页面没有响应。重新加载后即可查看附上的内容。",
+    "description": "Create tab: the page did not answer when asked for its structure"
+  },
   "panelCreateUnavailable": {
     "message": "这个页面没有响应。刷新后再试。",
     "description": "Create tab: the page's content script did not answer the request"

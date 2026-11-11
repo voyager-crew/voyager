@@ -15,7 +15,14 @@ describe('Create mode requests through the panel tab relay', () => {
         tabId: 7,
         url: 'https://evil.example/',
       }),
-    ).toEqual({ type: 'gv.create.start', request: 'Round my messages' });
+    ).toEqual({ type: 'gv.create.start', request: 'Round my messages', structure: false });
+  });
+
+  it('passes the page-structure choice on only when it is exactly true', () => {
+    const start = (structure: unknown) =>
+      parsePanelTabRequest({ type: 'gv.create.start', request: 'Hi', structure });
+    expect(start(true)).toMatchObject({ structure: true });
+    expect(start('true')).toMatchObject({ structure: false });
   });
 
   it.each([
@@ -32,6 +39,7 @@ describe('Create mode requests through the panel tab relay', () => {
     expect(parsePanelTabRequest({ type: 'gv.create.start', request })).toEqual({
       type: 'gv.create.start',
       request,
+      structure: false,
     });
   });
 

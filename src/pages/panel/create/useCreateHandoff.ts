@@ -28,6 +28,7 @@ const sameWarning = (a: CreateModelWarning | null, b: CreateModelWarning | null)
  * closes so the user reads it), or copy a handoff for a local coding agent.
  * `warning` names the page's chat model when it usually cannot write a
  * creation; it never blocks a send the user makes with the warning in view.
+ * `structure` says whether the page adds its outline to that message.
  */
 export function useCreateHandoff({
   context,
@@ -42,6 +43,8 @@ export function useCreateHandoff({
 }) {
   const site = authoringSites().find((candidate) => candidate.id === context.siteId) ?? null;
   const [request, setRequestText] = useState('');
+  // On each time the panel opens: the user sees what it adds and can leave it out.
+  const [structure, setStructure] = useState(true);
   const [sending, setSending] = useState(false);
   const [outcome, setOutcome] = useState<CreateHandoffOutcome | null>(null);
   const [warning, setWarning] = useState<CreateModelWarning | null>(null);
@@ -80,7 +83,7 @@ export function useCreateHandoff({
     let reply = null;
     try {
       reply = parseCreateStartReply(
-        await requestTab({ type: CREATE_MODE_MESSAGES.start, request: request.trim() }),
+        await requestTab({ type: CREATE_MODE_MESSAGES.start, request: request.trim(), structure }),
       );
     } catch {
       reply = null;
@@ -109,6 +112,10 @@ export function useCreateHandoff({
     site,
     request,
     setRequest,
+    structure,
+    setStructure,
+    pageUrl: context.pageUrl,
+    requestTab,
     ready,
     sending,
     outcome,

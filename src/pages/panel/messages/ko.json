@@ -43,6 +43,22 @@
     "message": "다시 확인",
     "description": "Create tab warning button: read the model the page shows again, after the user changed it"
   },
+  "panelCreateStructure": {
+    "message": "이 페이지의 구조를 텍스트 없이 덧붙여 AI가 실제 페이지에 맞게 작성하도록 하기",
+    "description": "Create tab: label of the switch (on by default) that adds the structure of this page, without its text, to the request"
+  },
+  "panelCreateStructureShow": {
+    "message": "덧붙는 내용 보기",
+    "description": "Create tab: fold that shows the exact page structure text added to the request"
+  },
+  "panelCreateStructureReading": {
+    "message": "이 페이지를 읽는 중…",
+    "description": "Create tab: the page structure is being read from the page"
+  },
+  "panelCreateStructureUnavailable": {
+    "message": "이 페이지가 응답하지 않았습니다. 새로고침하면 덧붙는 내용을 볼 수 있습니다.",
+    "description": "Create tab: the page did not answer when asked for its structure"
+  },
   "panelCreateUnavailable": {
     "message": "이 페이지가 응답하지 않았습니다. 새로고침한 뒤 다시 시도하세요.",
     "description": "Create tab: the page's content script did not answer the request"

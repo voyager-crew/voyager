@@ -2,8 +2,10 @@
  * Create mode on the page, a permanent page service:
  *
  * - the panel's "Create on this page" opens a new chat here and fills its
- *   composer with the creation message (`local/creationMessage.ts`). Voyager
- *   never sends it; the user reviews it and presses send.
+ *   composer with the creation message (`local/creationMessage.ts`), led by
+ *   the outline of the page it started on unless the user left that out
+ *   (`pageOutline.ts`; `gv.create.outline` shows the panel the same text).
+ *   Voyager never sends it; the user reviews it and presses send.
  * - in that chat, each JSON object in a reply gets a control
  *   (`replyControls.ts`). "Preview" holds the block and opens the panel, which
  *   fetches it once (`gv.create.pending`), checks it again and installs it;
@@ -43,6 +45,7 @@ import { startCreationFill } from './fill';
 import type { FillResult } from './fillMachine';
 import { createModelWarningReader } from './geminiModel';
 import { newChatTarget } from './newChat';
+import { buildPageOutline } from './pageOutline';
 import { createPendingReview } from './pending';
 import type { ReplyControlAction } from './replyControl';
 import { startReplyControls } from './replyControls';
@@ -82,12 +85,14 @@ export function startCreateMode(deps: CreateModeDeps = {}): StopNativeFeature {
     });
   };
 
-  const begin = (request: string): CreateStartReply => {
+  const begin = (request: string, structure: boolean): CreateStartReply => {
     // Leaving a chat with a typed message could lose it, so refuse before moving.
     const current = find();
     if (current && !isEmptyComposer(current)) return { ok: false, reason: 'busy' };
+    // Read now, before the new chat replaces the page the request started on.
+    const outline = structure ? buildPageOutline(document, site, location.href) : null;
     stopFill?.();
-    stopFill = startCreationFill(buildCreationMessage(request, site, getTranslationSync), {
+    stopFill = startCreationFill(buildCreationMessage(request, site, getTranslationSync, outline), {
       target,
       find,
       notify: (result) => {
@@ -139,13 +144,15 @@ export function startCreateMode(deps: CreateModeDeps = {}): StopNativeFeature {
   const listener: MessageListener = (message, _sender, sendResponse) => {
     const start = parseCreateStartRequest(message);
     if (start) {
-      sendResponse(begin(start.request));
+      sendResponse(begin(start.request, start.structure));
       return;
     }
     if (typeof message !== 'object' || message === null || !('type' in message)) return;
     if (message.type === CREATE_MODE_MESSAGES.pending) sendResponse({ candidate: pending.take() });
     if (message.type === CREATE_MODE_MESSAGES.model)
       sendResponse({ warning: readModelWarning?.() ?? null });
+    if (message.type === CREATE_MODE_MESSAGES.outline)
+      sendResponse({ outline: buildPageOutline(document, site, location.href) });
   };
   chrome.runtime.onMessage.addListener(listener);
 

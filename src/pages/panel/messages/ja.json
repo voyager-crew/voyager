@@ -43,6 +43,22 @@
     "message": "もう一度確認",
     "description": "Create tab warning button: read the model the page shows again, after the user changed it"
   },
+  "panelCreateStructure": {
+    "message": "このページの構造をテキストなしで添えて、AI が実際のページに合わせて書けるようにする",
+    "description": "Create tab: label of the switch (on by default) that adds the structure of this page, without its text, to the request"
+  },
+  "panelCreateStructureShow": {
+    "message": "添える内容を見る",
+    "description": "Create tab: fold that shows the exact page structure text added to the request"
+  },
+  "panelCreateStructureReading": {
+    "message": "このページを読み取っています…",
+    "description": "Create tab: the page structure is being read from the page"
+  },
+  "panelCreateStructureUnavailable": {
+    "message": "このページから応答がありません。再読み込みすると添える内容を確認できます。",
+    "description": "Create tab: the page did not answer when asked for its structure"
+  },
   "panelCreateUnavailable": {
     "message": "このページから応答がありませんでした。再読み込みしてから、もう一度お試しください。",
     "description": "Create tab: the page's content script did not answer the request"

@@ -259,6 +259,40 @@ describe('the panel asking this page to create', () => {
     expect(sendClicked).not.toHaveBeenCalled();
   });
 
+  it('adds the structure of the page the request started on, read before the new chat replaced it', async () => {
+    const { composer } = page();
+    document.querySelector('main')!.prepend(document.createElement('user-query'));
+    // The new chat takes the conversation off the page.
+    window.addEventListener('popstate', () => document.querySelector('user-query')?.remove(), {
+      once: true,
+    });
+    stop = startCreateMode({ find: () => composer });
+
+    expect(ask({ type: 'gv.create.start', request: 'Round my messages', structure: true })).toEqual(
+      { ok: true },
+    );
+    await vi.advanceTimersByTimeAsync(SETTLE_MS + FILL_CONFIRM_MS);
+    expect(document.querySelector('user-query')).toBeNull();
+    const text = composerText(composer);
+    expect(text.indexOf('Site: Gemini')).toBeLessThan(text.indexOf('Round my messages'));
+    expect(text).toMatch(/- userTurn: 1\b/);
+    expect(text).not.toContain('```');
+  });
+
+  it('adds no page structure when the user leaves it out, and shows the same text on request', async () => {
+    const { composer } = page();
+    stop = startCreateMode({ find: () => composer });
+
+    const preview = ask({ type: 'gv.create.outline' }) as { outline: string };
+    expect(preview.outline).toContain('Site: Gemini');
+    expect(
+      ask({ type: 'gv.create.start', request: 'Round my messages', structure: false }),
+    ).toEqual({ ok: true });
+    await vi.advanceTimersByTimeAsync(SETTLE_MS + FILL_CONFIRM_MS);
+    expect(composerText(composer)).toContain('Round my messages');
+    expect(composerText(composer)).not.toContain('Site: Gemini');
+  });
+
   it('ignores a request without a sentence', () => {
     const { composer } = page();
     stop = startCreateMode({ find: () => composer });

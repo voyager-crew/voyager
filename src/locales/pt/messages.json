@@ -3061,6 +3061,10 @@
     "message": "O Voyager não conseguiu instalar esse plugin. Corrija estes problemas e responda de novo com o plugin inteiro em um único bloco de código json:",
     "description": "Create mode: first line of the message to the AI listing the gate's problems. Write no triple backtick: it goes into the chat composer"
   },
+  "createModePageOutlineIntro": {
+    "message": "Esta é a estrutura da página de onde fiz o pedido, como o Voyager a leu (só a estrutura, nada do texto). Escreva o plugin para esta estrutura em vez de supor, e faça com que ele não mude nada numa página em que esses elementos não existam.",
+    "description": "Create mode: the lines before the page structure Voyager puts at the top of the creation message (tags and attributes only, no text from the page). Write no triple backtick: it goes into the chat composer"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "Cole a resposta da IA",
     "description": "Label of the field where the user pastes the AI reply"

@@ -4,6 +4,7 @@ import { MAX_PLUGIN_REQUEST_CHARS } from '@/features/plugins/local/authoringSite
 import type { TranslationKey } from '@/utils/translations';
 
 import { ModelWarning } from './ModelWarning';
+import { PageStructure } from './PageStructure';
 import type { CreateHandoff, CreateHandoffOutcome } from './useCreateHandoff';
 
 export const CREATE_REQUEST_ID = 'panel-create-request';
@@ -103,6 +104,15 @@ export function CreateView({
             fit(event.target);
           }}
         />
+        {site && handoff.requestTab && (
+          <PageStructure
+            on={handoff.structure}
+            onToggle={handoff.setStructure}
+            pageUrl={handoff.pageUrl}
+            requestTab={handoff.requestTab}
+            t={t}
+          />
+        )}
         <div className="create-foot">
           <p
             className={problem ? 'create-note bad' : 'create-note'}
