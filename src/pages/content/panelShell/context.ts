@@ -1,6 +1,6 @@
 /**
  * The tab-scoped context the panel shows: page URL, site, account slot,
- * scheme and direction. The background forwards it to the panel page, which
+ * scheme, direction and Create mode's review count. The background forwards it to the panel page, which
  * never trusts window messages for it.
  */
 import { extractRouteUserIdFromUrl } from '@/core/services/AccountIsolationService';
@@ -11,6 +11,7 @@ import { getCachedLanguage, onCachedLanguageChange } from '@/utils/i18n';
 
 import { getScheme, subscribeScheme } from '../platformTheme/scheme';
 import { watchRouteChanges } from '../utils/routeWatcher';
+import { voyagerPanelOpener } from './opener';
 
 export function readPanelContext(): PanelContext {
   const pageUrl = location.href;
@@ -22,7 +23,13 @@ export function readPanelContext(): PanelContext {
     accountSlot: site?.accountSlots ? (extractRouteUserIdFromUrl(pageUrl) ?? '0') : null,
     scheme: getScheme(),
     direction: detectRTL(getCachedLanguage()) ? 'rtl' : 'ltr',
+    ...readCreationRequest(),
   };
+}
+
+function readCreationRequest(): Pick<PanelContext, 'creationRequest'> {
+  const count = voyagerPanelOpener.reviewRequests();
+  return count > 0 ? { creationRequest: count } : {};
 }
 
 const sameContext = (a: PanelContext, b: PanelContext): boolean =>
@@ -30,11 +37,13 @@ const sameContext = (a: PanelContext, b: PanelContext): boolean =>
   a.siteId === b.siteId &&
   a.accountSlot === b.accountSlot &&
   a.scheme === b.scheme &&
-  a.direction === b.direction;
+  a.direction === b.direction &&
+  a.creationRequest === b.creationRequest;
 
 /**
  * Calls `onChange` with the new context whenever one of its parts changes:
- * SPA navigation, the scheme, Voyager's language or the page's own direction,
+ * SPA navigation, the scheme, Voyager's language, the page's own direction or
+ * a Create mode review request,
  * starting with any change since `initial` was read. Returns the cleanup.
  */
 export function watchPanelContext(
@@ -51,6 +60,7 @@ export function watchPanelContext(
   const stopRoute = watchRouteChanges(check);
   const stopScheme = subscribeScheme(check);
   const stopLanguage = onCachedLanguageChange(check);
+  const stopReviews = voyagerPanelOpener.onReviewRequest(check);
   const observer = new MutationObserver(check);
   observer.observe(document.documentElement, {
     attributes: true,
@@ -64,6 +74,7 @@ export function watchPanelContext(
     stopRoute();
     stopScheme();
     stopLanguage();
+    stopReviews();
     observer.disconnect();
   };
 }

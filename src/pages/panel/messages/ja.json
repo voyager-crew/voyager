@@ -31,6 +31,58 @@
     "message": "このページから応答がありませんでした。再読み込みしてから、もう一度お試しください。",
     "description": "Create tab: the page's content script did not answer the request"
   },
+  "panelCreateReviewTitle": {
+    "message": "このチャットのプラグイン",
+    "description": "Create tab: heading of the review of a plugin picked under an AI reply"
+  },
+  "panelCreateChecking": {
+    "message": "プラグインを確認しています…",
+    "description": "Create tab: the picked reply is being checked"
+  },
+  "panelCreateInstalling": {
+    "message": "インストールしています…",
+    "description": "Create tab: the reviewed plugin is being installed and turned on"
+  },
+  "panelCreateInstallNote": {
+    "message": "すぐにオンになります。いつでも「機能」からオフにできます。",
+    "description": "Create tab: what the install button does"
+  },
+  "panelCreateInstall": {
+    "message": "インストールしてオン",
+    "description": "Create tab button: install the reviewed plugin and turn it on"
+  },
+  "panelCreateUpdate": {
+    "message": "更新してオン",
+    "description": "Create tab button: replace the installed plugin with the reviewed version and turn it on"
+  },
+  "panelCreateRejectedHint": {
+    "message": "返信の下の「問題点を AI に返す」を使うと、修正版が届いたときに Voyager が提案します。",
+    "description": "Create tab: where to send the problems of a refused plugin"
+  },
+  "panelCreateInstalledOn": {
+    "message": "{name} をオンにしました。",
+    "description": "Create tab: the plugin is installed and on. Keep {name}"
+  },
+  "panelCreateInstalledOff": {
+    "message": "{name} はインストールしましたが、オフのままです。必要なサイトへのアクセスをブラウザが許可しませんでした。",
+    "description": "Create tab: installed, but the browser did not grant the site access it needs. Keep {name}"
+  },
+  "panelCreateTurnOn": {
+    "message": "オンにする",
+    "description": "Create tab button: try again to turn on the installed plugin"
+  },
+  "panelCreateReload": {
+    "message": "以前の版が動いていた場合は、ページを再読み込みするとこの版になります。",
+    "description": "Create tab: an earlier version with a native op keeps running until reload"
+  },
+  "panelCreateChangeAgain": {
+    "message": "変えたいところがあれば、このチャットで AI に伝えてください。新しい版を Voyager が返信の下で提案します。",
+    "description": "Create tab: how to change the installed plugin again"
+  },
+  "panelCreateFailed": {
+    "message": "インストールできませんでした。何も変更していません。",
+    "description": "Create tab: the install failed; nothing was installed"
+  },
   "panelTabsLabel": {
     "message": "パネルの区分",
     "description": "Accessible name of the panel tab list"

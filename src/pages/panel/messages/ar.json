@@ -16,7 +16,7 @@
     "description": "Create tab: what Create mode does, above the request field"
   },
   "panelCreateUnsupported": {
-    "message": "وضع الإنشاء لا يعمل على هذا الموقع بعد.",
+    "message": "وضع الإبداع لا يعمل على هذا الموقع بعد.",
     "description": "Create tab on a website where Create mode does not run"
   },
   "panelCreateHint": {
@@ -30,6 +30,58 @@
   "panelCreateUnavailable": {
     "message": "لم تستجب هذه الصفحة. أعد تحميلها ثم حاول مرة أخرى.",
     "description": "Create tab: the page's content script did not answer the request"
+  },
+  "panelCreateReviewTitle": {
+    "message": "إضافة من هذه المحادثة",
+    "description": "Create tab: heading of the review of a plugin picked under an AI reply"
+  },
+  "panelCreateChecking": {
+    "message": "جارٍ فحص الإضافة…",
+    "description": "Create tab: the picked reply is being checked"
+  },
+  "panelCreateInstalling": {
+    "message": "جارٍ التثبيت…",
+    "description": "Create tab: the reviewed plugin is being installed and turned on"
+  },
+  "panelCreateInstallNote": {
+    "message": "تعمل فورًا. يمكنك إيقافها في أي وقت من الميزات.",
+    "description": "Create tab: what the install button does"
+  },
+  "panelCreateInstall": {
+    "message": "تثبيت وتشغيل",
+    "description": "Create tab button: install the reviewed plugin and turn it on"
+  },
+  "panelCreateUpdate": {
+    "message": "تحديث وتشغيل",
+    "description": "Create tab button: replace the installed plugin with the reviewed version and turn it on"
+  },
+  "panelCreateRejectedHint": {
+    "message": "استخدم «أرسل المشكلات إلى الذكاء الاصطناعي» أسفل الرد، وسيعرض Voyager النسخة المصححة عند وصولها.",
+    "description": "Create tab: where to send the problems of a refused plugin"
+  },
+  "panelCreateInstalledOn": {
+    "message": "{name} مفعّلة.",
+    "description": "Create tab: the plugin is installed and on. Keep {name}"
+  },
+  "panelCreateInstalledOff": {
+    "message": "تم تثبيت {name} لكنها ما زالت متوقفة: لم يمنح المتصفح الوصول إلى الموقع الذي تحتاجه.",
+    "description": "Create tab: installed, but the browser did not grant the site access it needs. Keep {name}"
+  },
+  "panelCreateTurnOn": {
+    "message": "تشغيل",
+    "description": "Create tab button: try again to turn on the installed plugin"
+  },
+  "panelCreateReload": {
+    "message": "إذا كانت نسخة سابقة تعمل، فأعد تحميل الصفحة لاستخدام هذه.",
+    "description": "Create tab: an earlier version with a native op keeps running until reload"
+  },
+  "panelCreateChangeAgain": {
+    "message": "تريد تعديلًا؟ أخبر الذكاء الاصطناعي في هذه المحادثة، وسيعرض Voyager النسخة الجديدة أسفل رده.",
+    "description": "Create tab: how to change the installed plugin again"
+  },
+  "panelCreateFailed": {
+    "message": "تعذّر على Voyager تثبيتها. لم يتغير شيء.",
+    "description": "Create tab: the install failed; nothing was installed"
   },
   "panelTabsLabel": {
     "message": "أقسام اللوحة",

@@ -3001,6 +3001,38 @@
     "message": "تعذّر على Voyager العثور على مربع الرسالة. لم تتم إضافة شيء.",
     "description": "Create mode: the composer was not found in time; nothing was added"
   },
+  "createModePreviewInstall": {
+    "message": "معاينة وتثبيت",
+    "description": "Create mode control under a plugin code block in an AI reply: open the review in the Voyager panel"
+  },
+  "createModePreviewUpdate": {
+    "message": "معاينة التحديث",
+    "description": "Create mode control under a code block that changes a plugin already installed"
+  },
+  "createModeInstalledChip": {
+    "message": "مثبّتة",
+    "description": "Create mode label under a code block whose plugin is installed exactly as written"
+  },
+  "createModeEarlierVersion": {
+    "message": "نسخة سابقة",
+    "description": "Create mode label under a code block that a later block in the chat replaces"
+  },
+  "createModeRejectedNote": {
+    "message": "لا يستطيع Voyager تثبيت هذه بعد.",
+    "description": "Create mode note under a plugin code block that the import gate refuses"
+  },
+  "createModeSendProblems": {
+    "message": "أرسل المشكلات إلى الذكاء الاصطناعي",
+    "description": "Create mode button: put the gate's problems in the composer for the AI; nothing is sent"
+  },
+  "createModeProblemsFilled": {
+    "message": "المشكلات في مربع الرسالة. أرسلها عندما تكون جاهزًا.",
+    "description": "Create mode toast: the problems are in the composer, unsent"
+  },
+  "createModeFixIntro": {
+    "message": "تعذّر على Voyager تثبيت تلك الإضافة. أصلح هذه المشكلات، ثم أعد إرسال الإضافة كاملة في كتلة ```json واحدة فقط:",
+    "description": "Create mode: first line of the message to the AI listing the gate's problems; keep ```json unchanged"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "الصق رد الذكاء الاصطناعي",
     "description": "Label of the field where the user pastes the AI reply"

@@ -58,6 +58,11 @@ export interface PanelContext {
   accountSlot: string | null;
   scheme: 'light' | 'dark';
   direction: 'ltr' | 'rtl';
+  /**
+   * Bumped each time the user picks a Create mode reply on the page, so the
+   * panel asks the page for it (`gv.create.pending`). Absent means none yet.
+   */
+  creationRequest?: number;
 }
 
 export interface PanelSession {
@@ -113,12 +118,23 @@ export function parsePanelContext(value: unknown): PanelContext | null {
   if (!isNullableId(value.siteId) || !isNullableId(value.accountSlot)) return null;
   if (value.scheme !== 'light' && value.scheme !== 'dark') return null;
   if (value.direction !== 'ltr' && value.direction !== 'rtl') return null;
+  const { creationRequest } = value;
+  if (
+    creationRequest !== undefined &&
+    !(
+      typeof creationRequest === 'number' &&
+      Number.isSafeInteger(creationRequest) &&
+      creationRequest >= 0
+    )
+  )
+    return null;
   return {
     pageUrl: value.pageUrl,
     siteId: value.siteId,
     accountSlot: value.accountSlot,
     scheme: value.scheme,
     direction: value.direction,
+    ...(creationRequest ? { creationRequest } : {}),
   };
 }
 

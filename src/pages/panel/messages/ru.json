@@ -31,6 +31,58 @@
     "message": "Страница не ответила. Перезагрузите её и попробуйте снова.",
     "description": "Create tab: the page's content script did not answer the request"
   },
+  "panelCreateReviewTitle": {
+    "message": "Плагин из этого чата",
+    "description": "Create tab: heading of the review of a plugin picked under an AI reply"
+  },
+  "panelCreateChecking": {
+    "message": "Проверяем плагин…",
+    "description": "Create tab: the picked reply is being checked"
+  },
+  "panelCreateInstalling": {
+    "message": "Устанавливаем…",
+    "description": "Create tab: the reviewed plugin is being installed and turned on"
+  },
+  "panelCreateInstallNote": {
+    "message": "Он включится сразу. Выключить его можно в любой момент в разделе «Функции».",
+    "description": "Create tab: what the install button does"
+  },
+  "panelCreateInstall": {
+    "message": "Установить и включить",
+    "description": "Create tab button: install the reviewed plugin and turn it on"
+  },
+  "panelCreateUpdate": {
+    "message": "Обновить и включить",
+    "description": "Create tab button: replace the installed plugin with the reviewed version and turn it on"
+  },
+  "panelCreateRejectedHint": {
+    "message": "Нажмите «Вернуть проблемы ИИ» под ответом — Voyager предложит исправленную версию, когда она придёт.",
+    "description": "Create tab: where to send the problems of a refused plugin"
+  },
+  "panelCreateInstalledOn": {
+    "message": "{name} включён.",
+    "description": "Create tab: the plugin is installed and on. Keep {name}"
+  },
+  "panelCreateInstalledOff": {
+    "message": "{name} установлен, но выключен: браузер не дал нужный доступ к сайту.",
+    "description": "Create tab: installed, but the browser did not grant the site access it needs. Keep {name}"
+  },
+  "panelCreateTurnOn": {
+    "message": "Включить",
+    "description": "Create tab button: try again to turn on the installed plugin"
+  },
+  "panelCreateReload": {
+    "message": "Если работала предыдущая версия, перезагрузите страницу, чтобы включить эту.",
+    "description": "Create tab: an earlier version with a native op keeps running until reload"
+  },
+  "panelCreateChangeAgain": {
+    "message": "Хотите что-то изменить? Напишите ИИ в этом чате — Voyager предложит новую версию под его ответом.",
+    "description": "Create tab: how to change the installed plugin again"
+  },
+  "panelCreateFailed": {
+    "message": "Voyager не смог его установить. Ничего не изменилось.",
+    "description": "Create tab: the install failed; nothing was installed"
+  },
   "panelTabsLabel": {
     "message": "Разделы панели",
     "description": "Accessible name of the panel tab list"

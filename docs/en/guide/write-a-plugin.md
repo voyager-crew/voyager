@@ -1,12 +1,25 @@
 # Write Your Own Plugin
 
-Create mode turns one sentence into a plugin. You say what should change, an AI writes the plugin, and Voyager checks it before you import it. Create mode sits in the **My creations** card of the Voyager popup, and what it makes is a local plugin.
+Create mode turns one sentence into a plugin. You say what should change, an AI writes the plugin, and Voyager checks it before it runs. Create mode is the **Create** tab of the Voyager panel and the **My creations** card of the Voyager popup, and what it makes is a local plugin.
 
 A local plugin is a plugin you make for yourself. It changes how Gemini, AI Studio, ChatGPT, Claude, DeepSeek or Kimi looks or is laid out, it lives only in your browser, and it needs no pull request and no copy of the Voyager source.
 
 Like every Voyager plugin, it is declarative: a `plugin.json` manifest plus CSS. It runs no code of its own. Voyager checks it on import, applies its changes, and removes every change when you turn it off. An imported plugin starts switched off, so you can review it first.
 
-## Three ways to make one
+## Create on the page
+
+The quickest way runs on the AI site the plugin is for. Open the [Voyager panel](./panel.md) there and choose **Create**.
+
+1. Write one sentence under **What should change?** and choose **Create on this page**.
+2. Voyager opens a new chat on that site and puts the request in the message box. Read it, then send it yourself: Voyager never presses send. If the message box already holds text, Voyager leaves it alone and says so.
+3. The AI reads Voyager's page for the site and replies with one JSON code block. Under the block, Voyager adds **Preview and install**.
+4. Choose it. The panel opens on a review: the sites the plugin runs on, each change, its CSS in full and anything to check first. Choose **Install and turn on**, and it applies right away.
+
+To change the plugin, tell the AI in the same chat. Under its new reply Voyager offers **Preview update**, and the older block reads **Earlier version**. When Voyager can't install a reply, it offers **Send the problems back to the AI** instead: the problems go into the message box, below anything you typed, for you to send.
+
+Voyager reads replies only in a chat where your message links Voyager's create page, which the request from **Create on this page** always does. In any other chat nothing appears under the replies; use the popup ways below. The **Create** tab also has **Copy for a local agent**.
+
+## Three more ways
 
 Each way ends in **My creations**. On Gemini and AI Studio it is a settings card, right below **Cloud Sync** unless you move it, and **Jump to** at the top of the popup links to it. On ChatGPT, Claude, DeepSeek and Kimi it sits under the plugin list. **Create your own**, at the end of the plugin list, takes you to its first field.
 

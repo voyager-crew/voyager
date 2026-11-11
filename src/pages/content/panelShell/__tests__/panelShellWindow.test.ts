@@ -8,6 +8,7 @@ import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from '
 import { StorageKeys } from '@/core/types/common';
 import { PANEL_MESSAGE, PANEL_SHELL_MESSAGE } from '@/features/panel/protocol';
 
+import { voyagerPanelOpener } from '../opener';
 import {
   PANEL_URL,
   type ShellPage,
@@ -269,5 +270,20 @@ describe('panel window', () => {
     expect(document.querySelector<HTMLIFrameElement>('.gv-ps-frame')?.style.colorScheme).toBe(
       'dark',
     );
+  });
+
+  it('tells an open panel through its context that a Create mode reply was picked', async () => {
+    await open();
+    const updates = () =>
+      page
+        .sentOfType(PANEL_MESSAGE.contextUpdate)
+        .map((message) => (message.payload as { context: Record<string, unknown> }).context);
+    const before = voyagerPanelOpener.reviewRequests();
+
+    expect(voyagerPanelOpener.openReview()).toBe(true);
+    await flush();
+
+    expect(updates()).toEqual([expect.objectContaining({ creationRequest: before + 1 })]);
+    expect(panel()).not.toBeNull();
   });
 });

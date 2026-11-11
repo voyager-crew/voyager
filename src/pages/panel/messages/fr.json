@@ -16,7 +16,7 @@
     "description": "Create tab: what Create mode does, above the request field"
   },
   "panelCreateUnsupported": {
-    "message": "Le mode Créer ne fonctionne pas encore sur ce site.",
+    "message": "Le mode création ne fonctionne pas encore sur ce site.",
     "description": "Create tab on a website where Create mode does not run"
   },
   "panelCreateHint": {
@@ -30,6 +30,58 @@
   "panelCreateUnavailable": {
     "message": "Cette page n’a pas répondu. Rechargez-la, puis réessayez.",
     "description": "Create tab: the page's content script did not answer the request"
+  },
+  "panelCreateReviewTitle": {
+    "message": "Plugin de ce chat",
+    "description": "Create tab: heading of the review of a plugin picked under an AI reply"
+  },
+  "panelCreateChecking": {
+    "message": "Vérification du plugin…",
+    "description": "Create tab: the picked reply is being checked"
+  },
+  "panelCreateInstalling": {
+    "message": "Installation…",
+    "description": "Create tab: the reviewed plugin is being installed and turned on"
+  },
+  "panelCreateInstallNote": {
+    "message": "Il s’active tout de suite. Désactivez-le quand vous voulez dans Fonctions.",
+    "description": "Create tab: what the install button does"
+  },
+  "panelCreateInstall": {
+    "message": "Installer et activer",
+    "description": "Create tab button: install the reviewed plugin and turn it on"
+  },
+  "panelCreateUpdate": {
+    "message": "Mettre à jour et activer",
+    "description": "Create tab button: replace the installed plugin with the reviewed version and turn it on"
+  },
+  "panelCreateRejectedHint": {
+    "message": "Utilisez « Renvoyer les problèmes à l’IA » sous la réponse ; Voyager proposera la version corrigée dès qu’elle arrive.",
+    "description": "Create tab: where to send the problems of a refused plugin"
+  },
+  "panelCreateInstalledOn": {
+    "message": "{name} est activé.",
+    "description": "Create tab: the plugin is installed and on. Keep {name}"
+  },
+  "panelCreateInstalledOff": {
+    "message": "{name} est installé mais reste désactivé : le navigateur n’a pas accordé l’accès au site dont il a besoin.",
+    "description": "Create tab: installed, but the browser did not grant the site access it needs. Keep {name}"
+  },
+  "panelCreateTurnOn": {
+    "message": "Activer",
+    "description": "Create tab button: try again to turn on the installed plugin"
+  },
+  "panelCreateReload": {
+    "message": "Si une version précédente tournait, rechargez la page pour utiliser celle-ci.",
+    "description": "Create tab: an earlier version with a native op keeps running until reload"
+  },
+  "panelCreateChangeAgain": {
+    "message": "Envie d’un changement ? Dites-le à l’IA dans ce chat ; Voyager proposera la nouvelle version sous sa réponse.",
+    "description": "Create tab: how to change the installed plugin again"
+  },
+  "panelCreateFailed": {
+    "message": "Voyager n’a pas pu l’installer. Rien n’a été modifié.",
+    "description": "Create tab: the install failed; nothing was installed"
   },
   "panelTabsLabel": {
     "message": "Sections du panneau",

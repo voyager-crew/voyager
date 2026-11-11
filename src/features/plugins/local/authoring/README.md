@@ -3,19 +3,26 @@
 Part of [Write your own plugin locally](../README.md): how Voyager helps an AI write the
 manifest that the import gate described there then checks.
 
-**Create mode.** The **My creations** card in the popup opens on it: one
-sentence ("What should change?") and a site (the active tab's when supported),
-then one of two copies. Voyager itself stays offline: it never sends the text,
-opens or deep-links an AI page, reads one back, or makes a request; the user
-pastes it. Every web chat AI is assumed to browse, so the message for it stays
-short and the contract lives on a page it reads. `local/creationMessage.ts`
-builds both texts from i18n wrapper sentences (`createModeChatMessage`,
-`createModeAgentHandoff`) with the request (trimmed, at most
-`MAX_PLUGIN_REQUEST_CHARS`), URLs, engine version and command filled in one
-pass:
+**Create mode.** Two surfaces ask for the same one sentence ("What should
+change?"). The panel's **Create** tab works on the page the panel sits on:
+**Create on this page** fills a new chat's composer there (the in-page loop
+below) and **Copy for a local agent** copies the handoff. The popup's **My
+creations** card adds a site picker (the active tab's when supported) and
+offers **Copy for this chat** and **Copy for a local agent**. Voyager never
+sends a message, loads or deep-links a page, or makes a request: it fills an
+empty composer or the clipboard, and the user presses send. It reads an AI
+reply back in one case only: on the page, in a chat where a user message
+links a create page (`isCreationChatText`), which every creation message
+does. Anywhere else the user pastes the reply into the popup. Every web chat
+AI is assumed to browse, so the message for it stays short and the contract
+lives on a page it reads. `local/creationMessage.ts` builds both texts from
+i18n wrapper sentences (`createModeChatMessage`, `createModeAgentHandoff`)
+with the request (trimmed, at most `MAX_PLUGIN_REQUEST_CHARS`), URLs, engine
+version and command filled in one pass:
 
-- **Copy for this chat**: `buildCreationMessage(request, site, t)`, pasted into
-  the chat of the site the plugin targets: read `createPageUrl(site.id)` first,
+- **Copy for this chat** and **Create on this page**:
+  `buildCreationMessage(request, site, t)`, for the chat of the site the plugin
+  targets (the page filling it builds it with its own site): read `createPageUrl(site.id)` first,
   write a plugin for that site, the user's plugin engine version as a ceiling,
   reply with exactly one ```json block.
 - **Copy for a local agent**: `buildAgentHandoff(request, site, t)`, for a
@@ -25,7 +32,8 @@ pass:
   add** in the same card).
 
 A refused clipboard write leaves the text on screen to select. The popup side
-is `pages/popup/hooks/useCreateRequest.ts` and `components/CreateModeRequest.tsx`.
+is `pages/popup/hooks/useCreateRequest.ts` and `components/CreateModeRequest.tsx`;
+the panel side is `pages/panel/create/useCreateHandoff.ts` and `CreateView.tsx`.
 `authoringSites.ts` holds the site list, `authoringSiteForUrl` and the request
 ceiling both copies share.
 
@@ -51,6 +59,46 @@ ceiling both copies share.
   rules in [../README.md](../README.md), but only over the install the preview saw: if the same id was
   installed, changed or removed meanwhile, nothing is written and the preview
   is refreshed for a new review.
+
+**The in-page loop.** `pages/content/createMode/` is a permanent page service
+(`nativeFeatures.ts`, top frame only, on every site `authoringSiteForUrl`
+knows). The panel reaches it only through the background's tab relay; the
+panel takes nothing from window messages.
+
+- **Fill.** `gv.create.start` carries the sentence, parsed and bounded on both
+  ends (`creation/messages.ts`, `features/panel/tabRequests.ts`). A draft in
+  the current composer is refused before the page moves. `newChat.ts` holds
+  each site's new-chat path and control: the site's own control first, then,
+  on Gemini only, pushState plus popstate to `/u/<n>/app`; never
+  `location.assign`, `href` or `reload`. `fillMachine.ts` (`startMachine`:
+  opening, waiting for a stable composer, writing) checks the route in every
+  phase and writes only into an empty composer on the new-chat page. Nothing
+  is sent; a toast says what happened.
+- **Read.** `replyControls.ts` reads code blocks only in a Create chat: the
+  site's `codeBlock` anchor inside an `assistantTurn`, or a `pre` inside one
+  where the site declares none. Each block goes through `classifyReplyBlock`
+  against the installed records (refreshed by `subscribeLocalPlugins`), and
+  `markLatestCandidates` lets only the last block per id act; earlier ones
+  read **Earlier version**. Text that does not parse as a plugin, a block
+  still streaming included, gets no control. Controls sit after the block in a
+  shadow root (`gv-create-control`), take clicks only through `isUserEvent`,
+  and leave with teardown.
+- **Hand over.** **Preview and install** (or **Preview update**) holds the
+  block for 60 seconds and calls `voyagerPanelOpener.openReview()`, which bumps
+  `PanelContext.creationRequest` in the shell's authenticated context. The
+  panel then fetches the block once (`gv.create.pending`).
+- **Review and install.** The panel (`pages/panel/create/`, `reviewMachine.ts`
+  on `startMachine`) runs `checkPluginReply` again, since it never trusts the
+  page's verdict, and shows `LocalPluginPreviewSummary`, the popup's preview
+  in the panel's look. **Install and turn on** (`installReviewed.ts`) imports
+  the reviewed object only over the install it saw, so it lands disabled like
+  any import, then switches on exactly the imported manifest through
+  `setPluginEnabledWithSiteAccess` and `enableLocalPluginIfUnchanged`. An
+  install that changed in between enables nothing and the panel reviews
+  again. Refused site access leaves it installed and off with **Turn on**.
+- **Send the problems back.** Under a block the gate refuses, the control
+  appends `buildCreationFixMessage` to the composer, after a blank line below
+  any draft, and sends nothing.
 
 **One contract, four outputs.** `local/authoring/pluginContract.ts`
 (`buildPluginContract(site, { audience, refs })`) is the single description of

@@ -3001,6 +3001,38 @@
     "message": "Voyager couldn’t find the message box. Nothing was added.",
     "description": "Create mode: the composer was not found in time; nothing was added"
   },
+  "createModePreviewInstall": {
+    "message": "Preview and install",
+    "description": "Create mode control under a plugin code block in an AI reply: open the review in the Voyager panel"
+  },
+  "createModePreviewUpdate": {
+    "message": "Preview update",
+    "description": "Create mode control under a code block that changes a plugin already installed"
+  },
+  "createModeInstalledChip": {
+    "message": "Installed",
+    "description": "Create mode label under a code block whose plugin is installed exactly as written"
+  },
+  "createModeEarlierVersion": {
+    "message": "Earlier version",
+    "description": "Create mode label under a code block that a later block in the chat replaces"
+  },
+  "createModeRejectedNote": {
+    "message": "Voyager can’t install this yet.",
+    "description": "Create mode note under a plugin code block that the import gate refuses"
+  },
+  "createModeSendProblems": {
+    "message": "Send the problems back to the AI",
+    "description": "Create mode button: put the gate's problems in the composer for the AI; nothing is sent"
+  },
+  "createModeProblemsFilled": {
+    "message": "The problems are in the message box. Send them when you’re ready.",
+    "description": "Create mode toast: the problems are in the composer, unsent"
+  },
+  "createModeFixIntro": {
+    "message": "Voyager couldn’t install that plugin. Fix these problems, then reply with the whole plugin again in exactly one ```json block:",
+    "description": "Create mode: first line of the message to the AI listing the gate's problems; keep ```json unchanged"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "Paste the AI’s reply",
     "description": "Label of the field where the user pastes the AI reply"

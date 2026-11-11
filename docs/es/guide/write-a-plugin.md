@@ -1,12 +1,25 @@
 # Escribe tu propio plugin
 
-El modo creación convierte una frase en un plugin. Dices qué quieres cambiar, una IA escribe el plugin y Voyager lo revisa antes de que lo importes. El modo creación está en la tarjeta **Mis creaciones** del popup de Voyager, y lo que crea es un plugin local.
+El modo creación convierte una frase en un plugin. Dices qué quieres cambiar, una IA escribe el plugin y Voyager lo revisa antes de que lo importes. El modo creación está en la pestaña **Crear** del panel de Voyager y en la tarjeta **Mis creaciones** del popup de Voyager, y lo que crea es un plugin local.
 
 Un plugin local es un plugin que haces para ti. Cambia el aspecto o la disposición de Gemini, AI Studio, ChatGPT, Claude, DeepSeek o Kimi, vive solo en tu navegador y no necesita ninguna pull request ni una copia del código fuente de Voyager.
 
 Como todos los plugins de Voyager, es declarativo: un manifest `plugin.json` más CSS. No ejecuta código propio. Voyager lo revisa al importarlo, aplica sus cambios y los retira todos cuando lo desactivas. Un plugin importado empieza desactivado, así que puedes revisarlo antes de encenderlo.
 
-## Tres formas de crearlo
+## Crear en la página
+
+La forma más rápida funciona en el sitio de IA para el que es el plugin. Abre allí el [panel de Voyager](./panel.md) y elige **Crear**.
+
+1. Escribe una frase en **¿Qué quieres cambiar?** y elige **Crear en esta página**.
+2. Voyager abre un chat nuevo en ese sitio y pone la petición en el cuadro de mensaje. Léela y envíala tú: Voyager nunca pulsa enviar. Si el cuadro de mensaje ya tiene texto, Voyager no lo toca y te lo dice.
+3. La IA lee la página de Voyager para el sitio y responde con un único bloque de código JSON. Debajo del bloque, Voyager añade **Revisar e instalar**.
+4. Elígelo. El panel se abre con una revisión: los sitios donde funciona el plugin, cada cambio, su CSS completo y lo que conviene comprobar antes. Elige **Instalar y activar** y se aplica al momento.
+
+Para cambiar el plugin, díselo a la IA en el mismo chat. Bajo su nueva respuesta Voyager ofrece **Revisar actualización**, y el bloque anterior indica **Versión anterior**. Cuando Voyager no puede instalar una respuesta, ofrece en su lugar **Devolver los problemas a la IA**: los problemas van al cuadro de mensaje, debajo de lo que hayas escrito, para que los envíes tú.
+
+Voyager solo lee respuestas en un chat donde tu mensaje enlaza la página de creación de Voyager, y la petición de **Crear en esta página** siempre lo hace. En cualquier otro chat no aparece nada bajo las respuestas; usa las formas del popup que siguen. La pestaña **Crear** también tiene **Copiar para un agente local**.
+
+## Otras tres formas
 
 Las tres formas terminan en **Mis creaciones**. En Gemini y AI Studio es una tarjeta de ajustes, justo debajo de **Sincronización en Nube** salvo que la muevas, y **Ir a**, arriba del popup, enlaza con ella. En ChatGPT, Claude, DeepSeek y Kimi está debajo de la lista de plugins. **Crea el tuyo**, al final de la lista de plugins, te lleva a su primer campo.
 

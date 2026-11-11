@@ -3001,6 +3001,38 @@
     "message": "Voyager 没找到输入框，什么都没有填入。",
     "description": "Create mode: the composer was not found in time; nothing was added"
   },
+  "createModePreviewInstall": {
+    "message": "预览并安装",
+    "description": "Create mode control under a plugin code block in an AI reply: open the review in the Voyager panel"
+  },
+  "createModePreviewUpdate": {
+    "message": "预览更新",
+    "description": "Create mode control under a code block that changes a plugin already installed"
+  },
+  "createModeInstalledChip": {
+    "message": "已安装",
+    "description": "Create mode label under a code block whose plugin is installed exactly as written"
+  },
+  "createModeEarlierVersion": {
+    "message": "较早的版本",
+    "description": "Create mode label under a code block that a later block in the chat replaces"
+  },
+  "createModeRejectedNote": {
+    "message": "Voyager 暂时装不了这个插件。",
+    "description": "Create mode note under a plugin code block that the import gate refuses"
+  },
+  "createModeSendProblems": {
+    "message": "把问题发回给 AI",
+    "description": "Create mode button: put the gate's problems in the composer for the AI; nothing is sent"
+  },
+  "createModeProblemsFilled": {
+    "message": "问题已填入输入框，准备好后再发送。",
+    "description": "Create mode toast: the problems are in the composer, unsent"
+  },
+  "createModeFixIntro": {
+    "message": "Voyager 没能安装这个插件。请修复下面的问题，然后把完整插件放进唯一一个 ```json 代码块里重新回复：",
+    "description": "Create mode: first line of the message to the AI listing the gate's problems; keep ```json unchanged"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "粘贴 AI 的回复",
     "description": "Label of the field where the user pastes the AI reply"

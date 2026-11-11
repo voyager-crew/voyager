@@ -16,7 +16,7 @@
     "description": "Create tab: what Create mode does, above the request field"
   },
   "panelCreateUnsupported": {
-    "message": "만들기 모드는 아직 이 사이트에서 쓸 수 없습니다.",
+    "message": "창작 모드는 아직 이 사이트에서 쓸 수 없습니다.",
     "description": "Create tab on a website where Create mode does not run"
   },
   "panelCreateHint": {
@@ -30,6 +30,58 @@
   "panelCreateUnavailable": {
     "message": "이 페이지가 응답하지 않았습니다. 새로고침한 뒤 다시 시도하세요.",
     "description": "Create tab: the page's content script did not answer the request"
+  },
+  "panelCreateReviewTitle": {
+    "message": "이 채팅의 플러그인",
+    "description": "Create tab: heading of the review of a plugin picked under an AI reply"
+  },
+  "panelCreateChecking": {
+    "message": "플러그인을 확인하는 중…",
+    "description": "Create tab: the picked reply is being checked"
+  },
+  "panelCreateInstalling": {
+    "message": "설치하는 중…",
+    "description": "Create tab: the reviewed plugin is being installed and turned on"
+  },
+  "panelCreateInstallNote": {
+    "message": "바로 켜집니다. 언제든 기능에서 끌 수 있습니다.",
+    "description": "Create tab: what the install button does"
+  },
+  "panelCreateInstall": {
+    "message": "설치하고 켜기",
+    "description": "Create tab button: install the reviewed plugin and turn it on"
+  },
+  "panelCreateUpdate": {
+    "message": "업데이트하고 켜기",
+    "description": "Create tab button: replace the installed plugin with the reviewed version and turn it on"
+  },
+  "panelCreateRejectedHint": {
+    "message": "답변 아래의 ‘문제점을 AI에게 돌려보내기’를 쓰면, 고친 버전이 오는 대로 Voyager가 제안합니다.",
+    "description": "Create tab: where to send the problems of a refused plugin"
+  },
+  "panelCreateInstalledOn": {
+    "message": "{name}이(가) 켜졌습니다.",
+    "description": "Create tab: the plugin is installed and on. Keep {name}"
+  },
+  "panelCreateInstalledOff": {
+    "message": "{name}을(를) 설치했지만 아직 꺼져 있습니다. 브라우저가 필요한 사이트 접근을 허용하지 않았습니다.",
+    "description": "Create tab: installed, but the browser did not grant the site access it needs. Keep {name}"
+  },
+  "panelCreateTurnOn": {
+    "message": "켜기",
+    "description": "Create tab button: try again to turn on the installed plugin"
+  },
+  "panelCreateReload": {
+    "message": "이전 버전이 실행 중이었다면 페이지를 새로고침해야 이 버전이 적용됩니다.",
+    "description": "Create tab: an earlier version with a native op keeps running until reload"
+  },
+  "panelCreateChangeAgain": {
+    "message": "바꾸고 싶으면 이 채팅에서 AI에게 말하세요. 새 버전을 Voyager가 답변 아래에서 제안합니다.",
+    "description": "Create tab: how to change the installed plugin again"
+  },
+  "panelCreateFailed": {
+    "message": "설치하지 못했습니다. 아무것도 바뀌지 않았습니다.",
+    "description": "Create tab: the install failed; nothing was installed"
   },
   "panelTabsLabel": {
     "message": "패널 구역",

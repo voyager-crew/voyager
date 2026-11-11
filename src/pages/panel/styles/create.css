@@ -78,3 +78,61 @@
   justify-content: flex-end;
   gap: 8px;
 }
+
+.create-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.create-meta {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.create-line,
+.create-sub {
+  margin: 0;
+  font-size: 12.5px;
+}
+
+.create-sub {
+  color: var(--ink-3);
+}
+
+.create-list {
+  margin: 4px 0 0;
+  padding-inline-start: 18px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.create-code {
+  max-height: 160px;
+  margin: 0;
+  padding: 8px 10px;
+  overflow: auto;
+  border-radius: 9px;
+  background: var(--tile);
+  box-shadow: inset 0 0 0 1px var(--line);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.create-code-list {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}
+
+.create-warn {
+  padding-inline-start: 10px;
+  border-inline-start: 3px solid var(--wait);
+}
+
+.create-status p {
+  margin: 0;
+}

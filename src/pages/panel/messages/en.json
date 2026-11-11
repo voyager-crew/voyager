@@ -31,6 +31,58 @@
     "message": "This page didn’t answer. Reload it, then try again.",
     "description": "Create tab: the page's content script did not answer the request"
   },
+  "panelCreateReviewTitle": {
+    "message": "Plugin from this chat",
+    "description": "Create tab: heading of the review of a plugin picked under an AI reply"
+  },
+  "panelCreateChecking": {
+    "message": "Checking the plugin…",
+    "description": "Create tab: the picked reply is being checked"
+  },
+  "panelCreateInstalling": {
+    "message": "Installing…",
+    "description": "Create tab: the reviewed plugin is being installed and turned on"
+  },
+  "panelCreateInstallNote": {
+    "message": "It turns on right away. Turn it off any time under Features.",
+    "description": "Create tab: what the install button does"
+  },
+  "panelCreateInstall": {
+    "message": "Install and turn on",
+    "description": "Create tab button: install the reviewed plugin and turn it on"
+  },
+  "panelCreateUpdate": {
+    "message": "Update and turn on",
+    "description": "Create tab button: replace the installed plugin with the reviewed version and turn it on"
+  },
+  "panelCreateRejectedHint": {
+    "message": "Use “Send the problems back to the AI” under the reply, and Voyager offers the fixed version when it arrives.",
+    "description": "Create tab: where to send the problems of a refused plugin"
+  },
+  "panelCreateInstalledOn": {
+    "message": "{name} is on.",
+    "description": "Create tab: the plugin is installed and on. Keep {name}"
+  },
+  "panelCreateInstalledOff": {
+    "message": "{name} is installed but still off: the browser didn’t grant the site access it needs.",
+    "description": "Create tab: installed, but the browser did not grant the site access it needs. Keep {name}"
+  },
+  "panelCreateTurnOn": {
+    "message": "Turn on",
+    "description": "Create tab button: try again to turn on the installed plugin"
+  },
+  "panelCreateReload": {
+    "message": "If an earlier version was running, reload the page to use this one.",
+    "description": "Create tab: an earlier version with a native op keeps running until reload"
+  },
+  "panelCreateChangeAgain": {
+    "message": "Want a change? Tell the AI in this chat, and Voyager offers the new version under its reply.",
+    "description": "Create tab: how to change the installed plugin again"
+  },
+  "panelCreateFailed": {
+    "message": "Voyager couldn’t install it. Nothing was changed.",
+    "description": "Create tab: the install failed; nothing was installed"
+  },
   "panelTabsLabel": {
     "message": "Panel sections",
     "description": "Accessible name of the panel tab list"

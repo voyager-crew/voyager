@@ -1,26 +1,45 @@
 /**
- * Create mode on the page, a permanent page service: the panel's "Create on
- * this page" opens a new chat here and fills its composer with the creation
- * message (`local/creationMessage.ts`). Voyager never sends it; the user
- * reviews it and presses send. The panel reaches this module only through the
- * background's tab relay, never through window messages.
+ * Create mode on the page, a permanent page service:
+ *
+ * - the panel's "Create on this page" opens a new chat here and fills its
+ *   composer with the creation message (`local/creationMessage.ts`). Voyager
+ *   never sends it; the user reviews it and presses send.
+ * - in that chat, each plugin code block in a reply gets a control
+ *   (`replyControls.ts`). "Preview" holds the block and opens the panel, which
+ *   fetches it once (`gv.create.pending`), checks it again and installs it;
+ *   "Send the problems back" appends the gate's problems to the composer.
+ *
+ * The panel reaches this module only through the background's tab relay,
+ * never through window messages.
  */
+import { insertIntoComposer } from '@/core/services/composer';
 import { isEmptyComposer } from '@/core/services/composer/emptyComposer';
 import { createToaster } from '@/core/ui/toast/toaster';
 import { authoringSiteForUrl } from '@/features/plugins/local/authoringSites';
+import { buildCreationFixMessage } from '@/features/plugins/local/creation/fixMessage';
 import {
+  CREATE_MODE_MESSAGES,
   type CreateStartReply,
   parseCreateStartRequest,
 } from '@/features/plugins/local/creation/messages';
+import type { CreationCandidate } from '@/features/plugins/local/creation/types';
 import { buildCreationMessage } from '@/features/plugins/local/creationMessage';
+import {
+  loadLocalPluginRecords,
+  subscribeLocalPlugins,
+} from '@/features/plugins/local/localPluginStore';
 import { getTranslationSync } from '@/utils/i18n';
 import type { TranslationKey } from '@/utils/translations';
 
 import { findChatInput } from '../chatInput';
 import type { StopNativeFeature } from '../featureLifecycle';
+import { voyagerPanelOpener } from '../panelShell/opener';
 import { startCreationFill } from './fill';
 import type { FillResult } from './fillMachine';
 import { newChatTarget } from './newChat';
+import { createPendingReview } from './pending';
+import type { ReplyControlAction } from './replyControl';
+import { startReplyControls } from './replyControls';
 
 const TOAST_MS = 6_000;
 
@@ -36,6 +55,7 @@ type MessageListener = Parameters<typeof chrome.runtime.onMessage.addListener>[0
 export interface CreateModeDeps {
   /** The page's main composer; the site's own finder by default. */
   readonly find?: () => HTMLElement | null;
+  readonly openReview?: () => boolean;
 }
 
 export function startCreateMode(deps: CreateModeDeps = {}): StopNativeFeature {
@@ -71,10 +91,57 @@ export function startCreateMode(deps: CreateModeDeps = {}): StopNativeFeature {
     return { ok: true };
   };
 
+  const pending = createPendingReview();
+  const openReview = deps.openReview ?? (() => voyagerPanelOpener.openReview());
+
+  const sendProblemsBack = (candidate: CreationCandidate): void => {
+    if (candidate.verdict.kind !== 'rejected') return;
+    const composer = find();
+    const fix = buildCreationFixMessage(
+      candidate.verdict.issues,
+      getTranslationSync('createModeFixIntro'),
+    );
+    // After whatever the user already typed, a blank line apart; never sent.
+    const written =
+      composer !== null &&
+      insertIntoComposer(composer, isEmptyComposer(composer) ? fix : `\n\n${fix}`, 'append');
+    toaster.show({
+      message: getTranslationSync(written ? 'createModeProblemsFilled' : 'createModeNoComposer'),
+      tone: written ? 'success' : 'error',
+      durationMs: TOAST_MS,
+    });
+  };
+
+  const onAction = (action: ReplyControlAction, candidate: CreationCandidate): void => {
+    if (action === 'problems') {
+      sendProblemsBack(candidate);
+      return;
+    }
+    pending.put({ text: candidate.text, siteId: candidate.siteId });
+    openReview();
+  };
+
+  const stopControls = startReplyControls({
+    doc: document,
+    adapter: site,
+    loadRecords: loadLocalPluginRecords,
+    subscribeRecords: subscribeLocalPlugins,
+    onAction,
+  });
+
   const listener: MessageListener = (message, _sender, sendResponse) => {
     const start = parseCreateStartRequest(message);
-    if (!start) return;
-    sendResponse(begin(start.request));
+    if (start) {
+      sendResponse(begin(start.request));
+      return;
+    }
+    if (
+      typeof message === 'object' &&
+      message !== null &&
+      'type' in message &&
+      message.type === CREATE_MODE_MESSAGES.pending
+    )
+      sendResponse({ candidate: pending.take() });
   };
   chrome.runtime.onMessage.addListener(listener);
 
@@ -89,6 +156,7 @@ export function startCreateMode(deps: CreateModeDeps = {}): StopNativeFeature {
     }
     stopFill?.();
     stopFill = null;
+    stopControls();
     toaster.destroy();
   };
 }

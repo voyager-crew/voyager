@@ -31,6 +31,58 @@
     "message": "这个页面没有响应。刷新后再试。",
     "description": "Create tab: the page's content script did not answer the request"
   },
+  "panelCreateReviewTitle": {
+    "message": "来自这个对话的插件",
+    "description": "Create tab: heading of the review of a plugin picked under an AI reply"
+  },
+  "panelCreateChecking": {
+    "message": "正在检查插件…",
+    "description": "Create tab: the picked reply is being checked"
+  },
+  "panelCreateInstalling": {
+    "message": "正在安装…",
+    "description": "Create tab: the reviewed plugin is being installed and turned on"
+  },
+  "panelCreateInstallNote": {
+    "message": "安装后立即开启，随时可以在“功能”里关掉。",
+    "description": "Create tab: what the install button does"
+  },
+  "panelCreateInstall": {
+    "message": "安装并开启",
+    "description": "Create tab button: install the reviewed plugin and turn it on"
+  },
+  "panelCreateUpdate": {
+    "message": "更新并开启",
+    "description": "Create tab button: replace the installed plugin with the reviewed version and turn it on"
+  },
+  "panelCreateRejectedHint": {
+    "message": "点回复下方的“把问题发回给 AI”，修好的版本一到，Voyager 就会提示你。",
+    "description": "Create tab: where to send the problems of a refused plugin"
+  },
+  "panelCreateInstalledOn": {
+    "message": "{name} 已开启。",
+    "description": "Create tab: the plugin is installed and on. Keep {name}"
+  },
+  "panelCreateInstalledOff": {
+    "message": "{name} 已安装，但还没开启：浏览器没有授予它需要的网站访问权限。",
+    "description": "Create tab: installed, but the browser did not grant the site access it needs. Keep {name}"
+  },
+  "panelCreateTurnOn": {
+    "message": "开启",
+    "description": "Create tab button: try again to turn on the installed plugin"
+  },
+  "panelCreateReload": {
+    "message": "如果之前的版本正在运行，刷新页面后才会用上这一版。",
+    "description": "Create tab: an earlier version with a native op keeps running until reload"
+  },
+  "panelCreateChangeAgain": {
+    "message": "还想改？直接在这个对话里告诉 AI，Voyager 会在它的回复下提示新版本。",
+    "description": "Create tab: how to change the installed plugin again"
+  },
+  "panelCreateFailed": {
+    "message": "Voyager 没能安装它，什么都没有改动。",
+    "description": "Create tab: the install failed; nothing was installed"
+  },
   "panelTabsLabel": {
     "message": "分区",
     "description": "Accessible name of the panel tab list"

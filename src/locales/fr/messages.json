@@ -3001,6 +3001,38 @@
     "message": "Voyager n’a pas trouvé la zone de saisie. Rien n’a été ajouté.",
     "description": "Create mode: the composer was not found in time; nothing was added"
   },
+  "createModePreviewInstall": {
+    "message": "Aperçu et installation",
+    "description": "Create mode control under a plugin code block in an AI reply: open the review in the Voyager panel"
+  },
+  "createModePreviewUpdate": {
+    "message": "Aperçu de la mise à jour",
+    "description": "Create mode control under a code block that changes a plugin already installed"
+  },
+  "createModeInstalledChip": {
+    "message": "Installé",
+    "description": "Create mode label under a code block whose plugin is installed exactly as written"
+  },
+  "createModeEarlierVersion": {
+    "message": "Version précédente",
+    "description": "Create mode label under a code block that a later block in the chat replaces"
+  },
+  "createModeRejectedNote": {
+    "message": "Voyager ne peut pas encore l’installer.",
+    "description": "Create mode note under a plugin code block that the import gate refuses"
+  },
+  "createModeSendProblems": {
+    "message": "Renvoyer les problèmes à l’IA",
+    "description": "Create mode button: put the gate's problems in the composer for the AI; nothing is sent"
+  },
+  "createModeProblemsFilled": {
+    "message": "Les problèmes sont dans la zone de saisie. Envoyez-les quand vous voulez.",
+    "description": "Create mode toast: the problems are in the composer, unsent"
+  },
+  "createModeFixIntro": {
+    "message": "Voyager n’a pas pu installer ce plugin. Corrigez ces problèmes, puis renvoyez le plugin complet dans un seul bloc ```json :",
+    "description": "Create mode: first line of the message to the AI listing the gate's problems; keep ```json unchanged"
+  },
   "localPluginDescribeReplyLabel": {
     "message": "Collez la réponse de l’IA",
     "description": "Label of the field where the user pastes the AI reply"

@@ -29,10 +29,15 @@ A user can run a declarative plugin they wrote without publishing it:
    ones do (D7). **Export** downloads the stored manifest with CSS inlined;
    **Remove** deletes it with its enable state and settings.
 
-**Writing it with an AI.** Create mode, the reply check, the plugin contract and
-its generated outputs, and the offline CLI: [authoring/README.md](authoring/README.md).
-Create mode's pure readers (the Create-chat marker, the code-block verdict
-against the same gate, latest block per id, the fix message) are in `creation/`.
+**Writing it with an AI.** Create mode (the panel's Create tab and this card),
+the reply check, the in-page loop that installs a plugin from an AI reply, the
+plugin contract and its generated outputs, and the offline CLI:
+[authoring/README.md](authoring/README.md). Create mode's pure readers (the
+Create-chat marker, the code-block verdict against the same gate, latest block
+per id, the fix message) and the panel's request contract are in `creation/`;
+the page side is `pages/content/createMode/`. **Install and turn on** there
+imports exactly the reviewed object the same way, disabled, then switches on
+only that version.
 
 The gate (`local/validateLocalManifest.ts`) is the remote catalog's gate plus
 local-only rules, never a weaker one: `validateManifest` with the CSS and

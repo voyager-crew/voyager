@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { MAX_PLUGIN_REQUEST_CHARS } from '@/features/plugins/local/authoringSites';
 
-import { parsePanelRuntimeMessage, parsePanelTabRequest } from '../protocol';
+import { parsePanelContext, parsePanelRuntimeMessage, parsePanelTabRequest } from '../protocol';
 
 const SESSION = 'b'.repeat(64);
 
@@ -48,5 +48,24 @@ describe('Create mode requests through the panel tab relay', () => {
     });
     expect(parsePanelRuntimeMessage(message('ok'))).not.toBeNull();
     expect(parsePanelRuntimeMessage(message(''))).toBeNull();
+  });
+});
+
+describe('the review count in the panel context', () => {
+  const context = {
+    pageUrl: 'https://gemini.google.com/app',
+    siteId: 'gemini',
+    accountSlot: '0',
+    scheme: 'light',
+    direction: 'ltr',
+  };
+
+  it('carries a count of picks and reads a context without one as none', () => {
+    expect(parsePanelContext({ ...context, creationRequest: 2 })?.creationRequest).toBe(2);
+    expect(parsePanelContext(context)?.creationRequest).toBeUndefined();
+  });
+
+  it.each([-1, 1.5, '2', Number.NaN])('refuses a context whose count is %s', (count) => {
+    expect(parsePanelContext({ ...context, creationRequest: count })).toBeNull();
   });
 });

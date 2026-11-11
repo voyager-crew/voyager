@@ -90,7 +90,10 @@ EntitlementProvider  ─► entitled?         │  styles + domOps, reversible, 
   owns `mergePluginRecords`, the rules that pick which copy of a plugin id wins.
 - **`local/`** — user-imported declarative plugins: the `local.*` id namespace,
   the import gate, storage, the read-only `LocalPluginSource` and the inspect
-  summary the popup shows. See [local/README.md](local/README.md).
+  summary the popup shows, plus Create mode. Create mode reads a plugin back
+  from an AI reply only on the page, only in a chat a user message started
+  from a create page, and installs it from the panel after a review. See
+  [local/README.md](local/README.md).
 - **`remote/`** — the per-host remote catalog channel: a read-only source over a
   storage cache, plus a background-only fetcher. See [remote/README.md](remote/README.md).
 - **`catalog/`** — the bundled official data: one directory per site, each

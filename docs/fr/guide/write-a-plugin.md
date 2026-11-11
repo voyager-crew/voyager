@@ -1,12 +1,25 @@
 # Écrire son propre plugin
 
-Le mode création transforme une phrase en plugin. Vous dites ce qui doit changer, une IA écrit le plugin, et Voyager le vérifie avant que vous l'importiez. Le mode création se trouve dans la carte **Mes créations** du popup de Voyager, et ce qu'il produit est un plugin local.
+Le mode création transforme une phrase en plugin. Vous dites ce qui doit changer, une IA écrit le plugin, et Voyager le vérifie avant que vous l'importiez. Le mode création se trouve dans l'onglet **Créer** du panneau Voyager et dans la carte **Mes créations** du popup de Voyager, et ce qu'il produit est un plugin local.
 
 Un plugin local est un plugin que vous créez pour vous-même. Il modifie l'apparence ou la mise en page de Gemini, AI Studio, ChatGPT, Claude, DeepSeek ou Kimi, il ne vit que dans votre navigateur, et il ne demande ni pull request ni copie du code source de Voyager.
 
 Comme tous les plugins Voyager, il est déclaratif : un manifest `plugin.json` et du CSS. Il n'exécute aucun code qui lui soit propre. Voyager le vérifie à l'import, applique ses modifications et les retire toutes quand vous le désactivez. Un plugin importé est désactivé au départ, pour que vous puissiez le relire avant de l'activer.
 
-## Trois façons de le créer
+## Créer sur la page
+
+La façon la plus rapide se fait sur le site d'IA auquel le plugin est destiné. Ouvrez-y le [panneau Voyager](./panel.md) et choisissez **Créer**.
+
+1. Écrivez une phrase sous **Que faut-il changer ?** et choisissez **Créer sur cette page**.
+2. Voyager ouvre un nouveau chat sur ce site et place la demande dans la zone de saisie. Relisez-la, puis envoyez-la vous-même : Voyager n'appuie jamais sur envoyer. Si la zone de saisie contient déjà du texte, Voyager n'y touche pas et vous le signale.
+3. L'IA lit la page de Voyager pour ce site et répond avec un seul bloc de code JSON. Sous le bloc, Voyager ajoute **Aperçu et installation**.
+4. Choisissez-le. Le panneau s'ouvre sur une revue : les sites où le plugin s'applique, chaque changement, son CSS en entier et ce qu'il faut vérifier d'abord. Choisissez **Installer et activer**, et il s'applique tout de suite.
+
+Pour modifier le plugin, dites-le à l'IA dans le même chat. Sous sa nouvelle réponse, Voyager propose **Aperçu de la mise à jour**, et l'ancien bloc indique **Version précédente**. Quand Voyager ne peut pas installer une réponse, il propose à la place **Renvoyer les problèmes à l’IA** : les problèmes vont dans la zone de saisie, sous ce que vous avez déjà écrit, et c'est vous qui les envoyez.
+
+Voyager ne lit les réponses que dans un chat où votre message contient le lien de la page de création de Voyager, ce que fait toujours la demande de **Créer sur cette page**. Dans tout autre chat, rien n'apparaît sous les réponses ; utilisez les façons du popup ci-dessous. L'onglet **Créer** propose aussi **Copier pour un agent local**.
+
+## Trois autres façons
 
 Les trois façons aboutissent dans **Mes créations**. Sur Gemini et AI Studio, c'est une carte des réglages, juste sous **Synchro Cloud** sauf si vous la déplacez, et **Aller à**, en haut du popup, y mène. Sur ChatGPT, Claude, DeepSeek et Kimi, elle se trouve sous la liste des plugins. **Créez le vôtre**, à la fin de la liste des plugins, vous amène à son premier champ.
 
