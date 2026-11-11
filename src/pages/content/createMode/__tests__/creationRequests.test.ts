@@ -2,6 +2,7 @@
 // @vitest-environment-options { "url": "https://gemini.google.com/app/0123456789abcdef" }
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
+import { THEME_VARIABLES, themeVariableName } from '@/core/ui/themeVariables';
 import { isCreationChatText } from '@/features/plugins/local/creation/creationMarker';
 import type { LocalPluginRecordMap } from '@/features/plugins/local/localPluginStore';
 import { DEFAULT_ADAPTERS } from '@/features/plugins/sites/registry';
@@ -97,6 +98,12 @@ describe('which installed restyling creations find anything on this page', () =>
       'local.list': 'matches',
       'local.media': 'matches',
     });
+  });
+
+  it('counts a creation that only sets the public theme variables as found', () => {
+    const vars = THEME_VARIABLES.map(({ role }) => `${themeVariableName(role)}: #2e3440;`).join('');
+    const map = records(restyle('nord', { styles: [{ css: `:root { ${vars} }` }] }));
+    expect(verdicts(map)).toEqual({ 'local.nord': 'matches' });
   });
 
   it('leaves what matching cannot judge unchecked instead of calling it broken', () => {

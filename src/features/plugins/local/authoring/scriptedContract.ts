@@ -31,7 +31,7 @@ export function scriptedSection(
     return {
       title: SCRIPTED_TITLE,
       lines: [
-        `A scripted plugin carries JavaScript for behavior ${declarative} cannot give, such as reacting to clicks, counting or remembering something across visits. Read ${SCRIPTED_PAGE_URL} when the request needs such behavior, before answering NOT POSSIBLE. Use the declarative tier whenever it suffices: a scripted plugin needs ${SCRIPTED_REQUIREMENT}, and the user reads all of its code before turning it on.`,
+        `A scripted plugin runs JavaScript for what ${declarative} cannot do, such as reacting to clicks, counting or remembering across visits. Read ${SCRIPTED_PAGE_URL} when the request needs such behavior, before NOT POSSIBLE. Prefer the declarative tier: a scripted plugin needs desktop Chrome or Edge ${USER_SCRIPTS_MIN_CHROME}+ with "Allow User Scripts" on, and the user reads all its code.`,
       ],
     };
   }

@@ -9,6 +9,8 @@
  * gate accepts a `native` op.
  */
 
+import { THEME_VARIABLES, themeVariableName } from '@/core/ui/themeVariables';
+
 import { ALLOWED_ATTRIBUTE_NAMES, ALLOWED_ATTRIBUTE_PREFIXES } from '../../manifest/sinkGuards';
 import { REQUIRED_STRINGS } from '../../manifest/validate';
 import type { SemanticSelectorKey } from '../../sites/semanticKeys';
@@ -85,8 +87,17 @@ export function stylesSection(audience: ContractAudience): ContractSection {
       '- CSS may not load anything, not even from the same site: no @import, image-set(), image(), cross-fade() or src(), and url() only with a #fragment or a png, jpeg, gif, webp or avif data: URI (never SVG).',
       '- Scope every rule under a class your plugin adds (see addClass), so nothing else changes. Site styles often win on specificity: add !important where a rule does not apply.',
       "- Light or dark only rules: scope them with html[data-gv-scheme='dark'] or html[data-gv-scheme='light'], never with the site's own theme classes.",
+      themeVariablesLine(),
     ],
   };
+}
+
+/** How a plugin recolours Voyager's own UI: set the public variables, never its classes. */
+export function themeVariablesLine(): string {
+  const names = THEME_VARIABLES.map(
+    ({ role, meaning }) => `${themeVariableName(role)} (${meaning})`,
+  ).join(', ');
+  return `- To recolour Voyager’s own UI on any site, set these in one unscoped :root { } rule (it covers light and dark), never its gv- classes: ${names}.`;
 }
 
 export function pageChangesSection(
@@ -116,8 +127,8 @@ export function settingsSection(): ContractSection {
     lines: [
       `- "contributes.settings": { "<key>": { "type", "label", "default", … } }. Types: ${LOCAL_SETTING_TYPES.join(', ')} (the popup has no control for string or color).`,
       '- number: a slider from "min" to "max" (0 and 100 when omitted), with optional "minLabel" and "maxLabel" at its ends. select: "options": [{ "value": "…", "label": "…" }], at least one, unique values, and a "default" that is one of them.',
-      '- Optional "enabledBy": "<booleanKey>" disables a control in the popup until that boolean setting is true (one level: the boolean has no enabledBy). It needs no engine floor and does not change the page, so gate page behavior with the boolean too.',
-      '- Use a setting through a {{key}} token in CSS text, a setStyle value or a setAttribute value; Voyager substitutes the current value. A common pattern: setStyle sets a custom property from the setting, and the CSS reads var(...). A boolean renders as "true" or "false": set data-gv-… to "{{key}}" with setAttribute and style [data-gv-…=\'true\'].',
+      '- Optional "enabledBy": "<booleanKey>" disables a control until that boolean is true (one level, no engine floor). It does not change the page: gate page behavior with the boolean too.',
+      '- A {{key}} token in CSS text or a setStyle or setAttribute value becomes the setting’s current value. Common: setStyle sets a custom property from it and the CSS reads var(...). A boolean renders as "true" or "false": setAttribute data-gv-… to "{{key}}", then style [data-gv-…=\'true\'].',
     ],
   };
 }
@@ -180,7 +191,7 @@ export function impossibleSection(
       // Without this, an agent reading the list answers NOT POSSIBLE for a copy button or count badge a primitive ships.
       ...(primitives
         ? [
-            `These limits are on the plugin’s own fields and CSS. A primitive in ${refs.primitives} runs Voyager’s code and may lift one of them: read that list before answering NOT POSSIBLE, and use a primitive when the target site declares the keys it reads.`,
+            `A primitive in ${refs.primitives} runs Voyager’s code and may lift one of these limits: check that list before answering NOT POSSIBLE.`,
           ]
         : []),
       ...(audience === 'chat'

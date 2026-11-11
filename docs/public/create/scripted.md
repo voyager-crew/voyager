@@ -7,6 +7,7 @@ You were sent here from a Voyager create page because the request may need JavaS
 - "tier": "scripted".
 - "contributes": { "script": { "source": "<JavaScript>" } } and nothing else: no "styles", "domOps", "settings" or "theme". Style what you add from the script itself (inline styles, or a <style> element you add). The source is at most 200,000 characters, as a JSON string (newlines written as \n).
 - "matches", "id", "engine" and the other fields as on the create page. There are no settings: put any value the user may want to change in a named constant at the top of the source.
+- Recolouring Voyager’s own UI needs no script: the create page’s --gv-theme-* variables do it declaratively.
 
 ## How it runs
 

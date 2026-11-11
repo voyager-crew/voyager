@@ -7,15 +7,15 @@
  * the shipped styles read; the create pages render it for the AI.
  */
 export const THEME_VARIABLES = [
-  { role: 'surface', meaning: 'panels, menus, dialogs, tooltips' },
-  { role: 'hover', meaning: 'hovered rows and soft fills' },
+  { role: 'surface', meaning: 'panels, menus, dialogs' },
+  { role: 'hover', meaning: 'hovered rows' },
   { role: 'text', meaning: 'text' },
-  { role: 'text-muted', meaning: 'secondary text, icons, timeline dots' },
-  { role: 'border', meaning: 'borders and dividers' },
-  { role: 'accent', meaning: 'buttons, active and selected marks, focus rings' },
-  { role: 'accent-fg', meaning: 'text on the accent' },
-  { role: 'accent-hue', meaning: 'the accent’s OKLCH hue, a bare number, for accent tints' },
-  { role: 'danger', meaning: 'delete and error' },
+  { role: 'text-muted', meaning: 'secondary text, icons' },
+  { role: 'border', meaning: 'borders' },
+  { role: 'accent', meaning: 'buttons, selection, focus' },
+  { role: 'accent-fg', meaning: 'text on accent' },
+  { role: 'accent-hue', meaning: 'its OKLCH hue as a number, for tints' },
+  { role: 'danger', meaning: 'delete' },
 ] as const;
 
 export type ThemeRole = (typeof THEME_VARIABLES)[number]['role'];

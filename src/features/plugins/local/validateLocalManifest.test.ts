@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { THEME_VARIABLES, themeVariableName } from '@/core/ui/themeVariables';
+
 import { resolveEngineVersion } from '../engineVersion';
 import { validateHostCatalogFile } from '../remote/hostCatalogFile';
 import { isLocalPluginId, toLocalPluginId } from './localPluginId';
@@ -106,6 +108,18 @@ describe('validateLocalManifest', () => {
       },
     });
     expect(paths(example)).toEqual([]);
+  });
+
+  it('accepts a creation that only sets the public theme variables, on every site', () => {
+    const css = `:root{${THEME_VARIABLES.map(({ role }) => `${themeVariableName(role)}:#2e3440`).join(';')}}`;
+    for (const match of [
+      'https://gemini.google.com/*',
+      'https://aistudio.google.com/prompts/*',
+      'https://claude.ai/*',
+    ]) {
+      const nord = authored({ matches: [match], contributes: { styles: [{ css }] } });
+      expect(paths(nord), match).toEqual([]);
+    }
   });
 
   it('keeps Voyager’s own accent on Gemini: a theme there is rejected', () => {
