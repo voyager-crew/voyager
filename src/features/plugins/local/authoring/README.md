@@ -7,7 +7,8 @@ manifest that the import gate described there then checks.
 change?"). The panel's **Create** tab works on the page the panel sits on:
 **Create on this page** fills a new chat's composer there (the in-page loop
 below) and **Copy for a local agent** copies the handoff. The popup's **My
-creations** card adds a site picker (the active tab's when supported) and
+creations** card adds a site picker (it follows the active tab's site, which
+resolves after the card mounts, until the user picks one) and
 offers **Copy for this chat** and **Copy for a local agent**. Voyager never
 sends a message, loads or deep-links a page, or makes a request: it fills an
 empty composer or the clipboard, and the user presses send. It reads an AI
@@ -71,12 +72,16 @@ panel takes nothing from window messages.
   each site's new-chat path and control: the site's own control first, then,
   on Gemini only, pushState plus popstate to `/u/<n>/app`; never
   `location.assign`, `href` or `reload`. `fillMachine.ts` (`startMachine`:
-  opening, waiting for a stable composer, writing) checks the route in every
-  phase and writes only into an empty composer on the new-chat page. Nothing
-  is sent; a toast says what happened.
+  opening, waiting for a stable composer, writing) fixes the account and the
+  new-chat path when the request starts and checks the route in every phase:
+  any other move, another account's new chat included, ends the fill without
+  writing or navigating again. It writes only into an empty composer on that
+  new-chat page. Nothing is sent; a toast says what happened.
 - **Read.** `replyControls.ts` reads code blocks only in a Create chat: the
   site's `codeBlock` anchor inside an `assistantTurn`, or a `pre` inside one
-  where the site declares none. Each block goes through `classifyReplyBlock`
+  where the site declares none. The marker and the blocks count only when
+  rendered (`isRendered`, as the export reader skips the earlier conversations
+  ChatGPT keeps mounted under hidden ancestors). Each block goes through `classifyReplyBlock`
   against the installed records (refreshed by `subscribeLocalPlugins`), and
   `markLatestCandidates` lets only the last block per id act; earlier ones
   read **Earlier version**. Text that does not parse as a plugin, a block
@@ -86,7 +91,10 @@ panel takes nothing from window messages.
 - **Hand over.** **Preview and install** (or **Preview update**) holds the
   block for 60 seconds and calls `voyagerPanelOpener.openReview()`, which bumps
   `PanelContext.creationRequest` in the shell's authenticated context. The
-  panel then fetches the block once (`gv.create.pending`).
+  panel then fetches the block once (`gv.create.pending`). The page holds only
+  the latest pick: one made while a fetch is out is fetched again before the
+  answer counts, and one made during an install waits for it, so the review
+  always shows the latest pick.
 - **Review and install.** The panel (`pages/panel/create/`, `reviewMachine.ts`
   on `startMachine`) runs `checkPluginReply` again, since it never trusts the
   page's verdict, and shows `LocalPluginPreviewSummary`, the popup's preview
