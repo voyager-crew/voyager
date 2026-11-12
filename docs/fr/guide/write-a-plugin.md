@@ -41,11 +41,35 @@ Une fois la vérification passée, importez les deux fichiers de la même façon
 - Ajouter du CSS, limité à une classe `gv-` que le plugin ajoute à la page.
 - Ajouter une classe, définir un attribut sûr ou un style en ligne, ou masquer des éléments. Les cibles sont des clés sémantiques déclarées par le site (`userTurn`, `assistantTurn`, `composer`…) ou des sélecteurs CSS.
 - Proposer des réglages dans le popup : interrupteurs, curseurs et listes déroulantes, dont les valeurs arrivent dans le CSS via des jetons `{{key}}`.
-- Sur ChatGPT, Claude, DeepSeek et Kimi, activer une primitive de Voyager (copie de formules, timeline, diagrammes Mermaid, etc.) et changer les couleurs de l'interface de Voyager elle-même. Sur n'importe quel site, les variables `--gv-theme-*` sur `:root` changent les couleurs de Voyager : voir [Mode création](./create-mode.md#changer-les-couleurs-de-voyager).
+- Sur ChatGPT, Claude, DeepSeek et Kimi, activer une primitive de Voyager (copie de formules, timeline, diagrammes Mermaid, etc.) et changer les couleurs de l'interface de Voyager elle-même. Sur n'importe quel site, les variables `--gv-theme-*` sur `:root` changent les couleurs de Voyager : voir [ci-dessous](#changer-les-couleurs-de-voyager).
 
 ## Ce qu'il ne peut pas faire
 
 Un plugin déclaratif ne peut pas exécuter de JavaScript, réagir aux clics ou aux touches, charger quoi que ce soit depuis le réseau (polices, images, feuilles de style), lire ou réécrire le contenu d'un message, ni s'exécuter sur d'autres sites. Quand seul du code peut le faire, écrivez plutôt une création qui exécute du code. Aucune création ne peut s'exécuter sur d'autres sites ni modifier les réglages de Voyager ; pour une telle demande, les consignes de rédaction demandent à l'IA de le dire clairement et de construire la version la plus proche qui fonctionne.
+
+## Changer les couleurs de Voyager
+
+L'interface de Voyager sur la page lit ses couleurs dans un ensemble de variables publiques. Un plugin les définit dans une seule règle `:root` non limitée à une classe, et elles s'appliquent en thème clair comme en thème sombre ; une variable non définie garde la couleur propre à Voyager.
+
+- `--gv-theme-surface` (fond), `--gv-theme-hover` (lignes survolées), `--gv-theme-text` (texte), `--gv-theme-text-muted` (texte secondaire, icônes), `--gv-theme-border` (bordures) : uniquement les panneaux, menus, boîtes de dialogue, info-bulles et notifications propres à Voyager. Le texte, les bordures et la couleur de survol que Voyager dessine directement sur la page du site continuent de suivre le site.
+- `--gv-theme-accent` (boutons, sélection, focus), `--gv-theme-accent-fg` (texte sur l'accent), `--gv-theme-accent-hue` (la teinte OKLCH de l'accent, un nombre), `--gv-theme-danger` (suppression) : à la fois l'interface de Voyager et la page du site.
+- `--gv-theme-timeline` : le rail de la chronologie, ses points et graduations au repos, et la piste du curseur de gauche.
+
+Une palette Nord :
+
+```css
+:root {
+  --gv-theme-surface: #2e3440;
+  --gv-theme-hover: #3b4252;
+  --gv-theme-text: #eceff4;
+  --gv-theme-text-muted: #d8dee9;
+  --gv-theme-border: #4c566a;
+  --gv-theme-accent: #88c0d0;
+  --gv-theme-accent-fg: #2e3440;
+  --gv-theme-danger: #bf616a;
+  --gv-theme-timeline: #81a1c1;
+}
+```
 
 ## Règles vérifiées à l'import
 

@@ -41,11 +41,35 @@ Quando passar, importe os dois ficheiros da mesma forma, com **Importar arquivos
 - Acrescentar CSS, limitado a uma classe `gv-` que o plugin adiciona à página.
 - Adicionar uma classe, definir um atributo seguro ou um estilo inline, ou esconder elementos. Os alvos são chaves semânticas que o site declara (`userTurn`, `assistantTurn`, `composer`, …) ou seletores CSS.
 - Oferecer definições no popup: interruptores, controlos deslizantes e listas pendentes, cujos valores chegam ao CSS através de tokens `{{key}}`.
-- No ChatGPT, Claude, DeepSeek e Kimi, ativar uma primitiva do Voyager (cópia de fórmulas, a linha do tempo, diagramas Mermaid e outras) e mudar as cores da própria interface do Voyager. Em qualquer site, as variáveis `--gv-theme-*` em `:root` mudam as cores do Voyager: veja [Modo criação](./create-mode.md#mudar-as-cores-do-voyager).
+- No ChatGPT, Claude, DeepSeek e Kimi, ativar uma primitiva do Voyager (cópia de fórmulas, a linha do tempo, diagramas Mermaid e outras) e mudar as cores da própria interface do Voyager. Em qualquer site, as variáveis `--gv-theme-*` em `:root` mudam as cores do Voyager: veja [abaixo](#mudar-as-cores-do-voyager).
 
 ## O que não pode fazer
 
 Um plugin declarativo não pode executar JavaScript, reagir a cliques ou teclas, carregar nada da rede (tipos de letra, imagens, folhas de estilo), ler ou reescrever o que uma mensagem diz, nem correr noutros sites. Quando só código resolve, escreva antes uma criação que executa código. Nenhuma criação pode correr noutros sites nem mudar as definições do próprio Voyager; perante um pedido assim, o material de autoria diz à IA para o dizer claramente e para construir a versão mais próxima que funcione.
+
+## Mudar as cores do Voyager
+
+A interface do Voyager na página lê as cores de um conjunto de variáveis públicas. Um plugin as define numa única regra `:root` sem escopo de classe, e elas valem tanto no tema claro quanto no escuro; uma variável não definida mantém a cor original do Voyager.
+
+- `--gv-theme-surface` (fundo), `--gv-theme-hover` (linhas sob o cursor), `--gv-theme-text` (texto), `--gv-theme-text-muted` (texto secundário, ícones), `--gv-theme-border` (bordas): só os painéis, menus, diálogos, dicas e notificações do próprio Voyager. O texto, as bordas e a cor de hover que o Voyager desenha direto na página do site continuam seguindo o site.
+- `--gv-theme-accent` (botões, seleção, foco), `--gv-theme-accent-fg` (texto sobre o destaque), `--gv-theme-accent-hue` (o matiz OKLCH do destaque, um número), `--gv-theme-danger` (excluir): tanto a interface do Voyager quanto a página do site.
+- `--gv-theme-timeline`: o trilho da linha do tempo, seus pontos e marcas em repouso e a trilha do controle deslizante da esquerda.
+
+Uma paleta Nord:
+
+```css
+:root {
+  --gv-theme-surface: #2e3440;
+  --gv-theme-hover: #3b4252;
+  --gv-theme-text: #eceff4;
+  --gv-theme-text-muted: #d8dee9;
+  --gv-theme-border: #4c566a;
+  --gv-theme-accent: #88c0d0;
+  --gv-theme-accent-fg: #2e3440;
+  --gv-theme-danger: #bf616a;
+  --gv-theme-timeline: #81a1c1;
+}
+```
 
 ## Regras verificadas na importação
 

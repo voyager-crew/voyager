@@ -41,11 +41,35 @@ npx create-voyager-plugin@latest check my-plugin
 - CSS を追加する。適用範囲は、プラグインがページに付ける `gv-` クラスの下に限られます。
 - クラスの追加、安全な属性やインラインスタイルの設定、要素の非表示。対象には、サイトが宣言しているセマンティックキー（`userTurn`、`assistantTurn`、`composer` など）か CSS セレクタを指定します。
 - ポップアップに設定項目（スイッチ、スライダー、ドロップダウン）を用意する。設定値は `{{key}}` トークンで CSS に渡されます。
-- ChatGPT、Claude、DeepSeek、Kimi では、Voyager のプリミティブ（数式コピー、タイムライン、Mermaid 図など）を有効にしたり、Voyager 自身の UI の色を変えたりできます。どのサイトでも、`:root` に置いた `--gv-theme-*` 変数で Voyager の配色を変えられます。[作成モード](./create-mode.md#voyager-の配色を変える)を参照してください。
+- ChatGPT、Claude、DeepSeek、Kimi では、Voyager のプリミティブ（数式コピー、タイムライン、Mermaid 図など）を有効にしたり、Voyager 自身の UI の色を変えたりできます。どのサイトでも、`:root` に置いた `--gv-theme-*` 変数で Voyager の配色を変えられます。[下記](#voyager-の配色を変える)を参照してください。
 
 ## プラグインにできないこと
 
 宣言的なプラグインには、JavaScript の実行、クリックやキー入力への反応、ネットワークからの読み込み（フォント、画像、スタイルシート）、メッセージ内容の読み取りや書き換え、ほかのサイトでの動作はできません。コードでしか実現できない場合は、代わりにコードを実行する作品を作ってください。どの作品もほかのサイトでは動作せず、Voyager 自身の設定も変えられません。そうした依頼の場合、作成用の資料は AI にそのことを正直に伝えさせ、実現できるいちばん近い形で作らせます。
+
+## Voyager の配色を変える
+
+ページ上の Voyager の UI は、公開されている一連の変数から色を読み取ります。プラグインはこれらを、`gv-` クラスで絞り込まない `:root` ルール 1 つで設定します。ライトでもダークでも同じように反映され、設定しなかった変数は Voyager 本来の色のままです。
+
+- `--gv-theme-surface`（背景）、`--gv-theme-hover`（ホバーした行）、`--gv-theme-text`（文字）、`--gv-theme-text-muted`（補助的な文字、アイコン）、`--gv-theme-border`（枠線）: Voyager 自身のパネル、メニュー、ダイアログ、ツールチップ、トーストだけに効きます。Voyager がサイトのページに直接描く文字、枠線、ホバー色は、引き続きサイトに従います。
+- `--gv-theme-accent`（ボタン、選択、フォーカス）、`--gv-theme-accent-fg`（アクセントカラー上の文字）、`--gv-theme-accent-hue`（アクセントカラーの OKLCH 色相。数値）、`--gv-theme-danger`（削除）: Voyager の UI とサイトのページの両方に効きます。
+- `--gv-theme-timeline`: タイムラインのレール、選択されていないドットと目盛り、左側のスライダーのトラック。
+
+Nord 配色の例:
+
+```css
+:root {
+  --gv-theme-surface: #2e3440;
+  --gv-theme-hover: #3b4252;
+  --gv-theme-text: #eceff4;
+  --gv-theme-text-muted: #d8dee9;
+  --gv-theme-border: #4c566a;
+  --gv-theme-accent: #88c0d0;
+  --gv-theme-accent-fg: #2e3440;
+  --gv-theme-danger: #bf616a;
+  --gv-theme-timeline: #81a1c1;
+}
+```
 
 ## インポート時にチェックされるルール
 

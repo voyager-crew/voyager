@@ -1,60 +1,62 @@
 # Create Mode
 
-Say in one sentence how a site should change. The site's own AI writes it as a plugin, and Voyager checks it and installs it for you. No code, and you never leave the chat you are in. It works on Gemini, AI Studio, ChatGPT, Claude, DeepSeek and Kimi.
+Say in one sentence how you want a site to change, such as "make my messages narrower". The AI on that site makes the change for you, and Voyager checks it before installing it. You don't need to know any code, and you don't leave the page. It works on Gemini, AI Studio, ChatGPT, Claude, DeepSeek and Kimi.
 
-Create mode has two entry points: the **Create** tab of the [Voyager panel](./panel.md) on the page, and the **My creations** card in the Voyager popup. What it makes is a local plugin that lives only in your browser. To write a plugin yourself or hand it to a coding agent, see [Write Your Own Plugin](./write-a-plugin.md).
+What you make is called a creation. It is a small plugin that stays in this browser only. You can turn it off or remove it at any time.
+
+Create mode has two entry points: the **Create** tab of the [Voyager panel](./panel.md) on the page, and the **My creations** card in the Voyager popup (the window that opens when you click the Voyager icon in the browser toolbar).
 
 ## Create on the page
 
 <GuideOp>
 
-The quickest way runs on the AI site the plugin is for: open the Voyager panel there and choose **Create**.
+The quickest way is to do it on the AI site you want to change. Open the Voyager panel there and choose **Create**.
 
 </GuideOp>
 
 <GuideSteps>
 <GuideStep>
 
-Write one sentence under **What should change?**, such as "Make my messages narrower and hide the sidebar", then choose **Create on this page**.
+Write one sentence under **What should change?**, such as "Make my messages narrower and hide the sidebar". Then choose **Create on this page**.
 
 </GuideStep>
 <GuideStep>
 
-Voyager opens a new chat on that site and puts your request in the message box. Read it, then send it yourself: Voyager never presses send. If the message box already holds text, Voyager leaves it alone and asks you to send or clear it first.
+Voyager opens a new chat on that site and puts your request in the message box. Read it, then press send yourself. Voyager never sends anything for you. If the message box already has text, Voyager leaves it alone and asks you to send or clear it first.
 
 </GuideStep>
 <GuideStep>
 
-The AI reads Voyager's page for the site and replies with one JSON code block. Under the block, Voyager adds **Preview and install**.
+When the AI replies, a Voyager button, **Preview and install**, appears under the reply.
 
 </GuideStep>
 <GuideStep>
 
-Choose it. The panel opens on a review: the sites the plugin runs on, each change, its CSS in full and anything under **Check first**. Choose **Install and turn on**, and it applies right away. You can turn it off any time under **Features**.
+Choose it. The panel lists what the creation will change, which sites it runs on, and anything under **Check first**. When you're happy, choose **Install and turn on**, and the change appears at once. If you don't want it any more, turn it off in the panel's **Features** tab.
 
 </GuideStep>
 </GuideSteps>
 
 <GuideOp>
 
-To change the plugin, tell the AI in the same chat.
+To change it again, keep talking to the AI in the same chat.
 
-- **A new version**: under its new reply Voyager offers **Preview update**, then **Update and turn on**; the older block reads **Earlier version**.
-- **Already installed**: the version you installed reads **Installed**.
-- **Create chats only**: Voyager reads replies only in a chat where your message links Voyager's create page, which the request from **Create on this page** always does. In any other chat nothing appears under the replies; use the popup way below instead.
+- **A new version**: **Preview update** appears under the AI's new reply. Check it, then choose **Update and turn on**. Older replies read **Earlier version**.
+- **Already installed**: the reply you installed reads **Installed**.
+- **Only in these chats**: the buttons appear only in a chat you started with **Create on this page**. For any other chat, use "Create from the popup" below.
 
 </GuideOp>
 
-## Adding the page structure
+## Let the AI see the page
 
 <GuideOp>
 
-The **Create** tab has one switch: **Add how this page is built, without any of its text, so the AI writes for what’s here**. It is on by default, so the AI writes for the page as it really is instead of guessing.
+The **Create** tab has one switch: **Add how this page is built, without any of its text, so the AI writes for what’s here**. It is on by default.
 
-- **What it adds**: which page elements Voyager recognizes and how many, and the element tree around the latest reply and your latest message.
-- **What it leaves out**: any text on the page, links, your chats, and attribute values that look like data, such as ids, emails or long numbers.
-- **See what's added**: open it to read exactly the text that will be attached. It reads the page again when the page changes.
-- **Off**: turn the switch off and the request holds only your sentence.
+- **What it adds**: the page's layout, meaning which buttons, boxes and message areas it has and where they sit. With it, the AI doesn't have to guess.
+- **What it never adds**: any text on the page, your chats included, and no web addresses or account details.
+- **Look for yourself**: choose **See what’s added** to see everything that will go to the AI.
+- **Leave it out**: turn the switch off, and the request holds only your sentence.
 
 </GuideOp>
 
@@ -62,24 +64,23 @@ The **Create** tab has one switch: **Add how this page is built, without any of 
 
 <GuideOp>
 
-On Gemini, Voyager first checks which model the new chat will use. If it is a lighter model such as Flash or Flash-Lite, the top of the **Create** tab says that model usually can't write a plugin.
+Gemini has several models to choose from. Flash and Flash-Lite are lighter ones, and they usually can't make a creation that works. If the new chat would use one of them, the top of the **Create** tab tells you.
 
-- **What it suggests**: the notice names a stronger model to choose in Gemini's model menu, or offers to hand the request to a local coding agent (**Copy for a local agent** sits in the notice).
-- **Check again**: after switching models in Gemini, choose **Check again**. Voyager also checks again when you come back to the panel.
-- **Default model**: if you use [Default Model](./default-model.md), Voyager judges by the default the new chat will get.
-- **It doesn't block you**: it is only a notice. **Create on this page** still works.
+- **What to do**: the notice names a better model. Switch to it in Gemini's model menu, then choose **Check again**.
+- **Another way**: choose **Copy for a local agent** in the notice to hand the job to a coding assistant on your computer. See [Write Your Own Plugin](./write-a-plugin.md).
+- **It doesn't stop you**: it is only a notice. **Create on this page** still works.
 
 </GuideOp>
 
-## When a reply can't be installed
+## When it can't be installed
 
 <GuideOp>
 
-Not every reply comes out right. Under a reply Voyager can't install, it says why in plain words, such as "It doesn't say which site it applies to" or "One of its changes isn't allowed".
+The AI doesn't always get it right the first time. When it doesn't, a line under the reply says why, such as "It doesn't say which site it applies to".
 
-- **Ask it to fix**: choose **Ask it to fix** under the reply. Voyager puts the list of problems in the message box, after anything you already typed, for you to send.
-- **Once it's fixed**: when the AI replies with a fixed version, **Preview and install** appears under it.
-- **During review**: if the problems only show up in the panel's review, Voyager installs nothing and lists them.
+- **Ask it to fix**: choose **Ask it to fix** under the reply. Voyager writes the problems into the message box, and you press send.
+- **Once it's fixed**: when the AI sends a fixed version, **Preview and install** appears under it again.
+- **Nothing changes meanwhile**: a creation that wasn't installed doesn't touch your page.
 
 </GuideOp>
 
@@ -87,12 +88,13 @@ Not every reply comes out right. Under a reply Voyager can't install, it says wh
 
 <GuideOp>
 
-Everything you installed is in **My creations**. In the panel it is a group in the **Features** tab. In the popup, on Gemini and AI Studio it is a settings card, right below **Cloud Sync** unless you move it, and **Jump to** at the top of the popup links to it; on ChatGPT, Claude, DeepSeek and Kimi it sits under the plugin list.
+Everything you installed is in **My creations**.
 
-- **Switch**: each creation has a row and turns on and off like any other feature.
-- **Remove**: choose the trash icon and confirm to remove it from this browser. You can't undo this.
-- **Export**: choose **Export** on it in the popup's **My creations** list, then import the JSON file in another browser.
-- **Share it**: if it would help everyone, propose it for the official catalog: [Plugin Contribution](./plugin-contribution.md) describes that path.
+- **In the panel**: the **My creations** group in the **Features** tab. Each creation has a row with its own switch.
+- **In the popup**: on Gemini and AI Studio it is a card, below **Cloud Sync** unless you move it, and **Jump to** at the top of the popup takes you there. On the other sites it sits under the plugin list.
+- **Remove**: choose the trash icon on its row and confirm. You can't undo this.
+- **Take it to another browser**: choose **Export** on it in the popup's **My creations** to get a file. Import that file in the other browser.
+- **Share it with everyone**: if it would help others, you can propose it for Voyager. [Plugin Contribution](./plugin-contribution.md) explains how.
 
 </GuideOp>
 
@@ -100,11 +102,11 @@ Everything you installed is in **My creations**. In the panel it is a group in t
 
 <GuideOp>
 
-When the panel opens, Voyager looks at whether each creation in **My creations** does anything on the current page.
+Each time you open the panel, Voyager checks whether your creations do anything on the current page.
 
-- **Nothing matches**: a restyling creation is on, but no element it changes is on this page. Its row reads **On, but nothing on this page matches it**. Hover and focus states, and creations that only call built-ins, are not counted.
-- **A frozen page**: when a creation that runs code made the page stop responding, Voyager has already turned it off, and its row says why.
-- **Ask it to fix**: both cases offer **Ask it to fix**. Voyager opens a new chat on this site and fills it with what it saw on the page and the plugin as installed (plus the page structure while that switch is on). The panel closes so you can read it and send it.
+- **Not working here**: when a creation is on but finds nothing to change on this page, its row reads **On, but nothing on this page matches it**. This often happens after a site redesign.
+- **It froze the page**: when a creation that runs code made the page freeze, Voyager has already turned it off, and its row says why.
+- **Ask it to fix**: both cases offer **Ask it to fix**. Choose it, and Voyager opens a new chat with the problem filled in. The panel closes so you can read it and press send.
 
 </GuideOp>
 
@@ -112,70 +114,48 @@ When the panel opens, Voyager looks at whether each creation in **My creations**
 
 <GuideOp>
 
-A creation can also recolour Voyager's own UI on the page, from one sentence again, such as "Give Voyager's panels and timeline a Nord palette". The AI sets Voyager's public colour variables in one `:root` rule, and they apply in light and dark alike.
+A creation can also change Voyager's own colours. Just say so, for example "make Voyager match Nord".
 
-- **What follows the palette**: the background, text, borders and hover colour of panels, menus, dialogs, tooltips and toasts; the accent of buttons, selection and focus; the danger colour for delete.
-- **The timeline**: its rail, its resting dots and ticks, and the left slider's track have a colour of their own.
-- **What keeps following the site**: the text, borders and hover colour that Voyager draws straight on the site's page, so light text never lands on the site's light background. The Voyager popup is not affected.
+- **What changes**: Voyager's panels, menus, dialogs, pop-up messages and the timeline, in both light and dark mode.
+- **What stays**: the site's own colours, and the text Voyager writes straight onto the site's page, so it never blends into the site's background. The Voyager popup doesn't change.
+- **To go back**: turn the creation off, and the colours return.
 
 </GuideOp>
 
-<GuideNote>
-
-**A Nord example**: the sentence above usually gets CSS like this. A variable left unset keeps Voyager's own colour.
-
-```css
-:root {
-  --gv-theme-surface: #2e3440;
-  --gv-theme-hover: #3b4252;
-  --gv-theme-text: #eceff4;
-  --gv-theme-text-muted: #d8dee9;
-  --gv-theme-border: #4c566a;
-  --gv-theme-accent: #88c0d0;
-  --gv-theme-accent-fg: #2e3440;
-  --gv-theme-danger: #bf616a;
-  --gv-theme-timeline: #81a1c1;
-}
-```
-
-Every variable: `--gv-theme-surface` (background), `-hover` (hovered rows), `-text` (text), `-text-muted` (secondary text, icons), `-border` (borders), `-accent` (buttons, selection, focus), `-accent-fg` (text on accent), `-accent-hue` (the accent's OKLCH hue, a number), `-danger` (delete), `-timeline` (rail and dots on the site's background).
-
-</GuideNote>
-
-## Without the panel: create from the popup
+## Create from the popup
 
 <GuideOp>
 
-To skip the new chat, or to have another chat or another AI write it, start from **My creations** in the popup. **Create your own**, at the end of the plugin list, takes you to its first field.
+To skip the new chat, or to have another chat or another AI do it, start from **My creations** in the popup. **Create your own**, at the bottom of the plugin list, takes you there.
 
 </GuideOp>
 
 <GuideSteps>
 <GuideStep>
 
-Write one sentence under **What should change?**. The **Site** below it starts as the site of your current tab; change it if the plugin is for another site.
+Write one sentence under **What should change?**. The **Site** below it starts as the site you are on; change it if the creation is for another site.
 
 </GuideStep>
 <GuideStep>
 
-Choose **Copy for this chat** and paste the message into the AI chat on that site. The AI reads Voyager's page for the site, such as `https://voyager.nagi.fun/create/claude.md`, and replies with one JSON code block. The AI needs to be able to open links.
+Choose **Copy for this chat**, then paste the copied text into the AI chat on that site and send it.
 
 </GuideStep>
 <GuideStep>
 
-Paste the whole reply under **Paste the AI’s reply** and choose **Check reply**.
+When the AI replies, copy the whole reply, paste it under **Paste the AI’s reply**, and choose **Check reply**.
 
 </GuideStep>
 <GuideStep>
 
-Voyager shows what the plugin changes in plain language. Choose **Import**, then turn the plugin on in the plugin list; on Gemini and AI Studio its switch appears right below the card. A plugin imported this way starts switched off.
+Voyager tells you in plain words what it will change. Choose **Import**, then turn it on in the plugin list. A creation added this way starts switched off.
 
 </GuideStep>
 </GuideSteps>
 
 <GuideOp>
 
-On this path Voyager sends nothing itself. You paste the message, and you carry the reply back.
+On this path Voyager sends nothing itself. You paste the text over, and you bring the reply back.
 
 </GuideOp>
 
@@ -183,7 +163,7 @@ On this path Voyager sends nothing itself. You paste the message, and you carry 
 
 <GuideOp>
 
-When CSS and page changes can't do what you asked, such as counting your messages or reacting to a click, the AI can write a creation that runs JavaScript. Voyager runs it through Chrome's user scripts, only on the sites it lists, and only after you have read it. The review marks such a creation with a **Runs code** badge.
+Most creations only change how things look. Some requests need more, such as counting your messages or doing something when you click. For those, the AI makes a creation that runs code. The review marks it with **Runs code**.
 
 </GuideOp>
 
@@ -191,10 +171,10 @@ When CSS and page changes can't do what you asked, such as counting your message
 
 <GuideOp>
 
-- **Read it**: the review lists the sites it runs on and shows its full source. It can read everything on those pages, your chats included, and Voyager cannot stop it from sending what it reads elsewhere, so install only code you trust.
-- **Install and turn on**: turns on exactly the code you read. If its code or sites change later, it pauses until you review it again, and the switch never syncs to your other devices.
-- **One-time switch**: Chrome lets an extension run such code only after you allow it. Choose **Open Voyager’s details page**, turn on **Allow User Scripts** there (before Chrome 138, **Developer mode** at the top of `chrome://extensions`), then come back and choose **I turned it on**.
-- **Browsers**: desktop Chrome or Edge 133 or newer. On Safari, Firefox and phones it stays installed but paused; ask the AI for a version that only changes how the page looks.
+- **Look first**: the review lists the sites it runs on and shows all of its code. It can see everything on those pages, your chats included. Voyager can't stop it from sending what it sees somewhere else. So turn on only one you trust.
+- **Install and turn on**: turns on exactly the version you just looked at. A later version from the AI stays off until you look at it again. The switch applies to this device only.
+- **A one-time browser setting**: the browser must allow Voyager to run these creations. Choose **Open Voyager’s details page**, turn on **Allow User Scripts**, then come back and choose **I turned it on**.
+- **Browsers**: Chrome or Edge 133 or newer on a computer. On Safari, Firefox and phones it stays installed but paused. You can ask the AI for a version that only changes how the page looks.
 
 </GuideOp>
 
@@ -202,11 +182,11 @@ When CSS and page changes can't do what you asked, such as counting your message
 
 <GuideOp>
 
-In **My creations**, each creation that runs code shows **On, this device only**, **Off**, or **Paused** with the reason.
+In **My creations**, each creation that runs code reads **On, this device only**, **Off** or **Paused**, with the reason when paused.
 
-- **Stop all**: **Stop all creations that run code**, at the end of **My creations** (the popup card, or the panel's **Features** tab), stops every one at once; **Resume** starts them again.
-- **Open pages**: a page that is already open keeps running them until it reloads. **Reload this page** does that for the current tab.
-- **Freezes**: if a page stops responding after these creations ran on it, Voyager turns them off and names them in a notice the next time the page loads. Once the creation is fixed, review it in **My creations** and turn it back on.
+- **Stop them all**: choose **Stop all creations that run code** at the bottom of **My creations**. Choose **Resume** to start them again.
+- **Pages already open**: they keep running until you reload. **Reload this page** reloads the current page.
+- **A frozen page**: if a page freezes because of them, Voyager turns them off. The next time the page opens, a notice tells you which ones.
 
 </GuideOp>
 
@@ -214,11 +194,23 @@ In **My creations**, each creation that runs code shows **On, this device only**
 
 <GuideOp>
 
-Most creations change only how the page looks and is laid out, run no code of their own, and undo every change when you turn them off.
+- **Can do**: change how a page looks, such as width, text size and colour; hide parts you don't want; add switches and sliders to settings; recolour Voyager. On some sites it can also turn on Voyager's own features, such as formula copy and the timeline.
+- **Needs code**: doing something on a click, counting things, reading what's on the page. See "Creations that run code" above.
+- **Nothing can**: run on other sites, or change Voyager's own settings. For a request like that, the AI says so and makes the closest version it can.
 
-- **Can do**: restyle the page, hide parts of it, add switches and sliders to settings, recolour Voyager, and on the plugin sites turn on Voyager's built-ins (formula copy, the timeline, Mermaid diagrams and others).
-- **Needs code**: reacting to clicks, counting things or reading the page takes a creation that runs code, described above.
-- **No creation can**: run on other sites or change Voyager's own settings. For a request like that, the AI says so and builds the closest version that works.
-- **The full rules**: which fields a plugin may use and what the import checks are in [Write Your Own Plugin](./write-a-plugin.md#what-a-plugin-can-do).
+</GuideOp>
+
+## The details
+
+<GuideOp>
+
+This section is for people who want to know how it works underneath. Skip it if you only want to use it.
+
+- **What a creation is**: a local plugin, made of a plugin manifest and styles. Writing one by hand, the rules, and the colour variables for recolouring are in [Write Your Own Plugin](./write-a-plugin.md).
+- **What the AI reads**: the request links Voyager's instructions for the site, such as `https://voyager.nagi.fun/create/claude.md`, and the AI replies with one JSON code block. Voyager shows its buttons only in a chat whose message carries that link. So for the popup way, the AI must be able to open links.
+- **The page structure**: which page elements Voyager recognizes and how many, and the element tree around the latest reply and your latest message. No text and no web addresses; attribute values that look like ids, emails or long numbers are dropped too.
+- **The model notice**: Voyager reads the model the new chat will get. With [Default Model](./default-model.md) on, it judges by that default. It checks again when you come back to the panel.
+- **The automatic check**: Voyager looks only at whether the creation's styles and page changes find something on the current page. Hover and focus states, and creations that only call built-in features, are not counted.
+- **Running code**: through Chrome's user scripts, and only on the sites the creation lists. Before Chrome 138, the switch is **Developer mode** at the top of `chrome://extensions`.
 
 </GuideOp>

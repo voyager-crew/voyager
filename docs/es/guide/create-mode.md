@@ -1,60 +1,62 @@
 # Modo creación
 
-Di en una frase cómo debería cambiar un sitio. La propia IA del sitio lo escribe como plugin, y Voyager lo revisa y te lo instala. Sin código y sin salir del chat en el que estás. Funciona en Gemini, AI Studio, ChatGPT, Claude, DeepSeek y Kimi.
+Di en una frase cómo quieres que cambie un sitio, por ejemplo «haz mis mensajes más estrechos». La IA de ese sitio hace el cambio por ti, y Voyager lo revisa antes de instalarlo. No necesitas saber programar y no sales de la página. Funciona en Gemini, AI Studio, ChatGPT, Claude, DeepSeek y Kimi.
 
-El modo creación tiene dos puntos de entrada: la pestaña **Crear** del [panel de Voyager](./panel.md) en la página y la tarjeta **Mis creaciones** del popup de Voyager. Lo que crea es un plugin local que vive solo en tu navegador. Para escribir un plugin tú mismo o encargárselo a un agente de programación, consulta [Escribe tu propio plugin](./write-a-plugin.md).
+Lo que haces se llama una creación. Es un plugin pequeño que se queda solo en este navegador. Puedes apagarla o borrarla cuando quieras.
+
+El modo creación tiene dos entradas: la pestaña **Crear** del [panel de Voyager](./panel.md) en la página, y la tarjeta **Mis creaciones** del popup de Voyager (la ventana que se abre al hacer clic en el icono de Voyager en la barra de herramientas del navegador).
 
 ## Crear en la página
 
 <GuideOp>
 
-La forma más rápida funciona en el sitio de IA para el que es el plugin: abre allí el panel de Voyager y elige **Crear**.
+Lo más rápido es hacerlo en el mismo sitio de IA que quieres cambiar. Abre allí el panel de Voyager y elige **Crear**.
 
 </GuideOp>
 
 <GuideSteps>
 <GuideStep>
 
-Escribe una frase en **¿Qué quieres cambiar?**, por ejemplo «Haz mis mensajes más estrechos y oculta la barra lateral», y elige **Crear en esta página**.
+Escribe una frase en **¿Qué quieres cambiar?**, por ejemplo «Haz mis mensajes más estrechos y oculta la barra lateral». Luego elige **Crear en esta página**.
 
 </GuideStep>
 <GuideStep>
 
-Voyager abre un chat nuevo en ese sitio y pone tu petición en el cuadro de mensaje. Léela y envíala tú: Voyager nunca pulsa enviar. Si el cuadro de mensaje ya tiene texto, Voyager no lo toca y te pide que lo envíes o lo borres antes.
+Voyager abre un chat nuevo en ese sitio y escribe tu petición en el cuadro de mensaje. Léela y pulsa enviar tú. Voyager nunca envía nada por ti. Si el cuadro ya tiene texto, Voyager no lo toca. Te pide que lo envíes o lo borres antes.
 
 </GuideStep>
 <GuideStep>
 
-La IA lee la página de Voyager para el sitio y responde con un único bloque de código JSON. Debajo del bloque, Voyager añade **Revisar e instalar**.
+Cuando la IA responde, aparece debajo un botón de Voyager: **Revisar e instalar**.
 
 </GuideStep>
 <GuideStep>
 
-Elígelo. El panel se abre con una revisión: los sitios donde funciona el plugin, cada cambio, su CSS completo y lo que haya en **Revisa antes**. Elige **Instalar y activar** y se aplica al momento. Puedes desactivarlo cuando quieras en **Funciones**.
+Elígelo. El panel te muestra qué cambiará la creación, en qué sitios funciona y lo que haya en **Revisa antes**. Si te parece bien, elige **Instalar y activar**, y el cambio aparece al momento. Si ya no la quieres, apágala en la pestaña **Funciones** del panel.
 
 </GuideStep>
 </GuideSteps>
 
 <GuideOp>
 
-Para cambiar el plugin, díselo a la IA en el mismo chat.
+Para cambiarla otra vez, sigue hablando con la IA en el mismo chat.
 
-- **Una versión nueva**: bajo su nueva respuesta Voyager ofrece **Revisar actualización** y luego **Actualizar y activar**; el bloque anterior indica **Versión anterior**.
-- **Ya instalado**: la versión que instalaste indica **Instalado**.
-- **Solo chats de creación**: Voyager solo lee respuestas en un chat donde tu mensaje enlaza la página de creación de Voyager, y la petición de **Crear en esta página** siempre lo hace. En cualquier otro chat no aparece nada bajo las respuestas; usa en su lugar la forma del popup que se explica más abajo.
+- **Una versión nueva**: aparece **Revisar actualización** debajo de la nueva respuesta de la IA. Revísala y elige **Actualizar y activar**. Las respuestas anteriores indican **Versión anterior**.
+- **Ya instalada**: la respuesta que instalaste indica **Instalado**.
+- **Solo en estos chats**: los botones solo aparecen en un chat que empezaste con **Crear en esta página**. Para cualquier otro chat, usa «Crear desde el popup», más abajo.
 
 </GuideOp>
 
-## Añadir la estructura de la página
+## Deja que la IA vea la página
 
 <GuideOp>
 
-La pestaña **Crear** tiene un solo interruptor: **Añadir cómo está construida esta página, sin nada de su texto, para que la IA escriba para lo que hay aquí**. Viene activado, para que la IA escriba para la página tal como es en lugar de adivinar.
+La pestaña **Crear** tiene un solo interruptor: **Añadir cómo está construida esta página, sin nada de su texto, para que la IA escriba para lo que hay aquí**. Viene activado.
 
-- **Qué añade**: qué elementos de la página reconoce Voyager y cuántos hay, y el árbol de elementos alrededor de la última respuesta y de tu último mensaje.
-- **Qué deja fuera**: cualquier texto de la página, los enlaces, tus chats y los valores de atributos que parecen datos, como ids, correos o números largos.
-- **Ver lo que se añade**: ábrelo para leer exactamente el texto que se adjuntará. Vuelve a leer la página cuando esta cambia.
-- **Desactivado**: si apagas el interruptor, la petición solo lleva tu frase.
+- **Qué añade**: cómo está organizada la página, es decir, qué botones, cuadros y zonas de mensajes tiene y dónde están. Así la IA no tiene que adivinar.
+- **Qué nunca añade**: ningún texto de la página, tampoco tus chats, ni direcciones web ni datos de tu cuenta.
+- **Míralo tú**: elige **Ver lo que se añade** para ver todo lo que se enviará a la IA.
+- **Si no lo quieres**: apaga el interruptor, y la petición solo lleva tu frase.
 
 </GuideOp>
 
@@ -62,24 +64,23 @@ La pestaña **Crear** tiene un solo interruptor: **Añadir cómo está construid
 
 <GuideOp>
 
-En Gemini, Voyager comprueba primero qué modelo usará el chat nuevo. Si es un modelo más ligero, como Flash o Flash-Lite, la parte superior de la pestaña **Crear** avisa de que ese modelo no suele poder escribir un plugin.
+Gemini tiene varios modelos para elegir. Flash y Flash-Lite son más ligeros y normalmente no consiguen hacer una creación que funcione. Si el chat nuevo va a usar uno de ellos, la parte de arriba de la pestaña **Crear** te avisa.
 
-- **Qué sugiere**: el aviso indica un modelo más potente que puedes elegir en el menú de modelos de Gemini, u ofrece pasar la petición a un agente de programación local (**Copiar para un agente local** está en el propio aviso).
-- **Volver a comprobar**: después de cambiar de modelo en Gemini, elige **Volver a comprobar**. Voyager también vuelve a comprobarlo cuando regresas al panel.
-- **Modelo predeterminado**: si usas [Modelo Predeterminado](./default-model.md), Voyager se fija en el modelo predeterminado que recibirá el chat nuevo.
-- **No te bloquea**: es solo un aviso. **Crear en esta página** sigue funcionando.
+- **Qué hacer**: el aviso te dice un modelo mejor. Cámbialo en el menú de modelos de Gemini y elige **Volver a comprobar**.
+- **Otra opción**: elige **Copiar para un agente local** en el aviso para pasarle el trabajo a un asistente de programación de tu ordenador. Consulta [Escribe tu propio plugin](./write-a-plugin.md).
+- **No te frena**: es solo un aviso. **Crear en esta página** sigue funcionando.
 
 </GuideOp>
 
-## Cuando una respuesta no se puede instalar
+## Cuando no se puede instalar
 
 <GuideOp>
 
-No todas las respuestas salen bien. Bajo una respuesta que Voyager no puede instalar, explica el motivo con palabras sencillas, como «No indica en qué sitio funciona» o «Uno de sus cambios no está permitido».
+La IA no siempre acierta a la primera. Cuando falla, una línea debajo de la respuesta explica por qué, por ejemplo «No indica en qué sitio funciona».
 
-- **Pedir que lo corrija**: elige **Pedir que lo corrija** bajo la respuesta. Voyager pone la lista de problemas en el cuadro de mensaje, después de lo que ya hayas escrito, para que la envíes tú.
-- **Cuando esté corregido**: cuando la IA responde con una versión corregida, aparece **Revisar e instalar** debajo.
-- **Durante la revisión**: si los problemas solo aparecen en la revisión del panel, Voyager no instala nada y los enumera.
+- **Pedir que lo corrija**: elige **Pedir que lo corrija** debajo de la respuesta. Voyager escribe los problemas en el cuadro de mensaje, y tú pulsas enviar.
+- **Cuando esté corregida**: cuando la IA mande una versión corregida, vuelve a aparecer **Revisar e instalar** debajo.
+- **Mientras tanto no cambia nada**: una creación que no se instaló no toca tu página.
 
 </GuideOp>
 
@@ -87,12 +88,13 @@ No todas las respuestas salen bien. Bajo una respuesta que Voyager no puede inst
 
 <GuideOp>
 
-Todo lo que has instalado está en **Mis creaciones**. En el panel es un grupo de la pestaña **Funciones**. En el popup, en Gemini y AI Studio es una tarjeta de ajustes, justo debajo de **Sincronización en Nube** salvo que la muevas, y **Ir a**, arriba del popup, enlaza con ella; en ChatGPT, Claude, DeepSeek y Kimi está debajo de la lista de plugins.
+Todo lo que instalaste está en **Mis creaciones**.
 
-- **Interruptor**: cada creación tiene su fila y se activa y desactiva como cualquier otra función.
-- **Eliminar**: elige el icono de la papelera y confirma para quitarla de este navegador. No se puede deshacer.
-- **Exportar**: elige **Exportar** en ella dentro de la lista de **Mis creaciones** del popup e importa el archivo JSON en otro navegador.
-- **Compartirla**: si puede ser útil para todos, proponla para el catálogo oficial: [Contribuir plugins](./plugin-contribution.md) describe ese camino.
+- **En el panel**: el grupo **Mis creaciones** de la pestaña **Funciones**. Cada creación tiene su fila con su propio interruptor.
+- **En el popup**: en Gemini y AI Studio es una tarjeta, debajo de **Sincronización en Nube** salvo que la muevas. **Ir a**, arriba del popup, te lleva hasta ella. En los demás sitios está debajo de la lista de plugins.
+- **Borrar**: elige el icono de la papelera en su fila y confirma. No se puede deshacer.
+- **Llevarla a otro navegador**: en **Mis creaciones** del popup, elige **Exportar** en ella y obtendrás un archivo. Importa ese archivo en el otro navegador.
+- **Compartirla con todos**: si puede ayudar a otros, puedes proponerla para Voyager. [Contribuir plugins](./plugin-contribution.md) explica cómo.
 
 </GuideOp>
 
@@ -100,11 +102,11 @@ Todo lo que has instalado está en **Mis creaciones**. En el panel es un grupo d
 
 <GuideOp>
 
-Al abrirse el panel, Voyager mira si cada creación de **Mis creaciones** hace algo en la página actual.
+Cada vez que abres el panel, Voyager mira si tus creaciones hacen algo en la página actual.
 
-- **Nada coincide**: una creación que cambia el estilo está activada, pero ningún elemento que modifica está en esta página. Su fila indica **Activado, pero nada en esta página coincide con él**. No cuentan los estados de hover y foco, ni las creaciones que solo activan funciones integradas.
-- **Una página bloqueada**: cuando una creación que ejecuta código hizo que la página dejara de responder, Voyager ya la ha desactivado, y su fila explica el motivo.
-- **Pedir que lo arregle**: ambos casos ofrecen **Pedir que lo arregle**. Voyager abre un chat nuevo en este sitio y lo rellena con lo que vio en la página y el plugin tal como está instalado (más la estructura de la página mientras ese interruptor esté activado). El panel se cierra para que puedas leerlo y enviarlo.
+- **No funciona aquí**: si una creación está activada pero no encuentra nada que cambiar en esta página, su fila indica **Activado, pero nada en esta página coincide con él**. Suele pasar cuando el sitio cambia de diseño.
+- **Bloqueó la página**: si una creación que ejecuta código dejó la página congelada, Voyager ya la apagó, y su fila explica por qué.
+- **Pedir que lo arregle**: en los dos casos aparece **Pedir que lo arregle**. Elígelo, y Voyager abre un chat nuevo con el problema ya escrito. El panel se cierra para que lo leas y pulses enviar.
 
 </GuideOp>
 
@@ -112,70 +114,48 @@ Al abrirse el panel, Voyager mira si cada creación de **Mis creaciones** hace a
 
 <GuideOp>
 
-Una creación también puede cambiar los colores de la propia interfaz de Voyager en la página, de nuevo con una frase, como «Dale a los paneles y a la línea de tiempo de Voyager una paleta Nord». La IA establece las variables de color públicas de Voyager en una sola regla `:root`, y se aplican igual en modo claro y oscuro.
+Una creación también puede cambiar los colores del propio Voyager. Solo tienes que pedirlo, por ejemplo «pon Voyager con los colores de Nord».
 
-- **Qué sigue la paleta**: el fondo, el texto, los bordes y el color de hover de paneles, menús, diálogos, tooltips y avisos; el color de acento de botones, selección y foco; el color de peligro para eliminar.
-- **La línea de tiempo**: su riel, sus puntos y marcas en reposo y la pista del deslizador izquierdo tienen un color propio.
-- **Qué sigue al sitio**: el texto, los bordes y el color de hover que Voyager dibuja directamente sobre la página del sitio, para que nunca quede texto claro sobre el fondo claro del sitio. El popup de Voyager no se ve afectado.
+- **Qué cambia**: los paneles, menús, ventanas, mensajes emergentes y la línea de tiempo de Voyager, en modo claro y en modo oscuro.
+- **Qué se queda igual**: los colores del propio sitio, y el texto que Voyager pone directamente en la página del sitio, para que nunca se confunda con el fondo. El popup de Voyager no cambia.
+- **Para volver atrás**: apaga la creación y vuelven los colores de antes.
 
 </GuideOp>
 
-<GuideNote>
-
-**Un ejemplo Nord**: la frase anterior suele dar un CSS como este. Una variable que no se define conserva el color propio de Voyager.
-
-```css
-:root {
-  --gv-theme-surface: #2e3440;
-  --gv-theme-hover: #3b4252;
-  --gv-theme-text: #eceff4;
-  --gv-theme-text-muted: #d8dee9;
-  --gv-theme-border: #4c566a;
-  --gv-theme-accent: #88c0d0;
-  --gv-theme-accent-fg: #2e3440;
-  --gv-theme-danger: #bf616a;
-  --gv-theme-timeline: #81a1c1;
-}
-```
-
-Todas las variables: `--gv-theme-surface` (fondo), `-hover` (filas con el puntero encima), `-text` (texto), `-text-muted` (texto secundario, iconos), `-border` (bordes), `-accent` (botones, selección, foco), `-accent-fg` (texto sobre el acento), `-accent-hue` (el tono OKLCH del acento, un número), `-danger` (eliminar), `-timeline` (riel y puntos sobre el fondo del sitio).
-
-</GuideNote>
-
-## Sin el panel: crear desde el popup
+## Crear desde el popup
 
 <GuideOp>
 
-Para saltarte el chat nuevo, o para que lo escriba otro chat u otra IA, empieza en **Mis creaciones** del popup. **Crea el tuyo**, al final de la lista de plugins, te lleva a su primer campo.
+Para no abrir un chat nuevo, o para que lo haga otro chat u otra IA, empieza en **Mis creaciones** del popup. **Crea el tuyo**, al final de la lista de plugins, te lleva ahí.
 
 </GuideOp>
 
 <GuideSteps>
 <GuideStep>
 
-Escribe una frase en **¿Qué quieres cambiar?**. El campo **Sitio** de debajo empieza con el sitio de tu pestaña actual; cámbialo si el plugin es para otro sitio.
+Escribe una frase en **¿Qué quieres cambiar?**. Debajo, **Sitio** empieza con el sitio en el que estás. Cámbialo si la creación es para otro sitio.
 
 </GuideStep>
 <GuideStep>
 
-Elige **Copiar para este chat** y pega el mensaje en el chat de IA de ese sitio. La IA lee la página de Voyager para ese sitio, como `https://voyager.nagi.fun/create/claude.md`, y responde con un único bloque de código JSON. La IA tiene que poder abrir enlaces.
+Elige **Copiar para este chat**. Luego pega el texto copiado en el chat de IA de ese sitio y envíalo.
 
 </GuideStep>
 <GuideStep>
 
-Pega la respuesta completa en **Pega la respuesta de la IA** y elige **Revisar respuesta**.
+Cuando la IA responda, copia la respuesta entera, pégala en **Pega la respuesta de la IA** y elige **Revisar respuesta**.
 
 </GuideStep>
 <GuideStep>
 
-Voyager te explica con palabras sencillas qué cambia el plugin. Elige **Importar** y actívalo en la lista de plugins; en Gemini y AI Studio su interruptor aparece justo debajo de la tarjeta. Un plugin importado así empieza desactivado.
+Voyager te explica con palabras sencillas qué va a cambiar. Elige **Importar** y luego actívala en la lista de plugins. Una creación añadida así empieza apagada.
 
 </GuideStep>
 </GuideSteps>
 
 <GuideOp>
 
-Por este camino Voyager no envía nada por su cuenta. Tú pegas el mensaje y tú traes la respuesta de vuelta.
+Por este camino Voyager no envía nada por su cuenta. Tú pegas el texto y tú traes la respuesta de vuelta.
 
 </GuideOp>
 
@@ -183,7 +163,7 @@ Por este camino Voyager no envía nada por su cuenta. Tú pegas el mensaje y tú
 
 <GuideOp>
 
-Cuando el CSS y los cambios de página no bastan para lo que pediste, por ejemplo contar tus mensajes o reaccionar a un clic, la IA puede escribir una creación que ejecuta JavaScript. Voyager la ejecuta mediante los scripts de usuario de Chrome, solo en los sitios que indica y solo después de que la hayas leído. La revisión marca una creación así con la insignia **Ejecuta código**.
+La mayoría de las creaciones solo cambian el aspecto. Algunas peticiones necesitan más, como contar tus mensajes o hacer algo cuando haces clic. Para esas, la IA hace una creación que ejecuta código. La revisión la marca con **Ejecuta código**.
 
 </GuideOp>
 
@@ -191,10 +171,10 @@ Cuando el CSS y los cambios de página no bastan para lo que pediste, por ejempl
 
 <GuideOp>
 
-- **Léela**: la revisión muestra los sitios donde se ejecuta y su código fuente completo. Puede leer todo lo que hay en esas páginas, tus chats incluidos, y Voyager no puede impedir que envíe a otro lugar lo que lee, así que instala solo código en el que confíes.
-- **Instalar y activar**: activa exactamente el código que leíste. Si más adelante cambian su código o sus sitios, queda en pausa hasta que la revises de nuevo, y el interruptor nunca se sincroniza con tus otros dispositivos.
-- **Interruptor único**: Chrome solo deja que una extensión ejecute este código después de que lo permitas. Elige **Abrir la página de detalles de Voyager**, activa allí **Permitir scripts de usuario** (Allow User Scripts; antes de Chrome 138, el **Modo de desarrollador** arriba en `chrome://extensions`), vuelve y elige **Ya lo activé**.
-- **Navegadores**: Chrome o Edge de escritorio 133 o posterior. En Safari, Firefox y móviles queda instalada pero en pausa; pide a la IA una versión que solo cambie el aspecto de la página.
+- **Mírala antes**: la revisión muestra los sitios donde funciona y todo su código. Puede ver todo lo que hay en esas páginas, tus chats incluidos. Voyager no puede impedir que envíe a otra parte lo que ve. Así que activa solo una en la que confíes.
+- **Instalar y activar**: activa justo la versión que acabas de mirar. Si la IA te da una versión más nueva, se queda apagada hasta que la mires otra vez. El interruptor vale solo para este dispositivo.
+- **Un ajuste del navegador, una sola vez**: el navegador tiene que dejar que Voyager ejecute estas creaciones. Elige **Abrir la página de detalles de Voyager** y activa **Permitir scripts de usuario** (Allow User Scripts). Luego vuelve y elige **Ya lo activé**.
+- **Navegadores**: Chrome o Edge 133 o posterior, en un ordenador. En Safari, Firefox y móviles se queda instalada pero en pausa. Puedes pedirle a la IA una versión que solo cambie el aspecto de la página.
 
 </GuideOp>
 
@@ -202,11 +182,11 @@ Cuando el CSS y los cambios de página no bastan para lo que pediste, por ejempl
 
 <GuideOp>
 
-En **Mis creaciones**, cada creación que ejecuta código muestra **Activada, solo en este dispositivo**, **Desactivada** o **En pausa** con el motivo.
+En **Mis creaciones**, cada creación que ejecuta código indica **Activada, solo en este dispositivo**, **Desactivada** o **En pausa**. Si está en pausa, también dice por qué.
 
-- **Detener todo**: **Detener todas las creaciones que ejecutan código**, al final de **Mis creaciones** (la tarjeta del popup o la pestaña **Funciones** del panel), las detiene todas a la vez; **Reanudar** las vuelve a iniciar.
-- **Páginas abiertas**: una página que ya está abierta las sigue ejecutando hasta que se recarga. **Recargar esta página** lo hace con la pestaña actual.
-- **Bloqueos**: si una página deja de responder después de que estas creaciones se ejecutaran en ella, Voyager las desactiva y las nombra en un aviso la próxima vez que se cargue la página. Cuando la creación esté corregida, revísala en **Mis creaciones** y vuelve a activarla.
+- **Detenerlas todas**: elige **Detener todas las creaciones que ejecutan código**, al final de **Mis creaciones**. Elige **Reanudar** para volver a ponerlas en marcha.
+- **Páginas ya abiertas**: siguen funcionando hasta que recargas. **Recargar esta página** recarga la página actual.
+- **Una página congelada**: si una página se congela por su culpa, Voyager las apaga. La próxima vez que abras la página, un aviso te dice cuáles eran.
 
 </GuideOp>
 
@@ -214,11 +194,23 @@ En **Mis creaciones**, cada creación que ejecuta código muestra **Activada, so
 
 <GuideOp>
 
-La mayoría de las creaciones solo cambian el aspecto y la disposición de la página, no ejecutan código propio y deshacen todos sus cambios cuando las desactivas.
+- **Puede**: cambiar el aspecto de una página, como el ancho, el tamaño del texto y los colores; ocultar partes que no quieres ver; añadir interruptores y deslizadores a los ajustes; cambiar los colores de Voyager. En algunos sitios también puede activar funciones propias de Voyager, como copiar fórmulas y la línea de tiempo.
+- **Necesita código**: hacer algo al hacer clic, contar cosas, leer lo que hay en la página. Consulta «Creaciones que ejecutan código», más arriba.
+- **Nada puede**: funcionar en otros sitios ni cambiar los ajustes de Voyager. Si pides algo así, la IA te lo dice y hace la versión más parecida que pueda.
 
-- **Puede**: cambiar el estilo de la página, ocultar partes de ella, añadir interruptores y deslizadores a los ajustes, cambiar los colores de Voyager y, en los sitios de plugins, activar las funciones integradas de Voyager (copia de fórmulas, la línea de tiempo, diagramas Mermaid y otras).
-- **Necesita código**: reaccionar a clics, contar cosas o leer la página requiere una creación que ejecuta código, descrita más arriba.
-- **Ninguna creación puede**: ejecutarse en otros sitios ni cambiar los ajustes de Voyager. Ante una petición así, la IA lo dice y construye la versión más cercana que sí funcione.
-- **Las reglas completas**: qué campos puede usar un plugin y qué comprueba la importación se explican en [Escribe tu propio plugin](./write-a-plugin.md#que-puede-hacer-un-plugin).
+</GuideOp>
+
+## Los detalles
+
+<GuideOp>
+
+Esta sección es para quien quiere saber cómo funciona por dentro. Sáltala si solo quieres usarlo.
+
+- **Qué es una creación**: un plugin local, hecho de un manifest de plugin y estilos. Cómo escribir uno a mano, las reglas y las variables de color para cambiar los colores de Voyager están en [Escribe tu propio plugin](./write-a-plugin.md).
+- **Qué lee la IA**: la petición enlaza las instrucciones de Voyager para el sitio, como `https://voyager.nagi.fun/create/claude.md`, y la IA responde con un único bloque de código JSON. Voyager solo muestra sus botones en un chat cuyo mensaje lleva ese enlace. Por eso, en el camino del popup, la IA tiene que poder abrir enlaces.
+- **La estructura de la página**: qué elementos de la página reconoce Voyager y cuántos hay, y el árbol de elementos alrededor de la última respuesta y de tu último mensaje. Sin texto y sin direcciones web; también se quitan los valores de atributos que parecen ids, correos o números largos.
+- **El aviso del modelo**: Voyager lee el modelo que recibirá el chat nuevo. Con [Modelo Predeterminado](./default-model.md) activado, se fija en ese modelo predeterminado. Vuelve a comprobarlo cuando regresas al panel.
+- **La comprobación automática**: Voyager solo mira si los estilos y los cambios de página de la creación encuentran algo en la página actual. No cuentan los estados de hover y foco, ni las creaciones que solo activan funciones integradas.
+- **Ejecutar código**: mediante los scripts de usuario de Chrome, y solo en los sitios que indica la creación. Antes de Chrome 138, el interruptor es **Modo de desarrollador**, arriba en `chrome://extensions`.
 
 </GuideOp>

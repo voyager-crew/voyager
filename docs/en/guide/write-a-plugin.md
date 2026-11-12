@@ -41,11 +41,35 @@ When it passes, import both files the same way, with **Import files** under **Mo
 - Add CSS, scoped under a `gv-` class the plugin adds to the page.
 - Add a class, set a safe attribute or inline style, or hide elements. Targets are semantic anchors the site declares (`userTurn`, `assistantTurn`, `composer`, …) or CSS selectors.
 - Offer settings in the popup: switches, sliders and dropdowns, whose values reach CSS through `{{key}}` tokens.
-- On ChatGPT, Claude, DeepSeek and Kimi, turn on a Voyager primitive (formula copy, the timeline, Mermaid diagrams and others) and tint Voyager's own UI. On any site, the `--gv-theme-*` variables on `:root` recolour Voyager: see [Create mode](./create-mode.md#recolouring-voyager).
+- On ChatGPT, Claude, DeepSeek and Kimi, turn on a Voyager primitive (formula copy, the timeline, Mermaid diagrams and others) and tint Voyager's own UI. On any site, the `--gv-theme-*` variables on `:root` recolour Voyager: see [below](#recolouring-voyager).
 
 ## What it cannot do
 
 A declarative plugin cannot run JavaScript, react to clicks or keys, load anything from the network (fonts, images, stylesheets), read or rewrite what a message says, or run on other sites. When only code would do, write a creation that runs code instead. No creation can run on other sites or change Voyager's own settings; for a request like that, the authoring material tells the AI to say so and to build the closest version that works.
+
+## Recolouring Voyager
+
+Voyager's UI on the page reads its colours from a set of public variables. A plugin sets them in one unscoped `:root` rule, and they apply in light and dark alike; a variable left unset keeps Voyager's own colour.
+
+- `--gv-theme-surface` (background), `--gv-theme-hover` (hovered rows), `--gv-theme-text` (text), `--gv-theme-text-muted` (secondary text, icons), `--gv-theme-border` (borders): only Voyager's own panels, menus, dialogs, tooltips and toasts. The text, borders and hover colour Voyager draws straight on the site's page keep following the site.
+- `--gv-theme-accent` (buttons, selection, focus), `--gv-theme-accent-fg` (text on accent), `--gv-theme-accent-hue` (the accent's OKLCH hue, a number), `--gv-theme-danger` (delete): both Voyager's UI and the site's page.
+- `--gv-theme-timeline`: the timeline's rail, its resting dots and ticks, and the left slider's track.
+
+A Nord palette:
+
+```css
+:root {
+  --gv-theme-surface: #2e3440;
+  --gv-theme-hover: #3b4252;
+  --gv-theme-text: #eceff4;
+  --gv-theme-text-muted: #d8dee9;
+  --gv-theme-border: #4c566a;
+  --gv-theme-accent: #88c0d0;
+  --gv-theme-accent-fg: #2e3440;
+  --gv-theme-danger: #bf616a;
+  --gv-theme-timeline: #81a1c1;
+}
+```
 
 ## Rules the import checks
 

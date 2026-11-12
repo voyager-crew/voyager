@@ -41,11 +41,35 @@ npx create-voyager-plugin@latest check my-plugin
 - CSS 추가. 적용 범위는 플러그인이 페이지에 붙이는 `gv-` 클래스 아래로 한정됩니다.
 - 클래스 추가, 안전한 속성이나 인라인 스타일 설정, 요소 숨기기. 대상은 사이트가 선언한 시맨틱 키(`userTurn`, `assistantTurn`, `composer` 등)나 CSS 선택자입니다.
 - 팝업에 설정 제공: 스위치, 슬라이더, 드롭다운이며, 설정값은 `{{key}}` 토큰으로 CSS에 전달됩니다.
-- ChatGPT, Claude, DeepSeek, Kimi에서는 Voyager 프리미티브(수식 복사, 타임라인, Mermaid 다이어그램 등)를 켜고 Voyager 자체 UI의 색을 바꿀 수 있습니다. 어느 사이트에서든 `:root`에 둔 `--gv-theme-*` 변수로 Voyager 색을 바꿀 수 있습니다. [창작 모드](./create-mode.md#voyager-색-바꾸기)를 참고하세요.
+- ChatGPT, Claude, DeepSeek, Kimi에서는 Voyager 프리미티브(수식 복사, 타임라인, Mermaid 다이어그램 등)를 켜고 Voyager 자체 UI의 색을 바꿀 수 있습니다. 어느 사이트에서든 `:root`에 둔 `--gv-theme-*` 변수로 Voyager 색을 바꿀 수 있습니다. [아래](#voyager-색-바꾸기)를 참고하세요.
 
 ## 할 수 없는 일
 
 선언형 플러그인은 JavaScript를 실행하거나, 클릭이나 키 입력에 반응하거나, 네트워크에서 무언가(글꼴, 이미지, 스타일시트)를 불러오거나, 메시지 내용을 읽거나 고쳐 쓰거나, 다른 사이트에서 실행될 수 없습니다. 코드로만 할 수 있는 일이라면 대신 코드를 실행하는 창작물을 만드세요. 어떤 창작물도 다른 사이트에서 실행되거나 Voyager 자체 설정을 바꿀 수는 없습니다. 이런 요청이면 작성 자료가 AI에게 그 사실을 분명히 말하고 실제로 가능한 가장 가까운 형태로 만들도록 안내합니다.
+
+## Voyager 색 바꾸기
+
+페이지 위의 Voyager UI는 공개된 변수 묶음에서 색을 읽습니다. 플러그인은 이 변수들을 `gv-` 클래스로 한정하지 않은 `:root` 규칙 하나에 설정하며, 라이트와 다크 모두에 똑같이 적용됩니다. 설정하지 않은 변수는 Voyager 원래 색을 유지합니다.
+
+- `--gv-theme-surface`(배경), `--gv-theme-hover`(호버한 행), `--gv-theme-text`(글자), `--gv-theme-text-muted`(보조 글자, 아이콘), `--gv-theme-border`(테두리): Voyager 자체의 패널, 메뉴, 대화상자, 툴팁, 토스트에만 적용됩니다. Voyager가 사이트 페이지에 바로 그리는 글자, 테두리, 호버 색은 계속 사이트를 따릅니다.
+- `--gv-theme-accent`(버튼, 선택, 포커스), `--gv-theme-accent-fg`(강조색 위의 글자), `--gv-theme-accent-hue`(강조색의 OKLCH 색상각, 숫자), `--gv-theme-danger`(삭제): Voyager UI와 사이트 페이지 모두에 적용됩니다.
+- `--gv-theme-timeline`: 타임라인의 레일, 선택되지 않은 점과 눈금, 왼쪽 슬라이더의 트랙.
+
+Nord 팔레트 예시:
+
+```css
+:root {
+  --gv-theme-surface: #2e3440;
+  --gv-theme-hover: #3b4252;
+  --gv-theme-text: #eceff4;
+  --gv-theme-text-muted: #d8dee9;
+  --gv-theme-border: #4c566a;
+  --gv-theme-accent: #88c0d0;
+  --gv-theme-accent-fg: #2e3440;
+  --gv-theme-danger: #bf616a;
+  --gv-theme-timeline: #81a1c1;
+}
+```
 
 ## 가져올 때 검사하는 규칙
 

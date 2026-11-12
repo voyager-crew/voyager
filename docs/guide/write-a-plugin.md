@@ -41,11 +41,35 @@ npx create-voyager-plugin@latest check my-plugin
 - 添加 CSS，作用域限定在插件给页面加上的 `gv-` 类名下。
 - 添加类名、设置安全的属性或内联样式、隐藏元素。目标可以是网站声明的语义锚点（`userTurn`、`assistantTurn`、`composer` 等），也可以是 CSS 选择器。
 - 在弹窗里提供设置：开关、滑块和下拉框，设置值通过 `{{key}}` 写进 CSS。
-- 在 ChatGPT、Claude、DeepSeek 和 Kimi 上，启用 Voyager 的原语（公式复制、时间轴、Mermaid 图表等），并给 Voyager 自己的界面换色。在任何网站上，都可以用 `:root` 上的 `--gv-theme-*` 变量给 Voyager 换配色，见 [创造模式](./create-mode.md#给-voyager-换配色)。
+- 在 ChatGPT、Claude、DeepSeek 和 Kimi 上，启用 Voyager 的原语（公式复制、时间轴、Mermaid 图表等），并给 Voyager 自己的界面换色。在任何网站上，都可以用 `:root` 上的 `--gv-theme-*` 变量给 Voyager 换配色，见[下文](#给-voyager-换配色)。
 
 ## 插件做不到什么
 
 声明式插件不能运行 JavaScript，不能响应点击或按键，不能从网络加载任何东西（字体、图片、样式表），不能读取或改写消息内容，也不能在其他网站上运行。只有代码才能做到时，可以写一个会运行代码的创造。任何创造都不能在其他网站上运行，也不能改 Voyager 自己的设置；遇到这类需求，写作材料会让 AI 直接说明，并做出最接近、能实现的版本。
+
+## 给 Voyager 换配色
+
+Voyager 在网页上的界面颜色读自一组公开变量。插件在一条不加作用域的 `:root` 规则里设置它们，浅色和深色主题同时生效；没设置的变量保持 Voyager 原来的颜色。
+
+- `--gv-theme-surface`（背景）、`--gv-theme-hover`（悬停行）、`--gv-theme-text`（文字）、`--gv-theme-text-muted`（次要文字、图标）、`--gv-theme-border`（边框）：只作用于 Voyager 自己的面板、菜单、对话框、提示和通知。Voyager 直接画在网站页面上的文字、边框和悬停色继续跟网站走。
+- `--gv-theme-accent`（按钮、选中、焦点）、`--gv-theme-accent-fg`（强调色上的文字）、`--gv-theme-accent-hue`（强调色的 OKLCH 色相，一个数字）、`--gv-theme-danger`（删除）：在 Voyager 的界面和网站页面上都生效。
+- `--gv-theme-timeline`：时间轴的轨道、未选中的圆点和刻度，以及左侧滑块的轨道。
+
+Nord 配色的例子：
+
+```css
+:root {
+  --gv-theme-surface: #2e3440;
+  --gv-theme-hover: #3b4252;
+  --gv-theme-text: #eceff4;
+  --gv-theme-text-muted: #d8dee9;
+  --gv-theme-border: #4c566a;
+  --gv-theme-accent: #88c0d0;
+  --gv-theme-accent-fg: #2e3440;
+  --gv-theme-danger: #bf616a;
+  --gv-theme-timeline: #81a1c1;
+}
+```
 
 ## 导入时检查的规则
 
