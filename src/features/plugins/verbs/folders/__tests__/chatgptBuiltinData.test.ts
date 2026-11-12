@@ -72,9 +72,9 @@ describe("a ChatGPT user's folders from the builtin plugin", () => {
     if (!root) throw new Error('no folder section');
     expect(treeDriver({ root, rootBucketId: ROOT_CONVERSATIONS_ID }).outline()).toEqual([
       'Voyager 测试',
-      '  · Voyager 测试 会话 A',
       '  Voyager 测试 子',
       '    · Voyager 测试 会话 B',
+      '  · Voyager 测试 会话 A',
     ]);
     // A Project chat keeps the path it was filed under.
     expect(
@@ -82,8 +82,8 @@ describe("a ChatGPT user's folders from the builtin plugin", () => {
         title.getAttribute('href'),
       ),
     ).toEqual([
-      'https://chatgpt.com/c/00000000-0000-4000-8000-00000000000a',
       'https://chatgpt.com/g/g-p-0000000000000000000000000000000c/c/00000000-0000-4000-8000-00000000000b',
+      'https://chatgpt.com/c/00000000-0000-4000-8000-00000000000a',
     ]);
     expect(page.stored()).toEqual(STORED);
     expect(

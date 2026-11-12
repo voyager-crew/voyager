@@ -112,7 +112,7 @@ describe('folder header menus', () => {
     const onSortModeChange = vi.fn();
     menus.openSettings(openingClick(), 'manual', onSortModeChange);
     const options = Array.from(
-      document.querySelectorAll<HTMLButtonElement>('.gv-folder-sort-option'),
+      document.querySelectorAll<HTMLButtonElement>('[aria-label="folder_sort"] button'),
     );
     expect(options.map((button) => button.textContent)).toEqual([
       'folder_sort_manual',
@@ -126,6 +126,28 @@ describe('folder header menus', () => {
     expect(options[1].getAttribute('aria-pressed')).toBe('true');
     expect(onSortModeChange).toHaveBeenCalledExactlyOnceWith('recent');
     expect(document.querySelector('.gv-folder-settings-menu')).not.toBeNull();
+  });
+
+  it('shows the stored subfolder placement and saves a change', async () => {
+    vi.mocked(browser.storage.sync.get).mockResolvedValue({
+      [StorageKeys.FOLDER_SUBFOLDER_PLACEMENT]: 'last',
+    });
+    menus.openSettings(openingClick(), 'manual', vi.fn());
+    await Promise.resolve();
+    const [top, bottom] = Array.from(
+      document.querySelectorAll<HTMLButtonElement>(
+        '[aria-label="folder_subfolder_placement"] button',
+      ),
+    );
+    expect(top.textContent).toBe('folder_subfolder_placement_first');
+    expect(bottom.getAttribute('aria-pressed')).toBe('true');
+
+    top.click();
+
+    expect(top.getAttribute('aria-pressed')).toBe('true');
+    expect(browser.storage.sync.set).toHaveBeenCalledExactlyOnceWith({
+      [StorageKeys.FOLDER_SUBFOLDER_PLACEMENT]: 'first',
+    });
   });
 
   it('loads legacy width, previews slider input and persists width and enabled state', async () => {

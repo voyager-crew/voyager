@@ -642,6 +642,18 @@
     "message": "Switch to Manual order to rearrange conversations in this folder.",
     "description": "Notice shown when attempting an in-folder reorder in recently-opened mode"
   },
+  "folder_subfolder_placement": {
+    "message": "Subfolders",
+    "description": "Folder settings row: where an open folder lists its subfolders"
+  },
+  "folder_subfolder_placement_first": {
+    "message": "On top",
+    "description": "Subfolder placement option: subfolders above the folder's conversations"
+  },
+  "folder_subfolder_placement_last": {
+    "message": "At bottom",
+    "description": "Subfolder placement option: subfolders below the folder's conversations"
+  },
   "folder_anchor_move_above_notebooks": {
     "message": "Move folders above Notebooks",
     "description": "Tooltip on the folder header swap button shown when folders are currently above Recents — clicking moves them above Notebooks instead."

@@ -1,6 +1,6 @@
 /**
- * The folder settings popover's content: conversation order, the display
- * settings, and on Gemini the sidebar width. A site renders it into its own
+ * The folder settings popover's content: conversation order, where subfolders
+ * sit, the display settings, and on Gemini the sidebar width. A site renders it into its own
  * popover; one sheet styles it on the page and in a shadow root alike.
  */
 import browser from 'webextension-polyfill';
@@ -8,6 +8,10 @@ import browser from 'webextension-polyfill';
 import { createMinusIcon, createPlusIcon } from '@/core/icons/folderIcons';
 import { StorageKeys } from '@/core/types/common';
 import type { ConversationSortMode } from '@/features/folder/model/folderData';
+import {
+  type SubfolderPlacement,
+  toSubfolderPlacement,
+} from '@/features/folder/model/subfolderPlacement';
 import { getTranslationSyncUnsafe as t } from '@/utils/i18n';
 
 import {
@@ -72,6 +76,7 @@ export function openFolderSettingsPopover(
 /** Fills `menu`, a popover carrying `FOLDER_SETTINGS_CLASS`, with the settings rows. */
 export function renderFolderSettings(menu: HTMLElement, options: FolderSettingsOptions): void {
   menu.appendChild(createConversationSortSettingsRow(options.sortMode, options.onSortModeChange));
+  menu.appendChild(createSubfolderPlacementSettingsRow());
   if (options.sidebarWidth) menu.appendChild(createSidebarWidthSettingsRow());
   for (const setting of FOLDER_DISPLAY_SETTINGS) {
     const defaultValue = options.displayDefaults?.[setting.storageKey] ?? setting.defaultValue;
@@ -88,46 +93,102 @@ function createConversationSortSettingsRow(
   initialMode: ConversationSortMode,
   onSortModeChange: (mode: ConversationSortMode) => void,
 ): HTMLElement {
-  let currentMode = initialMode;
+  return createSegmentedSettingsRow('folder_sort', initialMode, onSortModeChange, [
+    ['manual', 'folder_sort_manual'],
+    ['recent', 'folder_sort_recent'],
+  ]).row;
+}
+
+/** Subfolders above or below a folder's conversations; every site's tree follows the stored value. */
+function createSubfolderPlacementSettingsRow(): HTMLElement {
+  const persist = (placement: SubfolderPlacement) => {
+    try {
+      void browser.storage.sync
+        .set({ [StorageKeys.FOLDER_SUBFOLDER_PLACEMENT]: placement })
+        .catch((error) => {
+          console.warn('[FolderSettings] Failed to save subfolder placement:', error);
+        });
+    } catch (error) {
+      console.warn('[FolderSettings] Failed to save subfolder placement:', error);
+    }
+  };
+  const { row, select } = createSegmentedSettingsRow<SubfolderPlacement>(
+    'folder_subfolder_placement',
+    'first',
+    persist,
+    [
+      ['first', 'folder_subfolder_placement_first'],
+      ['last', 'folder_subfolder_placement_last'],
+    ],
+  );
+  try {
+    void browser.storage.sync
+      .get({ [StorageKeys.FOLDER_SUBFOLDER_PLACEMENT]: 'first' })
+      .then((result) =>
+        select(toSubfolderPlacement(result?.[StorageKeys.FOLDER_SUBFOLDER_PLACEMENT])),
+      )
+      .catch((error) => {
+        console.warn('[FolderSettings] Failed to load subfolder placement:', error);
+      });
+  } catch {
+    // The default stays selected.
+  }
+  return row;
+}
+
+/** A label and a set of exclusive options; `select` shows a value without reporting it. */
+function createSegmentedSettingsRow<T extends string>(
+  labelKey: string,
+  initial: T,
+  onChange: (value: T) => void,
+  choices: readonly (readonly [T, string])[],
+): { row: HTMLElement; select: (value: T) => void } {
+  let current = initial;
   const row = document.createElement('div');
   row.className = 'gv-folder-settings-row gv-folder-sort-settings-row';
 
   const label = document.createElement('span');
   label.className = 'gv-folder-settings-label';
-  label.textContent = t('folder_sort');
+  label.textContent = t(labelKey);
 
   const options = document.createElement('div');
   options.className = 'gv-folder-sort-options';
   options.setAttribute('role', 'group');
-  options.setAttribute('aria-label', t('folder_sort'));
+  options.setAttribute('aria-label', t(labelKey));
 
-  const buttons = new Map<ConversationSortMode, HTMLButtonElement>();
+  const buttons = new Map<T, HTMLButtonElement>();
   const render = () => {
-    buttons.forEach((button, mode) => {
-      const active = currentMode === mode;
+    buttons.forEach((button, value) => {
+      const active = current === value;
       button.classList.toggle('is-active', active);
       button.setAttribute('aria-pressed', String(active));
     });
   };
 
-  (['manual', 'recent'] as const).forEach((mode) => {
+  for (const [value, optionLabelKey] of choices) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'gv-folder-sort-option';
-    button.textContent = t(mode === 'manual' ? 'folder_sort_manual' : 'folder_sort_recent');
+    button.textContent = t(optionLabelKey);
     button.addEventListener('click', (e) => {
       e.stopPropagation();
-      currentMode = mode;
-      onSortModeChange(mode);
+      current = value;
+      onChange(value);
       render();
     });
-    buttons.set(mode, button);
+    buttons.set(value, button);
     options.appendChild(button);
-  });
+  }
 
   render();
   row.append(label, options);
-  return row;
+  return {
+    row,
+    select: (value) => {
+      current = value;
+      render();
+    },
+  };
 }
 
 function createSidebarWidthSettingsRow(): HTMLElement {

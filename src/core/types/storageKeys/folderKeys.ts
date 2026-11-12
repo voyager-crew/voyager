@@ -33,6 +33,9 @@ export const FOLDER_STORAGE_KEYS = {
   // Global conversation ordering preference for folder views. Manual keeps
   // persisted sortIndex authoritative; recent uses lastOpenedAt/addedAt.
   FOLDER_CONVERSATION_SORT_MODE: 'gvFolderConversationSortMode',
+  // Global: whether an open folder lists its subfolders before ('first', the
+  // default) or after ('last') its own conversations.
+  FOLDER_SUBFOLDER_PLACEMENT: 'gvFolderSubfolderPlacement',
   // AI Studio variants — intentionally separate from the Gemini keys so toggling the
   // behaviour on one platform does not surprise users on the other.
   FOLDER_HIDE_ARCHIVED_CONVERSATIONS_AISTUDIO: 'aistudioFolderHideArchivedConversations',

@@ -610,6 +610,18 @@
     "message": "請切換到「手動排序」後再調整資料夾內的對話順序。",
     "description": "最近開啟模式下嘗試資料夾內排序時的提示"
   },
+  "folder_subfolder_placement": {
+    "message": "子資料夾",
+    "description": "Folder settings row: where an open folder lists its subfolders"
+  },
+  "folder_subfolder_placement_first": {
+    "message": "在上方",
+    "description": "Subfolder placement option: subfolders above the folder's conversations"
+  },
+  "folder_subfolder_placement_last": {
+    "message": "在下方",
+    "description": "Subfolder placement option: subfolders below the folder's conversations"
+  },
   "folder_anchor_move_above_notebooks": {
     "message": "將資料夾移到 Notebooks 上方",
     "description": "Tooltip on the folder header swap button shown when folders are currently above Recents — clicking moves them above Notebooks instead."

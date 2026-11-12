@@ -642,6 +642,18 @@
     "message": "Mude para Ordem manual para reorganizar as conversas desta pasta.",
     "description": "Notice shown when attempting an in-folder reorder in recently-opened mode"
   },
+  "folder_subfolder_placement": {
+    "message": "Subpastas",
+    "description": "Folder settings row: where an open folder lists its subfolders"
+  },
+  "folder_subfolder_placement_first": {
+    "message": "No topo",
+    "description": "Subfolder placement option: subfolders above the folder's conversations"
+  },
+  "folder_subfolder_placement_last": {
+    "message": "No final",
+    "description": "Subfolder placement option: subfolders below the folder's conversations"
+  },
   "folder_anchor_move_above_notebooks": {
     "message": "Mover pastas acima de Notebooks",
     "description": "Tooltip on the folder header swap button shown when folders are currently above Recents — clicking moves them above Notebooks instead."

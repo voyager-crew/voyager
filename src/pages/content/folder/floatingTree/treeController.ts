@@ -1,5 +1,11 @@
+import { StorageKeys } from '@/core/types/common';
 import type { ConversationSortMode } from '@/features/folder/model/folderData';
+import {
+  type SubfolderPlacement,
+  toSubfolderPlacement,
+} from '@/features/folder/model/subfolderPlacement';
 
+import { watchSyncSetting } from '../folderDisplay';
 import { eventPassedThrough } from '../shadowHost';
 import type { Folder, FolderData } from '../types';
 import { renderContextMenu } from './ContextMenu';
@@ -65,8 +71,10 @@ function menuTargetExists(data: FolderData, menu: ContextMenuState): boolean {
  * The view state a folder tree keeps between renders: the open inline editor,
  * the folder menu, and expansion when the host does not persist it. It also
  * owns the data revision's projection (the layout the view renders), rebuilt
- * whenever the data or its ordering may have changed. Nothing here writes to
- * the data: expansion goes back to the host through `onToggleFolderExpanded`.
+ * whenever the data or its ordering may have changed. It follows the one
+ * subfolder placement setting, shared by every site's tree. Nothing here
+ * writes to the data: expansion goes back to the host through
+ * `onToggleFolderExpanded`.
  */
 export function mountFolderTree({
   body,
@@ -82,6 +90,7 @@ export function mountFolderTree({
   let currentSite = site;
   let currentData = data;
   let currentConversationSortMode = conversationSortMode;
+  let subfolderPlacement: SubfolderPlacement = 'first';
   let inlineEditor: InlineEditorState | null = null;
   let contextMenu: ContextMenuState | null = null;
   // Bumped when another account's data replaces this one; the view starts over.
@@ -92,6 +101,7 @@ export function mountFolderTree({
       data: currentData,
       rootBucketId,
       conversationSortMode: currentConversationSortMode,
+      subfolderPlacement,
       site: currentSite,
     });
   };
@@ -206,6 +216,16 @@ export function mountFolderTree({
   const isInlineFormInputFocused = () =>
     !!focusRoot.activeElement?.classList.contains(cls('inline-input'));
 
+  const stopPlacementWatch = watchSyncSetting(StorageKeys.FOLDER_SUBFOLDER_PLACEMENT, (value) => {
+    const next = toSubfolderPlacement(value);
+    if (next === subfolderPlacement) return;
+    subfolderPlacement = next;
+    project();
+    // As with `update`: an inline form the user is typing in renders on close.
+    if (inlineEditor && isInlineFormInputFocused()) return;
+    render();
+  });
+
   return {
     apply,
     busy: () => contextMenu !== null || inlineEditor !== null,
@@ -256,6 +276,7 @@ export function mountFolderTree({
       render();
     },
     destroy: () => {
+      stopPlacementWatch();
       document.removeEventListener('click', onDocumentClick);
       document.removeEventListener('keydown', onDocumentKeyDown, true);
       // Unmount first so the inline form drops its document listener.

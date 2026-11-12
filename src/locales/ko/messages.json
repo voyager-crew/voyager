@@ -642,6 +642,18 @@
     "message": "폴더 안의 대화 순서를 바꾸려면 수동 정렬로 전환하세요.",
     "description": "Notice shown when attempting an in-folder reorder in recently-opened mode"
   },
+  "folder_subfolder_placement": {
+    "message": "하위 폴더",
+    "description": "Folder settings row: where an open folder lists its subfolders"
+  },
+  "folder_subfolder_placement_first": {
+    "message": "위에 표시",
+    "description": "Subfolder placement option: subfolders above the folder's conversations"
+  },
+  "folder_subfolder_placement_last": {
+    "message": "아래에 표시",
+    "description": "Subfolder placement option: subfolders below the folder's conversations"
+  },
   "folder_anchor_move_above_notebooks": {
     "message": "폴더를 Notebooks 위로 이동",
     "description": "Tooltip on the folder header swap button shown when folders are currently above Recents — clicking moves them above Notebooks instead."

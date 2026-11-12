@@ -7,6 +7,7 @@ import {
   ownBucket,
   sortConversationsByPriority,
 } from '@/features/folder/model/folderData';
+import type { SubfolderPlacement } from '@/features/folder/model/subfolderPlacement';
 
 import type { ConversationReference, Folder, FolderData } from '../types';
 import { type TreeSiteOptions, layoutFolders } from './shared';
@@ -70,6 +71,8 @@ export type ProjectionInput = {
   data: FolderData;
   rootBucketId: string;
   conversationSortMode: ConversationSortMode;
+  /** Inside a folder: subfolders before (`'first'`, the default) or after its conversations. */
+  subfolderPlacement?: SubfolderPlacement;
   site?: Pick<
     TreeSiteOptions,
     'folderOrder' | 'conversationOrder' | 'rootSection' | 'filter' | 'conversationIdentity'
@@ -80,14 +83,16 @@ export type ProjectionInput = {
  * Lays out folders (`layoutFolders`: cycles cut, repeats dropped) and each
  * bucket's conversations: stored order, or starred first then the sort mode.
  * A row shows starred when any copy of its conversation is (`readConversationStars`).
- * A folder lists its own conversations before its subfolders, as the root
- * does, unless `rootSection` puts the root's after its folders.
+ * A folder lists its subfolders before its own conversations, or after them
+ * with `subfolderPlacement: 'last'`. The root lists its conversations first,
+ * unless `rootSection` puts them after its folders under a heading.
  * A site filter reads the same cycle-cut layout, so it cannot lose a cycle.
  */
 export function buildTreeProjection({
   data,
   rootBucketId,
   conversationSortMode,
+  subfolderPlacement = 'first',
   site,
 }: ProjectionInput): TreeProjection {
   const layout = layoutFolders(data, site?.folderOrder);
@@ -135,7 +140,12 @@ export function buildTreeProjection({
     );
     const conversationKeys = conversationsOf(key, folder.id, depth);
     node.count = subfolderKeys.length + conversationKeys.length;
-    children.set(key, [...conversationKeys, ...subfolderKeys]);
+    children.set(
+      key,
+      subfolderPlacement === 'last'
+        ? [...conversationKeys, ...subfolderKeys]
+        : [...subfolderKeys, ...conversationKeys],
+    );
     return key;
   };
 

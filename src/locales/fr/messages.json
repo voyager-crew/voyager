@@ -642,6 +642,18 @@
     "message": "Passez à l’ordre manuel pour réorganiser les conversations de ce dossier.",
     "description": "Notice shown when attempting an in-folder reorder in recently-opened mode"
   },
+  "folder_subfolder_placement": {
+    "message": "Sous-dossiers",
+    "description": "Folder settings row: where an open folder lists its subfolders"
+  },
+  "folder_subfolder_placement_first": {
+    "message": "En haut",
+    "description": "Subfolder placement option: subfolders above the folder's conversations"
+  },
+  "folder_subfolder_placement_last": {
+    "message": "En bas",
+    "description": "Subfolder placement option: subfolders below the folder's conversations"
+  },
   "folder_anchor_move_above_notebooks": {
     "message": "Déplacer les dossiers au-dessus de Notebooks",
     "description": "Tooltip on the folder header swap button shown when folders are currently above Recents — clicking moves them above Notebooks instead."

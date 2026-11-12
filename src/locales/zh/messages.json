@@ -642,6 +642,18 @@
     "message": "请切换到“手动排序”后再调整文件夹内的会话顺序。",
     "description": "最近打开模式下尝试文件夹内排序时的提示"
   },
+  "folder_subfolder_placement": {
+    "message": "子文件夹",
+    "description": "Folder settings row: where an open folder lists its subfolders"
+  },
+  "folder_subfolder_placement_first": {
+    "message": "在上方",
+    "description": "Subfolder placement option: subfolders above the folder's conversations"
+  },
+  "folder_subfolder_placement_last": {
+    "message": "在下方",
+    "description": "Subfolder placement option: subfolders below the folder's conversations"
+  },
   "folder_anchor_move_above_notebooks": {
     "message": "将文件夹移到 Notebooks 上方",
     "description": "Tooltip on the folder header swap button shown when folders are currently above Recents — clicking moves them above Notebooks instead."

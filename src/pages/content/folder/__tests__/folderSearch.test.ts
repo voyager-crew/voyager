@@ -159,9 +159,9 @@ describe('folder sidebar search', () => {
     const panel = await search('folder:research');
     expect(sidebarTree(panel).outline()).toEqual([
       'Research',
-      '  · Research overview',
       '  Papers',
       '    · Alpha signals',
+      '  · Research overview',
     ]);
   });
 

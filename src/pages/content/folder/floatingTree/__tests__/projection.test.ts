@@ -5,6 +5,8 @@
  */
 import { describe, expect, it } from 'vitest';
 
+import type { SubfolderPlacement } from '@/features/folder/model/subfolderPlacement';
+
 import type { FolderData } from '../../types';
 import { ROOT_ITEM_KEY, buildTreeProjection, conversationKey, folderKey } from '../projection';
 import { conv, deepFreeze, folder } from './treeFixtures';
@@ -100,11 +102,12 @@ describe('tree item keys', () => {
 
 describe('tree order', () => {
   /** Every row in display order, every folder open, as `title` or `name`. */
-  const outline = (data: FolderData): string[] => {
+  const outline = (data: FolderData, subfolderPlacement?: SubfolderPlacement): string[] => {
     const projection = buildTreeProjection({
       data,
       rootBucketId: '__root__',
       conversationSortMode: 'manual',
+      subfolderPlacement,
     });
     const walk = (key: string): string[] =>
       (projection.children.get(key) ?? []).flatMap((child) => {
@@ -116,15 +119,26 @@ describe('tree order', () => {
     return walk(ROOT_ITEM_KEY);
   };
 
-  it("keeps a parent's own chat above an open subfolder's chats", () => {
-    const data: FolderData = {
-      folders: [folder('p', 'Parent'), folder('k', 'Kid', { parentId: 'p' })],
-      folderContents: {
-        p: [conv('pc', 'Parent chat')],
-        k: [conv('kc', 'Kid chat')],
-        __root__: [conv('rc', 'Root chat')],
-      },
-    };
-    expect(outline(data)).toEqual(['Root chat', 'Parent', 'Parent chat', 'Kid', 'Kid chat']);
+  const nested: FolderData = {
+    folders: [folder('p', 'Parent'), folder('k', 'Kid', { parentId: 'p' })],
+    folderContents: {
+      p: [conv('pc', 'Parent chat')],
+      k: [conv('kc', 'Kid chat')],
+      __root__: [conv('rc', 'Root chat')],
+    },
+  };
+
+  it("lists a folder's subfolders above its own chats by default", () => {
+    expect(outline(nested)).toEqual(['Root chat', 'Parent', 'Kid', 'Kid chat', 'Parent chat']);
+  });
+
+  it("lists a folder's own chats first when subfolders are placed last", () => {
+    expect(outline(nested, 'last')).toEqual([
+      'Root chat',
+      'Parent',
+      'Parent chat',
+      'Kid',
+      'Kid chat',
+    ]);
   });
 });

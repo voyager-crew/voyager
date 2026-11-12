@@ -405,8 +405,9 @@ describe('ChatGPT folders plugin', () => {
       addCurrentHere('trips');
       await vi.advanceTimersByTimeAsync(0);
       expect(document.querySelector(FAB)).not.toBeNull();
-      // The store's, and the display settings the section follows.
-      expect(memory.listeners.size).toBe(storageListeners + 2);
+      // The store's, the display settings the section follows, and the
+      // subfolder placement each tree (section and panel) follows.
+      expect(memory.listeners.size).toBe(storageListeners + 4);
 
       await scope.dispose();
 

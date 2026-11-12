@@ -58,10 +58,10 @@ describe("an AI Studio user's folders from the folder manager", () => {
       treeDriver({ root: treeRoot(), rootBucketId: AISTUDIO_ROOT_BUCKET_ID }).outline(),
     ).toEqual([
       'Voyager 测试',
-      '  · Voyager 测试 提示 A',
       '  Voyager 测试 云',
       '  Voyager 测试 子',
       '    · Untitled',
+      '  · Voyager 测试 提示 A',
       '· Voyager 测试 提示 C',
     ]);
     expect(local[GLOBAL_KEY]).toEqual(STORED);

@@ -176,15 +176,15 @@ describe("a Gemini user's folders from the folder manager", () => {
       'Voyager 测试 1',
       'Voyager 测试 2',
       'Voyager 测试 3',
-      '  · 会话 16',
-      '  · 会话 17',
-      '  · 会话 15',
       '  Voyager 测试 4',
       '  Voyager 测试 5',
       '    · 会话 23',
       '    · 会话 25',
       '    · 会话 24',
       '    · 会话 26',
+      '  · 会话 16',
+      '  · 会话 17',
+      '  · 会话 15',
     ]);
     // A gem chat keeps its gem path, a legacy bare id its /app/ link.
     const links = [
@@ -196,11 +196,11 @@ describe("a Gemini user's folders from the folder manager", () => {
         .map((conversation) => [conversation.title, conversation.url]),
     );
     expect(links).toEqual(
-      ['2', '4', '1', '5', '3', '16', '17', '15', '23', '25', '24', '26'].map((n) =>
+      ['2', '4', '1', '5', '3', '23', '25', '24', '26', '16', '17', '15'].map((n) =>
         urls.get(`会话 ${n}`),
       ),
     );
-    expect(links[5]).toMatch(/^https:\/\/gemini\.google\.com\/gem\/learning-coach\/[0-9a-f]{16}$/);
+    expect(links[9]).toMatch(/^https:\/\/gemini\.google\.com\/gem\/learning-coach\/[0-9a-f]{16}$/);
 
     const opened = expand(fixture.opened) as Record<string, unknown>;
     expect(local[KEY]).toEqual(opened.gvFolderData);

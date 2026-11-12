@@ -202,15 +202,15 @@ describe('Gemini folders as an official plugin', () => {
       'Voyager 测试 1',
       'Voyager 测试 2',
       'Voyager 测试 3',
-      '  · 会话 16',
-      '  · 会话 17',
-      '  · 会话 15',
       '  Voyager 测试 4',
       '  Voyager 测试 5',
       '    · 会话 23',
       '    · 会话 25',
       '    · 会话 24',
       '    · 会话 26',
+      '  · 会话 16',
+      '  · 会话 17',
+      '  · 会话 15',
     ]);
     expect(folderWrites()).toEqual([]);
     expect(memory.values.local.get(KEY)).toEqual(profile.stored);

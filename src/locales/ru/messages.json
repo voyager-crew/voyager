@@ -642,6 +642,18 @@
     "message": "Переключитесь на ручной порядок, чтобы изменить порядок чатов в этой папке.",
     "description": "Notice shown when attempting an in-folder reorder in recently-opened mode"
   },
+  "folder_subfolder_placement": {
+    "message": "Подпапки",
+    "description": "Folder settings row: where an open folder lists its subfolders"
+  },
+  "folder_subfolder_placement_first": {
+    "message": "Сверху",
+    "description": "Subfolder placement option: subfolders above the folder's conversations"
+  },
+  "folder_subfolder_placement_last": {
+    "message": "Снизу",
+    "description": "Subfolder placement option: subfolders below the folder's conversations"
+  },
   "folder_anchor_move_above_notebooks": {
     "message": "Переместить папки над Notebooks",
     "description": "Tooltip on the folder header swap button shown when folders are currently above Recents — clicking moves them above Notebooks instead."

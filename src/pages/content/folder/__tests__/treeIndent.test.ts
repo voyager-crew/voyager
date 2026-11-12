@@ -73,9 +73,9 @@ describe('folder tree indentation', () => {
     expect(sidebarTree(harness.runtime.panel).outline()).toEqual([
       'root',
       '  child',
-      '    · A',
       '    legacy-deep',
       '      · B',
+      '    · A',
     ]);
     expect(harness.store.data).toEqual(originalData);
   });

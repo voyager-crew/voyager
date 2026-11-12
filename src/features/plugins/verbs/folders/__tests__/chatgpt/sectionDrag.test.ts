@@ -179,7 +179,13 @@ describe('ChatGPT folder section: dragging chats', () => {
     await nextPass();
 
     expect(titles('work')).toEqual(['Beta', 'Gamma', 'Alpha']);
-    expect(view.outline().slice(0, 4)).toEqual(['Work', '  · Beta', '  · Gamma', '  · Alpha']);
+    expect(view.outline().slice(0, 5)).toEqual([
+      'Work',
+      '  Notes',
+      '  · Beta',
+      '  · Gamma',
+      '  · Alpha',
+    ]);
   });
 
   it('moves a chat into another folder above the chat it is dropped on', async () => {

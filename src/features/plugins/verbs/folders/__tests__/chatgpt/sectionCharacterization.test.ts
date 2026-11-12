@@ -146,17 +146,17 @@ describe('ChatGPT folder section: what it writes', () => {
     const view = await activate();
     expect(view.outline()).toEqual([
       'Work',
+      '  Notes',
       '  · Shared',
       '  · Plan',
-      '  Notes',
       'Personal',
       '  · Shared',
       'Loop X',
-      '  · In X',
       '  Loop Y',
-      '    · In Y',
       '    Loop Z',
       '      · In Z',
+      '    · In Y',
+      '  · In X',
     ]);
   });
 
@@ -234,9 +234,9 @@ describe('ChatGPT folder section: what it writes', () => {
     expect(stored().folders.find((f) => f.id === 'x')!.parentId).toBe('y');
     expect(view.outline()).toEqual([
       'Work',
+      '  Notes',
       '  · Shared',
       '  · Plan',
-      '  Notes',
       'Personal',
       '  · Shared',
       'Loop X',
@@ -337,7 +337,7 @@ describe('ChatGPT folder section: a star belongs to the conversation', () => {
     const view = await activate();
 
     expect(view.isStarred('work', 'Shared')).toBe(true);
-    expect(view.outline().slice(0, 3)).toEqual(['Work', '  · Shared', '  · Plan']);
+    expect(view.outline().slice(0, 4)).toEqual(['Work', '  Notes', '  · Shared', '  · Plan']);
   });
 
   it('unstarring a chat starred in only one folder clears it in every folder', async () => {
