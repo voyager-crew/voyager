@@ -12,6 +12,8 @@
 
 最快的做法是直接在你想改的那个 AI 网站上做。在那里打开 Voyager 面板，点 **创造**。
 
+<GuideShot kind="panel" src="/assets/create-mode-ask-zh.png" alt="面板的创造分页：写一句话的输入框、附上页面结构的开关和在此页创造按钮" :width="390" />
+
 </GuideOp>
 
 <GuideSteps>
@@ -29,10 +31,14 @@ Voyager 会在这个网站上新开一个对话，把你的请求填进输入框
 
 AI 回复后，回复下方会出现 Voyager 的按钮 **预览并安装**。
 
+<GuideShot src="/assets/create-mode-reply-zh.png" alt="AI 回复下方的 Voyager 预览并安装按钮" :width="240" />
+
 </GuideStep>
 <GuideStep>
 
 点它，面板里会列出这个创造会改哪些地方、在哪些网站上生效，以及 **请先留意** 的事项。看完点 **安装并开启**，改动马上出现。不想要了，到面板的 **功能** 分页把它关掉就行。
+
+<GuideShot kind="panel" src="/assets/create-mode-review-zh.png" alt="面板里的审阅：创造的名称、它会改什么、请先留意的事项和安装并开启按钮" :width="390" />
 
 </GuideStep>
 </GuideSteps>
@@ -57,6 +63,8 @@ AI 回复后，回复下方会出现 Voyager 的按钮 **预览并安装**。
 - **不会附上的**：页面上的任何文字，包括你的对话内容，也不包括网址和账号信息。
 - **自己看一眼**：点 **查看附上的内容**，看到的就是会发给 AI 的全部内容。
 - **不想附上**：关掉开关，请求里就只有你写的那句话。
+
+<GuideShot kind="panel" src="/assets/create-mode-structure-zh.png" alt="展开查看附上的内容后看到的页面结构：只有页面区域的名称和数量" :width="390" />
 
 </GuideOp>
 
@@ -95,6 +103,8 @@ AI 不是每次都能一次做对。做得不对时，回复下方会用一句�
 - **删除**：点那一行的垃圾桶图标，再确认。删除后无法撤销。
 - **带到别的浏览器**：在弹窗的 **我的创造** 里对它点 **导出**，会得到一个文件。在另一个浏览器里导入这个文件即可。
 - **分享给大家**：觉得它对别人也有用，可以提议收进 Voyager，做法见 [插件贡献说明](./plugin-contribution.md)。
+
+<GuideShot kind="panel" src="/assets/create-mode-creations-zh.png" alt="面板功能分页里的我的创造：每个创造一行，各有开关" :width="252" />
 
 </GuideOp>
 

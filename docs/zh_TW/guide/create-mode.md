@@ -12,6 +12,8 @@
 
 最快的做法，就是直接在你想改的那個 AI 網站上做。在那裡打開 Voyager 面板，點 **創造**。
 
+<GuideShot kind="panel" src="/assets/create-mode-ask-zh.png" alt="面板的創造分頁：寫一句話的輸入框、附上頁面結構的開關和在此頁創造按鈕" :width="390" />
+
 </GuideOp>
 
 <GuideSteps>
@@ -29,10 +31,14 @@ Voyager 會在這個網站上新開一個對話，把你的請求填進輸入框
 
 AI 回覆後，回覆下方會出現 Voyager 的按鈕 **預覽並安裝**。
 
+<GuideShot src="/assets/create-mode-reply-zh.png" alt="AI 回覆下方的 Voyager 預覽並安裝按鈕" :width="240" />
+
 </GuideStep>
 <GuideStep>
 
 點它，面板會列出這個創造會改哪些地方、在哪些網站上生效，以及 **請先留意** 的事項。看完沒問題就點 **安裝並開啟**，改動馬上出現。不想要了，到面板的 **功能** 分頁把它關掉就好。
+
+<GuideShot kind="panel" src="/assets/create-mode-review-zh.png" alt="面板裡的審閱：創造的名稱、它會改什麼、請先留意的事項和安裝並開啟按鈕" :width="390" />
 
 </GuideStep>
 </GuideSteps>
@@ -57,6 +63,8 @@ AI 回覆後，回覆下方會出現 Voyager 的按鈕 **預覽並安裝**。
 - **絕對不會附上的**：頁面上的任何文字，包括你的對話內容，也不包括網址和帳號資訊。
 - **自己看一眼**：點 **查看附上的內容**，看到的就是會交給 AI 的全部內容。
 - **不想附上**：把開關關掉，請求裡就只有你寫的那句話。
+
+<GuideShot kind="panel" src="/assets/create-mode-structure-zh.png" alt="展開查看附上的內容後看到的頁面結構：只有頁面區域的名稱和數量" :width="390" />
 
 </GuideOp>
 
@@ -95,6 +103,8 @@ AI 不一定每次都能一次做對。做得不對時，回覆下方會用一�
 - **刪除**：點那一列的垃圾桶圖示，再確認。刪掉就無法復原。
 - **帶到別的瀏覽器**：在彈出視窗的 **我的創造** 裡對它點 **匯出**，會得到一個檔案。到另一個瀏覽器匯入這個檔案就好。
 - **分享給大家**：覺得它對別人也有用，可以提議收進 Voyager，做法請見 [外掛貢獻說明](./plugin-contribution.md)。
+
+<GuideShot kind="panel" src="/assets/create-mode-creations-zh.png" alt="面板功能分頁裡的我的創造：每個創造一列，各有開關" :width="252" />
 
 </GuideOp>
 
