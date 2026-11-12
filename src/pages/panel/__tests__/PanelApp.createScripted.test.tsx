@@ -153,9 +153,12 @@ describe('when this browser cannot run it yet', () => {
     expect(storedManifest()).toBeDefined();
     const fake = allowUserScripts();
     await click(button(en.scriptedSetupDone));
-    await settle();
-    expect(query('[data-testid="scripted-setup"]')).toBeNull();
-    expect([...fake.scripts.keys()]).toEqual([ID]);
+    // The recheck and the registrar pass take a variable number of turns under load.
+    await vi.waitFor(async () => {
+      await settle();
+      expect(query('[data-testid="scripted-setup"]')).toBeNull();
+      expect([...fake.scripts.keys()]).toEqual([ID]);
+    });
     expect(fake.worlds.get(`gv-${ID}`)).toMatchObject({ messaging: false });
   });
 
