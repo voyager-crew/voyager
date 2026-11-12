@@ -17,6 +17,7 @@ const tempRoots: string[] = [];
 const contractPath = 'src/features/plugins/verbs/futureVerb/contract.ts';
 const baselinePath = 'src/features/plugins/verbs/futureVerb/paramsBaseline.json';
 const pluginPath = 'src/features/plugins/catalog/sites/example/plugins/future/plugin.json';
+const builtinPath = 'src/features/plugins/builtin/index.ts';
 const constantsPath = 'src/features/plugins/constants.ts';
 
 function write(root: string, path: string, source: string): void {
@@ -75,6 +76,11 @@ function fixture(): string {
   );
   write(
     root,
+    builtinPath,
+    "export const BUILTIN = [make({ id: 'a', engine: '>=next' }), make({ id: 'b', engine: '>=1.0.0' })];\n",
+  );
+  write(
+    root,
     'src/features/plugins/verbs/shipped/contract.ts',
     "export const contract = { name: 'shipped', sinceEngine: '1.0.0', params: { extra: { sinceEngine: 'next', required: false } } };\n",
   );
@@ -109,6 +115,7 @@ describe('plugin engine release stamping', () => {
     expect(before.stderr).toContain(contractPath);
     expect(before.stderr).toContain(baselinePath);
     expect(before.stderr).toContain(pluginPath);
+    expect(before.stderr).toContain(builtinPath);
 
     const bump = run(root, 'scripts/bump-version.js', ['--no-format']);
     expect(bump.status, bump.stderr).toBe(0);
@@ -127,6 +134,9 @@ describe('plugin engine release stamping', () => {
       readFileSync(join(repoRoot, constantsPath), 'utf8'),
     );
     expect(readFileSync(join(root, contractPath), 'utf8')).toContain("sinceEngine: '2.0.0'");
+    expect(readFileSync(join(root, builtinPath), 'utf8')).toBe(
+      "export const BUILTIN = [make({ id: 'a', engine: '>=2.0.0' }), make({ id: 'b', engine: '>=1.0.0' })];\n",
+    );
     expect(json(root, baselinePath)).toEqual({
       sinceEngine: '2.0.0',
       params: { extra: { sinceEngine: '2.0.0', type: 'boolean', required: false } },

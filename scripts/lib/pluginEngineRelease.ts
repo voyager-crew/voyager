@@ -7,7 +7,7 @@ import { resolveEngineVersion } from '../../src/features/plugins/engineVersion';
 interface EngineFile {
   readonly path: string;
   readonly source: string;
-  readonly kind: 'contract' | 'baseline' | 'plugin';
+  readonly kind: 'contract' | 'baseline' | 'plugin' | 'builtin';
 }
 
 export interface PluginEngineReleasePlan {
@@ -23,7 +23,7 @@ interface VersionField {
 }
 
 function parseSource(file: EngineFile): ts.SourceFile {
-  if (file.kind !== 'contract') {
+  if (file.kind !== 'contract' && file.kind !== 'builtin') {
     JSON.parse(file.source);
     return ts.parseJsonText(file.path, file.source);
   }
@@ -75,6 +75,11 @@ function engineFiles(root: string): EngineFile[] {
     }
   }
   walkCatalog(join(root, 'src/features/plugins/catalog'));
+  // Built-in manifests are written in TypeScript and declare `engine` like a plugin.json.
+  const builtin = join(root, 'src/features/plugins/builtin/index.ts');
+  if (existsSync(builtin)) {
+    files.push({ path: builtin, source: readFileSync(builtin, 'utf8'), kind: 'builtin' });
+  }
   return files.sort((a, b) => a.path.localeCompare(b.path));
 }
 
@@ -108,10 +113,12 @@ function versionFields(file: EngineFile): VersionField[] {
       const isVersion =
         file.kind === 'contract'
           ? name === 'sinceEngine'
-          : file.kind === 'plugin'
-            ? fieldPath.length === 1 && name === 'engine'
-            : name === 'sinceEngine' &&
-              (fieldPath.length === 1 || (fieldPath.length === 3 && fieldPath[0] === 'params'));
+          : file.kind === 'builtin'
+            ? name === 'engine'
+            : file.kind === 'plugin'
+              ? fieldPath.length === 1 && name === 'engine'
+              : name === 'sinceEngine' &&
+                (fieldPath.length === 1 || (fieldPath.length === 3 && fieldPath[0] === 'params'));
       if (isVersion) {
         const field = literalField(node.initializer, source, fieldPath.join('.'));
         if (field) fields.push(field);
