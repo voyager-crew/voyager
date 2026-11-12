@@ -4,7 +4,11 @@
 
 做出來的改動叫做「創造」。它是一個小外掛，只存在你這個瀏覽器裡。你隨時可以把它關掉或刪掉。
 
+<GuideHero src="/assets/create-mode-hero-zh-light.png" dark="/assets/create-mode-hero-zh-dark.png" alt="AI 網站頁面上開啟的 Voyager 面板，停在創造分頁，輸入框裡寫著一句需求">
+
 創造模式有兩個入口：網頁上 [Voyager 面板](./panel.md) 裡的 **創造** 分頁，以及 Voyager 彈出視窗（點瀏覽器工具列上的 Voyager 圖示打開的小視窗）裡的 **我的創造** 卡片。
+
+</GuideHero>
 
 ## 在頁面上創造
 
@@ -12,7 +16,7 @@
 
 最快的做法，就是直接在你想改的那個 AI 網站上做。在那裡打開 Voyager 面板，點 **創造**。
 
-<GuideShot kind="panel" src="/assets/create-mode-ask-zh.png" alt="面板的創造分頁：寫一句話的輸入框、附上頁面結構的開關和在此頁創造按鈕" :width="390" />
+<GuideShot kind="panel" src="/assets/create-mode-ask-zh.png" alt="創造分頁：寫一句話的輸入框、附上頁面結構的開關、複製給本機 Agent 和在此頁創造按鈕" :width="632" />
 
 </GuideOp>
 
@@ -31,14 +35,14 @@ Voyager 會在這個網站上新開一個對話，把你的請求填進輸入框
 
 AI 回覆後，回覆下方會出現 Voyager 的按鈕 **預覽並安裝**。
 
-<GuideShot src="/assets/create-mode-reply-zh.png" alt="AI 回覆下方的 Voyager 預覽並安裝按鈕" :width="240" />
+<GuideShot src="/assets/create-mode-reply-zh.png" alt="AI 回覆下方的 Voyager 預覽並安裝按鈕" :width="211" />
 
 </GuideStep>
 <GuideStep>
 
 點它，面板會列出這個創造會改哪些地方、在哪些網站上生效，以及 **請先留意** 的事項。看完沒問題就點 **安裝並開啟**，改動馬上出現。不想要了，到面板的 **功能** 分頁把它關掉就好。
 
-<GuideShot kind="panel" src="/assets/create-mode-review-zh.png" alt="面板裡的審閱：創造的名稱、它會改什麼、請先留意的事項和安裝並開啟按鈕" :width="390" />
+<GuideShot kind="panel" src="/assets/create-mode-review-zh.png" alt="面板裡的審閱：創造的名稱、生效的網站、它會改什麼、請先留意的事項和安裝並開啟按鈕" :width="632" />
 
 </GuideStep>
 </GuideSteps>
@@ -64,7 +68,7 @@ AI 回覆後，回覆下方會出現 Voyager 的按鈕 **預覽並安裝**。
 - **自己看一眼**：點 **查看附上的內容**，看到的就是會交給 AI 的全部內容。
 - **不想附上**：把開關關掉，請求裡就只有你寫的那句話。
 
-<GuideShot kind="panel" src="/assets/create-mode-structure-zh.png" alt="展開查看附上的內容後看到的頁面結構：只有頁面區域的名稱和數量" :width="390" />
+<GuideShot kind="panel" src="/assets/create-mode-structure-zh.png" alt="展開查看附上的內容後的頁面結構：只有頁面區域的名稱和數量，沒有任何文字" :width="612" />
 
 </GuideOp>
 
@@ -78,6 +82,8 @@ Gemini 有好幾個模型可以選。其中 Flash 和 Flash-Lite 比較輕量，
 - **另一條路**：也可以點提示裡的 **複製給本機 Agent**，交給你電腦上的程式設計助理來做，請見 [撰寫自己的外掛](./write-a-plugin.md)。
 - **不會擋你**：這只是提醒。**在此頁創造** 照樣可以點。
 
+<GuideShot kind="panel" src="/assets/create-mode-model-zh.png" alt="創造分頁頂部的提示：Gemini 的 Flash 通常寫不出外掛，附有重新檢查和複製給本機 Agent 按鈕" :width="616" />
+
 </GuideOp>
 
 ## 裝不上的時候
@@ -89,6 +95,8 @@ AI 不一定每次都能一次做對。做得不對時，回覆下方會用一�
 - **請它修正**：點回覆下方的 **請它修正**。Voyager 會把問題寫進輸入框，你按送出就好。
 - **修好之後**：AI 傳來修好的版本後，下方會再出現 **預覽並安裝**。
 - **在那之前什麼都不會變**：沒裝上的創造不會動到你的頁面。
+
+<GuideShot src="/assets/create-mode-rejected-zh.png" alt="AI 回覆下方的說明：暫時裝不了這個外掛，它沒寫明用在哪個網站，旁邊是請它修正按鈕" :width="523" />
 
 </GuideOp>
 
@@ -104,8 +112,6 @@ AI 不一定每次都能一次做對。做得不對時，回覆下方會用一�
 - **帶到別的瀏覽器**：在彈出視窗的 **我的創造** 裡對它點 **匯出**，會得到一個檔案。到另一個瀏覽器匯入這個檔案就好。
 - **分享給大家**：覺得它對別人也有用，可以提議收進 Voyager，做法請見 [外掛貢獻說明](./plugin-contribution.md)。
 
-<GuideShot kind="panel" src="/assets/create-mode-creations-zh.png" alt="面板功能分頁裡的我的創造：每個創造一列，各有開關" :width="252" />
-
 </GuideOp>
 
 ### 自動檢查
@@ -117,6 +123,8 @@ AI 不一定每次都能一次做對。做得不對時，回覆下方會用一�
 - **沒有作用**：如果一個創造開著，卻在這個頁面上找不到要改的地方，它那一列會寫 **已開啟，但這個頁面上沒有它能對應的內容**。網站改版後常常會這樣。
 - **讓頁面卡住**：如果一個會執行程式碼的創造讓頁面卡住，Voyager 已經把它關掉，那一列會寫明原因。
 - **請 AI 修正**：這兩種情況旁邊都有 **請 AI 修正**。點它，Voyager 會新開一個對話，把它看到的問題填進去。面板會自動關上，讓你看過一遍再送出。
+
+<GuideShot kind="panel" src="/assets/create-mode-creations-zh.png" alt="功能分頁裡的我的創造：一個創造寫著已開啟但這個頁面上沒有它能對應的內容，下面有請 AI 修正按鈕" :width="414" />
 
 </GuideOp>
 
@@ -185,6 +193,8 @@ Voyager 會用白話告訴你它會改什麼。點 **匯入**，再到外掛清�
 - **安裝並開啟**：開啟的就是你剛剛看過的那一版。之後 AI 給的新版本會先關著，等你再看一遍。這個開關只在這台裝置上生效。
 - **瀏覽器裡的一次性設定**：瀏覽器要先同意，Voyager 才能執行這類創造。點 **開啟 Voyager 詳細資料頁面**，打開 **允許使用者指令碼**（Allow User Scripts），回來再點 **我已開啟**。
 - **能用的瀏覽器**：電腦上的 Chrome 或 Edge，版本 133 以上。在 Safari、Firefox 和手機上，它會保留著，但暫停執行。可以請 AI 改成只改外觀的版本。
+
+<GuideShot kind="panel" src="/assets/create-mode-scripted-zh.png" alt="會執行程式碼的創造的審閱：執行程式碼標記、風險說明、完整程式碼和允許使用者指令碼的設定步驟" :width="632" />
 
 </GuideOp>
 

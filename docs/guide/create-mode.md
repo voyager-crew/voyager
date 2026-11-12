@@ -4,7 +4,11 @@
 
 做出来的改动叫「创造」，它是一个小插件，只保存在你这个浏览器里。你随时可以把它关掉或删掉。
 
+<GuideHero src="/assets/create-mode-hero-zh-light.png" dark="/assets/create-mode-hero-zh-dark.png" alt="AI 网站页面上打开的 Voyager 面板，停在创造分页，输入框里写着一句需求">
+
 创造模式有两个入口：网页上 [Voyager 面板](./panel.md) 里的 **创造** 分页，以及 Voyager 弹窗（点浏览器工具栏上的 Voyager 图标打开的窗口）里的 **我的创造** 卡片。
+
+</GuideHero>
 
 ## 在页面上创造
 
@@ -12,7 +16,7 @@
 
 最快的做法是直接在你想改的那个 AI 网站上做。在那里打开 Voyager 面板，点 **创造**。
 
-<GuideShot kind="panel" src="/assets/create-mode-ask-zh.png" alt="面板的创造分页：写一句话的输入框、附上页面结构的开关和在此页创造按钮" :width="390" />
+<GuideShot kind="panel" src="/assets/create-mode-ask-zh.png" alt="创造分页：写一句话的输入框、附上页面结构的开关、复制给本地 Agent 和在此页创造按钮" :width="632" />
 
 </GuideOp>
 
@@ -31,14 +35,14 @@ Voyager 会在这个网站上新开一个对话，把你的请求填进输入框
 
 AI 回复后，回复下方会出现 Voyager 的按钮 **预览并安装**。
 
-<GuideShot src="/assets/create-mode-reply-zh.png" alt="AI 回复下方的 Voyager 预览并安装按钮" :width="240" />
+<GuideShot src="/assets/create-mode-reply-zh.png" alt="AI 回复下方的 Voyager 预览并安装按钮" :width="211" />
 
 </GuideStep>
 <GuideStep>
 
 点它，面板里会列出这个创造会改哪些地方、在哪些网站上生效，以及 **请先留意** 的事项。看完点 **安装并开启**，改动马上出现。不想要了，到面板的 **功能** 分页把它关掉就行。
 
-<GuideShot kind="panel" src="/assets/create-mode-review-zh.png" alt="面板里的审阅：创造的名称、它会改什么、请先留意的事项和安装并开启按钮" :width="390" />
+<GuideShot kind="panel" src="/assets/create-mode-review-zh.png" alt="面板里的审阅：创造的名称、生效的网站、它会改什么、请先留意的事项和安装并开启按钮" :width="632" />
 
 </GuideStep>
 </GuideSteps>
@@ -64,7 +68,7 @@ AI 回复后，回复下方会出现 Voyager 的按钮 **预览并安装**。
 - **自己看一眼**：点 **查看附上的内容**，看到的就是会发给 AI 的全部内容。
 - **不想附上**：关掉开关，请求里就只有你写的那句话。
 
-<GuideShot kind="panel" src="/assets/create-mode-structure-zh.png" alt="展开查看附上的内容后看到的页面结构：只有页面区域的名称和数量" :width="390" />
+<GuideShot kind="panel" src="/assets/create-mode-structure-zh.png" alt="展开查看附上的内容后的页面结构：只有页面区域的名称和数量，没有任何文字" :width="612" />
 
 </GuideOp>
 
@@ -78,6 +82,8 @@ Gemini 有好几个模型可选。其中 Flash 和 Flash-Lite 比较轻，通常
 - **另一条路**：也可以点提示里的 **复制给本地 Agent**，交给你电脑上的编程助手来做，见 [编写自己的插件](./write-a-plugin.md)。
 - **不会拦你**：这只是提醒。**在此页创造** 照样能点。
 
+<GuideShot kind="panel" src="/assets/create-mode-model-zh.png" alt="创造分页顶部的提示：Gemini 的 Flash 通常写不出插件，附有重新检查和复制给本地 Agent 按钮" :width="616" />
+
 </GuideOp>
 
 ## 装不上的时候
@@ -89,6 +95,8 @@ AI 不是每次都能一次做对。做得不对时，回复下方会用一句�
 - **让它修复**：点回复下方的 **让它修复**。Voyager 会把问题写进输入框，你点发送就行。
 - **修好了**：AI 发来修好的版本后，下方会再出现 **预览并安装**。
 - **什么都不会改**：没装上的创造不会动你的页面。
+
+<GuideShot src="/assets/create-mode-rejected-zh.png" alt="AI 回复下方的说明：暂时装不了这个插件，它没写明用在哪个网站，旁边是让它修复按钮" :width="523" />
 
 </GuideOp>
 
@@ -104,8 +112,6 @@ AI 不是每次都能一次做对。做得不对时，回复下方会用一句�
 - **带到别的浏览器**：在弹窗的 **我的创造** 里对它点 **导出**，会得到一个文件。在另一个浏览器里导入这个文件即可。
 - **分享给大家**：觉得它对别人也有用，可以提议收进 Voyager，做法见 [插件贡献说明](./plugin-contribution.md)。
 
-<GuideShot kind="panel" src="/assets/create-mode-creations-zh.png" alt="面板功能分页里的我的创造：每个创造一行，各有开关" :width="252" />
-
 </GuideOp>
 
 ### 自动检查
@@ -117,6 +123,8 @@ AI 不是每次都能一次做对。做得不对时，回复下方会用一句�
 - **没起作用**：如果一个创造开着，却在这个页面上找不到要改的地方，它那一行会写 **已开启，但这个页面上没有它能匹配的内容**。网站改版后常会这样。
 - **让页面卡住了**：如果一个会运行代码的创造让页面卡住，Voyager 已经把它关掉，那一行会写明原因。
 - **请 AI 修复**：这两种情况旁边都有 **请 AI 修复**。点它，Voyager 会新开一个对话，把它看到的问题填进去。面板会自动关上，你读一遍再发送。
+
+<GuideShot kind="panel" src="/assets/create-mode-creations-zh.png" alt="功能分页里的我的创造：一个创造写着已开启但这个页面上没有它能匹配的内容，下面有请 AI 修复按钮" :width="414" />
 
 </GuideOp>
 
@@ -185,6 +193,8 @@ Voyager 会用大白话告诉你它会改什么。点 **导入**，再到插件�
 - **安装并开启**：开启的就是你刚看过的那一份。之后 AI 给的新版本会先关着，等你再看一遍。这个开关只在这台设备上生效。
 - **浏览器里的一次性设置**：浏览器要你同意后，Voyager 才能运行这类创造。点 **打开 Voyager 详情页**，打开 **允许用户脚本**（Allow User Scripts），回来点 **我已开启**。
 - **能用的浏览器**：电脑上的 Chrome 或 Edge，版本 133 及以上。在 Safari、Firefox 和手机上，它会保留但暂停运行。可以请 AI 改成只改外观的版本。
+
+<GuideShot kind="panel" src="/assets/create-mode-scripted-zh.png" alt="会运行代码的创造的审阅：运行代码标记、风险说明、完整代码和允许用户脚本的设置步骤" :width="632" />
 
 </GuideOp>
 

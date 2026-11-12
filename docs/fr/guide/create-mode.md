@@ -4,13 +4,19 @@ Dites en une phrase ce que vous voulez changer sur un site, par exemple « rends
 
 Ce que vous fabriquez s'appelle une création. C'est un petit plugin qui reste uniquement dans ce navigateur. Vous pouvez le désactiver ou le supprimer quand vous voulez.
 
+<GuideHero src="/assets/create-mode-hero-en-light.png" dark="/assets/create-mode-hero-en-dark.png" alt="Le panneau Voyager ouvert sur un site d’IA, sur l’onglet Créer, avec une demande d’une phrase saisie">
+
 Le mode création a deux points d'entrée. Le premier est l'onglet **Créer** du [panneau Voyager](./panel.md), sur la page. Le second est la carte **Mes créations** dans le popup de Voyager. Le popup, c'est la petite fenêtre qui s'ouvre quand vous cliquez sur l'icône de Voyager dans la barre d'outils du navigateur.
+
+</GuideHero>
 
 ## Créer sur la page
 
 <GuideOp>
 
 Le plus rapide est de le faire sur le site d'IA que vous voulez changer. Ouvrez-y le panneau Voyager et choisissez **Créer**.
+
+<GuideShot kind="panel" src="/assets/create-mode-ask-en.png" alt="L’onglet Créer : la zone pour une phrase, l’interrupteur de structure de la page et les boutons pour copier vers un agent local et créer sur cette page" :width="632" />
 
 </GuideOp>
 
@@ -29,10 +35,14 @@ Voyager ouvre une nouvelle conversation sur ce site et écrit votre demande dans
 
 Quand l'IA a répondu, un bouton de Voyager apparaît sous sa réponse : **Aperçu et installation**.
 
+<GuideShot src="/assets/create-mode-reply-en.png" alt="Le bouton Voyager Aperçu et installation, sous une réponse de l’IA" :width="267" />
+
 </GuideStep>
 <GuideStep>
 
 Choisissez-le. Le panneau montre ce que la création va changer, les sites où elle fonctionne et les points notés sous **À vérifier**. Si tout vous convient, choisissez **Installer et activer**. Le changement apparaît aussitôt. Si vous n'en voulez plus, désactivez-la dans l'onglet **Fonctions** du panneau.
+
+<GuideShot kind="panel" src="/assets/create-mode-review-en.png" alt="La revue dans le panneau : nom de la création, ses sites, ce qu’elle change, les points à vérifier et le bouton pour installer et activer" :width="632" />
 
 </GuideStep>
 </GuideSteps>
@@ -58,6 +68,8 @@ L'onglet **Créer** a un seul interrupteur : **Ajouter la structure de cette pag
 - **Voir par vous-même** : choisissez **Voir ce qui est ajouté**. Vous voyez tout ce qui partira vers l'IA.
 - **Ne rien ajouter** : désactivez l'interrupteur. La demande ne contient alors que votre phrase.
 
+<GuideShot kind="panel" src="/assets/create-mode-structure-en.png" alt="Ce qui est joint, déplié : la structure de la page en noms et nombres de ses parties, sans aucun texte" :width="612" />
+
 </GuideOp>
 
 ## L'avertissement sur le modèle dans Gemini
@@ -70,6 +82,8 @@ Gemini propose plusieurs modèles. Flash et Flash-Lite sont des modèles plus l�
 - **Une autre solution** : choisissez **Copier pour un agent local** dans l'avertissement. Le travail part alors vers un assistant de programmation installé sur votre ordinateur. Voir [Écrire son propre plugin](./write-a-plugin.md).
 - **Rien n'est bloqué** : ce n'est qu'un avertissement. **Créer sur cette page** marche toujours.
 
+<GuideShot kind="panel" src="/assets/create-mode-model-en.png" alt="L’avis en haut de l’onglet Créer indiquant que Flash de Gemini écrit rarement un plugin, avec les boutons pour revérifier et copier vers un agent local" :width="616" />
+
 </GuideOp>
 
 ## Quand ça ne s'installe pas
@@ -81,6 +95,8 @@ L'IA ne réussit pas toujours du premier coup. Dans ce cas, une ligne sous la r�
 - **Lui demander de corriger** : choisissez **Lui demander de corriger** sous la réponse. Voyager écrit les problèmes dans la zone de saisie, et c'est vous qui envoyez.
 - **Une fois corrigé** : quand l'IA envoie une version corrigée, **Aperçu et installation** réapparaît dessous.
 - **Rien ne change en attendant** : une création qui n'a pas été installée ne touche pas à votre page.
+
+<GuideShot src="/assets/create-mode-rejected-en.png" alt="La ligne sous une réponse de l’IA indiquant que le plugin ne peut pas être installé car il ne précise pas le site, avec le bouton Lui demander de corriger" :width="624" />
 
 </GuideOp>
 
@@ -107,6 +123,8 @@ Tout ce que vous avez installé se trouve dans **Mes créations**.
 - **Ne marche pas ici** : une création est activée, mais elle ne trouve rien à changer sur cette page. Sa ligne indique alors **Activé, mais rien sur cette page ne lui correspond**. Cela arrive souvent quand un site change de look.
 - **La page s'est figée** : une création qui exécute du code a bloqué la page. Voyager l'a déjà désactivée, et sa ligne explique pourquoi.
 - **Demander une correction** : dans les deux cas, **Demander une correction** est proposé. Choisissez-le. Voyager ouvre une nouvelle conversation avec le problème déjà écrit. Le panneau se ferme pour que vous puissiez le relire et appuyer sur envoyer.
+
+<GuideShot kind="panel" src="/assets/create-mode-creations-en.png" alt="Mes créations dans l’onglet Fonctions : une création est activée mais rien sur cette page ne lui correspond, avec le bouton Demander une correction" :width="414" />
 
 </GuideOp>
 
@@ -175,6 +193,8 @@ La plupart des créations changent seulement l'apparence. Certaines demandes von
 - **Installer et activer** : active exactement la version que vous venez de regarder. Si l'IA en fait une nouvelle version, celle-ci reste désactivée jusqu'à ce que vous la regardiez à son tour. L'interrupteur ne vaut que pour cet appareil.
 - **Un réglage à faire une seule fois** : le navigateur doit autoriser Voyager à faire tourner ces créations. Choisissez **Ouvrir la page de détails de Voyager** et activez **Autoriser les scripts utilisateur** (Allow User Scripts). Revenez ensuite et choisissez **Je l’ai activé**.
 - **Navigateurs** : Chrome ou Edge sur ordinateur, version 133 ou plus récente. Sur Safari, Firefox et téléphone, la création reste installée mais en pause. Vous pouvez demander à l'IA une version qui change seulement l'apparence de la page.
+
+<GuideShot kind="panel" src="/assets/create-mode-scripted-en.png" alt="La revue d’une création qui exécute du code : la mention Exécute du code, l’avertissement, le code complet et les étapes Allow User Scripts" :width="632" />
 
 </GuideOp>
 

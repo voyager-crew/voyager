@@ -4,13 +4,19 @@ Di en una frase cómo quieres que cambie un sitio, por ejemplo «haz mis mensaje
 
 Lo que haces se llama una creación. Es un plugin pequeño que se queda solo en este navegador. Puedes apagarla o borrarla cuando quieras.
 
+<GuideHero src="/assets/create-mode-hero-en-light.png" dark="/assets/create-mode-hero-en-dark.png" alt="El panel de Voyager abierto en un sitio de IA, en la pestaña Crear, con una petición de una frase escrita">
+
 El modo creación tiene dos entradas: la pestaña **Crear** del [panel de Voyager](./panel.md) en la página, y la tarjeta **Mis creaciones** del popup de Voyager (la ventana que se abre al hacer clic en el icono de Voyager en la barra de herramientas del navegador).
+
+</GuideHero>
 
 ## Crear en la página
 
 <GuideOp>
 
 Lo más rápido es hacerlo en el mismo sitio de IA que quieres cambiar. Abre allí el panel de Voyager y elige **Crear**.
+
+<GuideShot kind="panel" src="/assets/create-mode-ask-en.png" alt="La pestaña Crear: el cuadro para una frase, el interruptor de la estructura de la página y los botones para copiar a un agente local y crear en esta página" :width="632" />
 
 </GuideOp>
 
@@ -29,10 +35,14 @@ Voyager abre un chat nuevo en ese sitio y escribe tu petición en el cuadro de m
 
 Cuando la IA responde, aparece debajo un botón de Voyager: **Revisar e instalar**.
 
+<GuideShot src="/assets/create-mode-reply-en.png" alt="El botón Revisar e instalar de Voyager, bajo una respuesta de la IA" :width="267" />
+
 </GuideStep>
 <GuideStep>
 
 Elígelo. El panel te muestra qué cambiará la creación, en qué sitios funciona y lo que haya en **Revisa antes**. Si te parece bien, elige **Instalar y activar**, y el cambio aparece al momento. Si ya no la quieres, apágala en la pestaña **Funciones** del panel.
+
+<GuideShot kind="panel" src="/assets/create-mode-review-en.png" alt="La revisión en el panel: nombre de la creación, sus sitios, qué cambia, lo que conviene revisar y el botón para instalar y activar" :width="632" />
 
 </GuideStep>
 </GuideSteps>
@@ -58,6 +68,8 @@ La pestaña **Crear** tiene un solo interruptor: **Añadir cómo está construid
 - **Míralo tú**: elige **Ver lo que se añade** para ver todo lo que se enviará a la IA.
 - **Si no lo quieres**: apaga el interruptor, y la petición solo lleva tu frase.
 
+<GuideShot kind="panel" src="/assets/create-mode-structure-en.png" alt="Lo que se adjunta, desplegado: la estructura de la página como nombres y cantidades de sus partes, sin texto" :width="612" />
+
 </GuideOp>
 
 ## El aviso del modelo en Gemini
@@ -70,6 +82,8 @@ Gemini tiene varios modelos para elegir. Flash y Flash-Lite son más ligeros y n
 - **Otra opción**: elige **Copiar para un agente local** en el aviso para pasarle el trabajo a un asistente de programación de tu ordenador. Consulta [Escribe tu propio plugin](./write-a-plugin.md).
 - **No te frena**: es solo un aviso. **Crear en esta página** sigue funcionando.
 
+<GuideShot kind="panel" src="/assets/create-mode-model-en.png" alt="El aviso arriba de la pestaña Crear de que Flash de Gemini no suele escribir un plugin, con los botones para comprobar de nuevo y copiar a un agente local" :width="616" />
+
 </GuideOp>
 
 ## Cuando no se puede instalar
@@ -81,6 +95,8 @@ La IA no siempre acierta a la primera. Cuando falla, una línea debajo de la res
 - **Pedir que lo corrija**: elige **Pedir que lo corrija** debajo de la respuesta. Voyager escribe los problemas en el cuadro de mensaje, y tú pulsas enviar.
 - **Cuando esté corregida**: cuando la IA mande una versión corregida, vuelve a aparecer **Revisar e instalar** debajo.
 - **Mientras tanto no cambia nada**: una creación que no se instaló no toca tu página.
+
+<GuideShot src="/assets/create-mode-rejected-en.png" alt="La línea bajo una respuesta de la IA que dice que el plugin no se puede instalar porque no indica el sitio, con el botón Pedir que lo corrija" :width="624" />
 
 </GuideOp>
 
@@ -107,6 +123,8 @@ Cada vez que abres el panel, Voyager mira si tus creaciones hacen algo en la pá
 - **No funciona aquí**: si una creación está activada pero no encuentra nada que cambiar en esta página, su fila indica **Activado, pero nada en esta página coincide con él**. Suele pasar cuando el sitio cambia de diseño.
 - **Bloqueó la página**: si una creación que ejecuta código dejó la página congelada, Voyager ya la apagó, y su fila explica por qué.
 - **Pedir que lo arregle**: en los dos casos aparece **Pedir que lo arregle**. Elígelo, y Voyager abre un chat nuevo con el problema ya escrito. El panel se cierra para que lo leas y pulses enviar.
+
+<GuideShot kind="panel" src="/assets/create-mode-creations-en.png" alt="Mis creaciones en la pestaña Funciones: una creación está activa pero nada en esta página coincide, con el botón Pedir que lo arregle" :width="414" />
 
 </GuideOp>
 
@@ -175,6 +193,8 @@ La mayoría de las creaciones solo cambian el aspecto. Algunas peticiones necesi
 - **Instalar y activar**: activa justo la versión que acabas de mirar. Si la IA te da una versión más nueva, se queda apagada hasta que la mires otra vez. El interruptor vale solo para este dispositivo.
 - **Un ajuste del navegador, una sola vez**: el navegador tiene que dejar que Voyager ejecute estas creaciones. Elige **Abrir la página de detalles de Voyager** y activa **Permitir scripts de usuario** (Allow User Scripts). Luego vuelve y elige **Ya lo activé**.
 - **Navegadores**: Chrome o Edge 133 o posterior, en un ordenador. En Safari, Firefox y móviles se queda instalada pero en pausa. Puedes pedirle a la IA una versión que solo cambie el aspecto de la página.
+
+<GuideShot kind="panel" src="/assets/create-mode-scripted-en.png" alt="La revisión de una creación que ejecuta código: la marca Ejecuta código, el aviso, el código completo y los pasos de Allow User Scripts" :width="632" />
 
 </GuideOp>
 

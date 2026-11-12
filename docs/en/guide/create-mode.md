@@ -4,13 +4,19 @@ Say in one sentence how you want a site to change, such as "make my messages nar
 
 What you make is called a creation. It is a small plugin that stays in this browser only. You can turn it off or remove it at any time.
 
+<GuideHero src="/assets/create-mode-hero-en-light.png" dark="/assets/create-mode-hero-en-dark.png" alt="The Voyager panel open on an AI site, on its Create tab, with a one-sentence request typed in">
+
 Create mode has two entry points: the **Create** tab of the [Voyager panel](./panel.md) on the page, and the **My creations** card in the Voyager popup (the window that opens when you click the Voyager icon in the browser toolbar).
+
+</GuideHero>
 
 ## Create on the page
 
 <GuideOp>
 
 The quickest way is to do it on the AI site you want to change. Open the Voyager panel there and choose **Create**.
+
+<GuideShot kind="panel" src="/assets/create-mode-ask-en.png" alt="The Create tab: the box for one sentence, the page-structure switch, and the Copy for a local agent and Create on this page buttons" :width="632" />
 
 </GuideOp>
 
@@ -29,10 +35,14 @@ Voyager opens a new chat on that site and puts your request in the message box. 
 
 When the AI replies, a Voyager button, **Preview and install**, appears under the reply.
 
+<GuideShot src="/assets/create-mode-reply-en.png" alt="Voyager’s Preview and install button under an AI reply" :width="267" />
+
 </GuideStep>
 <GuideStep>
 
 Choose it. The panel lists what the creation will change, which sites it runs on, and anything under **Check first**. When you're happy, choose **Install and turn on**, and the change appears at once. If you don't want it any more, turn it off in the panel's **Features** tab.
+
+<GuideShot kind="panel" src="/assets/create-mode-review-en.png" alt="The review in the panel: the creation’s name, its sites, what it changes, Check first, and Install and turn on" :width="632" />
 
 </GuideStep>
 </GuideSteps>
@@ -58,6 +68,8 @@ The **Create** tab has one switch: **Add how this page is built, without any of 
 - **Look for yourself**: choose **See what’s added** to see everything that will go to the AI.
 - **Leave it out**: turn the switch off, and the request holds only your sentence.
 
+<GuideShot kind="panel" src="/assets/create-mode-structure-en.png" alt="See what’s added, opened: the page’s structure as names and counts of its parts, with no text" :width="612" />
+
 </GuideOp>
 
 ## The model notice on Gemini
@@ -70,6 +82,8 @@ Gemini has several models to choose from. Flash and Flash-Lite are lighter ones,
 - **Another way**: choose **Copy for a local agent** in the notice to hand the job to a coding assistant on your computer. See [Write Your Own Plugin](./write-a-plugin.md).
 - **It doesn't stop you**: it is only a notice. **Create on this page** still works.
 
+<GuideShot kind="panel" src="/assets/create-mode-model-en.png" alt="The notice at the top of the Create tab that Gemini’s Flash usually can’t write a plugin, with Check again and Copy for a local agent" :width="616" />
+
 </GuideOp>
 
 ## When it can't be installed
@@ -81,6 +95,8 @@ The AI doesn't always get it right the first time. When it doesn't, a line under
 - **Ask it to fix**: choose **Ask it to fix** under the reply. Voyager writes the problems into the message box, and you press send.
 - **Once it's fixed**: when the AI sends a fixed version, **Preview and install** appears under it again.
 - **Nothing changes meanwhile**: a creation that wasn't installed doesn't touch your page.
+
+<GuideShot src="/assets/create-mode-rejected-en.png" alt="The line under an AI reply that the plugin can’t be installed because it doesn’t say which site it applies to, with Ask it to fix" :width="624" />
 
 </GuideOp>
 
@@ -107,6 +123,8 @@ Each time you open the panel, Voyager checks whether your creations do anything 
 - **Not working here**: when a creation is on but finds nothing to change on this page, its row reads **On, but nothing on this page matches it**. This often happens after a site redesign.
 - **It froze the page**: when a creation that runs code made the page freeze, Voyager has already turned it off, and its row says why.
 - **Ask it to fix**: both cases offer **Ask it to fix**. Choose it, and Voyager opens a new chat with the problem filled in. The panel closes so you can read it and press send.
+
+<GuideShot kind="panel" src="/assets/create-mode-creations-en.png" alt="My creations in the Features tab: one creation reads On, but nothing on this page matches it, with Ask it to fix below" :width="414" />
 
 </GuideOp>
 
@@ -175,6 +193,8 @@ Most creations only change how things look. Some requests need more, such as cou
 - **Install and turn on**: turns on exactly the version you just looked at. A later version from the AI stays off until you look at it again. The switch applies to this device only.
 - **A one-time browser setting**: the browser must allow Voyager to run these creations. Choose **Open Voyager’s details page**, turn on **Allow User Scripts**, then come back and choose **I turned it on**.
 - **Browsers**: Chrome or Edge 133 or newer on a computer. On Safari, Firefox and phones it stays installed but paused. You can ask the AI for a version that only changes how the page looks.
+
+<GuideShot kind="panel" src="/assets/create-mode-scripted-en.png" alt="The review of a creation that runs code: the Runs code mark, the warning, the full code and the Allow User Scripts steps" :width="632" />
 
 </GuideOp>
 

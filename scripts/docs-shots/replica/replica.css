@@ -1,0 +1,187 @@
+/* A neutral chat layout: enough to look like a page behind Voyager's controls. */
+:root {
+  --rp-bg: #ffffff;
+  --rp-side: #f3f4f6;
+  --rp-text: #1f2328;
+  --rp-muted: #6b7280;
+  --rp-line: #e5e7eb;
+  --rp-bubble: #eef1f5;
+  --rp-code: #f6f8fa;
+}
+.dark-theme {
+  --rp-bg: #17181a;
+  --rp-side: #1f2023;
+  --rp-text: #e8eaed;
+  --rp-muted: #9aa0a6;
+  --rp-line: #303236;
+  --rp-bubble: #2a2c30;
+  --rp-code: #222427;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+body {
+  background: var(--rp-bg);
+  color: var(--rp-text);
+  font:
+    15px/1.6 system-ui,
+    -apple-system,
+    'PingFang SC',
+    sans-serif;
+}
+.rp-app {
+  display: flex;
+  height: 100vh;
+}
+.rp-side {
+  display: block;
+  width: 308px;
+  flex: none;
+  background: var(--rp-side);
+  padding: 16px 12px;
+}
+.rp-new {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 500;
+}
+.rp-new:hover {
+  background: var(--rp-line);
+}
+.rp-list {
+  margin-top: 16px;
+}
+.rp-list a {
+  display: block;
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: var(--rp-muted);
+  text-decoration: none;
+  font-size: 14px;
+}
+.rp-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.rp-top {
+  padding: 12px 20px;
+}
+.rp-model {
+  border: 0;
+  background: none;
+  color: var(--rp-muted);
+  font: inherit;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.rp-history {
+  display: block;
+  flex: 1;
+  overflow: auto;
+  padding: 8px 0 24px;
+}
+.rp-empty {
+  margin-top: 22vh;
+  text-align: center;
+  font-size: 28px;
+  color: var(--rp-muted);
+}
+.conversation-container {
+  display: block;
+  max-width: 760px;
+  margin: 0 auto 28px;
+  padding: 0 24px;
+}
+user-query {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+.user-query-bubble-with-background {
+  max-width: 80%;
+  max-height: 9.6em;
+  overflow: hidden;
+  background: var(--rp-bubble);
+  border-radius: 18px 4px 18px 18px;
+  padding: 10px 16px;
+  white-space: pre-wrap;
+}
+model-response {
+  display: block;
+}
+model-response p {
+  margin: 0 0 12px;
+}
+code-block {
+  display: block;
+  margin: 8px 0;
+  border: 1px solid var(--rp-line);
+  border-radius: 12px;
+  background: var(--rp-code);
+}
+.rp-code-head {
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--rp-muted);
+  border-bottom: 1px solid var(--rp-line);
+}
+code-block pre {
+  margin: 0;
+  padding: 12px 14px;
+  max-height: 220px;
+  overflow: auto;
+  font:
+    12.5px/1.5 ui-monospace,
+    Menlo,
+    monospace;
+}
+.rp-input {
+  display: block;
+  padding: 0 24px 24px;
+}
+.rp-field {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 760px;
+  margin: 0 auto;
+  border: 1px solid var(--rp-line);
+  border-radius: 24px;
+  padding: 10px 10px 10px 20px;
+  background: var(--rp-bg);
+}
+.rp-rich {
+  display: block;
+  flex: 1;
+  min-width: 0;
+}
+.ql-editor {
+  min-height: 24px;
+  max-height: 160px;
+  overflow: auto;
+  outline: none;
+  white-space: pre-wrap;
+}
+.ql-editor.ql-blank::before {
+  content: attr(data-placeholder);
+  color: var(--rp-muted);
+}
+.rp-send button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--rp-bubble);
+  color: var(--rp-text);
+  font-size: 18px;
+}

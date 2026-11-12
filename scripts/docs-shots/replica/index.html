@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Replica chat</title>
+    <link rel="stylesheet" href="/__replica/replica.css" />
+  </head>
+  <!--
+    A stand-in for gemini.google.com, served to a throwaway Chrome that maps the
+    host here (see ../README.md). It carries only the structure Voyager's Gemini
+    adapter reads, in a neutral look of its own: it is not a copy of Gemini.
+  -->
+  <body class="theme-host light-theme">
+    <div class="rp-app">
+      <bard-sidenav class="rp-side">
+        <side-navigation-content>
+          <div data-test-id="new-chat-button"><a href="/app" class="rp-new">New chat</a></div>
+          <div data-test-id="overflow-container" class="rp-overflow">
+            <expandable-section data-test-id="chats-expandable-section">
+              <div data-test-id="all-conversations" class="rp-list"></div>
+            </expandable-section>
+          </div>
+        </side-navigation-content>
+      </bard-sidenav>
+      <main class="rp-main">
+        <header class="rp-top">
+          <button
+            type="button"
+            class="rp-model"
+            data-test-id="bard-mode-menu-button"
+            aria-haspopup="menu"
+          >
+            <span class="mode-title">Argon</span>
+          </button>
+        </header>
+        <infinite-scroller id="chat-history" class="chat-history rp-history">
+          <div class="rp-empty">Where should we start?</div>
+        </infinite-scroller>
+        <input-area-v2 class="rp-input">
+          <div class="text-input-field rp-field">
+            <rich-textarea class="rp-rich">
+              <div
+                class="ql-editor ql-blank"
+                contenteditable="true"
+                role="textbox"
+                aria-label="Enter a prompt"
+                data-placeholder="Ask anything"
+              ></div>
+            </rich-textarea>
+            <div class="send-button submit rp-send">
+              <button type="button" aria-label="Send message">↑</button>
+            </div>
+          </div>
+        </input-area-v2>
+      </main>
+    </div>
+    <script src="/__replica/replica.js"></script>
+  </body>
+</html>

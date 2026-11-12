@@ -54,7 +54,7 @@ Lead sentence.
 ```
 - [ ] Exactly one `<GuideHero>` answering "where is it": light and dark, about 1380×860 (sidebar plus some of the page, demo folders only)
 - [ ] At most one element-only crop per operation, of Voyager's own component
-- [ ] Taken live from the dev build (verify-in-browser), light theme, about 2x
+- [ ] Taken live from the dev build, light theme, about 2x: on the Gemini replica ([scripts/docs-shots](../../../scripts/docs-shots/README.md)) when a scene can be staged there, else on the real site (verify-in-browser)
 - [ ] Saved under docs/public/assets/ with a descriptive name; -zh and -en variants when the crop has text
 - [ ] zh and zh_TW use -zh, every other locale uses -en
 - [ ] Privacy check passed (below); images no page references are removed
