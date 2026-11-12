@@ -93,6 +93,7 @@ const OWNED_FEATURE_SETTINGS: Readonly<Record<OwnedFeatureId, string>> = {
   timeline: 'Show Timeline',
   folders: 'Folders',
   siteCheck: 'Site check',
+  palette: 'Voyager palette',
 };
 
 type SharedRuntimePolicy = 'onePerPage' | 'perElement' | 'sharedDrafts';

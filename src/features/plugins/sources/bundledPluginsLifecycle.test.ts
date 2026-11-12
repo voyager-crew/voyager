@@ -207,10 +207,13 @@ describe('bundled plugin lifecycle (parametric)', async () => {
         expect(styleEl).not.toBeNull();
         expect(styleEl?.textContent?.length ?? 0).toBeGreaterThan(0);
       }
-      // Only ops that address page elements change the host markup; a
-      // primitive-only plugin (`native` op) runs code instead.
+      // Only ops that address page elements change the host markup (the body,
+      // or the root's attributes); a primitive-only plugin (`native` op) runs code instead.
       if (manifest.contributes.domOps?.some((op) => op.op !== 'native')) {
-        expect(document.body.outerHTML).not.toBe(before.body);
+        expect({ body: document.body.outerHTML, root: rootAttributes() }).not.toEqual({
+          body: before.body,
+          root: before.root,
+        });
       }
 
       engine.updateSettings(manifest.id, changedSettings(manifest));

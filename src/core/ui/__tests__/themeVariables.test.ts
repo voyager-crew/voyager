@@ -6,11 +6,18 @@ import { THEME_VARIABLES, themeVariableName } from '../themeVariables';
 
 const SRC = resolve(__dirname, '../../..');
 
-function shippedStylesheets(): string[] {
-  return readdirSync(SRC, { recursive: true, encoding: 'utf8' })
-    .filter((path) => path.endsWith('.css') && !path.split(/[\\/]/).includes('__tests__'))
-    .map((path) => readFileSync(join(SRC, path), 'utf8'));
+function shippedStylesheetPaths(): string[] {
+  return readdirSync(SRC, { recursive: true, encoding: 'utf8' }).filter(
+    (path) => path.endsWith('.css') && !path.split(/[\\/]/).includes('__tests__'),
+  );
 }
+
+function shippedStylesheets(): string[] {
+  return shippedStylesheetPaths().map((path) => readFileSync(join(SRC, path), 'utf8'));
+}
+
+const isCatalogPlugin = (path: string): boolean =>
+  path.split(/[\\/]/).join('/').startsWith('features/plugins/catalog/');
 
 function readNames(css: string): string[] {
   return [...css.matchAll(/var\(\s*(--gv-theme-[a-z-]+)\s*[,)]/g)].map((match) => match[1]);
@@ -62,6 +69,18 @@ describe('public theme variables', () => {
   });
 
   it('are never set by Voyager itself, so a creation that sets one always wins', () => {
-    for (const css of shippedStylesheets()) expect(css).not.toMatch(/--gv-theme-[a-z-]+\s*:/);
+    for (const path of shippedStylesheetPaths().filter((path) => !isCatalogPlugin(path))) {
+      expect(readFileSync(join(SRC, path), 'utf8'), path).not.toMatch(/--gv-theme-[a-z-]+\s*:/);
+    }
+  });
+
+  // An official palette is a plugin the person switched on; it still gives way to a creation's :root.
+  it('are set by an official plugin only at zero specificity', () => {
+    for (const path of shippedStylesheetPaths().filter(isCatalogPlugin)) {
+      const css = readFileSync(join(SRC, path), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+      for (const [, selector, body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        if (/--gv-theme-[a-z-]+\s*:/.test(body)) expect(selector.trim(), path).toMatch(/^:where\(/);
+      }
+    }
   });
 });

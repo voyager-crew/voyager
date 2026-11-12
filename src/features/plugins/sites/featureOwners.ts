@@ -59,7 +59,9 @@ export type OwnedFeatureId =
   | 'timeline'
   | 'folders'
   /** Diagnostics with no native predecessor: off until switched on. */
-  | 'siteCheck';
+  | 'siteCheck'
+  /** Recolours Voyager's own UI; no native predecessor, off until switched on. */
+  | 'palette';
 
 /** The packaged official plugin ids, by feature. */
 export const OFFICIAL_PLUGIN_IDS = {
@@ -111,6 +113,8 @@ export const OFFICIAL_PLUGIN_IDS = {
   geminiDraftSave: 'voyager.gemini-draft-save',
   geminiSiteCheck: 'voyager.gemini-site-check',
   aistudioSiteCheck: 'voyager.aistudio-site-check',
+  geminiPalette: 'voyager.gemini-palette',
+  aistudioPalette: 'voyager.aistudio-palette',
 } as const;
 
 /** Page-wide features admitted before site-specific initialization, with no public primitive. */
@@ -480,6 +484,20 @@ export const FEATURE_OWNERS: readonly OwnedFeature[] = [
     feature: 'siteCheck',
     officialPluginId: OFFICIAL_PLUGIN_IDS.aistudioSiteCheck,
     handlers: ['siteCheck'],
+    healthTracking: false,
+  },
+  {
+    site: 'gemini',
+    feature: 'palette',
+    officialPluginId: OFFICIAL_PLUGIN_IDS.geminiPalette,
+    handlers: [],
+    healthTracking: false,
+  },
+  {
+    site: 'aistudio',
+    feature: 'palette',
+    officialPluginId: OFFICIAL_PLUGIN_IDS.aistudioPalette,
+    handlers: [],
     healthTracking: false,
   },
 ];

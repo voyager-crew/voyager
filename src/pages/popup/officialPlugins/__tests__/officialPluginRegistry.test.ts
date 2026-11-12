@@ -94,7 +94,7 @@ describe('the official plugin list registry', () => {
       // A row with its own inline control shows that instead of the generic settings.
       if (entry.inlinePanel) continue;
       for (const [key, field] of fields) {
-        expect(['boolean', 'number'], `${entry.id}.${key}`).toContain(field.type);
+        expect(['boolean', 'number', 'select'], `${entry.id}.${key}`).toContain(field.type);
       }
     }
   });

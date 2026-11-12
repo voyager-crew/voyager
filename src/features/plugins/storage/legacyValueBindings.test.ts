@@ -171,6 +171,7 @@ describe('legacy value bindings', () => {
         StorageKeys.INPUT_COLLAPSE_WHEN_NOT_EMPTY,
         StorageKeys.FOLDER_HIDE_ARCHIVED_CONVERSATIONS_AISTUDIO,
         StorageKeys.FOLDER_HIDE_ARCHIVED_CONVERSATIONS,
+        StorageKeys.VOYAGER_PALETTE,
       ].sort(),
     );
   });

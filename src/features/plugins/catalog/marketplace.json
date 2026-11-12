@@ -252,6 +252,26 @@
       "name": "kimi-prompt-manager",
       "source": "sites/kimi/plugins/prompt-manager/plugin.json",
       "official": true
+    },
+    {
+      "name": "claude-palette",
+      "source": "sites/claude/plugins/palette/plugin.json",
+      "official": true
+    },
+    {
+      "name": "chatgpt-palette",
+      "source": "sites/chatgpt/plugins/palette/plugin.json",
+      "official": true
+    },
+    {
+      "name": "deepseek-palette",
+      "source": "sites/deepseek/plugins/palette/plugin.json",
+      "official": true
+    },
+    {
+      "name": "kimi-palette",
+      "source": "sites/kimi/plugins/palette/plugin.json",
+      "official": true
     }
   ]
 }

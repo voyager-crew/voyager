@@ -82,4 +82,10 @@ export const PLUGIN_STORAGE_KEYS = {
   // Site check on Gemini and AI Studio (chrome.storage.sync, backed up, default off): the
   // switch of their packaged `voyager.*-site-check` plugins. Other sites use gvPluginsState.
   SITE_CHECK_ENABLED: 'gvSiteCheckEnabled',
+
+  // Voyager palette on Gemini and AI Studio (chrome.storage.sync, backed up): the switch
+  // (default off) and the palette ('nord' | 'nord-dark' | 'nord-light', default 'nord') of
+  // their packaged `voyager.*-palette` plugins. Other sites use gvPluginsState.
+  VOYAGER_PALETTE_ENABLED: 'gvVoyagerPaletteEnabled',
+  VOYAGER_PALETTE: 'gvVoyagerPalette',
 } as const;

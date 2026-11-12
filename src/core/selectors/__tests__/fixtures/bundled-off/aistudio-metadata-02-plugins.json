@@ -69,6 +69,51 @@
     }
   ],
   [
+    "plugins/palette/plugin.json",
+    {
+      "id": "voyager.aistudio-palette",
+      "engine": ">=1.11.0",
+      "tier": "declarative",
+      "matches": ["https://aistudio.google.com/*", "https://aistudio.google.cn/*"],
+      "contributes": {
+        "settings": {
+          "palette": {
+            "type": "select",
+            "label": "Palette",
+            "default": "nord",
+            "options": [
+              {
+                "value": "nord",
+                "label": "Nord, following the page's light or dark"
+              },
+              {
+                "value": "nord-dark",
+                "label": "Nord dark, always"
+              },
+              {
+                "value": "nord-light",
+                "label": "Nord light, always"
+              }
+            ]
+          }
+        },
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ],
+        "domOps": [
+          {
+            "op": "setAttribute",
+            "target": "html",
+            "name": "data-gv-palette",
+            "value": "{{palette}}"
+          }
+        ]
+      }
+    }
+  ],
+  [
     "plugins/site-check/plugin.json",
     {
       "id": "voyager.aistudio-site-check",

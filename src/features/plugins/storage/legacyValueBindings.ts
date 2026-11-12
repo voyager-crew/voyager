@@ -33,6 +33,7 @@ import {
 import { normalizeGemsSidebarCount } from '@/core/utils/gemsSidebarValues';
 import { normalizeSidebarWidth } from '@/core/utils/sidebarWidthValues';
 import { type VisualEffect, resolveVisualEffect } from '@/core/utils/visualEffectValues';
+import { type VoyagerPalette, resolveVoyagerPalette } from '@/core/utils/voyagerPaletteValues';
 
 import { OFFICIAL_PLUGIN_IDS } from '../sites/featureOwners';
 import type { PluginSettings } from '../types';
@@ -47,7 +48,7 @@ export interface LegacyValueBinding {
   readonly read: (
     stored: unknown,
     snapshot?: LegacySettingSnapshot,
-  ) => number | boolean | VisualEffect;
+  ) => number | boolean | VisualEffect | VoyagerPalette;
   /** Extra legacy inputs for a trusted enum resolver, never plugin-supplied keys. */
   readonly additionalKeys?: readonly string[];
   /** Whether a live change to `legacyKey` replaces the current value (the native listener's test). */
@@ -71,6 +72,16 @@ function numberBinding(
 /** A sub-switch the native module reads as `=== true`, at startup and live. */
 function trueOnlyBinding(settingKey: string, legacyKey: string): LegacyValueBinding {
   return { settingKey, legacyKey, read: isTrue, acceptsLiveChange: always };
+}
+
+/** One palette shared by Gemini and AI Studio, as their switch is. */
+function paletteBinding(): LegacyValueBinding {
+  return {
+    settingKey: 'palette',
+    legacyKey: StorageKeys.VOYAGER_PALETTE,
+    read: resolveVoyagerPalette,
+    acceptsLiveChange: always,
+  };
 }
 
 /**
@@ -138,6 +149,8 @@ export const LEGACY_VALUE_BINDINGS: LegacyValueBindingTable = {
   [OFFICIAL_PLUGIN_IDS.geminiInputCollapse]: [
     trueOnlyBinding('collapseWhenNotEmpty', StorageKeys.INPUT_COLLAPSE_WHEN_NOT_EMPTY),
   ],
+  [OFFICIAL_PLUGIN_IDS.geminiPalette]: [paletteBinding()],
+  [OFFICIAL_PLUGIN_IDS.aistudioPalette]: [paletteBinding()],
 };
 
 export function legacyValueBindingsFor(
@@ -166,7 +179,7 @@ export function deriveLegacyValueSettings(
   legacy: LegacySettingSnapshot,
   table: LegacyValueBindingTable = LEGACY_VALUE_BINDINGS,
 ): PluginSettings {
-  const settings: Record<string, number | boolean | VisualEffect> = {};
+  const settings: Record<string, number | boolean | VisualEffect | VoyagerPalette> = {};
   for (const entry of legacyValueBindingsFor(id, table)) {
     const stored = Object.prototype.hasOwnProperty.call(legacy, entry.legacyKey)
       ? legacy[entry.legacyKey]

@@ -1,0 +1,178 @@
+{
+  "$schema": "https://voyager.nagi.fun/plugin.schema.json",
+  "id": "voyager.aistudio-palette",
+  "name": "AI Studio · Voyager palette",
+  "version": "1.0.0",
+  "description": "Recolours Voyager's own panels, menus, dialogs and timeline in Nord; the site keeps its own colours. Other palettes can be made in Create mode, which wrote this one's first version (Gemini, model Argon).",
+  "i18n": {
+    "zh": {
+      "name": "AI Studio · Voyager 配色",
+      "description": "用 Nord 配色重绘 Voyager 自己的面板、菜单、对话框和时间轴，网站本身的颜色不变。其他配色可以在「创造」里做出来，这一套的第一版就是 Gemini（Argon 模型）在「创造」里写的。",
+      "settings": {
+        "palette": {
+          "label": "配色",
+          "options": {
+            "nord": "Nord，跟随页面的浅色或深色",
+            "nord-dark": "Nord 深色，始终",
+            "nord-light": "Nord 浅色，始终"
+          }
+        }
+      }
+    },
+    "zh_TW": {
+      "name": "AI Studio · Voyager 配色",
+      "description": "用 Nord 配色重繪 Voyager 自己的面板、選單、對話框和時間軸，網站本身的顏色不變。其他配色可以在「創造」裡做出來，這一套的第一版就是 Gemini（Argon 模型）在「創造」裡寫的。",
+      "settings": {
+        "palette": {
+          "label": "配色",
+          "options": {
+            "nord": "Nord，跟隨頁面的淺色或深色",
+            "nord-dark": "Nord 深色，一律",
+            "nord-light": "Nord 淺色，一律"
+          }
+        }
+      }
+    },
+    "ja": {
+      "name": "AI Studio · Voyager 配色",
+      "description": "Voyager 自身のパネル、メニュー、ダイアログ、タイムラインを Nord の配色にします。サイト自体の色はそのままです。ほかの配色は「作成」で作れます。この配色の最初の版も、Gemini（モデル Argon）が「作成」で書いたものです。",
+      "settings": {
+        "palette": {
+          "label": "配色",
+          "options": {
+            "nord": "Nord（ページのライト／ダークに合わせる）",
+            "nord-dark": "Nord ダーク（常に）",
+            "nord-light": "Nord ライト（常に）"
+          }
+        }
+      }
+    },
+    "ko": {
+      "name": "AI Studio · Voyager 색 구성",
+      "description": "Voyager 자체의 패널, 메뉴, 대화상자, 타임라인을 Nord 색으로 바꿉니다. 사이트 자체의 색은 그대로입니다. 다른 색 구성은 ‘만들기’에서 만들 수 있으며, 이 색 구성의 첫 버전도 Gemini(Argon 모델)가 ‘만들기’에서 썼습니다.",
+      "settings": {
+        "palette": {
+          "label": "색 구성",
+          "options": {
+            "nord": "Nord, 페이지의 라이트·다크를 따름",
+            "nord-dark": "Nord 다크, 항상",
+            "nord-light": "Nord 라이트, 항상"
+          }
+        }
+      }
+    },
+    "fr": {
+      "name": "AI Studio · Palette Voyager",
+      "description": "Recolore en Nord les panneaux, menus, boîtes de dialogue et la chronologie de Voyager ; le site garde ses propres couleurs. D’autres palettes se créent avec « Créer », où Gemini (modèle Argon) a écrit la première version de celle-ci.",
+      "settings": {
+        "palette": {
+          "label": "Palette",
+          "options": {
+            "nord": "Nord, selon le thème clair ou sombre de la page",
+            "nord-dark": "Nord sombre, toujours",
+            "nord-light": "Nord clair, toujours"
+          }
+        }
+      }
+    },
+    "es": {
+      "name": "AI Studio · Paleta de Voyager",
+      "description": "Pinta en Nord los paneles, menús, diálogos y la línea de tiempo de Voyager; el sitio conserva sus propios colores. Otras paletas se hacen en «Crear», donde Gemini (modelo Argon) escribió la primera versión de esta.",
+      "settings": {
+        "palette": {
+          "label": "Paleta",
+          "options": {
+            "nord": "Nord, según el tema claro u oscuro de la página",
+            "nord-dark": "Nord oscuro, siempre",
+            "nord-light": "Nord claro, siempre"
+          }
+        }
+      }
+    },
+    "pt": {
+      "name": "AI Studio · Paleta do Voyager",
+      "description": "Pinta em Nord os painéis, menus, diálogos e a linha do tempo do próprio Voyager; o site mantém as suas cores. Outras paletas são feitas em “Criar”, onde o Gemini (modelo Argon) escreveu a primeira versão desta.",
+      "settings": {
+        "palette": {
+          "label": "Paleta",
+          "options": {
+            "nord": "Nord, conforme o tema claro ou escuro da página",
+            "nord-dark": "Nord escuro, sempre",
+            "nord-light": "Nord claro, sempre"
+          }
+        }
+      }
+    },
+    "ru": {
+      "name": "AI Studio · Палитра Voyager",
+      "description": "Перекрашивает в Nord панели, меню, диалоги и шкалу времени самого Voyager; сайт сохраняет свои цвета. Другие палитры делаются в разделе «Создать», где Gemini (модель Argon) и написал первую версию этой.",
+      "settings": {
+        "palette": {
+          "label": "Палитра",
+          "options": {
+            "nord": "Nord, по светлой или тёмной теме страницы",
+            "nord-dark": "Nord тёмная, всегда",
+            "nord-light": "Nord светлая, всегда"
+          }
+        }
+      }
+    },
+    "ar": {
+      "name": "AI Studio · لوحة ألوان Voyager",
+      "description": "تعيد تلوين لوحات Voyager وقوائمه ونوافذ الحوار والخط الزمني بألوان Nord، ويحتفظ الموقع بألوانه. يمكن صنع لوحات أخرى في «إنشاء»، حيث كتب Gemini (نموذج Argon) النسخة الأولى من هذه اللوحة.",
+      "settings": {
+        "palette": {
+          "label": "لوحة الألوان",
+          "options": {
+            "nord": "Nord، وفق الوضع الفاتح أو الداكن للصفحة",
+            "nord-dark": "Nord الداكن، دائمًا",
+            "nord-light": "Nord الفاتح، دائمًا"
+          }
+        }
+      }
+    }
+  },
+  "author": "voyager-official",
+  "category": "theme",
+  "license": "MIT",
+  "homepage": "https://github.com/voyager-crew/voyager/tree/main/src/features/plugins/catalog/sites/aistudio/plugins/palette",
+  "engine": ">=1.11.0",
+  "tier": "declarative",
+  "matches": ["https://aistudio.google.com/*", "https://aistudio.google.cn/*"],
+  "contributes": {
+    "settings": {
+      "palette": {
+        "type": "select",
+        "label": "Palette",
+        "default": "nord",
+        "options": [
+          {
+            "value": "nord",
+            "label": "Nord, following the page's light or dark"
+          },
+          {
+            "value": "nord-dark",
+            "label": "Nord dark, always"
+          },
+          {
+            "value": "nord-light",
+            "label": "Nord light, always"
+          }
+        ]
+      }
+    },
+    "styles": [
+      {
+        "file": "style.css"
+      }
+    ],
+    "domOps": [
+      {
+        "op": "setAttribute",
+        "target": "html",
+        "name": "data-gv-palette",
+        "value": "{{palette}}"
+      }
+    ]
+  }
+}

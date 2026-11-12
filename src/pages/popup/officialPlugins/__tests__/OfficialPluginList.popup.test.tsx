@@ -90,6 +90,7 @@ describe('the official plugin list in the popup', () => {
           OFFICIAL_PLUGIN_IDS.geminiEditInputWidth,
           OFFICIAL_PLUGIN_IDS.geminiHideInputHalo,
           OFFICIAL_PLUGIN_IDS.visualEffects,
+          OFFICIAL_PLUGIN_IDS.geminiPalette,
         ],
       },
       {
@@ -383,7 +384,7 @@ describe('the official plugin list in the popup', () => {
           ),
         ]),
       ).toEqual([
-        ['pluginsLayout', [OFFICIAL_PLUGIN_IDS.visualEffects]],
+        ['pluginsLayout', [OFFICIAL_PLUGIN_IDS.visualEffects, OFFICIAL_PLUGIN_IDS.aistudioPalette]],
         ['pluginsSidebar', [OFFICIAL_PLUGIN_IDS.aistudioSidebarWidth]],
         ['pluginsContent', [OFFICIAL_PLUGIN_IDS.aistudioFormulaCopy]],
         ['pluginsInput', [OFFICIAL_PLUGIN_IDS.aistudioEnterSend]],

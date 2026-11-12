@@ -192,5 +192,7 @@
   "BRIDGE_PARALLEL": "gvBridgeParallel",
   "BRIDGE_PARALLEL_JOBS": "gvBridgeParallelJobs",
   "BRIDGE_ACCOUNT_PLANS": "gvBridgeAccountPlans",
-  "SITE_CHECK_ENABLED": "gvSiteCheckEnabled"
+  "SITE_CHECK_ENABLED": "gvSiteCheckEnabled",
+  "VOYAGER_PALETTE_ENABLED": "gvVoyagerPaletteEnabled",
+  "VOYAGER_PALETTE": "gvVoyagerPalette"
 }

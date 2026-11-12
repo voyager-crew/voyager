@@ -354,6 +354,16 @@ export const LEGACY_ENABLE_BINDINGS: Readonly<Record<string, LegacyEnableBinding
     StorageKeys.SITE_CHECK_ENABLED,
     onOnlyIfTrue,
   ),
+  [OFFICIAL_PLUGIN_IDS.geminiPalette]: binding(
+    OFFICIAL_PLUGIN_IDS.geminiPalette,
+    StorageKeys.VOYAGER_PALETTE_ENABLED,
+    onOnlyIfTrue,
+  ),
+  [OFFICIAL_PLUGIN_IDS.aistudioPalette]: binding(
+    OFFICIAL_PLUGIN_IDS.aistudioPalette,
+    StorageKeys.VOYAGER_PALETTE_ENABLED,
+    onOnlyIfTrue,
+  ),
 };
 
 /** The stored value of `key`; `undefined` when the snapshot lacks it or holds it removed. */

@@ -40,6 +40,7 @@ import { createOnboardingCoachmarks } from './onboardingCoachmarks';
 import { registerPageErrorHandlers } from './pageErrorHandlers';
 import { PageRetiredError, createPageSteps } from './pageInitSteps';
 import { startPageSelectors } from './pageSelectorStartup';
+import { admitPalette } from './paletteStartup';
 import { ensureScheme, stopScheme } from './platformTheme/scheme';
 import { registerBuiltinNativeHandlers } from './pluginNativeRegistration';
 import { createPromptManagerEngine, readPromptCoverage } from './prompt/promptManagerEngine';
@@ -144,6 +145,7 @@ async function initializeFeatures(): Promise<void> {
     });
     if (entry !== 'start-points') return;
     admitSiteCheck(officialAdmission, location.href);
+    admitPalette(officialAdmission, location.href);
 
     if (nativeStartPointSiteForHost(location.hostname) === 'gemini') {
       await startGeminiPage({

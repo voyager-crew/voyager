@@ -147,6 +147,51 @@
     }
   ],
   [
+    "plugins/palette/plugin.json",
+    {
+      "id": "voyager.claude-palette",
+      "engine": ">=1.11.0",
+      "tier": "declarative",
+      "matches": ["https://claude.ai/*"],
+      "contributes": {
+        "settings": {
+          "palette": {
+            "type": "select",
+            "label": "Palette",
+            "default": "nord",
+            "options": [
+              {
+                "value": "nord",
+                "label": "Nord, following the page's light or dark"
+              },
+              {
+                "value": "nord-dark",
+                "label": "Nord dark, always"
+              },
+              {
+                "value": "nord-light",
+                "label": "Nord light, always"
+              }
+            ]
+          }
+        },
+        "styles": [
+          {
+            "file": "style.css"
+          }
+        ],
+        "domOps": [
+          {
+            "op": "setAttribute",
+            "target": "html",
+            "name": "data-gv-palette",
+            "value": "{{palette}}"
+          }
+        ]
+      }
+    }
+  ],
+  [
     "plugins/prompt-manager/plugin.json",
     {
       "id": "voyager.claude-prompt-manager",

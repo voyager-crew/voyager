@@ -13,6 +13,8 @@ import { sidebarWidthForDisplay } from './sidebarWidthDisplay';
 const SITE_CHECK_ALIASES =
   'site check diagnostics bug report broken selector element picker 站点检查 诊断 反馈 失效';
 
+const PALETTE_ALIASES = 'palette colour color scheme theme nord recolour 配色 颜色 主题 色彩';
+
 const BATCH_DELETE_ALIASES =
   'batch delete bulk remove select multiple conversations chats 批量删除 多选 删除对话';
 
@@ -131,6 +133,19 @@ export const OFFICIAL_PLUGIN_ENTRIES: readonly OfficialPluginEntry[] = [
     searchKeys: ['visualEffectHint', 'visualEffectSnow', 'visualEffectSakura', 'visualEffectRain'],
     searchAliases: ['snow sakura rain particles atmosphere 雪 樱花 雨 特效'],
     inlinePanel: 'visualEffect',
+  },
+  // Gemini and AI Studio share one switch and one palette, as the site check rows do.
+  {
+    id: OFFICIAL_PLUGIN_IDS.geminiPalette,
+    topic: 'pluginsLayout',
+    searchKeys: [],
+    searchAliases: [PALETTE_ALIASES],
+  },
+  {
+    id: OFFICIAL_PLUGIN_IDS.aistudioPalette,
+    topic: 'pluginsLayout',
+    searchKeys: [],
+    searchAliases: [PALETTE_ALIASES],
   },
   {
     id: OFFICIAL_PLUGIN_IDS.geminiSidebarWidth,
