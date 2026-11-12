@@ -41,7 +41,7 @@ export const contract: PrimitiveContract = {
     reply: {
       type: 'selector',
       required: false,
-      sinceEngine: 'next',
+      sinceEngine: '2.3.2',
       description:
         'Elements holding one assistant reply each. A reply that follows another reply with no user turn between them, such as a scheduled task’s later runs, gets its own marker labelled with its text. Omit it and only user turns are marked.',
     },

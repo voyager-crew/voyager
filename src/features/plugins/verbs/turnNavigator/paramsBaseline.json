@@ -44,7 +44,7 @@
     "reply": {
       "type": "selector",
       "required": false,
-      "sinceEngine": "next"
+      "sinceEngine": "2.3.2"
     }
   }
 }

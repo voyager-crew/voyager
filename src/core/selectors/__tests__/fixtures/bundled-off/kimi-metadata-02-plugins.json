@@ -134,7 +134,7 @@
     "plugins/palette/plugin.json",
     {
       "id": "voyager.kimi-palette",
-      "engine": ">=1.11.0",
+      "engine": ">=2.3.2",
       "tier": "declarative",
       "matches": ["https://www.kimi.com/*"],
       "contributes": {

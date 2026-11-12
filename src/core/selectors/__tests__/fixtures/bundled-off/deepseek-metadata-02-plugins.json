@@ -203,7 +203,7 @@
     "plugins/palette/plugin.json",
     {
       "id": "voyager.deepseek-palette",
-      "engine": ">=1.11.0",
+      "engine": ">=2.3.2",
       "tier": "declarative",
       "matches": ["https://chat.deepseek.com/*"],
       "contributes": {

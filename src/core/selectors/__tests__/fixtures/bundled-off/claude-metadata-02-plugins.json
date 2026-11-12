@@ -150,7 +150,7 @@
     "plugins/palette/plugin.json",
     {
       "id": "voyager.claude-palette",
-      "engine": ">=1.11.0",
+      "engine": ">=2.3.2",
       "tier": "declarative",
       "matches": ["https://claude.ai/*"],
       "contributes": {

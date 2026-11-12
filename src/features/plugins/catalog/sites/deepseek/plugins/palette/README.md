@@ -7,7 +7,7 @@ author: voyager-official
 license: MIT
 matches:
   - https://chat.deepseek.com/*
-engine: '>=1.11.0'
+engine: '>=2.3.2'
 settings:
   palette: 'select (nord, nord-dark, nord-light; default nord): which Nord to use'
 ---
@@ -61,9 +61,7 @@ palettes set it, in every site's copy.
 ## Engine floor
 
 Voyager 2.3.1 and earlier have no `--gv-theme-*` variables, so the plugin
-does nothing there. Its floor should be the release that ships them
-(`>=next`), but this tree still reports 2.3.1 and would refuse its own
-bundled copy, so the floor stays at `>=1.11.0` until the release raises it.
+would do nothing there. Its floor is the release that ships them, `>=2.3.2`.
 
 This is a declarative plugin: CSS and JSON interpreted by Voyager's bundled
 plugin engine. It does not execute remote JavaScript or load external resources.

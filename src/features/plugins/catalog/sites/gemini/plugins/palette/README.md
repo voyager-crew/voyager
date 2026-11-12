@@ -7,7 +7,7 @@ author: voyager-official
 license: MIT
 matches:
   - https://gemini.google.com/*
-engine: '>=1.11.0'
+engine: '>=2.3.2'
 settings:
   palette: 'select (nord, nord-dark, nord-light; default nord): which Nord to use'
 ---
@@ -65,7 +65,7 @@ palettes set it, in every site's copy.
 ## Engine floor
 
 Packaged only, so it ships only in builds that carry the `--gv-theme-*`
-variables; `engine` stays at the current floor, `>=1.11.0`.
+variables; its floor is the release that added them, `>=2.3.2`.
 
 This is a declarative plugin: CSS and JSON interpreted by Voyager's bundled
 plugin engine. It does not execute remote JavaScript or load external resources.

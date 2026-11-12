@@ -194,7 +194,7 @@ export const BUILTIN_PLUGINS: readonly PluginManifest[] = [
     siteLabel: 'ChatGPT',
     version: '1.1.0',
     matches: ['https://chatgpt.com/*', 'https://chat.openai.com/*'],
-    engine: '>=next',
+    engine: '>=2.3.2',
     // Selectors and the URL's conversation id come from the ChatGPT
     // adapter, so fixes travel with site.json. ChatGPT unmounts whole
     // exchange items off-screen, so the rail accumulates them. A star is

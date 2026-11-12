@@ -131,7 +131,7 @@ describe('BUILTIN_PLUGINS', () => {
     const timeline = BUILTIN_PLUGINS.find((m) => m.id === 'voyager.chatgpt-timeline');
     expect(timeline).toBeDefined();
     expect(timeline?.matches).toEqual(['https://chatgpt.com/*', 'https://chat.openai.com/*']);
-    expect(timeline?.engine).toBe('>=next');
+    expect(timeline?.engine).toBe('>=2.3.2');
     expect(timeline?.contributes.domOps).toMatchObject([
       {
         op: 'native',
