@@ -63,6 +63,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       {
         text: 'プラグイン',
         items: [
+          { text: '作成モード', link: '/ja/guide/create-mode' },
           { text: 'プラグイン一覧', link: '/ja/guide/plugins' },
           { text: 'ChatGPT ローカルブリッジ', link: '/ja/guide/local-bridge' },
           { text: '自分でプラグインを作る', link: '/ja/guide/write-a-plugin' },

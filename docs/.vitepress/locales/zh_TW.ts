@@ -63,6 +63,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       {
         text: '外掛',
         items: [
+          { text: '創造模式', link: '/zh_TW/guide/create-mode' },
           { text: '外掛一覽', link: '/zh_TW/guide/plugins' },
           { text: 'ChatGPT 本機橋接', link: '/zh_TW/guide/local-bridge' },
           { text: '撰寫自己的外掛', link: '/zh_TW/guide/write-a-plugin' },

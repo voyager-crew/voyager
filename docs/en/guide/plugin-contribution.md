@@ -6,7 +6,7 @@ This keeps plugins easier to review and maintain. If you want to contribute a pl
 
 ## Just for yourself: local plugins
 
-A plugin you only need in your own browser does not go through this process. Make it as a local plugin and import it in the popup: no Issue, no PR, no repository checkout. [Write your own plugin](./write-a-plugin.md) covers the three ways to make one, including the `create-voyager-plugin` checker and the skill for coding agents.
+A plugin you only need in your own browser does not go through this process. Make it as a local plugin and import it in the popup: no Issue, no PR, no repository checkout. The quickest way is [Create mode](./create-mode.md): one sentence, and the site's AI writes it. To hand it to a coding agent or write it by hand, see [Write your own plugin](./write-a-plugin.md), including the `create-voyager-plugin` checker and the skill for coding agents.
 
 ## Recommended path
 

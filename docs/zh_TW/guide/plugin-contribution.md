@@ -6,7 +6,7 @@ Voyager 的外掛系統優先支援宣告式外掛：用 `plugin.json` 描述外
 
 ## 只給自己用：本機外掛
 
-只需要在自己瀏覽器中使用的外掛，不必走這套流程。把它做成本機外掛，再於彈出視窗中匯入即可：不需要 Issue、不需要 PR，也不需要 clone 儲存庫。[撰寫你自己的外掛](/zh_TW/guide/write-a-plugin) 說明了三種建立方式，包括 `create-voyager-plugin` 檢查工具與給程式代理使用的 skill。
+只需要在自己瀏覽器中使用的外掛，不必走這套流程。把它做成本機外掛，再於彈出視窗中匯入即可：不需要 Issue、不需要 PR，也不需要 clone 儲存庫。最快的是 [創造模式](/zh_TW/guide/create-mode)：一句話，網站上的 AI 來寫；想交給程式代理或自己動手，請見 [撰寫你自己的外掛](/zh_TW/guide/write-a-plugin)，包括 `create-voyager-plugin` 檢查工具與給程式代理使用的 skill。
 
 ## 建議流程
 

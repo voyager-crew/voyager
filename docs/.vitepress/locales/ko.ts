@@ -63,6 +63,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       {
         text: '플러그인',
         items: [
+          { text: '창작 모드', link: '/ko/guide/create-mode' },
           { text: '플러그인 목록', link: '/ko/guide/plugins' },
           { text: 'ChatGPT 로컬 브리지', link: '/ko/guide/local-bridge' },
           { text: '직접 플러그인 만들기', link: '/ko/guide/write-a-plugin' },

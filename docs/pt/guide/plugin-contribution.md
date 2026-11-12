@@ -6,7 +6,7 @@ Isto torna os plugins mais fáceis de rever e manter. Se quiser contribuir com u
 
 ## Só para você: plugins locais
 
-Um plugin de que você só precisa no seu próprio navegador não passa por este processo. Crie-o como plugin local e importe-o no popup: sem Issue, sem PR, sem clonar o repositório. [Escreva seu próprio plugin](./write-a-plugin.md) explica as três formas de criar um, incluindo o verificador `create-voyager-plugin` e a skill para agentes de código.
+Um plugin de que você só precisa no seu próprio navegador não passa por este processo. Crie-o como plugin local e importe-o no popup: sem Issue, sem PR, sem clonar o repositório. O jeito mais rápido é o [modo criação](./create-mode.md): uma frase, e a IA do site escreve o plugin. Para entregá-lo a um agente de código ou escrevê-lo à mão, veja [Escreva seu próprio plugin](./write-a-plugin.md), incluindo o verificador `create-voyager-plugin` e a skill para agentes de código.
 
 ## Caminho recomendado
 

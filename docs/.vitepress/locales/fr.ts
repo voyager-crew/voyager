@@ -66,6 +66,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       {
         text: 'Plugins',
         items: [
+          { text: 'Mode création', link: '/fr/guide/create-mode' },
           { text: 'Tous les plugins', link: '/fr/guide/plugins' },
           { text: 'Pont local ChatGPT', link: '/fr/guide/local-bridge' },
           { text: 'Écrire son propre plugin', link: '/fr/guide/write-a-plugin' },

@@ -62,6 +62,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       {
         text: '插件',
         items: [
+          { text: '创造模式', link: '/guide/create-mode' },
           { text: '插件一览', link: '/guide/plugins' },
           { text: 'ChatGPT 本地桥', link: '/guide/local-bridge' },
           { text: '编写自己的插件', link: '/guide/write-a-plugin' },

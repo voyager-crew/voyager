@@ -29,7 +29,7 @@
   <p>
     <a href="https://voyager.nagi.fun/en">Documentation</a> ·
     <a href="#install">Install</a> ·
-    <a href="https://voyager.nagi.fun/en/guide/write-a-plugin">Write a plugin</a> ·
+    <a href="https://voyager.nagi.fun/en/guide/create-mode">Create mode</a> ·
     <a href="https://discord.gg/TEUFxdMbGb">Discord</a>
   </p>
   <p>
@@ -118,11 +118,12 @@ Gemini also gets [Deep Research export](https://voyager.nagi.fun/en/guide/deep-r
 
 A plugin you write lives only in your browser and needs no pull request.
 
+- **Say it on the page.** In the Voyager panel's **Create** tab, write one sentence and choose **Create on this page**. The site's AI writes the plugin, and Voyager offers **Preview and install** under its reply. [Create mode](https://voyager.nagi.fun/en/guide/create-mode)
 - **Ask the AI you are chatting with.** In the popup's **My creations** card, write one sentence and choose **Copy for this chat**. Paste it into the chat; Voyager checks the reply and shows what it changes before you import it.
 - **Hand it to a coding agent.** **Copy for a local agent** gives Claude Code, Codex or Cursor your request and the skill at `https://voyager.nagi.fun/skills/write-voyager-plugin/SKILL.md`.
 - **Write it by hand.** `npx create-voyager-plugin@latest init my-plugin --site claude`, then `check` runs the same checks as the import.
 
-A plugin cannot run scripts, load anything from the network or read what your messages say. [What a plugin can do](https://voyager.nagi.fun/en/guide/write-a-plugin)
+A plugin cannot run scripts, load anything from the network or read what your messages say. [What a plugin can do](https://voyager.nagi.fun/en/guide/write-a-plugin#what-a-plugin-can-do)
 
 ---
 

@@ -67,6 +67,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       {
         text: 'الإضافات',
         items: [
+          { text: 'وضع الإبداع', link: '/ar/guide/create-mode' },
           { text: 'كل الإضافات', link: '/ar/guide/plugins' },
           { text: 'الجسر المحلي لـ ChatGPT', link: '/ar/guide/local-bridge' },
           { text: 'اكتب إضافتك الخاصة', link: '/ar/guide/write-a-plugin' },

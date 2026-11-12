@@ -72,6 +72,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       {
         text: 'Плагины',
         items: [
+          { text: 'Режим создания', link: '/ru/guide/create-mode' },
           { text: 'Все плагины', link: '/ru/guide/plugins' },
           { text: 'Локальный мост ChatGPT', link: '/ru/guide/local-bridge' },
           { text: 'Создание своего плагина', link: '/ru/guide/write-a-plugin' },

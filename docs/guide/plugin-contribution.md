@@ -6,7 +6,7 @@ Voyager 的插件系统优先支持声明式插件：用 `plugin.json` 描述插
 
 ## 只给自己用：本地插件
 
-只在自己浏览器里用的插件不需要走这套流程。把它做成本地插件，在 popup 里导入即可：不用提 Issue、不用提 PR，也不用拉取仓库。[编写自己的插件](./write-a-plugin.md)介绍了三种做法，包括 `create-voyager-plugin` 检查工具和给编程 Agent 用的 skill。
+只在自己浏览器里用的插件不需要走这套流程。把它做成本地插件，在 popup 里导入即可：不用提 Issue、不用提 PR，也不用拉取仓库。最快的是 [创造模式](./create-mode.md)：一句话，网站上的 AI 来写；想交给编程 Agent 或自己动手，见 [编写自己的插件](./write-a-plugin.md)，包括 `create-voyager-plugin` 检查工具和给编程 Agent 用的 skill。
 
 ## 推荐路径
 

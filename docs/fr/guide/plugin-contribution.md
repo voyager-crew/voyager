@@ -6,7 +6,7 @@ Cette approche rend les plugins plus faciles à relire et à maintenir. Si vous 
 
 ## Pour vous seul : les plugins locaux
 
-Un plugin dont vous n'avez besoin que dans votre propre navigateur ne passe pas par ce processus. Créez-le comme plugin local et importez-le dans la popup de l'extension : pas d'Issue, pas de PR, pas de copie du dépôt. [Écrire votre propre plugin](./write-a-plugin.md) présente les trois façons d'en créer un, dont le vérificateur `create-voyager-plugin` et la skill destinée aux agents de code.
+Un plugin dont vous n'avez besoin que dans votre propre navigateur ne passe pas par ce processus. Créez-le comme plugin local et importez-le dans la popup de l'extension : pas d'Issue, pas de PR, pas de copie du dépôt. Le plus rapide est le [mode création](./create-mode.md) : une phrase, et l'IA du site l'écrit. Pour le confier à un agent de code ou l'écrire à la main, voir [Écrire votre propre plugin](./write-a-plugin.md), qui présente aussi le vérificateur `create-voyager-plugin` et la skill destinée aux agents de code.
 
 ## Parcours recommandé
 
