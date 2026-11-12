@@ -11,7 +11,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       ...announcementNav('공지'),
       { text: '홈', link: '/ko/' },
       { text: '가이드', link: '/ko/guide/installation' },
-      { text: '데이터 뷰어', link: '/ko/data-viewer' },
+      { text: '창작 모드', link: '/ko/guide/create-mode' },
     ],
     sidebar: [
       {
@@ -83,6 +83,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
           { text: '후원', link: '/ko/guide/sponsor' },
           { text: '에코시스템', link: '/ko/guide/ecosystem' },
           { text: '변경 로그', link: '/ko/changelog' },
+          { text: '데이터 뷰어', link: '/ko/data-viewer' },
         ],
       },
     ],

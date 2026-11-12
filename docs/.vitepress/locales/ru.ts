@@ -11,7 +11,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       ...announcementNav('Объявление'),
       { text: 'Главная', link: '/ru/' },
       { text: 'Руководство', link: '/ru/guide/installation' },
-      { text: 'Просмотр', link: '/ru/data-viewer' },
+      { text: 'Режим создания', link: '/ru/guide/create-mode' },
     ],
     sidebar: [
       {
@@ -92,6 +92,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
           { text: 'Поддержать', link: '/ru/guide/sponsor' },
           { text: 'Экосистема', link: '/ru/guide/ecosystem' },
           { text: 'Изменения', link: '/ru/changelog' },
+          { text: 'Просмотр', link: '/ru/data-viewer' },
         ],
       },
     ],

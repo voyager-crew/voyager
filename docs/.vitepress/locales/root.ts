@@ -10,7 +10,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       ...announcementNav('重要通知'),
       { text: '首页', link: '/' },
       { text: '指南', link: '/guide/installation' },
-      { text: '数据查看器', link: '/data-viewer' },
+      { text: '创造模式', link: '/guide/create-mode' },
     ],
     sidebar: [
       {
@@ -82,6 +82,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
           { text: '赞助', link: '/guide/sponsor' },
           { text: '受 Voyager 启发的项目', link: '/guide/ecosystem' },
           { text: '更新日志', link: '/changelog' },
+          { text: '数据查看器', link: '/data-viewer' },
         ],
       },
     ],

@@ -11,7 +11,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       ...announcementNav('重要通知'),
       { text: '首頁', link: '/zh_TW/' },
       { text: '指南', link: '/zh_TW/guide/installation' },
-      { text: '資料查看器', link: '/zh_TW/data-viewer' },
+      { text: '創造模式', link: '/zh_TW/guide/create-mode' },
     ],
     sidebar: [
       {
@@ -83,6 +83,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
           { text: '贊助', link: '/zh_TW/guide/sponsor' },
           { text: '受 Voyager 啟發的項目', link: '/zh_TW/guide/ecosystem' },
           { text: '更新日誌', link: '/zh_TW/changelog' },
+          { text: '資料查看器', link: '/zh_TW/data-viewer' },
         ],
       },
     ],

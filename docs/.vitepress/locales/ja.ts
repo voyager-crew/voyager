@@ -11,7 +11,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       ...announcementNav('お知らせ'),
       { text: 'ホーム', link: '/ja/' },
       { text: 'ガイド', link: '/ja/guide/installation' },
-      { text: 'データビューア', link: '/ja/data-viewer' },
+      { text: '作成モード', link: '/ja/guide/create-mode' },
     ],
     sidebar: [
       {
@@ -83,6 +83,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
           { text: 'スポンサー', link: '/ja/guide/sponsor' },
           { text: 'エコシステム', link: '/ja/guide/ecosystem' },
           { text: '更新履歴', link: '/ja/changelog' },
+          { text: 'データビューア', link: '/ja/data-viewer' },
         ],
       },
     ],

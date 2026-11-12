@@ -12,7 +12,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       ...announcementNav('إعلان'),
       { text: 'الرئيسية', link: '/ar/' },
       { text: 'الدليل', link: '/ar/guide/installation' },
-      { text: 'عارض البيانات', link: '/ar/data-viewer' },
+      { text: 'وضع الإبداع', link: '/ar/guide/create-mode' },
     ],
     sidebar: [
       {
@@ -87,6 +87,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
           { text: 'رعاية', link: '/ar/guide/sponsor' },
           { text: 'المنظومة', link: '/ar/guide/ecosystem' },
           { text: 'سجل التغييرات', link: '/ar/changelog' },
+          { text: 'عارض البيانات', link: '/ar/data-viewer' },
         ],
       },
     ],

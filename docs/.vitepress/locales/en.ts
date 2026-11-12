@@ -12,7 +12,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       ...announcementNav('Notice'),
       { text: 'Home', link: '/en/' },
       { text: 'Guide', link: '/en/guide/installation' },
-      { text: 'Data Viewer', link: '/en/data-viewer' },
+      { text: 'Create Mode', link: '/en/guide/create-mode' },
     ],
     sidebar: [
       {
@@ -84,6 +84,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
           { text: 'Sponsor', link: '/en/guide/sponsor' },
           { text: 'Ecosystem', link: '/en/guide/ecosystem' },
           { text: 'Changelog', link: '/en/changelog' },
+          { text: 'Data Viewer', link: '/en/data-viewer' },
         ],
       },
     ],

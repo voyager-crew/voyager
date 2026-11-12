@@ -11,7 +11,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
       ...announcementNav('Aviso'),
       { text: 'Início', link: '/pt/' },
       { text: 'Guia', link: '/pt/guide/installation' },
-      { text: 'Visualizador', link: '/pt/data-viewer' },
+      { text: 'Modo criação', link: '/pt/guide/create-mode' },
     ],
     sidebar: [
       {
@@ -86,6 +86,7 @@ const locale: LocaleSpecificConfig<DefaultTheme.Config> & { label: string; link?
           { text: 'Patrocinar', link: '/pt/guide/sponsor' },
           { text: 'Ecossistema', link: '/pt/guide/ecosystem' },
           { text: 'Novidades', link: '/pt/changelog' },
+          { text: 'Visualizador', link: '/pt/data-viewer' },
         ],
       },
     ],
