@@ -93,7 +93,8 @@ describe('panel API contract through bundled fixture graphs', () => {
       `import { PANEL_MESSAGE } from ${JSON.stringify(resolve('src/features/panel/protocol.ts'))}; export function run() { return chrome.runtime.sendMessage({ type: PANEL_MESSAGE.close }); }`,
     );
     expect(result.status, result.stderr).toBe(0);
-  });
+    // Bundles real repository modules in a child process: slower than the fixture graphs on CI.
+  }, 30_000);
 
   it.each([
     'import api from "webextension-polyfill"; export function run() { return api.tabs.query({}); }',
