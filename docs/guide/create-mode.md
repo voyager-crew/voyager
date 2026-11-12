@@ -96,7 +96,7 @@ AI 不是每次都能一次做对。做得不对时，回复下方会用一句�
 - **修好了**：AI 发来修好的版本后，下方会再出现 **预览并安装**。
 - **什么都不会改**：没装上的创造不会动你的页面。
 
-<GuideShot src="/assets/create-mode-rejected-zh.png" alt="AI 回复下方的说明：暂时装不了这个插件，它没写明用在哪个网站，旁边是让它修复按钮" :width="523" />
+<GuideShot src="/assets/create-mode-rejected-zh.png" alt="AI 回复下方的说明：暂时装不了这个插件，它没写明用在哪个网站，旁边是让它修复按钮" :width="513" />
 
 </GuideOp>
 

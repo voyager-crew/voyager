@@ -100,6 +100,8 @@ const chrome = spawn(
     `--disable-extensions-except=${EXTENSION}`,
     `--host-resolver-rules=MAP ${HOST} 127.0.0.1:${server.port}, MAP * ~NOTFOUND, EXCLUDE 127.0.0.1`,
     '--ignore-certificate-errors',
+    // The whole browser at 2x: an emulated scale reaches the page but not the panel's frame.
+    '--force-device-scale-factor=2',
     '--remote-debugging-port=0',
     '--no-first-run',
     '--no-default-browser-check',

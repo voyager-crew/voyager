@@ -96,7 +96,7 @@ AI 不一定每次都能一次做對。做得不對時，回覆下方會用一�
 - **修好之後**：AI 傳來修好的版本後，下方會再出現 **預覽並安裝**。
 - **在那之前什麼都不會變**：沒裝上的創造不會動到你的頁面。
 
-<GuideShot src="/assets/create-mode-rejected-zh.png" alt="AI 回覆下方的說明：暫時裝不了這個外掛，它沒寫明用在哪個網站，旁邊是請它修正按鈕" :width="523" />
+<GuideShot src="/assets/create-mode-rejected-zh.png" alt="AI 回覆下方的說明：暫時裝不了這個外掛，它沒寫明用在哪個網站，旁邊是請它修正按鈕" :width="513" />
 
 </GuideOp>
 
