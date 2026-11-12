@@ -53,7 +53,7 @@ Clique com o botão direito numa pasta e tudo o que pode fazer com ela está no 
 
 <GuideNote>
 
-**Visualização**: a roda dentada do cabeçalho das pastas muda a ordem das conversas (ordem manual ou abertas recentemente) e ajusta o tamanho do texto, o espaçamento das pastas e o recuo das subpastas; a opção **Espaçamento de pastas** da janela também o faz. No Safari para Mac, pode ser preciso atualizar a página para ver a alteração.
+**Visualização**: a roda dentada do cabeçalho das pastas muda a ordem das conversas (ordem manual ou abertas recentemente) e a posição das subpastas (no topo ou no final), e ajusta o tamanho do texto, o espaçamento das pastas e o recuo das subpastas; a opção **Espaçamento de pastas** da janela também o faz. No Safari para Mac, pode ser preciso atualizar a página para ver a alteração.
 
 </GuideNote>
 

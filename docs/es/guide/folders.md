@@ -53,7 +53,7 @@ Haz clic derecho en una carpeta y todo lo que puedes hacer con ella está en el 
 
 <GuideNote>
 
-**Ajustes de vista**: el engranaje del encabezado de carpetas cambia el orden de las conversaciones (orden manual o abiertas recientemente) y ajusta el tamaño del texto, el espaciado de carpetas y la sangría de subcarpetas; el ajuste **Espaciado de carpetas** de la ventana también lo hace. En Safari para Mac quizá tengas que recargar la página para ver el cambio.
+**Ajustes de vista**: el engranaje del encabezado de carpetas cambia el orden de las conversaciones (orden manual o abiertas recientemente) y la posición de las subcarpetas (arriba o abajo), y ajusta el tamaño del texto, el espaciado de carpetas y la sangría de subcarpetas; el ajuste **Espaciado de carpetas** de la ventana también lo hace. En Safari para Mac quizá tengas que recargar la página para ver el cambio.
 
 </GuideNote>
 

@@ -53,7 +53,7 @@ Faites un clic droit sur un dossier : tout ce que vous pouvez en faire est dans 
 
 <GuideNote>
 
-**Affichage** : la roue dentée de l’en-tête des dossiers change l’ordre des conversations (ordre manuel ou ouvertes récemment) et règle la taille du texte, l’espacement des dossiers et le retrait des sous-dossiers ; le réglage **Espacement des dossiers** de la fenêtre le fait aussi. Sur Safari pour Mac, il faut parfois actualiser la page pour voir le changement.
+**Affichage** : la roue dentée de l’en-tête des dossiers change l’ordre des conversations (ordre manuel ou ouvertes récemment) et la place des sous-dossiers (en haut ou en bas), et règle la taille du texte, l’espacement des dossiers et le retrait des sous-dossiers ; le réglage **Espacement des dossiers** de la fenêtre le fait aussi. Sur Safari pour Mac, il faut parfois actualiser la page pour voir le changement.
 
 </GuideNote>
 

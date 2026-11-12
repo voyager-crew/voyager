@@ -53,7 +53,7 @@ Right-click a folder and everything you can do to it is in the menu.
 
 <GuideNote>
 
-**Display settings**: the gear in the folder header switches the chat order (manual or recently opened) and sets the text size, folder spacing and subfolder indent; the popup's **Folder spacing** sets it too. On Mac Safari, you may need to refresh the page to see a change.
+**Display settings**: the gear in the folder header switches the chat order (manual or recently opened) and where subfolders sit (on top or at bottom), and sets the text size, folder spacing and subfolder indent; the popup's **Folder spacing** sets it too. On Mac Safari, you may need to refresh the page to see a change.
 
 </GuideNote>
 
