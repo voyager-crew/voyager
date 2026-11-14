@@ -51,6 +51,19 @@ En el cuadro de chat, escribe `/` seguido de parte del nombre de un prompt. La l
 
 ![Vista de lista compacta](/assets/gemini-prompt-manager-compact.png)
 
+## Exportar, importar y trasladar
+
+Tu biblioteca de prompts puede guardarse como archivo JSON local o combinarse con Google Drive, para llevarla a otra cuenta de Google u otro navegador.
+
+En Gemini y AI Studio, abre la ventana emergente de Voyager y busca **Datos de prompts** en la tarjeta **Gestor de Prompts**. En Claude, ChatGPT, DeepSeek y Kimi, **Datos de prompts** es una tarjeta propia de la ventana emergente, encima de la tarjeta **Complementos**.
+
+- **Exportar**: guarda toda la biblioteca en un solo archivo JSON.
+- **Importar**: combina un archivo JSON con tu biblioteca. No se borra nada de lo que ya tienes; un prompt que ya existe se conserva una sola vez, con sus etiquetas combinadas.
+- **Descargar (combinar) / Subir (combinar)**: combina tus prompts con los de Google Drive. Consulta [Sincronización en la nube](/es/guide/cloud-sync) para conectar Drive.
+- **Trasladar**: pulsa **Exportar** en el perfil del navegador anterior y luego **Importar** el archivo en el perfil de tu otra cuenta de Google o en otro ordenador.
+
+Los prompts con nombres duplicados se conservan todos, pero necesitan otro nombre antes de poder usarse con la inserción rápida `/`.
+
 ## Disponible en Cualquier Lugar
 
 El Gestor de Prompts ahora se puede utilizar en cualquier sitio web que elijas, no solo en Gemini™ y AI Studio.

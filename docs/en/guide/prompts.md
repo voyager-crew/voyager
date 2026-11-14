@@ -51,6 +51,19 @@ In a chat input, type `/` followed by part of a prompt name. The list shows matc
 
 ![Compact list view](/assets/gemini-prompt-manager-compact.png)
 
+## Export, import & moving
+
+Your prompt library can be saved as a local JSON file or merged with Google Drive, so it comes with you to another Google account or browser.
+
+On Gemini and AI Studio, open the Voyager popup and find **Prompt data** in the **Prompt Manager** card. On Claude, ChatGPT, DeepSeek, and Kimi, **Prompt data** is its own card in the popup, above the **Plugins** card.
+
+- **Export**: saves the whole library as one JSON file.
+- **Import**: merges a JSON file into your library. Nothing you already have is deleted; a prompt you already have is kept once, with its tags combined.
+- **Pull (merge) / Push (merge)**: merges your prompts with the ones in Google Drive. See [Cloud Sync](/en/guide/cloud-sync) for connecting Drive.
+- **Moving**: click **Export** in the old browser profile, then **Import** the file in the profile of your other Google account or on another computer.
+
+Prompts with duplicate names are all kept, but need a new name before `/` quick insert can use them.
+
 ## Available Anywhere
 
 The Prompt Manager can now be used on any website you choose, not just Gemini™ and AI Studio.
