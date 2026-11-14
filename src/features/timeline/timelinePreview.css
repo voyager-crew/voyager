@@ -17,7 +17,8 @@
     color 0.15s ease,
     background-color 0.15s ease,
     opacity 0.15s ease;
-  z-index: 2147483646;
+  /* Level with the rail (timeline.css). */
+  z-index: 2147483098;
   opacity: 0;
 }
 

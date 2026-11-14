@@ -5,7 +5,8 @@
   height: 160px;
   opacity: 0;
   transition: opacity 180ms ease;
-  z-index: 2147483646;
+  /* Level with the rail (timeline.css). */
+  z-index: 2147483098;
   pointer-events: none;
 }
 

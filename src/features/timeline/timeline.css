@@ -13,7 +13,9 @@ html[data-gv-scheme] .gemini-timeline-bar:not(.timeline-no-container)::before {
   width: 24px;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 128px);
   height: auto;
-  z-index: 2147483646;
+  /* Just under the floating ball's satellites (2147483099): its 24px hit-zone
+     would otherwise swallow a satellite or ball dragged over it. */
+  z-index: 2147483098;
   display: flex;
   flex-direction: column;
   align-items: center;
