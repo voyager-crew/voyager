@@ -17,6 +17,8 @@ import { getTranslationSyncUnsafe as t, initI18n } from '@/utils/i18n';
 import { SiteFolderGuide } from './folderGuide';
 import { SiteFoldersView } from './foldersView';
 import { HIDE_FILED_SETTING, SidebarHideFiled } from './hideFiled';
+import { startNewChatFiling } from './newChatFiling';
+import { siteNewChatPort } from './newChatSite';
 import { loadPanelPrefs } from './panelPrefs';
 import { type DroppedConversation, bindSidebarRowDrag } from './rowDrag';
 import { loadSectionPrefs } from './sectionPrefs';
@@ -149,7 +151,9 @@ export function startSiteFolders(
     view = shown;
     for (const [message, tone] of early.splice(0)) shown.notifyStorage(message, tone);
     const sendSite = sendSiteOf(adapter);
-    shown.start(sectionPrefs, sendSite !== null);
+    const newChatPort = siteNewChatPort(site, adapter, store, shown);
+    const newChat = newChatPort ? startNewChatFiling(scope, newChatPort) : null;
+    shown.start(sectionPrefs, sendSite !== null, newChat?.menuItems);
     if (sendSite) {
       trackActivity(scope, key, sendSite, store, (entries) => {
         void commands.run({ kind: 'setConversationActivity', entries });

@@ -7,10 +7,12 @@
  */
 import type { PluginScope } from '@/features/plugins/runtime/pluginScope';
 import type { FoldersSection } from '@/features/plugins/sites/sections/foldersData';
-import type { PluginSettings } from '@/features/plugins/types';
+import type { PluginSettings, SiteAdapter } from '@/features/plugins/types';
 import { openAIStudioFolderSession } from '@/pages/content/folder/session/aistudioFolderSessions';
 
 import { HIDE_FILED_SETTING } from '../hideFiled';
+import { startNewChatFiling } from '../newChatFiling';
+import { aistudioNewChatPort } from './newChat';
 import { AIStudioFoldersView, aistudioPageDom } from './view';
 
 export interface AIStudioFoldersRuntime {
@@ -29,6 +31,7 @@ export function startAIStudioFolders(
   scope: PluginScope,
   section: FoldersSection,
   settings: PluginSettings = {},
+  selectors?: SiteAdapter['selectors'],
 ): AIStudioFoldersRuntime | null {
   const dom = aistudioPageDom(section);
   if (!dom) return null;
@@ -50,7 +53,9 @@ export function startAIStudioFolders(
     scope.effect(() => () => lease.release(), 'aistudio-folders:session');
     await lease.ready;
     if (scope.isDisposed) return;
-    const shown = new AIStudioFoldersView(lease.session, dom!, hideArchived);
+    const newChatPort = aistudioNewChatPort(lease.session, selectors, () => view);
+    const newChat = newChatPort ? startNewChatFiling(scope, newChatPort) : null;
+    const shown = new AIStudioFoldersView(lease.session, dom!, hideArchived, newChat?.menuItems);
     view = shown;
     scope.effect(
       () => () => {

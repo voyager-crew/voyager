@@ -95,6 +95,7 @@ export class AIStudioFoldersView implements AIStudioFolderView {
     readonly session: AIStudioFolderSession,
     private readonly dom: AIStudioPageDom,
     hideArchived: boolean,
+    private readonly folderMenuItems?: TreeActions['folderMenuItems'],
   ) {
     const t = session.translate;
     this.hideArchived = new HideArchivedSetting(hideArchived);
@@ -238,7 +239,7 @@ export class AIStudioFoldersView implements AIStudioFolderView {
   }
 
   private treeActions(): TreeActions {
-    return aistudioTreeActions({
+    const actions = aistudioTreeActions({
       commands: this.session.commands,
       canEdit: () => this.session.canEdit,
       data: () => this.session.data,
@@ -252,6 +253,7 @@ export class AIStudioFoldersView implements AIStudioFolderView {
       confirmFolderRemoval: this.dialogs.confirmFolderRemoval,
       confirmConversationRemoval: this.dialogs.confirmConversationRemoval,
     });
+    return { ...actions, folderMenuItems: this.folderMenuItems };
   }
 
   /** Removes the panel and its tree; a dropped panel is already out of the page. */

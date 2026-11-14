@@ -47,6 +47,8 @@ export class SiteFoldersView {
   private fab: FloatingFabHandle | null = null;
   /** The conversation last recorded as opened, so each open is recorded once. */
   private openedConversationId: string | null = null;
+  /** Entries a folder's menu adds, such as "New chat in this folder". */
+  private folderMenuItems: TreeActions['folderMenuItems'];
   // Gemini's removal confirm; it closes with the panel.
   private readonly dialogs = createFolderDialogs();
   // One place for every outcome: the section, the panel and a row's menu all
@@ -88,8 +90,13 @@ export class SiteFoldersView {
    * Mounts the sidebar section, which owns `sectionPrefs` from here on. It
    * offers the Activity view only when the page records send times (`activity`).
    */
-  start(sectionPrefs: SiteFolderSectionPrefs, activity: boolean): void {
+  start(
+    sectionPrefs: SiteFolderSectionPrefs,
+    activity: boolean,
+    folderMenuItems?: TreeActions['folderMenuItems'],
+  ): void {
     const { key, identity, page } = this.site;
+    this.folderMenuItems = folderMenuItems;
     this.scope.child(this.toaster, `${key}:toasts`);
     this.scope.effect(() => () => this.showFloatingEntry(false), `${key}:fab`);
     this.scope.effect(() => this.store.subscribe((change) => this.refresh(change)), `${key}:sync`);
@@ -257,7 +264,7 @@ export class SiteFoldersView {
       });
   }
 
-  private notify(message: string, tone: ToastTone): void {
+  notify(message: string, tone: ToastTone): void {
     this.toaster.show({ message, tone, durationMs: NOTICE_MS, channel: this.site.key });
   }
 
@@ -327,6 +334,7 @@ export class SiteFoldersView {
         confirmFolderRemoval: this.dialogs.confirmFolderRemoval,
         confirmConversationRemoval: this.dialogs.confirmConversationRemoval,
         onAddCurrentConversation: (folderId) => this.addCurrent(folderId),
+        folderMenuItems: this.folderMenuItems,
       },
       this.site.section.tree,
     );

@@ -55,7 +55,12 @@ export const foldersPrimitive: Primitive<FoldersParams> = {
     }
     // AI Studio's folders keep their own panel and /library, on its core folder session.
     if (extension === 'aistudio' && adapter.folders) {
-      const aistudio = startAIStudioFolders(scope, adapter.folders, context.settings);
+      const aistudio = startAIStudioFolders(
+        scope,
+        adapter.folders,
+        context.settings,
+        adapter.selectors,
+      );
       context.setTargetCounter(() => aistudio?.onScreen() ?? 0);
       return aistudio
         ? { updateSettings: (settings) => aistudio.updateSettings(settings) }

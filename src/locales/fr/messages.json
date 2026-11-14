@@ -2645,6 +2645,14 @@
     "message": "Nouvelle conversation dans ce dossier",
     "description": "Folder context menu item to create a new chat and auto-assign it to this folder"
   },
+  "folder_new_chat_pending": {
+    "message": "La prochaine conversation que vous lancerez ira dans « {folder} »",
+    "description": "Toast after \"New chat in this folder\": the conversation the user starts next is filed into this folder. {folder} is the folder name"
+  },
+  "folder_new_chat_unavailable": {
+    "message": "Bouton Nouvelle conversation introuvable sur ce site. Ouvrez une nouvelle conversation, puis réessayez.",
+    "description": "Toast when \"New chat in this folder\" cannot find the site's own new-chat control"
+  },
   "responseCompleteNotification": {
     "message": "Notifications de réponse terminée",
     "description": "Gemini response completion notification toggle"

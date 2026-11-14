@@ -2645,6 +2645,14 @@
     "message": "このフォルダで新規チャット",
     "description": "Folder context menu item to create a new chat and auto-assign it to this folder"
   },
+  "folder_new_chat_pending": {
+    "message": "次に始めるチャットは「{folder}」に入ります",
+    "description": "Toast after \"New chat in this folder\": the conversation the user starts next is filed into this folder. {folder} is the folder name"
+  },
+  "folder_new_chat_unavailable": {
+    "message": "このサイトの新規チャットボタンが見つかりません。新しいチャットを開いてから、もう一度お試しください。",
+    "description": "Toast when \"New chat in this folder\" cannot find the site's own new-chat control"
+  },
   "responseCompleteNotification": {
     "message": "Gemini 完了通知",
     "description": "Gemini response completion notification toggle"

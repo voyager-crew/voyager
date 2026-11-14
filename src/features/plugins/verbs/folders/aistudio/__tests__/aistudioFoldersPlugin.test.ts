@@ -20,7 +20,7 @@ import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
 import { BundledCatalogPluginSource } from '@/features/plugins/sources/BundledCatalogPluginSource';
 import { admitAIStudioFolders } from '@/pages/content/aistudioFolderStartup';
 import { nameInput, treeRoot } from '@/pages/content/folder/__tests__/aistudioTreeDriver';
-import { treeDriver } from '@/pages/content/folder/floatingTree/__tests__/treeDriver';
+import { menuItem, treeDriver } from '@/pages/content/folder/floatingTree/__tests__/treeDriver';
 import { aistudioFolderLeases } from '@/pages/content/folder/session/aistudioFolderSessions';
 import { type MemoryStorage, createMemoryStorage, settle } from '@/tests/memoryStorage';
 
@@ -214,6 +214,59 @@ describe('AI Studio folders as an official plugin', () => {
       });
       await vi.waitFor(() => expect(hidden()).toEqual([]));
     } finally {
+      window.history.replaceState({}, '', '/prompts/new_chat');
+    }
+  });
+
+  it('"New chat in this folder" opens the new chat and files the prompt its first run creates', async () => {
+    window.history.replaceState({}, '', '/prompts/p1');
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      '<a href="/prompts/new_chat">New chat</a>' +
+        '<ms-prompt-box><textarea formcontrolname="promptText"></textarea>' +
+        '<ms-run-button><button>Run</button></ms-run-button></ms-prompt-box>',
+    );
+    // AI Studio's router: its own links route in place.
+    document.addEventListener(
+      'click',
+      (event) => {
+        const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+        if (!link) return;
+        event.preventDefault();
+        window.history.pushState({}, '', link.getAttribute('href'));
+      },
+      { signal: lifetime.signal },
+    );
+    // Only the route poll is virtual.
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    const poll = async () => {
+      vi.advanceTimersByTime(400);
+      await pass();
+    };
+    try {
+      await openPage();
+      await vi.waitFor(() => expect(panel()).not.toBeNull());
+
+      treeDriver({ root: treeRoot(), rootBucketId: AISTUDIO_ROOT_BUCKET_ID }).openMenuByButton(
+        'Thesis',
+      );
+      menuItem('New chat in this folder').click();
+      expect(location.pathname).toBe('/prompts/new_chat');
+      await poll();
+      document.querySelector('textarea')!.value = 'Hello';
+      document.querySelector<HTMLButtonElement>('ms-run-button > button')!.click();
+      window.history.pushState({}, '', '/prompts/p9');
+      await poll();
+
+      await vi.waitFor(() =>
+        expect(
+          (memory.values.local.get(KEY) as FolderData).folderContents.f1.map(
+            (prompt) => prompt.conversationId,
+          ),
+        ).toEqual(['p1', 'p9']),
+      );
+    } finally {
+      vi.useRealTimers();
       window.history.replaceState({}, '', '/prompts/new_chat');
     }
   });

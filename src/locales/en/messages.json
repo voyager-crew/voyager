@@ -2501,6 +2501,14 @@
     "message": "New chat in this folder",
     "description": "Folder context menu item to create a new chat and auto-assign it to this folder"
   },
+  "folder_new_chat_pending": {
+    "message": "The next chat you start goes into “{folder}”",
+    "description": "Toast after \"New chat in this folder\": the conversation the user starts next is filed into this folder. {folder} is the folder name"
+  },
+  "folder_new_chat_unavailable": {
+    "message": "Couldn't find this site's New chat button. Open a new chat, then try again.",
+    "description": "Toast when \"New chat in this folder\" cannot find the site's own new-chat control"
+  },
   "canvasExportCopyMarkdown": {
     "message": "Copy as Markdown",
     "description": "Canvas share menu item: copy canvas content as Markdown to clipboard"
