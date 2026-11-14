@@ -4,6 +4,9 @@
  * When enabled, injects a folder picker above the Gemini chat input on new-chat
  * pages. On the first send, it prepends any folder instructions just-in-time
  * and automatically assigns the new conversation to the selected folder.
+ * Switched off, it runs only for a "New chat in this folder" handoff: the
+ * picker shows that folder and the first send files the chat, without
+ * instructions, then the watch stops.
  */
 import { isImeKeyEvent } from '@/core/services/composer/sendKeys/sendKeyIntent';
 import { StorageKeys } from '@/core/types/common';
@@ -14,6 +17,13 @@ import type { GeminiFolderSession } from '../folder/session/geminiFolderSession'
 import { followGeminiSendKey } from '../sendBehavior/followSendKey';
 import { setInputText } from '../utils/inputHelper';
 import { watchRouteChanges } from '../utils/routeWatcher';
+import {
+  CONVERSATION_HREF_PATTERN,
+  extractConvId,
+  extractGemMetadata,
+  getConversationTitle,
+  isNewChatPath,
+} from './chatRoutes';
 import { resolveProjectInput } from './inputTargets';
 import {
   buildInstructionBlock,
@@ -23,6 +33,8 @@ import {
 import { clearNewChatFolder, onNewChatFolder, pendingNewChatFolder } from './pendingFolder';
 import { createPendingProjectSend } from './pendingSend';
 import { type FolderSnapshot, createFolderProjectPicker } from './picker';
+
+export { extractConvId, isNewChatPath } from './chatRoutes';
 
 /**
  * Gemini's folder session as Folder-as-Project uses it: the folders to pick
@@ -43,7 +55,10 @@ export type FolderProjectFolders = Pick<
 // Module state (per-tab, reset on navigation)
 // ============================================================================
 
+/** The watch runs: Folder-as-Project is on, or a handoff is being carried out. */
 let featureInitialized = false;
+/** The Folder-as-Project setting: the picker on every new chat, and instructions. */
+let projectEnabled = false;
 let selectedFolderId: string | null = null;
 let selectedFolderName: string | null = null;
 let selectedFolderInstructions: string | null = null;
@@ -66,41 +81,6 @@ let sidebarNavClickListener: ((e: Event) => void) | null = null;
 let effectiveSendKey: ReturnType<typeof followGeminiSendKey> | null = null;
 
 const SEND_BUTTON_SELECTOR = packaged['project.send'].join(', ');
-
-// Sidebar conversation links: /app/<convId>, /u/0/app/<convId>, /gem/<gemId>/<convId>.
-// Used by sidebarNavClickListener to cancel pendingSend before URL change.
-const CONVERSATION_HREF_PATTERN = /\/(u\/\d+\/)?(app|gem\/[^/]+)\/[^/?#]+/;
-
-// ============================================================================
-// URL helpers
-// ============================================================================
-
-/**
- * Returns true when the current pathname is a new (empty) chat or gem page —
- * i.e., no conversation ID is present yet.
- *
- * Supports multi-profile paths like /u/0/app.
- *
- * @param path - `window.location.pathname` to test
- */
-export function isNewChatPath(path: string): boolean {
-  // Matches /app or /app/ but not /app/<convId>
-  // Matches /gem/<gemId> or /gem/<gemId>/ but not /gem/<gemId>/<convId>
-  return /^\/(u\/\d+\/)?(app\/?|gem\/[^/]+\/?)$/.test(path);
-}
-
-/**
- * Extracts the conversation ID from a Gemini chat or gem URL path.
- *
- * @param path - `window.location.pathname` to parse
- * @returns Conversation ID string, or null if none present
- */
-export function extractConvId(path: string): string | null {
-  const appMatch = path.match(/\/app\/([^/?#]+)/);
-  if (appMatch?.[1]) return appMatch[1];
-  const gemMatch = path.match(/\/gem\/[^/]+\/([^/?#]+)/);
-  return gemMatch?.[1] ?? null;
-}
 
 // ============================================================================
 // Send detection — distinguishes message sends from sidebar navigation
@@ -180,7 +160,7 @@ function choiceMayActOnSend(input: HTMLElement | null): boolean {
 }
 
 function prepareInputForSend(input: HTMLElement | null, online: boolean): void {
-  if (!input || !selectedFolderInstructions || !selectedFolderName) return;
+  if (!projectEnabled || !input || !selectedFolderInstructions || !selectedFolderName) return;
   if (!selectionBelongsToPage()) return;
 
   const currentText = stripInstructionBlock(readInputText(input));
@@ -241,18 +221,6 @@ function isEditableTarget(target: EventTarget | null): target is HTMLElement {
     target.getAttribute('contenteditable') === 'true' ||
     target.getAttribute('role') === 'textbox'
   );
-}
-
-function extractGemMetadata(path: string): { isGem: boolean; gemId?: string } {
-  const gemMatch = path.match(/\/gem\/([^/]+)\/[^/?#]+/);
-  if (!gemMatch?.[1]) {
-    return { isGem: false };
-  }
-
-  return {
-    isGem: true,
-    gemId: gemMatch[1],
-  };
 }
 
 function setupSendDetection(): void {
@@ -316,18 +284,6 @@ function teardownSendDetection(): void {
 }
 
 // ============================================================================
-// Conversation title
-// ============================================================================
-
-function getConversationTitle(convId: string): string {
-  const escapedId = convId.replace(/"/g, '\\"');
-  const link = document.querySelector<HTMLAnchorElement>(
-    `[data-test-id="conversation"][jslog*="c_${escapedId}"] a, a[href*="/app/${escapedId}"], a[href*="/gem/"][href$="/${escapedId}"]`,
-  );
-  return link?.textContent?.trim() || document.title || 'New Chat';
-}
-
-// ============================================================================
 // URL change handler
 // ============================================================================
 
@@ -375,7 +331,17 @@ function handleNavigation(folders: FolderProjectFolders, prevPath: string, newPa
     clearFolderSelection();
     clearPendingSendState();
     picker?.remove();
+    // A handoff carried out, or left behind for a chat that is not new: nothing left to watch.
+    if (!projectEnabled && !pendingNewChatFolder()) stopWatch();
   }
+}
+
+function stopWatch(): void {
+  featureInitialized = false;
+  stopURLWatcher();
+  clearPreparedInstructions();
+  picker?.remove();
+  clearFolderSelection();
 }
 
 // ============================================================================
@@ -405,7 +371,10 @@ function startURLWatcher(folders: FolderProjectFolders): void {
     loadedFolders: () => snapshotOf(folders),
     currentAccount: folders.folderAccount ? () => folders.folderAccount?.() ?? null : undefined,
     onAccountChange: folders.onAccountChange?.bind(folders),
-    canMount: () => featureInitialized && isNewChatPath(window.location.pathname),
+    canMount: () =>
+      featureInitialized &&
+      isNewChatPath(window.location.pathname) &&
+      (projectEnabled || selectedFolderId !== null || pendingNewChatFolder() !== null),
     onSelect: (folder, source, account) => {
       selectedFolderId = folder?.id ?? null;
       selectedFolderName = folder?.name ?? null;
@@ -462,6 +431,7 @@ export function startFolderProject(folders: FolderProjectFolders): void {
         ctrlEnterSendEnabled = res?.[StorageKeys.CTRL_ENTER_SEND] === true;
       }
       if (res?.[StorageKeys.FOLDER_PROJECT_ENABLED] !== true) return;
+      projectEnabled = true;
       if (featureInitialized) return;
       featureInitialized = true;
       startURLWatcher(folders);
@@ -471,7 +441,11 @@ export function startFolderProject(folders: FolderProjectFolders): void {
   // "New chat in this folder" on the new-chat page itself: no navigation follows, so the
   // picker takes this tab's handoff here.
   onNewChatFolder(() => {
-    if (featureInitialized && isNewChatPath(location.pathname)) void picker?.applyPending();
+    if (!featureInitialized) {
+      // Folder-as-Project off: watch for this one chat; the watch shows the picker on a new chat.
+      featureInitialized = true;
+      startURLWatcher(folders);
+    } else if (isNewChatPath(location.pathname)) void picker?.applyPending();
   });
   // A handoff whose folders had not loaded yet (the account was still unreadable) is taken
   // once they have.
@@ -497,15 +471,15 @@ export function startFolderProject(folders: FolderProjectFolders): void {
 
     if (!(StorageKeys.FOLDER_PROJECT_ENABLED in changes)) return;
     const enabled = changes[StorageKeys.FOLDER_PROJECT_ENABLED].newValue === true;
+    projectEnabled = enabled;
     if (enabled && !featureInitialized) {
       featureInitialized = true;
       startURLWatcher(folders);
-    } else if (!enabled) {
-      featureInitialized = false;
-      stopURLWatcher();
-      clearPreparedInstructions();
-      picker?.remove();
-      clearFolderSelection();
+    } else if (enabled) {
+      // A handoff's watch already runs: the picker now shows on this new chat too.
+      if (isNewChatPath(location.pathname)) void picker?.show();
+    } else {
+      stopWatch();
       // Drop any pending folder selection so re-enabling later doesn't auto-select a stale folder
       clearNewChatFolder();
       // Older builds handed it off through storage; one may still be stored.

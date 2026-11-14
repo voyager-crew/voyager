@@ -85,14 +85,19 @@ function bucketOf(store: GeminiFolderReads, conversation: ConversationReference)
   return null;
 }
 
+/**
+ * "New chat in this folder" on every folder; its instructions only with
+ * Folder-as-Project on, which alone puts them in a send.
+ */
 function projectMenuItems(options: SidebarTreeOptions, folder: Folder): FolderMenuItem[] {
   const { store, dialogs, feedback, navigation } = options;
-  if (!options.view().projectEnabled) return [];
+  const newChat: FolderMenuItem = {
+    labelKey: 'folder_new_chat_in_folder',
+    run: () => navigation.createNewChatInFolder(folder.id),
+  };
+  if (!options.view().projectEnabled) return [newChat];
   return [
-    {
-      labelKey: 'folder_new_chat_in_folder',
-      run: () => navigation.createNewChatInFolder(folder.id),
-    },
+    newChat,
     {
       labelKey: folder.instructions
         ? 'folderAsProject_editInstructions'
