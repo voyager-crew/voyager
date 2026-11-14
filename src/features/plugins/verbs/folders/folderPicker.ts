@@ -52,13 +52,15 @@ export interface FolderPickerHandle {
 }
 
 /**
- * Opens the picker over the page; `onSelect` runs once with the chosen folder.
+ * Opens the picker over the page, titled `heading`; `onSelect` runs once with
+ * the chosen folder.
  * The caller closes the picker it opened: any other picker on the page belongs
  * to another runtime and is left alone.
  */
 export function openFolderPicker(
   data: FolderData,
   onSelect: (folderId: string) => void,
+  heading: string = t('conversation_move_to_folder_title'),
 ): FolderPickerHandle {
   const host = document.createElement('div');
   host.className = FOLDER_PICKER_CLASS;
@@ -75,7 +77,7 @@ export function openFolderPicker(
   const title = document.createElement('div');
   title.className = 'title';
   title.id = 'gv-chatgpt-folder-picker-title';
-  title.textContent = t('conversation_move_to_folder_title');
+  title.textContent = heading;
   const search = document.createElement('input');
   search.type = 'search';
   search.className = 'search';

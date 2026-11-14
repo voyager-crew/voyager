@@ -66,6 +66,36 @@ describe('new chat filing transitions', () => {
     });
   });
 
+  const choose = (folderId: string | null): NewChatEvent => ({ type: 'choose', folderId });
+
+  it('files into the folder the chip picked on the new chat', () => {
+    expect(run([choose('f1'), { type: 'send' }, route('c1')])).toEqual({
+      status: 'filing',
+      folderId: 'f1',
+      conversationId: 'c1',
+    });
+  });
+
+  it('lets the chip replace the pending folder before the send', () => {
+    expect(run([request('f1', true), choose('f2'), { type: 'send' }, route('c1')])).toMatchObject({
+      status: 'filing',
+      folderId: 'f2',
+    });
+  });
+
+  it('files nothing once the chip dropped the folder', () => {
+    expect(run([request('f1', true), choose(null), { type: 'send' }, route('c1')])).toEqual({
+      status: 'idle',
+    });
+  });
+
+  it('keeps the folder of a chat already sent, or a new chat still opening', () => {
+    const sent: NewChatState = { status: 'sent', folderId: 'f1' };
+    const opening: NewChatState = { status: 'opening', folderId: 'f1' };
+    expect(run([choose('f2'), choose(null)], sent)).toBe(sent);
+    expect(run([choose('f2'), choose(null)], opening)).toBe(opening);
+  });
+
   it('settles after filing', () => {
     expect(
       run([{ type: 'filed' }], { status: 'filing', folderId: 'f1', conversationId: 'c1' }),
@@ -80,7 +110,10 @@ describe('new chat route events', () => {
     newChatLink: () => null,
     composer: 'textarea',
     sendButton: 'button',
+    composerRoot: undefined,
     folderName: () => null,
+    hasFolders: () => false,
+    pickFolder: () => null,
     file: () => {},
     notify: () => {},
   };

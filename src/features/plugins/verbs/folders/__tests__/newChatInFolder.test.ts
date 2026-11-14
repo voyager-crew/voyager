@@ -206,3 +206,75 @@ describe.each(SITES)('New chat in this folder on $name', (site) => {
     expect(filed(page)).toEqual(before);
   });
 });
+
+describe('The new chat’s folder chip on Claude', () => {
+  const site = SITES[0];
+  const chip = () =>
+    document.querySelector<HTMLElement>('.gv-new-chat-folder-chip')?.shadowRoot ?? null;
+  const shown = () => {
+    const root = chip();
+    const host = document.querySelector('.gv-new-chat-folder-chip');
+    if (!root || !host?.closest('[data-composer-card-holder]')) return null;
+    return {
+      label: root.querySelector('.label')!.textContent,
+      clearable: !root.querySelector<HTMLButtonElement>('.clear')!.hidden,
+    };
+  };
+  const openNewChat = async (poll: () => Promise<void>) => {
+    document.querySelector<HTMLElement>(`a[href="${site.newChatPath}"]`)!.click();
+    await poll();
+  };
+
+  it('offers the folders on the new chat, and files the chat into the one picked', async () => {
+    const { page, poll } = await openSite(site);
+    expect(shown()).toBeNull();
+
+    await openNewChat(poll);
+    expect(shown()).toEqual({ label: 'Folders', clearable: false });
+    chip()!.querySelector<HTMLButtonElement>('.pick')!.click();
+    const picker = document.querySelector(claude.PICKER)!.shadowRoot!;
+    picker.querySelector<HTMLButtonElement>('[data-folder-id="f1"]')!.click();
+    expect(shown()).toEqual({ label: site.folder, clearable: true });
+
+    send(site);
+    history.pushState(null, '', site.chatPath(NEW_ID));
+    await poll();
+
+    expect(filed(page)).toContain(site.storedId(NEW_ID));
+    expect(shown()).toBeNull();
+  });
+
+  it('files nothing once × dropped the folder the menu chose', async () => {
+    const { page, poll } = await openSite(site);
+    const before = filed(page);
+
+    chooseNewChatIn(site);
+    await poll();
+    expect(shown()).toEqual({ label: site.folder, clearable: true });
+    chip()!.querySelector<HTMLButtonElement>('.clear')!.click();
+    expect(shown()).toEqual({ label: 'Folders', clearable: false });
+
+    send(site);
+    history.pushState(null, '', site.chatPath(NEW_ID));
+    await poll();
+
+    expect(filed(page)).toEqual(before);
+  });
+
+  it('leaves the composer when the user leaves the new chat, and with the folders', async () => {
+    const { poll } = await openSite(site);
+
+    await openNewChat(poll);
+    expect(shown()).not.toBeNull();
+    history.pushState(null, '', site.chatPath(site.rowId));
+    await poll();
+    expect(shown()).toBeNull();
+
+    await openNewChat(poll);
+    expect(shown()).not.toBeNull();
+    await close?.();
+    close = null;
+    expect(document.querySelector('.gv-new-chat-folder-chip')).toBeNull();
+    expect(document.querySelector('[data-composer-card-holder] > div')!.className).toBe('');
+  });
+});

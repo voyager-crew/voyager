@@ -2645,10 +2645,6 @@
     "message": "Новый чат в этой папке",
     "description": "Folder context menu item to create a new chat and auto-assign it to this folder"
   },
-  "folder_new_chat_pending": {
-    "message": "Следующий чат, который вы начнёте, попадёт в «{folder}»",
-    "description": "Toast after \"New chat in this folder\": the conversation the user starts next is filed into this folder. {folder} is the folder name"
-  },
   "folder_new_chat_unavailable": {
     "message": "Не удалось найти на сайте кнопку нового чата. Откройте новый чат и попробуйте ещё раз.",
     "description": "Toast when \"New chat in this folder\" cannot find the site's own new-chat control"

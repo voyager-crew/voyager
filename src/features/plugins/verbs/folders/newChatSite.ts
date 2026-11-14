@@ -10,6 +10,7 @@ import type { SiteAdapter } from '@/features/plugins/types';
 import { newChatTarget, samePath } from '@/pages/content/createMode/newChat';
 import { getTranslationSyncUnsafe as t } from '@/utils/i18n';
 
+import { openFolderPicker } from './folderPicker';
 import type { NewChatPort } from './newChatFiling';
 import type { SiteFoldersAdapter, SiteFoldersStore } from './types';
 
@@ -39,8 +40,14 @@ export function siteNewChatPort(
     conversationIdOf,
     composer,
     sendButton,
+    composerRoot: adapter?.selectors.composerRoot,
     folderName: (folderId) =>
       store.data.folders.find((folder) => folder.id === folderId)?.name ?? null,
+    hasFolders: () => store.ready && store.data.folders.length > 0,
+    pickFolder: (onSelect) =>
+      store.ready
+        ? openFolderPicker(store.data, onSelect, t('folderAsProject_selectFolder'))
+        : null,
     file: (folderId, conversationId) => {
       // Read now: a chat the site keeps nowhere (ChatGPT's temporary chats) gives none.
       const conversation = site.page.current(t(site.messages.untitled));

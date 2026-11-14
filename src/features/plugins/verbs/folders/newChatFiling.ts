@@ -3,9 +3,11 @@
  * the site's own new chat, and the conversation the user's first send there
  * creates is filed into the folder once the route names it. Opening a chat
  * from a link instead, leaving the new chat, back or forward, or waiting too
- * long files nothing. Each site supplies a `NewChatPort`; everything else
- * lives on one machine per folders runtime, so turning the folders off (or the
- * restart an account change brings) drops a pending folder with its listeners.
+ * long files nothing. On the new chat, a chip on the composer (`newChatChip.ts`)
+ * shows the pending folder and lets the user pick another or none. Each site
+ * supplies a `NewChatPort`; everything else lives on one machine per folders
+ * runtime, so turning the folders off (or the restart an account change
+ * brings) drops a pending folder with its listeners.
  */
 import { readComposerText } from '@/core/services/composer/draft';
 import { isImeKeyEvent } from '@/core/services/composer/sendKeys/sendKeyIntent';
@@ -17,6 +19,9 @@ import type { TreeActions } from '@/pages/content/folder/floatingTree/shared';
 import { type RouteChange, watchRouteChanges } from '@/pages/content/utils/routeWatcher';
 import { getTranslationSyncUnsafe as t } from '@/utils/i18n';
 
+import type { FolderPickerHandle } from './folderPicker';
+import { mountNewChatChip } from './newChatChip';
+
 export interface NewChatPort {
   /** The site's own control that opens a new chat, or null. */
   newChatLink(): HTMLElement | null;
@@ -26,7 +31,13 @@ export interface NewChatPort {
   /** The site's prompt field and send button, from its semantic keys. */
   readonly composer: string;
   readonly sendButton: string;
+  /** The site's composer root key, where the folder chip sits; the field's parent without one. */
+  readonly composerRoot: string | undefined;
   folderName(folderId: string): string | null;
+  /** Whether the user has a folder to offer on the new chat. */
+  hasFolders(): boolean;
+  /** Opens the site's folder picker; null while the folders cannot be read. */
+  pickFolder(onSelect: (folderId: string) => void): FolderPickerHandle | null;
   /** Files `conversationId`, the conversation the page now shows, into `folderId`. */
   file(folderId: string, conversationId: string): void;
   notify(message: string, tone: ToastTone): void;
@@ -41,6 +52,8 @@ export type NewChatState =
 
 export type NewChatEvent =
   | { readonly type: 'request'; readonly folderId: string; readonly onNewChat: boolean }
+  /** The chip on the new chat picked a folder, or none. */
+  | { readonly type: 'choose'; readonly folderId: string | null }
   | { readonly type: 'arrivedNewChat' }
   | { readonly type: 'send' }
   | { readonly type: 'conversationRoute'; readonly conversationId: string }
@@ -59,6 +72,12 @@ export function transition(state: NewChatState, event: NewChatEvent): NewChatSta
   switch (event.type) {
     case 'request':
       return { status: event.onNewChat ? 'composing' : 'opening', folderId: event.folderId };
+    case 'choose':
+      if (state.status !== 'idle' && state.status !== 'composing') return state;
+      if (event.folderId === null) return state.status === 'idle' ? state : IDLE;
+      return state.status === 'composing' && state.folderId === event.folderId
+        ? state
+        : { status: 'composing', folderId: event.folderId };
     case 'arrivedNewChat':
       return state.status === 'opening' ? { status: 'composing', folderId: state.folderId } : state;
     case 'send':
@@ -181,11 +200,10 @@ export function startNewChatFiling(scope: PluginScope, port: NewChatPort): NewCh
       }),
     'new-chat-filing:route',
   );
+  scope.effect(() => mountNewChatChip(port, machine), 'new-chat-filing:chip');
 
   const request = (folderId: string): void => {
-    if (scope.isDisposed) return;
-    const name = port.folderName(folderId);
-    if (name === null) return;
+    if (scope.isDisposed || port.folderName(folderId) === null) return;
     const onNewChat = port.isNewChat(location.href);
     if (!onNewChat) {
       const link = port.newChatLink();
@@ -196,7 +214,6 @@ export function startNewChatFiling(scope: PluginScope, port: NewChatPort): NewCh
       clickNativeControl(link);
     }
     machine.send({ type: 'request', folderId, onNewChat });
-    port.notify(t('folder_new_chat_pending').split('{folder}').join(name), 'info');
   };
 
   return {

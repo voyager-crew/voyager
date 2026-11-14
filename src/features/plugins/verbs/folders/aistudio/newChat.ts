@@ -8,6 +8,7 @@ import { NEW_CHAT_TARGETS } from '@/pages/content/createMode/newChat';
 import { extractPromptIdFromHref } from '@/pages/content/folder/aistudioPromptLinks';
 import type { AIStudioFolderSession } from '@/pages/content/folder/session/aistudioFolderSession';
 
+import { openFolderPicker } from '../folderPicker';
 import type { NewChatPort } from '../newChatFiling';
 import type { AIStudioFoldersView } from './view';
 
@@ -54,8 +55,19 @@ export function aistudioNewChatPort(
     },
     composer,
     sendButton,
+    composerRoot: selectors?.composerRoot,
     folderName: (folderId) =>
       session.data.folders.find((folder) => folder.id === folderId)?.name ?? null,
+    hasFolders: () => session.canEdit && session.data.folders.length > 0,
+    // Placing the new prompt needs an editable session; offer no picker without one.
+    pickFolder: (onSelect) =>
+      session.canEdit
+        ? openFolderPicker(
+            session.data,
+            onSelect,
+            session.translate('folderAsProject_selectFolder'),
+          )
+        : null,
     file: (folderId, conversationId) =>
       void placeNewPrompt(session, view, folderId, conversationId),
     notify: (message, tone) => view()?.notify(message, tone),

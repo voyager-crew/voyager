@@ -2645,10 +2645,6 @@
     "message": "在此資料夾新增對話",
     "description": "Folder context menu item to create a new chat and auto-assign it to this folder"
   },
-  "folder_new_chat_pending": {
-    "message": "接下來新開的對話會放進「{folder}」",
-    "description": "Toast after \"New chat in this folder\": the conversation the user starts next is filed into this folder. {folder} is the folder name"
-  },
   "folder_new_chat_unavailable": {
     "message": "找不到這個網站的「新對話」按鈕。請先自行開啟新對話，再試一次。",
     "description": "Toast when \"New chat in this folder\" cannot find the site's own new-chat control"

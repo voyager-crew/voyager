@@ -2501,10 +2501,6 @@
     "message": "在此文件夹新建对话",
     "description": "Folder context menu item to create a new chat and auto-assign it to this folder"
   },
-  "folder_new_chat_pending": {
-    "message": "接下来新开的对话会放进「{folder}」",
-    "description": "Toast after \"New chat in this folder\": the conversation the user starts next is filed into this folder. {folder} is the folder name"
-  },
   "folder_new_chat_unavailable": {
     "message": "找不到这个网站的「新对话」按钮。请先自己打开一个新对话，再试一次。",
     "description": "Toast when \"New chat in this folder\" cannot find the site's own new-chat control"
