@@ -10,21 +10,23 @@ import { findGeminiNewChat } from '@/core/gemini/sidebar/actions';
 import { chatgptActionSelector } from '@/features/plugins/builtin/chatgptActionTargets';
 
 export interface NewChatTarget {
-  /** The new-chat path for the account the page is on. */
-  path(location: Location): string;
+  /** The new-chat path for the account the page (or a URL) is on. */
+  path(location: Pick<Location, 'pathname'>): string;
   /** The site's own control that opens a new chat, or null. */
   link(doc: Document): HTMLElement | null;
   /** The router follows pushState plus popstate, so the History API may stand in for the control. */
   readonly history: boolean;
 }
 
-const accountPrefix = (location: Location): string =>
+const accountPrefix = (location: Pick<Location, 'pathname'>): string =>
   /^\/u\/\d+/.exec(location.pathname)?.[0] ?? '';
 
 /** A control of the page's own, never one of Voyager's. */
 function nativeLink(doc: Document, selector: string): HTMLElement | null {
   const found = doc.querySelector<HTMLElement>(selector);
-  return found && !found.closest('[class^="gv-"], [class*=" gv-"]') ? found : null;
+  const owner = found?.closest('[class^="gv-"], [class*=" gv-"]');
+  // Voyager marks the page root too (`gv-aistudio-root`, `body.gv-rtl`); only its own surfaces count.
+  return found && (!owner || owner === doc.documentElement || owner === doc.body) ? found : null;
 }
 
 export const NEW_CHAT_TARGETS = {
@@ -58,7 +60,8 @@ export const NEW_CHAT_TARGETS = {
   },
   kimi: {
     path: () => '/',
-    link: (doc) => nativeLink(doc, 'a[href="/"]'),
+    // Kimi's own button carries a tracking query: `/?chat_enter_method=new_chat`.
+    link: (doc) => nativeLink(doc, 'a[href="/"], a[href^="/?chat_enter_method="]'),
     history: false,
   },
 } as const satisfies Record<string, NewChatTarget>;
