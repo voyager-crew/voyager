@@ -33,7 +33,7 @@ export const CONTENT_UI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] =
       'query-text-line remains independent packaged evidence before deleting a saved draft; clicked anchor URL ownership clears a pending send on native navigation. Remote content cannot certify draft deletion.',
   },
   {
-    file: 'src/pages/content/folderProject/index.ts',
+    file: 'src/pages/content/folderProject/chatRoutes.ts',
     kind: 'protocol',
     values: {
       '[data-test-id="conversation"]': 1,
