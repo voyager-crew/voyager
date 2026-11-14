@@ -8,8 +8,13 @@
  * itself keeps its own value, so the host's absolutely placed children stay
  * where they were.
  */
-import { nativeDomDecorations } from '@/core/services/NativeDomDecorationService';
 import { findComposer, readComposer } from '@/core/services/composer';
+import {
+  type AnchorPosition,
+  composerRootOf,
+  positionAnchor,
+  unclippedAnchor,
+} from '@/core/services/composer/composerAnchor';
 import { onCachedLanguageChange } from '@/utils/i18n';
 
 import {
@@ -31,38 +36,8 @@ export interface ComposerBadgeOptions {
 
 /** SPA navigation replaces the composer; the badge follows once the page settles. */
 const REBIND_DELAY_MS = 250;
-/** A root with one of these positions already contains the badge without Voyager's class. */
-const POSITIONED = /^(relative|absolute|fixed|sticky)$/;
 /** Room the badge takes above its anchor: `bottom: calc(100% + 4px)` and an 18px line. */
 const BADGE_CLEARANCE_PX = 24;
-
-function clips(style: CSSStyleDeclaration): boolean {
-  return [style.overflow, style.overflowX, style.overflowY].some(
-    (value) => value !== '' && value !== 'visible',
-  );
-}
-
-/**
- * The root, or the parent of the outermost ancestor that would clip a badge drawn just above the
- * root: DeepSeek's composer root sits inside a rounded card with `overflow: hidden`.
- */
-function unclippedAnchor(root: HTMLElement, view: Window): HTMLElement {
-  const badgeTop = root.getBoundingClientRect().top - BADGE_CLEARANCE_PX;
-  let anchor = root;
-  for (
-    let node: HTMLElement | null = root;
-    node && node !== root.ownerDocument.body;
-    node = node.parentElement
-  ) {
-    if (
-      node.parentElement &&
-      clips(view.getComputedStyle(node)) &&
-      node.getBoundingClientRect().top > badgeTop
-    )
-      anchor = node.parentElement;
-  }
-  return anchor;
-}
 
 export function startComposerBadge(options: ComposerBadgeOptions): () => void {
   const { doc, composer, composerRoot, metric } = options;
@@ -70,8 +45,7 @@ export function startComposerBadge(options: ComposerBadgeOptions): () => void {
   const badge = createBadge(doc, 'composer');
   let field: HTMLElement | null = null;
   let anchor: HTMLElement | null = null;
-  /** Whether Voyager positioned the anchor, and whether it had a `class` attribute before. */
-  let anchorPositioned: { readonly hadClass: boolean } | undefined;
+  let anchorPosition: AnchorPosition | undefined;
   let count = 0;
   let frame = 0;
   let rebindTimer: ReturnType<typeof setTimeout> | undefined;
@@ -85,8 +59,7 @@ export function startComposerBadge(options: ComposerBadgeOptions): () => void {
     // An empty draft has nothing to measure; a standing "0" above every new chat is noise.
     badge.hidden = count === 0;
     render();
-    // React rewrites a root's className on its own updates; put the anchor class back.
-    if (anchor && anchorPositioned) anchor.classList.add(COUNTER_ANCHOR_CLASS);
+    anchorPosition?.reapply();
   };
 
   const scheduleUpdate = (): void => {
@@ -99,17 +72,9 @@ export function startComposerBadge(options: ComposerBadgeOptions): () => void {
 
   const releaseAnchor = (): void => {
     badge.remove();
-    if (anchor && anchorPositioned) {
-      // Only Voyager's class goes: the host may have changed its own classes since.
-      if (options.resolveSelectors)
-        nativeDomDecorations.release(anchor, COUNTER_ANCHOR_CLASS, badge);
-      anchor.classList.remove(COUNTER_ANCHOR_CLASS);
-      if (!anchorPositioned.hadClass && anchor.classList.length === 0) {
-        anchor.removeAttribute('class');
-      }
-    }
+    anchorPosition?.release();
     anchor = null;
-    anchorPositioned = undefined;
+    anchorPosition = undefined;
   };
 
   const fieldObserver = new MutationObserver(scheduleUpdate);
@@ -123,21 +88,19 @@ export function startComposerBadge(options: ComposerBadgeOptions): () => void {
       if (field)
         fieldObserver.observe(field, { childList: true, subtree: true, characterData: true });
     }
-    const root =
-      (field && current.composerRoot ? field.closest<HTMLElement>(current.composerRoot) : null) ??
-      field?.parentElement ??
-      null;
-    const nextAnchor = root && unclippedAnchor(root, view);
+    const root = composerRootOf(field, current.composerRoot);
+    const nextAnchor = root && unclippedAnchor(root, view, BADGE_CLEARANCE_PX);
     if (nextAnchor !== anchor) {
       releaseAnchor();
       anchor = nextAnchor;
-      if (anchor && !POSITIONED.test(view.getComputedStyle(anchor).position)) {
-        anchorPositioned = { hadClass: anchor.hasAttribute('class') };
-        // Only an independently accepted native anchor may keep its own badge decoration.
-        if (options.resolveSelectors)
-          nativeDomDecorations.acquire(anchor, COUNTER_ANCHOR_CLASS, badge);
-        anchor.classList.add(COUNTER_ANCHOR_CLASS);
-      }
+      // Only an independently accepted native anchor may keep its own badge decoration.
+      if (anchor)
+        anchorPosition = positionAnchor(
+          anchor,
+          view,
+          COUNTER_ANCHOR_CLASS,
+          options.resolveSelectors ? badge : null,
+        );
     }
     if (anchor && badge.parentElement !== anchor) anchor.append(badge);
   };
