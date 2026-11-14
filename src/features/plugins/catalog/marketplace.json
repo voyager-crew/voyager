@@ -272,6 +272,11 @@
       "name": "kimi-palette",
       "source": "sites/kimi/plugins/palette/plugin.json",
       "official": true
+    },
+    {
+      "name": "chatgpt-table-copy",
+      "source": "sites/chatgpt/plugins/table-copy/plugin.json",
+      "official": true
     }
   ]
 }
