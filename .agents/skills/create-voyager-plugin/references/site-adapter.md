@@ -37,8 +37,10 @@ A new site also needs its directory, a `CODEOWNERS` line, and an extension
 release (D16).
 
 Folders on a new site take no TypeScript: a `folders` section in its bundled
-`site.json`, a `conversationIdPattern`, and a plugin whose `domOps` call the
-`folders` primitive. The site then gets one unscoped bucket in
+`site.json` that includes a `page` block (placeholder titles; without it
+`siteFoldersFromData` returns null and the site gets no folders), a
+`conversationIdPattern`, and a plugin whose `domOps` call the `folders`
+primitive. The site then gets one unscoped bucket in
 `chrome.storage.local` with names derived from its id (`gvFolderData:<id>`,
 backups `<id>-folders`, Drive `gemini-voyager-<id>-folders.json`, export files
 tagged `<id>`), and no first-run guide (`features/folder/sites/derivedFolderSites.ts`).
