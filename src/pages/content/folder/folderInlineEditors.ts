@@ -1,3 +1,4 @@
+import { isImeKeyEvent } from '@/core/services/composer/sendKeys/sendKeyIntent';
 import { getTranslationSyncUnsafe as t } from '@/utils/i18n';
 
 import type { DialogView, OwnDialogView } from './folderDialogViews';
@@ -32,6 +33,8 @@ function bindNameInput(
   input.addEventListener(
     'keydown',
     (event) => {
+      // Enter or Escape while an IME composes picks or drops a candidate, not the name.
+      if (isImeKeyEvent(event)) return;
       if (event.key === 'Enter') submit();
       else if (event.key === 'Escape') view.close();
     },

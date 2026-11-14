@@ -2,6 +2,8 @@
 import type { CSSProperties } from 'preact';
 import { useLayoutEffect, useRef } from 'preact/hooks';
 
+import { isImeKeyEvent } from '@/core/services/composer/sendKeys/sendKeyIntent';
+
 import { eventPassedThrough } from '../shadowHost';
 import { KEEPS_INLINE_FORM_ATTR, MAX_FOLDER_NAME_LENGTH, MENU_SELECTOR, cls, t } from './shared';
 import { CHECK, type IconNode, LineIcon, X } from './treeIcons';
@@ -123,6 +125,8 @@ export function InlineForm({
         onClick={(e) => e.stopPropagation()}
         onDblClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
+          // Enter or Escape while an IME composes picks or drops a candidate, not the name.
+          if (isImeKeyEvent(e)) return;
           if (e.key === 'Enter') {
             e.preventDefault();
             submit();
