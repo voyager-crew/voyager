@@ -14,6 +14,7 @@ import {
   assessDifficultWatermarkRemovalCandidate,
   assessWatermarkRemovalCandidate,
   getWatermarkSignalStrength,
+  hasGradientRemovalEvidence,
   hasReliableWatermarkSignal,
   hasResidualWatermarkEdges,
   hasSafeSupportedReliabilityTransition,
@@ -202,6 +203,54 @@ export function chooseDifficultWatermarkAnchorOption(
   return best?.option;
 }
 
+/**
+ * Last resort for the V2 star at its exact anchor: trial one pass per anchor
+ * on the original pixels and keep the one whose edges it erased most, when
+ * the edge evidence alone proves a watermark was there.
+ */
+function removeOnGradientEvidence(
+  imageData: ImageData,
+  anchorOptions: WatermarkAnchorOption[],
+): boolean {
+  const candidates = anchorOptions.filter((option) => option.config.alphaVariant === '20260520');
+  if (candidates.length === 0) return false;
+  const original = new ImageData(
+    new Uint8ClampedArray(imageData.data),
+    imageData.width,
+    imageData.height,
+  );
+  let best: { option: WatermarkAnchorOption; residual: number } | undefined;
+
+  for (const option of candidates) {
+    const position = calculateWatermarkPosition(imageData.width, imageData.height, option.config);
+    if (!isWatermarkPositionInBounds(imageData, position)) continue;
+
+    const snapshot = snapshotWatermarkRegion(imageData, position);
+    try {
+      removeWatermark(imageData, option.alphaMap, position);
+      const assessment = assessWatermarkRemovalCandidate(
+        original,
+        imageData,
+        option.alphaMap,
+        position,
+      );
+      if (!hasGradientRemovalEvidence(assessment)) continue;
+      const residual = Math.abs(assessment.candidateSignal.gradientScore);
+      if (!best || residual < best.residual) best = { option, residual };
+    } finally {
+      restoreWatermarkRegion(imageData, position, snapshot);
+    }
+  }
+
+  if (!best) return false;
+  removeWatermark(
+    imageData,
+    best.option.alphaMap,
+    calculateWatermarkPosition(imageData.width, imageData.height, best.option.config),
+  );
+  return true;
+}
+
 export function removeWatermarkFromAnchorOptions(
   imageData: ImageData,
   anchorOptions: WatermarkAnchorOption[],
@@ -220,12 +269,13 @@ export function removeWatermarkFromAnchorOptions(
     // full-size V2 preset may use its narrower first-pass transition evidence.
     const allowSupportedReliabilityTransition =
       trustedOption.config.logoSize === 96 && trustedOption.config.alphaVariant === '20260520';
-    removeWatermarkWithResidualCheck(
+    const passes = removeWatermarkWithResidualCheck(
       imageData,
       trustedOption.alphaMap,
       trustedPosition,
       allowSupportedReliabilityTransition,
     );
+    if (passes === 0) removeOnGradientEvidence(imageData, anchorOptions);
     return 'reliable';
   }
 
@@ -233,7 +283,9 @@ export function removeWatermarkFromAnchorOptions(
   // Each difficult candidate is trialed against, and restored to, the same
   // original pixels before the strongest safe suppression is applied once.
   const difficultOption = chooseDifficultWatermarkAnchorOption(imageData, anchorOptions);
-  if (!difficultOption) return 'none';
+  if (!difficultOption) {
+    return removeOnGradientEvidence(imageData, anchorOptions) ? 'difficult' : 'none';
+  }
 
   const difficultPosition = calculateWatermarkPosition(
     imageData.width,

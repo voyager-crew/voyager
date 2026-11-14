@@ -25,6 +25,9 @@ const MIN_SUPPORTED_TRANSITION_RATIO = 0.35;
 const MIN_SUPPORTED_GRADIENT_SUPPRESSION = 0.1;
 const MIN_SUPPORTED_GRADIENT_SUPPRESSION_RATIO = 0.5;
 const MIN_DIFFICULT_SUPPRESSION = 0.08;
+const MIN_GRADIENT_EVIDENCE_ORIGINAL = 0.1;
+const MAX_GRADIENT_EVIDENCE_RESIDUAL = 0.1;
+const MAX_GRADIENT_EVIDENCE_RESIDUAL_RATIO = 0.3;
 const NEAR_BLACK_THRESHOLD = 5;
 const MAX_NEAR_BLACK_INCREASE = 0.05;
 const CLIP_ORIGINAL_THRESHOLD = 5;
@@ -266,6 +269,25 @@ export function hasSafeSupportedReliabilityTransition(
     gradientSuppressionRatio > MIN_SUPPORTED_GRADIENT_SUPPRESSION_RATIO &&
     assessment.nearBlackIncrease === 0 &&
     assessment.newlyClippedRatio === 0 &&
+    assessment.severeUndershootRatio < MAX_SEVERE_UNDERSHOOT_RATIO
+  );
+}
+
+/**
+ * Accept a removal on edge evidence alone, for an exact V2 anchor whose
+ * spatial score a textured background has skewed (a wood grain or a frame
+ * corner under the star, discussion #898). Sobel magnitude ignores sign, so
+ * reverse-blending a star that is not there draws its edges into the image and
+ * raises the gradient score: only a real watermark lets one pass erase them.
+ */
+export function hasGradientRemovalEvidence(assessment: WatermarkRemovalAssessment): boolean {
+  const original = assessment.originalSignal.gradientScore;
+  const residual = Math.abs(assessment.candidateSignal.gradientScore);
+  return (
+    original >= MIN_GRADIENT_EVIDENCE_ORIGINAL &&
+    residual <= MAX_GRADIENT_EVIDENCE_RESIDUAL &&
+    residual <= original * MAX_GRADIENT_EVIDENCE_RESIDUAL_RATIO &&
+    // As in the general gate, clipping on a dark background is no damage without severe undershoot.
     assessment.severeUndershootRatio < MAX_SEVERE_UNDERSHOOT_RATIO
   );
 }
