@@ -2157,6 +2157,14 @@
     "message": "各ユーザープロンプトをターン見出しに追加し、重複する「ユーザー」セクションを省略します。",
     "description": "Hint for the Markdown prompt heading toggle"
   },
+  "export_markdown_text_only": {
+    "message": "テキストのみ",
+    "description": "Label for the Markdown export switch that leaves out images"
+  },
+  "export_markdown_text_only_hint": {
+    "message": "画像を含めず、1 つの .md ファイルとして書き出します。",
+    "description": "Hint for the Markdown text-only switch: images are left out, so the export is one .md file instead of a zip"
+  },
   "export_image_width_label": {
     "message": "画像の幅",
     "description": "Label for image width selection in export dialog"

@@ -161,6 +161,8 @@ export interface ExportOptions {
   includeImageSource?: boolean;
   /** Put each user prompt in its turn heading and omit the duplicate User section. */
   usePromptAsTurnHeading?: boolean;
+  /** Leave image embeds out of Markdown, so it downloads as a single .md file and not a zip. */
+  markdownTextOnly?: boolean;
   /** Human-readable labels used by conversation exports; ignored by JSON and document layouts. */
   speakerLabels?: ExportSpeakerLabels;
 }

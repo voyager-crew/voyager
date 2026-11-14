@@ -2157,6 +2157,14 @@
     "message": "각 사용자 프롬프트를 턴 제목에 추가하고 중복된 사용자 섹션을 생략합니다.",
     "description": "Hint for the Markdown prompt heading toggle"
   },
+  "export_markdown_text_only": {
+    "message": "텍스트만",
+    "description": "Label for the Markdown export switch that leaves out images"
+  },
+  "export_markdown_text_only_hint": {
+    "message": "이미지를 빼고 .md 파일 하나로 내보냅니다.",
+    "description": "Hint for the Markdown text-only switch: images are left out, so the export is one .md file instead of a zip"
+  },
   "export_image_width_label": {
     "message": "이미지 너비",
     "description": "Label for image width selection in export dialog"

@@ -233,7 +233,15 @@ function handleSaveReport(messages: Translation): void {
     const t = (key: TranslationKey): string => messages[key] ?? key;
     const dialog = new ExportDialog();
     dialog.show({
-      onExport: async (format, fontSize, imageWidth) => {
+      onExport: async (
+        format,
+        fontSize,
+        imageWidth,
+        _promptHeading,
+        _labels,
+        _overrides,
+        textOnly,
+      ) => {
         const progress = showExportProgress(exportingProgressText(t));
         try {
           if (format === 'image') {
@@ -250,6 +258,7 @@ function handleSaveReport(messages: Translation): void {
             layout: 'document',
             fontSize,
             imageWidth,
+            markdownTextOnly: textOnly,
           });
           const minVisiblePromise = new Promise((resolve) => setTimeout(resolve, 420));
           const [result] = await Promise.all([resultPromise, minVisiblePromise]);
@@ -268,6 +277,7 @@ function handleSaveReport(messages: Translation): void {
       onCancel: () => {},
       initialImageWidth,
       speakerLabelsEnabled: false,
+      showTextOnlyOption: true,
       translations: {
         title: t('deepResearchSaveReport'),
         selectFormat: t('export_dialog_select'),
@@ -284,6 +294,8 @@ function handleSaveReport(messages: Translation): void {
         imageWidthWide: t('export_image_width_wide'),
         promptHeadingLabel: t('export_markdown_prompt_heading'),
         promptHeadingHint: t('export_markdown_prompt_heading_hint'),
+        textOnlyLabel: t('export_markdown_text_only'),
+        textOnlyHint: t('export_markdown_text_only_hint'),
         formatRecommended: t('export_format_recommended'),
         formatDescriptions: {
           json: t('export_format_json_description'),

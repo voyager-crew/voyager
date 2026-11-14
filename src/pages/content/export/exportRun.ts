@@ -15,11 +15,7 @@ import { logger } from '@/core/services/LoggerService';
 import { askConfirm } from '@/core/ui/confirm';
 import type { AppLanguage } from '@/utils/language';
 
-import type {
-  ConversationMetadata,
-  ExportFormat,
-  ExportSpeakerLabels,
-} from '../../../features/export/types/export';
+import type { ConversationMetadata } from '../../../features/export/types/export';
 import { resolveExportErrorMessage } from '../../../features/export/ui/ExportErrorMessage';
 import {
   exportingProgressText,
@@ -39,6 +35,7 @@ import {
   loadExportDictionaries,
   readExportLanguage,
 } from './exportLocale';
+import type { ExportRunRequest } from './exportRunRequest';
 import { hasExportSearchImages } from './exportSearchImages';
 import {
   type ExportSelectionConfirmation,
@@ -78,16 +75,6 @@ const FINAL_EXPORT_PREPARE_DELAY_MS = 120;
 /** Gemini loads ten turns per page, so this stops near 3000 turns. */
 const MAX_PRELOAD_PAGES = 300;
 const MAX_PRELOAD_RELOADS = 25;
-
-export interface ExportRunRequest {
-  format: ExportFormat;
-  fontSize?: number;
-  imageWidth?: number;
-  usePromptAsTurnHeading?: boolean;
-  speakerLabels?: ExportSpeakerLabels;
-  /** Message to preselect in the selection session. */
-  initialSelectedMessageId?: string;
-}
 
 export interface ExportRunLocale {
   dict: ExportDictionaries;

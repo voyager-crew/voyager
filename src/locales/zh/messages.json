@@ -2157,6 +2157,14 @@
     "message": "把每个用户提示词放进轮次标题，并省略重复的“用户”段落。",
     "description": "Hint for the Markdown prompt heading toggle"
   },
+  "export_markdown_text_only": {
+    "message": "仅文本",
+    "description": "Label for the Markdown export switch that leaves out images"
+  },
+  "export_markdown_text_only_hint": {
+    "message": "不含图片，导出为单个 .md 文件。",
+    "description": "Hint for the Markdown text-only switch: images are left out, so the export is one .md file instead of a zip"
+  },
   "export_image_width_label": {
     "message": "导出图片宽度",
     "description": "Label for image width selection in export dialog"

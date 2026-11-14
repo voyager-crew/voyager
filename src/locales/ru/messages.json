@@ -2157,6 +2157,14 @@
     "message": "Добавляет каждый запрос пользователя в заголовок хода и убирает дублирующий раздел «Пользователь».",
     "description": "Hint for the Markdown prompt heading toggle"
   },
+  "export_markdown_text_only": {
+    "message": "Только текст",
+    "description": "Label for the Markdown export switch that leaves out images"
+  },
+  "export_markdown_text_only_hint": {
+    "message": "Без изображений: экспорт сохраняется одним файлом .md.",
+    "description": "Hint for the Markdown text-only switch: images are left out, so the export is one .md file instead of a zip"
+  },
   "export_image_width_label": {
     "message": "Ширина изображения",
     "description": "Label for image width selection in export dialog"

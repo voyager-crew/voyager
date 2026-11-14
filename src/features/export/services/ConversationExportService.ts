@@ -19,6 +19,7 @@ import { MarkdownFormatter } from './MarkdownFormatter';
 import { PDFPrintService } from './PDFPrintService';
 import { MAX_EXPORT_IMAGE_TOTAL_BYTES, fetchBoundedExportImage } from './boundedImageFetch';
 import { packageMarkdownImages } from './markdownImageArchive';
+import { stripMarkdownImages } from './markdownTextOnly';
 
 /**
  * Main export service
@@ -193,6 +194,7 @@ export class ConversationExportService {
       filename,
       'chat.md',
       options.signal,
+      options.markdownTextOnly,
     );
     return {
       success: true,
@@ -289,6 +291,7 @@ export class ConversationExportService {
       filename,
       mdEntryName,
       options.signal,
+      options.markdownTextOnly,
     );
     return {
       success: true,
@@ -421,9 +424,14 @@ export class ConversationExportService {
     filename: string,
     markdownEntryName: string,
     signal?: AbortSignal,
+    textOnly = false,
   ): Promise<{ filename: string; omittedImageCount: number }> {
     this.assertNotAborted(signal);
     const normalizedFilename = filename.toLowerCase().endsWith('.md') ? filename : `${filename}.md`;
+    if (textOnly) {
+      MarkdownFormatter.download(stripMarkdownImages(markdown), normalizedFilename);
+      return { filename: normalizedFilename, omittedImageCount: 0 };
+    }
     if (MarkdownFormatter.extractImageUrls(markdown).length === 0) {
       MarkdownFormatter.download(markdown, normalizedFilename);
       return { filename: normalizedFilename, omittedImageCount: 0 };

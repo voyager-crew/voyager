@@ -2157,6 +2157,14 @@
     "message": "Ajoute chaque prompt utilisateur au titre du tour et omet la section Utilisateur en double.",
     "description": "Hint for the Markdown prompt heading toggle"
   },
+  "export_markdown_text_only": {
+    "message": "Texte seul",
+    "description": "Label for the Markdown export switch that leaves out images"
+  },
+  "export_markdown_text_only_hint": {
+    "message": "Laisse les images de côté : l’export tient en un seul fichier .md.",
+    "description": "Hint for the Markdown text-only switch: images are left out, so the export is one .md file instead of a zip"
+  },
   "export_image_width_label": {
     "message": "Largeur de l'image",
     "description": "Label for image width selection in export dialog"

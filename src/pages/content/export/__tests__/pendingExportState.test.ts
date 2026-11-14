@@ -76,7 +76,33 @@ describe('pendingExportState', () => {
       includeImageSource: true,
       imageWidth: 960,
       usePromptAsTurnHeading: true,
+      markdownTextOnly: false,
       speakerLabels: labels,
+    });
+  });
+
+  it('carries text-only Markdown through a reload and reads older state as off', async () => {
+    const state = createPendingExportState(ExportFormat.MARKDOWN, url, 1000, {
+      markdownTextOnly: true,
+    });
+    persistPendingExportState(sessionStorage, state, 1001);
+    const exportSpy = vi
+      .spyOn(ConversationExportService, 'export')
+      .mockResolvedValue({ success: true, format: ExportFormat.MARKDOWN });
+    await exportPendingConversation(
+      restorePendingExportState(sessionStorage, url)!,
+      turns,
+      metadata,
+      true,
+    );
+    expect(exportSpy.mock.calls[0]?.[2].markdownTextOnly).toBe(true);
+
+    // State stored before the option existed has no field and must still resume.
+    sessionStorage.setItem(PENDING_EXPORT_SESSION_KEY, validSerializedState());
+    expect(restorePendingExportState(sessionStorage, url)).toMatchObject({
+      format: 'markdown',
+      attempt: 1,
+      markdownTextOnly: false,
     });
   });
 

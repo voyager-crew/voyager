@@ -14,11 +14,14 @@ export interface ExportDialogOptions {
     usePromptAsTurnHeading?: boolean,
     speakerLabels?: ExportSpeakerLabels,
     speakerLabelOverrides?: ExportSpeakerLabelOverrides,
+    markdownTextOnly?: boolean,
   ) => void;
   onCancel: () => void;
   onSpeakerLabelOverridesChange?: (overrides: ExportSpeakerLabelOverrides) => void;
   initialImageWidth?: ImageExportWidth;
   showPromptHeadingOption?: boolean;
+  /** Offer the Markdown "text only" switch; only where the export honours `markdownTextOnly`. */
+  showTextOnlyOption?: boolean;
   initialSpeakerLabelOverrides?: ExportSpeakerLabelOverrides;
   speakerLabelsEnabled?: boolean;
   speakerNames?: {
@@ -44,6 +47,8 @@ export interface ExportDialogOptions {
     imageWidthWide: string;
     promptHeadingLabel: string;
     promptHeadingHint: string;
+    textOnlyLabel?: string;
+    textOnlyHint?: string;
     formatRecommended: string;
     formatDescriptions: Record<ExportFormat, string>;
   };

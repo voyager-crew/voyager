@@ -13,6 +13,7 @@ export interface PendingExportState {
   fontSize?: number;
   imageWidth?: number;
   usePromptAsTurnHeading?: boolean;
+  markdownTextOnly?: boolean;
   speakerLabels?: ExportSpeakerLabels;
   initialSelectedMessageId?: string;
   attempt: number;
@@ -54,6 +55,7 @@ export function createPendingExportState(
     fontSize?: number;
     imageWidth?: number;
     usePromptAsTurnHeading?: boolean;
+    markdownTextOnly?: boolean;
     speakerLabels?: ExportSpeakerLabels;
     initialSelectedMessageId?: string;
   } = {},
@@ -110,6 +112,7 @@ export function parsePendingExportState(raw: string): PendingExportState | null 
       fontSize: typeof parsed.fontSize === 'number' ? parsed.fontSize : undefined,
       imageWidth: typeof parsed.imageWidth === 'number' ? parsed.imageWidth : undefined,
       usePromptAsTurnHeading: parsed.usePromptAsTurnHeading === true,
+      markdownTextOnly: parsed.markdownTextOnly === true,
       speakerLabels: parseSpeakerLabels(parsed.speakerLabels),
       initialSelectedMessageId:
         typeof parsed.initialSelectedMessageId === 'string'
@@ -159,6 +162,7 @@ export function exportPendingConversation(
     includeImageSource,
     imageWidth: state.imageWidth,
     usePromptAsTurnHeading: state.usePromptAsTurnHeading,
+    markdownTextOnly: state.markdownTextOnly,
     speakerLabels: state.speakerLabels,
     signal,
   });

@@ -2157,6 +2157,14 @@
     "message": "Adiciona cada prompt do usuário ao título do turno e omite a seção Usuário duplicada.",
     "description": "Hint for the Markdown prompt heading toggle"
   },
+  "export_markdown_text_only": {
+    "message": "Só texto",
+    "description": "Label for the Markdown export switch that leaves out images"
+  },
+  "export_markdown_text_only_hint": {
+    "message": "Deixa as imagens de fora para exportar um único arquivo .md.",
+    "description": "Hint for the Markdown text-only switch: images are left out, so the export is one .md file instead of a zip"
+  },
   "export_image_width_label": {
     "message": "Largura da imagem",
     "description": "Label for image width selection in export dialog"

@@ -18,6 +18,7 @@ import {
   normalizeSpeakerLabelOverrides,
 } from '../types/export';
 import type { ExportDialogOptions } from './exportDialogOptions';
+import { createMarkdownSwitchSection } from './markdownSwitchSection';
 
 export type { ExportDialogOptions };
 
@@ -38,6 +39,7 @@ export class ExportDialog {
   private fontSize: number = PDF_DEFAULT_FONT_SIZE;
   private imageWidth: ImageExportWidth = DEFAULT_IMAGE_EXPORT_WIDTH;
   private usePromptAsTurnHeading = false;
+  private markdownTextOnly = false;
   private speakerLabelOverrides: ExportSpeakerLabelOverrides | null = null;
 
   /**
@@ -46,6 +48,7 @@ export class ExportDialog {
   show(options: ExportDialogOptions): void {
     this.imageWidth = normalizeImageExportWidth(options.initialImageWidth);
     this.usePromptAsTurnHeading = false;
+    this.markdownTextOnly = false;
     if (options.speakerNames && options.speakerLabelsEnabled !== false) {
       this.speakerLabelOverrides = normalizeSpeakerLabelOverrides(
         options.initialSpeakerLabelOverrides,
@@ -117,7 +120,24 @@ export class ExportDialog {
     const imageWidthSection = this.createImageWidthSection(options);
 
     // Prompt heading section (visible only for chat Markdown exports)
-    const promptHeadingSection = this.createPromptHeadingSection(options);
+    const promptHeadingSection = createMarkdownSwitchSection(
+      'gv-export-prompt-heading-section',
+      options.showPromptHeadingOption === true,
+      options.translations.promptHeadingLabel,
+      options.translations.promptHeadingHint,
+      (checked) => {
+        this.usePromptAsTurnHeading = checked;
+      },
+    );
+    const textOnlySection = createMarkdownSwitchSection(
+      'gv-export-text-only-section',
+      options.showTextOnlyOption === true,
+      options.translations.textOnlyLabel ?? '',
+      options.translations.textOnlyHint ?? '',
+      (checked) => {
+        this.markdownTextOnly = checked;
+      },
+    );
     const speakerNamesSection = this.createSpeakerNamesSection(options);
 
     // Buttons
@@ -144,6 +164,9 @@ export class ExportDialog {
       const fontSize = isPdf || isImage ? this.fontSize : undefined;
       const imageWidth = isImage ? this.imageWidth : undefined;
       const usePromptAsTurnHeading = isMarkdown ? this.usePromptAsTurnHeading : undefined;
+      // Passed only where the switch is offered, so other callers see the same arguments as before.
+      const markdownTextOnly =
+        isMarkdown && options.showTextOnlyOption ? this.markdownTextOnly : undefined;
       if (
         this.selectedFormat !== ('json' as ExportFormat) &&
         this.speakerLabelOverrides &&
@@ -161,6 +184,17 @@ export class ExportDialog {
           usePromptAsTurnHeading,
           speakerLabels,
           speakerLabelOverrides,
+          ...(markdownTextOnly === undefined ? [] : ([markdownTextOnly] as const)),
+        );
+      } else if (markdownTextOnly !== undefined) {
+        options.onExport(
+          this.selectedFormat,
+          fontSize,
+          imageWidth,
+          usePromptAsTurnHeading,
+          undefined,
+          undefined,
+          markdownTextOnly,
         );
       } else {
         options.onExport(this.selectedFormat, fontSize, imageWidth, usePromptAsTurnHeading);
@@ -182,6 +216,7 @@ export class ExportDialog {
     }
     dialog.appendChild(formatsList);
     dialog.appendChild(promptHeadingSection);
+    dialog.appendChild(textOnlySection);
     if (speakerNamesSection) {
       dialog.appendChild(speakerNamesSection);
     }
@@ -455,47 +490,6 @@ export class ExportDialog {
     return section;
   }
 
-  private createPromptHeadingSection(options: ExportDialogOptions): HTMLElement {
-    const section = document.createElement('div');
-    section.className = 'gv-export-prompt-heading-section';
-    section.dataset.enabled = options.showPromptHeadingOption ? 'true' : 'false';
-    section.style.display = options.showPromptHeadingOption ? 'flex' : 'none';
-
-    const copy = document.createElement('div');
-    copy.className = 'gv-export-prompt-heading-copy';
-
-    const label = document.createElement('div');
-    label.className = 'gv-export-fontsize-label gv-export-prompt-heading-label';
-    label.textContent = options.translations.promptHeadingLabel;
-
-    const hint = document.createElement('div');
-    hint.className = 'gv-export-format-description gv-export-prompt-heading-hint';
-    hint.textContent = options.translations.promptHeadingHint;
-
-    copy.appendChild(label);
-    copy.appendChild(hint);
-
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'gv-coach-switch gv-export-prompt-heading-switch';
-    toggle.setAttribute('role', 'switch');
-    toggle.setAttribute('aria-label', options.translations.promptHeadingLabel);
-    toggle.setAttribute('aria-checked', 'false');
-
-    const knob = document.createElement('span');
-    knob.className = 'gv-coach-knob';
-    toggle.appendChild(knob);
-
-    toggle.addEventListener('click', () => {
-      this.usePromptAsTurnHeading = !this.usePromptAsTurnHeading;
-      toggle.setAttribute('aria-checked', this.usePromptAsTurnHeading ? 'true' : 'false');
-    });
-
-    section.appendChild(copy);
-    section.appendChild(toggle);
-    return section;
-  }
-
   /**
    * Update optional sections visibility and slider range based on selected format
    */
@@ -508,14 +502,14 @@ export class ExportDialog {
     const imageWidthSection = this.overlay.querySelector(
       '.gv-export-imagewidth-section',
     ) as HTMLElement | null;
-    const promptHeadingSection = this.overlay.querySelector(
-      '.gv-export-prompt-heading-section',
-    ) as HTMLElement | null;
+    const markdownSwitchSections = this.overlay.querySelectorAll<HTMLElement>(
+      '.gv-export-markdown-switch-section',
+    );
     const speakerNamesSection = this.overlay.querySelector(
       '.gv-export-speakers-section',
     ) as HTMLElement | null;
 
-    if (!fontSizeSection || !imageWidthSection || !promptHeadingSection) return;
+    if (!fontSizeSection || !imageWidthSection) return;
 
     const isPdf = this.selectedFormat === ('pdf' as ExportFormat);
     const isImage = this.selectedFormat === ('image' as ExportFormat);
@@ -523,8 +517,9 @@ export class ExportDialog {
 
     fontSizeSection.style.display = isPdf || isImage ? 'block' : 'none';
     imageWidthSection.style.display = isImage ? 'block' : 'none';
-    promptHeadingSection.style.display =
-      isMarkdown && promptHeadingSection.dataset.enabled === 'true' ? 'flex' : 'none';
+    markdownSwitchSections.forEach((section) => {
+      section.style.display = isMarkdown && section.dataset.enabled === 'true' ? 'flex' : 'none';
+    });
     if (speakerNamesSection) {
       speakerNamesSection.style.display =
         this.selectedFormat === ('json' as ExportFormat) ? 'none' : 'block';

@@ -262,8 +262,8 @@
   background: var(--gv-theme-hover, var(--gv-ui-hover));
 }
 
-/* Optional sections (prompt heading, speakers, font size, image width) */
-.gv-export-prompt-heading-section,
+/* Optional sections (Markdown switches, speakers, font size, image width) */
+.gv-export-markdown-switch-section,
 .gv-export-speakers-section,
 .gv-export-fontsize-section,
 .gv-export-imagewidth-section {
@@ -273,8 +273,8 @@
   border-radius: 9px;
 }
 
-/* Markdown prompt heading option */
-.gv-export-prompt-heading-section {
+/* Markdown on/off options (prompt heading, text only) */
+.gv-export-markdown-switch-section {
   align-items: center;
   justify-content: space-between;
   gap: 16px;

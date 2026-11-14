@@ -315,13 +315,22 @@ export function createExportEntrypoint(exportSite: ExportSite) {
     activeExportDialog = dialog;
 
     dialog.show({
-      onExport: (format, fontSize, imageWidth, usePromptAsTurnHeading, speakerLabels) =>
+      onExport: (
+        format,
+        fontSize,
+        imageWidth,
+        usePromptAsTurnHeading,
+        speakerLabels,
+        _speakerLabelOverrides,
+        markdownTextOnly,
+      ) =>
         exportRunner.run(
           {
             format,
             fontSize,
             imageWidth,
             usePromptAsTurnHeading,
+            markdownTextOnly,
             speakerLabels,
             initialSelectedMessageId: options?.initialSelectedMessageId || undefined,
           },
@@ -345,6 +354,7 @@ export function createExportEntrypoint(exportSite: ExportSite) {
       },
       initialImageWidth,
       showPromptHeadingOption: true,
+      showTextOnlyOption: true,
       initialSpeakerLabelOverrides: savedSpeakerLabelOverrides,
       speakerNames: {
         title: t('export_speaker_names'),
@@ -369,6 +379,8 @@ export function createExportEntrypoint(exportSite: ExportSite) {
         imageWidthWide: t('export_image_width_wide'),
         promptHeadingLabel: t('export_markdown_prompt_heading'),
         promptHeadingHint: t('export_markdown_prompt_heading_hint'),
+        textOnlyLabel: t('export_markdown_text_only'),
+        textOnlyHint: t('export_markdown_text_only_hint'),
         formatRecommended: t('export_format_recommended'),
         formatDescriptions: {
           json: t('export_format_json_description'),
