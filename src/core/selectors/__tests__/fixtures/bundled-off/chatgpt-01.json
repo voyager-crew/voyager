@@ -62,7 +62,9 @@
   ],
   [
     "profiles/actions.newChat",
-    ["a[data-testid=\"create-new-chat-button\"], a[href=\"/\"], a[href^=\"/u/\"][href$=\"/\"]"]
+    [
+      "a[data-testid=\"create-new-chat-button\"], a[href=\"/\"], a[href^=\"/u/\"][href$=\"/\"], nav button[data-sidebar-destination=\"builtin:home\"]"
+    ]
   ],
   ["profiles/actions.shareButton", ["[data-testid=\"share-chat-button\"]"]],
   [

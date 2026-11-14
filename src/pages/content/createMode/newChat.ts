@@ -21,12 +21,21 @@ export interface NewChatTarget {
 const accountPrefix = (location: Pick<Location, 'pathname'>): string =>
   /^\/u\/\d+/.exec(location.pathname)?.[0] ?? '';
 
-/** A control of the page's own, never one of Voyager's. */
-function nativeLink(doc: Document, selector: string): HTMLElement | null {
-  const found = doc.querySelector<HTMLElement>(selector);
-  const owner = found?.closest('[class^="gv-"], [class*=" gv-"]');
+function isVoyagerOwned(doc: Document, element: Element): boolean {
+  const owner = element.closest('[class^="gv-"], [class*=" gv-"]');
   // Voyager marks the page root too (`gv-aistudio-root`, `body.gv-rtl`); only its own surfaces count.
-  return found && (!owner || owner === doc.documentElement || owner === doc.body) ? found : null;
+  return !!owner && owner !== doc.documentElement && owner !== doc.body;
+}
+
+/**
+ * A control of the page's own that a click can reach. A collapsed panel keeps
+ * its links in the DOM under `inert` (ChatGPT's home panel), where a click does nothing.
+ */
+function nativeLink(doc: Document, selector: string): HTMLElement | null {
+  for (const found of doc.querySelectorAll<HTMLElement>(selector)) {
+    if (!isVoyagerOwned(doc, found) && !found.closest('[inert]')) return found;
+  }
+  return null;
 }
 
 export const NEW_CHAT_TARGETS = {
