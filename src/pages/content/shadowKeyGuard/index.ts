@@ -16,6 +16,11 @@
  * defaults remain intact unless a handler cancels the copy, which cancels the
  * original too. Widget Tab and Escape stay composed for document-level focus and
  * dismissal handlers; text fields keep their existing boundary for every key.
+ *
+ * Firefox's `KeyboardEvent` constructor ignores `composed: false` (a keydown
+ * stays composed). Replaying that event hits this guard again and never reaches
+ * the field, so Enter in a folder name does nothing. A plain `Event` does honor
+ * `composed`, and the field only reads the key fields copied onto it.
  */
 
 /** Host attribute that marks a shadow surface whose fields and widgets are protected. */
@@ -38,8 +43,8 @@ function isInMarkedSurface(field: HTMLElement): boolean {
   return root instanceof ShadowRoot && root.host.hasAttribute(SHADOW_SURFACE_ATTR);
 }
 
-function copyInsideShadow(event: KeyboardEvent): KeyboardEvent {
-  return new KeyboardEvent(event.type, {
+function keyboardInit(event: KeyboardEvent): KeyboardEventInit {
+  return {
     key: event.key,
     code: event.code,
     location: event.location,
@@ -55,13 +60,46 @@ function copyInsideShadow(event: KeyboardEvent): KeyboardEvent {
     cancelable: true,
     // Not composed: the copy stops at the shadow root and never reaches the page.
     composed: false,
+  };
+}
+
+/** Key fields a panel handler reads. A plain Event has none of them. */
+const KEY_FIELDS = [
+  'key',
+  'code',
+  'location',
+  'repeat',
+  'isComposing',
+  'ctrlKey',
+  'shiftKey',
+  'altKey',
+  'metaKey',
+  'keyCode',
+  'charCode',
+  'which',
+] as const;
+
+function copyInsideShadow(event: KeyboardEvent): Event {
+  const keyboard = new KeyboardEvent(event.type, keyboardInit(event));
+  // Firefox ignores composed:false on KeyboardEvent, so this copy would re-enter
+  // the guard and the rename field would never see Enter.
+  if (!keyboard.composed) return keyboard;
+  const copy = new Event(event.type, { bubbles: true, cancelable: true, composed: false });
+  for (const name of KEY_FIELDS) {
+    Object.defineProperty(copy, name, { value: event[name] });
+  }
+  Object.defineProperty(copy, 'getModifierState', {
+    value: (key: string) => event.getModifierState(key),
   });
+  return copy;
 }
 
 /** Install the guard on `win`; the returned function removes it. */
 export function installShadowKeyGuard(win: Window = window): () => void {
+  // Set while a copy is being dispatched, so a composed replay cannot re-enter.
+  let replaying = false;
   const guard = (event: Event) => {
-    if (!(event instanceof KeyboardEvent)) return;
+    if (!(event instanceof KeyboardEvent) || replaying) return;
     const origin = event.composedPath()[0];
     if (!(origin instanceof HTMLElement) || !isInMarkedSurface(origin)) return;
     if (
@@ -71,7 +109,12 @@ export function installShadowKeyGuard(win: Window = window): () => void {
       return;
     event.stopImmediatePropagation();
     const copy = copyInsideShadow(event);
-    origin.dispatchEvent(copy);
+    replaying = true;
+    try {
+      origin.dispatchEvent(copy);
+    } finally {
+      replaying = false;
+    }
     if (copy.defaultPrevented) event.preventDefault();
   };
   for (const type of KEY_EVENTS) win.addEventListener(type, guard, true);

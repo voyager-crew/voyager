@@ -5,7 +5,11 @@ import {
   destroyMountedTrees,
   mountConsumer,
 } from '../../folder/floatingTree/__tests__/treeConsumers';
-import { deepActiveElement } from '../../folder/floatingTree/__tests__/treeDriver';
+import {
+  deepActiveElement,
+  settle,
+  treeDriver,
+} from '../../folder/floatingTree/__tests__/treeDriver';
 import { folder, spyActions } from '../../folder/floatingTree/__tests__/treeFixtures';
 
 vi.mock('webextension-polyfill', () => ({ default: chrome }));
@@ -77,6 +81,56 @@ describe('shadow widget key guard', () => {
     key(rows[0], 'ArrowDown');
     expect(deepActiveElement()).toBe(rows[1]);
     expect(pageSaw).toEqual([]);
+  });
+
+  it('submits a folder rename on Enter when Firefox leaves the replay composed', async () => {
+    // Firefox's KeyboardEvent constructor ignores composed:false, so a keydown
+    // replay re-enters the guard and the name field never sees Enter.
+    const RealKeyboardEvent = window.KeyboardEvent;
+    let made = 0;
+    class FirefoxKeyboardEvent extends RealKeyboardEvent {
+      constructor(type: string, init?: KeyboardEventInit) {
+        made += 1;
+        if (made > 12) throw new Error(`replay loop at ${made}`);
+        super(type, { ...init, composed: true });
+      }
+    }
+    vi.stubGlobal('KeyboardEvent', FirefoxKeyboardEvent);
+    try {
+      const { pageSaw } = guardAndPage();
+      const { tree, actions } = folderTree();
+      const view = treeDriver(tree);
+      view.startRename('Alpha');
+      await settle();
+      view.pressInInput('Escape');
+      await settle();
+      expect(view.nameInput()).toBeNull();
+
+      view.startRename('Alpha');
+      await settle();
+      const input = view.nameInput()!;
+      input.value = '工作';
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Enter',
+          isComposing: true,
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+        }),
+      );
+      expect(actions.onRenameFolder).not.toHaveBeenCalled();
+      expect(input.isConnected).toBe(true);
+
+      view.typeName('Renamed');
+      view.pressInInput('Enter');
+      expect(actions.onRenameFolder).toHaveBeenCalledWith('a', 'Renamed');
+      expect(pageSaw).toEqual([]);
+      expect(made).toBeGreaterThan(0);
+      expect(made).toBeLessThan(12);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('keeps Enter on a tree row away from the page and activates the folder', () => {
