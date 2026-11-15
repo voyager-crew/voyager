@@ -1,6 +1,6 @@
 {
   "turn.user": [
-    ".user-query-bubble-with-background",
+    ".user-query-bubble-with-background, user-query-content > .user-query-container > .file-preview-container:only-child",
     ".user-query-bubble-container",
     ".user-query-container",
     "user-query-content .user-query-bubble-with-background",

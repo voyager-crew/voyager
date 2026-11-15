@@ -110,6 +110,7 @@ export class GeminiTimelineTurnSource implements TimelineTurnSource {
   }
 
   private findFirst(view: GeminiTurnView): TurnSelection | null {
+    // First match wins, so the leading turn.user selector must also match an image-only prompt.
     for (const selector of this.candidates(view)) {
       const element = document.querySelector(selector);
       if (!element) continue;

@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { getGeminiTurnSelectors } from '@/core/gemini/turnSelectors';
+
 import { GeminiTimelineAdapter } from '../GeminiTimelineAdapter';
 
 describe('TimelineManager selector priority compatibility', () => {
@@ -29,7 +31,7 @@ describe('TimelineManager selector priority compatibility', () => {
     expect(source.matches()).toEqual([defaultTurn]);
     source.destroy();
     expect(localStorage.getItem('geminiTimelineUserTurnSelectorAuto')).toBe(
-      '.user-query-bubble-with-background',
+      getGeminiTurnSelectors('turn.user')[0],
     );
   });
 
