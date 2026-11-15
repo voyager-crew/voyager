@@ -60,10 +60,14 @@ export async function loadAuthoritativeSyncPayload(
       ? [StorageKeys.PROMPT_ITEMS]
       : []),
   ]);
+  // A bucket that was never saved is empty. Plugin sites write the key only after the first edit.
+  const storedFolders = Object.hasOwn(stored, folderStorageKey)
+    ? stored[folderStorageKey]
+    : undefined;
   const folders =
-    selection?.site === false
+    selection?.site === false || storedFolders === undefined
       ? { folders: [], folderContents: {} }
-      : parseStoredFolderData(stored[folderStorageKey]);
+      : parseStoredFolderData(storedFolders);
   if (!folders) {
     throw new Error('Local folder data is unavailable or invalid');
   }
