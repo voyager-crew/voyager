@@ -81,8 +81,6 @@ const KEY_FIELDS = [
 
 function copyInsideShadow(event: KeyboardEvent): Event {
   const keyboard = new KeyboardEvent(event.type, keyboardInit(event));
-  // Firefox ignores composed:false on KeyboardEvent, so this copy would re-enter
-  // the guard and the rename field would never see Enter.
   if (!keyboard.composed) return keyboard;
   const copy = new Event(event.type, { bubbles: true, cancelable: true, composed: false });
   for (const name of KEY_FIELDS) {
@@ -96,10 +94,8 @@ function copyInsideShadow(event: KeyboardEvent): Event {
 
 /** Install the guard on `win`; the returned function removes it. */
 export function installShadowKeyGuard(win: Window = window): () => void {
-  // Set while a copy is being dispatched, so a composed replay cannot re-enter.
-  let replaying = false;
   const guard = (event: Event) => {
-    if (!(event instanceof KeyboardEvent) || replaying) return;
+    if (!(event instanceof KeyboardEvent)) return;
     const origin = event.composedPath()[0];
     if (!(origin instanceof HTMLElement) || !isInMarkedSurface(origin)) return;
     if (
@@ -109,12 +105,7 @@ export function installShadowKeyGuard(win: Window = window): () => void {
       return;
     event.stopImmediatePropagation();
     const copy = copyInsideShadow(event);
-    replaying = true;
-    try {
-      origin.dispatchEvent(copy);
-    } finally {
-      replaying = false;
-    }
+    origin.dispatchEvent(copy);
     if (copy.defaultPrevented) event.preventDefault();
   };
   for (const type of KEY_EVENTS) win.addEventListener(type, guard, true);
