@@ -14,7 +14,7 @@ Defina um modelo Gemini™ preferido como padrão para evitar a troca manual a c
 
 - **Configuração Interativa**: Adiciona um botão de "Estrela" diretamente no menu nativo de seleção de modelos do Gemini.
 - **Troca Automática**: Muda automaticamente para o seu modelo preferido sempre que você inicia uma nova conversa.
-- **Nível de raciocínio também**: Marque com estrela a opção **Extended thinking** e os novos chats também começam com ela.
+- **Nível de raciocínio também**: Cada linha de raciocínio, **Low**, **Medium** e **High**, tem sua própria estrela; marque uma e os novos chats começam nesse nível. Uma estrela salva na antiga opção **Extended thinking** agora corresponde a **High**.
 - **Preferência Persistente**: Sua escolha é salva e sincronizada entre os seus dispositivos.
 - **Otimizado para SPA**: É ativado com precisão ao clicar no botão "Novo chat", usar atalhos ou navegar de volta para a página inicial.
 
@@ -24,7 +24,7 @@ Defina um modelo Gemini™ preferido como padrão para evitar a troca manual a c
 2. Passe o mouse sobre o seu modelo preferido e clique no **ícone de Estrela**.
 3. Assim que a estrela estiver **preenchida**, esse modelo será definido como seu padrão.
 4. A extensão selecionará automaticamente este modelo para todos os novos chats.
-5. Para que os novos chats também comecem com o Extended thinking, clique na estrela ao lado de **Extended thinking** no mesmo menu.
+5. Para que os novos chats também comecem em um nível de raciocínio, clique na estrela ao lado de **Low**, **Medium** ou **High** no mesmo menu (no menu antigo, que só tem **Extended thinking**, clique na estrela ao lado dessa opção).
 6. Para desativar, basta clicar no ícone de estrela preenchida novamente.
 
 Para pausar sem perder a sua escolha, desative **Conversas** → **Modelo padrão** no popup do Voyager.

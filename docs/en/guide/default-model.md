@@ -14,7 +14,7 @@ Set a preferred Gemini™ model as your default to avoid manual switching for ev
 
 - **Interactive Setup**: Adds a "Star" button directly into Gemini's native model selection menu.
 - **Auto-Switching**: Automatically switches to your preferred model whenever you start a new conversation.
-- **Thinking Level Too**: Star the **Extended thinking** option and new chats start with it as well.
+- **Thinking Level Too**: Each thinking row, **Low**, **Medium** and **High**, has its own star; star one and new chats start on that level. A star saved on the old **Extended thinking** option now maps to **High**.
 - **Persistent Preference**: Your choice is saved and synced across your devices.
 - **SPA Optimized**: Accurately triggers when clicking the "New Chat" button, using shortcuts, or navigating back to the home page.
 
@@ -24,7 +24,7 @@ Set a preferred Gemini™ model as your default to avoid manual switching for ev
 2. Hover over your preferred model and click the **Star icon**.
 3. Once the star is **filled**, that model is set as your default.
 4. The extension will now automatically select this model for all new chats.
-5. To start new chats with extended thinking as well, click the star next to **Extended thinking** in the same menu.
+5. To start new chats on a thinking level as well, click the star next to **Low**, **Medium** or **High** in the same menu (in the older menu with only **Extended thinking**, click the star next to it).
 6. To unset, simply click the filled star icon again.
 
 To pause it without losing your choice, turn off **Conversations** → **Default Model** in the Voyager popup.

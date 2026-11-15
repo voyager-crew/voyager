@@ -14,7 +14,7 @@ Définissez un modèle Gemini™ préféré par défaut pour éviter de changer 
 
 - **Configuration Interactive** : Ajoute un bouton "Étoile" directement dans le menu natif de sélection de modèle de Gemini.
 - **Commutation Automatique** : Bascule automatiquement vers votre modèle préféré chaque fois que vous commencez une nouvelle conversation.
-- **Niveau de réflexion aussi** : mettez en favori l'option **Réflexion approfondie** (Extended thinking), et les nouvelles conversations démarrent aussi avec elle.
+- **Niveau de réflexion aussi** : chaque niveau de réflexion, **Low**, **Medium** et **High**, a sa propre étoile ; mettez-en un en favori et les nouvelles conversations démarrent à ce niveau. Une étoile enregistrée sur l'ancienne option **Réflexion approfondie** (Extended thinking) correspond désormais à **High**.
 - **Préférence Persistante** : Votre choix est enregistré et synchronisé sur vos appareils.
 - **Optimisé pour SPA** : Se déclenche avec précision lors d'un clic sur le bouton "Nouveau chat", l'utilisation de raccourcis ou le retour à la page d'accueil.
 
@@ -24,7 +24,7 @@ Définissez un modèle Gemini™ préféré par défaut pour éviter de changer 
 2. Survolez votre modèle préféré et cliquez sur l'**icône Étoile**.
 3. Une fois que l'étoile est **pleine**, ce modèle est défini par défaut.
 4. L'extension sélectionnera désormais automatiquement ce modèle pour tous les nouveaux chats.
-5. Pour démarrer aussi les nouvelles conversations avec la réflexion approfondie, cliquez sur l'étoile à côté de **Réflexion approfondie** dans le même menu.
+5. Pour démarrer aussi les nouvelles conversations à un niveau de réflexion, cliquez sur l'étoile à côté de **Low**, **Medium** ou **High** dans le même menu (dans l'ancien menu qui ne propose que **Réflexion approfondie**, cliquez sur l'étoile à côté de cette option).
 6. Pour annuler, cliquez simplement à nouveau sur l'icône de l'étoile pleine.
 
 Pour la mettre en pause sans perdre votre choix, désactivez **Conversations** → **Modèle par défaut** dans la popup de Voyager.
