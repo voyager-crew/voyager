@@ -38,13 +38,22 @@ function rangeIntersectsFormula(range: Range): boolean {
   return false;
 }
 
+/**
+ * ChatGPT keeps the TeX on a wrapper around the rendered formula. The wrapper
+ * is outside FORMULA_TARGET_SELECTOR, so a clone of the formula alone cannot
+ * see it.
+ */
+function latexBoundary(formula: Element): Element {
+  return formula.closest('[data-math-source]') ?? formula;
+}
+
 /** Cover a formula the selection only cuts through, without touching the live range. */
 function expandToWholeFormulas(range: Range): Range {
   const expanded = range.cloneRange();
   const startFormula = formulaHost(expanded.startContainer);
-  if (startFormula) expanded.setStartBefore(startFormula);
+  if (startFormula) expanded.setStartBefore(latexBoundary(startFormula));
   const endFormula = formulaHost(expanded.endContainer);
-  if (endFormula) expanded.setEndAfter(endFormula);
+  if (endFormula) expanded.setEndAfter(latexBoundary(endFormula));
   return expanded;
 }
 

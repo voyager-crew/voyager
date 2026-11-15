@@ -75,6 +75,25 @@ describe('Formula selection copy', () => {
     expect(selection.getRangeAt(0).endOffset).toBe(1);
   });
 
+  it('reads a ChatGPT display formula from the source wrapper around a partial selection', () => {
+    document.body.innerHTML =
+      '<p id="line">Before <span data-math-source="\\frac{a}{b}"><span class="katex-display"><span class="katex"><span id="visual">ab</span></span></span></span> after</p>';
+    const visual = document.getElementById('visual')!.firstChild!;
+    const range = document.createRange();
+    range.setStart(visual, 0);
+    range.setEnd(visual, 1);
+    const selection = document.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    context.service.initialize();
+
+    const { event, setData } = dispatchCopy(document.getElementById('line')!);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(setData).toHaveBeenCalledWith('text/plain', '$$\\frac{a}{b}$$');
+    expect(selection.getRangeAt(0).startContainer).toBe(visual);
+  });
+
   it('leaves a selection with no formula to the browser', () => {
     document.body.innerHTML = '<p id="plain">Just words</p>';
     const plain = document.getElementById('plain')!;
