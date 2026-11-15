@@ -7,7 +7,7 @@
 
 `site.json` 包含 `id`（与目录名相同）、`label`、`matches`、`selectors`、`theme`、`brandColor`、`capabilities`，以及可选的 `conversationIdPattern` 和 `turnKeyAttributes`。`turnKeyAttributes` 指定在页面重新渲染用户消息时，用于保持其身份的属性。发送追踪（用于文件夹的 Activity 和时间线时间戳）只会在设置了该字段、`composer`、`userTurn` 和 `conversationIdPattern` 的站点上运行。`src/features/plugins/sites/siteAdapterData.ts` 中的 `validateSiteAdapterData` 负责校验它；`bun run catalog:build` 会在发布前校验每个站点和插件。
 
-`site.json` 就是站点适配器本身，只是写成了数据。目前的插件平台是 ChatGPT、Claude、DeepSeek 和 Kimi。Gemini 和 AI Studio 是 Voyager 的原生界面，同样有各自的 `site.json`（`catalog/sites/gemini/`、`catalog/sites/aistudio/`），但它随扩展打包，不会发布到远端目录；`sites/adapters/` 下的 `gemini.ts`、`aistudio.ts`、`claude.ts`、`chatgpt.ts`、`deepseek.ts` 现在都只是 `site.json` 的一行壳，要改就改 JSON，不要改 TypeScript。
+`site.json` 就是站点适配器本身，只是写成了数据。目前的插件平台是 ChatGPT、Claude、DeepSeek、Kimi 和 Grok。Gemini 和 AI Studio 是 Voyager 的原生界面，同样有各自的 `site.json`（`catalog/sites/gemini/`、`catalog/sites/aistudio/`），但它随扩展打包，不会发布到远端目录；`sites/adapters/` 下的 `gemini.ts`、`aistudio.ts`、`claude.ts`、`chatgpt.ts`、`deepseek.ts` 现在都只是 `site.json` 的一行壳，要改就改 JSON，不要改 TypeScript。
 
 发布的分站点目录里也带上了站点数据，所以选择器修复不发新版本也能到达用户。全新的站点仍然需要扩展本身的支持，因为它还需要随包提供的主机权限和 content script 注册。
 

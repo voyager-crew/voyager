@@ -19,7 +19,7 @@ site that sets it, along with `composer`, `userTurn`, and a
 `src/features/plugins/sites/siteAdapterData.ts` validates it, and
 `bun run catalog:build` validates every site and plugin before publishing.
 
-Every plugin platform is data. Sites today are ChatGPT, Claude, DeepSeek, and Kimi.
+Every plugin platform is data. Sites today are ChatGPT, Claude, DeepSeek, Kimi, and Grok.
 Gemini and AI Studio are native Voyager surfaces with their own `site.json`
 (`catalog/sites/gemini/` and `catalog/sites/aistudio/`), but it ships inside the
 package and is never published to the remote catalog. All five adapters,

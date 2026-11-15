@@ -113,7 +113,7 @@ export const SITE_KNOWLEDGE_OWNERS: readonly SiteKnowledgeOwner[] = [
   {
     kind: 'table',
     path: 'src/core/icons/platformLogos.ts',
-    sites: ['gemini', 'aistudio', 'chatgpt', 'claude', 'deepseek', 'kimi'],
+    sites: ['gemini', 'aistudio', 'chatgpt', 'claude', 'deepseek', 'grok', 'kimi'],
     reason: 'Bundled platform logo identity table.',
   },
   {

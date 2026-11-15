@@ -145,7 +145,7 @@ export function localRulesSection(
       ...(audience === 'agent'
         ? [
             '- On Gemini and AI Studio: no "theme", and a "native" op only for the primitives listed for that site (Voyager runs its other features there itself).',
-            '- "theme": { "brand": "#rrggbb" } optionally recolors Voyager’s own UI on Claude, ChatGPT, DeepSeek or Kimi. "requires" is optional: native ops already imply "requires.handlers". "requires.formFactors" defaults to ["desktop", "mobile"]; write ["desktop"] only for a plugin that cannot work on a phone.',
+            '- "theme": { "brand": "#rrggbb" } optionally recolors Voyager’s own UI on Claude, ChatGPT, DeepSeek, Kimi or Grok. "requires" is optional: native ops already imply "requires.handlers". "requires.formFactors" defaults to ["desktop", "mobile"]; write ["desktop"] only for a plugin that cannot work on a phone.',
             '- The site-check route fields ("routeWords", "accountSlots", "conversationRoutes") and the Prompt Manager "prompt" section come only from Voyager’s packaged site.json, so a local plugin cannot set them.',
           ]
         : primitives

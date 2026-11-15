@@ -1,0 +1,61 @@
+{
+  "$schema": "https://voyager.nagi.fun/plugin.schema.json",
+  "id": "voyager.grok-site-check",
+  "name": "Grok · Site check",
+  "version": "1.0.0",
+  "description": "Report a broken Grok page: a Site check button lists every selector Voyager relies on here with its match count, lets you pick the broken part, and previews a report with no message text before you copy it or open an issue.",
+  "i18n": {
+    "ar": {
+      "name": "Grok · فحص الموقع",
+      "description": "أبلغ عن صفحة معطلة في Grok: يعرض زر «فحص الموقع» كل محدد يعتمد عليه Voyager هنا مع عدد تطابقاته، ويتيح لك اختيار الجزء المعطل، ويعرض تقريرًا بلا نص الرسائل قبل نسخه أو فتح بلاغ."
+    },
+    "es": {
+      "name": "Grok · Comprobación del sitio",
+      "description": "Informa de una página de Grok rota: el botón Comprobación del sitio enumera cada selector del que depende Voyager aquí con sus coincidencias, te deja elegir la parte rota y muestra un informe sin texto de mensajes antes de copiarlo o abrir una incidencia."
+    },
+    "fr": {
+      "name": "Grok · Vérification du site",
+      "description": "Signalez une page Grok cassée : le bouton Vérification du site liste chaque sélecteur dont Voyager dépend ici avec son nombre de résultats, vous laisse choisir la partie cassée et prévisualise un rapport sans texte des messages avant de le copier ou d’ouvrir un ticket."
+    },
+    "ja": {
+      "name": "Grok · サイトチェック",
+      "description": "Grok のページの不具合を報告：「サイトチェック」ボタンが Voyager がここで使うすべてのセレクターと一致数を一覧にし、壊れた部分を選択でき、コピーや Issue 作成の前にメッセージ本文を含まないレポートをプレビューできます。"
+    },
+    "ko": {
+      "name": "Grok · 사이트 점검",
+      "description": "Grok 페이지의 문제를 보고합니다. '사이트 점검' 버튼이 Voyager가 여기서 쓰는 모든 선택자와 일치 수를 보여 주고, 고장 난 부분을 고를 수 있으며, 복사하거나 이슈를 열기 전에 메시지 본문이 없는 보고서를 미리 봅니다."
+    },
+    "pt": {
+      "name": "Grok · Verificação do site",
+      "description": "Relate uma página do Grok quebrada: o botão Verificação do site lista cada seletor de que o Voyager depende aqui com o número de correspondências, permite escolher a parte quebrada e mostra um relatório sem texto das mensagens antes de copiá-lo ou abrir uma issue."
+    },
+    "ru": {
+      "name": "Grok · Проверка сайта",
+      "description": "Сообщите о сломанной странице Grok: кнопка «Проверка сайта» показывает каждый селектор, на который здесь опирается Voyager, и число совпадений, позволяет выбрать сломанную часть и показывает отчёт без текста сообщений перед копированием или открытием issue."
+    },
+    "zh": {
+      "name": "Grok · 站点检查",
+      "description": "反馈 Grok 页面的问题：「站点检查」按钮会列出 Voyager 在此依赖的每个选择器及其匹配数，可选取出问题的部分，并在复制或打开 Issue 之前预览不含消息文本的报告。"
+    },
+    "zh_TW": {
+      "name": "Grok · 網站檢查",
+      "description": "回報 Grok 頁面的問題：「網站檢查」按鈕會列出 Voyager 在此依賴的每個選擇器及其符合數，可選取有問題的部分，並在複製或開啟 Issue 之前預覽不含訊息文字的報告。"
+    }
+  },
+  "author": "voyager-official",
+  "category": "other",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/voyager-crew/voyager/tree/main/src/features/plugins/catalog/sites/grok/plugins/site-check",
+  "engine": ">=1.10.0",
+  "tier": "declarative",
+  "matches": ["https://grok.com/*"],
+  "contributes": {
+    "domOps": [
+      {
+        "op": "native",
+        "handler": "siteCheck",
+        "params": {}
+      }
+    ]
+  }
+}

@@ -26,6 +26,7 @@ export const PLUGIN_SITES = [
   'claude',
   'deepseek',
   'kimi',
+  'grok',
 ] as const;
 export type PluginSite = (typeof PLUGIN_SITES)[number];
 
@@ -38,6 +39,7 @@ const NAMING_SITES: readonly PluginSite[] = [
   'claude',
   'deepseek',
   'kimi',
+  'grok',
   'gemini',
   'aistudio',
 ];
@@ -49,6 +51,7 @@ const SITE_HOSTS: Readonly<Record<PluginSite, readonly string[]>> = {
   claude: ['claude.ai'],
   deepseek: ['chat.deepseek.com'],
   kimi: ['www.kimi.com'],
+  grok: ['grok.com'],
 };
 
 /** Rows in reading order: the features people come for first. Unlisted ones follow. */

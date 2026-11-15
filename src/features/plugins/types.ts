@@ -38,6 +38,7 @@ export const KNOWN_SITE_IDS = [
   'chatgpt',
   'claude',
   'deepseek',
+  'grok',
   'kimi',
 ] as const;
 export type KnownSiteId = (typeof KNOWN_SITE_IDS)[number];

@@ -46,6 +46,7 @@ describe('build-plugin-catalog', () => {
         'chatgpt.com',
         'claude.ai',
         'gemini.google.com',
+        'grok.com',
         'www.kimi.com',
       ].map((host) => `${host}.json`),
     );

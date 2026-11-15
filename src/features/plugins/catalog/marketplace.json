@@ -234,6 +234,11 @@
       "official": true
     },
     {
+      "name": "grok-site-check",
+      "source": "sites/grok/plugins/site-check/plugin.json",
+      "official": true
+    },
+    {
       "name": "chatgpt-prompt-manager",
       "source": "sites/chatgpt/plugins/prompt-manager/plugin.json",
       "official": true

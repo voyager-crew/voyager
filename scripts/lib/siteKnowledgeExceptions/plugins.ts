@@ -134,6 +134,7 @@ export const PLUGINS_SITE_KNOWLEDGE_EXCEPTIONS: readonly SiteKnowledgeException[
       chatgpt: 1,
       claude: 1,
       deepseek: 1,
+      grok: 1,
       kimi: 1,
     },
     reason: 'Hand-written known-site list for plugin authoring autocomplete.',

@@ -7,7 +7,7 @@
 
 `site.json` には、`id`（ディレクトリ名と同じ）、`label`、`matches`、`selectors`、`theme`、`brandColor`、`capabilities` と、任意の `conversationIdPattern` および `turnKeyAttributes` が含まれます。`turnKeyAttributes` は、ページが再描画されたときにユーザーのメッセージの識別子を保つ属性の名前を指定します。送信の追跡（フォルダの Activity やタイムラインのタイムスタンプで使われます）は、この属性と `composer`、`userTurn`、`conversationIdPattern` を設定したサイトでのみ動作します。`src/features/plugins/sites/siteAdapterData.ts` の `validateSiteAdapterData` がこれを検証し、`bun run catalog:build` は公開の前にすべてのサイトとプラグインを検証します。
 
-`site.json` はサイトアダプタそのものをデータとして書いたものです。現在のプラグイン対応サイトは ChatGPT、Claude、DeepSeek、Kimi です。Gemini と AI Studio は Voyager のネイティブ画面で、こちらも専用の `site.json`（`catalog/sites/gemini/`、`catalog/sites/aistudio/`）を持ちますが、拡張機能に同梱され、リモートカタログには公開されません。`sites/adapters/gemini.ts`、`aistudio.ts`、`claude.ts`、`chatgpt.ts`、`deepseek.ts` はいずれも `site.json` を読むだけの 1 行のシェルです。TypeScript ではなく JSON を編集してください。
+`site.json` はサイトアダプタそのものをデータとして書いたものです。現在のプラグイン対応サイトは ChatGPT、Claude、DeepSeek、Kimi、Grok です。Gemini と AI Studio は Voyager のネイティブ画面で、こちらも専用の `site.json`（`catalog/sites/gemini/`、`catalog/sites/aistudio/`）を持ちますが、拡張機能に同梱され、リモートカタログには公開されません。`sites/adapters/gemini.ts`、`aistudio.ts`、`claude.ts`、`chatgpt.ts`、`deepseek.ts` はいずれも `site.json` を読むだけの 1 行のシェルです。TypeScript ではなく JSON を編集してください。
 
 公開されるホスト別カタログはサイトデータも運ぶため、セレクタ修正は拡張機能をリリースしなくてもユーザーに届きます。ただし、まったく新しいサイトには、やはり拡張機能の中に含める必要があります。ホスト権限とコンテンツスクリプトの登録が、パッケージに組み込まれているためです。
 

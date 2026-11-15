@@ -76,6 +76,15 @@ The user needs desktop Chrome or Edge 133 or later, with "Allow User Scripts" tu
   - scrollContainer: `.ds-virtual-list.ds-scroll-area`
   - composerRoot: `div:has(> div > textarea.ds-scroll-area)`
   - sendButton: `div:has(> div > textarea.ds-scroll-area) div.ds-button--primary.ds-button--circle[role="button"]`
+- Grok:
+  - userTurn: `div[data-testid="user-message"]`
+  - reply (one per AI reply): `div[data-testid="assistant-message"]`
+  - thinkingBlock: `[data-testid="conversation-thought"]`
+  - composer: `div.tiptap.ProseMirror.query-bar-editor[contenteditable="true"][role="textbox"]`
+  - sidebar: `aside#app-sidebar`
+  - scrollContainer: `div[data-testid="chat-transcript-scroller"]`
+  - composerRoot: `form:has([data-testid="chat-input"])`
+  - sendButton: `button[data-testid="chat-submit"]`
 - Kimi:
   - userTurn: `.segment-user`
   - reply (one per AI reply): `.segment-assistant`
