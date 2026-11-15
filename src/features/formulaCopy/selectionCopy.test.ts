@@ -53,6 +53,18 @@ describe('Formula selection copy', () => {
     expect(context.writeTextMock).not.toHaveBeenCalled();
   });
 
+  it('copies a Gemini display formula whose container holds data-math as $$...$$', () => {
+    document.body.innerHTML =
+      '<div id="reply"><p>Size <span class="math-inline" data-math="n"><span class="katex">n</span></span> rows:</p><div class="math-block" data-math="\\frac{1}{n}"><span class="katex-display"><span class="katex">1n</span></span></div><p>Done.</p></div>';
+    const reply = document.getElementById('reply')!;
+    selectContents(reply);
+    context.service.initialize();
+
+    const { setData } = dispatchCopy(reply);
+
+    expect(setData).toHaveBeenCalledWith('text/plain', 'Size $n$ rows:\n$$\\frac{1}{n}$$\nDone.');
+  });
+
   it('expands an endpoint inside a formula to the whole formula LaTeX', () => {
     document.body.innerHTML =
       '<p id="line"><span class="katex-display" id="formula"><span class="katex"><span class="katex-html" aria-hidden="true" id="visual">ab</span><math><semantics><annotation encoding="application/x-tex">\\frac{a}{b}</annotation></semantics></math></span></span> tail</p>';

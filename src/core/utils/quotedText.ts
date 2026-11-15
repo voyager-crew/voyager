@@ -16,7 +16,10 @@ export function replaceMathWithLatex(root: DocumentFragment): void {
       ? GEMINI_FORMULA_PACKAGED['formula.quote']
       : '.math-inline, .math-block';
   for (const container of Array.from(root.querySelectorAll(containers))) {
-    const dataMathEl = container.querySelector('[data-math]');
+    // Gemini now puts data-math on the block container itself, not only on a child.
+    const dataMathEl = container.matches('[data-math]')
+      ? container
+      : container.querySelector('[data-math]');
     const latex = dataMathEl?.getAttribute('data-math');
     if (latex) {
       const isBlock = container.classList.contains('math-block');
