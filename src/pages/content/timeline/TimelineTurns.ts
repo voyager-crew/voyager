@@ -163,7 +163,11 @@ export class TimelineTurns {
         el.textContent = el.dataset.userLatexOriginal ?? '';
       });
 
-      return this.normalizeText(clone.textContent || '');
+      // An image-only prompt has no text; the host's own alt text names it in the page language.
+      return (
+        this.normalizeText(clone.textContent || '') ||
+        this.normalizeText(element.querySelector('img[alt]')?.getAttribute('alt') ?? '')
+      );
     } catch {
       return this.normalizeText(element.textContent || '');
     }

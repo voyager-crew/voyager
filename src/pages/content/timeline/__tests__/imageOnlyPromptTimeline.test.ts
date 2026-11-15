@@ -91,9 +91,12 @@ describe('image-only Gemini prompts', () => {
     await source.initialize(new AbortController().signal);
     const markers = source.read([]).markers;
 
-    // An empty image summary must survive dedupe, in document order, without stealing the bubble.
+    // The image prompt keeps document order without stealing the bubble, named by Gemini's alt text.
     expect(markers.map((marker) => marker.element)).toEqual([bubble, imageTurn]);
-    expect(markers.map((marker) => marker.summary)).toEqual(['Describe this', '']);
+    expect(markers.map((marker) => marker.summary)).toEqual([
+      'Describe this',
+      'Uploaded image preview',
+    ]);
     expect(markers.map((marker) => marker.id)).toEqual([
       's-aaaaaaaaaaaaaaaa',
       's-bbbbbbbbbbbbbbbb',
