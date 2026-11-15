@@ -21,5 +21,11 @@
   "brandColor": "#6b7280",
   "capabilities": ["chat", "sidebar", "composer", "darkMode"],
   "conversationIdPattern": "^/c/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/?",
-  "routeWords": ["c"]
+  "routeWords": ["c"],
+  "export": {
+    "version": 1,
+    "read": "virtual",
+    "messageKey": "data-plane-row",
+    "title": "[data-testid=\"conversation-title\"]"
+  }
 }

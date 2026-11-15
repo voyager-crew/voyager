@@ -10,11 +10,8 @@ import type { ExportMessage } from '../conversationCollector';
 import { throwIfExportCancelled } from '../exportCancellation';
 import type { ExportSite, ExportTurnSession } from '../exportSite';
 import { siteTurnSelector } from '../toolbarTargets';
-import {
-  captureCatalogWindow,
-  readCatalogConversation,
-  type CatalogSnapshot,
-} from './catalogReader';
+import { captureCatalogWindow, type CatalogSnapshot } from './catalogReader';
+import { readCatalogOrGrokConversation } from './grokConversation';
 
 /** Keep consecutive prompts separate; selecting only a reply keeps its original exchange. */
 function selectedTurns(
@@ -126,7 +123,7 @@ export function createCatalogExportSite(provided: SiteAdapter): ExportSite {
       action: { label: getTranslationSync('pm_cancel'), run: cancel },
     });
     try {
-      const result = await readCatalogConversation(site, adapter, {
+      const result = await readCatalogOrGrokConversation(site, adapter, {
         ...options,
         signal: owner.signal,
       });
