@@ -278,7 +278,7 @@ export const OFFICIAL_PLUGIN_ENTRIES: readonly OfficialPluginEntry[] = [
     searchKeys: ['enableUserLatexRendering', 'enableUserLatexRenderingHint'],
     searchAliases: ['latex math formula katex 公式 数学'],
   },
-  // Two ids, one switch and one format: each site lists its own, with the same panel.
+  // Two ids, one switch, one format and one selection conversion: each site lists its own, with the same panel.
   ...[OFFICIAL_PLUGIN_IDS.geminiFormulaCopy, OFFICIAL_PLUGIN_IDS.aistudioFormulaCopy].map(
     (id): OfficialPluginEntry => ({
       id,
@@ -292,6 +292,8 @@ export const OFFICIAL_PLUGIN_ENTRIES: readonly OfficialPluginEntry[] = [
         'formulaCopyFormatUnicodeMath',
         'formulaCopyFormatNoDollar',
         'formulaCopyFormatNotion',
+        'formulaCopySelectionLatex',
+        'formulaCopySelectionLatexHint',
       ],
       searchAliases: ['math equation latex unicode notion copy formula 数学 公式 复制'],
       panel: 'formulaCopy',

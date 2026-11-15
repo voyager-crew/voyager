@@ -12,16 +12,13 @@
  * time (`runtime/resourceClaims.ts`).
  */
 import { activateFormulaCopy } from '@/features/formulaCopy';
+import { FORMULA_TARGET_SELECTOR } from '@/features/formulaCopy/formulaSource';
 
 import type { ManifestIssue } from '../../manifest/validate';
 import { getPrimitiveContract } from '../contracts';
 import type { Primitive } from '../types';
 
 export type FormulaCopyParams = Readonly<Record<string, never>>;
-
-/** Markup the service recognises (Gemini data-math, KaTeX, MathJax, AI Studio). */
-const FORMULA_TARGET_SELECTOR =
-  '[data-math], .katex, .katex-display, ms-katex, .math-inline, .math-display, .math-block, mjx-container';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

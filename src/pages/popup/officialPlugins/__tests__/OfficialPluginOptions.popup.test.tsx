@@ -161,6 +161,26 @@ describe('official plugin rows with options', () => {
       },
     );
 
+    it.each([
+      ['missing', undefined, true],
+      ['false', false, false],
+      ['true', true, true],
+    ] as const)(
+      'shows a %s stored selection-copy switch the way the formula runtime reads it',
+      async (_label, stored, expected) => {
+        if (stored !== undefined) sync[StorageKeys.FORMULA_COPY_SELECTION_LATEX] = stored;
+        await mount();
+        const selectionCopy = row(
+          OFFICIAL_PLUGIN_IDS.geminiFormulaCopy,
+        )!.querySelector<HTMLInputElement>(`input[aria-label="${en.formulaCopySelectionLatex}"]`)!;
+        expect(selectionCopy.checked).toBe(expected);
+        await act(async () => selectionCopy.click());
+        expect(extensionApi.storage.sync.set).toHaveBeenCalledExactlyOnceWith({
+          [StorageKeys.FORMULA_COPY_SELECTION_LATEX]: !expected,
+        });
+      },
+    );
+
     it('a search that lists a row with options shows them', async () => {
       local[StorageKeys.GV_POPUP_SETTINGS_SEARCH_QUERY] = en.formulaCopyFormatNotion;
       await mount();

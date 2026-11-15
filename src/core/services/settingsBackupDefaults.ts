@@ -51,6 +51,7 @@ export const BACKUPABLE_SYNC_SETTINGS_DEFAULTS = {
   [StorageKeys.LANGUAGE]: null,
   [StorageKeys.FORMULA_COPY_ENABLED]: true,
   [StorageKeys.FORMULA_COPY_FORMAT]: 'latex',
+  [StorageKeys.FORMULA_COPY_SELECTION_LATEX]: true,
   [StorageKeys.WATERMARK_REMOVER_ENABLED]: null,
   [StorageKeys.WATERMARK_DOWNLOAD_ENABLED]: null,
   [StorageKeys.WATERMARK_PREVIEW_ENABLED]: null,

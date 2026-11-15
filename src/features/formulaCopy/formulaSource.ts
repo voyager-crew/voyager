@@ -4,6 +4,10 @@ import {
 } from '@/core/gemini/math/formula';
 import { nativeStartPointSiteForHost } from '@/features/plugins/sites/hostPolicy';
 
+/** Markup the formula-copy service recognises (Gemini, KaTeX, MathJax, AI Studio). */
+export const FORMULA_TARGET_SELECTOR =
+  '[data-math], .katex, .katex-display, ms-katex, .math-inline, .math-display, .math-block, mjx-container';
+
 /**
  * Find the nearest math element in the DOM tree
  * Supports both Gemini (data-math attribute) and AI Studio (ms-katex container)

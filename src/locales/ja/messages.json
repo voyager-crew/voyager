@@ -582,6 +582,14 @@
     "message": "このスイッチとコピー形式は Gemini と AI Studio の両方に適用されます。",
     "description": "Formula copy card: says the switch and the format are shared by Gemini and AI Studio"
   },
+  "formulaCopySelectionLatex": {
+    "message": "選択範囲をコピーするときに数式を変換",
+    "description": "数式のコピー形式の横にある選択コピーのスイッチ"
+  },
+  "formulaCopySelectionLatexHint": {
+    "message": "回答の一部を選択して Ctrl/Cmd+C を押すと、数式が LaTeX としてコピーされます。",
+    "description": "選択コピーのスイッチの説明"
+  },
   "formulaCopyFormatNoDollar": {
     "message": "LaTeX (ドル記号なし)",
     "description": "LaTeX format option without dollar signs"

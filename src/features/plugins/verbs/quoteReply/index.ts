@@ -2,12 +2,12 @@ import { findComposer, insertIntoComposer, readComposer } from '@/core/services/
 import { LAYER_ATTR, isVoyagerLayerEvent } from '@/core/ui/layer';
 import { createToaster } from '@/core/ui/toast/toaster';
 import { formatQuotedText } from '@/core/utils/quotedText';
+import { extractQuoteText } from '@/features/formulaCopy/extractQuoteText';
 import { getTranslationSync, onCachedLanguageChange } from '@/utils/i18n';
 
 import { getPrimitiveContract } from '../contracts';
 import type { Primitive } from '../types';
 import './messages';
-import { extractQuoteText } from './text';
 
 export type QuoteReplyParams = Readonly<Record<string, never>>;
 

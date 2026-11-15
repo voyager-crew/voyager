@@ -40,12 +40,34 @@ function isFormulaCopyFormat(value: unknown): value is FormulaCopyFormat {
 /** The copy format Gemini and AI Studio share, and a note that the switch is shared too. */
 function FormulaCopyPanel({ values, write, idPrefix, t }: OfficialPanelProps) {
   const stored = values[StorageKeys.FORMULA_COPY_FORMAT];
-  // The runtime reads anything else as LaTeX.
+  // The runtime reads anything else as LaTeX, and a missing selection flag as on.
   const format: FormulaCopyFormat = isFormulaCopyFormat(stored) ? stored : 'latex';
+  const selectionLatex = values[StorageKeys.FORMULA_COPY_SELECTION_LATEX] !== false;
   const legendId = `${idPrefix}-format`;
+  const selectionHintId = `${idPrefix}-selection-latex-hint`;
   return (
     <div className="space-y-2">
       <p className="text-muted-foreground text-[11px] leading-snug">{t('formulaCopyScopeNote')}</p>
+      <div className="flex items-start justify-between gap-3">
+        <span className="min-w-0 flex-1">
+          <span className="text-foreground/80 block text-xs">{t('formulaCopySelectionLatex')}</span>
+          <span
+            id={selectionHintId}
+            className="text-muted-foreground mt-0.5 block text-[11px] leading-snug"
+          >
+            {t('formulaCopySelectionLatexHint')}
+          </span>
+        </span>
+        <Switch
+          size="sm"
+          checked={selectionLatex}
+          aria-label={t('formulaCopySelectionLatex')}
+          aria-describedby={selectionHintId}
+          onChange={(event) =>
+            write({ [StorageKeys.FORMULA_COPY_SELECTION_LATEX]: event.target.checked })
+          }
+        />
+      </div>
       <div role="radiogroup" aria-labelledby={legendId} className="space-y-1.5">
         <p id={legendId} className="text-foreground/80 text-xs">
           {t('formulaCopyFormatHint')}

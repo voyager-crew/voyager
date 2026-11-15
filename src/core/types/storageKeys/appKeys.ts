@@ -7,6 +7,8 @@ export const APP_STORAGE_KEYS = {
   LANGUAGE: 'language',
   FORMULA_COPY_ENABLED: 'gvFormulaCopyEnabled',
   FORMULA_COPY_FORMAT: 'gvFormulaCopyFormat',
+  // Default on (`!== false`): a selection copy rewrites formulas as LaTeX.
+  FORMULA_COPY_SELECTION_LATEX: 'gvFormulaCopySelectionLatex',
   // Legacy single-toggle key. Kept for migration: when neither
   // WATERMARK_DOWNLOAD_ENABLED nor WATERMARK_PREVIEW_ENABLED is present, this
   // value (defaulting to true) is used to derive both flags so existing users

@@ -582,6 +582,14 @@
     "message": "이 스위치와 복사 형식은 Gemini와 AI Studio 모두에 적용됩니다.",
     "description": "Formula copy card: says the switch and the format are shared by Gemini and AI Studio"
   },
+  "formulaCopySelectionLatex": {
+    "message": "선택 영역을 복사할 때 수식 변환",
+    "description": "수식 복사 형식 옆의 선택 복사 스위치"
+  },
+  "formulaCopySelectionLatexHint": {
+    "message": "답변의 일부를 선택하고 Ctrl/Cmd+C를 누르면 수식이 LaTeX로 복사됩니다.",
+    "description": "선택 복사 스위치 설명"
+  },
   "formulaCopyFormatNoDollar": {
     "message": "LaTeX (달러 기호 없음)",
     "description": "LaTeX format option without dollar signs"

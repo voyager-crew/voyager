@@ -582,6 +582,14 @@
     "message": "Этот переключатель и формат копирования действуют и в Gemini, и в AI Studio.",
     "description": "Formula copy card: says the switch and the format are shared by Gemini and AI Studio"
   },
+  "formulaCopySelectionLatex": {
+    "message": "Преобразовывать формулы при копировании выделения",
+    "description": "Переключатель копирования выделения рядом с форматом формулы"
+  },
+  "formulaCopySelectionLatexHint": {
+    "message": "Если выделить часть ответа и нажать Ctrl/Cmd+C, формулы копируются как LaTeX.",
+    "description": "Пояснение к переключателю копирования выделения"
+  },
   "formulaCopyFormatNoDollar": {
     "message": "LaTeX (без знака доллара)",
     "description": "LaTeX format option without dollar signs"

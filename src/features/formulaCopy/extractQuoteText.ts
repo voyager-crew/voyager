@@ -1,5 +1,6 @@
 import { replaceMathWithLatex } from '@/core/utils/quotedText';
-import { extractLatexSource, isDisplayMode } from '@/features/formulaCopy/formulaSource';
+
+import { extractLatexSource, isDisplayMode } from './formulaSource';
 
 const BLOCK = /^(P|DIV|LI|UL|OL|BLOCKQUOTE|PRE|H[1-6]|TR)$/;
 
@@ -26,7 +27,10 @@ function selectedText(node: Node): string {
     .join('');
 }
 
-/** Read only a clone: rendered math has duplicate visual/MathML text, but one TeX source. */
+/**
+ * Read only a clone: rendered math has duplicate visual/MathML text, but one TeX source.
+ * Quote reply and selection copy share this reading.
+ */
 export function extractQuoteText(range: Range): string {
   const root = range.commonAncestorContainer;
   if (

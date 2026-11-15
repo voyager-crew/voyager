@@ -30,31 +30,9 @@ describe('Formula copy service', () => {
     expect(document.documentElement.classList.contains('gv-formula-copy-enabled')).toBe(false);
   });
 
-  it.each([
-    ['ordinary text and arrow', 'plain-arrow'],
-    ['ordinary text containing a host math-wrapped arrow', 'wrapped-arrow'],
-    ['ordinary text and a real formula', 'formula'],
-  ])('does not intercept native copy events for %s', (_label, fixtureKind) => {
+  it('does not intercept a native copy of ordinary text', () => {
     const selection = document.createElement('p');
-    if (fixtureKind === 'wrapped-arrow') {
-      selection.append('A ');
-      const wrapper = document.createElement('span');
-      wrapper.className = 'math-inline';
-      const arrow = document.createElement('span');
-      arrow.setAttribute('data-math', '\\rightarrow');
-      arrow.textContent = '→';
-      wrapper.appendChild(arrow);
-      selection.append(wrapper, ' B');
-    } else if (fixtureKind === 'formula') {
-      selection.append('Result: ');
-      const formula = document.createElement('span');
-      formula.className = 'math-inline';
-      formula.setAttribute('data-math', 'x^2');
-      formula.textContent = 'x²';
-      selection.append(formula);
-    } else {
-      selection.textContent = 'A → B';
-    }
+    selection.textContent = 'A → B';
     document.body.appendChild(selection);
     const range = document.createRange();
     range.selectNodeContents(selection);

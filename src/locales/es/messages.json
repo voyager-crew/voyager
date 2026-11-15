@@ -582,6 +582,14 @@
     "message": "Este interruptor y el formato de copia se aplican tanto a Gemini como a AI Studio.",
     "description": "Formula copy card: says the switch and the format are shared by Gemini and AI Studio"
   },
+  "formulaCopySelectionLatex": {
+    "message": "Convertir las fórmulas al copiar una selección",
+    "description": "Interruptor de copia de selección junto al formato de fórmula"
+  },
+  "formulaCopySelectionLatexHint": {
+    "message": "Al seleccionar parte de una respuesta y pulsar Ctrl/Cmd+C, sus fórmulas se copian como LaTeX.",
+    "description": "Explicación del interruptor de copia de selección"
+  },
   "formulaCopyFormatNoDollar": {
     "message": "LaTeX (Sin signo de dólar)",
     "description": "LaTeX format option without dollar signs"

@@ -582,6 +582,14 @@
     "message": "此开关和复制格式同时作用于 Gemini 与 AI Studio。",
     "description": "Formula copy card: says the switch and the format are shared by Gemini and AI Studio"
   },
+  "formulaCopySelectionLatex": {
+    "message": "复制选中内容时转换公式",
+    "description": "公式复制格式旁的选区复制开关"
+  },
+  "formulaCopySelectionLatexHint": {
+    "message": "选中回答的一部分按 Ctrl/Cmd+C 时，其中的公式会复制为 LaTeX。",
+    "description": "选区复制开关的说明"
+  },
   "formulaCopyFormatNoDollar": {
     "message": "LaTeX (纯文本，无 $ 符号)",
     "description": "LaTeX 格式选项，无美元符号"

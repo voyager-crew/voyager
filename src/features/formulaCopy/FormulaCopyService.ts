@@ -20,6 +20,7 @@ import {
   findMathElement,
   isDisplayMode as isFormulaDisplayMode,
 } from './formulaSource';
+import { writeSelectionCopy } from './selectionCopy';
 
 /**
  * Formula copy format options
@@ -55,12 +56,15 @@ export class FormulaCopyService {
   private readonly config: Required<Omit<FormulaCopyConfig, 'format'>>;
   private readonly interaction: FormulaInteraction;
   private currentFormat: FormulaCopyFormat = 'latex';
+  /** Missing and anything other than `false` stay on, matching the backup default. */
+  private selectionLatexEnabled = true;
 
   // Storage change listener, extracted so it can be removed on destroy
   private readonly handleStorageChange: Parameters<
     typeof browser.storage.onChanged.addListener
   >[0] = (changes, areaName) => {
-    if (areaName === 'sync' && changes[StorageKeys.FORMULA_COPY_FORMAT]) {
+    if (areaName !== 'sync') return;
+    if (changes[StorageKeys.FORMULA_COPY_FORMAT]) {
       const newFormat = changes[StorageKeys.FORMULA_COPY_FORMAT].newValue as FormulaCopyFormat;
       if (
         newFormat === 'latex' ||
@@ -72,6 +76,14 @@ export class FormulaCopyService {
         this.currentFormat = newFormat;
         this.logger.debug('Formula format changed', { format: newFormat });
       }
+    }
+    const selectionChange = changes[StorageKeys.FORMULA_COPY_SELECTION_LATEX];
+    if (selectionChange) {
+      this.formatPreferenceChangeVersion += 1;
+      this.selectionLatexEnabled = selectionChange.newValue !== false;
+      this.logger.debug('Formula selection copy changed', {
+        enabled: this.selectionLatexEnabled,
+      });
     }
   };
 
@@ -127,13 +139,17 @@ export class FormulaCopyService {
     changeVersionAtStart: number,
   ): Promise<void> {
     try {
-      const result = await browser.storage.sync.get(StorageKeys.FORMULA_COPY_FORMAT);
+      const result = await browser.storage.sync.get([
+        StorageKeys.FORMULA_COPY_FORMAT,
+        StorageKeys.FORMULA_COPY_SELECTION_LATEX,
+      ]);
       if (
         loadGeneration !== this.formatPreferenceLoadGeneration ||
         changeVersionAtStart !== this.formatPreferenceChangeVersion
       )
         return;
 
+      this.selectionLatexEnabled = result[StorageKeys.FORMULA_COPY_SELECTION_LATEX] !== false;
       const format = result[StorageKeys.FORMULA_COPY_FORMAT] as FormulaCopyFormat | undefined;
       if (
         format === 'latex' ||
@@ -203,6 +219,7 @@ export class FormulaCopyService {
     this.interaction.start();
     document.addEventListener('click', this.handleClick, true);
     document.addEventListener('mouseover', this.handleMouseOver, true);
+    document.addEventListener('copy', this.handleCopy, true);
     this.isInitialized = true;
     this.lifecycleGeneration += 1;
     document.documentElement.setAttribute(
@@ -228,6 +245,7 @@ export class FormulaCopyService {
     this.releaseRootClass();
     document.removeEventListener('click', this.handleClick, true);
     document.removeEventListener('mouseover', this.handleMouseOver, true);
+    document.removeEventListener('copy', this.handleCopy, true);
     // A successor that took the page over owns the shared arrow markers now.
     this.interaction.stop({ clearMarkers: ownsPage });
     this.toaster.clear();
@@ -241,6 +259,12 @@ export class FormulaCopyService {
     this.destroy();
     this.stopFormatPreferenceSync();
   }
+
+  /** A selection copy while the service is running. Destroy removes this listener. */
+  private handleCopy = (event: Event): void => {
+    if (!this.selectionLatexEnabled) return;
+    writeSelectionCopy(event, document.getSelection());
+  };
 
   /**
    * Handle click events using event delegation

@@ -582,6 +582,14 @@
     "message": "This switch and the copy format apply to both Gemini and AI Studio.",
     "description": "Formula copy card: says the switch and the format are shared by Gemini and AI Studio"
   },
+  "formulaCopySelectionLatex": {
+    "message": "Convert formulas when copying a selection",
+    "description": "Selection copy toggle beside the formula format"
+  },
+  "formulaCopySelectionLatexHint": {
+    "message": "Selecting part of a reply and pressing Ctrl/Cmd+C copies its formulas as LaTeX.",
+    "description": "Selection copy toggle hint"
+  },
   "formulaCopyFormatNoDollar": {
     "message": "LaTeX (No Dollar Sign)",
     "description": "LaTeX format option without dollar signs"

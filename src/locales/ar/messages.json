@@ -582,6 +582,14 @@
     "message": "ينطبق هذا المفتاح وتنسيق النسخ على Gemini وAI Studio معًا.",
     "description": "Formula copy card: says the switch and the format are shared by Gemini and AI Studio"
   },
+  "formulaCopySelectionLatex": {
+    "message": "تحويل الصيغ عند نسخ التحديد",
+    "description": "مفتاح نسخ التحديد بجانب تنسيق الصيغة"
+  },
+  "formulaCopySelectionLatexHint": {
+    "message": "عند تحديد جزء من الرد والضغط على Ctrl/Cmd+C تُنسخ الصيغ الموجودة فيه بصيغة LaTeX.",
+    "description": "شرح مفتاح نسخ التحديد"
+  },
   "formulaCopyFormatNoDollar": {
     "message": "LaTeX (بدون علامة الدولار)",
     "description": "LaTeX format option without dollar signs"

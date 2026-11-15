@@ -121,7 +121,7 @@ export type OfficialControlId = 'responseNotification';
  * carries them, for the panels to show live.
  */
 export const OFFICIAL_PANEL_KEYS: Readonly<Record<OfficialPanelId, readonly string[]>> = {
-  formulaCopy: [StorageKeys.FORMULA_COPY_FORMAT],
+  formulaCopy: [StorageKeys.FORMULA_COPY_FORMAT, StorageKeys.FORMULA_COPY_SELECTION_LATEX],
   highlight: [StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED],
   contextSync: [StorageKeys.CONTEXT_SYNC_PORT],
   visualEffect: [StorageKeys.GV_VISUAL_EFFECT, StorageKeys.GV_SNOW_EFFECT],

@@ -32,6 +32,7 @@ describe('SettingsBackupService', () => {
         [StorageKeys.EXPORT_IMAGE_WIDTH]: 620,
         [StorageKeys.SLASH_PROMPT_ENABLED]: true,
         [StorageKeys.FORMULA_COPY_ENABLED]: true,
+        [StorageKeys.FORMULA_COPY_SELECTION_LATEX]: true,
         [StorageKeys.EXPORT_SPEAKER_LABELS]: {},
       }),
     );
