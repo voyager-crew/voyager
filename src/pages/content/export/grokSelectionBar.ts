@@ -14,6 +14,11 @@ const SCROLLER_SELECTOR = '[data-testid="chat-transcript-scroller"]';
 const DOCKED_CLASS = 'gv-export-select-bar--docked';
 /** Gap under a title we could not dock beneath. */
 const TITLE_CLEARANCE_PX = 8;
+/** `.gv-export-msg-checkbox` width plus the 8px gap used beside a bubble. */
+const CHECKBOX_OUTSET_PX = 28;
+const SELECTOR_CLASS = 'gv-export-msg-selector';
+/** An inset child counts as the bubble only when the row has real empty space beside it. */
+const BUBBLE_INSET_PX = 32;
 
 function clearPin(bar: HTMLElement): void {
   bar.style.removeProperty('left');
@@ -36,6 +41,33 @@ function blockAboveTranscript(title: Element, scroller: Element): HTMLElement | 
     node = parent;
   }
   return null;
+}
+
+function visualBubble(host: HTMLElement, hostRect: DOMRect): DOMRect {
+  const boxes = [...host.children].flatMap((child) => {
+    if (!(child instanceof HTMLElement) || child.classList.contains(SELECTOR_CLASS)) return [];
+    const rect = child.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 ? [rect] : [];
+  });
+  if (boxes.length !== 1) return hostRect;
+  const box = boxes[0];
+  const inset = box.left - hostRect.left;
+  const slack = hostRect.width - box.width;
+  if (inset >= BUBBLE_INSET_PX && slack >= BUBBLE_INSET_PX) return box;
+  return hostRect;
+}
+
+/**
+ * Checkbox position relative to the message host, just left of the bubble.
+ * A right-aligned Grok bubble must not share the assistant column's far-left gutter.
+ */
+export function grokCheckboxPosition(host: HTMLElement): { left: number; top: number } {
+  const hostRect = host.getBoundingClientRect();
+  const bubble = visualBubble(host, hostRect);
+  return {
+    left: Math.round(bubble.left - hostRect.left) - CHECKBOX_OUTSET_PX,
+    top: Math.max(6, Math.round(bubble.top - hostRect.top) + 6),
+  };
 }
 
 /**

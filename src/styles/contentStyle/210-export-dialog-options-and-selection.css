@@ -391,3 +391,22 @@ html[data-gv-platform='grok'] .gv-export-select-bar.gv-export-select-bar--docked
   max-width: calc(100% - 24px);
   margin: 8px auto;
 }
+
+/* Grok's selected reply is a tight text box. Padding and an outset ring keep the
+   outline off the glyphs. The room rule still wins when the checkbox has to sit
+   inside a clipping bubble. */
+html[data-gv-platform='grok'] .gv-export-select-mode .gv-export-msg-host {
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+
+html[data-gv-platform='grok'] .gv-export-select-mode .gv-export-msg-host.gv-export-msg-room {
+  padding-left: 44px;
+}
+
+html[data-gv-platform='grok'] .gv-export-select-mode .gv-export-msg-selected {
+  outline: 1px solid color-mix(in srgb, var(--gv-ui-primary) 55%, transparent);
+  outline-offset: 4px;
+  box-shadow: none;
+}

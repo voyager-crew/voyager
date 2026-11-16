@@ -27,7 +27,7 @@ import {
   isOnlyRoleSelected,
   toSelectionMessages,
 } from './exportSelectionMachine';
-import { dockGrokSelectionBar } from './grokSelectionBar';
+import { dockGrokSelectionBar, grokCheckboxPosition } from './grokSelectionBar';
 import { reconcileExistingSelectionHost } from './selectionUtils';
 
 export interface ExportSelectionConfirmation {
@@ -297,12 +297,31 @@ function createSelectionView(
   // text starts at that edge, so a checkbox inside it covered the reply: when the conversation
   // leaves a gutter left of the edge, the column goes there instead. Otherwise the column stays
   // inside the messages, and a message starting under it gets room so its first characters show.
+  // Grok's user bubble is that right-hand bubble: the shared column lands in the blank space far
+  // to its left, so each Grok checkbox sits on its own bubble instead.
   const alignSelectors = () => {
     const placed = Array.from(bindings.values()).flatMap((binding) => {
       const rect = binding.host.getBoundingClientRect();
       return rect.width > 0 ? [{ binding, left: rect.left }] : [];
     });
     if (placed.length === 0) return;
+    if (document.documentElement.dataset.gvPlatform === 'grok') {
+      const root = anchors.conversationRoot();
+      placed.forEach(({ binding }) => {
+        const hostRect = binding.host.getBoundingClientRect();
+        const position = grokCheckboxPosition(binding.host);
+        const clipped =
+          position.left < 0 &&
+          clipsGutterColumn([binding.host], root, hostRect.left + position.left);
+        binding.selector.style.left = `${clipped ? SELECTOR_INSET_PX : position.left}px`;
+        binding.selector.style.top = `${position.top}px`;
+        const needsRoom = clipped;
+        if (binding.host.classList.contains(ROOM_CLASS) !== needsRoom) {
+          binding.host.classList.toggle(ROOM_CLASS, needsRoom);
+        }
+      });
+      return;
+    }
     const edge = placed.reduce((min, { left }) => Math.min(min, left), Infinity);
     const root = anchors.conversationRoot();
     const gutter = edge - root.getBoundingClientRect().left;

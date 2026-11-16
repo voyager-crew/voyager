@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { readContentStyle } from '@/tests/contentStyle';
 
-import type { ExportMessage } from '../conversationCollector';
+import type { ExportMessage, ExportMessageRole } from '../conversationCollector';
 import { startExportSelectionSession } from '../exportSelectionSession';
 import { dockGrokSelectionBar } from '../grokSelectionBar';
 
@@ -146,5 +146,142 @@ describe('Grok export selection bar', () => {
     expect(block).toContain('top: auto;');
     expect(block).toContain('margin: 8px auto;');
     expect(css).toMatch(/\.gv-export-select-bar\s*\{[^}]*\btop:\s*12px;/);
+  });
+});
+
+function box(el: HTMLElement, left: number, top: number, width: number, height: number): void {
+  el.getBoundingClientRect = () =>
+    ({
+      left,
+      top,
+      width,
+      height,
+      right: left + width,
+      bottom: top + height,
+      x: left,
+      y: top,
+      toJSON: () => ({}),
+    }) as DOMRect;
+}
+
+function selectorLeft(host: HTMLElement): string {
+  return host.querySelector<HTMLElement>('.gv-export-msg-selector')?.style.left ?? '';
+}
+
+async function selectMessages(
+  hosts: readonly { id: string; role: ExportMessageRole }[],
+): Promise<{ cancel: () => void; done: Promise<void> }> {
+  const column = document.querySelector<HTMLElement>('#column');
+  if (!column) throw new Error('missing column');
+  box(column, 200, 0, 900, 800);
+  const messages: ExportMessage[] = hosts.map(({ id, role }) => {
+    const hostElement = document.querySelector<HTMLElement>(`#${id}`);
+    if (!hostElement) throw new Error(`missing ${id}`);
+    return { messageId: id, role, hostElement, text: id, starred: false };
+  });
+  const session = startExportSelectionSession({
+    t: (key) => key,
+    abortExport: () => {},
+    readMessages: () => messages,
+    initialSelectedMessageId: null,
+    anchors: {
+      topUserElement: () => messages[0]?.hostElement ?? null,
+      conversationRoot: () => column,
+    },
+    isSameConversation: () => true,
+    onConfirm: async () => {},
+  });
+  return session;
+}
+
+describe('Grok export checkboxes', () => {
+  it('sits each checkbox on its own bubble instead of the far-left column', async () => {
+    document.documentElement.dataset.gvPlatform = 'grok';
+    document.body.innerHTML =
+      '<div id="column">' +
+      '<div id="assistant" data-testid="assistant-message">answer</div>' +
+      '<div id="user" data-testid="user-message">question</div>' +
+      '</div>';
+    box(document.querySelector<HTMLElement>('#assistant')!, 280, 140, 500, 120);
+    box(document.querySelector<HTMLElement>('#user')!, 640, 80, 180, 40);
+
+    const session = await selectMessages([
+      { id: 'assistant', role: 'assistant' },
+      { id: 'user', role: 'user' },
+    ]);
+
+    expect(selectorLeft(document.querySelector<HTMLElement>('#user')!)).toBe('-28px');
+    expect(selectorLeft(document.querySelector<HTMLElement>('#assistant')!)).toBe('-28px');
+    session.cancel();
+    await session.done;
+  });
+
+  it('keeps other sites on one checkbox column', async () => {
+    document.body.innerHTML =
+      '<div id="column">' +
+      '<div id="assistant">answer</div>' +
+      '<div id="user">question</div>' +
+      '</div>';
+    box(document.querySelector<HTMLElement>('#assistant')!, 280, 140, 500, 120);
+    box(document.querySelector<HTMLElement>('#user')!, 640, 80, 180, 40);
+
+    const session = await selectMessages([
+      { id: 'assistant', role: 'assistant' },
+      { id: 'user', role: 'user' },
+    ]);
+
+    expect(selectorLeft(document.querySelector<HTMLElement>('#user')!)).toBe('-388px');
+    expect(selectorLeft(document.querySelector<HTMLElement>('#assistant')!)).toBe('-28px');
+    session.cancel();
+    await session.done;
+  });
+
+  it('moves the checkbox next to a bubble inset in a wide row', async () => {
+    document.documentElement.dataset.gvPlatform = 'grok';
+    document.body.innerHTML =
+      '<div id="column"><div id="user" data-testid="user-message"><div id="bubble">question</div></div></div>';
+    const host = document.querySelector<HTMLElement>('#user')!;
+    box(host, 200, 100, 800, 80);
+    box(document.querySelector<HTMLElement>('#bubble')!, 700, 110, 250, 40);
+
+    const session = await selectMessages([{ id: 'user', role: 'user' }]);
+
+    const selector = host.querySelector<HTMLElement>('.gv-export-msg-selector');
+    expect(selector?.style.left).toBe('472px');
+    expect(selector?.style.top).toBe('16px');
+    session.cancel();
+    await session.done;
+  });
+
+  it('keeps a clipped checkbox inside the bubble', async () => {
+    document.documentElement.dataset.gvPlatform = 'grok';
+    document.body.innerHTML = '<div id="column"><div id="user">question</div></div>';
+    const host = document.querySelector<HTMLElement>('#user')!;
+    host.style.overflowX = 'hidden';
+    box(host, 640, 80, 180, 40);
+
+    const session = await selectMessages([{ id: 'user', role: 'user' }]);
+
+    expect(selectorLeft(host)).toBe('8px');
+    expect(host.classList.contains('gv-export-msg-room')).toBe(true);
+    session.cancel();
+    await session.done;
+  });
+
+  it('pads a selected Grok message and offsets its outline', () => {
+    const css = readContentStyle();
+    const host =
+      css.match(
+        /html\[data-gv-platform='grok'\] \.gv-export-select-mode \.gv-export-msg-host\s*\{([^}]*)\}/,
+      )?.[1] ?? '';
+    const selected =
+      css.match(
+        /html\[data-gv-platform='grok'\] \.gv-export-select-mode \.gv-export-msg-selected\s*\{([^}]*)\}/,
+      )?.[1] ?? '';
+
+    expect(host).toContain('padding: 8px 12px;');
+    expect(selected).toContain('outline-offset: 4px;');
+    expect(selected).toContain('box-shadow: none;');
+    expect(css).toMatch(/\.gv-export-msg-selected\s*\{[^}]*box-shadow:/);
   });
 });
