@@ -9,6 +9,7 @@ import {
   DEFAULT_EXPORT_SPEAKER_LABELS,
   type MarkdownFormatOptions,
 } from '../types/export';
+import { separateMarkdownLists } from './markdownListSpacing';
 
 /**
  * Markdown formatting service
@@ -103,7 +104,7 @@ export class MarkdownFormatter {
     sections.push('');
     sections.push(this.formatFooter(metadata));
 
-    return sections.join('\n');
+    return separateMarkdownLists(sections.join('\n'));
   }
 
   /**
