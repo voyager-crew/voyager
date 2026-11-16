@@ -376,3 +376,18 @@ html[data-gv-scheme='dark'] .gv-export-width-btn.active {
     min-width: 0;
   }
 }
+
+/* Grok keeps the conversation title in the top row and starts the transcript
+   immediately under it. A bar fixed to the viewport covers that title and the
+   first message; docking takes a row of its own between them. */
+html[data-gv-platform='grok'] .gv-export-select-bar.gv-export-select-bar--docked {
+  position: relative;
+  top: auto;
+  right: auto;
+  left: auto;
+  transform: none;
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  margin: 8px auto;
+}

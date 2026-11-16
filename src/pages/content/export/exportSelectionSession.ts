@@ -27,6 +27,7 @@ import {
   isOnlyRoleSelected,
   toSelectionMessages,
 } from './exportSelectionMachine';
+import { dockGrokSelectionBar } from './grokSelectionBar';
 import { reconcileExistingSelectionHost } from './selectionUtils';
 
 export interface ExportSelectionConfirmation {
@@ -215,7 +216,10 @@ function createSelectionView(
   bar.append(selectAllBtn, selectUserBtn, selectAIBtn, count, exportBtn, cancelBtn);
   document.body.appendChild(bar);
   cleanupTasks.push(() => bar.remove());
-  cleanupTasks.push(alignToConversationCenter(bar, anchors));
+  // Grok's title and the first message share the top of the column, so a
+  // viewport-fixed bar covers both. Dock it between them on Grok only.
+  const releaseGrokDock = dockGrokSelectionBar(bar);
+  cleanupTasks.push(releaseGrokDock ?? alignToConversationCenter(bar, anchors));
 
   selectAllBtn.addEventListener('click', (ev) => {
     swallow(ev);
