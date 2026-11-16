@@ -52,6 +52,14 @@ describe('Grok content markers', () => {
     expect(ids(sendButton)).toEqual(['send']);
   });
 
+  it('treats the composer stop control as generating and leaves send and voice idle', () => {
+    document.body.innerHTML =
+      '<button type="button" aria-label="Stop" data-testid="composer-stop" data-icon-button id="stop"></button>' +
+      '<button type="submit" aria-label="Send" data-composer-action="send" data-testid="chat-submit" data-trigger-disabled id="send"></button>' +
+      '<button type="button" aria-label="Voice mode" data-composer-action="voice" id="voice"></button>';
+    expect(ids(grok.export?.generating)).toEqual(['stop']);
+  });
+
   it('finds the app sidebar, the transcript scroller and an expanded thought', () => {
     document.body.innerHTML =
       '<aside id="app-sidebar" aria-label="App navigation"><button draggable="true" id="chat">Chat</button></aside>' +

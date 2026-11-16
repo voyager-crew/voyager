@@ -13,10 +13,11 @@ times out, the same export reads the virtual transcript instead:
 `read: "virtual"`, `messageKey: "data-plane-row"`, scroller
 `div[data-testid="chat-transcript-scroller"]`.
 
-`export.generating` is omitted. The 2026-11-15 capture did not include a stop
-control, so a DOM read cannot claim to be complete. `GROK_GENERATING_SELECTOR_PLACEHOLDER`
-in `grokConversation.ts` is the marker for that gap. It is the string
-`UNVERIFIED`, not a selector, and must not be copied into `site.json`.
+`export.generating` is `button[data-testid="composer-stop"]`, the composer stop
+button captured on grok.com on 2026-11-16. It is in the document only while a
+reply is streaming. The virtual-DOM fallback treats that button as an
+in-progress reply, and a finished crawl that never sees it can report itself
+complete.
 
 This plugin requires Voyager plugin engine `>=1.10.0`. The manifest contains
 no site selectors or executable code.

@@ -26,6 +26,7 @@
     "version": 1,
     "read": "virtual",
     "messageKey": "data-plane-row",
-    "title": "[data-testid=\"conversation-title\"]"
+    "title": "[data-testid=\"conversation-title\"]",
+    "generating": "button[data-testid=\"composer-stop\"]"
   }
 }

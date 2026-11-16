@@ -25,13 +25,6 @@ import { embedYouTubeLinks } from './grokMessageMarkdown';
 export { grokConversationId, grokDisplayedLeafId, selectGrokBranch } from './grokBranch';
 export type { GrokBranch, GrokBranchMessage } from './grokBranch';
 
-/**
- * The 2026-11-15 capture did not include a stop control. This is not a selector.
- * Copying any selector into `export.generating` would let a finished DOM crawl
- * report itself complete.
- */
-export const GROK_GENERATING_SELECTOR_PLACEHOLDER = 'UNVERIFIED';
-
 const REQUEST_TIMEOUT_MS = 20_000;
 const GROK_ORIGIN = 'https://grok.com';
 

@@ -10,7 +10,6 @@ import type { ExportSelectionOptions } from '../adapter/type';
 import type { CatalogReadResult, CatalogSnapshot } from './catalogReader';
 import { createCatalogExportSite } from './catalogSite';
 import {
-  GROK_GENERATING_SELECTOR_PLACEHOLDER,
   type GrokReadDeps,
   grokConversationId,
   grokDisplayedLeafId,
@@ -149,15 +148,14 @@ afterEach(() => {
 describe('Grok conversation parsing', () => {
   const site = grokSite();
 
-  it('keeps the virtual descriptor and does not invent a generating selector', () => {
+  it('keeps the virtual descriptor and the composer stop control', () => {
     expect(site.export).toEqual({
       version: 1,
       read: 'virtual',
       messageKey: 'data-plane-row',
       title: '[data-testid="conversation-title"]',
+      generating: 'button[data-testid="composer-stop"]',
     });
-    expect(site.export?.generating).toBeUndefined();
-    expect(GROK_GENERATING_SELECTOR_PLACEHOLDER).toBe('UNVERIFIED');
   });
 
   it('reads the conversation id from /c/<uuid> and the displayed leaf from rid', () => {
@@ -421,7 +419,8 @@ describe('Grok conversation read', () => {
       ['user', 'Page prompt', `data-plane-row:gateway:${USER}`],
       ['assistant', 'Page answer', `data-plane-row:gateway:${KEPT}`],
     ]);
-    expect(result.completeness).toBe('unknown');
+    // The stop control is absent, so a finished crawl can report itself complete.
+    expect(result.completeness).toBe('complete');
     expect(scroller.scrollTop).toBe(40);
   });
 
