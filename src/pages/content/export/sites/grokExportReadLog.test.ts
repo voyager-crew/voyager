@@ -1,14 +1,13 @@
 import type { JSDOM } from 'jsdom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from '@/core/services/LoggerService';
 import grokData from '@/features/plugins/catalog/sites/grok/site.json';
 import { validateSiteAdapterData } from '@/features/plugins/sites/siteAdapterData';
 import type { SiteAdapter } from '@/features/plugins/types';
 
 import { buildCatalogExportAdapter } from '../adapter/platform/catalog';
 import type { CatalogReadResult } from './catalogReader';
-import { readCatalogOrGrokConversation } from './grokConversation';
+import { grokExportReadShouldLog, readCatalogOrGrokConversation } from './grokConversation';
 
 declare const jsdom: JSDOM;
 
@@ -58,9 +57,15 @@ afterEach(() => {
 });
 
 describe('Grok export read log', () => {
+  it('stays on for the chrome dev build, where vite build leaves DEV false', () => {
+    expect(grokExportReadShouldLog(false, true)).toBe(true);
+    expect(grokExportReadShouldLog(true, false)).toBe(true);
+    expect(grokExportReadShouldLog(false, false)).toBe(false);
+  });
+
   it('names the endpoint and the message count in a dev build', async () => {
     jsdom.reconfigure({ url: `https://grok.com/c/01234567-89ab-cdef-0123-456789abcdef` });
-    const info = vi.spyOn(logger, 'info').mockImplementation(() => undefined);
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
     const fetchImpl: typeof fetch = async (input, init) => {
       const url = String(input);
       if (url.includes('/response-node')) return json({ responseNodes: [{ responseId: USER }] });
@@ -87,7 +92,7 @@ describe('Grok export read log', () => {
 
   it('names the virtual DOM fallback and stays quiet for another site or a cancel', async () => {
     jsdom.reconfigure({ url: `https://grok.com/c/01234567-89ab-cdef-0123-456789abcdef` });
-    const info = vi.spyOn(logger, 'info').mockImplementation(() => undefined);
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
     const site = grokSite();
     await readCatalogOrGrokConversation(
       site,

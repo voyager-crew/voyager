@@ -509,12 +509,20 @@ function decorateGrokDom(result: CatalogReadResult): CatalogReadResult {
   return changed ? { ...result, snapshots } : result;
 }
 
+/** vite build leaves DEV false and the logger at WARN; the chrome dev flag is on. */
+export function grokExportReadShouldLog(
+  dev: boolean = import.meta.env.DEV,
+  chromeDevBuild: boolean = Boolean(import.meta.env.VOYAGER_DEV_SETTINGS_BRIDGE),
+): boolean {
+  return dev || chromeDevBuild;
+}
+
 function logGrokExportRead(source: 'endpoint' | 'virtual-dom', count: number): void {
-  if (!import.meta.env.DEV) return;
-  logger.info(
-    source === 'endpoint' ? 'Grok export read via endpoint' : 'Grok export read via virtual DOM',
-    { source, count },
-  );
+  if (!grokExportReadShouldLog()) return;
+  const message =
+    source === 'endpoint' ? 'Grok export read via endpoint' : 'Grok export read via virtual DOM';
+  // oxlint-disable-next-line no-console -- info is filtered when NODE_ENV is production
+  console.info(message, { source, count });
 }
 
 function canReadGrokApi(site: SiteAdapter, expectedUrl: string | undefined): boolean {
