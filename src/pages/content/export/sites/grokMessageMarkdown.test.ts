@@ -67,20 +67,60 @@ describe('Grok export cards', () => {
     expect(text).not.toContain('**Sources**');
   });
 
+  it('embeds one cover when the same video is linked again', () => {
+    const url = 'https://www.youtube.com/watch?v=IOM0oAhLQV4';
+    const text = grokMessageMarkdown({
+      message: [
+        `方便。[T3 Code First Impressions](${url})`,
+        '',
+        '参考：',
+        '',
+        `- ${url}`,
+        '- https://youtu.be/IOM0oAhLQV4',
+      ].join('\n'),
+      webSearchResults: [{ url, title: 'T3 Code First Impressions: Why I am Using It' }],
+    });
+
+    expect(text.match(/img\.youtube\.com\/vi\/IOM0oAhLQV4/g)).toHaveLength(1);
+    expect(text).toContain(
+      `[![T3 Code First Impressions](https://img.youtube.com/vi/IOM0oAhLQV4/hqdefault.jpg)](${url})`,
+    );
+    expect(text).toContain(`- ${url}`);
+    expect(text).toContain('- https://youtu.be/IOM0oAhLQV4');
+    expect(text).not.toContain('**Sources**');
+  });
+
+  it('keeps one cover for a cited video and lists it under Sources', () => {
+    const url = 'https://www.youtube.com/watch?v=IOM0oAhLQV4';
+    const text = grokMessageMarkdown({
+      message: `对比。${url}\n\n再看一次 ${url}`,
+      citedWebSearchResults: [{ url, title: 'T3 Code First Impressions' }],
+    });
+
+    expect(text.match(/img\.youtube\.com\/vi\/IOM0oAhLQV4/g)).toHaveLength(1);
+    expect(text).toContain(`再看一次 ${url}`);
+    expect(text).toContain('1. [T3 Code First Impressions]');
+    expect(text).not.toContain('[[1]]');
+  });
+
   it('uses a markdown link label as the YouTube title', () => {
     expect(grokMessageMarkdown({ message: '[对比视频](https://youtu.be/JMYspR42HFM)' })).toBe(
       '[![对比视频](https://img.youtube.com/vi/JMYspR42HFM/hqdefault.jpg)](https://youtu.be/JMYspR42HFM)',
     );
   });
 
-  it('lists search sources that are not already in the reply', () => {
+  it('lists a cited page and drops the rest of the search, including a repeated url', () => {
     const text = branchText('仓库见正文。', {
       webSearchResults: [
         { url: 'https://layerfs.ai/', title: 'LayerFS' },
         { url: 'https://layerfs.ai/', title: 'duplicate' },
         { url: 'javascript:alert(1)', title: 'nope' },
+        { url: 'https://example.com/unrelated', title: 'LayeredFS for Switch' },
       ],
-      citedWebSearchResults: [{ url: 'https://github.com/Ephemeral-AI-Lab/layerfs', title: '' }],
+      citedWebSearchResults: [
+        { url: 'https://github.com/Ephemeral-AI-Lab/layerfs', title: '' },
+        { url: 'https://github.com/Ephemeral-AI-Lab/layerfs/', title: 'LayerFS repo' },
+      ],
     });
 
     expect(text).toBe(
@@ -89,45 +129,131 @@ describe('Grok export cards', () => {
         '',
         '**Sources**',
         '',
-        '- [LayerFS](https://layerfs.ai/)',
-        '- https://github.com/Ephemeral-AI-Lab/layerfs',
+        '1. [LayerFS repo](https://github.com/Ephemeral-AI-Lab/layerfs)',
       ].join('\n'),
     );
   });
 
-  it('turns an X post into a titled link and does not invent one when the payload has none', () => {
-    const titled = grokMessageMarkdown({
-      message: 'https://x.com/yifanxu_ephai/status/2121565771004592535',
+  it('does not add Sources or retitle a post when the reply cites nothing', () => {
+    expect(
+      grokMessageMarkdown({
+        message: '仓库见正文。https://x.com/yifanxu_ephai/status/2121565771004592535',
+        webSearchResults: [{ url: 'https://layerfs.ai/', title: 'LayerFS' }],
+        xposts: [
+          {
+            username: 'yifanxu_ephai',
+            postId: '2121565771004592535',
+            text: 'LayerFS draft',
+          },
+        ],
+        xSearchResults: {
+          results: [{ username: 'theo', postId: '2119970535056846996', text: 'noise' }],
+        },
+      }),
+    ).toBe('仓库见正文。https://x.com/yifanxu_ephai/status/2121565771004592535');
+  });
+
+  it('marks a cited post in the sentence and keeps the post text for Sources', () => {
+    const tweet = `@yifanxu_ephai 想看 paper 里具体的机制，尤其是 LayerFS 怎么影响 agent 的学习过程。`;
+    const text = grokMessageMarkdown({
+      message:
+        '只有作者自己承认的短板，以及少量集成 bug。https://twitter.com/thevernaldawn/status/2121576880029749274?s=20',
       xposts: [
+        { username: 'thevernaldawn', postId: '2121576880029749274', text: tweet },
         {
-          username: 'yifanxu_ephai',
-          postId: '2121565771004592535',
-          text: 'LayerFS draft',
+          username: 'SciresM',
+          postId: '1010957526945316864',
+          text: 'Still more issues to fix in LayeredFS, but took down a pretty irritating one just now.',
+        },
+      ],
+      citedXposts: [{ username: 'thevernaldawn', postId: '2121576880029749274', text: tweet }],
+      xSearchResults: {
+        results: [
+          {
+            username: 'ChainLinkGod',
+            postId: '2047750285779710326',
+            text: 'The reason why I am so critical of LayerZero',
+          },
+        ],
+      },
+    });
+
+    const [body, sources] = text.split('\n\n**Sources**\n\n');
+    expect(body).toBe(
+      '只有作者自己承认的短板，以及少量集成 bug。[[1]](https://x.com/thevernaldawn/status/2121576880029749274)',
+    );
+    expect(body).not.toContain(tweet);
+    expect(sources).toBe(`1. [${tweet}](https://x.com/thevernaldawn/status/2121576880029749274)`);
+    expect(text).not.toContain('SciresM');
+    expect(text).not.toContain('LayerZero');
+  });
+
+  it('treats a t.co citation and the expanded page with the same title as one source', () => {
+    const title =
+      'GitHub - Ephemeral-AI-Lab/layerfs: Ephemeral Workspaces, durable shared history.';
+    const text = grokMessageMarkdown({
+      message:
+        '见论文。' +
+        '<' +
+        'grok:render card_id="c1" card_type="citation_card" type="render_inline_citation">' +
+        '<' +
+        '/grok:render>',
+      cardAttachmentsJson: [
+        JSON.stringify({
+          id: 'c1',
+          cardType: 'citation_card',
+          type: 'render_inline_citation',
+          url: 'https://t.co/hwcUUBzhYw',
+        }),
+      ],
+      webSearchResults: [
+        { url: 'https://github.com/Ephemeral-AI-Lab/layerfs', title },
+        { url: 'https://t.co/hwcUUBzhYw', title },
+        {
+          url: 'https://x.com/SciresM/status/1010957526945316864',
+          title: 'Still more issues in LayeredFS',
+        },
+      ],
+      citedWebSearchResults: [{ url: 'https://t.co/hwcUUBzhYw', title }],
+    });
+
+    expect(text).toBe(
+      [
+        `见论文。[[1]](https://github.com/Ephemeral-AI-Lab/layerfs)`,
+        '',
+        '**Sources**',
+        '',
+        `1. [${title}](https://github.com/Ephemeral-AI-Lab/layerfs)`,
+      ].join('\n'),
+    );
+    expect(text).not.toContain('t.co');
+    expect(text).not.toContain('SciresM');
+  });
+
+  it('follows an expanded url field when the titles differ', () => {
+    const text = grokMessageMarkdown({
+      message: '见仓库。https://t.co/hwcUUBzhYw。',
+      citedWebSearchResults: [
+        {
+          url: 'https://t.co/hwcUUBzhYw',
+          expandedUrl: 'https://github.com/Ephemeral-AI-Lab/layerfs',
+          title: 'LayerFS',
         },
       ],
     });
-    expect(titled).toBe('[LayerFS draft](https://x.com/yifanxu_ephai/status/2121565771004592535)');
 
-    expect(
-      grokMessageMarkdown({
-        message: 'https://x.com/yifanxu_ephai/status/2121565771004592535',
-        xposts: [],
-      }),
-    ).toBe('https://x.com/yifanxu_ephai/status/2121565771004592535');
+    expect(text).toBe(
+      [
+        '见仓库。[[1]](https://github.com/Ephemeral-AI-Lab/layerfs)。',
+        '',
+        '**Sources**',
+        '',
+        '1. [LayerFS](https://github.com/Ephemeral-AI-Lab/layerfs)',
+      ].join('\n'),
+    );
   });
 
-  it('appends an X post the reply did not already link', () => {
-    expect(
-      grokMessageMarkdown({
-        message: '见讨论。',
-        xSearchResults: {
-          results: [{ username: 'theo', postId: '2119970535056846996', text: '' }],
-        },
-      }),
-    ).toBe('见讨论。\n\n- [@theo](https://x.com/theo/status/2119970535056846996)');
-  });
-
-  it('keeps a citation as a link when the card payload names the URL', () => {
+  it('numbers a citation card and a cited post the body never links', () => {
     const text = grokMessageMarkdown({
       message:
         'Hello  <grok:render card_id="05a0cb" card_type="citation_card"><argument name="citation_id">48</argument></grok:render> world',
@@ -135,9 +261,26 @@ describe('Grok export cards', () => {
         '{"id":"05a0cb","cardType":"citation_card","url":"https://layerfs.ai/"}',
         '{not json',
       ],
-      webSearchResults: [{ url: 'https://layerfs.ai/', title: 'LayerFS' }],
+      webSearchResults: [
+        { url: 'https://layerfs.ai/', title: 'LayerFS' },
+        { url: 'https://example.com/other', title: 'Uncited' },
+      ],
+      citedXposts: [
+        { username: 'yifanxu_ephai', postId: '2118119208718606448', text: 'LayerFS 发布两周了。' },
+      ],
     });
-    expect(text).toBe('Hello [LayerFS](https://layerfs.ai/) world');
+
+    expect(text).toBe(
+      [
+        'Hello [[1]](https://layerfs.ai/) world',
+        '',
+        '**Sources**',
+        '',
+        '1. [LayerFS](https://layerfs.ai/)',
+        '2. [LayerFS 发布两周了。](https://x.com/yifanxu_ephai/status/2118119208718606448)',
+      ].join('\n'),
+    );
+    expect(text).not.toContain('Uncited');
   });
 
   it('still drops a citation widget that has no card payload', () => {

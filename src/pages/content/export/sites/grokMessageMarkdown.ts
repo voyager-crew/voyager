@@ -1,18 +1,15 @@
 /**
- * Grok reply text for export.
- *
- * `load-responses` bodies carry the markdown in `message` plus, when Grok
- * searched or unfurled a card, `webSearchResults`, `citedWebSearchResults`,
- * `xposts` / `citedXposts` / `xSearchResults`, and `cardAttachmentsJson`.
- * Public clients (ai-vault, grok2api) read those names. A YouTube link in the
- * markdown has no title there, so the cover uses the search/card title or
- * "YouTube video". Citation widgets stay out of the sentence unless the card
- * payload names a URL.
+ * Grok reply markdown. Cited sources (`cited*` fields and `citation_card`
+ * placeholders, or a bare URL of one of those) become `[[n]](url)` and a
+ * numbered **Sources** list. Search hits the reply does not cite are left
+ * out. A `t.co` link and its expanded page are one target.
  */
 
 const RENDER_PAIR = /<grok:render\b([^>]*)>[\s\S]*?<\/grok:render>/gi;
 const RENDER_EMPTY = /<grok:render\b[^>]*\/>/gi;
 const BARE_URL = /https?:\/\/[^\s<>)\]]+/g;
+const TRAILING_PUNCT = /[.,;:!?。，、；：！？]+$/;
+const CITATION_MARKER = /\[\[\d+\]\]\(https?:\/\/[^\s)]+\)/g;
 const VIDEO_ID = /^[\w-]{11}$/;
 const USERNAME = /^[A-Za-z0-9_]{1,15}$/;
 const POST_ID = /^\d{5,25}$/;
@@ -20,22 +17,26 @@ const MAX_CARDS = 100;
 const MAX_LINKS = 100;
 
 const YOUTUBE_FALLBACK = 'YouTube video';
+const EXPANDED_KEY = /^(?:expanded|canonical|unwound)_?url$/i;
 
-interface SourceLink {
+interface LinkFact {
   url: string;
   title: string;
-}
-
-interface XPostLink {
-  url: string;
-  postId: string;
-  username: string;
-  text: string;
+  identity: string;
+  /** Identity of a t.co (or other) URL that should open this same target. */
+  aliasFrom?: string;
 }
 
 interface CardLink {
   id: string;
   url?: string;
+  title: string;
+  cardType: string;
+  type: string;
+}
+
+interface SourceLine {
+  url: string;
   title: string;
 }
 
@@ -52,10 +53,10 @@ function httpUrl(value: unknown): string | null {
   try {
     const url = new URL(trimmed);
     if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    return trimmed;
   } catch {
     return null;
   }
-  return trimmed;
 }
 
 function plainTitle(value: unknown): string {
@@ -71,6 +72,10 @@ function linkLabel(text: string, fallback: string): string {
   return label.replace(/\\/g, '\\\\').replace(/\[/g, '\\[').replace(/\]/g, '\\]');
 }
 
+function hostOf(url: URL): string {
+  return url.hostname.toLowerCase().replace(/^www\./, '');
+}
+
 /** watch?v=, youtu.be/ and shorts/ only. Anything else stays a normal link. */
 export function youtubeVideoId(raw: string): string | null {
   let url: URL;
@@ -80,7 +85,7 @@ export function youtubeVideoId(raw: string): string | null {
     return null;
   }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
-  const host = url.hostname.toLowerCase().replace(/^(?:www|m)\./, '');
+  const host = hostOf(url);
   if (host === 'youtu.be') {
     const id = url.pathname.split('/').filter(Boolean)[0] ?? '';
     return VIDEO_ID.test(id) ? id : null;
@@ -159,34 +164,60 @@ function mapOutsideInlineCode(line: string, edit: (plain: string) => string): st
   return out;
 }
 
-function embedYouTubeSegment(segment: string, titles: ReadonlyMap<string, string>): string {
+function mapProse(markdown: string, edit: (segment: string) => string): string {
+  return mapOutsideFences(markdown, (line) => mapOutsideInlineCode(line, edit));
+}
+
+function embedYouTubeSegment(
+  segment: string,
+  titles: ReadonlyMap<string, string>,
+  seen: Set<string>,
+): string {
   const linked = segment.replace(
     /(?<!!)\[([^[\]]*)\]\((https?:\/\/[^\s)]+)\)/g,
     (whole, label: string, url: string) => {
       const id = youtubeVideoId(url);
       if (!id) return whole;
-      const name = plainTitle(label);
-      return youtubeCover(name || titles.get(id) || YOUTUBE_FALLBACK, id, url);
+      if (seen.has(id)) return whole;
+      seen.add(id);
+      return youtubeCover(plainTitle(label) || titles.get(id) || YOUTUBE_FALLBACK, id, url);
     },
   );
   return linked.replace(BARE_URL, (raw: string, offset: number, source: string) => {
     if (source.slice(Math.max(0, offset - 2), offset) === '](') return raw;
-    const trimmed = raw.replace(/[.,;:!?]+$/g, '');
-    const rest = raw.slice(trimmed.length);
+    const { url: trimmed, rest } = splitUrl(raw);
     const id = youtubeVideoId(trimmed);
     if (!id) return raw;
+    if (seen.has(id)) return raw;
+    seen.add(id);
     return `${youtubeCover(titles.get(id) || YOUTUBE_FALLBACK, id, trimmed)}${rest}`;
   });
 }
 
-/** Turn bare and linked YouTube URLs into cover images, leaving code alone. */
 export function embedYouTubeLinks(
   markdown: string,
   titles: ReadonlyMap<string, string> = new Map(),
 ): string {
-  return mapOutsideFences(markdown, (line) =>
-    mapOutsideInlineCode(line, (segment) => embedYouTubeSegment(segment, titles)),
+  const seen = new Set<string>();
+  return mapProse(markdown, (segment) => embedYouTubeSegment(segment, titles, seen));
+}
+
+function embedOutsideCitations(markdown: string, titles: ReadonlyMap<string, string>): string {
+  const saved: string[] = [];
+  const shielded = markdown.replace(CITATION_MARKER, (whole) => {
+    const token = `\uE000${saved.length}\uE001`;
+    saved.push(whole);
+    return token;
+  });
+  return embedYouTubeLinks(shielded, titles).replace(
+    /\uE000(\d+)\uE001/g,
+    (_whole, index: string) => saved[Number(index)] ?? '',
   );
+}
+
+function splitUrl(raw: string): { url: string; rest: string } {
+  const url = raw.replace(TRAILING_PUNCT, '');
+  return { url, rest: raw.slice(url.length) };
 }
 
 function listOf(value: unknown): unknown[] {
@@ -195,45 +226,145 @@ function listOf(value: unknown): unknown[] {
   return Array.isArray(results) ? results : [];
 }
 
-function readSources(facts: Record<string, unknown>): SourceLink[] {
-  const seen = new Set<string>();
-  const sources: SourceLink[] = [];
-  for (const key of ['webSearchResults', 'citedWebSearchResults'] as const) {
-    for (const item of listOf(facts[key])) {
-      if (sources.length >= MAX_LINKS) return sources;
-      const data = record(item);
-      const url = httpUrl(data?.url);
-      if (!data || !url || seen.has(url)) continue;
-      seen.add(url);
-      sources.push({ url, title: plainTitle(data.title) });
-    }
+function parsedHttp(raw: string): URL | null {
+  const text = httpUrl(raw);
+  if (!text) return null;
+  try {
+    return new URL(text);
+  } catch {
+    return null;
   }
-  return sources;
 }
 
-function readPosts(facts: Record<string, unknown>): XPostLink[] {
-  const seen = new Set<string>();
-  const posts: XPostLink[] = [];
-  for (const key of ['xposts', 'citedXposts', 'xSearchResults'] as const) {
-    for (const item of listOf(facts[key])) {
-      if (posts.length >= MAX_LINKS) return posts;
-      const data = record(item);
-      if (!data) continue;
-      const username = typeof data.username === 'string' ? data.username.trim() : '';
-      const postId =
-        typeof data.postId === 'string'
-          ? data.postId.trim()
-          : typeof data.id === 'string' && POST_ID.test(data.id.trim())
-            ? data.id.trim()
-            : '';
-      if (!USERNAME.test(username) || !POST_ID.test(postId)) continue;
-      const url = `https://x.com/${username}/status/${postId}`;
-      if (seen.has(url)) continue;
-      seen.add(url);
-      posts.push({ url, postId, username, text: plainTitle(data.text) });
+function identityOf(raw: string): string | null {
+  const url = parsedHttp(raw);
+  if (!url) return null;
+  const host = hostOf(url);
+  if (host === 't.co') {
+    const code = url.pathname.split('/').filter(Boolean)[0] ?? '';
+    return code ? `tco:${code}` : null;
+  }
+  const video = youtubeVideoId(url.href);
+  if (video) return `yt:${video}`;
+  if (
+    host === 'x.com' ||
+    host === 'twitter.com' ||
+    host === 'mobile.x.com' ||
+    host === 'mobile.twitter.com'
+  ) {
+    const parts = url.pathname.split('/').filter(Boolean);
+    const id = parts[2] ?? '';
+    if (parts[1]?.toLowerCase() === 'status' && POST_ID.test(id)) return `x:${id}`;
+  }
+  url.hash = '';
+  let path = url.pathname;
+  if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
+  const search = url.searchParams.toString();
+  return `${host}${path}${search ? `?${search}` : ''}`;
+}
+
+function displayHref(raw: string): string | null {
+  const url = parsedHttp(raw);
+  if (!url) return null;
+  const host = hostOf(url);
+  if (
+    host === 'x.com' ||
+    host === 'twitter.com' ||
+    host === 'mobile.x.com' ||
+    host === 'mobile.twitter.com'
+  ) {
+    const parts = url.pathname.split('/').filter(Boolean);
+    const id = parts[2] ?? '';
+    const user = parts[0] ?? '';
+    if (parts[1]?.toLowerCase() === 'status' && POST_ID.test(id) && USERNAME.test(user)) {
+      return `https://x.com/${user}/status/${id}`;
     }
   }
-  return posts;
+  url.hash = '';
+  if (url.pathname.length > 1 && url.pathname.endsWith('/') && !url.search) {
+    url.pathname = url.pathname.slice(0, -1);
+  }
+  return url.href;
+}
+
+function isShort(raw: string): boolean {
+  return identityOf(raw)?.startsWith('tco:') ?? false;
+}
+
+function expandedTarget(data: Record<string, unknown>, from: string): string | undefined {
+  for (const [key, value] of Object.entries(data)) {
+    if (!EXPANDED_KEY.test(key)) continue;
+    const url = httpUrl(value);
+    if (url && identityOf(url) !== identityOf(from)) return displayHref(url) ?? undefined;
+  }
+  const urls = record(data.entities)?.urls;
+  if (!Array.isArray(urls)) return undefined;
+  const fromId = identityOf(from);
+  for (const item of urls) {
+    const row = record(item);
+    const short = httpUrl(row?.url);
+    const long = httpUrl(row?.expanded_url) ?? httpUrl(row?.expandedUrl);
+    if (!short || !long || identityOf(short) !== fromId) continue;
+    return displayHref(long) ?? undefined;
+  }
+  return undefined;
+}
+
+function take(raw: string, title: string, expanded?: string): LinkFact | null {
+  const shown = displayHref(expanded && !isShort(expanded) ? expanded : raw);
+  const identity = shown ? identityOf(shown) : null;
+  const from = identityOf(raw);
+  if (!shown || !identity) return null;
+  return {
+    url: shown,
+    title,
+    identity,
+    ...(from && from !== identity ? { aliasFrom: from } : {}),
+  };
+}
+
+function readWeb(value: unknown): LinkFact[] {
+  const links: LinkFact[] = [];
+  for (const item of listOf(value)) {
+    if (links.length >= MAX_LINKS) break;
+    const data = record(item);
+    const raw = data ? httpUrl(data.url) : null;
+    if (!data || !raw) continue;
+    const link = take(raw, plainTitle(data.title), expandedTarget(data, raw));
+    if (link) links.push(link);
+  }
+  return links;
+}
+
+function readPosts(value: unknown): LinkFact[] {
+  const links: LinkFact[] = [];
+  for (const item of listOf(value)) {
+    if (links.length >= MAX_LINKS) break;
+    const data = record(item);
+    if (!data) continue;
+    const username = typeof data.username === 'string' ? data.username.trim() : '';
+    const postId =
+      typeof data.postId === 'string'
+        ? data.postId.trim()
+        : typeof data.id === 'string' && POST_ID.test(data.id.trim())
+          ? data.id.trim()
+          : '';
+    if (!USERNAME.test(username) || !POST_ID.test(postId)) continue;
+    const status = `https://x.com/${username}/status/${postId}`;
+    const direct = httpUrl(data.url);
+    const expanded = direct ? expandedTarget(data, direct) : undefined;
+    const title = plainTitle(data.text) || plainTitle(data.title);
+    const post: LinkFact = { url: status, title, identity: `x:${postId}` };
+    const from = direct ? identityOf(direct) : null;
+    if (from?.startsWith('tco:')) {
+      const page = expanded && !isShort(expanded) ? expanded : '';
+      const pageId = page ? identityOf(page) : null;
+      if (page && pageId) links.push({ url: page, title, identity: pageId, aliasFrom: from });
+      else post.aliasFrom = from;
+    }
+    links.push(post);
+  }
+  return links;
 }
 
 function readCards(value: unknown): Map<string, CardLink> {
@@ -243,8 +374,10 @@ function readCards(value: unknown): Map<string, CardLink> {
     if (!parsed) continue;
     const id = typeof parsed.id === 'string' ? parsed.id.trim() : '';
     if (!id || id.length > 80 || cards.has(id)) continue;
-    const url = httpUrl(parsed.url) ?? httpUrl(parsed.link);
-    cards.set(id, { id, ...(url ? { url } : {}), title: plainTitle(parsed.title) });
+    const url = httpUrl(parsed.url) ?? httpUrl(parsed.link) ?? undefined;
+    const cardType = typeof parsed.cardType === 'string' ? parsed.cardType : '';
+    const type = typeof parsed.type === 'string' ? parsed.type : '';
+    cards.set(id, { id, ...(url ? { url } : {}), title: plainTitle(parsed.title), cardType, type });
   }
   return cards;
 }
@@ -257,19 +390,124 @@ function parseJson(value: string): unknown {
   }
 }
 
+function isCitation(card: CardLink): boolean {
+  if (card.cardType === 'citation_card' || card.type === 'render_inline_citation') return true;
+  return !card.cardType && !card.type && Boolean(card.url);
+}
+
+function resolveId(identity: string, aliases: ReadonlyMap<string, string>): string {
+  let current = identity;
+  const seen = new Set<string>();
+  for (let hop = 0; hop < 4; hop++) {
+    const next = aliases.get(current);
+    if (!next || next === current || seen.has(next)) return current;
+    seen.add(current);
+    current = next;
+  }
+  return current;
+}
+
+function indexLinks(groups: readonly (readonly LinkFact[])[]): {
+  catalog: LinkFact[];
+  aliases: Map<string, string>;
+} {
+  const catalog = groups.flat();
+  const aliases = new Map<string, string>();
+  for (const link of catalog) {
+    if (link.aliasFrom) aliases.set(link.aliasFrom, link.identity);
+  }
+  const owners = new Map<string, string | null>();
+  for (const link of catalog) {
+    const id = resolveId(link.identity, aliases);
+    if (!link.title || id.startsWith('tco:')) continue;
+    const prev = owners.get(link.title);
+    owners.set(link.title, prev === undefined || prev === id ? id : null);
+  }
+  for (const link of catalog) {
+    const id = resolveId(link.identity, aliases);
+    if (!id.startsWith('tco:') || !link.title || aliases.has(id)) continue;
+    const owner = owners.get(link.title);
+    if (owner) aliases.set(id, owner);
+  }
+  return { catalog, aliases };
+}
+
 function youtubeTitles(
-  sources: readonly SourceLink[],
+  links: readonly LinkFact[],
   cards: ReadonlyMap<string, CardLink>,
 ): Map<string, string> {
   const titles = new Map<string, string>();
-  const add = (url: string | undefined, title: string) => {
-    if (!url || !title) return;
+  const add = (url: string, title: string) => {
     const id = youtubeVideoId(url);
-    if (id && !titles.has(id)) titles.set(id, title);
+    if (id && title && !titles.has(id)) titles.set(id, title);
   };
-  for (const source of sources) add(source.url, source.title);
-  for (const card of cards.values()) add(card.url, card.title);
+  for (const link of links) add(link.url, link.title);
+  for (const card of cards.values()) {
+    if (card.url) add(card.url, card.title);
+  }
   return titles;
+}
+
+interface CitationIndex {
+  order: SourceLine[];
+  cited: Set<string>;
+  marker: (identity: string, fallbackUrl: string, title: string) => string;
+  ensure: (identity: string, fallbackUrl: string, title: string) => void;
+  resolve: (identity: string) => string;
+  show: (identity: string, fallbackUrl: string) => string;
+}
+
+function createCitations(
+  catalog: readonly LinkFact[],
+  aliases: ReadonlyMap<string, string>,
+): CitationIndex {
+  const order: SourceLine[] = [];
+  const numbers = new Map<string, number>();
+  const cited = new Set<string>();
+  const resolve = (identity: string) => resolveId(identity, aliases);
+
+  const show = (identity: string, fallbackUrl: string): string => {
+    const id = resolve(identity);
+    for (const link of catalog) {
+      if (resolve(link.identity) !== id || isShort(link.url)) continue;
+      return link.url;
+    }
+    return displayHref(fallbackUrl) ?? fallbackUrl;
+  };
+
+  const titleOf = (identity: string, fallback: string): string => {
+    if (fallback) return fallback;
+    const id = resolve(identity);
+    for (const link of catalog) {
+      if (resolve(link.identity) === id && link.title) return link.title;
+    }
+    return '';
+  };
+
+  const ensure = (identity: string, fallbackUrl: string, title: string): number | null => {
+    const id = resolve(identity);
+    const existing = numbers.get(id);
+    if (existing) {
+      const slot = order[existing - 1];
+      if (slot && !slot.title) slot.title = titleOf(id, title);
+      return existing;
+    }
+    if (order.length >= MAX_LINKS) return null;
+    const n = order.length + 1;
+    numbers.set(id, n);
+    order.push({ url: show(id, fallbackUrl), title: titleOf(id, title) });
+    return n;
+  };
+
+  // A card or post title pasted here swallowed the sentence; Sources keeps the title.
+  const marker = (identity: string, fallbackUrl: string, title: string): string => {
+    const n = ensure(identity, fallbackUrl, title);
+    const url = n ? order[n - 1]!.url : show(identity, fallbackUrl);
+    if (n) cited.add(resolve(identity));
+    return n ? `[[${n}]](${url})` : url;
+  };
+
+  return { order, cited, marker, ensure, resolve, show };
 }
 
 function cardId(attrs: string): string | null {
@@ -280,31 +518,29 @@ function cardId(attrs: string): string | null {
 function replaceRenderTags(
   raw: string,
   cards: ReadonlyMap<string, CardLink>,
-  sources: readonly SourceLink[],
+  cite: CitationIndex,
 ): string {
   return raw.replace(RENDER_PAIR, (_whole, attrs: string) => {
     const id = cardId(attrs);
     const card = id ? cards.get(id) : undefined;
     if (!card?.url) return '';
-    const title = card.title || sources.find((source) => source.url === card.url)?.title || '';
-    return title ? `[${linkLabel(title, card.url)}](${card.url})` : card.url;
+    const identity = identityOf(card.url);
+    if (!identity) return '';
+    if (!isCitation(card)) return cite.show(identity, card.url);
+    cite.cited.add(cite.resolve(identity));
+    return cite.marker(identity, card.url, card.title);
   });
 }
 
-function titleKnownPosts(body: string, posts: readonly XPostLink[]): string {
-  return mapOutsideFences(body, (line) =>
-    mapOutsideInlineCode(line, (segment) => {
-      let next = segment;
-      for (const post of posts) {
-        if (!post.text || !next.includes(post.url) || next.includes(`](${post.url})`)) continue;
-        next = next.replace(
-          post.url,
-          `[${linkLabel(post.text, `@${post.username}`)}](${post.url})`,
-        );
-      }
-      return next;
-    }),
-  );
+function replaceCitedUrls(segment: string, cite: CitationIndex): string {
+  return segment.replace(BARE_URL, (raw: string, offset: number, source: string) => {
+    if (source.slice(Math.max(0, offset - 2), offset) === '](') return raw;
+    const { url: trimmed, rest } = splitUrl(raw);
+    const identity = identityOf(trimmed);
+    // A cited video stays a cover. Sources still lists it.
+    if (!identity || youtubeVideoId(trimmed) || !cite.cited.has(cite.resolve(identity))) return raw;
+    return `${cite.marker(identity, trimmed, '')}${rest}`;
+  });
 }
 
 function appendBlock(body: string, block: string): string {
@@ -312,42 +548,35 @@ function appendBlock(body: string, block: string): string {
   return body ? `${body}\n\n${block}` : block;
 }
 
-/**
- * The exported markdown for one Grok response. Code fences are unchanged.
- * Search results and X posts already written in the body are not repeated.
- */
+function sourcesBlock(order: readonly SourceLine[]): string {
+  if (order.length === 0) return '';
+  const lines = order.map((source, index) =>
+    source.title
+      ? `${index + 1}. [${linkLabel(source.title, source.url)}](${source.url})`
+      : `${index + 1}. ${source.url}`,
+  );
+  return `**Sources**\n\n${lines.join('\n')}`;
+}
+
 export function grokMessageMarkdown(facts: Record<string, unknown>): string {
   const message = typeof facts.message === 'string' ? facts.message : '';
   const query = typeof facts.query === 'string' ? facts.query : '';
   const raw = message.trim() ? message : query;
   const cards = readCards(facts.cardAttachmentsJson);
-  const sources = readSources(facts);
-  const posts = readPosts(facts);
-  const titles = youtubeTitles(sources, cards);
-  const body = embedYouTubeLinks(
-    replaceRenderTags(raw, cards, sources)
-      .replace(RENDER_EMPTY, '')
-      .replace(/[ \t]{2,}/g, ' ')
-      .trim(),
-    titles,
-  );
-  const withPosts = titleKnownPosts(body, posts);
-  const postLines = posts
-    .filter(
-      (post) => !withPosts.includes(post.url) && !withPosts.includes(`/status/${post.postId}`),
-    )
-    .map((post) =>
-      post.text
-        ? `- [${linkLabel(post.text, `@${post.username}`)}](${post.url})`
-        : `- [@${post.username}](${post.url})`,
-    );
-  const sourceLines = sources
-    .filter((source) => !withPosts.includes(source.url))
-    .map((source) =>
-      source.title
-        ? `- [${linkLabel(source.title, source.url)}](${source.url})`
-        : `- ${source.url}`,
-    );
-  const sourcesBlock = sourceLines.length > 0 ? `**Sources**\n\n${sourceLines.join('\n')}` : '';
-  return appendBlock(appendBlock(withPosts, postLines.join('\n')), sourcesBlock);
+  const web = readWeb(facts.webSearchResults);
+  const citedWeb = readWeb(facts.citedWebSearchResults);
+  const posts = readPosts(facts.xposts);
+  const citedPosts = readPosts(facts.citedXposts);
+  const searchedPosts = readPosts(facts.xSearchResults);
+  const { catalog, aliases } = indexLinks([web, citedWeb, posts, citedPosts, searchedPosts]);
+  const cite = createCitations(catalog, aliases);
+  for (const link of [...citedWeb, ...citedPosts]) cite.cited.add(cite.resolve(link.identity));
+
+  const withRenders = replaceRenderTags(raw, cards, cite).replace(RENDER_EMPTY, '');
+  const collapsed = withRenders.replace(/[ \t]{2,}/g, ' ').trim();
+  const withBare = mapProse(collapsed, (segment) => replaceCitedUrls(segment, cite));
+  const body = embedOutsideCitations(withBare, youtubeTitles(web, cards));
+
+  for (const link of [...citedWeb, ...citedPosts]) cite.ensure(link.identity, link.url, link.title);
+  return appendBlock(body, sourcesBlock(cite.order));
 }
