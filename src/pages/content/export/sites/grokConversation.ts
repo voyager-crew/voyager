@@ -509,6 +509,14 @@ function decorateGrokDom(result: CatalogReadResult): CatalogReadResult {
   return changed ? { ...result, snapshots } : result;
 }
 
+function logGrokExportRead(source: 'endpoint' | 'virtual-dom', count: number): void {
+  if (!import.meta.env.DEV) return;
+  logger.info(
+    source === 'endpoint' ? 'Grok export read via endpoint' : 'Grok export read via virtual DOM',
+    { source, count },
+  );
+}
+
 function canReadGrokApi(site: SiteAdapter, expectedUrl: string | undefined): boolean {
   if (site.id !== 'grok' || location.origin !== GROK_ORIGIN) return false;
   if (!expectedUrl) return true;
@@ -532,7 +540,9 @@ export async function readCatalogOrGrokConversation(
   const readDom = deps.readDom ?? readCatalogConversation;
   const readPage = async (): Promise<CatalogReadResult> => {
     const result = await readDom(site, adapter, options);
-    return site.id === 'grok' ? decorateGrokDom(result) : result;
+    const decorated = site.id === 'grok' ? decorateGrokDom(result) : result;
+    if (site.id === 'grok') logGrokExportRead('virtual-dom', decorated.snapshots.length);
+    return decorated;
   };
   if (!canReadGrokApi(site, options.expectedUrl)) return readPage();
   const pattern = site.conversationIdPattern;
@@ -548,8 +558,10 @@ export async function readCatalogOrGrokConversation(
       deps.timeoutMs ?? REQUEST_TIMEOUT_MS,
       deps.fetch ?? ((input, init) => globalThis.fetch(input, init)),
     );
+    const snapshots = snapshotsFor(messageKey, branch);
+    logGrokExportRead('endpoint', snapshots.length);
     return {
-      snapshots: snapshotsFor(messageKey, branch),
+      snapshots,
       completeness: branch.partial ? 'unknown' : 'complete',
     };
   } catch (error) {
