@@ -27,13 +27,6 @@ function onGrokPage(): boolean {
   return document.documentElement.dataset.gvPlatform === grokSite.id;
 }
 
-function clearPin(bar: HTMLElement): void {
-  bar.style.removeProperty('left');
-  bar.style.removeProperty('right');
-  bar.style.removeProperty('top');
-  bar.style.removeProperty('transform');
-}
-
 /**
  * The title's block that does not contain the transcript: its parent does.
  * Inserting after that block puts the bar under the title and above the messages.
@@ -44,7 +37,6 @@ function blockAboveTranscript(title: Element, scroller: Element): HTMLElement | 
     const parent = node.parentElement;
     if (!parent) return null;
     if (parent.contains(scroller) && !node.contains(scroller)) return node;
-    if (node === document.body || node === document.documentElement) return null;
     node = parent;
   }
   return null;
@@ -98,10 +90,7 @@ export function placeGrokCheckboxes(
     const clipped = position.left < 0 && clipsColumn([host], root, hostRect.left + position.left);
     selector.style.left = `${clipped ? CLIPPED_INSET_PX : position.left}px`;
     selector.style.top = `${position.top}px`;
-    const needsRoom = clipped;
-    if (host.classList.contains(ROOM_CLASS) !== needsRoom) {
-      host.classList.toggle(ROOM_CLASS, needsRoom);
-    }
+    if (host.classList.contains(ROOM_CLASS) !== clipped) host.classList.toggle(ROOM_CLASS, clipped);
   }
   return true;
 }
@@ -120,7 +109,6 @@ export function dockGrokSelectionBar(bar: HTMLElement): (() => void) | null {
     if (header && parent) {
       parent.insertBefore(bar, header.nextSibling);
       bar.classList.add(DOCKED_CLASS);
-      clearPin(bar);
       return () => {
         bar.classList.remove(DOCKED_CLASS);
       };

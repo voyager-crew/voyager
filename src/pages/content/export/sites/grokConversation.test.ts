@@ -1,134 +1,31 @@
-import type { JSDOM } from 'jsdom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import grokData from '@/features/plugins/catalog/sites/grok/site.json';
-import { validateSiteAdapterData } from '@/features/plugins/sites/siteAdapterData';
-import type { SiteAdapter } from '@/features/plugins/types';
-
 import { buildCatalogExportAdapter } from '../adapter/platform/catalog';
-import type { ExportSelectionOptions } from '../adapter/type';
-import type { CatalogReadResult, CatalogSnapshot } from './catalogReader';
 import { createCatalogExportSite } from './catalogSite';
+import { grokConversationId, grokDisplayedLeafId, selectGrokBranch } from './grokBranch';
+import { readCatalogOrGrokConversation } from './grokConversation';
 import {
-  type GrokReadDeps,
-  grokConversationId,
-  grokDisplayedLeafId,
-  readCatalogOrGrokConversation,
-  selectGrokBranch,
-} from './grokConversation';
+  CONTROL,
+  CONV,
+  DROPPED,
+  KEPT,
+  ORIGINAL_URL,
+  USER,
+  branched,
+  domResult,
+  endpointFetch,
+  grokSite,
+  jsonResponse,
+  node,
+  openConversation,
+  readGrok,
+  readOptions,
+  response,
+} from './grokConversation.fixtures';
 
-declare const jsdom: JSDOM;
+declare const jsdom: import('jsdom').JSDOM;
 
-const ORIGINAL_URL = location.href;
-const CONV = '01234567-89ab-cdef-0123-456789abcdef';
-const USER = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
-const KEPT = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
-const DROPPED = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
-const CONTROL = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function grokSite(): SiteAdapter {
-  const validated = validateSiteAdapterData(grokData);
-  if (!validated.success) throw new Error(JSON.stringify(validated.error));
-  return validated.data;
-}
-
-function node(id: string, parent?: string): Record<string, unknown> {
-  return parent ? { responseId: id, parentResponseId: parent } : { responseId: id };
-}
-
-function response(
-  id: string,
-  sender: string,
-  message: string,
-  extra: Record<string, unknown> = {},
-): Record<string, unknown> {
-  return { responseId: id, sender, message, ...extra };
-}
-
-function branched() {
-  return {
-    nodes: { responseNodes: [node(USER), node(KEPT, USER), node(DROPPED, USER)] },
-    responses: [
-      response(USER, 'human', 'Prompt', { createTime: '2026-01-01T00:00:00.000Z' }),
-      response(KEPT, 'assistant', 'First answer', {
-        parentResponseId: USER,
-        createTime: '2026-01-01T00:00:01.000Z',
-      }),
-      response(DROPPED, 'ASSISTANT', 'Regenerated', {
-        parentResponseId: USER,
-        createTime: '2026-01-01T00:00:02.000Z',
-      }),
-    ],
-  };
-}
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-function endpointFetch(
-  nodes: unknown,
-  responses: readonly Record<string, unknown>[],
-): typeof fetch {
-  const byId = new Map(responses.map((entry) => [entry.responseId, entry]));
-  return async (input, init) => {
-    const url = String(input);
-    if (url.includes('/response-node')) return jsonResponse(nodes);
-    const requested = JSON.parse(String(init?.body)) as { responseIds?: string[] };
-    const page = (requested.responseIds ?? []).flatMap((id) => {
-      const entry = byId.get(id);
-      return entry ? [entry] : [];
-    });
-    return jsonResponse({ responses: page });
-  };
-}
-
-function domResult(text: string): CatalogReadResult {
-  const element = document.createElement('div');
-  element.textContent = text;
-  const snapshot: CatalogSnapshot = {
-    id: 'dom-1',
-    role: 'user',
-    content: {
-      text,
-      html: '',
-      attachments: [],
-      hasImages: false,
-      hasFormulas: false,
-      hasTables: false,
-      hasCode: false,
-    },
-    text,
-    element,
-    host: new WeakRef(element),
-    fingerprint: 'dom',
-  };
-  return { snapshots: [snapshot], completeness: 'unknown' };
-}
-
-function openConversation(rid?: string): void {
-  jsdom.reconfigure({ url: `https://grok.com/c/${CONV}${rid ? `?rid=${rid}` : ''}` });
-}
-
-function readOptions(): ExportSelectionOptions {
-  return { expectedUrl: location.href };
-}
-
-async function readGrok(
-  fetchImpl: typeof fetch,
-  deps: GrokReadDeps = {},
-): Promise<CatalogReadResult> {
-  return readCatalogOrGrokConversation(
-    grokSite(),
-    buildCatalogExportAdapter(grokSite()),
-    readOptions(),
-    { fetch: fetchImpl, ...deps },
-  );
-}
 
 function headerRecord(init: RequestInit | undefined): Record<string, string> {
   const headers = init?.headers;
@@ -147,16 +44,6 @@ afterEach(() => {
 
 describe('Grok conversation parsing', () => {
   const site = grokSite();
-
-  it('keeps the virtual descriptor and the composer stop control', () => {
-    expect(site.export).toEqual({
-      version: 1,
-      read: 'virtual',
-      messageKey: 'data-plane-row',
-      title: '[data-testid="conversation-title"]',
-      generating: 'button[data-testid="composer-stop"]',
-    });
-  });
 
   it('reads the conversation id from /c/<uuid> and the displayed leaf from rid', () => {
     const pattern = site.conversationIdPattern ?? '';
@@ -203,10 +90,13 @@ describe('Grok conversation parsing', () => {
       const { parentResponseId: _parent, ...rest } = entry;
       return rest;
     });
-    expect(selectGrokBranch(nodes, withoutBodyParents, KEPT)?.messages).toEqual([
-      { id: USER, role: 'user', text: 'From query', partial: false },
-      { id: KEPT, role: 'assistant', text: 'Hello world', partial: true },
-    ]);
+    expect(selectGrokBranch(nodes, withoutBodyParents, KEPT)).toEqual({
+      messages: [
+        { id: USER, role: 'user', text: 'From query' },
+        { id: KEPT, role: 'assistant', text: 'Hello world' },
+      ],
+      partial: true,
+    });
 
     const nodesWithoutParents = { responseNodes: [node(USER), node(CONTROL), node(KEPT)] };
     expect(

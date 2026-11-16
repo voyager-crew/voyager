@@ -4,12 +4,12 @@
  * numbered **Sources** list. Search hits the reply does not cite are left
  * out. A `t.co` link and its expanded page are one target.
  */
+import { mapOutsideFences } from '@/features/export/services/markdownListSpacing';
 
 const RENDER_PAIR = /<grok:render\b([^>]*)>[\s\S]*?<\/grok:render>/gi;
 const RENDER_EMPTY = /<grok:render\b[^>]*\/>/gi;
 const BARE_URL = /https?:\/\/[^\s<>)\]]+/g;
 const TRAILING_PUNCT = /[.,;:!?。，、；：！？]+$/;
-const CITATION_MARKER = /\[\[\d+\]\]\(https?:\/\/[^\s)]+\)/g;
 const VIDEO_ID = /^[\w-]{11}$/;
 const USERNAME = /^[A-Za-z0-9_]{1,15}$/;
 const POST_ID = /^\d{5,25}$/;
@@ -40,23 +40,26 @@ interface SourceLine {
   title: string;
 }
 
-function record(value: unknown): Record<string, unknown> | null {
+export function record(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
 }
 
-function httpUrl(value: unknown): string | null {
+function parsedHttp(value: unknown): URL | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   if (!trimmed || trimmed.length > 2_000) return null;
   try {
     const url = new URL(trimmed);
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
-    return trimmed;
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url : null;
   } catch {
     return null;
   }
+}
+
+function httpUrl(value: unknown): string | null {
+  return parsedHttp(value) ? (value as string).trim() : null;
 }
 
 function plainTitle(value: unknown): string {
@@ -76,8 +79,17 @@ function hostOf(url: URL): string {
   return url.hostname.toLowerCase().replace(/^www\./, '');
 }
 
+const X_HOSTS = new Set(['x.com', 'twitter.com', 'mobile.x.com', 'mobile.twitter.com']);
+
+/** `<user>/status/<id>` on an X host. */
+function xStatus(url: URL): { user: string; id: string } | null {
+  if (!X_HOSTS.has(hostOf(url))) return null;
+  const [user = '', status, id = ''] = url.pathname.split('/').filter(Boolean);
+  return status?.toLowerCase() === 'status' && POST_ID.test(id) ? { user, id } : null;
+}
+
 /** watch?v=, youtu.be/ and shorts/ only. Anything else stays a normal link. */
-export function youtubeVideoId(raw: string): string | null {
+function youtubeVideoId(raw: string): string | null {
   let url: URL;
   try {
     url = new URL(raw);
@@ -103,42 +115,6 @@ export function youtubeVideoId(raw: string): string | null {
 function youtubeCover(title: string, id: string, url: string): string {
   const thumb = `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
   return `[![${linkLabel(title, YOUTUBE_FALLBACK)}](${thumb})](${url})`;
-}
-
-interface FenceMark {
-  char: '`' | '~';
-  len: number;
-  rest: string;
-}
-
-function fenceMark(line: string): FenceMark | null {
-  const match = /^( {0,3})(`{3,}|~{3,})(.*)$/.exec(line);
-  if (!match) return null;
-  const marker = match[2] ?? '';
-  const char = marker[0];
-  if (char !== '`' && char !== '~') return null;
-  return { char, len: marker.length, rest: match[3] ?? '' };
-}
-
-function mapOutsideFences(markdown: string, edit: (line: string) => string): string {
-  let open: { char: '`' | '~'; len: number } | null = null;
-  return markdown
-    .split('\n')
-    .map((line) => {
-      const mark = fenceMark(line);
-      if (open) {
-        if (mark && mark.char === open.char && mark.len >= open.len && mark.rest.trim() === '') {
-          open = null;
-        }
-        return line;
-      }
-      if (mark && (mark.char === '~' || !mark.rest.includes('`'))) {
-        open = mark;
-        return line;
-      }
-      return edit(line);
-    })
-    .join('\n');
 }
 
 function mapOutsideInlineCode(line: string, edit: (plain: string) => string): string {
@@ -168,6 +144,16 @@ function mapProse(markdown: string, edit: (segment: string) => string): string {
   return mapOutsideFences(markdown, (line) => mapOutsideInlineCode(line, edit));
 }
 
+/** Bare URLs not already a link target; `replace` returns null to keep one. */
+function replaceBareUrls(segment: string, replace: (url: string) => string | null): string {
+  return segment.replace(BARE_URL, (raw: string, offset: number, source: string) => {
+    if (source.slice(Math.max(0, offset - 2), offset) === '](') return raw;
+    const url = raw.replace(TRAILING_PUNCT, '');
+    const replaced = replace(url);
+    return replaced === null ? raw : `${replaced}${raw.slice(url.length)}`;
+  });
+}
+
 function embedYouTubeSegment(
   segment: string,
   titles: ReadonlyMap<string, string>,
@@ -179,20 +165,16 @@ function embedYouTubeSegment(
     (whole, bang: string, label: string, url: string) => {
       if (bang) return whole;
       const id = youtubeVideoId(url);
-      if (!id) return whole;
-      if (seen.has(id)) return whole;
+      if (!id || seen.has(id)) return whole;
       seen.add(id);
       return youtubeCover(plainTitle(label) || titles.get(id) || YOUTUBE_FALLBACK, id, url);
     },
   );
-  return linked.replace(BARE_URL, (raw: string, offset: number, source: string) => {
-    if (source.slice(Math.max(0, offset - 2), offset) === '](') return raw;
-    const { url: trimmed, rest } = splitUrl(raw);
-    const id = youtubeVideoId(trimmed);
-    if (!id) return raw;
-    if (seen.has(id)) return raw;
+  return replaceBareUrls(linked, (url) => {
+    const id = youtubeVideoId(url);
+    if (!id || seen.has(id)) return null;
     seen.add(id);
-    return `${youtubeCover(titles.get(id) || YOUTUBE_FALLBACK, id, trimmed)}${rest}`;
+    return youtubeCover(titles.get(id) || YOUTUBE_FALLBACK, id, url);
   });
 }
 
@@ -204,38 +186,10 @@ export function embedYouTubeLinks(
   return mapProse(markdown, (segment) => embedYouTubeSegment(segment, titles, seen));
 }
 
-function embedOutsideCitations(markdown: string, titles: ReadonlyMap<string, string>): string {
-  const saved: string[] = [];
-  const shielded = markdown.replace(CITATION_MARKER, (whole) => {
-    const token = `\uE000${saved.length}\uE001`;
-    saved.push(whole);
-    return token;
-  });
-  return embedYouTubeLinks(shielded, titles).replace(
-    /\uE000(\d+)\uE001/g,
-    (_whole, index: string) => saved[Number(index)] ?? '',
-  );
-}
-
-function splitUrl(raw: string): { url: string; rest: string } {
-  const url = raw.replace(TRAILING_PUNCT, '');
-  return { url, rest: raw.slice(url.length) };
-}
-
 function listOf(value: unknown): unknown[] {
   if (Array.isArray(value)) return value;
   const results = record(value)?.results;
   return Array.isArray(results) ? results : [];
-}
-
-function parsedHttp(raw: string): URL | null {
-  const text = httpUrl(raw);
-  if (!text) return null;
-  try {
-    return new URL(text);
-  } catch {
-    return null;
-  }
 }
 
 function identityOf(raw: string): string | null {
@@ -248,16 +202,8 @@ function identityOf(raw: string): string | null {
   }
   const video = youtubeVideoId(url.href);
   if (video) return `yt:${video}`;
-  if (
-    host === 'x.com' ||
-    host === 'twitter.com' ||
-    host === 'mobile.x.com' ||
-    host === 'mobile.twitter.com'
-  ) {
-    const parts = url.pathname.split('/').filter(Boolean);
-    const id = parts[2] ?? '';
-    if (parts[1]?.toLowerCase() === 'status' && POST_ID.test(id)) return `x:${id}`;
-  }
+  const post = xStatus(url);
+  if (post) return `x:${post.id}`;
   url.hash = '';
   let path = url.pathname;
   if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
@@ -268,20 +214,8 @@ function identityOf(raw: string): string | null {
 function displayHref(raw: string): string | null {
   const url = parsedHttp(raw);
   if (!url) return null;
-  const host = hostOf(url);
-  if (
-    host === 'x.com' ||
-    host === 'twitter.com' ||
-    host === 'mobile.x.com' ||
-    host === 'mobile.twitter.com'
-  ) {
-    const parts = url.pathname.split('/').filter(Boolean);
-    const id = parts[2] ?? '';
-    const user = parts[0] ?? '';
-    if (parts[1]?.toLowerCase() === 'status' && POST_ID.test(id) && USERNAME.test(user)) {
-      return `https://x.com/${user}/status/${id}`;
-    }
-  }
+  const post = xStatus(url);
+  if (post && USERNAME.test(post.user)) return `https://x.com/${post.user}/status/${post.id}`;
   url.hash = '';
   if (url.pathname.length > 1 && url.pathname.endsWith('/') && !url.search) {
     url.pathname = url.pathname.slice(0, -1);
@@ -535,19 +469,12 @@ function replaceRenderTags(
 }
 
 function replaceCitedUrls(segment: string, cite: CitationIndex): string {
-  return segment.replace(BARE_URL, (raw: string, offset: number, source: string) => {
-    if (source.slice(Math.max(0, offset - 2), offset) === '](') return raw;
-    const { url: trimmed, rest } = splitUrl(raw);
-    const identity = identityOf(trimmed);
+  return replaceBareUrls(segment, (url) => {
+    const identity = identityOf(url);
     // A cited video stays a cover. Sources still lists it.
-    if (!identity || youtubeVideoId(trimmed) || !cite.cited.has(cite.resolve(identity))) return raw;
-    return `${cite.marker(identity, trimmed, '')}${rest}`;
+    if (!identity || youtubeVideoId(url) || !cite.cited.has(cite.resolve(identity))) return null;
+    return cite.marker(identity, url, '');
   });
-}
-
-function appendBlock(body: string, block: string): string {
-  if (!block) return body;
-  return body ? `${body}\n\n${block}` : block;
 }
 
 function sourcesBlock(order: readonly SourceLine[]): string {
@@ -577,8 +504,8 @@ export function grokMessageMarkdown(facts: Record<string, unknown>): string {
   const withRenders = replaceRenderTags(raw, cards, cite).replace(RENDER_EMPTY, '');
   const collapsed = withRenders.replace(/[ \t]{2,}/g, ' ').trim();
   const withBare = mapProse(collapsed, (segment) => replaceCitedUrls(segment, cite));
-  const body = embedOutsideCitations(withBare, youtubeTitles(web, cards));
+  const body = embedYouTubeLinks(withBare, youtubeTitles(web, cards));
 
   for (const link of [...citedWeb, ...citedPosts]) cite.ensure(link.identity, link.url, link.title);
-  return appendBlock(body, sourcesBlock(cite.order));
+  return [body, sourcesBlock(cite.order)].filter(Boolean).join('\n\n');
 }

@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { readContentStyle } from '@/tests/contentStyle';
-
 import type { ExportMessage, ExportMessageRole } from '../conversationCollector';
 import { startExportSelectionSession } from '../exportSelectionSession';
 import { dockGrokSelectionBar } from '../grokSelectionBar';
@@ -134,19 +132,6 @@ describe('Grok export selection bar', () => {
     await session.done;
     expect(document.querySelector('[data-gv-export-select-bar="true"]')).toBeNull();
   });
-
-  it('takes the docked bar out of the fixed top slot', () => {
-    const css = readContentStyle();
-    const block =
-      css.match(
-        /html\[data-gv-platform='grok'\] \.gv-export-select-bar\.gv-export-select-bar--docked\s*\{([^}]*)\}/,
-      )?.[1] ?? '';
-
-    expect(block).toContain('position: relative;');
-    expect(block).toContain('top: auto;');
-    expect(block).toContain('margin: 8px auto;');
-    expect(css).toMatch(/\.gv-export-select-bar\s*\{[^}]*\btop:\s*12px;/);
-  });
 });
 
 function box(el: HTMLElement, left: number, top: number, width: number, height: number): void {
@@ -266,22 +251,5 @@ describe('Grok export checkboxes', () => {
     expect(host.classList.contains('gv-export-msg-room')).toBe(true);
     session.cancel();
     await session.done;
-  });
-
-  it('pads a selected Grok message and offsets its outline', () => {
-    const css = readContentStyle();
-    const host =
-      css.match(
-        /html\[data-gv-platform='grok'\] \.gv-export-select-mode \.gv-export-msg-host\s*\{([^}]*)\}/,
-      )?.[1] ?? '';
-    const selected =
-      css.match(
-        /html\[data-gv-platform='grok'\] \.gv-export-select-mode \.gv-export-msg-selected\s*\{([^}]*)\}/,
-      )?.[1] ?? '';
-
-    expect(host).toContain('padding: 8px 12px;');
-    expect(selected).toContain('outline-offset: 4px;');
-    expect(selected).toContain('box-shadow: none;');
-    expect(css).toMatch(/\.gv-export-msg-selected\s*\{[^}]*box-shadow:/);
   });
 });

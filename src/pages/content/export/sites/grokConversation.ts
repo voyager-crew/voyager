@@ -5,7 +5,6 @@
  * `grokConversationEndpoint.ts`.
  */
 import { logger } from '@/core/services/LoggerService';
-import { hashString53 } from '@/core/utils/hash';
 import type { ExtractedContent } from '@/features/export/services/DOMContentExtractor';
 import grokSite from '@/features/plugins/catalog/sites/grok/site.json';
 import type { SiteAdapter } from '@/features/plugins/types';
@@ -17,13 +16,11 @@ import {
   type CatalogReadResult,
   type CatalogSnapshot,
   readCatalogConversation,
+  snapshotFingerprint,
 } from './catalogReader';
 import { type GrokBranch, grokConversationId, grokDisplayedLeafId } from './grokBranch';
 import { GrokApiMiss, fetchGrokBranch } from './grokConversationEndpoint';
 import { embedYouTubeLinks } from './grokMessageMarkdown';
-
-export { grokConversationId, grokDisplayedLeafId, selectGrokBranch } from './grokBranch';
-export type { GrokBranch, GrokBranchMessage } from './grokBranch';
 
 const REQUEST_TIMEOUT_MS = 20_000;
 const GROK_ORIGIN = 'https://grok.com';
@@ -56,9 +53,7 @@ function snapshotsFor(messageKey: string, branch: GrokBranch): CatalogSnapshot[]
       text: message.text,
       element,
       host: new WeakRef(element),
-      fingerprint: hashString53(
-        `${message.role}\u0000${content.text}\u0000${content.html}\u0000${JSON.stringify(content.attachments)}`,
-      ),
+      fingerprint: snapshotFingerprint(message.role, content),
     };
   });
 }
@@ -91,20 +86,12 @@ function decorateGrokDom(result: CatalogReadResult): CatalogReadResult {
   return changed ? { ...result, snapshots } : result;
 }
 
-/** vite build leaves DEV false and the logger at WARN; the chrome dev flag is on. */
-export function grokExportReadShouldLog(
-  dev: boolean = import.meta.env.DEV,
-  chromeDevBuild: boolean = Boolean(import.meta.env.VOYAGER_DEV_SETTINGS_BRIDGE),
-): boolean {
-  return dev || chromeDevBuild;
-}
-
 function logGrokExportRead(source: 'endpoint' | 'virtual-dom', count: number): void {
-  if (!grokExportReadShouldLog()) return;
-  const message =
-    source === 'endpoint' ? 'Grok export read via endpoint' : 'Grok export read via virtual DOM';
-  // oxlint-disable-next-line no-console -- info is filtered when NODE_ENV is production
-  console.info(message, { source, count });
+  // `vite build` leaves DEV false and the logger at WARN; the chrome dev build sets the bridge flag.
+  if (!import.meta.env.DEV && !import.meta.env.VOYAGER_DEV_SETTINGS_BRIDGE) return;
+  const via = source === 'endpoint' ? 'endpoint' : 'virtual DOM';
+  // oxlint-disable-next-line no-console -- dev builds only
+  console.info(`Grok export read via ${via}`, { source, count });
 }
 
 /** This reader belongs to the bundled Grok adapter, not every catalog site. */
@@ -122,10 +109,6 @@ function canReadGrokApi(site: SiteAdapter, expectedUrl: string | undefined): boo
   }
 }
 
-/**
- * Grok tries its conversation endpoint first. Every other catalog site, and
- * Grok when that read fails, uses the DOM reader configured in `site.json`.
- */
 export async function readCatalogOrGrokConversation(
   site: SiteAdapter,
   adapter: ExportPlatformAdapter,

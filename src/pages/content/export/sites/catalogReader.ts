@@ -22,6 +22,13 @@ import {
   createCatalogSnapshotAccumulator,
 } from './catalogReaderMerge';
 
+/** Content identity used to match a snapshot across reads. */
+export function snapshotFingerprint(role: string, content: ExtractedContent): string {
+  return hashString53(
+    `${role}\u0000${content.text}\u0000${content.html}\u0000${JSON.stringify(content.attachments)}`,
+  );
+}
+
 export type { CatalogSnapshot } from './catalogReaderMerge';
 export type CatalogCompleteness = 'complete' | 'partial' | 'unknown';
 export type CatalogReadReason = 'generating' | 'route' | 'timeout' | 'identity' | 'top';
@@ -124,9 +131,7 @@ function mountedSnapshots(
         : nativeKey
           ? `${role}:${nativeKey}`
           : undefined;
-      const fingerprint = hashString53(
-        `${role}\u0000${content.text}\u0000${content.html}\u0000${JSON.stringify(content.attachments)}`,
-      );
+      const fingerprint = snapshotFingerprint(role, content);
       const id = nativeId && !ids.has(nativeId) ? nativeId : `catalog-mounted-${index}`;
       ids.add(id);
       return {

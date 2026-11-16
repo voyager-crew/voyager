@@ -23,13 +23,8 @@
  * timeout returns nothing so the caller can read the virtual list instead.
  */
 import { isAbortError, throwIfExportCancelled } from '../exportCancellation';
-import {
-  type GrokBranch,
-  isGrokConversationId,
-  record,
-  responseIdOf,
-  selectGrokBranch,
-} from './grokBranch';
+import { type GrokBranch, responseIdOf, selectGrokBranch } from './grokBranch';
+import { record } from './grokMessageMarkdown';
 
 /** How many response ids one `load-responses` body carries. Public clients batch. */
 const RESPONSE_BATCH = 50;
@@ -43,36 +38,35 @@ export class GrokApiMiss extends Error {
   }
 }
 
-function endpoint(conversationId: string, suffix: string): string {
-  if (!isGrokConversationId(conversationId)) throw new GrokApiMiss('shape');
-  return `/rest/app-chat/conversations/${encodeURIComponent(conversationId)}${suffix}`;
+interface RequestContext {
+  readonly conversationId: string;
+  readonly signal: AbortSignal | undefined;
+  readonly timeoutMs: number;
+  readonly fetchImpl: typeof fetch;
 }
 
-function requestHeaders(jsonBody: boolean): Record<string, string> | null {
-  const id = globalThis.crypto?.randomUUID?.();
-  if (!id) return null;
-  return {
-    Accept: 'application/json',
-    'x-xai-request-id': id,
-    ...(jsonBody ? { 'Content-Type': 'application/json' } : {}),
-  };
-}
-
-async function request(
-  url: string,
-  init: RequestInit,
-  parent: AbortSignal | undefined,
-  timeoutMs: number,
-  fetchImpl: typeof fetch,
-): Promise<Response> {
+/** One same-origin JSON request. A miss is a `GrokApiMiss`; a cancel stays an `AbortError`. */
+async function requestJson(
+  context: RequestContext,
+  suffix: string,
+  body?: Record<string, unknown>,
+): Promise<unknown> {
+  const { signal: parent, timeoutMs, fetchImpl } = context;
   throwIfExportCancelled(parent);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   const onParent = () => controller.abort();
   parent?.addEventListener('abort', onParent);
+  let response: Response;
   try {
-    return await fetchImpl(url, {
-      ...init,
+    response = await fetchImpl(`/rest/app-chat/conversations/${context.conversationId}${suffix}`, {
+      method: body ? 'POST' : 'GET',
+      headers: {
+        Accept: 'application/json',
+        'x-xai-request-id': crypto.randomUUID(),
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
       credentials: 'include',
       cache: 'no-store',
       signal: controller.signal,
@@ -85,59 +79,32 @@ async function request(
     clearTimeout(timer);
     parent?.removeEventListener('abort', onParent);
   }
-}
-
-async function readBody(response: Response): Promise<unknown> {
   if (!response.ok) throw new GrokApiMiss(`http-${response.status}`);
   try {
-    return JSON.parse(await response.text()) as unknown;
+    return (await response.json()) as unknown;
   } catch (error) {
     if (isAbortError(error)) throw error;
     throw new GrokApiMiss('shape');
   }
 }
 
-async function getNodes(
-  conversationId: string,
-  signal: AbortSignal | undefined,
-  timeoutMs: number,
-  fetchImpl: typeof fetch,
-): Promise<unknown> {
-  const headers = requestHeaders(false);
-  if (!headers) throw new GrokApiMiss('request-id');
-  const response = await request(
-    endpoint(conversationId, '/response-node?includeThreads=true'),
-    { method: 'GET', headers },
-    signal,
-    timeoutMs,
-    fetchImpl,
-  );
-  return readBody(response);
-}
-
-function nodeIds(payload: unknown): string[] | null {
+function nodeIds(payload: unknown): string[] {
   const nodes = record(payload)?.responseNodes;
-  if (!Array.isArray(nodes)) return null;
-  const ids: string[] = [];
-  const seen = new Set<string>();
+  if (!Array.isArray(nodes)) return [];
+  const ids = new Set<string>();
   for (const node of nodes) {
     const id = responseIdOf(node);
-    if (!id || seen.has(id)) continue;
-    seen.add(id);
-    ids.push(id);
+    if (id) ids.add(id);
   }
-  return ids;
+  return [...ids];
 }
 
-function nextCursor(payload: unknown): string | null {
-  const data = record(payload);
-  if (!data) return null;
+function nextCursor(data: Record<string, unknown>, more: boolean): string | null {
   // `cursor` is only a continuation when the page says there is more. A finished
   // payload can echo the cursor it was given.
-  const keys =
-    data.hasMore === true || data.hasNextPage === true
-      ? (['nextCursor', 'nextPageToken', 'next', 'cursor'] as const)
-      : (['nextCursor', 'nextPageToken', 'next'] as const);
+  const keys = more
+    ? ['nextCursor', 'nextPageToken', 'next', 'cursor']
+    : ['nextCursor', 'nextPageToken', 'next'];
   for (const key of keys) {
     const value = data[key];
     if (typeof value === 'string' && value.trim()) return value.trim();
@@ -145,47 +112,23 @@ function nextCursor(payload: unknown): string | null {
   return null;
 }
 
-function hasMore(payload: unknown): boolean {
-  const data = record(payload);
-  return data?.hasMore === true || data?.hasNextPage === true;
-}
-
-async function postResponses(
-  conversationId: string,
-  body: Record<string, unknown>,
-  signal: AbortSignal | undefined,
-  timeoutMs: number,
-  fetchImpl: typeof fetch,
-): Promise<unknown> {
-  const headers = requestHeaders(true);
-  if (!headers) throw new GrokApiMiss('request-id');
-  const response = await request(
-    endpoint(conversationId, '/load-responses'),
-    { method: 'POST', headers, body: JSON.stringify(body) },
-    signal,
-    timeoutMs,
-    fetchImpl,
-  );
-  return readBody(response);
-}
-
 async function loadBatch(
-  conversationId: string,
+  context: RequestContext,
   responseIds: readonly string[],
-  signal: AbortSignal | undefined,
-  timeoutMs: number,
-  fetchImpl: typeof fetch,
 ): Promise<unknown[]> {
   const collected: unknown[] = [];
   const seenIds = new Set<string>();
   const seenCursors = new Set<string>();
   let cursor: string | null = null;
   for (let page = 0; page < MAX_RESPONSE_PAGES; page++) {
-    const body: Record<string, unknown> = { responseIds: [...responseIds] };
-    if (cursor) body.cursor = cursor;
-    const payload = await postResponses(conversationId, body, signal, timeoutMs, fetchImpl);
-    const responses = record(payload)?.responses;
-    if (!Array.isArray(responses)) throw new GrokApiMiss('shape');
+    const data = record(
+      await requestJson(context, '/load-responses', {
+        responseIds: [...responseIds],
+        ...(cursor ? { cursor } : {}),
+      }),
+    );
+    const responses = data?.responses;
+    if (!data || !Array.isArray(responses)) throw new GrokApiMiss('shape');
     let added = 0;
     for (const response of responses) {
       const id = responseIdOf(response);
@@ -194,29 +137,14 @@ async function loadBatch(
       collected.push(response);
       added += 1;
     }
-    const next = nextCursor(payload);
-    const more = hasMore(payload);
+    const more = data.hasMore === true || data.hasNextPage === true;
+    const next = nextCursor(data, more);
     if (!more && !next) return collected;
     if (!next || seenCursors.has(next) || added === 0) throw new GrokApiMiss('incomplete');
     seenCursors.add(next);
     cursor = next;
   }
   throw new GrokApiMiss('incomplete');
-}
-
-async function loadResponses(
-  conversationId: string,
-  responseIds: readonly string[],
-  signal: AbortSignal | undefined,
-  timeoutMs: number,
-  fetchImpl: typeof fetch,
-): Promise<unknown[]> {
-  const collected: unknown[] = [];
-  for (let start = 0; start < responseIds.length; start += RESPONSE_BATCH) {
-    const batch = responseIds.slice(start, start + RESPONSE_BATCH);
-    collected.push(...(await loadBatch(conversationId, batch, signal, timeoutMs, fetchImpl)));
-  }
-  return collected;
 }
 
 export async function fetchGrokBranch(
@@ -226,12 +154,14 @@ export async function fetchGrokBranch(
   timeoutMs: number,
   fetchImpl: typeof fetch,
 ): Promise<GrokBranch> {
-  throwIfExportCancelled(signal);
-  const nodePayload = await getNodes(conversationId, signal, timeoutMs, fetchImpl);
+  const context: RequestContext = { conversationId, signal, timeoutMs, fetchImpl };
+  const nodePayload = await requestJson(context, '/response-node?includeThreads=true');
   const ids = nodeIds(nodePayload);
-  if (!ids || ids.length === 0) throw new GrokApiMiss('shape');
-  throwIfExportCancelled(signal);
-  const responses = await loadResponses(conversationId, ids, signal, timeoutMs, fetchImpl);
+  if (ids.length === 0) throw new GrokApiMiss('shape');
+  const responses: unknown[] = [];
+  for (let start = 0; start < ids.length; start += RESPONSE_BATCH) {
+    responses.push(...(await loadBatch(context, ids.slice(start, start + RESPONSE_BATCH))));
+  }
   throwIfExportCancelled(signal);
   const branch = selectGrokBranch(nodePayload, responses, leafId);
   if (!branch) throw new GrokApiMiss('shape');

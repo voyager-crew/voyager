@@ -3,7 +3,7 @@
  * No network: the endpoint client fetches, and this file decides which messages
  * are on the branch the page is showing.
  */
-import { grokMessageMarkdown } from './grokMessageMarkdown';
+import { grokMessageMarkdown, record } from './grokMessageMarkdown';
 
 const CONVERSATION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -11,19 +11,12 @@ export interface GrokBranchMessage {
   readonly id: string;
   readonly role: 'user' | 'assistant';
   readonly text: string;
-  readonly partial: boolean;
 }
 
 export interface GrokBranch {
   readonly messages: readonly GrokBranchMessage[];
   /** A selected message was still marked partial by the endpoint. */
   readonly partial: boolean;
-}
-
-export function record(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
 }
 
 export function responseIdOf(value: unknown): string | null {
@@ -33,7 +26,7 @@ export function responseIdOf(value: unknown): string | null {
   return trimmed.length > 0 && trimmed.length <= 200 ? trimmed : null;
 }
 
-export function isGrokConversationId(value: string): boolean {
+function isGrokConversationId(value: string): boolean {
   return CONVERSATION_ID.test(value);
 }
 
@@ -52,11 +45,6 @@ function readTime(value: unknown): number | null {
   if (typeof value !== 'string' || !value) return null;
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? null : parsed;
-}
-
-/** Reply markdown, including YouTube covers and structured sources when the payload has them. */
-function messageText(facts: Record<string, unknown>): string {
-  return grokMessageMarkdown(facts);
 }
 
 function roleOf(facts: Record<string, unknown>): 'user' | 'assistant' | 'other' {
@@ -79,19 +67,12 @@ interface Draft {
 
 /** The `/c/<uuid>` id, and only that. A capture that is not a UUID is not requested. */
 export function grokConversationId(url: string, pattern: string): string | null {
-  let pathname: string;
   try {
-    pathname = new URL(url).pathname;
+    const captured = new RegExp(pattern).exec(new URL(url).pathname)?.[1];
+    return captured !== undefined && isGrokConversationId(captured) ? captured : null;
   } catch {
     return null;
   }
-  let captured: string | undefined;
-  try {
-    captured = new RegExp(pattern).exec(pathname)?.[1];
-  } catch {
-    return null;
-  }
-  return captured !== undefined && isGrokConversationId(captured) ? captured : null;
 }
 
 /** `rid` is the response the page is showing, when the query is a UUID. */
@@ -172,7 +153,7 @@ export function selectGrokBranch(
       ...current,
       parentId: parent === undefined ? current.parentId : parent,
       role: roleOf(facts),
-      text: messageText(facts),
+      text: grokMessageMarkdown(facts),
       createdAt: readTime(facts.createTime) ?? current.createdAt,
       partial: facts.partial === true,
       control: facts.isControl === true,
@@ -193,13 +174,10 @@ export function selectGrokBranch(
     chain.push(draft);
     id = draft.parentId && drafts.has(draft.parentId) ? draft.parentId : null;
   }
-  chain.reverse();
-  const messages = chain.filter(isShown).map((draft) => ({
-    id: draft.id,
-    role: draft.role,
-    text: draft.text,
-    partial: draft.partial,
-  }));
-  if (messages.length === 0) return null;
-  return { messages, partial: messages.some((message) => message.partial) };
+  const shown = chain.reverse().filter(isShown);
+  if (shown.length === 0) return null;
+  return {
+    messages: shown.map(({ id, role, text }) => ({ id, role, text })),
+    partial: shown.some((draft) => draft.partial),
+  };
 }

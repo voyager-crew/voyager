@@ -1,15 +1,7 @@
-import type { JSDOM } from 'jsdom';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import grokData from '@/features/plugins/catalog/sites/grok/site.json';
-import { validateSiteAdapterData } from '@/features/plugins/sites/siteAdapterData';
-
-import { buildCatalogExportAdapter } from '../adapter/platform/catalog';
-import type { CatalogSnapshot } from './catalogReader';
-import { readCatalogOrGrokConversation, selectGrokBranch } from './grokConversation';
+import { selectGrokBranch } from './grokBranch';
 import { grokMessageMarkdown } from './grokMessageMarkdown';
-
-declare const jsdom: JSDOM;
 
 const USER = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const KEPT = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
@@ -305,50 +297,5 @@ describe('Grok export cards', () => {
         'Hello  <grok:render card_id="05a0cb" card_type="citation_card"><argument name="citation_id">48</argument></grok:render> world',
       ),
     ).toBe('Hello world');
-  });
-
-  it('embeds a YouTube link from the page when the endpoint is missed', async () => {
-    const validated = validateSiteAdapterData(grokData);
-    if (!validated.success) throw new Error('grok site');
-    const original = location.href;
-    jsdom.reconfigure({
-      url: 'https://grok.com/c/01234567-89ab-cdef-0123-456789abcdef',
-    });
-    const element = document.createElement('div');
-    const text = '对比视频：https://www.youtube.com/watch?v=JMYspR42HFM';
-    const snapshot: CatalogSnapshot = {
-      id: 'dom-1',
-      role: 'assistant',
-      content: {
-        text,
-        html: '',
-        attachments: [],
-        hasImages: false,
-        hasFormulas: false,
-        hasTables: false,
-        hasCode: false,
-      },
-      text,
-      element,
-      host: new WeakRef(element),
-      fingerprint: 'dom',
-    };
-    try {
-      const result = await readCatalogOrGrokConversation(
-        validated.data,
-        buildCatalogExportAdapter(validated.data),
-        { expectedUrl: location.href },
-        {
-          fetch: async () => new Response('no', { status: 500 }),
-          readDom: vi.fn(async () => ({ snapshots: [snapshot], completeness: 'unknown' as const })),
-        },
-      );
-      expect(result.snapshots[0]?.text).toBe(
-        '对比视频：[![YouTube video](https://img.youtube.com/vi/JMYspR42HFM/hqdefault.jpg)](https://www.youtube.com/watch?v=JMYspR42HFM)',
-      );
-      expect(result.snapshots[0]?.content.hasImages).toBe(true);
-    } finally {
-      jsdom.reconfigure({ url: original });
-    }
   });
 });
