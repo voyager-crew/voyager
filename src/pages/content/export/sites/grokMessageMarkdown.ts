@@ -173,9 +173,11 @@ function embedYouTubeSegment(
   titles: ReadonlyMap<string, string>,
   seen: Set<string>,
 ): string {
+  // Optional `!` marks an image. Safari 15.4 cannot parse a lookbehind that would skip it.
   const linked = segment.replace(
-    /(?<!!)\[([^[\]]*)\]\((https?:\/\/[^\s)]+)\)/g,
-    (whole, label: string, url: string) => {
+    /(!?)\[([^[\]]*)\]\((https?:\/\/[^\s)]+)\)/g,
+    (whole, bang: string, label: string, url: string) => {
+      if (bang) return whole;
       const id = youtubeVideoId(url);
       if (!id) return whole;
       if (seen.has(id)) return whole;

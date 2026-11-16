@@ -109,6 +109,22 @@ describe('Grok export cards', () => {
     );
   });
 
+  it('embeds adjacent markdown links and leaves an image that already points at YouTube', () => {
+    expect(
+      grokMessageMarkdown({
+        message: '[One](https://youtu.be/JMYspR42HFM)[Two](https://youtu.be/dQw4w9WgXcQ)',
+      }),
+    ).toBe(
+      '[![One](https://img.youtube.com/vi/JMYspR42HFM/hqdefault.jpg)](https://youtu.be/JMYspR42HFM)' +
+        '[![Two](https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg)](https://youtu.be/dQw4w9WgXcQ)',
+    );
+    expect(
+      grokMessageMarkdown({
+        message: '![clip](https://www.youtube.com/watch?v=dQw4w9WgXcQ)',
+      }),
+    ).toBe('![clip](https://www.youtube.com/watch?v=dQw4w9WgXcQ)');
+  });
+
   it('lists a cited page and drops the rest of the search, including a repeated url', () => {
     const text = branchText('仓库见正文。', {
       webSearchResults: [
