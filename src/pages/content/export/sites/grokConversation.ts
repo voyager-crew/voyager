@@ -15,7 +15,8 @@
  * `/rest/app-chat/conversations/<id>/response-node?includeThreads=true`, then
  * POST `/rest/app-chat/conversations/<id>/load-responses` with
  * `{ responseIds }`. A message has `responseId`, `parentResponseId`, `sender`
- * (`human` or `assistant`) and `message`. The exported branch is the parent
+ * (`human` or `assistant`) and `message`. `webSearchResults`, `xposts` and
+ * `cardAttachmentsJson` are kept when the payload includes them. The exported branch is the parent
  * chain of the `rid` query, or of the newest leaf when `rid` is absent or
  * unknown. A non-2xx response, a different shape, or a timeout returns nothing
  * so the caller can read the virtual list instead.
@@ -33,6 +34,7 @@ import {
   type CatalogSnapshot,
   readCatalogConversation,
 } from './catalogReader';
+import { embedYouTubeLinks, grokMessageMarkdown } from './grokMessageMarkdown';
 
 /**
  * The 2026-11-15 capture did not include a stop control. This is not a selector.
@@ -48,8 +50,6 @@ const MAX_RESPONSE_PAGES = 8;
 const REQUEST_TIMEOUT_MS = 20_000;
 const GROK_ORIGIN = 'https://grok.com';
 const CONVERSATION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const GROK_RENDER_PAIR = /<grok:render\b[^>]*>[\s\S]*?<\/grok:render>/gi;
-const GROK_RENDER_EMPTY = /<grok:render\b[^>]*\/>/gi;
 
 export interface GrokBranchMessage {
   readonly id: string;
@@ -107,16 +107,9 @@ function readTime(value: unknown): number | null {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
-/** Drop Grok's inline citation widgets. The visible reply is the surrounding markdown. */
+/** Reply markdown, including YouTube covers and structured sources when the payload has them. */
 function messageText(facts: Record<string, unknown>): string {
-  const message = typeof facts.message === 'string' ? facts.message : '';
-  const query = typeof facts.query === 'string' ? facts.query : '';
-  const raw = message.trim() ? message : query;
-  return raw
-    .replace(GROK_RENDER_PAIR, '')
-    .replace(GROK_RENDER_EMPTY, '')
-    .replace(/[ \t]{2,}/g, ' ')
-    .trim();
+  return grokMessageMarkdown(facts);
 }
 
 function roleOf(facts: Record<string, unknown>): 'user' | 'assistant' | 'other' {
@@ -468,7 +461,7 @@ function snapshotsFor(messageKey: string, branch: GrokBranch): CatalogSnapshot[]
       text: message.text,
       html: '',
       attachments: [],
-      hasImages: false,
+      hasImages: message.text.includes('!['),
       hasFormulas: false,
       hasTables: false,
       hasCode: message.text.includes('```'),
@@ -496,6 +489,26 @@ function sameRoute(expected: string, page: string): boolean {
   );
 }
 
+/** Page text has no card payload; a bare YouTube URL still becomes a cover. */
+function decorateGrokDom(result: CatalogReadResult): CatalogReadResult {
+  let changed = false;
+  const snapshots = result.snapshots.map((snapshot) => {
+    const text = embedYouTubeLinks(snapshot.text);
+    if (text === snapshot.text) return snapshot;
+    changed = true;
+    return {
+      ...snapshot,
+      text,
+      content: {
+        ...snapshot.content,
+        text,
+        hasImages: snapshot.content.hasImages || text.includes('!['),
+      },
+    };
+  });
+  return changed ? { ...result, snapshots } : result;
+}
+
 function canReadGrokApi(site: SiteAdapter, expectedUrl: string | undefined): boolean {
   if (site.id !== 'grok' || location.origin !== GROK_ORIGIN) return false;
   if (!expectedUrl) return true;
@@ -517,12 +530,16 @@ export async function readCatalogOrGrokConversation(
   deps: GrokReadDeps = {},
 ): Promise<CatalogReadResult> {
   const readDom = deps.readDom ?? readCatalogConversation;
-  if (!canReadGrokApi(site, options.expectedUrl)) return readDom(site, adapter, options);
+  const readPage = async (): Promise<CatalogReadResult> => {
+    const result = await readDom(site, adapter, options);
+    return site.id === 'grok' ? decorateGrokDom(result) : result;
+  };
+  if (!canReadGrokApi(site, options.expectedUrl)) return readPage();
   const pattern = site.conversationIdPattern;
   const conversationId = pattern ? grokConversationId(location.href, pattern) : null;
-  if (!conversationId) return readDom(site, adapter, options);
+  if (!conversationId) return readPage();
   const messageKey = site.export?.messageKey;
-  if (!messageKey) return readDom(site, adapter, options);
+  if (!messageKey) return readPage();
   try {
     const branch = await fetchGrokBranch(
       conversationId,
@@ -541,6 +558,6 @@ export async function readCatalogOrGrokConversation(
       reason: error instanceof GrokApiMiss ? error.reason : 'error',
     });
     throwIfExportCancelled(options.signal);
-    return readDom(site, adapter, options);
+    return readPage();
   }
 }
