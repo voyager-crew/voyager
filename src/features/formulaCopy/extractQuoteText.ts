@@ -17,10 +17,18 @@ function selectedText(node: Node): string {
       return '';
     if (node.tagName === 'BR') return '\n';
   }
+  const isBlock = (candidate: Node | undefined) =>
+    candidate instanceof Element && BLOCK.test(candidate.tagName);
+  const inPre = node instanceof Element && node.closest('pre') !== null;
+  // Markdown renderers keep source newlines between blocks; the separator already breaks there.
+  const isBlockGap = (child: Node, index: number, children: Node[]) =>
+    !inPre &&
+    child.nodeType === Node.TEXT_NODE &&
+    (child.nodeValue ?? '').trim() === '' &&
+    (isBlock(children[index - 1]) || isBlock(children[index + 1]));
   return Array.from(node.childNodes)
+    .filter((child, index, children) => !isBlockGap(child, index, children))
     .map((child, index, children) => {
-      const isBlock = (candidate: Node) =>
-        candidate instanceof Element && BLOCK.test(candidate.tagName);
       const separator = index > 0 && (isBlock(child) || isBlock(children[index - 1])) ? '\n' : '';
       return separator + selectedText(child);
     })
