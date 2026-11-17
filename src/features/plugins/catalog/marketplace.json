@@ -244,6 +244,31 @@
       "official": true
     },
     {
+      "name": "grok-quote-reply",
+      "source": "sites/grok/plugins/quote-reply/plugin.json",
+      "official": true
+    },
+    {
+      "name": "grok-ctrl-enter-send",
+      "source": "sites/grok/plugins/ctrl-enter-send/plugin.json",
+      "official": true
+    },
+    {
+      "name": "grok-draft-save",
+      "source": "sites/grok/plugins/draft-save/plugin.json",
+      "official": true
+    },
+    {
+      "name": "grok-composer-counter",
+      "source": "sites/grok/plugins/composer-counter/plugin.json",
+      "official": true
+    },
+    {
+      "name": "grok-prompt-manager",
+      "source": "sites/grok/plugins/prompt-manager/plugin.json",
+      "official": true
+    },
+    {
       "name": "chatgpt-prompt-manager",
       "source": "sites/chatgpt/plugins/prompt-manager/plugin.json",
       "official": true

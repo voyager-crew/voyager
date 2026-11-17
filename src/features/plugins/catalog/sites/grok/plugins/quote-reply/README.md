@@ -1,0 +1,31 @@
+# Grok · Quote replies
+
+Select text inside a single assistant reply to show **Quote** near the
+selection. Click it, or focus it with the keyboard and activate it, to append the
+selected text to the message composer as a Markdown quote. Each line starts
+with `> `; an existing draft keeps its text and gets a blank line before the
+quote. The composer receives focus with the caret at the end. No message is sent.
+
+Enable this plugin from Voyager's popup; there are no additional settings.
+Selections in your own messages, thinking blocks, outside replies or across
+multiple replies do not show the button. The button disappears when the
+selection collapses, the page scrolls, Escape is pressed, an outside area is
+pressed, the selected reply is re-rendered or the plugin is disabled. If the
+composer is missing, a toast explains the problem and the selection stays intact.
+
+The plugin invokes Voyager's `quoteReply` primitive with no params. Its contract
+requires the adapter's `assistantTurn` and `composer` semantic keys. Grok's
+adapter also declares `thinkingBlock`, so a selection that touches that block
+shows nothing. Formula text is preserved as LaTeX where the reply renders KaTeX.
+Light and dark colors follow Voyager's resolved page theme, and the button
+supports RTL layouts.
+
+This requires an extension update that ships `quoteReply`. The manifest uses
+`engine: ">=1.8.0"`; a catalog update alone cannot provide the primitive.
+
+## Live check
+
+Pending on grok.com: the Quote button position, inserting into the query-bar
+editor with `> ` intact, a blank line after an existing draft, no button on the
+user's own messages or inside a thinking block, and the caret ending in the
+composer.

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://voyager.nagi.fun/plugin.schema.json",
+  "id": "voyager.grok-quote-reply",
+  "name": "Grok · Quote replies",
+  "version": "1.0.0",
+  "description": "Select text in an assistant reply and add it as a quote to your draft without sending a message.",
+  "i18n": {
+    "ar": {
+      "name": "Grok · اقتباس الردود",
+      "description": "حدّد نصًا من ردّ المساعد وأضفه كاقتباس إلى مسودتك دون إرسال رسالة."
+    },
+    "es": {
+      "name": "Grok · Citar respuestas",
+      "description": "Selecciona texto de una respuesta del asistente y añádelo como cita a tu borrador sin enviar ningún mensaje."
+    },
+    "fr": {
+      "name": "Grok · Citer les réponses",
+      "description": "Sélectionnez du texte dans une réponse de l’assistant et ajoutez-le comme citation à votre brouillon sans envoyer de message."
+    },
+    "ja": {
+      "name": "Grok · 返信を引用",
+      "description": "アシスタントの返信内のテキストを選択し、引用として下書きに追加します。メッセージは送信されません。"
+    },
+    "ko": {
+      "name": "Grok · 답변 인용",
+      "description": "어시스턴트 답변의 텍스트를 선택해 초안에 인용문으로 추가합니다. 메시지는 전송되지 않습니다."
+    },
+    "pt": {
+      "name": "Grok · Citar respostas",
+      "description": "Selecione um trecho da resposta do assistente e adicione-o como citação ao seu rascunho sem enviar uma mensagem."
+    },
+    "ru": {
+      "name": "Grok · Цитирование ответов",
+      "description": "Выделите текст в ответе ассистента и добавьте его как цитату в черновик, не отправляя сообщение."
+    },
+    "zh": {
+      "name": "Grok · 引用回复",
+      "description": "选中助手回复中的文字，将其作为引用添加到草稿中，不会发送消息。"
+    },
+    "zh_TW": {
+      "name": "Grok · 引用回覆",
+      "description": "選取助手回覆中的文字，將其作為引用加入草稿，不會傳送訊息。"
+    }
+  },
+  "author": "voyager-official",
+  "category": "productivity",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/voyager-crew/voyager/tree/main/src/features/plugins/catalog/sites/grok/plugins/quote-reply",
+  "engine": ">=1.8.0",
+  "tier": "declarative",
+  "matches": ["https://grok.com/*"],
+  "contributes": {
+    "domOps": [
+      {
+        "op": "native",
+        "handler": "quoteReply",
+        "params": {}
+      }
+    ]
+  }
+}
