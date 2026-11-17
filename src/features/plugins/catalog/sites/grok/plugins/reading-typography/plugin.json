@@ -1,0 +1,349 @@
+{
+  "$schema": "https://voyager.nagi.fun/plugin.schema.json",
+  "id": "voyager.grok-reading-typography",
+  "name": "Grok · Reading Typography",
+  "version": "1.0.0",
+  "description": "Adjust answer text size, line height and paragraph spacing. Table text follows the size; code blocks, block formulas and the composer keep their native style.",
+  "i18n": {
+    "zh": {
+      "name": "Grok · 阅读排版",
+      "description": "调整回答正文的字号、行高和段落间距；表格文字随字号缩放；代码块、块级公式和输入框保持原样。",
+      "settings": {
+        "fontSizeEnabled": {
+          "label": "自定义正文字号"
+        },
+        "fontSize": {
+          "label": "正文字号（%）",
+          "minLabel": "小",
+          "maxLabel": "大"
+        },
+        "spacingEnabled": {
+          "label": "自定义间距"
+        },
+        "lineHeight": {
+          "label": "行高（%）",
+          "minLabel": "紧凑",
+          "maxLabel": "宽松"
+        },
+        "paragraphSpacing": {
+          "label": "段落间距（px）",
+          "minLabel": "紧凑",
+          "maxLabel": "宽松"
+        }
+      }
+    },
+    "zh_TW": {
+      "name": "Grok · 閱讀排版",
+      "description": "調整回覆正文的字級、行高和段落間距；表格文字隨字級縮放；程式碼區塊、區塊公式和輸入框保持原樣。",
+      "settings": {
+        "fontSizeEnabled": {
+          "label": "自訂正文字級"
+        },
+        "fontSize": {
+          "label": "正文字級（%）",
+          "minLabel": "小",
+          "maxLabel": "大"
+        },
+        "spacingEnabled": {
+          "label": "自訂間距"
+        },
+        "lineHeight": {
+          "label": "行高（%）",
+          "minLabel": "緊湊",
+          "maxLabel": "寬鬆"
+        },
+        "paragraphSpacing": {
+          "label": "段落間距（px）",
+          "minLabel": "緊湊",
+          "maxLabel": "寬鬆"
+        }
+      }
+    },
+    "ja": {
+      "name": "Grok · 読書レイアウト",
+      "description": "回答本文の文字サイズ、行間、段落間隔を調整します。表の文字も文字サイズに合わせて変わり、コードブロック、ブロック数式、入力欄はそのままです。",
+      "settings": {
+        "fontSizeEnabled": {
+          "label": "文字サイズを変更"
+        },
+        "fontSize": {
+          "label": "文字サイズ（%）",
+          "minLabel": "小",
+          "maxLabel": "大"
+        },
+        "spacingEnabled": {
+          "label": "間隔を変更"
+        },
+        "lineHeight": {
+          "label": "行間（%）",
+          "minLabel": "狭め",
+          "maxLabel": "広め"
+        },
+        "paragraphSpacing": {
+          "label": "段落間隔（px）",
+          "minLabel": "狭め",
+          "maxLabel": "広め"
+        }
+      }
+    },
+    "ko": {
+      "name": "Grok · 읽기 서식",
+      "description": "답변 본문의 글자 크기, 줄 높이, 문단 간격을 조절합니다. 표 글자도 글자 크기를 따르며, 코드 블록, 블록 수식, 입력창은 그대로 유지됩니다.",
+      "settings": {
+        "fontSizeEnabled": {
+          "label": "글자 크기 변경"
+        },
+        "fontSize": {
+          "label": "글자 크기(%)",
+          "minLabel": "작게",
+          "maxLabel": "크게"
+        },
+        "spacingEnabled": {
+          "label": "간격 변경"
+        },
+        "lineHeight": {
+          "label": "줄 높이(%)",
+          "minLabel": "좁게",
+          "maxLabel": "넓게"
+        },
+        "paragraphSpacing": {
+          "label": "문단 간격(px)",
+          "minLabel": "좁게",
+          "maxLabel": "넓게"
+        }
+      }
+    },
+    "fr": {
+      "name": "Grok · Mise en forme de lecture",
+      "description": "Ajuste la taille du texte, l'interligne et l'espacement des paragraphes des réponses. Le texte des tableaux suit la taille ; les blocs de code, les formules en bloc et la zone de saisie restent intacts.",
+      "settings": {
+        "fontSizeEnabled": {
+          "label": "Personnaliser la taille du texte"
+        },
+        "fontSize": {
+          "label": "Taille du texte (%)",
+          "minLabel": "Petit",
+          "maxLabel": "Grand"
+        },
+        "spacingEnabled": {
+          "label": "Personnaliser l'espacement"
+        },
+        "lineHeight": {
+          "label": "Interligne (%)",
+          "minLabel": "Serré",
+          "maxLabel": "Aéré"
+        },
+        "paragraphSpacing": {
+          "label": "Espacement des paragraphes (px)",
+          "minLabel": "Serré",
+          "maxLabel": "Aéré"
+        }
+      }
+    },
+    "es": {
+      "name": "Grok · Formato de lectura",
+      "description": "Ajusta el tamaño del texto, el interlineado y el espacio entre párrafos de las respuestas. El texto de las tablas sigue el tamaño; los bloques de código, las fórmulas en bloque y el cuadro de entrada no cambian.",
+      "settings": {
+        "fontSizeEnabled": {
+          "label": "Personalizar tamaño del texto"
+        },
+        "fontSize": {
+          "label": "Tamaño del texto (%)",
+          "minLabel": "Pequeño",
+          "maxLabel": "Grande"
+        },
+        "spacingEnabled": {
+          "label": "Personalizar espaciado"
+        },
+        "lineHeight": {
+          "label": "Interlineado (%)",
+          "minLabel": "Ajustado",
+          "maxLabel": "Amplio"
+        },
+        "paragraphSpacing": {
+          "label": "Espacio entre párrafos (px)",
+          "minLabel": "Ajustado",
+          "maxLabel": "Amplio"
+        }
+      }
+    },
+    "pt": {
+      "name": "Grok · Formatação de leitura",
+      "description": "Ajusta o tamanho do texto, a altura da linha e o espaço entre parágrafos das respostas. O texto das tabelas acompanha o tamanho; blocos de código, fórmulas em bloco e a caixa de entrada não mudam.",
+      "settings": {
+        "fontSizeEnabled": {
+          "label": "Personalizar tamanho do texto"
+        },
+        "fontSize": {
+          "label": "Tamanho do texto (%)",
+          "minLabel": "Pequeno",
+          "maxLabel": "Grande"
+        },
+        "spacingEnabled": {
+          "label": "Personalizar espaçamento"
+        },
+        "lineHeight": {
+          "label": "Altura da linha (%)",
+          "minLabel": "Compacto",
+          "maxLabel": "Espaçoso"
+        },
+        "paragraphSpacing": {
+          "label": "Espaço entre parágrafos (px)",
+          "minLabel": "Compacto",
+          "maxLabel": "Espaçoso"
+        }
+      }
+    },
+    "ru": {
+      "name": "Grok · Оформление текста",
+      "description": "Настраивает размер текста, межстрочный интервал и отступы между абзацами в ответах. Текст таблиц масштабируется вместе с ним; блоки кода, блочные формулы и поле ввода не меняются.",
+      "settings": {
+        "fontSizeEnabled": {
+          "label": "Настроить размер текста"
+        },
+        "fontSize": {
+          "label": "Размер текста (%)",
+          "minLabel": "Мелкий",
+          "maxLabel": "Крупный"
+        },
+        "spacingEnabled": {
+          "label": "Настроить интервалы"
+        },
+        "lineHeight": {
+          "label": "Межстрочный интервал (%)",
+          "minLabel": "Плотный",
+          "maxLabel": "Свободный"
+        },
+        "paragraphSpacing": {
+          "label": "Интервал между абзацами (px)",
+          "minLabel": "Плотный",
+          "maxLabel": "Свободный"
+        }
+      }
+    },
+    "ar": {
+      "name": "Grok · تنسيق القراءة",
+      "description": "يضبط حجم نص الإجابات وارتفاع السطر والتباعد بين الفقرات، ويتبع نص الجداول الحجم نفسه، مع إبقاء كتل الشيفرة والمعادلات الكتلية ومربع الإدخال كما هي.",
+      "settings": {
+        "fontSizeEnabled": {
+          "label": "تخصيص حجم النص"
+        },
+        "fontSize": {
+          "label": "حجم النص (%)",
+          "minLabel": "صغير",
+          "maxLabel": "كبير"
+        },
+        "spacingEnabled": {
+          "label": "تخصيص التباعد"
+        },
+        "lineHeight": {
+          "label": "ارتفاع السطر (%)",
+          "minLabel": "ضيق",
+          "maxLabel": "واسع"
+        },
+        "paragraphSpacing": {
+          "label": "تباعد الفقرات (px)",
+          "minLabel": "ضيق",
+          "maxLabel": "واسع"
+        }
+      }
+    }
+  },
+  "author": "voyager-official",
+  "category": "readability",
+  "license": "MIT",
+  "homepage": "https://github.com/voyager-crew/voyager/tree/main/src/features/plugins/catalog/sites/grok/plugins/reading-typography",
+  "engine": ">=1.4.0",
+  "tier": "declarative",
+  "matches": ["https://grok.com/*"],
+  "requires": {
+    "semantic": ["assistantTurn"]
+  },
+  "contributes": {
+    "settings": {
+      "fontSizeEnabled": {
+        "type": "boolean",
+        "label": "Custom text size",
+        "default": false
+      },
+      "fontSize": {
+        "type": "number",
+        "enabledBy": "fontSizeEnabled",
+        "label": "Text size (%)",
+        "minLabel": "Small",
+        "maxLabel": "Large",
+        "default": 100,
+        "min": 80,
+        "max": 150
+      },
+      "spacingEnabled": {
+        "type": "boolean",
+        "label": "Custom spacing",
+        "default": false
+      },
+      "lineHeight": {
+        "type": "number",
+        "enabledBy": "spacingEnabled",
+        "label": "Line height (%)",
+        "minLabel": "Tight",
+        "maxLabel": "Loose",
+        "default": 160,
+        "min": 120,
+        "max": 220
+      },
+      "paragraphSpacing": {
+        "type": "number",
+        "enabledBy": "spacingEnabled",
+        "label": "Paragraph spacing (px)",
+        "minLabel": "Tight",
+        "maxLabel": "Loose",
+        "default": 16,
+        "min": 0,
+        "max": 24
+      }
+    },
+    "styles": [
+      {
+        "file": "style.css"
+      }
+    ],
+    "domOps": [
+      {
+        "op": "addClass",
+        "target": {
+          "kind": "semantic",
+          "key": "assistantTurn"
+        },
+        "className": "gv-plugin-grok-reading-typography"
+      },
+      {
+        "op": "setAttribute",
+        "target": {
+          "kind": "semantic",
+          "key": "assistantTurn"
+        },
+        "name": "data-gv-font-size",
+        "value": "{{fontSizeEnabled}}"
+      },
+      {
+        "op": "setAttribute",
+        "target": {
+          "kind": "semantic",
+          "key": "assistantTurn"
+        },
+        "name": "data-gv-spacing",
+        "value": "{{spacingEnabled}}"
+      },
+      {
+        "op": "setStyle",
+        "target": "body",
+        "styles": {
+          "--gv-plugin-reading-text-size": "{{fontSize}}%",
+          "--gv-plugin-reading-text-scale": "{{fontSize}}",
+          "--gv-plugin-reading-line-height": "{{lineHeight}}",
+          "--gv-plugin-reading-paragraph-spacing": "{{paragraphSpacing}}px"
+        }
+      }
+    ]
+  }
+}

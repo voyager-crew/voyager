@@ -284,6 +284,16 @@
       "official": true
     },
     {
+      "name": "grok-reading-width",
+      "source": "sites/grok/plugins/reading-width/plugin.json",
+      "official": true
+    },
+    {
+      "name": "grok-reading-typography",
+      "source": "sites/grok/plugins/reading-typography/plugin.json",
+      "official": true
+    },
+    {
       "name": "chatgpt-prompt-manager",
       "source": "sites/chatgpt/plugins/prompt-manager/plugin.json",
       "official": true
@@ -321,6 +331,11 @@
     {
       "name": "kimi-palette",
       "source": "sites/kimi/plugins/palette/plugin.json",
+      "official": true
+    },
+    {
+      "name": "grok-palette",
+      "source": "sites/grok/plugins/palette/plugin.json",
       "official": true
     }
   ]
