@@ -1,0 +1,61 @@
+{
+  "$schema": "https://voyager.nagi.fun/plugin.schema.json",
+  "id": "voyager.grok-export",
+  "name": "Grok · Conversation export",
+  "version": "1.0.0",
+  "description": "Select messages and export Grok conversations as JSON, Markdown, PDF or images.",
+  "i18n": {
+    "zh": {
+      "name": "Grok · 会话导出",
+      "description": "将 Grok 对话导出为 JSON、Markdown、PDF 或图片，并在导出前选择消息。"
+    },
+    "zh_TW": {
+      "name": "Grok · 對話匯出",
+      "description": "將 Grok 對話匯出為 JSON、Markdown、PDF 或圖片，並在匯出前選取訊息。"
+    },
+    "ja": {
+      "name": "Grok · 会話エクスポート",
+      "description": "メッセージを選んで、Grok の会話を JSON、Markdown、PDF、画像としてエクスポートします。"
+    },
+    "ko": {
+      "name": "Grok · 대화 내보내기",
+      "description": "메시지를 선택해 Grok 대화를 JSON, Markdown, PDF 또는 이미지로 내보냅니다."
+    },
+    "fr": {
+      "name": "Grok · Export de conversations",
+      "description": "Exportez vos conversations Grok en JSON, Markdown, PDF ou image après avoir sélectionné les messages."
+    },
+    "es": {
+      "name": "Grok · Exportar conversaciones",
+      "description": "Selecciona mensajes y exporta conversaciones de Grok como JSON, Markdown, PDF o imagen."
+    },
+    "pt": {
+      "name": "Grok · Exportar conversas",
+      "description": "Selecione mensagens e exporte conversas do Grok como JSON, Markdown, PDF ou imagem."
+    },
+    "ru": {
+      "name": "Grok · Экспорт диалогов",
+      "description": "Выбирайте сообщения и экспортируйте диалоги Grok в JSON, Markdown, PDF или изображение."
+    },
+    "ar": {
+      "name": "Grok · تصدير المحادثات",
+      "description": "اختر الرسائل وصدّر محادثات Grok بصيغة JSON أو Markdown أو PDF أو صورة."
+    }
+  },
+  "author": "voyager-official",
+  "category": "productivity",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/voyager-crew/voyager/tree/main/src/features/plugins/catalog/sites/grok/plugins/export",
+  "engine": ">=1.10.0",
+  "tier": "declarative",
+  "matches": ["https://grok.com/*"],
+  "contributes": {
+    "domOps": [
+      {
+        "op": "native",
+        "handler": "conversationExport",
+        "params": {}
+      }
+    ]
+  }
+}

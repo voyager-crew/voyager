@@ -376,3 +376,37 @@ html[data-gv-scheme='dark'] .gv-export-width-btn.active {
     min-width: 0;
   }
 }
+
+/* Grok keeps the conversation title in the top row and starts the transcript
+   immediately under it. A bar fixed to the viewport covers that title and the
+   first message; docking takes a row of its own between them. */
+html[data-gv-platform='grok'] .gv-export-select-bar.gv-export-select-bar--docked {
+  position: relative;
+  top: auto;
+  right: auto;
+  left: auto;
+  transform: none;
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  margin: 8px auto;
+}
+
+/* Grok's selected reply is a tight text box. Padding and an outset ring keep the
+   outline off the glyphs. The room rule still wins when the checkbox has to sit
+   inside a clipping bubble. */
+html[data-gv-platform='grok'] .gv-export-select-mode .gv-export-msg-host {
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+
+html[data-gv-platform='grok'] .gv-export-select-mode .gv-export-msg-host.gv-export-msg-room {
+  padding-left: 44px;
+}
+
+html[data-gv-platform='grok'] .gv-export-select-mode .gv-export-msg-selected {
+  outline: 1px solid color-mix(in srgb, var(--gv-ui-primary) 55%, transparent);
+  outline-offset: 4px;
+  box-shadow: none;
+}

@@ -78,7 +78,8 @@
     "https://claude.ai/*",
     "https://*.frame.claudeusercontent.com/*",
     "https://chat.deepseek.com/*",
-    "https://www.kimi.com/*"
+    "https://www.kimi.com/*",
+    "https://grok.com/*"
   ],
   "optional_host_permissions": ["https://chatgpt.com/*", "http://127.0.0.1/*", "<all_urls>"],
   "background": {

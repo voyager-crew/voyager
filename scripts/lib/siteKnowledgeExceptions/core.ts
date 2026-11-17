@@ -76,6 +76,7 @@ export const CORE_SITE_KNOWLEDGE_EXCEPTIONS: readonly SiteKnowledgeException[] =
       chatgpt: 1,
       claude: 1,
       deepseek: 1,
+      grok: 1,
       kimi: 1,
     },
     reason: 'Host-to-site fallback table for diagnostic reports when no bundled adapter matches.',

@@ -37,6 +37,10 @@ describe('SiteRegistry.resolveByUrl', () => {
       registry.resolveByUrl('https://artifact-id.frame.claudeusercontent.com/_f/version/')?.id,
     ).toBe('claude');
     expect(registry.resolveByUrl('https://chat.deepseek.com/a/chat/s/abc')?.id).toBe('deepseek');
+    expect(registry.resolveByUrl('https://grok.com/')?.id).toBe('grok');
+    expect(
+      registry.resolveByUrl('https://grok.com/c/01234567-89ab-cdef-0123-456789abcdef')?.id,
+    ).toBe('grok');
   });
 
   it('returns null for sites with no adapter', () => {
@@ -53,6 +57,7 @@ describe('resolvePluginPlatformId', () => {
       resolvePluginPlatformId('https://artifact-id.frame.claudeusercontent.com/_f/version/'),
     ).toBe('claude');
     expect(resolvePluginPlatformId('https://chat.deepseek.com/a/chat/s/abc')).toBe('deepseek');
+    expect(resolvePluginPlatformId('https://grok.com/')).toBe('grok');
   });
 
   it('returns null for native Voyager sites (full feature set runs there)', () => {
@@ -68,7 +73,26 @@ describe('resolvePluginPlatformId', () => {
   it('returns null for sites Voyager ships no adapter for', () => {
     expect(resolvePluginPlatformId('https://example.com/')).toBeNull();
     expect(resolvePluginPlatformId('https://deepseek.com/')).toBeNull();
-    expect(resolvePluginPlatformId('https://grok.com/')).toBeNull();
+    expect(resolvePluginPlatformId('https://www.grok.com/')).toBeNull();
+  });
+});
+
+describe('Grok URL boundaries', () => {
+  it.each([
+    'https://grok.com/',
+    'https://grok.com/c/01234567-89ab-cdef-0123-456789abcdef?x=1#last',
+  ])('resolves %s as a plugin-only platform', (url) => {
+    expect(resolvePluginPlatformId(url)).toBe('grok');
+  });
+
+  it.each([
+    'https://grok.com.example.org/',
+    'http://grok.com/',
+    'https://www.grok.com/',
+    'https://x.com/i/grok',
+    'https://grok.x.ai/',
+  ])('does not grant platform support to %s', (url) => {
+    expect(SiteRegistry.createDefault().resolveByUrl(url)).toBeNull();
   });
 });
 

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://voyager.nagi.fun/site.schema.json",
+  "id": "grok",
+  "label": "Grok",
+  "matches": ["https://grok.com/*"],
+  "selectors": {
+    "userTurn": "div[data-testid=\"user-message\"]",
+    "assistantTurn": "div[data-testid=\"assistant-message\"]",
+    "thinkingBlock": "[data-testid=\"conversation-thought\"]",
+    "composer": "div.tiptap.ProseMirror.query-bar-editor[contenteditable=\"true\"][role=\"textbox\"]",
+    "sidebar": "aside#app-sidebar",
+    "scrollContainer": "div[data-testid=\"chat-transcript-scroller\"]",
+    "composerRoot": "form:has([data-testid=\"chat-input\"])",
+    "sendButton": "button[data-testid=\"chat-submit\"]"
+  },
+  "theme": {
+    "hostSelector": "html",
+    "lightSelector": "html.light",
+    "darkSelector": "html.dark"
+  },
+  "brandColor": "#6b7280",
+  "capabilities": ["chat", "sidebar", "composer", "darkMode"],
+  "conversationIdPattern": "^/c/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/?",
+  "routeWords": ["c"],
+  "export": {
+    "version": 1,
+    "read": "virtual",
+    "messageKey": "data-plane-row",
+    "title": "[data-testid=\"conversation-title\"]",
+    "generating": "button[data-testid=\"composer-stop\"]"
+  }
+}

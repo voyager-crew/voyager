@@ -165,6 +165,24 @@ describe('MarkdownFormatter', () => {
       expect(markdown).not.toContain('### 👤 User');
     });
 
+    it('puts a blank line before a list that follows a paragraph', () => {
+      const markdown = MarkdownFormatter.format(
+        [
+          {
+            user: '问',
+            assistant:
+              '**作者自承问题：**\n- 文档不完善\n- benchmark 不全\n\n```\n- not a list\n```\n参考：\n- https://example.com',
+            starred: false,
+          },
+        ],
+        mockMetadata,
+      );
+
+      expect(markdown).toContain('**作者自承问题：**\n\n- 文档不完善\n- benchmark 不全');
+      expect(markdown).toContain('```\n- not a list\n```');
+      expect(markdown).toContain('参考：\n\n- https://example.com');
+    });
+
     it('should include assistant content', () => {
       const markdown = MarkdownFormatter.format(mockTurns, mockMetadata);
 

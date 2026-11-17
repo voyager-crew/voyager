@@ -13,6 +13,7 @@ import {
   IconClaude,
   IconDeepSeek,
   IconGemini,
+  IconGrok,
   IconKimi,
 } from './WebsiteLogos';
 
@@ -35,6 +36,7 @@ const SITE_BADGES: Record<string, { Icon: typeof IconClaude; color: string }> = 
   claude: { Icon: IconClaude, color: '#d97757' },
   chatgpt: { Icon: IconChatGPT, color: '#0ea5e9' },
   deepseek: { Icon: IconDeepSeek, color: '#4d6bfe' },
+  grok: { Icon: IconGrok, color: '#6b7280' },
   kimi: { Icon: IconKimi, color: '#1783ff' },
 };
 
@@ -75,7 +77,7 @@ function soleMatchedSiteId(matches: readonly string[]): string | undefined {
 
 /** Strip a redundant site prefix ("Claude · ", "Gemini · "): the logo or the list already says it. */
 export function displayName(name: string): string {
-  return name.replace(/^(Claude|ChatGPT|Gemini|AI Studio|DeepSeek|Kimi)\s*[·:|]\s*/i, '');
+  return name.replace(/^(Claude|ChatGPT|Gemini|AI Studio|DeepSeek|Kimi|Grok)\s*[·:|]\s*/i, '');
 }
 
 /**

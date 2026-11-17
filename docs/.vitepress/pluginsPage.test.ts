@@ -144,8 +144,8 @@ describe('plugin table', () => {
 
     const page = renderPluginsPage(locale('zh'), featureRows(plugins), new Set(), noPages);
 
-    expect(cells(page, '代码折叠')).toEqual(['✓', '', '', '', '✓', '']);
-    expect(cells(page, '对话分叉')).toEqual(['✓', '', '', '', '', '']);
+    expect(cells(page, '代码折叠')).toEqual(['✓', '', '', '', '✓', '', '']);
+    expect(cells(page, '对话分叉')).toEqual(['✓', '', '', '', '', '', '']);
     expect(page).not.toContain('代码块折叠');
   });
 
@@ -164,9 +164,9 @@ describe('plugin table', () => {
       noPages,
     );
 
-    expect(cells(page, 'Timeline')).toEqual(['on', '', '', '✓', '', '']);
+    expect(cells(page, 'Timeline')).toEqual(['on', '', '', '✓', '', '', '']);
     // One of Gemini's two diagram plugins is still off: the reader has to switch it on.
-    expect(cells(page, 'ECharts')).toEqual(['✓', '', '', '', '', '']);
+    expect(cells(page, 'ECharts')).toEqual(['✓', '', '', '', '', '', '']);
   });
 
   it("shows Gemini's export as its default-on plugin in ChatGPT's export row", () => {
@@ -183,7 +183,15 @@ describe('plugin table', () => {
       const page = renderPluginsPage(entry, rows, FRESH_INSTALL_ON, exists);
       const chatgpt = rows[0].plugins.chatgpt![0];
       const name = (chatgpt.i18n?.[entry.manifest]?.name ?? chatgpt.name).replace(/^[^·]*·\s*/, '');
-      expect(cells(page, `[${name}](${prefix}/guide/export)`)).toEqual(['on', '', '✓', '', '', '']);
+      expect(cells(page, `[${name}](${prefix}/guide/export)`)).toEqual([
+        'on',
+        '',
+        '✓',
+        '',
+        '',
+        '',
+        '',
+      ]);
     }
   });
 
@@ -231,7 +239,7 @@ describe('plugin table', () => {
       const name = (plugin.i18n?.[entry.manifest]?.name ?? plugin.name).replace(/^Gemini · /, '');
       const label = `[${name}](${prefix}/guide/${guide})`;
       expect(page).toContain(`| **${label}** |`);
-      expect(cells(page, label)).toEqual(['on', '', '', '', '', '']);
+      expect(cells(page, label)).toEqual(['on', '', '', '', '', '', '']);
     }
   });
 
@@ -259,7 +267,7 @@ describe('plugin table', () => {
         const label = `[${name}](${prefix}/guide/${row.feature})`;
         expect(page).toContain(`| **${label}** |`);
         const mark = FRESH_INSTALL_ON.has(plugin.id) ? 'on' : '✓';
-        expect(cells(page, label)).toEqual([mark, '', '', '', '', '']);
+        expect(cells(page, label)).toEqual([mark, '', '', '', '', '', '']);
       }
     }
   });
@@ -279,7 +287,7 @@ describe('plugin table', () => {
       const plugin = rows[0].plugins.gemini![0];
       const name = (plugin.i18n?.[entry.manifest]?.name ?? plugin.name).replace(/^Gemini · /, '');
       const label = `[${name}](${prefix}/guide/batch-delete)`;
-      expect(cells(page, label)).toEqual(['on', 'on', '', '', '', '']);
+      expect(cells(page, label)).toEqual(['on', 'on', '', '', '', '', '']);
     }
   });
 
@@ -312,6 +320,7 @@ describe('plugin table', () => {
         expect(cells(page, label)).toEqual([
           '✓',
           row.feature === 'sidebar-width' ? 'on' : '',
+          '',
           '',
           '',
           '',

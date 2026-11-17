@@ -73,7 +73,7 @@ describe('site support table', () => {
     });
     const [own] = supportRows('folders', rows, {}, new Set(['voyager.chatgpt-folders']));
 
-    expect(own.cells).toEqual(['on', 'on', 'on', 'yes', '', '']);
+    expect(own.cells).toEqual(['on', 'on', 'on', 'yes', '', '', '']);
   });
 
   it('gives a feature without capabilities its own row only, and an unknown feature none', () => {

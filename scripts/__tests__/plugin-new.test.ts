@@ -164,8 +164,8 @@ describe('plugin:new scaffold', () => {
 
   it('rejects an unknown site and lists the ones that exist', () => {
     const catalogDir = makeCatalogCopy();
-    expect(() => scaffoldPlugin({ catalogDir, site: 'grok', segment: 'reading-guide' })).toThrow(
-      /Unknown site "grok".*aistudio, chatgpt, claude, deepseek, gemini/s,
+    expect(() => scaffoldPlugin({ catalogDir, site: 'qwen', segment: 'reading-guide' })).toThrow(
+      /Unknown site "qwen".*aistudio, chatgpt, claude, deepseek, gemini, grok, kimi/s,
     );
   });
 

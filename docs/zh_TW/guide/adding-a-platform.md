@@ -7,7 +7,7 @@
 
 `site.json` 包含 `id`（與其目錄名相同）、`label`、`matches`、`selectors`、`theme`、`brandColor`、`capabilities`，以及選填的 `conversationIdPattern` 與 `turnKeyAttributes`。`turnKeyAttributes` 指定當頁面重新轉譯使用者訊息時，用來保持其身分識別的屬性。送出追蹤（供資料夾活動與時間軸時間戳記使用）只會在有設定它的網站上執行，並同時需要 `composer`、`userTurn` 與 `conversationIdPattern`。`src/features/plugins/sites/siteAdapterData.ts` 中的 `validateSiteAdapterData` 會驗證它，而 `bun run catalog:build` 會在發布前驗證每個網站與外掛。
 
-`site.json` 就是網站適配器本身，只是寫成了資料。目前的外掛平台是 ChatGPT、Claude、DeepSeek 和 Kimi。Gemini 和 AI Studio 是 Voyager 的原生介面，同樣有各自的 `site.json`（`catalog/sites/gemini/`、`catalog/sites/aistudio/`），但它隨擴充功能打包，不會發布到遠端目錄；`sites/adapters/` 下的 `gemini.ts`、`aistudio.ts`、`claude.ts`、`chatgpt.ts`、`deepseek.ts` 現在都只是 `site.json` 的一行外殼，要改就改 JSON，不要改 TypeScript。發布的分網站目錄也帶上了網站資料，所以 `site.json` 裡的選擇器修正不必發新版本就能送到使用者手上。全新的網站仍然需要發新版本，因為它還需要隨套件發布主機權限與內容腳本註冊。
+`site.json` 就是網站適配器本身，只是寫成了資料。目前的外掛平台是 ChatGPT、Claude、DeepSeek、Kimi 和 Grok。Gemini 和 AI Studio 是 Voyager 的原生介面，同樣有各自的 `site.json`（`catalog/sites/gemini/`、`catalog/sites/aistudio/`），但它隨擴充功能打包，不會發布到遠端目錄；`sites/adapters/` 下的 `gemini.ts`、`aistudio.ts`、`claude.ts`、`chatgpt.ts`、`deepseek.ts` 現在都只是 `site.json` 的一行外殼，要改就改 JSON，不要改 TypeScript。發布的分網站目錄也帶上了網站資料，所以 `site.json` 裡的選擇器修正不必發新版本就能送到使用者手上。全新的網站仍然需要發新版本，因為它還需要隨套件發布主機權限與內容腳本註冊。
 
 以 DeepSeek 這類新平台為例，適配器的工作應聚焦於平台契約。請在同一個完整的變更中提交 `site.json`、必要的選擇器測試，以及說明支援範圍所需的最少文件。網站註冊表會直接從檔案中取得新適配器，因此不需要修改任何註冊清單。不要為每個外掛都新增一個網站。
 
