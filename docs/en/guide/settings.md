@@ -17,7 +17,7 @@ Click the extension icon to access the control center.
 
 - **Scroll mode**: In **Timeline** → **Show Timeline**, `Flow` scrolls smoothly to the message; `Jump` goes there instantly.
 - **Timeline position**: In **Timeline** → **Show Timeline**, turn on **Draggable Timeline** and move it where it feels right. **Reset Timeline Position** puts it back.
-- **Visual Effects**: On Gemini and AI Studio, switch on **Page layout** → **Visual effects**, then pick `Snow`, `Sakura`, or `Rain` under the row; switch it off to turn the effect off. On other sites (Claude, ChatGPT, DeepSeek, Kimi, and custom sites) the same row sits in that site's **Plugins** card, once Voyager runs there (Prompt Manager or a plugin turned on for the site).
+- **Visual Effects**: On Gemini and AI Studio, switch on **Page layout** → **Visual effects**, then pick `Snow`, `Sakura`, or `Rain` under the row; switch it off to turn the effect off. On other sites (Claude, ChatGPT, DeepSeek, Kimi, Grok, and custom sites) the same row sits in that site's **Plugins** card, once Voyager runs there (Prompt Manager or a plugin turned on for the site).
 
 ## Custom Order
 

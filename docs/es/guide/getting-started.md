@@ -8,7 +8,7 @@ Voyager no es solo una herramienta, es un hábito. Dame 5 minutos para enseñart
 ¿Aún no lo has instalado? Ve a la [Guía de Instalación](/es/guide/installation).
 ¿Instalado? Recarga la página de Gemini. El cambio es inmediato.
 
-¿También usas Claude, ChatGPT, DeepSeek o Kimi? Abre el popup de Voyager, ve a **Complementos** y activa los plugins que quieras para ese sitio. La primera vez, tu navegador pedirá permiso para acceder al sitio; si no aparece nada, recarga la pestaña. Explora todos los plugins en el [catálogo de plugins](/es/guide/plugins).
+¿También usas Claude, ChatGPT, DeepSeek, Kimi o Grok? Abre el popup de Voyager, ve a **Complementos** y activa los plugins que quieras para ese sitio. La primera vez, tu navegador pedirá permiso para acceder al sitio; si no aparece nada, recarga la pestaña. Explora todos los plugins en el [catálogo de plugins](/es/guide/plugins).
 
 ## 2. Navegación
 

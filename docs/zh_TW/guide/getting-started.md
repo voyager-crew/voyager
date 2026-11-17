@@ -8,7 +8,7 @@ Voyager 不只是工具，它是種習慣。給我 5 分鐘，帶你上手。
 還沒裝？去 [安裝指南](/zh_TW/guide/installation)。
 裝好了？刷新 Gemini 頁面。變化立竿見影。
 
-也在用 Claude、ChatGPT、DeepSeek 或 Kimi？打開 Voyager 彈窗，進入 **外掛**，把那個網站想要的外掛打開。第一次會跳出瀏覽器授權，允許就好；沒看到效果就刷新分頁。全部外掛都在 [外掛目錄](/zh_TW/guide/plugins) 裡。
+也在用 Claude、ChatGPT、DeepSeek、Kimi 或 Grok？打開 Voyager 彈窗，進入 **外掛**，把那個網站想要的外掛打開。第一次會跳出瀏覽器授權，允許就好；沒看到效果就刷新分頁。全部外掛都在 [外掛目錄](/zh_TW/guide/plugins) 裡。
 
 ## 2. 穿梭
 

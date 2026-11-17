@@ -20,7 +20,7 @@ Clique no ícone da extensão para acessar a central de controle.
 
 - **Modo de rolagem**: em **Linha do tempo** → **Mostrar linha do tempo**, `Fluxo` rola suavemente até a mensagem; `Pulo` vai até ela instantaneamente.
 - **Posição da linha do tempo**: Em **Linha do tempo** → **Mostrar linha do tempo**, ative **Linha do tempo arrastável** e mova-a para onde preferir. **Redefinir Posição da Linha do Tempo** a devolve ao lugar original.
-- **Efeitos visuais**: no Gemini e no AI Studio, ative **Layout da página** → **Efeitos visuais** e escolha `Neve`, `Sakura` ou `Chuva` por baixo da linha; desative-a para desligar o efeito. Nos outros sites (Claude, ChatGPT, DeepSeek, Kimi e sites personalizados), a mesma linha fica no cartão **Plugins** desse site, assim que o Voyager funciona lá (Gestor de prompts ou um plugin ativado para o site).
+- **Efeitos visuais**: no Gemini e no AI Studio, ative **Layout da página** → **Efeitos visuais** e escolha `Neve`, `Sakura` ou `Chuva` por baixo da linha; desative-a para desligar o efeito. Nos outros sites (Claude, ChatGPT, DeepSeek, Kimi, Grok e sites personalizados), a mesma linha fica no cartão **Plugins** desse site, assim que o Voyager funciona lá (Gestor de prompts ou um plugin ativado para o site).
 
 ## Ordem personalizada
 

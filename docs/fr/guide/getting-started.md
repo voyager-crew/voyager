@@ -8,7 +8,7 @@ Voyager n'est pas juste un utilitaire ; c'est un flux de travail. Voici comment 
 Si vous ne l'avez pas encore installé, rendez-vous sur le [Guide d'Installation](/fr/guide/installation).
 Une fois installé, rafraîchissez votre onglet Gemini. Vous verrez la différence immédiatement.
 
-Vous utilisez aussi Claude, ChatGPT, DeepSeek ou Kimi ? Ouvrez la popup de Voyager, allez dans **Extensions** et activez les extensions voulues pour ce site. Le navigateur demandera d'abord l'autorisation d'accéder au site ; rechargez l'onglet si rien n'apparaît. Parcourez l'ensemble dans le [catalogue d'extensions](/fr/guide/plugins).
+Vous utilisez aussi Claude, ChatGPT, DeepSeek, Kimi ou Grok ? Ouvrez la popup de Voyager, allez dans **Extensions** et activez les extensions voulues pour ce site. Le navigateur demandera d'abord l'autorisation d'accéder au site ; rechargez l'onglet si rien n'apparaît. Parcourez l'ensemble dans le [catalogue d'extensions](/fr/guide/plugins).
 
 ## 2. La Chronologie
 

@@ -8,7 +8,7 @@ O Voyager não é apenas um utilitário; é um fluxo de trabalho. Veja como tira
 Se ainda não o instalou, vá para o [Guia de Instalação](/pt/guide/installation).
 Uma vez instalado, atualize o seu separador do Gemini. Verá a diferença imediatamente.
 
-Também usa o Claude, o ChatGPT, o DeepSeek ou o Kimi? Abra o popup do Voyager, vá até **Plugins** e ative os plugins que quiser para esse site. Na primeira vez, o navegador vai pedir permissão para acessar o site; recarregue a aba se nada aparecer. Veja tudo no [catálogo de plugins](/pt/guide/plugins).
+Também usa o Claude, o ChatGPT, o DeepSeek, o Kimi ou o Grok? Abra o popup do Voyager, vá até **Plugins** e ative os plugins que quiser para esse site. Na primeira vez, o navegador vai pedir permissão para acessar o site; recarregue a aba se nada aparecer. Veja tudo no [catálogo de plugins](/pt/guide/plugins).
 
 ## 2. A Linha do Tempo
 

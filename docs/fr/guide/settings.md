@@ -17,7 +17,7 @@ Cliquez sur l'icône de l'extension pour accéder au centre de contrôle.
 
 - **Mode défilement** : dans **Chronologie** → **Afficher la chronologie**, `Flux` défile en douceur jusqu'au message ; `Saut` y va instantanément.
 - **Position de la Chronologie** : Dans **Chronologie** → **Afficher la chronologie**, activez **Chronologie déplaçable** et mettez-la où cela semble juste. **Réinitialiser la position de la chronologie** la remet à sa place.
-- **Effets Visuels** : sur Gemini et AI Studio, activez **Mise en page** → **Effets visuels**, puis choisissez `Neige`, `Sakura` ou `Pluie` sous la ligne ; désactivez-la pour couper l’effet. Sur les autres sites (Claude, ChatGPT, DeepSeek, Kimi et sites personnalisés), la même ligne se trouve dans la carte **Extensions** du site, dès que Voyager y est actif (Gestionnaire de prompts ou extension activée pour ce site).
+- **Effets Visuels** : sur Gemini et AI Studio, activez **Mise en page** → **Effets visuels**, puis choisissez `Neige`, `Sakura` ou `Pluie` sous la ligne ; désactivez-la pour couper l’effet. Sur les autres sites (Claude, ChatGPT, DeepSeek, Kimi, Grok et sites personnalisés), la même ligne se trouve dans la carte **Extensions** du site, dès que Voyager y est actif (Gestionnaire de prompts ou extension activée pour ce site).
 
 ## Ordre personnalisé
 
