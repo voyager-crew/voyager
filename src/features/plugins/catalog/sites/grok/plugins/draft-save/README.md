@@ -17,5 +17,11 @@ The plugin uses the `draftSave` primitive with the adapter's `composer` and
 `sendButton` semantic selectors and its `conversationIdPattern`. Turning it off
 stops saving and restoring and keeps the drafts already saved.
 
-Live check: pending on grok.com (refresh restore, multi-paragraph text, send
-clears, the first message from a new chat, switching conversations).
+Grok's Private chat mode is not recognized as a temporary chat, so its drafts
+are saved like any other new-chat draft, as with Claude's incognito chats.
+
+Live check (2026-11-17, grok.com): a four-block draft with an empty paragraph
+came back unchanged after a reload, and a cleared draft stayed cleared. A
+new-chat draft restored after a reload, and sending it as the first message of
+a chat dropped it: the new-chat page was empty afterwards. A conversation draft
+restored after a reload and was gone after it was sent.

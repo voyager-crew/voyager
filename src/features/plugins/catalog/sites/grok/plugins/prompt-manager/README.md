@@ -13,5 +13,8 @@ that finder uses the generic candidate list; the adapter's `composer` is a
 Turning coverage off unmounts the panel and its listeners. Gemini, AI Studio
 and non-catalog custom websites keep their existing startup paths.
 
-Live check: pending on grok.com (the floating trigger, opening the panel, and
-inserting a saved prompt into the query-bar editor without sending).
+Live check (2026-11-17, grok.com): the floating trigger opened the panel, and a
+saved two-line prompt was inserted into the query-bar editor as two paragraphs
+without sending. It still went there while a past message was open for editing:
+Grok's edit box is a `<textarea>`, so the query bar stays the only
+`contenteditable` textbox on the page.

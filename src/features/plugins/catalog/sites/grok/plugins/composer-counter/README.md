@@ -22,11 +22,11 @@ without leaving a second badge. Its label is CSS generated content, so it never
 appears in copied text, exports or the draft. Turning the plugin off removes
 the badge and its styles.
 
-This requires an extension update that ships `counterBadge`. The manifest uses
-`engine: ">=1.8.0"`; a catalog update alone cannot provide the primitive.
+The manifest uses `engine: ">=1.8.0"`, the `counterBadge` floor.
 
 ## Live check
 
-Pending on grok.com, in light and dark themes: the badge position above the
-composer, the count while typing, hiding on an empty draft, and a clean
-teardown when the plugin is turned off.
+2026-11-17, grok.com, light and dark themes: the badge sat just above the query
+bar at its inline-end corner, both on the home page's centered composer and in a
+conversation. It counted while typing (21, 42, 49, 71 chars, paragraph breaks not
+counted) and was hidden while the draft was empty.

@@ -20,12 +20,17 @@ shows nothing. Formula text is preserved as LaTeX where the reply renders KaTeX.
 Light and dark colors follow Voyager's resolved page theme, and the button
 supports RTL layouts.
 
-This requires an extension update that ships `quoteReply`. The manifest uses
-`engine: ">=1.8.0"`; a catalog update alone cannot provide the primitive.
+Grok renders saved replies with a source newline between paragraphs. Voyager
+skips whitespace next to a block, so each paragraph becomes one quote line
+without blank quote lines in between. Releases before that fix add two blank
+quote lines at each paragraph break of a reloaded reply. The quote still works,
+so the manifest keeps the `quoteReply` floor, `engine: ">=1.8.0"`.
 
 ## Live check
 
-Pending on grok.com: the Quote button position, inserting into the query-bar
-editor with `> ` intact, a blank line after an existing draft, no button on the
-user's own messages or inside a thinking block, and the caret ending in the
-composer.
+2026-11-17, grok.com, light and dark themes: **Quote** appeared at the end of a
+selection in a reply, beside Grok's own selection bar without overlapping it.
+Clicking it put the quote into the query-bar editor as separate paragraphs with
+the caret at the end, and nothing was sent. On a reloaded reply with source
+newlines between paragraphs, a two-paragraph selection gave two `> ` lines and
+no blank quote lines.

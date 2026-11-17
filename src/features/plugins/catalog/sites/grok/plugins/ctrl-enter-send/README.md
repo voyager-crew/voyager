@@ -18,14 +18,17 @@ pending; there is no fallback Enter dispatch. IME composition is left alone,
 including keydown events that report `isComposing` or key code 229. Plain Enter
 never sends.
 
-This requires an extension update that ships `sendShortcut`. The manifest uses
-`engine: ">=1.8.0"`; a catalog update alone cannot provide the primitive.
+The manifest uses `engine: ">=1.8.0"`, the `sendShortcut` floor.
+
+While a reply is streaming, Grok shows its send button again as soon as the
+composer holds text, and sending stops the running reply before the new message
+goes out. Ctrl/⌘+Enter does the same as Grok's own Enter there. With an empty
+composer Grok shows only its stop button, so Ctrl/⌘+Enter does nothing.
 
 ## Live check
 
-Pending on grok.com. Confirm the adapter finds the composer, its form and its
-send button; that Enter inserts a newline and does not send; that Ctrl/⌘+Enter
-clicks the send button only while it is enabled and no upload is pending; and
-that turning the plugin off restores the site's keyboard handling. Grok's own
-disabled and upload markers are not separately named in `site.json`, so those
-states still need a check on the live page.
+2026-11-17, grok.com: Enter inserted a new paragraph and did not send, on the
+home page and in a conversation. Ctrl+Enter sent exactly one message, both as
+the first message of a new chat and inside a conversation. Ctrl+Enter during a
+streaming reply stopped it and sent the new text once, matching Grok's own Enter
+with the plugin off. File-upload states were not checked.
