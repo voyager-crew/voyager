@@ -1,0 +1,30 @@
+/* Sets only the public --gv-theme-* roles (src/core/ui/themeVariables.ts), so
+ * only Voyager's own UI changes colour and the site keeps its own. The
+ * palette setting reaches the page as data-gv-palette on <html>, which the
+ * engine removes with this sheet when the plugin is off. :where() keeps the
+ * rules at zero specificity, so a creation's own :root palette still wins. */
+:where(html[data-gv-palette='nord'][data-gv-scheme='light'], html[data-gv-palette='nord-light']) {
+  --gv-theme-surface: #eceff4;
+  --gv-theme-hover: #e5e9f0;
+  --gv-theme-text: #2e3440;
+  --gv-theme-text-muted: #4c566a;
+  --gv-theme-border: #d8dee9;
+  --gv-theme-accent: #5e81ac;
+  --gv-theme-accent-fg: #eceff4;
+  --gv-theme-accent-hue: 256;
+  --gv-theme-danger: #bf616a;
+  --gv-theme-timeline: #4c566a;
+}
+
+:where(html[data-gv-palette='nord'][data-gv-scheme='dark'], html[data-gv-palette='nord-dark']) {
+  --gv-theme-surface: #2e3440;
+  --gv-theme-hover: #3b4252;
+  --gv-theme-text: #eceff4;
+  --gv-theme-text-muted: #d8dee9;
+  --gv-theme-border: #434c5e;
+  --gv-theme-accent: #88c0d0;
+  --gv-theme-accent-fg: #2e3440;
+  --gv-theme-accent-hue: 213;
+  --gv-theme-danger: #bf616a;
+  --gv-theme-timeline: #d8dee9;
+}

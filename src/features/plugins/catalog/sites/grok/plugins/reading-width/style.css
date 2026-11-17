@@ -1,0 +1,9 @@
+/* Grok sizes its conversation column, the user bubble and the composer from one
+ * variable, --grok-page-max-width (native 800px), which it writes inline on the
+ * [data-chat-width] wrapper. Overriding that variable moves all three together,
+ * so the composer stays under the column and the user bubble follows. Grok
+ * already keeps its side gutters and caps the column at the chat area, so a
+ * width larger than the window never overflows. The sidebar is untouched. */
+.gv-plugin-grok-readable [data-chat-width] {
+  --grok-page-max-width: var(--gv-plugin-reading-width, 1000px) !important;
+}

@@ -41,6 +41,8 @@ const STYLESHEETS = [
   'src/features/plugins/catalog/sites/claude/plugins/cjk-render-fix/style.css',
   'src/features/plugins/catalog/sites/deepseek/plugins/reading-width/style.css',
   'src/features/plugins/catalog/sites/deepseek/plugins/timeline/style.css',
+  'src/features/plugins/catalog/sites/grok/plugins/reading-width/style.css',
+  'src/features/plugins/catalog/sites/grok/plugins/reading-typography/style.css',
 ] as const;
 
 const HOST_DIALECTS: ReadonlyArray<{ name: string; pattern: RegExp }> = [
