@@ -15,7 +15,7 @@ on its `[data-chat-width]` wrapper; the plugin overrides it from a stylesheet
 while a `gv-plugin-grok-readable` class is on `<body>`. Grok's own text-column
 setting writes the same variable, so the plugin wins while it is on.
 
-Live check (2026-11-17, grok.com, 1700 px window): at 1000 px the answer text
+DOM check (2026-11-17, grok.com, 1700 px window, this CSS injected by hand; the extension itself not loaded): at 1000 px the answer text
 was 930 px wide and the composer 964 px, both centered; at 1600 px both stopped
 at the chat area with about 40 px gutters and no horizontal scroll.
 
