@@ -25,7 +25,7 @@ Maj+Entrée et la saisie IME gardent le comportement propre au site, et Ctrl/⌘
 ## Autres sites
 
 - **AI Studio** fonctionne à l'inverse : activez **Entrée pour envoyer dans AI Studio** pour envoyer avec `Entrée`, et insérer un saut de ligne avec `Ctrl/⌘+Entrée`.
-- **Claude, ChatGPT, DeepSeek et Kimi** : ouvrez la popup de Voyager sur ce site et activez **Envoyer avec Ctrl/⌘+Entrée** dans la carte **Extensions**. Les extensions de chaque site sont listées dans [Tous les plugins](/fr/guide/plugins).
+- **Claude, ChatGPT, DeepSeek, Kimi et Grok** : ouvrez la popup de Voyager sur ce site et activez **Envoyer avec Ctrl/⌘+Entrée** dans la carte **Extensions**. Les extensions de chaque site sont listées dans [Tous les plugins](/fr/guide/plugins).
 - **Safari** : si Gemini demande d'appuyer deux fois sur Entrée pour envoyer, activez **Corriger la touche Entrée sur Safari**.
 
 ## Caractéristiques

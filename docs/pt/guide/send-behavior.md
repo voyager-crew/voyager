@@ -25,7 +25,7 @@ Shift+Enter e a composição de IME mantêm o comportamento próprio do site, e 
 ## Outros sites
 
 - **AI Studio** funciona ao contrário: ative **Enter para enviar no AI Studio** para enviar com `Enter` e adicionar uma nova linha com `Ctrl/⌘+Enter`.
-- **Claude, ChatGPT, DeepSeek e Kimi**: abra o popup do Voyager nesse site e ative **Enviar com Ctrl/⌘+Enter** no cartão **Plugins**. Os plugins de cada site estão em [Todos os plugins](/pt/guide/plugins).
+- **Claude, ChatGPT, DeepSeek, Kimi e Grok**: abra o popup do Voyager nesse site e ative **Enviar com Ctrl/⌘+Enter** no cartão **Plugins**. Os plugins de cada site estão em [Todos os plugins](/pt/guide/plugins).
 - **Safari**: se o Gemini exigir apertar Enter duas vezes para enviar, ative **Corrigir tecla Enter no Safari**.
 
 ## Características

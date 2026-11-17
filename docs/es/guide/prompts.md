@@ -55,7 +55,7 @@ En el cuadro de chat, escribe `/` seguido de parte del nombre de un prompt. La l
 
 Tu biblioteca de prompts puede guardarse como archivo JSON local o combinarse con Google Drive, para llevarla a otra cuenta de Google u otro navegador.
 
-En Gemini y AI Studio, abre la ventana emergente de Voyager y busca **Datos de prompts** en la tarjeta **Gestor de Prompts**. En Claude, ChatGPT, DeepSeek y Kimi, **Datos de prompts** es una tarjeta propia de la ventana emergente, encima de la tarjeta **Complementos**.
+En Gemini y AI Studio, abre la ventana emergente de Voyager y busca **Datos de prompts** en la tarjeta **Gestor de Prompts**. En Claude, ChatGPT, DeepSeek, Kimi y Grok, **Datos de prompts** es una tarjeta propia de la ventana emergente, encima de la tarjeta **Complementos**.
 
 - **Exportar**: guarda toda la biblioteca en un solo archivo JSON.
 - **Importar**: combina un archivo JSON con tu biblioteca. No se borra nada de lo que ya tienes; un prompt que ya existe se conserva una sola vez, con sus etiquetas combinadas.
@@ -70,7 +70,7 @@ El Gestor de Prompts ahora se puede utilizar en cualquier sitio web que elijas, 
 
 ### Cómo Habilitarlo
 
-En Claude, ChatGPT, DeepSeek y Kimi, el Gestor de Prompts es una fila de la tarjeta **Complementos** del sitio. Abre el popup de Voyager mientras estás en el sitio y activa **Gestor de Prompts**. Si es la primera función que activas allí, el navegador pide acceso al sitio una sola vez.
+En Claude, ChatGPT, DeepSeek, Kimi y Grok, el Gestor de Prompts es una fila de la tarjeta **Complementos** del sitio. Abre el popup de Voyager mientras estás en el sitio y activa **Gestor de Prompts**. Si es la primera función que activas allí, el navegador pide acceso al sitio una sola vez.
 
 Para cualquier otro sitio:
 
@@ -92,5 +92,5 @@ Las direcciones locales también funcionan: introduce `localhost:3080` o `127.0.
 ![Gestor de Prompts dentro de DeepSeek Harness](/assets/prompt-manager-deepseek-harness.png)
 
 ::: tip
-En los sitios web que añades tú mismo, **solo** se activa la función del Gestor de Prompts. Otras funciones como la Línea de tiempo y las Carpetas no se cargarán allí. Claude, ChatGPT, DeepSeek y Kimi son distintos: tienen sus propios plugins oficiales, que puedes consultar en el [catálogo de plugins](/es/guide/plugins).
+En los sitios web que añades tú mismo, **solo** se activa la función del Gestor de Prompts. Otras funciones como la Línea de tiempo y las Carpetas no se cargarán allí. Claude, ChatGPT, DeepSeek, Kimi y Grok son distintos: tienen sus propios plugins oficiales, que puedes consultar en el [catálogo de plugins](/es/guide/plugins).
 :::

@@ -1,0 +1,188 @@
+{
+  "$schema": "https://voyager.nagi.fun/plugin.schema.json",
+  "id": "voyager.grok-composer-counter",
+  "name": "Grok · Draft counter",
+  "version": "1.0.0",
+  "description": "Shows a live count of the characters, words or lines in your draft above the message box.",
+  "i18n": {
+    "ar": {
+      "name": "Grok · عدّاد المسودة",
+      "description": "يعرض فوق مربع الرسالة عددًا مباشرًا لأحرف مسودتك أو كلماتها أو أسطرها.",
+      "settings": {
+        "metric": {
+          "label": "ما يُعَدّ",
+          "options": {
+            "chars": "الأحرف",
+            "words": "الكلمات",
+            "cjkChars": "أحرف CJK",
+            "lines": "الأسطر"
+          }
+        }
+      }
+    },
+    "es": {
+      "name": "Grok · Contador del borrador",
+      "description": "Muestra en directo, sobre el cuadro de mensaje, cuántos caracteres, palabras o líneas tiene tu borrador.",
+      "settings": {
+        "metric": {
+          "label": "Qué contar",
+          "options": {
+            "chars": "Caracteres",
+            "words": "Palabras",
+            "cjkChars": "Caracteres CJK",
+            "lines": "Líneas"
+          }
+        }
+      }
+    },
+    "fr": {
+      "name": "Grok · Compteur du brouillon",
+      "description": "Affiche en direct, au-dessus de la zone de message, le nombre de caractères, de mots ou de lignes de votre brouillon.",
+      "settings": {
+        "metric": {
+          "label": "Ce qui est compté",
+          "options": {
+            "chars": "Caractères",
+            "words": "Mots",
+            "cjkChars": "Caractères CJK",
+            "lines": "Lignes"
+          }
+        }
+      }
+    },
+    "ja": {
+      "name": "Grok · 下書きカウンター",
+      "description": "入力欄の上に、下書きの文字数・単語数・行数をリアルタイムで表示します。",
+      "settings": {
+        "metric": {
+          "label": "数える対象",
+          "options": {
+            "chars": "文字数",
+            "words": "単語数",
+            "cjkChars": "CJK 文字数",
+            "lines": "行数"
+          }
+        }
+      }
+    },
+    "ko": {
+      "name": "Grok · 입력 글자 수 카운터",
+      "description": "메시지 입력창 위에 작성 중인 글의 글자 수, 단어 수 또는 줄 수를 실시간으로 표시합니다.",
+      "settings": {
+        "metric": {
+          "label": "셀 항목",
+          "options": {
+            "chars": "글자 수",
+            "words": "단어 수",
+            "cjkChars": "한중일 문자 수",
+            "lines": "줄 수"
+          }
+        }
+      }
+    },
+    "pt": {
+      "name": "Grok · Contador do rascunho",
+      "description": "Mostra ao vivo, acima da caixa de mensagem, quantos caracteres, palavras ou linhas tem o seu rascunho.",
+      "settings": {
+        "metric": {
+          "label": "O que contar",
+          "options": {
+            "chars": "Caracteres",
+            "words": "Palavras",
+            "cjkChars": "Caracteres CJK",
+            "lines": "Linhas"
+          }
+        }
+      }
+    },
+    "ru": {
+      "name": "Grok · Счётчик черновика",
+      "description": "Показывает над полем ввода количество символов, слов или строк в вашем черновике по мере набора.",
+      "settings": {
+        "metric": {
+          "label": "Что считать",
+          "options": {
+            "chars": "Символы",
+            "words": "Слова",
+            "cjkChars": "Символы CJK",
+            "lines": "Строки"
+          }
+        }
+      }
+    },
+    "zh": {
+      "name": "Grok · 输入框字数统计",
+      "description": "在输入框上方实时显示草稿的字符数、字数或行数。",
+      "settings": {
+        "metric": {
+          "label": "统计内容",
+          "options": {
+            "chars": "字符数",
+            "words": "字数",
+            "cjkChars": "中日韩字符",
+            "lines": "行数"
+          }
+        }
+      }
+    },
+    "zh_TW": {
+      "name": "Grok · 輸入框字數統計",
+      "description": "在輸入框上方即時顯示草稿的字元數、字數或行數。",
+      "settings": {
+        "metric": {
+          "label": "統計內容",
+          "options": {
+            "chars": "字元數",
+            "words": "字數",
+            "cjkChars": "中日韓字元",
+            "lines": "行數"
+          }
+        }
+      }
+    }
+  },
+  "author": "voyager-official",
+  "category": "productivity",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/voyager-crew/voyager/tree/main/src/features/plugins/catalog/sites/grok/plugins/composer-counter",
+  "engine": ">=1.8.0",
+  "tier": "declarative",
+  "matches": ["https://grok.com/*"],
+  "contributes": {
+    "settings": {
+      "metric": {
+        "type": "select",
+        "label": "What to count",
+        "default": "chars",
+        "options": [
+          {
+            "value": "chars",
+            "label": "Characters"
+          },
+          {
+            "value": "words",
+            "label": "Words"
+          },
+          {
+            "value": "cjkChars",
+            "label": "CJK characters"
+          },
+          {
+            "value": "lines",
+            "label": "Lines"
+          }
+        ]
+      }
+    },
+    "domOps": [
+      {
+        "op": "native",
+        "handler": "counterBadge",
+        "params": {
+          "target": "composer",
+          "metric": "{{metric}}"
+        }
+      }
+    ]
+  }
+}

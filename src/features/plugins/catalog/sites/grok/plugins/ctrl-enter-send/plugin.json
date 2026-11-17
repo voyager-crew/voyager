@@ -1,0 +1,61 @@
+{
+  "$schema": "https://voyager.nagi.fun/plugin.schema.json",
+  "id": "voyager.grok-ctrl-enter-send",
+  "name": "Grok · Ctrl/⌘+Enter to send",
+  "version": "1.0.0",
+  "description": "Enter inserts a newline; Ctrl/⌘+Enter sends your message when the send button is enabled and no upload is pending.",
+  "i18n": {
+    "ar": {
+      "name": "Grok · الإرسال باستخدام Ctrl/⌘+Enter",
+      "description": "يُدرج Enter سطرًا جديدًا، ويُرسل Ctrl/⌘+Enter رسالتك عندما يكون زر الإرسال جاهزًا ولا توجد عمليات رفع معلّقة."
+    },
+    "es": {
+      "name": "Grok · Enviar con Ctrl/⌘+Enter",
+      "description": "Enter inserta un salto de línea; Ctrl/⌘+Enter envía tu mensaje cuando el botón está habilitado y no hay archivos pendientes de subir."
+    },
+    "fr": {
+      "name": "Grok · Envoyer avec Ctrl/⌘+Entrée",
+      "description": "Entrée insère un saut de ligne ; Ctrl/⌘+Entrée envoie votre message lorsque le bouton est actif et qu’aucun fichier n’est en cours de téléversement."
+    },
+    "ja": {
+      "name": "Grok · Ctrl/⌘+Enterで送信",
+      "description": "Enterで改行し、送信ボタンが有効でアップロード待ちのファイルがないときにCtrl/⌘+Enterでメッセージを送信します。"
+    },
+    "ko": {
+      "name": "Grok · Ctrl/⌘+Enter로 전송",
+      "description": "Enter로 줄을 바꾸고, 전송 버튼이 활성화되어 있으며 업로드 대기 중인 파일이 없을 때 Ctrl/⌘+Enter로 메시지를 전송합니다."
+    },
+    "pt": {
+      "name": "Grok · Enviar com Ctrl/⌘+Enter",
+      "description": "Enter insere uma quebra de linha; Ctrl/⌘+Enter envia sua mensagem quando o botão está habilitado e não há arquivos aguardando envio."
+    },
+    "ru": {
+      "name": "Grok · Отправка по Ctrl/⌘+Enter",
+      "description": "Enter вставляет новую строку, а Ctrl/⌘+Enter отправляет сообщение, если кнопка отправки активна и нет незавершённых загрузок файлов."
+    },
+    "zh": {
+      "name": "Grok · Ctrl/⌘+Enter 发送",
+      "description": "Enter 换行；发送按钮可用且没有待完成的文件上传时，按 Ctrl/⌘+Enter 发送消息。"
+    },
+    "zh_TW": {
+      "name": "Grok · Ctrl/⌘+Enter 傳送",
+      "description": "Enter 換行；傳送按鈕可用且沒有待完成的檔案上傳時，按 Ctrl/⌘+Enter 傳送訊息。"
+    }
+  },
+  "author": "voyager-official",
+  "category": "productivity",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/voyager-crew/voyager/tree/main/src/features/plugins/catalog/sites/grok/plugins/ctrl-enter-send",
+  "engine": ">=1.8.0",
+  "tier": "declarative",
+  "matches": ["https://grok.com/*"],
+  "contributes": {
+    "domOps": [
+      {
+        "op": "native",
+        "handler": "sendShortcut",
+        "params": {}
+      }
+    ]
+  }
+}

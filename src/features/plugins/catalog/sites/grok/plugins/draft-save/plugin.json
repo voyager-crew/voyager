@@ -1,0 +1,64 @@
+{
+  "$schema": "https://voyager.nagi.fun/plugin.schema.json",
+  "id": "voyager.grok-draft-save",
+  "name": "Grok · Draft auto-save",
+  "version": "1.0.0",
+  "description": "Saves unsent text in the Grok composer and restores it when you refresh the page or reopen the conversation. Drafts stay on this device and are cleared once sent.",
+  "i18n": {
+    "ar": {
+      "name": "Grok · حفظ المسودة تلقائيًا",
+      "description": "يحفظ النص غير المرسل في حقل الإدخال في Grok ويستعيده عند تحديث الصفحة أو إعادة فتح المحادثة. تبقى المسودات على هذا الجهاز وتُحذف بعد الإرسال."
+    },
+    "es": {
+      "name": "Grok · Guardado automático de borrador",
+      "description": "Guarda el texto no enviado del campo de entrada de Grok y lo restaura al actualizar la página o reabrir la conversación. Los borradores se quedan en este dispositivo y se borran al enviarlos."
+    },
+    "fr": {
+      "name": "Grok · Sauvegarde automatique du brouillon",
+      "description": "Enregistre le texte non envoyé du champ de saisie de Grok et le restaure quand vous actualisez la page ou rouvrez la conversation. Les brouillons restent sur cet appareil et sont effacés une fois envoyés."
+    },
+    "ja": {
+      "name": "Grok · 下書きの自動保存",
+      "description": "Grok の入力欄にある未送信のテキストを保存し、ページを更新したり会話を開き直したりしたときに復元します。下書きはこの端末にのみ保存され、送信すると削除されます。"
+    },
+    "ko": {
+      "name": "Grok · 초안 자동 저장",
+      "description": "Grok 입력창에서 전송하지 않은 텍스트를 저장하고, 페이지를 새로고침하거나 대화를 다시 열 때 복원합니다. 초안은 이 기기에만 저장되며 전송하면 삭제됩니다."
+    },
+    "pt": {
+      "name": "Grok · Salvamento automático de rascunho",
+      "description": "Salva o texto não enviado no campo de entrada do Grok e o restaura ao atualizar a página ou reabrir a conversa. Os rascunhos ficam neste dispositivo e são apagados após o envio."
+    },
+    "ru": {
+      "name": "Grok · Автосохранение черновика",
+      "description": "Сохраняет неотправленный текст в поле ввода Grok и восстанавливает его при обновлении страницы или повторном открытии беседы. Черновики хранятся только на этом устройстве и удаляются после отправки."
+    },
+    "zh": {
+      "name": "Grok · 草稿自动保存",
+      "description": "保存 Grok 输入框中未发送的文字，刷新页面或重新打开对话时自动恢复。草稿只保存在本设备上，发送后即删除。"
+    },
+    "zh_TW": {
+      "name": "Grok · 草稿自動儲存",
+      "description": "儲存 Grok 輸入框中未送出的文字，重新整理頁面或重新開啟對話時自動還原。草稿只儲存在這部裝置上，送出後即刪除。"
+    }
+  },
+  "author": "voyager-official",
+  "category": "productivity",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/voyager-crew/voyager/tree/main/src/features/plugins/catalog/sites/grok/plugins/draft-save",
+  "engine": ">=1.8.0",
+  "tier": "declarative",
+  "matches": ["https://grok.com/*"],
+  "requires": {
+    "handlers": ["draftSave"]
+  },
+  "contributes": {
+    "domOps": [
+      {
+        "op": "native",
+        "handler": "draftSave",
+        "params": {}
+      }
+    ]
+  }
+}

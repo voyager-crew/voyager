@@ -18,7 +18,7 @@ Voyager simplifie ce processus :
 
 Gemini propose désormais sa propre fonction de réponse avec citation ; celle de Voyager est donc désactivée par défaut sur Gemini. Vous pouvez l’activer dans **Saisie** → **Citer et répondre**, dans la popup de Voyager.
 
-Sur Claude, ChatGPT, DeepSeek et Kimi, ouvrez la popup de Voyager sur ce site et activez **Citer les réponses** dans la carte **Extensions** (la page [Tous les plugins](/fr/guide/plugins) liste les extensions de chaque site). Le bouton **Quote** apparaît alors lorsque vous sélectionnez du texte à l'intérieur d'une seule réponse de l'assistant, et la citation est ajoutée à votre brouillon sans rien envoyer.
+Sur Claude, ChatGPT, DeepSeek, Kimi et Grok, ouvrez la popup de Voyager sur ce site et activez **Citer les réponses** dans la carte **Extensions** (la page [Tous les plugins](/fr/guide/plugins) liste les extensions de chaque site). Le bouton **Quote** apparaît alors lorsque vous sélectionnez du texte à l'intérieur d'une seule réponse de l'assistant, et la citation est ajoutée à votre brouillon sans rien envoyer.
 
 ## Fonctionnalités
 

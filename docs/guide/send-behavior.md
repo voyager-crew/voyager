@@ -25,7 +25,7 @@ Shift+Enter 和输入法组合输入保持网站自身的行为；如果附件�
 ## 其他网站
 
 - **AI Studio** 的逻辑相反：开启 **AI Studio Enter 发送**，即可用 `Enter` 发送，并用 `Ctrl/⌘+Enter` 换行。
-- **Claude、ChatGPT、DeepSeek 和 Kimi**：在该网站打开 Voyager 弹窗，在 **插件** 卡片里开启 **Ctrl/⌘+Enter 发送**。各网站的插件见[插件一览](/guide/plugins)。
+- **Claude、ChatGPT、DeepSeek、Kimi 和 Grok**：在该网站打开 Voyager 弹窗，在 **插件** 卡片里开启 **Ctrl/⌘+Enter 发送**。各网站的插件见[插件一览](/guide/plugins)。
 - **Safari**：如果 Gemini 需要按两次回车才能发送，请开启 **修复 Safari 回车键**。
 
 ## 功能特点

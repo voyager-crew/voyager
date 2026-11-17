@@ -26,7 +26,7 @@ Shift+Enter와 IME 입력 조합은 사이트의 기본 동작을 그대로 유�
 ## 다른 사이트
 
 - **AI Studio**는 반대 방식으로 작동합니다. **AI Studio에서 Enter로 전송**을 켜면 `Enter`로 전송하고 `Ctrl/⌘+Enter`로 줄바꿈합니다.
-- **Claude, ChatGPT, DeepSeek, Kimi**: 해당 사이트에서 Voyager 팝업을 열고 **플러그인** 카드에서 **Ctrl/⌘+Enter로 전송**을 켜세요. 사이트별 플러그인은 [플러그인 목록](/ko/guide/plugins)에서 볼 수 있습니다.
+- **Claude, ChatGPT, DeepSeek, Kimi, Grok**: 해당 사이트에서 Voyager 팝업을 열고 **플러그인** 카드에서 **Ctrl/⌘+Enter로 전송**을 켜세요. 사이트별 플러그인은 [플러그인 목록](/ko/guide/plugins)에서 볼 수 있습니다.
 - **Safari**: Gemini에서 Enter를 두 번 눌러야 전송된다면 **Safari Enter 키 수정**을 켜세요.
 
 ## 기능 특징

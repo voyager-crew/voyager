@@ -373,6 +373,18 @@ describe('quoteReply primitive', () => {
       expect(readComposer(field)).toBe('> First\n> \n> Second\n');
     });
 
+    it('ignores source newlines between rendered paragraphs', () => {
+      const { field } = fixture(site);
+      document.getElementById('selected')!.outerHTML =
+        '<div id="paragraphs"><p>First</p>\n<p>Second</p>\n<ul>\n<li>Item</li>\n</ul></div>';
+      activate(site.adapter);
+      select(document.getElementById('paragraphs')!);
+
+      quoteButton().click();
+
+      expect(readComposer(field)).toBe('> First\n> Second\n> Item\n');
+    });
+
     it('quotes a selection of the complete KaTeX contents as one formula', () => {
       const { field } = fixture(site);
       document.getElementById('selected')!.innerHTML =
