@@ -7,7 +7,7 @@ Voyager transforme votre conversation en une chronologie.
 
 Sur Gemini, **Chronologie** → **Afficher la chronologie** contrôle la barre de chronologie et ses raccourcis de navigation. La désactivation conserve les étoiles et la hiérarchie enregistrées. Les heures des messages dépendent séparément de **Chronologie** → **Horodatage des messages** : elles peuvent donc rester visibles même lorsque la chronologie est désactivée.
 
-Sur Claude, ChatGPT et DeepSeek, la barre est l’extension de chronologie du site : activez-la dans **Extensions** ; ses **Options** regroupent le style, les niveaux de nœuds (lorsqu’ils sont proposés), **Réinitialiser la position de la chronologie** et **Voir la bibliothèque enregistrée**, ainsi que les horodatages des messages sur ChatGPT.
+Sur Claude, ChatGPT, DeepSeek et Grok, la barre est l’extension de chronologie du site : activez-la dans **Extensions** ; ses **Options** regroupent le style, les niveaux de nœuds (lorsqu’ils sont proposés), **Réinitialiser la position de la chronologie** et **Voir la bibliothèque enregistrée**, ainsi que les horodatages des messages sur ChatGPT.
 
 ## Visualisez la Forme de Votre Chat
 
@@ -94,4 +94,4 @@ La chronologie est la plus utile dans les conversations de plus de 10 messages, 
 
 La chronologie fonctionne sur Google Gemini, ainsi que sur Claude et ChatGPT grâce aux extensions intégrées, sur Chrome, Edge, Firefox, Safari, Opera et Brave. Les raccourcis clavier et les étoiles fonctionnent de la même façon sur les trois. Les niveaux sont partout une option expérimentale à activer : sur Gemini, activez **Activer les niveaux de nœuds** sous **Chronologie** → **Afficher la chronologie**, une fois la ligne activée ; sur Claude et ChatGPT, activez le même interrupteur dans les réglages de **Timeline**, dans la section **Extensions**. Les messages étoilés se synchronisent entre appareils lorsque la [Synchro Cloud](/fr/guide/cloud-sync) est activée.
 
-La chronologie n'est pas disponible sur AI Studio. DeepSeek dispose d'une extension de chronologie facultative dans le catalogue d'extensions (elle est livrée désactivée).
+La chronologie n'est pas disponible sur AI Studio. DeepSeek et Grok disposent chacun d'une extension de chronologie facultative dans le catalogue d'extensions (livrée désactivée).

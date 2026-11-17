@@ -1,0 +1,64 @@
+{
+  "$schema": "https://voyager.nagi.fun/plugin.schema.json",
+  "id": "voyager.grok-table-copy",
+  "name": "Grok · Table Copy",
+  "version": "1.0.0",
+  "description": "Copy any table in a reply as Markdown, with formulas kept as LaTeX, or as TSV to paste into a spreadsheet.",
+  "i18n": {
+    "zh": {
+      "name": "Grok · 表格复制",
+      "description": "将回复中的表格复制为 Markdown（公式保留为 LaTeX），或复制为 TSV 粘贴到电子表格。"
+    },
+    "zh_TW": {
+      "name": "Grok · 表格複製",
+      "description": "將回覆中的表格複製為 Markdown（公式保留為 LaTeX），或複製為 TSV 貼到試算表。"
+    },
+    "ja": {
+      "name": "Grok · 表のコピー",
+      "description": "回答内の表を Markdown（数式は LaTeX のまま）または表計算ソフトに貼り付けられる TSV としてコピーします。"
+    },
+    "ko": {
+      "name": "Grok · 표 복사",
+      "description": "답변의 표를 Markdown(수식은 LaTeX 그대로) 또는 스프레드시트에 붙여 넣을 TSV로 복사합니다."
+    },
+    "fr": {
+      "name": "Grok · Copie de tableaux",
+      "description": "Copiez un tableau d’une réponse en Markdown, formules conservées en LaTeX, ou en TSV à coller dans un tableur."
+    },
+    "es": {
+      "name": "Grok · Copia de tablas",
+      "description": "Copia una tabla de la respuesta como Markdown, con las fórmulas en LaTeX, o como TSV para pegarla en una hoja de cálculo."
+    },
+    "pt": {
+      "name": "Grok · Cópia de tabelas",
+      "description": "Copie uma tabela da resposta como Markdown, com as fórmulas em LaTeX, ou como TSV para colar numa planilha."
+    },
+    "ru": {
+      "name": "Grok · Копирование таблиц",
+      "description": "Копируйте таблицу из ответа в Markdown с формулами в LaTeX или в TSV для вставки в электронную таблицу."
+    },
+    "ar": {
+      "name": "Grok · نسخ الجداول",
+      "description": "انسخ أي جدول في الرد بتنسيق Markdown مع إبقاء الصيغ بصيغة LaTeX، أو بتنسيق TSV للصقه في جدول بيانات."
+    }
+  },
+  "author": "voyager-official",
+  "category": "productivity",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/voyager-crew/voyager/tree/main/src/features/plugins/catalog/sites/grok/plugins/table-copy",
+  "engine": ">=1.8.0",
+  "tier": "declarative",
+  "matches": ["https://grok.com/*"],
+  "requires": {
+    "handlers": ["tableCopy"]
+  },
+  "contributes": {
+    "domOps": [
+      {
+        "op": "native",
+        "handler": "tableCopy",
+        "params": {}
+      }
+    ]
+  }
+}

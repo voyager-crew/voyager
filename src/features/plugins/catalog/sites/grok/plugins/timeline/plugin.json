@@ -1,0 +1,179 @@
+{
+  "$schema": "https://voyager.nagi.fun/plugin.schema.json",
+  "id": "voyager.grok-timeline",
+  "name": "Grok · Timeline",
+  "version": "1.0.0",
+  "description": "Adds a compact conversation timeline to Grok with starred messages and search.",
+  "i18n": {
+    "zh": {
+      "name": "Grok · 时间线",
+      "description": "为 Grok 添加紧凑的对话时间线，支持星标消息和搜索。",
+      "settings": {
+        "timelineStyle": {
+          "label": "时间线样式",
+          "options": {
+            "dots": "节点",
+            "compact": "紧凑索引",
+            "ruler": "刻度"
+          }
+        }
+      }
+    },
+    "zh_TW": {
+      "name": "Grok · 時間線",
+      "description": "為 Grok 加入緊湊的對話時間線，支援星標訊息與搜尋。",
+      "settings": {
+        "timelineStyle": {
+          "label": "時間軸樣式",
+          "options": {
+            "dots": "節點",
+            "compact": "精簡索引",
+            "ruler": "刻度"
+          }
+        }
+      }
+    },
+    "ja": {
+      "name": "Grok · タイムライン",
+      "description": "Grok にコンパクトな会話タイムラインを追加し、スター付きメッセージと検索に対応します。",
+      "settings": {
+        "timelineStyle": {
+          "label": "タイムライン表示",
+          "options": {
+            "dots": "ノード",
+            "compact": "コンパクト",
+            "ruler": "目盛り"
+          }
+        }
+      }
+    },
+    "ko": {
+      "name": "Grok · 타임라인",
+      "description": "Grok에 별표 메시지와 검색을 지원하는 간단한 대화 타임라인을 추가합니다.",
+      "settings": {
+        "timelineStyle": {
+          "label": "타임라인 스타일",
+          "options": {
+            "dots": "노드",
+            "compact": "컴팩트",
+            "ruler": "눈금"
+          }
+        }
+      }
+    },
+    "fr": {
+      "name": "Grok · Timeline",
+      "description": "Ajoute une timeline compacte à Grok avec messages favoris et recherche.",
+      "settings": {
+        "timelineStyle": {
+          "label": "Style de la chronologie",
+          "options": {
+            "dots": "Nœuds",
+            "compact": "Compact",
+            "ruler": "Graduations"
+          }
+        }
+      }
+    },
+    "es": {
+      "name": "Grok · Línea de tiempo",
+      "description": "Añade a Grok una línea de tiempo compacta con mensajes destacados y búsqueda.",
+      "settings": {
+        "timelineStyle": {
+          "label": "Estilo de cronología",
+          "options": {
+            "dots": "Nodos",
+            "compact": "Compacto",
+            "ruler": "Escala"
+          }
+        }
+      }
+    },
+    "pt": {
+      "name": "Grok · Linha do tempo",
+      "description": "Adiciona ao Grok uma linha do tempo compacta com mensagens favoritas e busca.",
+      "settings": {
+        "timelineStyle": {
+          "label": "Estilo da linha do tempo",
+          "options": {
+            "dots": "Nós",
+            "compact": "Compacto",
+            "ruler": "Régua"
+          }
+        }
+      }
+    },
+    "ru": {
+      "name": "Grok · Таймлайн",
+      "description": "Добавляет в Grok компактную шкалу диалога со звёздами и поиском.",
+      "settings": {
+        "timelineStyle": {
+          "label": "Стиль временной шкалы",
+          "options": {
+            "dots": "Узлы",
+            "compact": "Компактный",
+            "ruler": "Шкала"
+          }
+        }
+      }
+    },
+    "ar": {
+      "name": "Grok · المخطط الزمني",
+      "description": "يضيف إلى Grok مخططًا زمنيًا موجزًا مع الرسائل المميزة والبحث.",
+      "settings": {
+        "timelineStyle": {
+          "label": "نمط الخط الزمني",
+          "options": {
+            "dots": "العُقد",
+            "compact": "مضغوط",
+            "ruler": "تدريج"
+          }
+        }
+      }
+    }
+  },
+  "author": "voyager-official",
+  "category": "productivity",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/voyager-crew/voyager/tree/main/src/features/plugins/catalog/sites/grok/plugins/timeline",
+  "engine": ">=1.6.0",
+  "tier": "declarative",
+  "matches": ["https://grok.com/*"],
+  "requires": {
+    "handlers": ["turnNavigator"],
+    "semantic": ["userTurn"],
+    "formFactors": ["desktop", "mobile"]
+  },
+  "contributes": {
+    "settings": {
+      "timelineStyle": {
+        "type": "select",
+        "label": "Timeline style",
+        "default": "dots",
+        "options": [
+          {
+            "value": "dots",
+            "label": "Nodes"
+          },
+          {
+            "value": "compact",
+            "label": "Compact"
+          },
+          {
+            "value": "ruler",
+            "label": "Ruler"
+          }
+        ]
+      }
+    },
+    "domOps": [
+      {
+        "op": "native",
+        "handler": "turnNavigator",
+        "params": {
+          "turn": "div[data-testid=\"user-message\"] > [data-bubble-text], div[data-testid=\"user-message\"]:not(:has(> [data-bubble-text]))"
+        }
+      }
+    ]
+  }
+}
