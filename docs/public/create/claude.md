@@ -2,7 +2,7 @@
 
 Voyager is a browser extension for AI chat sites. A Voyager plugin is a JSON manifest plus CSS that changes the page reversibly; Voyager checks it strictly on import. It runs no code unless it is the scripted kind below.
 
-This page follows Voyager 2.3.2: the user’s message gives their request and their Voyager version.
+This page follows Voyager 2.3.3: the user’s message gives their request and their Voyager version.
 
 ## Target site: Claude
 
