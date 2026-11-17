@@ -23,6 +23,20 @@ describe('exportRichText.inline', () => {
     expect(extracted.html).toBe(content);
   });
 
+  it('keeps an inline formula inside bold text as LaTeX (#571)', () => {
+    const assistant = document.createElement('div');
+    assistant.innerHTML = `
+      <message-content>
+        <div class="markdown"><p><b>Final answer: <span class="math-inline" data-math="\\frac{4 + 3\\sqrt{15}}{17}"><span class="katex"><span class="katex-html">174+315</span></span></span></b></p></div>
+      </message-content>
+    `;
+
+    const extracted = extractor.extractAssistantContent(assistant);
+
+    expect(extracted.text).toBe('**Final answer: $\\frac{4 + 3\\sqrt{15}}{17}$**');
+    expect(extracted.hasFormulas).toBe(true);
+  });
+
   it('preserves direct text around nested inline elements', () => {
     const assistant = document.createElement('div');
     assistant.innerHTML = `
