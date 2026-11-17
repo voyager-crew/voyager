@@ -25,7 +25,7 @@ Shift+Enter と IME の変換中はサイト本来の動作のままです。添
 ## ほかのサイト
 
 - **AI Studio** は逆の動作です：**AI Studio で Enter 送信** をオンにすると、`Enter` で送信、`Ctrl/⌘+Enter` で改行になります。
-- **Claude、ChatGPT、DeepSeek、Kimi**：そのサイトで Voyager のポップアップを開き、**プラグイン** カードの **Ctrl/⌘+Enterで送信** をオンにしてください。サイトごとのプラグインは [プラグイン一覧](/ja/guide/plugins) で確認できます。
+- **Claude、ChatGPT、DeepSeek、Kimi、Grok**：そのサイトで Voyager のポップアップを開き、**プラグイン** カードの **Ctrl/⌘+Enterで送信** をオンにしてください。サイトごとのプラグインは [プラグイン一覧](/ja/guide/plugins) で確認できます。
 - **Safari**：Gemini で送信に Enter を 2 回押す必要がある場合は、**Safari の Enter キーを修正** をオンにしてください。
 
 ## 機能の特徴

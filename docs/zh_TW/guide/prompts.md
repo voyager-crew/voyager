@@ -55,7 +55,7 @@
 
 提示詞庫可以存成本機 JSON 檔案，也可以和 Google Drive 合併，換 Google 帳號或換瀏覽器時一起帶走。
 
-在 Gemini 和 AI Studio 上，開啟 Voyager 彈出視窗，在 **提示詞管理器** 卡片中找到 **提示詞資料**；在 Claude、ChatGPT、DeepSeek 和 Kimi 上，**提示詞資料** 是彈出視窗中 **外掛** 卡片上方的獨立一欄。
+在 Gemini 和 AI Studio 上，開啟 Voyager 彈出視窗，在 **提示詞管理器** 卡片中找到 **提示詞資料**；在 Claude、ChatGPT、DeepSeek、Kimi 和 Grok 上，**提示詞資料** 是彈出視窗中 **外掛** 卡片上方的獨立一欄。
 
 - **匯出**：將整個提示詞庫存成一個 JSON 檔案。
 - **匯入**：將 JSON 檔案併入現有的庫，既有的提示詞不會被刪除；同一條提示詞只保留一份，標籤合併。
@@ -70,7 +70,7 @@
 
 ### 如何啟用
 
-在 Claude、ChatGPT、DeepSeek 和 Kimi 上，提示詞管理器是該網站 **外掛** 卡片中的一列。在該網站頁面打開 Voyager 彈窗，開啟 **提示詞管理器** 即可；如果這是在該網站上開啟的第一個功能，瀏覽器會要求一次該網站的存取權限。
+在 Claude、ChatGPT、DeepSeek、Kimi 和 Grok 上，提示詞管理器是該網站 **外掛** 卡片中的一列。在該網站頁面打開 Voyager 彈窗，開啟 **提示詞管理器** 即可；如果這是在該網站上開啟的第一個功能，瀏覽器會要求一次該網站的存取權限。
 
 其他任何網站：
 
@@ -92,5 +92,5 @@
 ![在 DeepSeek Harness 中執行的提示詞管理器](/assets/prompt-manager-deepseek-harness.png)
 
 ::: tip
-在您自行添加的網站上，**僅**激活提示詞管理器功能。時間軸、資料夾等其他功能不會加載。Claude、ChatGPT、DeepSeek 和 Kimi 不同：它們有各自的官方外掛，可以在[外掛一覽](/zh_TW/guide/plugins)中瀏覽。
+在您自行添加的網站上，**僅**激活提示詞管理器功能。時間軸、資料夾等其他功能不會加載。Claude、ChatGPT、DeepSeek、Kimi 和 Grok 不同：它們有各自的官方外掛，可以在[外掛一覽](/zh_TW/guide/plugins)中瀏覽。
 :::

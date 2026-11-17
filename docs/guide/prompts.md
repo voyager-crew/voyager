@@ -55,7 +55,7 @@
 
 提示词库可以存成本地 JSON 文件，也可以和 Google Drive 合并，换 Google 账号或换浏览器时一起带走。
 
-在 Gemini 和 AI Studio 上，打开 Voyager 弹窗，在 **提示词管理器** 卡片里找到 **提示词数据**；在 Claude、ChatGPT、DeepSeek 和 Kimi 上，**提示词数据** 是弹窗中 **插件** 卡片上方的单独一栏。
+在 Gemini 和 AI Studio 上，打开 Voyager 弹窗，在 **提示词管理器** 卡片里找到 **提示词数据**；在 Claude、ChatGPT、DeepSeek、Kimi 和 Grok 上，**提示词数据** 是弹窗中 **插件** 卡片上方的单独一栏。
 
 - **导出**：把整个提示词库存成一个 JSON 文件。
 - **导入**：把 JSON 文件并入现有的库，已有的提示词不会被删除；同一条提示词只保留一份，标签合并。
@@ -70,7 +70,7 @@
 
 ### 如何启用
 
-在 Claude、ChatGPT、DeepSeek 和 Kimi 上，提示词管理器是该网站 **插件** 卡片里的一行。打开该网站时点开 Voyager 弹窗，打开 **提示词管理器** 即可；如果这是在该网站上开启的第一个功能，浏览器会请求一次该网站的访问权限。
+在 Claude、ChatGPT、DeepSeek、Kimi 和 Grok 上，提示词管理器是该网站 **插件** 卡片里的一行。打开该网站时点开 Voyager 弹窗，打开 **提示词管理器** 即可；如果这是在该网站上开启的第一个功能，浏览器会请求一次该网站的访问权限。
 
 其他网站：
 
@@ -92,5 +92,5 @@
 ![在 DeepSeek Harness 中运行的提示词管理器](/assets/prompt-manager-deepseek-harness.png)
 
 ::: tip
-在自行添加的网站上，**仅**激活提示词管理器功能，时间线、文件夹等其他功能不会加载。Claude、ChatGPT、DeepSeek 和 Kimi 则不同：它们有各自的官方插件，可以在[插件目录](/guide/plugins)中浏览。
+在自行添加的网站上，**仅**激活提示词管理器功能，时间线、文件夹等其他功能不会加载。Claude、ChatGPT、DeepSeek、Kimi 和 Grok 则不同：它们有各自的官方插件，可以在[插件目录](/guide/plugins)中浏览。
 :::

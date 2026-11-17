@@ -55,7 +55,7 @@ Na caixa de conversa, digite `/` seguido de parte do nome de um prompt. A lista 
 
 Sua biblioteca de prompts pode ser salva como um arquivo JSON local ou mesclada com o Google Drive, para levá-la a outra conta Google ou outro navegador.
 
-No Gemini e no AI Studio, abra o popup do Voyager e encontre **Dados de prompts** no cartão **Gerenciador de Prompts**. No Claude, ChatGPT, DeepSeek e Kimi, **Dados de prompts** é um cartão próprio no popup, acima do cartão **Plugins**.
+No Gemini e no AI Studio, abra o popup do Voyager e encontre **Dados de prompts** no cartão **Gerenciador de Prompts**. No Claude, ChatGPT, DeepSeek, Kimi e Grok, **Dados de prompts** é um cartão próprio no popup, acima do cartão **Plugins**.
 
 - **Exportar**: salva a biblioteca inteira em um único arquivo JSON.
 - **Importar**: mescla um arquivo JSON à sua biblioteca. Nada do que você já tem é apagado; um prompt que já existe fica uma só vez, com as tags combinadas.
@@ -70,7 +70,7 @@ O Gestor de Prompts agora pode ser usado em qualquer site à sua escolha, não l
 
 ### Como Ativar
 
-No Claude, no ChatGPT, no DeepSeek e no Kimi, o Gerenciador de Prompts é uma linha do cartão **Plugins** do site. Abra o popup do Voyager enquanto estiver no site e ative **Gerenciador de Prompts**. Se for o primeiro recurso que você ativa ali, o navegador pede acesso ao site uma única vez.
+No Claude, no ChatGPT, no DeepSeek, no Kimi e no Grok, o Gerenciador de Prompts é uma linha do cartão **Plugins** do site. Abra o popup do Voyager enquanto estiver no site e ative **Gerenciador de Prompts**. Se for o primeiro recurso que você ativa ali, o navegador pede acesso ao site uma única vez.
 
 Para qualquer outro site:
 
@@ -92,5 +92,5 @@ Endereços locais também funcionam — digite `localhost:3080` ou `127.0.0.1:30
 ![Gestor de Prompts dentro do DeepSeek Harness](/assets/prompt-manager-deepseek-harness.png)
 
 ::: tip
-Em sites personalizados, **apenas** a funcionalidade de Gestor de Prompts é ativada. Outras funcionalidades como Linha do Tempo, Pastas, etc., não são carregadas ali. Claude, ChatGPT, DeepSeek e Kimi são diferentes: recebem plugins oficiais próprios, que pode conferir na [lista de plugins](/pt/guide/plugins).
+Em sites personalizados, **apenas** a funcionalidade de Gestor de Prompts é ativada. Outras funcionalidades como Linha do Tempo, Pastas, etc., não são carregadas ali. Claude, ChatGPT, DeepSeek, Kimi e Grok são diferentes: recebem plugins oficiais próprios, que pode conferir na [lista de plugins](/pt/guide/plugins).
 :::

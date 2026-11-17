@@ -55,7 +55,7 @@ In a chat input, type `/` followed by part of a prompt name. The list shows matc
 
 Your prompt library can be saved as a local JSON file or merged with Google Drive, so it comes with you to another Google account or browser.
 
-On Gemini and AI Studio, open the Voyager popup and find **Prompt data** in the **Prompt Manager** card. On Claude, ChatGPT, DeepSeek, and Kimi, **Prompt data** is its own card in the popup, above the **Plugins** card.
+On Gemini and AI Studio, open the Voyager popup and find **Prompt data** in the **Prompt Manager** card. On Claude, ChatGPT, DeepSeek, Kimi, and Grok, **Prompt data** is its own card in the popup, above the **Plugins** card.
 
 - **Export**: saves the whole library as one JSON file.
 - **Import**: merges a JSON file into your library. Nothing you already have is deleted; a prompt you already have is kept once, with its tags combined.
@@ -70,7 +70,7 @@ The Prompt Manager can now be used on any website you choose, not just Gemini™
 
 ### How to Enable
 
-On Claude, ChatGPT, DeepSeek, and Kimi, Prompt Manager is a row in the site's **Plugins** card. Open the Voyager popup while you're on the site and turn on **Prompt Manager**. If it's the first feature you turn on there, your browser asks for access to the site once.
+On Claude, ChatGPT, DeepSeek, Kimi, and Grok, Prompt Manager is a row in the site's **Plugins** card. Open the Voyager popup while you're on the site and turn on **Prompt Manager**. If it's the first feature you turn on there, your browser asks for access to the site once.
 
 For any other site:
 
@@ -92,5 +92,5 @@ Local addresses work too — enter `localhost:3080` or `127.0.0.1:3080` the same
 ![Prompt Manager running inside DeepSeek Harness](/assets/prompt-manager-deepseek-harness.png)
 
 ::: tip
-On websites you add yourself, **only** the Prompt Manager is activated. Features like Timeline and Folders don't load there. Claude, ChatGPT, DeepSeek, and Kimi are different: they get their own official plugins, which you can browse in the [plugin list](/en/guide/plugins).
+On websites you add yourself, **only** the Prompt Manager is activated. Features like Timeline and Folders don't load there. Claude, ChatGPT, DeepSeek, Kimi, and Grok are different: they get their own official plugins, which you can browse in the [plugin list](/en/guide/plugins).
 :::

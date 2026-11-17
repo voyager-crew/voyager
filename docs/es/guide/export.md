@@ -1,6 +1,6 @@
 # Libertad Total
 
-Voyager Export te permite descargar cualquier conversación de Gemini, ChatGPT, Claude, DeepSeek o Kimi como archivo Markdown, PDF, JSON o imagen. Extrae el contenido completo del chat, incluidos los bloques de código, las imágenes y el formato, y te da una copia permanente y portátil de cada conversación con IA que tengas.
+Voyager Export te permite descargar cualquier conversación de Gemini, ChatGPT, Claude, DeepSeek, Kimi o Grok como archivo Markdown, PDF, JSON o imagen. Extrae el contenido completo del chat, incluidos los bloques de código, las imágenes y el formato, y te da una copia permanente y portátil de cada conversación con IA que tengas.
 
 Los datos bloqueados son la peor experiencia.
 Nuestro credo es simple: lo que creas, es tuyo.
@@ -28,11 +28,11 @@ Voyager te ayuda a bajar tus datos de la nube a tu palma.
 
 ### Cómo Exportar
 
-1. Haz clic en el botón **Exportar** (ChatGPT, Claude, DeepSeek, Kimi y los diseños actuales de Gemini). Empieza en la esquina superior derecha de la página; puedes arrastrarlo a cualquier sitio, cada sitio recuerda su posición y, si lo sueltas cerca de la posición original, vuelve a ella. En Gemini también puedes elegir **Exportar historial de conversación** en el menú ⋮ de una conversación o de una respuesta; en los diseños antiguos de Gemini, pasa el ratón sobre el logo de Gemini para ver el **icono de exportación**.
+1. Haz clic en el botón **Exportar** (ChatGPT, Claude, DeepSeek, Kimi, Grok y los diseños actuales de Gemini). Empieza en la esquina superior derecha de la página; puedes arrastrarlo a cualquier sitio, cada sitio recuerda su posición y, si lo sueltas cerca de la posición original, vuelve a ella. En Gemini también puedes elegir **Exportar historial de conversación** en el menú ⋮ de una conversación o de una respuesta; en los diseños antiguos de Gemini, pasa el ratón sobre el logo de Gemini para ver el **icono de exportación**.
 2. Elige el formato.
 3. Llévatelo.
 
-En Claude, DeepSeek y Kimi, la exportación es un complemento desactivado por defecto: actívalo primero en **Complementos** en el popup. Voyager recorre las conversaciones largas desplazándose para leerlas enteras y después empieza con todos los mensajes seleccionados; desmarca los que no quieras. Si no puede confirmar el principio y el final, avisa de que la exportación puede estar incompleta. En ChatGPT, si no puede leer el historial completo, lo indica y te pide que te desplaces hacia arriba para cargar los mensajes anteriores y vuelvas a intentarlo. Cambiar a otro chat detiene la exportación, igual que empezar una nueva respuesta en Claude.
+En Claude, DeepSeek, Kimi y Grok, la exportación es un complemento desactivado por defecto: actívalo primero en **Complementos** en el popup. Voyager recorre las conversaciones largas desplazándose para leerlas enteras y después empieza con todos los mensajes seleccionados; desmarca los que no quieras. Si no puede confirmar el principio y el final, avisa de que la exportación puede estar incompleta. En ChatGPT, si no puede leer el historial completo, lo indica y te pide que te desplaces hacia arriba para cargar los mensajes anteriores y vuelvas a intentarlo. Cambiar a otro chat detiene la exportación, igual que empezar una nueva respuesta en Claude. En Grok, Voyager lee la conversación directamente desde grok.com y solo se desplaza si eso falla.
 
 Los archivos subidos en una conversación de ChatGPT aparecen en la exportación como una línea `📎 nombre del archivo`.
 
@@ -81,4 +81,4 @@ Esto resulta útil en investigación académica, análisis de la competencia y d
 
 ## Plataformas compatibles
 
-La exportación funciona en Gemini y ChatGPT en Chrome, Edge, Firefox, Safari, Opera y Brave. En Claude, DeepSeek y Kimi, la exportación es un complemento desactivado por defecto que se activa en **Complementos**. En Safari, la exportación a PDF usa un paso de impresión manual (Command+P después de hacer clic en exportar); las exportaciones a Markdown y JSON siguen incluyendo imágenes.
+La exportación funciona en Gemini y ChatGPT en Chrome, Edge, Firefox, Safari, Opera y Brave. En Claude, DeepSeek, Kimi y Grok, la exportación es un complemento desactivado por defecto que se activa en **Complementos**. En Safari, la exportación a PDF usa un paso de impresión manual (Command+P después de hacer clic en exportar); las exportaciones a Markdown y JSON siguen incluyendo imágenes.

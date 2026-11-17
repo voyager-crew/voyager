@@ -18,7 +18,7 @@ O Voyager simplifica isso:
 
 O Gemini agora tem sua própria função de resposta com citação, por isso a do Voyager fica desativada por padrão no Gemini. Você pode ativá-la em **Entrada** → **Responder Citação** no popup do Voyager.
 
-No Claude, ChatGPT, DeepSeek e Kimi, abra o popup do Voyager nesse site e ative **Citar respostas** no cartão **Plugins** (os plugins de cada site estão em [Todos os plugins](/pt/guide/plugins)). Depois disso, o botão **Quote** aparece quando você seleciona texto dentro de uma única resposta do assistente, e a citação é adicionada ao seu rascunho sem enviar nada.
+No Claude, ChatGPT, DeepSeek, Kimi e Grok, abra o popup do Voyager nesse site e ative **Citar respostas** no cartão **Plugins** (os plugins de cada site estão em [Todos os plugins](/pt/guide/plugins)). Depois disso, o botão **Quote** aparece quando você seleciona texto dentro de uma única resposta do assistente, e a citação é adicionada ao seu rascunho sem enviar nada.
 
 ## Recursos
 
