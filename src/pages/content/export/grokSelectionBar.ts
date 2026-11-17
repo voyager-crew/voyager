@@ -69,7 +69,7 @@ function grokCheckboxPosition(host: HTMLElement): { left: number; top: number } 
   };
 }
 
-export interface GrokCheckboxHost {
+interface GrokCheckboxHost {
   readonly host: HTMLElement;
   readonly selector: HTMLElement;
 }

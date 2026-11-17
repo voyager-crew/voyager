@@ -7,7 +7,7 @@ import { grokMessageMarkdown, record } from './grokMessageMarkdown';
 
 const CONVERSATION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export interface GrokBranchMessage {
+interface GrokBranchMessage {
   readonly id: string;
   readonly role: 'user' | 'assistant';
   readonly text: string;

@@ -28,7 +28,6 @@ interface LinkFact {
 }
 
 interface CardLink {
-  id: string;
   url?: string;
   title: string;
   cardType: string;
@@ -313,7 +312,7 @@ function readCards(value: unknown): Map<string, CardLink> {
     const url = httpUrl(parsed.url) ?? httpUrl(parsed.link) ?? undefined;
     const cardType = typeof parsed.cardType === 'string' ? parsed.cardType : '';
     const type = typeof parsed.type === 'string' ? parsed.type : '';
-    cards.set(id, { id, ...(url ? { url } : {}), title: plainTitle(parsed.title), cardType, type });
+    cards.set(id, { ...(url ? { url } : {}), title: plainTitle(parsed.title), cardType, type });
   }
   return cards;
 }
