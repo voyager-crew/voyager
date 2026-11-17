@@ -279,11 +279,6 @@
       "official": true
     },
     {
-      "name": "grok-table-copy",
-      "source": "sites/grok/plugins/table-copy/plugin.json",
-      "official": true
-    },
-    {
       "name": "grok-reading-width",
       "source": "sites/grok/plugins/reading-width/plugin.json",
       "official": true
