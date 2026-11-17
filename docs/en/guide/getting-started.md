@@ -8,7 +8,7 @@ Voyager isn’t just a utility; it’s a workflow. Here is how to make the most 
 If you haven't installed it yet, head over to the [Installation Guide](/en/guide/installation).
 Once installed, refresh your Gemini tab. You’ll see the difference immediately.
 
-Using Claude, ChatGPT, DeepSeek, or Kimi too? Open the Voyager popup, go to **Plugins**, and turn on the plugins you want for that site. Your browser will ask for permission to access the site the first time; reload the tab if nothing shows up. Browse everything in the [plugin catalog](/en/guide/plugins).
+Using Claude, ChatGPT, DeepSeek, Kimi, or Grok too? Open the Voyager popup, go to **Plugins**, and turn on the plugins you want for that site. Your browser will ask for permission to access the site the first time; reload the tab if nothing shows up. Browse everything in the [plugin catalog](/en/guide/plugins).
 
 ## 2. The Timeline
 

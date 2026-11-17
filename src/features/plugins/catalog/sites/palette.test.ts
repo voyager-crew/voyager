@@ -1,5 +1,5 @@
 /**
- * The six `voyager.<site>-palette` plugins: one palette on every site, every
+ * The seven `voyager.<site>-palette` plugins: one palette on every site, every
  * public theme role set in both Nord palettes, and each option resolving on a
  * light and a dark page the way the README promises.
  */
@@ -12,7 +12,7 @@ import { DeclarativeEngine } from '../../runtime/declarativeEngine';
 import { BundledCatalogPluginSource } from '../../sources/BundledCatalogPluginSource';
 import type { PluginManifest } from '../../types';
 
-const SITES = ['gemini', 'aistudio', 'claude', 'chatgpt', 'deepseek', 'kimi'] as const;
+const SITES = ['gemini', 'aistudio', 'claude', 'chatgpt', 'deepseek', 'kimi', 'grok'] as const;
 
 let palettes: PluginManifest[];
 

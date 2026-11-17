@@ -8,7 +8,7 @@ Voyager 不只是工具，它是种习惯。给我 5 分钟，带你上手。
 还没装？去 [安装指南](/guide/installation)。
 装好了？刷新 Gemini 页面。变化立竿见影。
 
-也在用 Claude、ChatGPT、DeepSeek 或 Kimi？打开 Voyager 弹窗，进入 **插件**，为该网站开启想要的插件。第一次浏览器会请求访问该网站的权限；如果没出现任何内容，刷新一下标签页。全部插件见[插件目录](/guide/plugins)。
+也在用 Claude、ChatGPT、DeepSeek、Kimi 或 Grok？打开 Voyager 弹窗，进入 **插件**，为该网站开启想要的插件。第一次浏览器会请求访问该网站的权限；如果没出现任何内容，刷新一下标签页。全部插件见[插件目录](/guide/plugins)。
 
 ## 2. 穿梭
 

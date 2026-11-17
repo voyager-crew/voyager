@@ -1,0 +1,27 @@
+/* Answer prose only: the answer's markdown sits in [data-markdown-row] inside
+ * the assistant turn. Grok's thinking block lives in the same turn, so every
+ * rule skips [data-testid='conversation-thought']. Paragraphs, list items and
+ * table cells all render at 15px on a 24px line natively; each gets an
+ * absolute size scaled from that 15px, so nesting never compounds and 100%
+ * leaves Grok untouched. Code blocks keep their size (their <pre> is not
+ * matched), and block math stays native: KaTeX's display span sits beside the
+ * paragraphs, not in them, and sizes itself in em. */
+.gv-plugin-grok-reading-typography[data-gv-font-size='true']
+  [data-markdown-row]
+  :is(p, li, td, th):not(pre *, [data-testid='conversation-thought'] *) {
+  font-size: calc(15px * var(--gv-plugin-reading-text-scale, 100) / 100) !important;
+  line-height: 1.6em !important;
+}
+
+.gv-plugin-grok-reading-typography[data-gv-spacing='true']
+  [data-markdown-row]
+  :is(p, li):not(pre *, [data-testid='conversation-thought'] *) {
+  line-height: calc(var(--gv-plugin-reading-line-height, 160) / 100) !important;
+}
+
+/* Grok spaces paragraphs on the bottom only (16px); keep that shape. */
+.gv-plugin-grok-reading-typography[data-gv-spacing='true']
+  [data-markdown-row]
+  p:not(:last-child):not(table *, pre *, [data-testid='conversation-thought'] *) {
+  margin-block-end: var(--gv-plugin-reading-paragraph-spacing, 16px) !important;
+}

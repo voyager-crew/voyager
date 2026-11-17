@@ -7,7 +7,7 @@ Voyager turns your conversation into a timeline.
 
 On Gemini, **Timeline** → **Show Timeline** controls the rail and its navigation shortcuts. Turning it off keeps saved stars and hierarchy. Message time labels follow **Timeline** → **Message timestamps** independently, so you can keep them visible with the timeline off.
 
-On Claude, ChatGPT, and DeepSeek, the rail is that site's timeline plugin: turn it on under **Plugins**, and its **Options** hold the style, node levels (where offered), **Reset Timeline Position**, and **View Saved Library**, plus message timestamps on ChatGPT.
+On Claude, ChatGPT, DeepSeek, and Grok, the rail is that site's timeline plugin: turn it on under **Plugins**, and its **Options** hold the style, node levels (where offered), **Reset Timeline Position**, and **View Saved Library**, plus message timestamps on ChatGPT.
 
 ## See the Shape of Your Chat
 
@@ -94,4 +94,4 @@ Timeline is most valuable in conversations longer than 10 messages, where scroll
 
 Timeline works on Google Gemini, and on Claude and ChatGPT as built-in plugins, across Chrome, Edge, Firefox, Safari, Opera, and Brave. Keyboard shortcuts and starring work the same on all three. Levels are an experimental opt-in everywhere: on Gemini, turn on **Enable Node Levels** below **Timeline** → **Show Timeline** once the row is on; on Claude and ChatGPT, turn on the same switch in the **Timeline** plugin settings under **Plugins**. Starred messages sync across devices when [Cloud Sync](/en/guide/cloud-sync) is enabled.
 
-Timeline is not available on AI Studio. DeepSeek has an optional timeline plugin in the plugin catalog (it ships disabled).
+Timeline is not available on AI Studio. DeepSeek and Grok each have an optional timeline plugin in the plugin catalog (they ship disabled).

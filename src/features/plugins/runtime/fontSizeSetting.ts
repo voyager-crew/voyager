@@ -7,6 +7,7 @@ const FONT_SIZE_PLUGIN_IDS = new Set([
   'voyager.claude-reading-typography',
   'voyager.deepseek-reading-typography',
   'voyager.kimi-reading-typography',
+  'voyager.grok-reading-typography',
 ]);
 
 /** The same percentage input and reset in full settings and the floating panel. */

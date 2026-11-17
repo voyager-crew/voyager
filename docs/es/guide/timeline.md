@@ -7,7 +7,7 @@ Voyager convierte la conversación en una línea.
 
 En Gemini, **Línea de tiempo** → **Mostrar línea de tiempo** controla la barra de la línea de tiempo y sus atajos de navegación. Al desactivarla se conservan las estrellas y la jerarquía guardadas. Las horas de los mensajes dependen por separado de **Línea de tiempo** → **Marcas de tiempo de mensajes**, por lo que pueden seguir visibles con la línea de tiempo desactivada.
 
-En Claude, ChatGPT y DeepSeek, la barra es el complemento de línea de tiempo de ese sitio: actívalo en **Complementos** y sus **Opciones** incluyen el estilo, los niveles de nodo (donde se ofrecen), **Restablecer posición de la línea de tiempo** y **Ver biblioteca guardada**, además de las marcas de tiempo de mensajes en ChatGPT.
+En Claude, ChatGPT, DeepSeek y Grok, la barra es el complemento de línea de tiempo de ese sitio: actívalo en **Complementos** y sus **Opciones** incluyen el estilo, los niveles de nodo (donde se ofrecen), **Restablecer posición de la línea de tiempo** y **Ver biblioteca guardada**, además de las marcas de tiempo de mensajes en ChatGPT.
 
 ## Ver el Ritmo
 
@@ -94,4 +94,4 @@ La línea de tiempo es más útil en conversaciones de más de 10 mensajes, cuan
 
 La línea de tiempo funciona en Google Gemini, y en Claude y ChatGPT como plugins integrados, en Chrome, Edge, Firefox, Safari, Opera y Brave. Los atajos de teclado y los destacados funcionan igual en las tres. Los niveles son en todas partes una opción experimental que hay que activar: en Gemini, activa **Habilitar niveles de nodo** debajo de **Línea de tiempo** → **Mostrar línea de tiempo**, con la fila activada; en Claude y ChatGPT, activa el mismo interruptor en los ajustes de **Línea de tiempo**, dentro de **Complementos**. Los mensajes destacados se sincronizan entre dispositivos cuando la [Sincronización en la nube](/es/guide/cloud-sync) está activada.
 
-La línea de tiempo no está disponible en AI Studio. DeepSeek tiene un plugin de línea de tiempo opcional en el catálogo de plugins (viene desactivado).
+La línea de tiempo no está disponible en AI Studio. DeepSeek y Grok tienen cada uno un plugin de línea de tiempo opcional en el catálogo de plugins (vienen desactivados).
