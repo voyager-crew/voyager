@@ -60,17 +60,39 @@ try {
   Bun.spawn(['open', authUrl]); // macOS; harmless if it fails
 } catch {}
 
-const code: string = await new Promise((resolve) => {
+const TIMEOUT_MS = 5 * 60 * 1000;
+
+const code: string = await new Promise((resolve, reject) => {
+  const timer = setTimeout(() => {
+    server.stop();
+    reject(new Error(`No authorization arrived within ${TIMEOUT_MS / 60_000} minutes.`));
+  }, TIMEOUT_MS);
   const server = Bun.serve({
     port: PORT,
     fetch(req) {
-      const c = new URL(req.url).searchParams.get('code');
+      const params = new URL(req.url).searchParams;
+      const error = params.get('error');
+      if (error) {
+        clearTimeout(timer);
+        const description = params.get('error_description');
+        const failure = new Error(
+          `Authorization failed: ${error}${description ? ` (${description})` : ''}`,
+        );
+        // Exit only after this page has been sent, so the tab shows the failure too.
+        queueMicrotask(() => void server.stop().then(() => reject(failure)));
+        return new Response('Authorization failed — return to the terminal.');
+      }
+      const c = params.get('code');
       if (!c) return new Response('Waiting for Google authorization…');
+      clearTimeout(timer);
       resolve(c);
       queueMicrotask(() => server.stop());
       return new Response('Authorized — close this tab and return to the terminal.');
     },
   });
+}).catch((error: unknown) => {
+  console.error(`\n${error instanceof Error ? error.message : String(error)}`);
+  process.exit(1);
 });
 
 const res = await fetch('https://oauth2.googleapis.com/token', {
