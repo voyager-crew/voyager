@@ -201,6 +201,10 @@ export class GoogleDriveFiles {
     // 1. Ensure backup folder exists
     const folderId = await this.ensureBackupFolder(token);
 
+    // knownFileId comes from this upload's own prepare-time search. A file
+    // deleted or trashed since then is another device's change: keep the id so
+    // the pre-write version check rejects it as a conflict instead of recreating
+    // it here. The next sync's search no longer finds it and creates a new file.
     if (knownFileId) {
       this.fileIdByName[fileName] = knownFileId;
       const parents = await this.getFileParents(token, knownFileId);
