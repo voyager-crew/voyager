@@ -9,7 +9,10 @@
   "actions.newChat": [
     "a[data-testid=\"create-new-chat-button\"], a[href=\"/\"], a[href^=\"/u/\"][href$=\"/\"], nav button[data-sidebar-destination=\"builtin:home\"]"
   ],
-  "actions.shareButton": ["[data-testid=\"share-chat-button\"]"],
+  "actions.shareButton": [
+    "[data-testid=\"share-chat-button\"]",
+    "[data-app-shell-main-titlebar] button:has(use[href$=\"#codex-icon-arrow-up-open-base-light-20\"])"
+  ],
   "actions.thinking": [
     "span.loading-shimmer, [aria-busy=\"true\"], [role=\"progressbar\"], progress, .result-streaming, [data-message-streaming=\"true\"], [data-is-streaming=\"true\"]"
   ],

@@ -53,7 +53,7 @@ The user needs desktop Chrome or Edge 133 or later, with "Allow User Scripts" tu
   - codeBlock: `[data-markdown-copy="code-block"]`
   - composer: `#prompt-textarea, [data-composer-markdown][contenteditable="true"]`
   - sidebar: `nav[aria-label], #stage-slideover-sidebar`
-  - headerActions: `#conversation-header-actions`
+  - headerActions: `[data-app-shell-main-titlebar] > .ms-auto, #conversation-header-actions`
   - scrollContainer: `[data-app-action-timeline-scroll]`
   - composerRoot: `form:has(#prompt-textarea, [data-composer-markdown])`
   - sendButton: `form:has(#prompt-textarea, [data-composer-markdown]) button[type="submit"]`

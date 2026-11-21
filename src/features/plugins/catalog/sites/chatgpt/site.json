@@ -12,7 +12,7 @@
     "scrollContainer": "[data-app-action-timeline-scroll]",
     "composerRoot": "form:has(#prompt-textarea, [data-composer-markdown])",
     "sendButton": "form:has(#prompt-textarea, [data-composer-markdown]) button[type=\"submit\"]",
-    "headerActions": "#conversation-header-actions"
+    "headerActions": "[data-app-shell-main-titlebar] > .ms-auto, #conversation-header-actions"
   },
   "theme": {
     "hostSelector": "html",
