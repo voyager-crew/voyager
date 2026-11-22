@@ -34,6 +34,7 @@ import {
   isCompleteTurnState,
   readTurnKey,
   replyIdOf,
+  replyTextOf,
   settledConversationId,
   sha256Hex,
   siteOf,
@@ -64,7 +65,20 @@ function requireConversation(ctx: OpContext, conversationId: string): void {
   });
 }
 
-/** The last mounted turn, once its reply is the message the conversation ends on. */
+/**
+ * A background tab mounts the reply's id, turn state and action row before its
+ * body: the body counts once it shows text or media.
+ */
+function hasRenderedBody(reply: HTMLElement): boolean {
+  if (replyTextOf(reply).length > 0) return true;
+  return resolveChatgptReplyContent(reply).querySelector('img, video, canvas') !== null;
+}
+
+/**
+ * The last mounted turn, once its reply is the message the conversation ends on
+ * and its body has rendered. A reply that never renders a body is still returned
+ * when the wait runs out, so the read can name it as empty.
+ */
 async function currentLastItem(
   ctx: OpContext,
   conversationId: string,
@@ -72,6 +86,7 @@ async function currentLastItem(
 ): Promise<HTMLElement | null> {
   // Three polls without a change once passed for the end of the thread; a slow history
   // answer showed an older reply that long.
+  let bodiless: HTMLElement | null = null;
   const found = await ctx.waitFor(
     () => {
       // A passive op has no route guard, and an in-app navigation keeps the document:
@@ -80,7 +95,13 @@ async function currentLastItem(
       const currentNode = pageData.currentNode(conversationId);
       const last = conversationItems().at(-1);
       const reply = last ? findReply(last) : null;
-      return currentNode && reply && replyIdOf(reply) === currentNode ? last : null;
+      if (!currentNode || !reply || replyIdOf(reply) !== currentNode) {
+        bodiless = null;
+        return null;
+      }
+      if (hasRenderedBody(reply)) return last;
+      bodiless = last ?? null;
+      return null;
     },
     {
       timeoutMs: Math.max(
@@ -89,7 +110,7 @@ async function currentLastItem(
       ),
     },
   );
-  return found ?? null;
+  return found ?? bodiless;
 }
 
 /**
@@ -191,11 +212,18 @@ export async function runTurnsRead(
   );
   const markdown = content.text.trim().replace(HEADING_LINE, '').trim();
   const messageId = replyIdOf(found.reply);
+  const files = turnFiles(pageData, params.conversationId, messageId ?? found.turnKey);
+  if (!markdown && files.length === 0) {
+    ctx.fail('unverified', 'The reply rendered with no extractable content.', {
+      reason: 'empty-reply',
+      turnKey: found.turnKey,
+    });
+  }
   return {
     markdown,
     turnKey: found.turnKey,
     ...(messageId ? { messageId } : {}),
     textSha256: await sha256Hex(markdown),
-    files: turnFiles(pageData, params.conversationId, messageId ?? found.turnKey),
+    files,
   };
 }
