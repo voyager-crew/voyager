@@ -293,11 +293,6 @@ export const NON_SETTINGS_BACKUP_POLICIES = {
     disposition: 'device-local',
     reason: 'Viewport coordinates are device-specific.',
   },
-  [StorageKeys.GV_USAGE_SHOW_REMAINING]: {
-    storage: 'local',
-    disposition: 'device-local',
-    reason: 'A display preference toggled on the bar itself, kept beside its placement.',
-  },
   [StorageKeys.GV_CLAUDE_USAGE_CACHE]: {
     storage: 'local',
     disposition: 'cache',

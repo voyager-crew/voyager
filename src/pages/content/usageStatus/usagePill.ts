@@ -1,6 +1,7 @@
 import browser from 'webextension-polyfill';
 
 import { StorageKeys } from '@/core/types/common';
+import { type UsageDisplay, resolveUsageDisplay } from '@/core/utils/usageDisplayValues';
 import { getTranslationSync } from '@/utils/i18n';
 import type { TranslationKey } from '@/utils/translations';
 
@@ -57,7 +58,7 @@ export function createUsagePill(onRefresh: () => void) {
   let pill: HTMLElement | null = null;
   let stampTimer: number | null = null;
   let dragPos: { x: number; y: number } | null = null;
-  let showRemaining = false;
+  let display: UsageDisplay = 'used';
   let dragging = false;
   let dragMoved = false;
   let dragOffset = { x: 0, y: 0 };
@@ -82,17 +83,8 @@ export function createUsagePill(onRefresh: () => void) {
     track.appendChild(fill);
     seg.appendChild(track);
 
-    // Clicking the number flips every bar between used and remaining.
-    const pct = document.createElement('button');
-    pct.type = 'button';
+    const pct = document.createElement('span');
     pct.className = 'gv-usage-pct';
-    pct.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      showRemaining = !showRemaining;
-      void saveShowRemaining(showRemaining);
-      if (pill) updatePillContent(pill, snapshot);
-    });
     seg.appendChild(pct);
 
     return seg;
@@ -171,19 +163,19 @@ export function createUsagePill(onRefresh: () => void) {
     }
     if (metric) {
       seg.removeAttribute('hidden');
-      const shown = showRemaining ? Math.max(0, 100 - metric.percent) : metric.percent;
+      const remaining = display === 'remaining';
+      const shown = remaining ? Math.max(0, 100 - metric.percent) : metric.percent;
       if (fill) fill.style.width = `${shown}%`;
       if (pct) {
         const reset = formatResetCountdown(metric.resetEpoch, Date.now());
-        const value = showRemaining
+        pct.textContent = `${shown}%${reset ? ` (${reset})` : ''}`;
+        // The number alone does not say which share it is; the label does.
+        const spoken = remaining
           ? t('usageStatusRemaining', '{n}% left').replace('{n}', String(shown))
-          : `${shown}%`;
-        pct.textContent = `${value}${reset ? ` (${reset})` : ''}`;
-        const hint = showRemaining
-          ? t('usageStatusShowUsed', 'Click to show used')
-          : t('usageStatusShowRemaining', 'Click to show remaining');
-        pct.title = hint;
-        pct.setAttribute('aria-label', `${pct.textContent}. ${hint}`);
+          : t('usageStatusUsed', '{n}% used').replace('{n}', String(shown));
+        const label = reset ? `${spoken} (${reset})` : spoken;
+        pct.title = label;
+        pct.setAttribute('aria-label', label);
       }
       // Colour follows how much is used in either view: low remaining turns red.
       seg.classList.toggle('gv-usage-high', metric.percent >= 90);
@@ -274,9 +266,7 @@ export function createUsagePill(onRefresh: () => void) {
     if (ev.button !== 0 || !pill) return;
     // Don't start a drag from the interactive controls.
     if (
-      (ev.target as Element | null)?.closest(
-        '.gv-usage-empty, .gv-usage-refresh, .gv-usage-open, .gv-usage-pct',
-      )
+      (ev.target as Element | null)?.closest('.gv-usage-empty, .gv-usage-refresh, .gv-usage-open')
     )
       return;
     dragging = true;
@@ -329,35 +319,22 @@ export function createUsagePill(onRefresh: () => void) {
     }
   }
 
-  /** Load the stored placement and the used/remaining choice. */
   async function loadPosition(): Promise<void> {
     try {
-      const r = (await browser.storage.local.get([
-        StorageKeys.GV_USAGE_POS,
-        StorageKeys.GV_USAGE_SHOW_REMAINING,
-      ])) as Record<string, unknown>;
-      const raw = r[StorageKeys.GV_USAGE_POS];
+      const r = await browser.storage.local.get(StorageKeys.GV_USAGE_POS);
+      const raw = (r as Record<string, unknown>)[StorageKeys.GV_USAGE_POS];
       if (raw && typeof raw === 'object') {
         const p = raw as { x?: unknown; y?: unknown };
         if (typeof p.x === 'number' && typeof p.y === 'number') dragPos = { x: p.x, y: p.y };
       }
-      showRemaining = r[StorageKeys.GV_USAGE_SHOW_REMAINING] === true;
     } catch {
       // ignore
     }
   }
 
-  async function saveShowRemaining(value: boolean): Promise<void> {
-    try {
-      await browser.storage.local.set({ [StorageKeys.GV_USAGE_SHOW_REMAINING]: value });
-    } catch {
-      // ignore
-    }
-  }
-
-  /** Mirror a used/remaining switch made in another tab. */
-  function adoptShowRemaining(raw: unknown): void {
-    showRemaining = raw === true;
+  /** Count used or remaining, from the stored popup choice. */
+  function adoptDisplay(raw: unknown): void {
+    display = resolveUsageDisplay(raw);
     if (pill) updatePillContent(pill, snapshot);
   }
 
@@ -420,5 +397,5 @@ export function createUsagePill(onRefresh: () => void) {
     if (pill) positionPill(pill);
   }
 
-  return { loadPosition, adoptPosition, adoptShowRemaining, render, setSpinning, remove };
+  return { loadPosition, adoptPosition, adoptDisplay, render, setSpinning, remove };
 }

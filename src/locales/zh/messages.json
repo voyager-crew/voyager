@@ -2087,15 +2087,23 @@
   },
   "usageStatusRemaining": {
     "message": "剩余 {n}%",
-    "description": "Usage bar value in remaining view; {n} is the percent left. Keep the {n} placeholder literal."
+    "description": "Accessible label and tooltip of a usage bar's percent in remaining view (the bar itself shows only the number); {n} is the percent left. Keep the {n} placeholder literal."
   },
-  "usageStatusShowRemaining": {
-    "message": "点击改为显示剩余",
-    "description": "Tooltip on a usage bar's percent in used view; clicking switches every bar to remaining."
+  "usageStatusUsed": {
+    "message": "已用 {n}%",
+    "description": "Accessible label and tooltip of a usage bar's percent in used view; {n} is the percent used. Keep the {n} placeholder literal."
   },
-  "usageStatusShowUsed": {
-    "message": "点击改为显示已用",
-    "description": "Tooltip on a usage bar's percent in remaining view; clicking switches every bar back to used."
+  "usageStatusDisplay": {
+    "message": "百分比",
+    "description": "Popup label above the used/remaining choice under the Gemini usage status plugin row."
+  },
+  "usageStatusDisplayUsed": {
+    "message": "显示已用",
+    "description": "Popup option: usage bars count what has been used (the default)."
+  },
+  "usageStatusDisplayRemaining": {
+    "message": "显示剩余",
+    "description": "Popup option: usage bars count what is left; the bar fills to the remaining share."
   },
   "usageStatusRefresh": {
     "message": "刷新",

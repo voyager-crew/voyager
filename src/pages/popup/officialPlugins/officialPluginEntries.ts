@@ -467,7 +467,8 @@ export const OFFICIAL_PLUGIN_ENTRIES: readonly OfficialPluginEntry[] = [
     topic: 'pluginsConversations',
     formerSectionTitle: 'generalOptions',
     searchKeys: ['usageStatusToggle', 'usageStatusToggleHint'],
-    searchAliases: ['usage quota limit 用量 限额'],
+    searchAliases: ['usage quota limit remaining 用量 限额 剩余'],
+    panel: 'usageStatus',
   },
   {
     id: OFFICIAL_PLUGIN_IDS.geminiResponseNotification,

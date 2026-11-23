@@ -153,32 +153,6 @@ html[data-gv-scheme='light'] .gv-claude-usage-pill .gv-usage-track {
   min-width: 24px;
 }
 
-/* The Gemini bar's percent is a button that flips used/remaining. */
-button.gv-usage-pct {
-  padding: 0 2px;
-  margin: 0;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-button.gv-usage-pct:hover {
-  opacity: 1;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-html[data-gv-scheme='light'] button.gv-usage-pct:hover {
-  background: rgba(0, 0, 0, 0.06);
-}
-
-button.gv-usage-pct:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 1px;
-}
-
 .gv-usage-refresh,
 .gv-usage-open {
   flex: 0 0 auto;

@@ -92,6 +92,16 @@ async function loadSnapshot(
   return null;
 }
 
+/** The stored used/remaining choice, raw; the pill resolves it (a failed read is the default). */
+async function loadDisplay(): Promise<unknown> {
+  try {
+    const result = await browser.storage.sync.get(StorageKeys.USAGE_STATUS_DISPLAY);
+    return (result as Record<string, unknown> | undefined)?.[StorageKeys.USAGE_STATUS_DISPLAY];
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Runs usage status until `signal` aborts. The promise settles once the run is
  * attached, or as soon as it learns it was stopped while reading storage.
@@ -117,8 +127,8 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
   let liveRecipe: unknown;
   let positionChangedLive = false;
   let livePosition: unknown;
-  let showRemainingChangedLive = false;
-  let liveShowRemaining: unknown;
+  let displayChangedLive = false;
+  let liveDisplay: unknown;
   let snapshot: UsageSnapshot | null = null;
   let snapshotRevision = 0;
   // BCP-47 locale for reset-time formatting, derived from the Voyager language.
@@ -328,10 +338,11 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
         livePosition = changes[StorageKeys.GV_USAGE_POS].newValue;
         if (initialized) pill.adoptPosition(livePosition);
       }
-      if (areaName === 'local' && changes[StorageKeys.GV_USAGE_SHOW_REMAINING]) {
-        showRemainingChangedLive = true;
-        liveShowRemaining = changes[StorageKeys.GV_USAGE_SHOW_REMAINING].newValue;
-        if (initialized) pill.adoptShowRemaining(liveShowRemaining);
+      if (areaName === 'sync' && changes[StorageKeys.USAGE_STATUS_DISPLAY]) {
+        // The used/remaining choice changed in the popup (or another device).
+        displayChangedLive = true;
+        liveDisplay = changes[StorageKeys.USAGE_STATUS_DISPLAY].newValue;
+        if (initialized) pill.adoptDisplay(liveDisplay);
       }
     };
     browser.storage.onChanged.addListener(storageListener);
@@ -411,6 +422,8 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
     if (!isCurrent()) return;
     await pill.loadPosition();
     if (!isCurrent()) return;
+    const storedDisplay = await loadDisplay();
+    if (!isCurrent()) return;
 
     // The route moved to another account during the reads: never show or merge
     // the previous account's cache here; the navigation below loads the right one.
@@ -421,7 +434,7 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
 
     if (recipeChangedLive) refresh.adoptRecipe(liveRecipe);
     if (positionChangedLive) pill.adoptPosition(livePosition);
-    if (showRemainingChangedLive) pill.adoptShowRemaining(liveShowRemaining);
+    pill.adoptDisplay(displayChangedLive ? liveDisplay : storedDisplay);
     initialized = true;
     pill.render(true, snapshot);
     stopRouteWatcher = watchRouteChanges(handleRouteChange);

@@ -89,6 +89,7 @@ export const BACKUPABLE_SYNC_SETTINGS_DEFAULTS = {
   [StorageKeys.GV_GEMS_SIDEBAR_ENABLED]: true,
   [StorageKeys.GV_GEMS_SIDEBAR_COUNT]: 3,
   [StorageKeys.USAGE_STATUS_ENABLED]: false,
+  [StorageKeys.USAGE_STATUS_DISPLAY]: 'used',
   [StorageKeys.COACHMARKS_SEEN]: [],
   [StorageKeys.GV_FOLDER_SPACING]: 2,
   [StorageKeys.GV_AISTUDIO_FOLDER_SPACING]: 2,

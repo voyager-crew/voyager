@@ -112,7 +112,8 @@ export type OfficialPanelId =
   | 'highlight'
   | 'contextSync'
   | 'visualEffect'
-  | 'timeline';
+  | 'timeline'
+  | 'usageStatus';
 export type OfficialControlId = 'responseNotification';
 
 /**
@@ -126,6 +127,7 @@ export const OFFICIAL_PANEL_KEYS: Readonly<Record<OfficialPanelId, readonly stri
   contextSync: [StorageKeys.CONTEXT_SYNC_PORT],
   visualEffect: [StorageKeys.GV_VISUAL_EFFECT, StorageKeys.GV_SNOW_EFFECT],
   timeline: GEMINI_TIMELINE_OPTION_KEYS,
+  usageStatus: [StorageKeys.USAGE_STATUS_DISPLAY],
 };
 
 export const OFFICIAL_PANEL_STORAGE_KEYS: readonly string[] = [
