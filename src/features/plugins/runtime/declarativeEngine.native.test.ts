@@ -73,7 +73,12 @@ describe('DeclarativeEngine native ops', () => {
     engine.unmount('x.unknown');
   });
 
-  it('restarts primitives when settings change', async () => {
+  it('restarts a primitive that cannot take settings in place when they change', async () => {
+    const { getPrimitive } = await import('../verbs/registry');
+    // Formula copy takes its own settings in place; this activation offers no updater.
+    const activate = vi
+      .spyOn(getPrimitive('formulaCopy')!, 'activate')
+      .mockImplementation((scope) => void activateFormulaCopy(scope));
     const engine = new DeclarativeEngine({ doc: document, adapter });
     const plugin = manifest('x.formula', [{ op: 'native', handler: 'formulaCopy', params: {} }]);
     engine.mount(plugin, { a: 1 });
@@ -83,11 +88,14 @@ describe('DeclarativeEngine native ops', () => {
     await vi.waitFor(() => expect(activateFormulaCopy).toHaveBeenCalledTimes(2));
     expect(first.isDisposed).toBe(true);
     engine.unmount(plugin.id);
+    activate.mockRestore();
   });
 
   it('a second settings update during a pending restart activates once, with the latest settings', async () => {
     const { getPrimitive } = await import('../verbs/registry');
-    const activate = vi.spyOn(getPrimitive('formulaCopy')!, 'activate');
+    const activate = vi
+      .spyOn(getPrimitive('formulaCopy')!, 'activate')
+      .mockImplementation((scope) => void activateFormulaCopy(scope));
     const engine = new DeclarativeEngine({ doc: document, adapter });
     const plugin = manifest('x.formula', [{ op: 'native', handler: 'formulaCopy', params: {} }]);
     engine.mount(plugin, { a: 1 });

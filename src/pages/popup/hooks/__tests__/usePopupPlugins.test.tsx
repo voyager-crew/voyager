@@ -324,22 +324,22 @@ describe('usePopupPlugins', () => {
   });
 
   it('reports bound official plugins in popup diagnostics with their legacy values, labelled storage-derived', async () => {
-    const formulaId = OFFICIAL_PLUGIN_IDS.geminiFormulaCopy;
+    const forkId = OFFICIAL_PLUGIN_IDS.geminiFork;
     const localId = 'local.me.tweak';
     vi.mocked(chrome.storage.sync.get).mockResolvedValue({} as never);
     vi.mocked(listPluginManifestsWithSources).mockResolvedValue([
-      record(formulaId, 'gemini.google.com'),
+      record(forkId, 'gemini.google.com'),
       record(localId, 'gemini.google.com'),
     ]);
     vi.mocked(loadPluginState).mockResolvedValue({
       // Stray settings a bound plugin never runs with.
-      [formulaId]: { enabled: true, installedAt: 1, settings: { format: 'stray' } },
+      [forkId]: { enabled: true, installedAt: 1, settings: { format: 'stray' } },
       [localId]: { enabled: true, installedAt: 1, settings: { width: 3 } },
     });
 
     await render();
     expect(plugins.diagnosticPlugins).toEqual([
-      expect.objectContaining({ id: formulaId, settings: {}, basis: 'storage-derived' }),
+      expect.objectContaining({ id: forkId, settings: {}, basis: 'storage-derived' }),
       expect.objectContaining({ id: localId, settings: { width: 3 } }),
     ]);
     // A plugin's own state is what its page runs: nothing derived to label.

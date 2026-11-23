@@ -58,6 +58,36 @@
         "handlers": ["formulaCopy"]
       },
       "contributes": {
+        "settings": {
+          "format": {
+            "type": "select",
+            "label": "Formula copy format",
+            "default": "latex",
+            "options": [
+              {
+                "value": "latex",
+                "label": "LaTeX"
+              },
+              {
+                "value": "unicodemath",
+                "label": "MathML (Word)"
+              },
+              {
+                "value": "no-dollar",
+                "label": "LaTeX (No Dollar Sign)"
+              },
+              {
+                "value": "notion",
+                "label": "Notion ($$ format)"
+              }
+            ]
+          },
+          "selectionLatex": {
+            "type": "boolean",
+            "label": "Convert formulas when copying a selection",
+            "default": true
+          }
+        },
         "domOps": [
           {
             "op": "native",

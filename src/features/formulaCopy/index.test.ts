@@ -51,6 +51,30 @@ describe('formula copy plugin lifecycle', () => {
     );
   });
 
+  it('a plugin that declares the preferences runs on them, and a change lands without a restart', async () => {
+    const service = getFormulaCopyService();
+    const adopt = vi.spyOn(service, 'adoptPreferences');
+    const initialize = vi.spyOn(service, 'initialize');
+    const scope = new PluginScope();
+    const activation = activateFormulaCopy(scope, { format: 'notion', selectionLatex: false });
+    await vi.waitFor(() => expect(service.isServiceInitialized()).toBe(true));
+    expect(adopt).toHaveBeenLastCalledWith({ format: 'notion', selectionLatex: false });
+
+    activation.setPreferences({ format: 'latex', selectionLatex: true });
+    expect(adopt).toHaveBeenLastCalledWith({ format: 'latex', selectionLatex: true });
+    expect(initialize).toHaveBeenCalledTimes(1);
+    expect(service.isServiceInitialized()).toBe(true);
+    // Its settings are the source: the shared keys are not read or watched.
+    expect(storageMocks.get).not.toHaveBeenCalled();
+    expect(storageMocks.addListener).not.toHaveBeenCalled();
+
+    // Once a later activation holds the service, this one's late change is dropped.
+    activateFormulaCopy(new PluginScope(), { format: 'latex', selectionLatex: true });
+    activation.setPreferences({ format: 'no-dollar', selectionLatex: true });
+    expect(adopt).not.toHaveBeenCalledWith({ format: 'no-dollar', selectionLatex: true });
+    await scope.dispose();
+  });
+
   it('does not let an older pending scope dispose a rapid remount', async () => {
     const service = getFormulaCopyService();
     // Establish the long-lived format listener, then control only the two

@@ -6,9 +6,12 @@ import { PluginScope } from '../../runtime/pluginScope';
 import type { PrimitiveContext } from '../types';
 import { formulaCopyPrimitive } from './index';
 
+const setPreferences = vi.fn();
+
 vi.mock('@/features/formulaCopy', () => ({
   activateFormulaCopy: vi.fn((scope: PluginScope) => {
     scope.effect(() => () => {}, 'formula-copy');
+    return { setPreferences };
   }),
 }));
 
@@ -27,6 +30,7 @@ function context(doc: Document): PrimitiveContext & { counters: Array<() => numb
 afterEach(() => {
   document.body.innerHTML = '';
   vi.mocked(activateFormulaCopy).mockClear();
+  setPreferences.mockClear();
 });
 
 describe('formulaCopy primitive', () => {
@@ -45,9 +49,32 @@ describe('formulaCopy primitive', () => {
 
     formulaCopyPrimitive.activate(scope, {}, ctx);
 
-    expect(activateFormulaCopy).toHaveBeenCalledWith(scope);
+    // Declaring no formula settings leaves the service on the shared storage keys.
+    expect(activateFormulaCopy).toHaveBeenCalledWith(scope, null);
     expect(ctx.counters).toHaveLength(1);
     expect(ctx.counters[0]()).toBe(2);
     expect(scope.getEffects()).toContain('formula-copy');
+  });
+
+  it('hands the declared format and selection setting to the service, and later ones in place', () => {
+    const scope = new PluginScope();
+    const ctx = { ...context(document), settings: { format: 'notion', selectionLatex: false } };
+
+    const handle = formulaCopyPrimitive.activate(scope, {}, ctx);
+
+    expect(activateFormulaCopy).toHaveBeenCalledWith(scope, {
+      format: 'notion',
+      selectionLatex: false,
+    });
+    expect(handle).toHaveProperty('updateSettings');
+    (handle as { updateSettings(settings: object): void }).updateSettings({
+      format: 'unicodemath',
+      selectionLatex: true,
+    });
+    expect(setPreferences).toHaveBeenCalledExactlyOnceWith({
+      format: 'unicodemath',
+      selectionLatex: true,
+    });
+    expect(activateFormulaCopy).toHaveBeenCalledTimes(1);
   });
 });

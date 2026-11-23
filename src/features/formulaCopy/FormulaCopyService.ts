@@ -9,6 +9,11 @@ import { logger } from '@/core';
 import { StorageKeys } from '@/core/types/common';
 import type { ILogger } from '@/core/types/common';
 import { createToaster } from '@/core/ui/toast/toaster';
+import {
+  type FormulaCopyFormat,
+  isFormulaCopyFormat,
+  resolveFormulaCopySelectionLatex,
+} from '@/core/utils/formulaCopyValues';
 import { packagedSiteForUrl } from '@/features/plugins/sites/hostPolicy';
 import { getTranslationSyncUnsafe } from '@/utils/i18n';
 
@@ -22,10 +27,16 @@ import {
 } from './formulaSource';
 import { writeSelectionCopy } from './selectionCopy';
 
+export type { FormulaCopyFormat };
+
 /**
- * Formula copy format options
+ * The two preferences, as a plugin that declares them (Gemini's and AI Studio's
+ * `format` and `selectionLatex` settings) hands them in.
  */
-export type FormulaCopyFormat = 'latex' | 'unicodemath' | 'no-dollar' | 'notion';
+export interface FormulaCopyPreferences {
+  readonly format: FormulaCopyFormat;
+  readonly selectionLatex: boolean;
+}
 
 /**
  * Configuration for the formula copy service
@@ -58,6 +69,12 @@ export class FormulaCopyService {
   private currentFormat: FormulaCopyFormat = 'latex';
   /** Missing and anything other than `false` stay on, matching the backup default. */
   private selectionLatexEnabled = true;
+  /**
+   * Where the preferences come from: storage for a plugin that declares no
+   * such settings (Claude, ChatGPT, DeepSeek, Grok, local plugins), or the
+   * holding plugin's settings, in which case storage is neither read nor watched.
+   */
+  private preferencesFromSettings = false;
 
   // Storage change listener, extracted so it can be removed on destroy
   private readonly handleStorageChange: Parameters<
@@ -65,13 +82,8 @@ export class FormulaCopyService {
   >[0] = (changes, areaName) => {
     if (areaName !== 'sync') return;
     if (changes[StorageKeys.FORMULA_COPY_FORMAT]) {
-      const newFormat = changes[StorageKeys.FORMULA_COPY_FORMAT].newValue as FormulaCopyFormat;
-      if (
-        newFormat === 'latex' ||
-        newFormat === 'unicodemath' ||
-        newFormat === 'no-dollar' ||
-        newFormat === 'notion'
-      ) {
+      const newFormat = changes[StorageKeys.FORMULA_COPY_FORMAT].newValue;
+      if (isFormulaCopyFormat(newFormat)) {
         this.formatPreferenceChangeVersion += 1;
         this.currentFormat = newFormat;
         this.logger.debug('Formula format changed', { format: newFormat });
@@ -80,7 +92,7 @@ export class FormulaCopyService {
     const selectionChange = changes[StorageKeys.FORMULA_COPY_SELECTION_LATEX];
     if (selectionChange) {
       this.formatPreferenceChangeVersion += 1;
-      this.selectionLatexEnabled = selectionChange.newValue !== false;
+      this.selectionLatexEnabled = resolveFormulaCopySelectionLatex(selectionChange.newValue);
       this.logger.debug('Formula selection copy changed', {
         enabled: this.selectionLatexEnabled,
       });
@@ -149,14 +161,11 @@ export class FormulaCopyService {
       )
         return;
 
-      this.selectionLatexEnabled = result[StorageKeys.FORMULA_COPY_SELECTION_LATEX] !== false;
-      const format = result[StorageKeys.FORMULA_COPY_FORMAT] as FormulaCopyFormat | undefined;
-      if (
-        format === 'latex' ||
-        format === 'unicodemath' ||
-        format === 'no-dollar' ||
-        format === 'notion'
-      ) {
+      this.selectionLatexEnabled = resolveFormulaCopySelectionLatex(
+        result[StorageKeys.FORMULA_COPY_SELECTION_LATEX],
+      );
+      const format = result[StorageKeys.FORMULA_COPY_FORMAT];
+      if (isFormulaCopyFormat(format)) {
         this.currentFormat = format;
         this.logger.debug('Loaded formula format preference', { format });
       }
@@ -195,12 +204,28 @@ export class FormulaCopyService {
   }
 
   /**
-   * Resolve the current format before click handling becomes active. The
-   * storage listener stays attached while the interaction feature is toggled
-   * off, so an off -> on transition cannot briefly copy with a stale format.
+   * Resolve the current format before click handling becomes active. With
+   * `preferences` (a plugin that declares them) they are used as given and
+   * storage is left alone; later ones arrive through `adoptPreferences`.
+   * Without, the format is read from storage, and the storage listener stays
+   * attached while the interaction feature is toggled off, so an off -> on
+   * transition cannot briefly copy with a stale format.
    */
-  public prepare(): Promise<void> {
+  public prepare(preferences: FormulaCopyPreferences | null = null): Promise<void> {
+    if (preferences) {
+      this.adoptPreferences(preferences);
+      return Promise.resolve();
+    }
+    this.preferencesFromSettings = false;
     return this.startFormatPreferenceSync();
+  }
+
+  /** The holding plugin's settings changed: copy with them from now on, without reading storage. */
+  public adoptPreferences(preferences: FormulaCopyPreferences): void {
+    this.preferencesFromSettings = true;
+    this.stopFormatPreferenceSync();
+    this.currentFormat = preferences.format;
+    this.selectionLatexEnabled = preferences.selectionLatex;
   }
 
   /**
@@ -214,7 +239,7 @@ export class FormulaCopyService {
 
     // Production entry points await prepare(); keep direct callers and older
     // integrations compatible while still subscribing synchronously here.
-    if (!this.isFormatChangeListenerAttached) void this.prepare();
+    if (!this.preferencesFromSettings && !this.isFormatChangeListenerAttached) void this.prepare();
 
     this.interaction.start();
     document.addEventListener('click', this.handleClick, true);

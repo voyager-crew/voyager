@@ -9,47 +9,173 @@
     "zh": {
       "name": "AI Studio · 公式复制",
       "description": "点击行内或块级公式，按下方选定的格式复制；悬停时会提示可点击。",
-      "changelog": "首个版本：将 AI Studio 内置的公式复制打包为调用 formulaCopy 原语的官方插件。"
+      "changelog": "首个版本：将 AI Studio 内置的公式复制打包为调用 formulaCopy 原语的官方插件。",
+      "settings": {
+        "format": {
+          "label": "公式复制格式",
+          "options": {
+            "latex": "LaTeX",
+            "unicodemath": "MathML (Word)",
+            "no-dollar": "LaTeX (纯文本，无 $ 符号)",
+            "notion": "Notion (双$格式)"
+          }
+        },
+        "selectionLatex": {
+          "label": "复制选中内容时转换公式"
+        }
+      }
     },
     "zh_TW": {
       "name": "AI Studio · 公式複製",
       "description": "點擊行內或區塊公式，依下方選定的格式複製；滑鼠懸停時會提示可點擊。",
-      "changelog": "首個版本：將 AI Studio 內建的公式複製打包為呼叫 formulaCopy 原語的官方外掛。"
+      "changelog": "首個版本：將 AI Studio 內建的公式複製打包為呼叫 formulaCopy 原語的官方外掛。",
+      "settings": {
+        "format": {
+          "label": "公式複製格式",
+          "options": {
+            "latex": "LaTeX",
+            "unicodemath": "MathML (Word)",
+            "no-dollar": "LaTeX (純文字，無 $ 符號)",
+            "notion": "Notion (雙$格式)"
+          }
+        },
+        "selectionLatex": {
+          "label": "複製選取內容時轉換公式"
+        }
+      }
     },
     "ja": {
       "name": "AI Studio · 数式コピー",
       "description": "インラインまたはブロック数式をクリックすると、下で選んだ形式でコピーします。ホバーするとクリック可能であることが分かります。",
-      "changelog": "初版：AI Studio 内蔵の数式コピーを、formulaCopy プリミティブを呼び出す公式プラグインとして同梱しました。"
+      "changelog": "初版：AI Studio 内蔵の数式コピーを、formulaCopy プリミティブを呼び出す公式プラグインとして同梱しました。",
+      "settings": {
+        "format": {
+          "label": "数式コピー形式",
+          "options": {
+            "latex": "LaTeX",
+            "unicodemath": "MathML (Word)",
+            "no-dollar": "LaTeX (ドル記号なし)",
+            "notion": "Notion ($$ 形式)"
+          }
+        },
+        "selectionLatex": {
+          "label": "選択範囲をコピーするときに数式を変換"
+        }
+      }
     },
     "ko": {
       "name": "AI Studio · 수식 복사",
       "description": "인라인 또는 블록 수식을 클릭하면 아래에서 고른 형식으로 복사합니다. 마우스를 올리면 클릭 가능함을 표시합니다.",
-      "changelog": "첫 릴리스: AI Studio 내장 수식 복사를 formulaCopy 프리미티브를 호출하는 공식 플러그인으로 포함했습니다."
+      "changelog": "첫 릴리스: AI Studio 내장 수식 복사를 formulaCopy 프리미티브를 호출하는 공식 플러그인으로 포함했습니다.",
+      "settings": {
+        "format": {
+          "label": "수식 복사 형식",
+          "options": {
+            "latex": "LaTeX",
+            "unicodemath": "MathML (Word)",
+            "no-dollar": "LaTeX (달러 기호 없음)",
+            "notion": "Notion ($$ 포맷)"
+          }
+        },
+        "selectionLatex": {
+          "label": "선택 영역을 복사할 때 수식 변환"
+        }
+      }
     },
     "fr": {
       "name": "AI Studio · Copie de formules",
       "description": "Cliquez sur une formule en ligne ou en bloc pour la copier dans le format choisi ci-dessous ; le survol indique qu'elle est cliquable.",
-      "changelog": "Première version : la copie de formules intégrée à AI Studio, livrée comme plugin officiel qui appelle la primitive formulaCopy."
+      "changelog": "Première version : la copie de formules intégrée à AI Studio, livrée comme plugin officiel qui appelle la primitive formulaCopy.",
+      "settings": {
+        "format": {
+          "label": "Format de copie de formule",
+          "options": {
+            "latex": "LaTeX",
+            "unicodemath": "MathML (Word)",
+            "no-dollar": "LaTeX (Sans dollars)",
+            "notion": "Notion ($$ Format)"
+          }
+        },
+        "selectionLatex": {
+          "label": "Convertir les formules lors de la copie d’une sélection"
+        }
+      }
     },
     "es": {
       "name": "AI Studio · Copia de fórmulas",
       "description": "Haz clic en una fórmula en línea o en bloque para copiarla en el formato elegido abajo; al pasar el cursor se muestra que se puede hacer clic.",
-      "changelog": "Primera versión: la copia de fórmulas integrada de AI Studio, incluida como plugin oficial que llama a la primitiva formulaCopy."
+      "changelog": "Primera versión: la copia de fórmulas integrada de AI Studio, incluida como plugin oficial que llama a la primitiva formulaCopy.",
+      "settings": {
+        "format": {
+          "label": "Formato de copia de fórmula",
+          "options": {
+            "latex": "LaTeX",
+            "unicodemath": "MathML (Word)",
+            "no-dollar": "LaTeX (Sin signo de dólar)",
+            "notion": "Notion ($$ Formato)"
+          }
+        },
+        "selectionLatex": {
+          "label": "Convertir las fórmulas al copiar una selección"
+        }
+      }
     },
     "pt": {
       "name": "AI Studio · Cópia de fórmulas",
       "description": "Clique em uma fórmula inline ou em bloco para copiá-la no formato escolhido abaixo; ao passar o cursor, ela indica que pode ser clicada.",
-      "changelog": "Primeira versão: a cópia de fórmulas integrada do AI Studio, incluída como plugin oficial que chama a primitiva formulaCopy."
+      "changelog": "Primeira versão: a cópia de fórmulas integrada do AI Studio, incluída como plugin oficial que chama a primitiva formulaCopy.",
+      "settings": {
+        "format": {
+          "label": "Formato de cópia de fórmula",
+          "options": {
+            "latex": "LaTeX",
+            "unicodemath": "MathML (Word)",
+            "no-dollar": "LaTeX (Sem cifrão)",
+            "notion": "Notion ($$ Formato)"
+          }
+        },
+        "selectionLatex": {
+          "label": "Converter fórmulas ao copiar uma seleção"
+        }
+      }
     },
     "ru": {
       "name": "AI Studio · Копирование формул",
       "description": "Нажмите на строчную или блочную формулу, чтобы скопировать её в формате, выбранном ниже; при наведении видно, что её можно нажать.",
-      "changelog": "Первая версия: встроенное копирование формул AI Studio, поставляемое как официальный плагин, который вызывает примитив formulaCopy."
+      "changelog": "Первая версия: встроенное копирование формул AI Studio, поставляемое как официальный плагин, который вызывает примитив formulaCopy.",
+      "settings": {
+        "format": {
+          "label": "Формат копирования формулы",
+          "options": {
+            "latex": "LaTeX",
+            "unicodemath": "MathML (Word)",
+            "no-dollar": "LaTeX (без знака доллара)",
+            "notion": "Notion ($$ Формат)"
+          }
+        },
+        "selectionLatex": {
+          "label": "Преобразовывать формулы при копировании выделения"
+        }
+      }
     },
     "ar": {
       "name": "AI Studio · نسخ الصيغ",
       "description": "انقر على صيغة مضمنة أو كتلية لنسخها بالتنسيق المختار أدناه؛ ويظهر عند التحويم أنها قابلة للنقر.",
-      "changelog": "الإصدار الأول: نسخ الصيغ المدمج في AI Studio، مضمّنًا كإضافة رسمية تستدعي الأساسية formulaCopy."
+      "changelog": "الإصدار الأول: نسخ الصيغ المدمج في AI Studio، مضمّنًا كإضافة رسمية تستدعي الأساسية formulaCopy.",
+      "settings": {
+        "format": {
+          "label": "تنسيق نسخ الصيغة",
+          "options": {
+            "latex": "LaTeX",
+            "unicodemath": "MathML (Word)",
+            "no-dollar": "LaTeX (بدون علامة الدولار)",
+            "notion": "Notion ($$ تنسيق)"
+          }
+        },
+        "selectionLatex": {
+          "label": "تحويل الصيغ عند نسخ التحديد"
+        }
+      }
     }
   },
   "author": "voyager-official",
@@ -63,6 +189,36 @@
     "handlers": ["formulaCopy"]
   },
   "contributes": {
+    "settings": {
+      "format": {
+        "type": "select",
+        "label": "Formula copy format",
+        "default": "latex",
+        "options": [
+          {
+            "value": "latex",
+            "label": "LaTeX"
+          },
+          {
+            "value": "unicodemath",
+            "label": "MathML (Word)"
+          },
+          {
+            "value": "no-dollar",
+            "label": "LaTeX (No Dollar Sign)"
+          },
+          {
+            "value": "notion",
+            "label": "Notion ($$ format)"
+          }
+        ]
+      },
+      "selectionLatex": {
+        "type": "boolean",
+        "label": "Convert formulas when copying a selection",
+        "default": true
+      }
+    },
     "domOps": [
       {
         "op": "native",

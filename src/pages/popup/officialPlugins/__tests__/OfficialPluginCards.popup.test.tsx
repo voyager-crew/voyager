@@ -331,12 +331,11 @@ describe('the official plugin topic cards', () => {
 
     it('is not offered for an option under a row', async () => {
       await mount();
-      const notion = [
-        ...row(OFFICIAL_PLUGIN_IDS.geminiFormulaCopy)!.querySelectorAll<HTMLInputElement>(
-          'input[type="radio"]',
-        ),
-      ].find((input) => input.closest('label')!.textContent === en.formulaCopyFormatNotion)!;
-      await act(async () => notion.click());
+      const format = row(OFFICIAL_PLUGIN_IDS.geminiFormulaCopy)!.querySelector('select')!;
+      await act(async () => {
+        format.value = 'notion';
+        format.dispatchEvent(new Event('change', { bubbles: true }));
+      });
       expect(sync[StorageKeys.FORMULA_COPY_FORMAT]).toBe('notion');
       expect(toast()).toBeNull();
     });

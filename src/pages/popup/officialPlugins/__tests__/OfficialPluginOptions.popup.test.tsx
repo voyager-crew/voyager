@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StorageKeys } from '@/core/types/common';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
-import { loadAllTranslations, loadTranslations } from '@/utils/translations';
+import { loadTranslations } from '@/utils/translations';
 
 import Popup from '../../Popup';
 import { domId } from '../OfficialPluginRow';
@@ -83,63 +83,6 @@ describe('official plugin rows with options', () => {
     );
 
   describe('rows with options', () => {
-    const radio = (id: string, label: string) =>
-      [...row(id)!.querySelectorAll<HTMLInputElement>('input[type="radio"]')].find(
-        (input) => input.closest('label')!.textContent === label,
-      )!;
-
-    it('shows options under the row only while it is on, with no Options button', async () => {
-      const id = OFFICIAL_PLUGIN_IDS.geminiFormulaCopy;
-      sync[StorageKeys.FORMULA_COPY_ENABLED] = false;
-      await mount();
-      expect(options(id)).toBeNull();
-      expect(row(id)!.querySelector('input[type="radio"]')).toBeNull();
-      await act(async () => toggle(id).click());
-      expect(options(id)!.getAttribute('aria-label')).toBe(
-        en.pluginRowOptionsFor.replace('{name}', 'Formula Copy'),
-      );
-      expect(options(id)!.textContent).toContain(en.formulaCopyScopeNote);
-      expect(row(id)!.querySelectorAll('input[type="radio"]')).toHaveLength(4);
-      expect(row(id)!.querySelector('button[aria-expanded]')).toBeNull();
-      await act(async () => toggle(id).click());
-      expect(options(id)).toBeNull();
-      expect(row(id)!.querySelector('input[type="radio"]')).toBeNull();
-    });
-
-    it('shows the stored formula format and writes only the format key', async () => {
-      sync[StorageKeys.FORMULA_COPY_FORMAT] = 'unicodemath';
-      await mount();
-      const id = OFFICIAL_PLUGIN_IDS.geminiFormulaCopy;
-      expect(radio(id, en.formulaCopyFormatUnicodeMath).checked).toBe(true);
-      await act(async () => radio(id, en.formulaCopyFormatNotion).click());
-      expect(radio(id, en.formulaCopyFormatNotion).checked).toBe(true);
-      expect(extensionApi.storage.sync.set).toHaveBeenCalledExactlyOnceWith({
-        [StorageKeys.FORMULA_COPY_FORMAT]: 'notion',
-      });
-      expect(local[StorageKeys.PLUGINS_STATE]).toBeUndefined();
-    });
-
-    it('a format stored elsewhere while the popup is open shows at once', async () => {
-      await mount();
-      const id = OFFICIAL_PLUGIN_IDS.geminiFormulaCopy;
-      expect(radio(id, en.formulaCopyFormatLatex).checked).toBe(true);
-      await act(async () => emitSyncChange({ [StorageKeys.FORMULA_COPY_FORMAT]: 'no-dollar' }));
-      expect(radio(id, en.formulaCopyFormatNoDollar).checked).toBe(true);
-    });
-
-    it('on AI Studio, the formula row edits the same shared switch and format', async () => {
-      extensionApi.tabs.query.mockResolvedValue([{ id: 8, url: AI_STUDIO }]);
-      await mount();
-      const id = OFFICIAL_PLUGIN_IDS.aistudioFormulaCopy;
-      expect(toggle(id).checked).toBe(true);
-      await act(async () => radio(id, en.formulaCopyFormatNotion).click());
-      await act(async () => toggle(id).click());
-      expect(extensionApi.storage.sync.set.mock.calls.map(([payload]) => payload)).toEqual([
-        { [StorageKeys.FORMULA_COPY_FORMAT]: 'notion' },
-        { [StorageKeys.FORMULA_COPY_ENABLED]: false },
-      ]);
-    });
-
     it.each([
       ['missing', undefined, true],
       ['false', false, false],
@@ -160,35 +103,6 @@ describe('official plugin rows with options', () => {
         });
       },
     );
-
-    it.each([
-      ['missing', undefined, true],
-      ['false', false, false],
-      ['true', true, true],
-    ] as const)(
-      'shows a %s stored selection-copy switch the way the formula runtime reads it',
-      async (_label, stored, expected) => {
-        if (stored !== undefined) sync[StorageKeys.FORMULA_COPY_SELECTION_LATEX] = stored;
-        await mount();
-        const selectionCopy = row(
-          OFFICIAL_PLUGIN_IDS.geminiFormulaCopy,
-        )!.querySelector<HTMLInputElement>(`input[aria-label="${en.formulaCopySelectionLatex}"]`)!;
-        expect(selectionCopy.checked).toBe(expected);
-        await act(async () => selectionCopy.click());
-        expect(extensionApi.storage.sync.set).toHaveBeenCalledExactlyOnceWith({
-          [StorageKeys.FORMULA_COPY_SELECTION_LATEX]: !expected,
-        });
-      },
-    );
-
-    it('a search that lists a row with options shows them', async () => {
-      local[StorageKeys.GV_POPUP_SETTINGS_SEARCH_QUERY] = en.formulaCopyFormatNotion;
-      await mount();
-      await act(async () => loadAllTranslations());
-      expect(
-        radio(OFFICIAL_PLUGIN_IDS.geminiFormulaCopy, en.formulaCopyFormatNotion),
-      ).toBeDefined();
-    });
   });
 
   describe('the completion notification row', () => {

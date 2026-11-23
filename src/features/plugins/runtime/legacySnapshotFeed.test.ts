@@ -151,7 +151,7 @@ describe('openLegacySnapshotFeed', () => {
 
 describe('legacyBoundSettings', () => {
   it('gives a bound official plugin no settings beyond its legacy values, and an unbound one none of its own', () => {
-    expect(legacyBoundSettings(FORMULA_ID, { [SIZE_KEY]: 120 })).toEqual({});
+    expect(legacyBoundSettings(OFFICIAL_PLUGIN_IDS.geminiFork, { [SIZE_KEY]: 120 })).toEqual({});
     expect(legacyBoundSettings('local.me.tweak', { [SIZE_KEY]: 120 })).toBeNull();
   });
 });

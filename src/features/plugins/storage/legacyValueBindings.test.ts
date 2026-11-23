@@ -173,6 +173,8 @@ describe('legacy value bindings', () => {
         StorageKeys.FOLDER_HIDE_ARCHIVED_CONVERSATIONS,
         StorageKeys.VOYAGER_PALETTE,
         StorageKeys.USAGE_STATUS_DISPLAY,
+        StorageKeys.FORMULA_COPY_FORMAT,
+        StorageKeys.FORMULA_COPY_SELECTION_LATEX,
       ].sort(),
     );
   });

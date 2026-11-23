@@ -54,7 +54,7 @@ describe('loadLegacySettingSnapshot', () => {
   it('reads binding keys and preserves missing switches while resolving AI Studio width fallback', async () => {
     syncGet().mockResolvedValue({
       [StorageKeys.INPUT_VIM_MODE]: true,
-      [StorageKeys.FORMULA_COPY_FORMAT]: 'mathml',
+      [StorageKeys.HIGHLIGHT_DEFAULT_COLOR]: 'pink',
     });
     const snapshot = await loadLegacySettingSnapshot();
     expect(snapshot).toEqual({
@@ -92,13 +92,13 @@ describe('subscribeLegacySettings', () => {
   it('reports binding-key changes in the sync area only', () => {
     const { callback, listener } = subscribe();
     listener({ [StorageKeys.INPUT_VIM_MODE]: { newValue: true } }, 'local');
-    listener({ [StorageKeys.FORMULA_COPY_FORMAT]: { newValue: 'mathml' } }, 'sync');
+    listener({ [StorageKeys.HIGHLIGHT_DEFAULT_COLOR]: { newValue: 'pink' } }, 'sync');
     expect(callback).not.toHaveBeenCalled();
 
     listener(
       {
         [StorageKeys.INPUT_VIM_MODE]: { newValue: true, oldValue: false },
-        [StorageKeys.FORMULA_COPY_FORMAT]: { newValue: 'mathml' },
+        [StorageKeys.HIGHLIGHT_DEFAULT_COLOR]: { newValue: 'pink' },
       },
       'sync',
     );

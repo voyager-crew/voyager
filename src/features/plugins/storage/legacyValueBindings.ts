@@ -30,14 +30,19 @@ import {
   normalizeEditInputWidthPercent,
   normalizeParagraphSpacingPx,
 } from '@/core/utils/chatAppearanceValues';
+import {
+  isFormulaCopyFormat,
+  resolveFormulaCopyFormat,
+  resolveFormulaCopySelectionLatex,
+} from '@/core/utils/formulaCopyValues';
 import { normalizeGemsSidebarCount } from '@/core/utils/gemsSidebarValues';
 import { normalizeSidebarWidth } from '@/core/utils/sidebarWidthValues';
-import { type UsageDisplay, resolveUsageDisplay } from '@/core/utils/usageDisplayValues';
-import { type VisualEffect, resolveVisualEffect } from '@/core/utils/visualEffectValues';
-import { type VoyagerPalette, resolveVoyagerPalette } from '@/core/utils/voyagerPaletteValues';
+import { resolveUsageDisplay } from '@/core/utils/usageDisplayValues';
+import { resolveVisualEffect } from '@/core/utils/visualEffectValues';
+import { resolveVoyagerPalette } from '@/core/utils/voyagerPaletteValues';
 
 import { OFFICIAL_PLUGIN_IDS } from '../sites/featureOwners';
-import type { PluginSettings } from '../types';
+import type { PluginSettingValue, PluginSettings } from '../types';
 import type { LegacySettingSnapshot } from './legacySettingBindings';
 
 export interface LegacyValueBinding {
@@ -46,10 +51,7 @@ export interface LegacyValueBinding {
   /** The sync storage key the native module reads. */
   readonly legacyKey: string;
   /** The native module's reading of the stored value; `read(undefined)` is the default. */
-  readonly read: (
-    stored: unknown,
-    snapshot?: LegacySettingSnapshot,
-  ) => number | boolean | VisualEffect | VoyagerPalette | UsageDisplay;
+  readonly read: (stored: unknown, snapshot?: LegacySettingSnapshot) => PluginSettingValue;
   /** Extra legacy inputs for a trusted enum resolver, never plugin-supplied keys. */
   readonly additionalKeys?: readonly string[];
   /** Whether a live change to `legacyKey` replaces the current value (the native listener's test). */
@@ -83,6 +85,28 @@ function paletteBinding(): LegacyValueBinding {
     read: resolveVoyagerPalette,
     acceptsLiveChange: always,
   };
+}
+
+/**
+ * The copy format and the selection conversion Gemini and AI Studio share, as
+ * their switch is. The service ignored a live format it did not know, keeping
+ * the last one; a removed selection flag reads on.
+ */
+function formulaCopyBindings(): readonly LegacyValueBinding[] {
+  return [
+    {
+      settingKey: 'format',
+      legacyKey: StorageKeys.FORMULA_COPY_FORMAT,
+      read: resolveFormulaCopyFormat,
+      acceptsLiveChange: isFormulaCopyFormat,
+    },
+    {
+      settingKey: 'selectionLatex',
+      legacyKey: StorageKeys.FORMULA_COPY_SELECTION_LATEX,
+      read: resolveFormulaCopySelectionLatex,
+      acceptsLiveChange: always,
+    },
+  ];
 }
 
 /**
@@ -152,6 +176,8 @@ export const LEGACY_VALUE_BINDINGS: LegacyValueBindingTable = {
   ],
   [OFFICIAL_PLUGIN_IDS.geminiPalette]: [paletteBinding()],
   [OFFICIAL_PLUGIN_IDS.aistudioPalette]: [paletteBinding()],
+  [OFFICIAL_PLUGIN_IDS.geminiFormulaCopy]: formulaCopyBindings(),
+  [OFFICIAL_PLUGIN_IDS.aistudioFormulaCopy]: formulaCopyBindings(),
   // Whether the usage bars count used or remaining; removal reads as the default, used.
   [OFFICIAL_PLUGIN_IDS.geminiUsageStatus]: [
     {
@@ -189,8 +215,7 @@ export function deriveLegacyValueSettings(
   legacy: LegacySettingSnapshot,
   table: LegacyValueBindingTable = LEGACY_VALUE_BINDINGS,
 ): PluginSettings {
-  const settings: Record<string, number | boolean | VisualEffect | VoyagerPalette | UsageDisplay> =
-    {};
+  const settings: Record<string, PluginSettingValue> = {};
   for (const entry of legacyValueBindingsFor(id, table)) {
     const stored = Object.prototype.hasOwnProperty.call(legacy, entry.legacyKey)
       ? legacy[entry.legacyKey]

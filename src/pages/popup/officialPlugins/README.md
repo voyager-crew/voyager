@@ -114,11 +114,11 @@ When an external restore and an unsettled local write collide, the latest snapsh
 
 ## Declaring a row's controls
 
-| Control                                                                                                    | Declared as                                                                                                       | Examples                                                                                  |
-| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| A choice or scalar the user sets (give the handler `updateSettings` so a change applies without a restart) | Manifest `contributes.settings` plus a value binding; booleans write at once, numbers through `sliders` on commit | Chat / edit input width, font size, line height, Gems sidebar count, usage used/remaining |
-| An enum the schema cannot express, a note, an action button, a live probe                                  | `panel` (below the settings) or `inlinePanel` (in place of the manifest's settings)                               | Timeline, formula copy format, highlight markers, Context Sync, Visual effects            |
-| A switch that is not a plain write (a permission flow)                                                     | `control`; the popup supplies it                                                                                  | Response notification                                                                     |
+| Control                                                                                                    | Declared as                                                                                                       | Examples                                                                                                       |
+| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| A choice or scalar the user sets (give the handler `updateSettings` so a change applies without a restart) | Manifest `contributes.settings` plus a value binding; booleans write at once, numbers through `sliders` on commit | Chat / edit input width, font size, line height, Gems sidebar count, usage used/remaining, formula copy format |
+| An enum the schema cannot express, a note, an action button, a live probe                                  | `panel` (below the settings) or `inlinePanel` (in place of the manifest's settings)                               | Timeline, highlight markers, Context Sync, Visual effects, the formula copy note                               |
+| A switch that is not a plain write (a permission flow)                                                     | `control`; the popup supplies it                                                                                  | Response notification                                                                                          |
 
 A manifest setting reaches every surface: the popup row, the options page and the in-page Voyager
 panel. The in-page row shows the first slider and the first bound `select` (as a chip) inline, and
@@ -131,9 +131,11 @@ the in-page panel does not offer them.
 
 Special cases:
 
-- **Formula copy**: two ids, one switch and one format, shared across Gemini and AI Studio. Each
-  site lists its own row with the same panel, which says that turning it off on one site turns it
-  off on both.
+- **Formula copy**: two ids, one switch and one set of options (`format`, `selectionLatex`), shared
+  across Gemini and AI Studio: both manifests declare the options and bind them to the same sync
+  keys. Each site lists its own row with the same note panel, which says that the switch and the
+  options apply to both. The page's formula copy service takes them as plugin settings; plugins
+  that declare none (Claude, ChatGPT, DeepSeek, Grok, local) leave it reading those keys itself.
 - **Response notification**: the control reads `enabled` from the snapshot and calls the original
   flow synchronously, with no `await` before it: Firefox needs the permission request to be the
   gesture's first await, Chrome hands the intent to the background first, Safari keeps its native
