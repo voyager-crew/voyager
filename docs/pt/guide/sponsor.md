@@ -27,12 +27,6 @@ Uma forma simples de oferecer um café como agradecimento.
 
 [<img src="/badges/github-stars.svg" alt="GitHub stars" height="30"/>](https://github.com/voyager-crew/voyager)
 
-### 🎙️ Ferramenta Recomendada: Typeless
-
-Recomendo muito o **[Typeless (typeless.com)](https://www.typeless.com/?via=gemini-voyager)**, uma ferramenta de voz para texto com IA que usei bastante durante o desenvolvimento do Voyager. Incorporá-la ao meu dia a dia me economizou muito tempo e aumentou bastante a minha produtividade.
-
-> 🎁 **[Entre pelo meu link de indicação](https://www.typeless.com/?via=gemini-voyager)** (Código: _`gemini-voyager`_) para ganhar **US$ 5 em créditos grátis**. Isso também me dá créditos para continuar mantendo este projeto, uma forma gratuita de apoiar o meu trabalho! ❤️
-
 ## Para onde vai o dinheiro?
 
 - **Taxas de Programador Apple**: Para manter a versão Safari viva e assinada ($99/ano).

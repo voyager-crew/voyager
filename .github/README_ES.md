@@ -147,12 +147,6 @@ Si Voyager te facilita la vida, considera invitarme a un café. ¡Ayuda a manten
   </table>
 </div>
 
-### 🎙️ Herramienta recomendada: Typeless
-
-Recomiendo encarecidamente **[Typeless (typeless.com)](https://www.typeless.com/?via=gemini-voyager)**, una herramienta de voz a texto con IA que utilicé extensamente durante el desarrollo de Voyager. Integrarlo en mi flujo de trabajo diario me ha ahorrado muchísimo tiempo.
-
-> 🎁 **[Únete a través de mi enlace de referido](https://www.typeless.com/?via=gemini-voyager)** (Código: _`gemini-voyager`_) para obtener **$5 de crédito gratis**. ❤️
-
 ---
 
 ## 💬 Comunidad

@@ -34,14 +34,6 @@
   </a>
 </div>
 
----
-
-### 🎙️ 特別推薦: Typeless
-
-我非常推薦 **[Typeless (typeless.com)](https://www.typeless.com/?via=gemini-voyager)** 這款 AI 語音輸入工具。在開發 Voyager 的過程中，我將其整合進了日常工作流，極大地節省了我的時間並顯著提升了整體開發效率。
-
-> 🎁 **[點擊我的邀請連結註冊](https://www.typeless.com/?via=gemini-voyager)**（邀請碼 _`gemini-voyager`_）即可獲得 **5 美元免費額度**，同時也能支持本項目的開發。❤️
-
 <style>
 .sponsor-badges {
   display: flex;

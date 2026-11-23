@@ -147,12 +147,6 @@ Voyager がお役に立ちましたら、コーヒー一杯分のご支援をい
   </table>
 </div>
 
-### 🎙️ おすすめツール：Typeless
-
-Voyager の開発中、私は AI 音声入力ツール **[Typeless (typeless.com)](https://www.typeless.com/?via=gemini-voyager)** を愛用していました。日々のワークフローに欠かせない、生産性を劇的に向上させてくれるツールです。
-
-> 🎁 **[こちらのリンク](https://www.typeless.com/?via=gemini-voyager)**（招待コード：_`gemini-voyager`_）から登録すると、**5 ドルの無料クレジット**がもらえます。❤️
-
 ---
 
 ## 💬 コミュニティ

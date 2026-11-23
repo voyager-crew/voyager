@@ -147,12 +147,6 @@
   </table>
 </div>
 
-### 🎙️ 特別推薦：Typeless
-
-我非常推薦 **[Typeless (typeless.com)](https://www.typeless.com/?via=gemini-voyager)**，這是一款 AI 語音轉文字工具。我在開發 Voyager 的過程中大量使用它。把它整合進日常工作流程後，為我節省了大量時間，也明顯提升了生產力。
-
-> 🎁 **[透過我的推薦連結註冊](https://www.typeless.com/?via=gemini-voyager)**（邀請碼：_`gemini-voyager`_），即可獲得 **5 美元免費額度**。這也會讓我獲得額度，繼續維護這個專案，是一種免費的支持方式！❤️
-
 ---
 
 ## 💬 交流與回饋

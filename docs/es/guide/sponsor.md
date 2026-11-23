@@ -34,14 +34,6 @@ Este sitio no usa Google Ads y la extensión no tiene versión de pago; tampoco 
   </div>
 </div>
 
----
-
-### 🎙️ Herramienta Recomendada: Typeless
-
-Recomiendo encarecidamente **[Typeless (typeless.com)](https://www.typeless.com/?via=gemini-voyager)**, una herramienta de voz a texto con IA. La integré en mi flujo de trabajo diario durante el desarrollo de Voyager, lo que me ahorró una enorme cantidad de tiempo y aumentó significativamente mi productividad.
-
-> 🎁 **[Únete a través de mi enlace de referencia](https://www.typeless.com/?via=gemini-voyager)** (Código: _`gemini-voyager`_) para obtener **$5 en créditos gratis**. ¡Esto también me da créditos para seguir manteniendo este proyecto, una forma gratuita de apoyar mi trabajo! ❤️
-
 <style>
 .sponsor-badges {
   display: flex;

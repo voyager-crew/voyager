@@ -34,14 +34,6 @@ Ce site n'affiche aucune publicité (Google Ads ou autre) et l'extension n'a pas
   </div>
 </div>
 
----
-
-### 🎙️ Outil Recommandé : Typeless
-
-Je recommande vivement **[Typeless (typeless.com)](https://www.typeless.com/?via=gemini-voyager)**, un outil IA de voix-à-texte que j'ai utilisé intensivement durant le développement de Voyager. L'intégrer dans mon flux quotidien m'a fait gagner un temps énorme et a considérablement boosté ma productivité.
-
-> 🎁 **[Rejoignez via mon lien de parrainage](https://www.typeless.com/?via=gemini-voyager)** (Code : _`gemini-voyager`_) pour obtenir **$5 de crédits gratuits**. Cela me donne aussi des crédits pour continuer à maintenir ce projet—une façon gratuite de soutenir mon travail ! ❤️
-
 <style>
 .sponsor-badges {
   display: flex;

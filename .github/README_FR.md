@@ -147,12 +147,6 @@ Si Voyager facilite votre vie, considérez m'offrir un café. Cela aide à maint
   </table>
 </div>
 
-### 🎙️ Outil recommandé : Typeless
-
-Je recommande vivement **[Typeless (typeless.com)](https://www.typeless.com/?via=gemini-voyager)**, un outil de synthèse vocale IA que j'ai utilisé intensivement durant le développement. Il booste considérablement la productivité.
-
-> 🎁 **[Rejoignez via mon lien](https://www.typeless.com/?via=gemini-voyager)** (Code : _`gemini-voyager`_) pour obtenir **5$ de crédits gratuits**. ❤️
-
 ---
 
 ## 💬 Communauté
