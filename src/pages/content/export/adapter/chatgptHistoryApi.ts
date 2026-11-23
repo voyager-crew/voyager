@@ -106,6 +106,18 @@ function isShownReply(message: Json): boolean {
   );
 }
 
+/** The messages from the root down to `lastId` inclusive, oldest first. */
+function branchMessages(mapping: Json, lastId: string): Json[] {
+  const branch: Json[] = [];
+  const seen = new Set<string>();
+  for (let id = lastId; id && !seen.has(id); id = text(record(mapping[id])?.parent)) {
+    seen.add(id);
+    const message = record(record(mapping[id])?.message);
+    if (message) branch.unshift(message);
+  }
+  return branch;
+}
+
 /**
  * The turns strictly before the node `beforeId`, oldest first, on that node's
  * own branch. Throws when the tree does not hold the node.
@@ -113,18 +125,23 @@ function isShownReply(message: Json): boolean {
 export function parseTurnsBefore(data: unknown, beforeId: string): ChatGptApiTurn[] {
   const mapping = record(record(data)?.mapping);
   if (!mapping || !record(mapping[beforeId])) throw new Error('chatgpt_export_history_mismatch');
-  const branch: Json[] = [];
-  const seen = new Set<string>();
-  for (
-    let id = text(record(mapping[beforeId])?.parent);
-    id && !seen.has(id);
-    id = text(record(mapping[id])?.parent)
-  ) {
-    seen.add(id);
-    const message = record(record(mapping[id])?.message);
-    if (message) branch.unshift(message);
-  }
+  return branchTurns(branchMessages(mapping, text(record(mapping[beforeId])?.parent)));
+}
 
+/**
+ * Every turn on the branch the server last saved (`current_node`), oldest
+ * first. Throws when the tree does not hold that node.
+ */
+export function parseCurrentBranch(data: unknown): ChatGptApiTurn[] {
+  const mapping = record(record(data)?.mapping);
+  const leaf = text(record(data)?.current_node);
+  if (!mapping || !leaf || !record(mapping[leaf])) {
+    throw new Error('chatgpt_export_history_mismatch');
+  }
+  return branchTurns(branchMessages(mapping, leaf));
+}
+
+function branchTurns(branch: readonly Json[]): ChatGptApiTurn[] {
   interface Draft {
     key: string;
     user: string;
@@ -255,6 +272,19 @@ const STALE_SESSION = new Set([401, 403, 404]);
 export class ChatGptHistoryReader {
   private headers: Promise<Record<string, string>> | null = null;
   private tree: { readonly conversationId: string; readonly data: unknown } | null = null;
+
+  /**
+   * Read every turn of the conversation at `url` on its saved branch. Always
+   * a fresh read: the conversation may have grown since the tree was kept.
+   */
+  async currentBranch(url: string, signal?: AbortSignal): Promise<ChatGptApiTurn[]> {
+    const conversationId = chatGptConversationId(url);
+    if (!conversationId) throw new Error('chatgpt_export_history_unavailable');
+    const data = await this.readConversation(conversationId, signal);
+    const turns = parseCurrentBranch(data);
+    this.tree = { conversationId, data };
+    return turns;
+  }
 
   /** Read the turns before `beforeId` in the conversation at `url`. */
   async turnsBefore(

@@ -1,7 +1,13 @@
+import type { ExportCrawlExtent } from '@/features/plugins/sites/sections/exportCrawlData';
 import { chatGptTurnHash } from '@/features/savedLibrary/exportStars';
 
 import { type ChatGptHistoryReader, apiTurnMessages, chatGptHistory } from './chatgptHistoryApi';
-import { type ScrollView, createScrollView, findScrollContainer } from './chatgptScrollView';
+import {
+  type ScrollView,
+  type ScrollViewBehavior,
+  createScrollView,
+  findScrollContainer,
+} from './chatgptScrollView';
 import { assertActive, wait } from './chatgptShared';
 import {
   type ChatGptThreadMessage,
@@ -73,8 +79,20 @@ export const DEFAULT_CHATGPT_CRAWL_TIMING: ChatGptCrawlTiming = {
   maxSteps: 5000,
 };
 
+/** Which shipped page measurement the crawl uses; remote site data can switch them. */
+export interface ChatGptCrawlBehavior extends ScrollViewBehavior {
+  readonly extent: ExportCrawlExtent;
+}
+
+export const DEFAULT_CHATGPT_CRAWL_BEHAVIOR: ChatGptCrawlBehavior = {
+  extent: 'outermostBox',
+  upwardScroll: 'wheelRelease',
+  direction: 'auto',
+};
+
 export interface ChatGptCrawlOptions extends ChatGptReadOptions {
   readonly timing?: Partial<ChatGptCrawlTiming>;
+  readonly behavior?: Partial<ChatGptCrawlBehavior>;
   /** Called with the number of turns read so far, after each one. */
   readonly onProgress?: (turns: number) => void;
   /** Reads the turns ChatGPT will not load; the page's shared reader by default. */
@@ -97,6 +115,7 @@ interface CrawlContext {
   readonly view: ScrollView;
   readonly options: ChatGptCrawlOptions;
   readonly timing: ChatGptCrawlTiming;
+  readonly behavior: ChatGptCrawlBehavior;
   /**
    * The first loaded item's key when older history would not load. ChatGPT
    * keeps blank room for the unloaded turns above it (measured live: ~950px
@@ -130,7 +149,7 @@ function readWindow(context: CrawlContext): MountedWindow {
     ? items.findIndex((item) => readTurnKey(item) === context.loadedFrom)
     : -1;
   if (start > 0) items = items.slice(start);
-  const box = items[0] ? findThreadExtent(items[0]) : null;
+  const box = items[0] ? findThreadExtent(items[0], context.behavior.extent) : null;
   return {
     items,
     spans: items.map((item) => spanOf(context.view, item)),
@@ -451,6 +470,7 @@ export async function crawlChatGptThread(
 ): Promise<ChatGptThreadMessage[]> {
   assertActive(options);
   const timing = { ...DEFAULT_CHATGPT_CRAWL_TIMING, ...options.timing };
+  const behavior = { ...DEFAULT_CHATGPT_CRAWL_BEHAVIOR, ...options.behavior };
   const root = resolveVisibleConversationRoot(document);
   const first = mountedTurnItems(root)[0];
   if (!first) throw new Error('chatgpt_export_no_turns');
@@ -458,9 +478,10 @@ export async function crawlChatGptThread(
 
   const context: CrawlContext = {
     root,
-    view: createScrollView(findScrollContainer(first)),
+    view: createScrollView(findScrollContainer(first), behavior),
     options,
     timing,
+    behavior,
     loadedFrom: null,
   };
   const position = captureReaderPosition(context);

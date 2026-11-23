@@ -3,6 +3,7 @@ import type {
   ContentExtractor,
   ExtractedContent,
 } from '@/features/export/services/DOMContentExtractor';
+import type { ExportCrawlExtent } from '@/features/plugins/sites/sections/exportCrawlData';
 
 import { chatgptExportData, chatgptTurnSelector, CHATGPT_USER_BUBBLE } from './chatgptExportData';
 import { chatgptStreamingSelector } from './chatgptExportLocators';
@@ -132,10 +133,20 @@ export function findMountedTurnItem(root: ParentNode, turnKey: string): HTMLElem
  * items lie. It is the outermost ancestor below the list that draws a box:
  * ChatGPT wraps that box in a `display: contents` element (measured live,
  * November 2026), which measures 0×0 at the viewport origin (#1071).
+ * `directChild` takes the list's direct child instead, as before then.
  */
-export function findThreadExtent(item: Element): HTMLElement | null {
+export function findThreadExtent(
+  item: Element,
+  mode: ExportCrawlExtent = 'outermostBox',
+): HTMLElement | null {
   const list = item.parentElement?.closest(chatgptThreadListSelector(item));
   if (!list) return null;
+  if (mode === 'directChild') {
+    // The layout before November 2026: the box is the list's direct child.
+    let node: Element | null = item.parentElement;
+    while (node && node.parentElement !== list) node = node.parentElement;
+    return node instanceof HTMLElement ? node : null;
+  }
   let extent: HTMLElement | null = null;
   for (let node = item.parentElement; node && node !== list; node = node.parentElement) {
     if (node instanceof HTMLElement && getComputedStyle(node).display !== 'contents') {

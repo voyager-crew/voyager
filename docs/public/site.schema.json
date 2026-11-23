@@ -249,6 +249,48 @@
         }
       }
     },
+    "exportThread": {
+      "type": "object",
+      "description": "Where the ChatGPT export reads the whole conversation from. A missing or invalid section reads as [\"crawl\", \"api\"].",
+      "required": ["format", "order"],
+      "additionalProperties": false,
+      "properties": {
+        "format": { "const": 1 },
+        "order": {
+          "description": "`crawl` walks the page; `api` reads ChatGPT's conversation endpoint, whose replies export as plain Markdown. The first source that reads the whole conversation wins.",
+          "oneOf": [{ "const": ["crawl", "api"] }, { "const": ["api"] }, { "const": ["crawl"] }]
+        }
+      }
+    },
+    "exportCrawl": {
+      "type": "object",
+      "description": "How the ChatGPT export walks the page. Each value selects a behaviour the extension already ships; an invalid field reads as its default.",
+      "required": ["format"],
+      "additionalProperties": false,
+      "properties": {
+        "format": { "const": 1 },
+        "extent": {
+          "enum": ["outermostBox", "directChild"],
+          "default": "outermostBox",
+          "description": "The list box: the outermost ancestor below the list that draws a box, or the list's direct child (before November 2026)."
+        },
+        "upwardScroll": {
+          "enum": ["wheelRelease", "plain"],
+          "default": "wheelRelease",
+          "description": "Send a scripted upward wheel before scrolling up, to release ChatGPT's pin to the newest turn, or scroll plainly (before November 2026)."
+        },
+        "direction": {
+          "enum": ["auto", "normal", "reverse"],
+          "default": "auto",
+          "description": "Whether the scroller runs top-down or as column-reverse; auto reads its computed style."
+        },
+        "pollMs": { "type": "integer", "minimum": 10, "maximum": 1000, "default": 50 },
+        "settleMs": { "type": "integer", "minimum": 50, "maximum": 5000, "default": 150 },
+        "mountTimeoutMs": { "type": "integer", "minimum": 500, "maximum": 30000, "default": 2500 },
+        "historyIdleMs": { "type": "integer", "minimum": 200, "maximum": 10000, "default": 1000 },
+        "historyStallMs": { "type": "integer", "minimum": 1000, "maximum": 60000, "default": 10000 }
+      }
+    },
     "locators": {
       "$ref": "site-sections/locators.schema.json"
     }

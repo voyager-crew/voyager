@@ -196,3 +196,26 @@ conversation content or account identifiers. Hosting providers see ordinary
 connection metadata such as IP address, User-Agent and the hostname in the URL.
 Announcement and cloud-sync settings remain separate. D13/D14 require the same
 coverage and request disclosure in every privacy locale and store-listing draft.
+
+## ChatGPT export switches
+
+ChatGPT's host file may carry two top-level sections that switch the
+conversation export between behaviours this build already ships and tests
+(`sites/sections/exportCrawlData.ts`; values and limits in
+[site.schema.json](../../../../docs/public/site.schema.json)). They name code
+paths, never steps or selectors, so a redesign that breaks the page walk can be
+answered with data while the fix ships:
+
+```json
+"exportThread": { "format": 1, "order": ["api"] },
+"exportCrawl": { "format": 1, "extent": "directChild", "upwardScroll": "plain", "historyStallMs": 20000 }
+```
+
+`exportThread.order` is `["crawl", "api"]` (default: walk the page, read
+`/backend-api/conversation/<id>` when the walk fails), `["api"]` or `["crawl"]`.
+Endpoint replies export as plain Markdown, and the endpoint's saved branch must
+match every turn the page shows. `exportCrawl` sets `extent`, `upwardScroll`,
+`direction` and the crawl timings. Both are their own sections because a client
+drops a known section that gains an unknown key; an invalid section or field
+reads as the default and is reported in `sectionIssues`, which fails
+`catalog:build` but never the adapter. The packaged `site.json` omits both.

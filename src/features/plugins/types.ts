@@ -20,6 +20,7 @@ import type { TranslationKey } from '@/utils/translations';
 
 import type { ScriptContribution } from './scripted/types';
 import type { BridgePolicySection } from './sites/sections/bridgePolicyData';
+import type { ExportCrawlSection, ExportThreadSection } from './sites/sections/exportCrawlData';
 import type { SiteExportConfig } from './sites/sections/exportData';
 import type { FolderSkin } from './sites/sections/folderSkinData';
 import type { FoldersSection } from './sites/sections/foldersData';
@@ -111,6 +112,13 @@ export interface SiteAdapter {
   readonly turnKeyAttributes?: readonly string[];
   /** Optional page facts for the conversationExport primitive. */
   readonly export?: SiteExportConfig;
+  /**
+   * Where the ChatGPT export reads the whole conversation from, and how its
+   * page walk scrolls. Optional and isolated: a bad section or field reads as
+   * the packaged default without invalidating the adapter.
+   */
+  readonly exportThread?: ExportThreadSection;
+  readonly exportCrawl?: ExportCrawlSection;
   /**
    * Data for the Local Bridge `model.select` op. Optional and isolated: a bad
    * section is dropped without invalidating the adapter (`sectionIssues`).

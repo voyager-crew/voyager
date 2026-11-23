@@ -23,6 +23,8 @@ const SITE_RUNTIME_FIELDS = {
   prompt: true,
   turnKeyAttributes: true,
   export: true,
+  exportThread: true,
+  exportCrawl: true,
   modelPicker: true,
   projects: true,
   pageHooks: true,

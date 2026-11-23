@@ -12,7 +12,7 @@ import {
   chatgptCollectTurnContainers,
   resolveChatGptSelectionRoles,
 } from './chatgpt';
-import { type ChatGptCrawlOptions, crawlChatGptThread } from './chatgptCrawl';
+import type { ChatGptCrawlOptions } from './chatgptCrawl';
 import { createChatGptLoggedOutReader } from './chatgptLoggedOut';
 import { type ChatGptThreadKind, readChatGptThreadKind } from './chatgptLoggedOutDom';
 import { assertActive, normalizedConversationUrl } from './chatgptShared';
@@ -27,6 +27,7 @@ import {
   userSelectionHost,
 } from './chatgptThread';
 import { turnsFromMessages } from './chatgptThreadExport';
+import { chatGptCrawlSettings, readChatGptThread } from './chatgptThreadSources';
 import { watchThreadVersions } from './chatgptThreadWatch';
 import type { ExportPlatformAdapter } from './platformAdapters';
 
@@ -63,6 +64,7 @@ type Reader = ExportTurnReader & Required<Pick<ExportTurnReader, 'roles'>>;
 export function createChatGptTurnSource(adapter: ExportPlatformAdapter) {
   const extractor = createContentExtractor(adapter);
   const loggedOut = createChatGptLoggedOutReader(adapter);
+  const settings = chatGptCrawlSettings(adapter.site);
   let latest: ExportTurnSession | null = null;
   let prepared: { route: string; kind: ChatGptThreadKind | null } | null = null;
 
@@ -115,8 +117,11 @@ export function createChatGptTurnSource(adapter: ExportPlatformAdapter) {
                 })
               : null;
             stay.scope.effect(() => () => progress?.hide());
-            void crawlChatGptThread({
+            void readChatGptThread({
               ...options,
+              order: settings.order,
+              timing: { ...settings.timing, ...options.timing },
+              behavior: { ...settings.behavior, ...options.behavior },
               extractor,
               signal: crawl.signal,
               expectedUrl: route,

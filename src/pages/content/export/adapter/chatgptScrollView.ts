@@ -1,3 +1,8 @@
+import type {
+  ExportCrawlDirection,
+  ExportCrawlUpwardScroll,
+} from '@/features/plugins/sites/sections/exportCrawlData';
+
 /**
  * The conversation scroller seen as one axis that starts at the oldest turn.
  *
@@ -14,6 +19,17 @@ export interface ScrollView {
   /** Offset of an element's top from the conversation's start. */
   offsetOf(element: Element): number;
 }
+
+/** How the scroll view reads the box's direction and moves up; the current page's by default. */
+export interface ScrollViewBehavior {
+  readonly direction: ExportCrawlDirection;
+  readonly upwardScroll: ExportCrawlUpwardScroll;
+}
+
+const DEFAULT_SCROLL_BEHAVIOR: ScrollViewBehavior = {
+  direction: 'auto',
+  upwardScroll: 'wheelRelease',
+};
 
 const SCROLLABLE_OVERFLOW = /(auto|scroll|overlay)/;
 
@@ -35,7 +51,8 @@ export function findScrollContainer(element: Element): HTMLElement | null {
   return null;
 }
 
-function isReverseScroller(container: HTMLElement): boolean {
+function isReverseScroller(container: HTMLElement, direction: ExportCrawlDirection): boolean {
+  if (direction !== 'auto') return direction === 'reverse';
   const style = getComputedStyle(container);
   return style.flexDirection === 'column-reverse' && /flex/.test(style.display);
 }
@@ -44,8 +61,8 @@ function clamp(value: number, max: number): number {
   return Math.min(Math.max(0, value), Math.max(0, max));
 }
 
-function elementScrollView(container: HTMLElement): ScrollView {
-  const reverse = isReverseScroller(container);
+function elementScrollView(container: HTMLElement, behavior: ScrollViewBehavior): ScrollView {
+  const reverse = isReverseScroller(container, behavior.direction);
   const range = () => Math.max(0, container.scrollHeight - container.clientHeight);
   const offset = () => (reverse ? container.scrollTop + range() : container.scrollTop);
   return {
@@ -57,7 +74,7 @@ function elementScrollView(container: HTMLElement): ScrollView {
       // ChatGPT pins the thread to its newest turn and pulls a scripted scroll
       // back down until a wheel moves it up (measured live, November 2026;
       // #1071). A scripted wheel releases the pin and scrolls nothing itself.
-      if (target < offset()) {
+      if (behavior.upwardScroll === 'wheelRelease' && target < offset()) {
         container.dispatchEvent(
           new WheelEvent('wheel', { deltaY: -1, bubbles: true, cancelable: true }),
         );
@@ -89,6 +106,9 @@ function windowScrollView(): ScrollView {
   };
 }
 
-export function createScrollView(container: HTMLElement | null): ScrollView {
-  return container ? elementScrollView(container) : windowScrollView();
+export function createScrollView(
+  container: HTMLElement | null,
+  behavior: ScrollViewBehavior = DEFAULT_SCROLL_BEHAVIOR,
+): ScrollView {
+  return container ? elementScrollView(container, behavior) : windowScrollView();
 }
