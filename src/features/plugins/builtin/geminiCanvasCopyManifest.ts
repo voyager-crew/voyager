@@ -5,43 +5,44 @@ export const GEMINI_CANVAS_COPY_MANIFEST: PluginManifest = {
   id: 'voyager.gemini-canvas-copy',
   name: 'Gemini · Canvas copy as Markdown',
   version: '1.0.0',
-  description: 'Copy a Canvas document as Markdown from its share menu.',
+  description: 'Copy a Canvas document as Markdown from the Export menu.',
   i18n: {
     zh: {
       name: 'Gemini · Canvas 复制为 Markdown',
-      description: '在 Canvas 的分享菜单中，将文档复制为 Markdown。',
+      description: '在 Canvas 的导出菜单中，将文档复制为 Markdown。',
     },
     zh_TW: {
       name: 'Gemini · Canvas 複製為 Markdown',
-      description: '在 Canvas 的分享選單中，將文件複製為 Markdown。',
+      description: '在 Canvas 的匯出選單中，將文件複製為 Markdown。',
     },
     ja: {
       name: 'Gemini · Canvas を Markdown としてコピー',
-      description: 'Canvas の共有メニューから、ドキュメントを Markdown としてコピーします。',
+      description:
+        'Canvas のエクスポートメニューから、ドキュメントを Markdown としてコピーします。',
     },
     ko: {
       name: 'Gemini · Canvas를 Markdown으로 복사',
-      description: 'Canvas 공유 메뉴에서 문서를 Markdown으로 복사합니다.',
+      description: 'Canvas 내보내기 메뉴에서 문서를 Markdown으로 복사합니다.',
     },
     fr: {
       name: 'Gemini · Copier Canvas en Markdown',
-      description: 'Copiez un document Canvas au format Markdown depuis son menu de partage.',
+      description: 'Copiez un document Canvas au format Markdown depuis le menu Exporter.',
     },
     es: {
       name: 'Gemini · Copiar Canvas como Markdown',
-      description: 'Copia un documento de Canvas como Markdown desde su menú de compartir.',
+      description: 'Copia un documento de Canvas como Markdown desde el menú Exportar.',
     },
     pt: {
       name: 'Gemini · Copiar Canvas como Markdown',
-      description: 'Copie um documento do Canvas como Markdown pelo menu de compartilhamento.',
+      description: 'Copie um documento do Canvas como Markdown pelo menu Exportar.',
     },
     ru: {
       name: 'Gemini · Копирование Canvas в Markdown',
-      description: 'Копируйте документ Canvas в формате Markdown через меню «Поделиться».',
+      description: 'Копируйте документ Canvas в формате Markdown через меню «Экспорт».',
     },
     ar: {
       name: 'Gemini · نسخ Canvas بصيغة Markdown',
-      description: 'انسخ مستند Canvas بصيغة Markdown من قائمة المشاركة.',
+      description: 'انسخ مستند Canvas بصيغة Markdown من قائمة التصدير.',
     },
   },
   author: 'voyager-official',
