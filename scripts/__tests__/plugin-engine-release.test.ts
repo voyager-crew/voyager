@@ -40,8 +40,13 @@ function fixture(): string {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     copyFileSync(join(repoRoot, path), join(root, path));
   }
-  for (const path of [
+  // The bump's skill regeneration is a real-repo step; here it only needs to succeed.
+  write(
+    root,
     'package.json',
+    '{"version": "1.9.9", "type": "module", "scripts": {"skills:build": "true"}}\n',
+  );
+  for (const path of [
     'manifest.json',
     'manifest.dev.json',
     'packages/create-voyager-plugin/package.json',
