@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { StorageKeys } from '@/core/types/common';
 import { NATIVE_HANDLER_BINDINGS } from '@/pages/content/pluginNativeRegistration';
 
 import { checkPrimitivesAreShippable } from '../../../../scripts/lib/pluginChecks';
@@ -292,6 +293,31 @@ describe('BUILTIN_PLUGINS', () => {
     expect(handler?.updateSettings).toBeTypeOf('function');
   });
 
+  it('gives Gemini usage status one used/remaining choice, localized and applied in place', () => {
+    const usage = BUILTIN_PLUGINS.find((m) => m.id === 'voyager.gemini-usage-status');
+    expect(usage?.matches).toEqual(['https://gemini.google.com/*']);
+    expect(usage?.contributes.settings?.display).toMatchObject({
+      type: 'select',
+      default: 'used',
+      options: [{ value: 'used' }, { value: 'remaining' }],
+    });
+    // The host fills it from gvUsageStatusDisplay; anything but 'remaining' reads as used.
+    const bindings = legacyValueBindingsFor('voyager.gemini-usage-status');
+    expect(bindings.map((entry) => [entry.settingKey, entry.legacyKey])).toEqual([
+      ['display', StorageKeys.USAGE_STATUS_DISPLAY],
+    ]);
+    expect(bindings[0].read(undefined)).toBe('used');
+    expect(bindings[0].read('remaining')).toBe('remaining');
+    for (const locale of ['zh', 'zh_TW', 'ja', 'ko', 'fr', 'es', 'pt', 'ru', 'ar'] as const) {
+      const display = usage?.i18n?.[locale]?.settings?.display;
+      expect(usage?.i18n?.[locale]?.name, locale).toBeTruthy();
+      expect(display?.label, locale).toBeTruthy();
+      expect(Object.keys(display?.options ?? {}), locale).toEqual(['used', 'remaining']);
+    }
+    const handler = NATIVE_HANDLER_BINDINGS['voyager.gemini-usage-status'];
+    expect(handler?.updateSettings).toBeTypeOf('function');
+  });
+
   it.each([
     ['Markdown rendering fix', 'voyager.gemini-markdown-fix'],
     ['Message timestamps', 'voyager.gemini-message-timestamps'],
@@ -303,7 +329,6 @@ describe('BUILTIN_PLUGINS', () => {
     ['research pack', 'voyager.gemini-research-pack'],
     ['default model', 'voyager.gemini-default-model'],
     ['fork', 'voyager.gemini-fork'],
-    ['usage status', 'voyager.gemini-usage-status'],
     ['quote reply', 'voyager.gemini-quote-reply'],
     ['highlight', 'voyager.gemini-highlight'],
     ['prevent auto-scroll', 'voyager.gemini-prevent-auto-scroll'],

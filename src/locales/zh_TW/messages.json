@@ -2093,18 +2093,6 @@
     "message": "已用 {n}%",
     "description": "Accessible label and tooltip of a usage bar's percent in used view; {n} is the percent used. Keep the {n} placeholder literal."
   },
-  "usageStatusDisplay": {
-    "message": "百分比",
-    "description": "Popup label above the used/remaining choice under the Gemini usage status plugin row."
-  },
-  "usageStatusDisplayUsed": {
-    "message": "顯示已用",
-    "description": "Popup option: usage bars count what has been used (the default)."
-  },
-  "usageStatusDisplayRemaining": {
-    "message": "顯示剩餘",
-    "description": "Popup option: usage bars count what is left; the bar fills to the remaining share."
-  },
   "usageStatusRefresh": {
     "message": "重新整理",
     "description": "Tooltip/aria-label for the refresh button on the usage status pill."

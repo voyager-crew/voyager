@@ -6,17 +6,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StorageKeys } from '@/core/types/common';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
-import { loadTranslations } from '@/utils/translations';
 
 import Popup from '../../Popup';
 import { emitSyncChange, extensionApi, popupRows, resetPopupBrowser } from './popupHarness';
-
-const en = await loadTranslations('en');
 
 vi.mock('webextension-polyfill', async () => ({
   default: (await import('./popupHarness')).extensionApi,
 }));
 
+/** The used/remaining choice comes from the manifest's `display` select, as every surface shows it. */
 describe('usage status row: used or remaining', () => {
   const id = OFFICIAL_PLUGIN_IDS.geminiUsageStatus;
   let container: HTMLDivElement;
@@ -46,40 +44,43 @@ describe('usage status row: used or remaining', () => {
       );
     });
   };
-  const choice = (label: string) =>
-    [...(popupRows(container).row(id)?.querySelectorAll<HTMLElement>('[role="radio"]') ?? [])].find(
-      (radio) => radio.textContent === label,
-    );
+  const select = () => popupRows(container).row(id)?.querySelector('select') ?? null;
+  const pick = async (value: string) => {
+    const element = select()!;
+    await act(async () => {
+      element.value = value;
+      element.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  };
 
   it('offers the choice only while the plugin is on', async () => {
     await mount();
-    expect(choice(en.usageStatusDisplayUsed)).toBeUndefined();
+    expect(select()).toBeNull();
 
     await act(async () => popupRows(container).toggle(id).click());
-    expect(choice(en.usageStatusDisplayUsed)?.getAttribute('aria-checked')).toBe('true');
-    expect(choice(en.usageStatusDisplayRemaining)?.getAttribute('aria-checked')).toBe('false');
-    expect(
-      popupRows(container)
-        .row(id)!
-        .querySelector('[role="radiogroup"]')!
-        .getAttribute('aria-label'),
-    ).toBe(en.usageStatusDisplay);
+    expect(select()!.value).toBe('used');
+    expect([...select()!.options].map((option) => [option.value, option.text])).toEqual([
+      ['used', 'Used'],
+      ['remaining', 'Remaining'],
+    ]);
+    expect(select()!.closest('label')!.textContent).toContain('Bar shows');
 
     await act(async () => popupRows(container).toggle(id).click());
-    expect(choice(en.usageStatusDisplayUsed)).toBeUndefined();
+    expect(select()).toBeNull();
   });
 
-  it('writes the synced display key, and follows a change made elsewhere', async () => {
+  it('writes the synced display key, never plugin state, and follows a change made elsewhere', async () => {
     sync[StorageKeys.USAGE_STATUS_ENABLED] = true;
     await mount();
-    await act(async () => choice(en.usageStatusDisplayRemaining)!.click());
+    await pick('remaining');
     expect(extensionApi.storage.sync.set).toHaveBeenCalledExactlyOnceWith({
       [StorageKeys.USAGE_STATUS_DISPLAY]: 'remaining',
     });
-    expect(choice(en.usageStatusDisplayRemaining)!.getAttribute('aria-checked')).toBe('true');
     expect(local[StorageKeys.PLUGINS_STATE]).toBeUndefined();
 
+    await act(async () => emitSyncChange({ [StorageKeys.USAGE_STATUS_DISPLAY]: 'remaining' }));
+    expect(select()!.value).toBe('remaining');
     await act(async () => emitSyncChange({ [StorageKeys.USAGE_STATUS_DISPLAY]: 'used' }));
-    expect(choice(en.usageStatusDisplayUsed)!.getAttribute('aria-checked')).toBe('true');
+    expect(select()!.value).toBe('used');
   });
 });

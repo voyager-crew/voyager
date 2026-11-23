@@ -50,8 +50,9 @@ export const APPEARANCE_STORAGE_KEYS = {
   // composer. Synced so the toggle follows the user across devices. Default off
   // (opt-in) since it injects persistent UI.
   USAGE_STATUS_ENABLED: 'gvUsageStatusEnabled',
-  // What the usage bars count: 'used' (default) or 'remaining'. Synced, chosen
-  // under the usage status row in the popup; colours follow the used share
+  // What the usage bars count: 'used' (default) or 'remaining'. Synced; the
+  // usage plugin's `display` setting through its value binding, so the popup
+  // row and the in-page panel both offer it. Colours follow the used share
   // either way. See core/utils/usageDisplayValues.ts.
   USAGE_STATUS_DISPLAY: 'gvUsageStatusDisplay',
   // Local cache of the usage limits scraped from /usage. Stored as a

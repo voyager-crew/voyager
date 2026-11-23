@@ -1,10 +1,15 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+// @vitest-environment-options { "url": "https://gemini.google.com/u/0/app" }
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
-import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
+import { PluginHost } from '@/features/plugins/runtime/PluginHost';
+import { createOfficialAdmission } from '@/features/plugins/runtime/officialAdmission';
+import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
+import { BuiltinPluginSource } from '@/features/plugins/sources/BuiltinPluginSource';
 
-import { startUsageStatusRuntime } from '../runtime';
-import type { UsageSnapshot } from '../usageSnapshot';
+import { type LifecycleHarness, installLifecycleHarness } from '../../__tests__/lifecycleHarness';
+import { registerBuiltinNativeHandlers } from '../../pluginNativeRegistration';
+import { type UsageSnapshot, usageCacheKeyForAccount } from '../usageSnapshot';
 import { flushUsagePlugin } from './usagePluginHarness';
 
 vi.mock('webextension-polyfill', () => ({ default: chrome }));
@@ -16,8 +21,7 @@ vi.mock('@/utils/i18n', () => ({
   getTranslationSync: (key: string) => key,
 }));
 
-type Listener = Parameters<typeof chrome.storage.onChanged.addListener>[0];
-
+const ID = OFFICIAL_PLUGIN_IDS.geminiUsageStatus;
 const now = new Date(2026, 6, 18, 10).getTime();
 const cached: UsageSnapshot = {
   accountKey: 'u/0',
@@ -28,53 +32,70 @@ const cached: UsageSnapshot = {
   updatedAt: now,
 };
 
-const listeners = new Set<Listener>();
-let run: AbortController | undefined;
+let harness: LifecycleHarness;
+let host: PluginHost | null = null;
 
-const pct = () => document.querySelector<HTMLElement>('#gv-usage-pill .gv-usage-pct')!;
-const fill = () => document.querySelector<HTMLElement>('#gv-usage-pill .gv-usage-fill')!;
+const pill = () => document.getElementById('gv-usage-pill');
+const pct = () => pill()!.querySelector<HTMLElement>('.gv-usage-pct')!;
+const fill = () => pill()!.querySelector<HTMLElement>('.gv-usage-fill')!;
+const status = () => host!.getStatuses().find((entry) => entry.id === ID)?.kind;
 
-async function start(sync: Record<string, unknown>): Promise<void> {
-  vi.mocked(chrome.storage.sync.get).mockImplementation(async () => sync);
-  run = new AbortController();
-  await startUsageStatusRuntime({ signal: run.signal });
+/** Mounts the real official plugin through the host, with `display` as stored. */
+async function start(display?: unknown): Promise<void> {
+  harness.storage.sync.set(StorageKeys.USAGE_STATUS_ENABLED, true);
+  if (display !== undefined) harness.storage.sync.set(StorageKeys.USAGE_STATUS_DISPLAY, display);
+  const admission = createOfficialAdmission();
+  admission.admit('gemini', 'usageStatus');
+  admission.close();
+  host = new PluginHost({
+    url: location.href,
+    doc: document,
+    sources: [new BuiltinPluginSource()],
+    admission,
+    isTopFrame: true,
+    requestCatalogRefresh: () => {},
+  });
+  await host.start();
   await flushUsagePlugin();
 }
 
-async function syncChange(key: string, newValue: unknown): Promise<void> {
-  for (const listener of listeners) listener({ [key]: { newValue } }, 'sync');
+/** The popup or the in-page panel writes the choice; Chrome reports the change. */
+async function choose(display: unknown): Promise<void> {
+  const oldValue = harness.storage.sync.get(StorageKeys.USAGE_STATUS_DISPLAY);
+  if (display === undefined) harness.storage.sync.delete(StorageKeys.USAGE_STATUS_DISPLAY);
+  else harness.storage.sync.set(StorageKeys.USAGE_STATUS_DISPLAY, display);
+  harness.emitStorageChange(
+    { [StorageKeys.USAGE_STATUS_DISPLAY]: { oldValue, newValue: display } },
+    'sync',
+  );
   await flushUsagePlugin();
 }
 
+beforeAll(registerBuiltinNativeHandlers);
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(now);
-  vi.clearAllMocks();
-  listeners.clear();
-  vi.mocked(chrome.storage.onChanged.addListener).mockImplementation((l) => listeners.add(l));
-  vi.mocked(chrome.storage.onChanged.removeListener).mockImplementation((l) => listeners.delete(l));
-  vi.mocked(chrome.storage.local.get).mockImplementation(async () => ({
-    'gvUsageCache:u/0': cached,
-  }));
-  vi.mocked(chrome.storage.local.set).mockResolvedValue();
-  vi.spyOn(window, 'postMessage').mockImplementation(() => {});
-  setPageUrl('https://gemini.google.com/u/0/app');
+  history.replaceState({}, '', '/u/0/app');
   document.body.innerHTML = '';
+  harness = installLifecycleHarness();
+  harness.storage.local.set(usageCacheKeyForAccount('u/0'), cached);
+  vi.spyOn(window, 'postMessage').mockImplementation(() => {});
 });
 
 afterEach(async () => {
-  run?.abort();
-  run = undefined;
+  host?.stop();
+  host = null;
   await flushUsagePlugin();
+  harness.restore();
   vi.restoreAllMocks();
-  resetPageUrl();
+  vi.clearAllTimers();
   vi.useRealTimers();
   document.body.innerHTML = '';
 });
 
-describe('usage used/remaining display', () => {
+describe('usage used/remaining display, as the plugin setting', () => {
   it('counts used by default, and says so to screen readers', async () => {
-    await start({});
+    await start();
     expect(pct().textContent).toBe('7% (4h)');
     expect(pct().tagName).toBe('SPAN');
     expect(pct().getAttribute('aria-label')).toBe('7% used (4h)');
@@ -82,7 +103,7 @@ describe('usage used/remaining display', () => {
   });
 
   it('shows only the remaining number and fills the bar to it when remaining is stored', async () => {
-    await start({ [StorageKeys.USAGE_STATUS_DISPLAY]: 'remaining' });
+    await start('remaining');
     expect(pct().textContent).toBe('93% (4h)');
     expect(fill().style.width).toBe('93%');
     expect(pct().getAttribute('aria-label')).toBe('93% left (4h)');
@@ -90,19 +111,23 @@ describe('usage used/remaining display', () => {
     expect(pct().closest('.gv-usage-metric')!.className).toBe('gv-usage-metric');
   });
 
-  it('re-renders when the popup changes the choice, and ignores clicks on the number', async () => {
-    await start({});
-    await syncChange(StorageKeys.USAGE_STATUS_DISPLAY, 'remaining');
+  it('switches in place when the setting changes, without remounting the plugin', async () => {
+    await start();
+    const mounted = pill();
+    expect(status()).toBe('mounted');
+
+    await choose('remaining');
+    expect(pill()).toBe(mounted);
     expect(pct().textContent).toBe('93% (4h)');
     expect(fill().style.width).toBe('93%');
 
+    // Clicking the number does nothing: the choice lives in the plugin's settings.
     pct().click();
     expect(pct().textContent).toBe('93% (4h)');
-    expect(chrome.storage.local.set).not.toHaveBeenCalledWith(
-      expect.objectContaining({ gvUsageShowRemaining: expect.anything() }),
-    );
 
-    await syncChange(StorageKeys.USAGE_STATUS_DISPLAY, undefined);
+    await choose(undefined);
+    expect(pill()).toBe(mounted);
+    expect(status()).toBe('mounted');
     expect(pct().textContent).toBe('7% (4h)');
   });
 });

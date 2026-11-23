@@ -32,6 +32,7 @@ import {
 } from '@/core/utils/chatAppearanceValues';
 import { normalizeGemsSidebarCount } from '@/core/utils/gemsSidebarValues';
 import { normalizeSidebarWidth } from '@/core/utils/sidebarWidthValues';
+import { type UsageDisplay, resolveUsageDisplay } from '@/core/utils/usageDisplayValues';
 import { type VisualEffect, resolveVisualEffect } from '@/core/utils/visualEffectValues';
 import { type VoyagerPalette, resolveVoyagerPalette } from '@/core/utils/voyagerPaletteValues';
 
@@ -48,7 +49,7 @@ export interface LegacyValueBinding {
   readonly read: (
     stored: unknown,
     snapshot?: LegacySettingSnapshot,
-  ) => number | boolean | VisualEffect | VoyagerPalette;
+  ) => number | boolean | VisualEffect | VoyagerPalette | UsageDisplay;
   /** Extra legacy inputs for a trusted enum resolver, never plugin-supplied keys. */
   readonly additionalKeys?: readonly string[];
   /** Whether a live change to `legacyKey` replaces the current value (the native listener's test). */
@@ -151,6 +152,15 @@ export const LEGACY_VALUE_BINDINGS: LegacyValueBindingTable = {
   ],
   [OFFICIAL_PLUGIN_IDS.geminiPalette]: [paletteBinding()],
   [OFFICIAL_PLUGIN_IDS.aistudioPalette]: [paletteBinding()],
+  // Whether the usage bars count used or remaining; removal reads as the default, used.
+  [OFFICIAL_PLUGIN_IDS.geminiUsageStatus]: [
+    {
+      settingKey: 'display',
+      legacyKey: StorageKeys.USAGE_STATUS_DISPLAY,
+      read: resolveUsageDisplay,
+      acceptsLiveChange: always,
+    },
+  ],
 };
 
 export function legacyValueBindingsFor(
@@ -179,7 +189,8 @@ export function deriveLegacyValueSettings(
   legacy: LegacySettingSnapshot,
   table: LegacyValueBindingTable = LEGACY_VALUE_BINDINGS,
 ): PluginSettings {
-  const settings: Record<string, number | boolean | VisualEffect | VoyagerPalette> = {};
+  const settings: Record<string, number | boolean | VisualEffect | VoyagerPalette | UsageDisplay> =
+    {};
   for (const entry of legacyValueBindingsFor(id, table)) {
     const stored = Object.prototype.hasOwnProperty.call(legacy, entry.legacyKey)
       ? legacy[entry.legacyKey]

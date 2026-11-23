@@ -1,7 +1,7 @@
 import browser from 'webextension-polyfill';
 
 import { StorageKeys } from '@/core/types/common';
-import { type UsageDisplay, resolveUsageDisplay } from '@/core/utils/usageDisplayValues';
+import type { UsageDisplay } from '@/core/utils/usageDisplayValues';
 import { getTranslationSync } from '@/utils/i18n';
 import type { TranslationKey } from '@/utils/translations';
 
@@ -332,9 +332,9 @@ export function createUsagePill(onRefresh: () => void) {
     }
   }
 
-  /** Count used or remaining, from the stored popup choice. */
-  function adoptDisplay(raw: unknown): void {
-    display = resolveUsageDisplay(raw);
+  /** Count used or remaining: the plugin's `display` setting. */
+  function adoptDisplay(next: UsageDisplay): void {
+    display = next;
     if (pill) updatePillContent(pill, snapshot);
   }
 

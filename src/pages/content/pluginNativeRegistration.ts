@@ -60,7 +60,10 @@ import {
 } from './sidebarWidth/pluginHandler';
 import { activateGeminiTimeline } from './timeline/pluginHandler';
 import { activateGeminiMessageTimestamps } from './timestamp/pluginHandler';
-import { activateGeminiUsageStatus } from './usageStatus/pluginHandler';
+import {
+  activateGeminiUsageStatus,
+  updateGeminiUsageStatusSettings,
+} from './usageStatus/pluginHandler';
 import { createVisualEffectsRuntime } from './visualEffects';
 import {
   activateGeminiWatermarkDownload,
@@ -144,6 +147,7 @@ export const NATIVE_HANDLER_BINDINGS: Readonly<Record<string, NativeHandler>> = 
   },
   'voyager.gemini-usage-status': {
     activate: activateGeminiUsageStatus,
+    updateSettings: updateGeminiUsageStatusSettings,
   },
   'voyager.gemini-quote-reply': {
     activate: activateGeminiQuoteReply,

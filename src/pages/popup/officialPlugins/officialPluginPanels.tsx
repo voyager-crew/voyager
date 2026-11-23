@@ -10,7 +10,6 @@ import type { TranslationKey } from '@/utils/translations';
 import { VisualEffectChoices } from '../components/VisualEffectChoices';
 import { ContextSyncPanel } from './ContextSyncPanel';
 import { TimelinePanel } from './TimelinePanel';
-import { UsageStatusPanel } from './UsageStatusPanel';
 import type { OfficialPanelId } from './officialPluginRegistry';
 import type { ContextSyncRequest } from './useContextSyncRequest';
 
@@ -148,5 +147,4 @@ export const OFFICIAL_PANELS: Readonly<
   contextSync: ContextSyncPanel,
   visualEffect: VisualEffectPanel,
   timeline: TimelinePanel,
-  usageStatus: UsageStatusPanel,
 };

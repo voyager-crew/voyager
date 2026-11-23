@@ -172,6 +172,7 @@ describe('legacy value bindings', () => {
         StorageKeys.FOLDER_HIDE_ARCHIVED_CONVERSATIONS_AISTUDIO,
         StorageKeys.FOLDER_HIDE_ARCHIVED_CONVERSATIONS,
         StorageKeys.VOYAGER_PALETTE,
+        StorageKeys.USAGE_STATUS_DISPLAY,
       ].sort(),
     );
   });

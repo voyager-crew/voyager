@@ -12,6 +12,7 @@ import browser from 'webextension-polyfill';
 import { LoggerService } from '@/core/services/LoggerService';
 import { StorageKeys } from '@/core/types/common';
 import { isExtensionContextInvalidatedError } from '@/core/utils/extensionContext';
+import type { UsageDisplay } from '@/core/utils/usageDisplayValues';
 import { getCurrentLanguage, initI18n, onCachedLanguageChange } from '@/utils/i18n';
 import { type AppLanguage, localeFromLanguage } from '@/utils/language';
 
@@ -39,7 +40,7 @@ const logger = LoggerService.getInstance().createChild('UsageStatus');
 type StorageChanges = Record<string, chrome.storage.StorageChange>;
 
 /** The one running run; a second start is refused. */
-let activeRun: object | null = null;
+let activeRun: { readonly setDisplay: (display: UsageDisplay) => void } | null = null;
 let runSerial = 0;
 
 function isOnUsagePage(): boolean {
@@ -92,30 +93,36 @@ async function loadSnapshot(
   return null;
 }
 
-/** The stored used/remaining choice, raw; the pill resolves it (a failed read is the default). */
-async function loadDisplay(): Promise<unknown> {
-  try {
-    const result = await browser.storage.sync.get(StorageKeys.USAGE_STATUS_DISPLAY);
-    return (result as Record<string, unknown> | undefined)?.[StorageKeys.USAGE_STATUS_DISPLAY];
-  } catch {
-    return undefined;
-  }
+/**
+ * Count used or remaining on the running pill, re-rendering it in place. The
+ * plugin host calls this when the plugin's `display` setting changes; with no
+ * run it does nothing, and the next start takes the value as its `display`.
+ */
+export function setUsageStatusDisplay(display: UsageDisplay): void {
+  activeRun?.setDisplay(display);
 }
 
 /**
- * Runs usage status until `signal` aborts. The promise settles once the run is
- * attached, or as soon as it learns it was stopped while reading storage.
- * Stopping removes the pill, listeners, observers and timers; it never deletes
- * the usage cache, recipe or pill position.
+ * Runs usage status until `signal` aborts, counting `display` (the plugin's
+ * setting; used when omitted). The promise settles once the run is attached,
+ * or as soon as it learns it was stopped while reading storage. Stopping
+ * removes the pill, listeners, observers and timers; it never deletes the
+ * usage cache, recipe or pill position.
  */
-export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Promise<void> {
+export function startUsageStatusRuntime({
+  signal,
+  display = 'used',
+}: {
+  signal: AbortSignal;
+  display?: UsageDisplay;
+}): Promise<void> {
   if (signal.aborted) return Promise.resolve();
   if (activeRun) {
     logger.error('Usage status is already running; the second start is ignored');
     return Promise.resolve();
   }
   rememberGeminiUsageRootAtStartup();
-  const run = {};
+  const run = { setDisplay: (next: UsageDisplay) => pill.adoptDisplay(next) };
   activeRun = run;
   const serial = ++runSerial;
   const isCurrent = (): boolean => activeRun === run;
@@ -127,8 +134,6 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
   let liveRecipe: unknown;
   let positionChangedLive = false;
   let livePosition: unknown;
-  let displayChangedLive = false;
-  let liveDisplay: unknown;
   let snapshot: UsageSnapshot | null = null;
   let snapshotRevision = 0;
   // BCP-47 locale for reset-time formatting, derived from the Voyager language.
@@ -147,6 +152,7 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
   let stopFollowingLanguage: (() => void) | null = null;
 
   const pill = createUsagePill(() => refresh.requestReplay(true));
+  pill.adoptDisplay(display);
   const refresh = createUsageRefresh(
     () => ({
       enabled: collecting && isCurrent(),
@@ -338,12 +344,6 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
         livePosition = changes[StorageKeys.GV_USAGE_POS].newValue;
         if (initialized) pill.adoptPosition(livePosition);
       }
-      if (areaName === 'sync' && changes[StorageKeys.USAGE_STATUS_DISPLAY]) {
-        // The used/remaining choice changed in the popup (or another device).
-        displayChangedLive = true;
-        liveDisplay = changes[StorageKeys.USAGE_STATUS_DISPLAY].newValue;
-        if (initialized) pill.adoptDisplay(liveDisplay);
-      }
     };
     browser.storage.onChanged.addListener(storageListener);
   }
@@ -396,7 +396,7 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
     { once: true },
   );
 
-  // Live cache and preference changes must win even while their startup reads are pending.
+  // Live cache and placement changes must win even while their startup reads are pending.
   setupStorageListener();
 
   return (async () => {
@@ -422,8 +422,6 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
     if (!isCurrent()) return;
     await pill.loadPosition();
     if (!isCurrent()) return;
-    const storedDisplay = await loadDisplay();
-    if (!isCurrent()) return;
 
     // The route moved to another account during the reads: never show or merge
     // the previous account's cache here; the navigation below loads the right one.
@@ -434,7 +432,6 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
 
     if (recipeChangedLive) refresh.adoptRecipe(liveRecipe);
     if (positionChangedLive) pill.adoptPosition(livePosition);
-    pill.adoptDisplay(displayChangedLive ? liveDisplay : storedDisplay);
     initialized = true;
     pill.render(true, snapshot);
     stopRouteWatcher = watchRouteChanges(handleRouteChange);
