@@ -31,23 +31,17 @@ export interface SettingSwitchLabels {
   readonly hint: string;
 }
 
-/** A switch for the legacy-bound plugin `pluginId`; `null` when it has no binding. */
-export function createSettingSwitch(
-  doc: Document,
-  pluginId: string,
-  labels: SettingSwitchLabels,
-): SettingSwitch | null {
-  const binding = legacyBindingFor(pluginId);
-  if (!binding) return null;
-
+/**
+ * The switch's look without its behavior: off, and disabled until its owner
+ * knows the stored value, so the first click never acts on a guess. A boolean
+ * `:choice:` marker shares it.
+ */
+export function createSwitchButton(doc: Document, label: string): HTMLButtonElement {
   const button = doc.createElement('button');
   button.type = 'button';
   button.className = CLASS;
   button.setAttribute('role', 'switch');
   button.setAttribute('aria-checked', 'false');
-  button.setAttribute('aria-description', labels.hint);
-  button.title = labels.hint;
-  // Disabled until the stored value is known, so the first click never acts on a guess.
   button.disabled = true;
 
   const track = doc.createElement('span');
@@ -58,8 +52,23 @@ export function createSettingSwitch(
   track.appendChild(thumb);
   const name = doc.createElement('span');
   name.className = `${CLASS}__name`;
-  name.textContent = labels.name;
+  name.textContent = label;
   button.append(track, name);
+  return button;
+}
+
+/** A switch for the legacy-bound plugin `pluginId`; `null` when it has no binding. */
+export function createSettingSwitch(
+  doc: Document,
+  pluginId: string,
+  labels: SettingSwitchLabels,
+): SettingSwitch | null {
+  const binding = legacyBindingFor(pluginId);
+  if (!binding) return null;
+
+  const button = createSwitchButton(doc, labels.name);
+  button.setAttribute('aria-description', labels.hint);
+  button.title = labels.hint;
 
   let disposed = false;
   const show = (enabled: boolean): void => {

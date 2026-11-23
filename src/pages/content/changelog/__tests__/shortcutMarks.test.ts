@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { mapNoteProse } from '../noteSections';
 import { formatShortcut, invalidShortcutSpecs, parseShortcut } from '../shortcutMarks';
-import { unknownSwitchIds } from '../switchTargets';
+import { unknownChoiceMarkers, unknownSwitchIds } from '../switchTargets';
 
 function shown(spec: string, notation: 'mac' | 'other' | 'both'): string | null {
   const shortcut = parseShortcut(spec);
@@ -49,7 +49,7 @@ describe('release notes', () => {
     );
 
   // The viewer shows a bad marker as plain text; this is where a note with one fails.
-  it.each(files)('%s uses only valid shortcut markers and listed switch targets', (file) => {
+  it.each(files)('%s uses only valid shortcut markers and listed setting targets', (file) => {
     const parts: string[] = [];
     mapNoteProse(readFileSync(file, 'utf8'), (text) => {
       parts.push(text);
@@ -59,6 +59,7 @@ describe('release notes', () => {
 
     expect(invalidShortcutSpecs(prose)).toEqual([]);
     expect(unknownSwitchIds(prose)).toEqual([]);
+    expect(unknownChoiceMarkers(prose)).toEqual([]);
   });
 
   it('catches an unlisted switch target and a malformed shortcut', () => {

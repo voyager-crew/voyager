@@ -88,12 +88,29 @@ describe('site changelog', () => {
     expect(page).toContain('`:kbd:Alt+V:`');
   });
 
-  it.each([':switch:voyager.gemini-folders:', ':kbd:Hyper+V:'])(
-    'fails the build on %s',
-    (marker) => {
-      expect(() =>
-        renderChangelog(locale('en'), [note('2.0.0', { en: marker })], () => false),
-      ).toThrow(/v2\.0\.0/);
-    },
-  );
+  it.each([
+    ['zh', '<strong>进度条显示</strong>（可在 Voyager 中设置）'],
+    ['en', '<strong>Bar shows</strong> (set it in Voyager)'],
+  ])('prints a setting control as the %s label and where to set it', (lang, mention) => {
+    const page = renderChangelog(
+      locale(lang),
+      [note('2.0.0', { [lang]: 'Pick :choice:voyager.gemini-usage-status:display: here' })],
+      () => false,
+    );
+
+    expect(page).toContain(mention);
+    expect(page).not.toMatch(/<select|<button|:choice:/);
+  });
+
+  it.each([
+    ':switch:voyager.gemini-folders:',
+    ':kbd:Hyper+V:',
+    ':choice:voyager.gemini-usage-status:nope:',
+    ':choice:voyager.gemini-folders:hideFiledChats:',
+    ':choice:voyager.gemini-usage-status:',
+  ])('fails the build on %s', (marker) => {
+    expect(() =>
+      renderChangelog(locale('en'), [note('2.0.0', { en: marker })], () => false),
+    ).toThrow(/v2\.0\.0/);
+  });
 });

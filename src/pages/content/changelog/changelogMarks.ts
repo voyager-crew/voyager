@@ -1,6 +1,7 @@
 /**
- * Turn the `:kbd:` and `:switch:` markers in the rendered changelog into a key
- * cap in the reader's notation and a working setting switch. Built from DOM
+ * Turn the `:kbd:`, `:switch:` and `:choice:` markers in the rendered changelog
+ * into a key cap in the reader's notation, a working plugin switch and a
+ * working control for one of the plugin's settings. Built from DOM
  * nodes, like the platform marks, so the sanitiser's allow-list stays as it is.
  *
  * A marker in inline code or a code block stays as written: that is how a note
@@ -8,9 +9,18 @@
  */
 import { logger } from '@/core/services/LoggerService';
 
+import { createSettingChoice } from './settingChoice';
 import { createSettingSwitch } from './settingSwitch';
 import { SHORTCUT_MARKER, formatShortcut, parseShortcut } from './shortcutMarks';
-import { SWITCH_MARKER, switchTargetFor, switchTargetName } from './switchTargets';
+import {
+  CHOICE_MARKER,
+  SWITCH_MARKER,
+  choiceTargetFor,
+  choiceTargetLabel,
+  choiceTargetOptions,
+  switchTargetFor,
+  switchTargetName,
+} from './switchTargets';
 
 export interface ChangelogMarkOptions {
   /** The reader's system, from the shared `isMac()`. */
@@ -19,9 +29,11 @@ export interface ChangelogMarkOptions {
   readonly lang: string;
   /** What a switch does, in the reader's language (`changelog_switch_hint`). */
   readonly switchHint: string;
+  /** A setting control's hint while its plugin is off; `{name}` is the plugin's name (`changelog_choice_off_hint`). */
+  readonly choiceOffHint: string;
 }
 
-const ANY_MARKER_SOURCE = `${SHORTCUT_MARKER.source}|${SWITCH_MARKER.source}`;
+const ANY_MARKER_SOURCE = `${SHORTCUT_MARKER.source}|${SWITCH_MARKER.source}|${CHOICE_MARKER.source}`;
 const ANY_MARKER = new RegExp(ANY_MARKER_SOURCE, 'g');
 /** Stateless, unlike the global one: `test` on a global regex moves its `lastIndex`. */
 const HAS_MARKER = new RegExp(ANY_MARKER_SOURCE);
@@ -44,7 +56,8 @@ function shortcutNode(doc: Document, spec: string, mac: boolean): Node {
 
 /**
  * Replace every marker under `root` in place. Returns the teardown for the
- * switches' storage listeners; the viewer runs it when it closes.
+ * switches' and setting controls' storage listeners; the viewer runs it when
+ * it closes.
  */
 export function renderChangelogMarks(root: HTMLElement, options: ChangelogMarkOptions): () => void {
   const doc = root.ownerDocument;
@@ -64,6 +77,27 @@ export function renderChangelogMarks(root: HTMLElement, options: ChangelogMarkOp
     return control.element;
   };
 
+  const choiceNode = (id: string, key: string): Node => {
+    const choice = choiceTargetFor(id, key);
+    // Not on the allow-list: never a control, only the marker's words (a test fails such a note).
+    if (!choice) {
+      logger.warn('changelog: choice marker for an unlisted target', { id, key });
+      return doc.createTextNode(`${id} ${key}`);
+    }
+    const name = choiceTargetLabel(choice, options.lang);
+    const control = createSettingChoice(doc, choice, {
+      name,
+      options: choiceTargetOptions(choice, options.lang),
+      offHint: options.choiceOffHint.replace(
+        '{name}',
+        switchTargetName(choice.target, options.lang),
+      ),
+    });
+    if (!control) return doc.createTextNode(name);
+    disposers.push(control.dispose);
+    return control.element;
+  };
+
   const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const pending: Text[] = [];
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
@@ -76,11 +110,13 @@ export function renderChangelogMarks(root: HTMLElement, options: ChangelogMarkOp
     let cursor = 0;
     for (const match of value.matchAll(ANY_MARKER)) {
       if (match.index > cursor) fragment.append(value.slice(cursor, match.index));
-      const [, shortcutSpec, switchId] = match;
+      const [, shortcutSpec, switchId, choiceId, choiceKey] = match;
       fragment.append(
         shortcutSpec !== undefined
           ? shortcutNode(doc, shortcutSpec, options.mac)
-          : switchNode(switchId),
+          : switchId !== undefined
+            ? switchNode(switchId)
+            : choiceNode(choiceId, choiceKey),
       );
       cursor = match.index + match[0].length;
     }

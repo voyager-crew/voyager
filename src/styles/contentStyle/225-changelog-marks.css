@@ -94,3 +94,78 @@
     transition: none;
   }
 }
+
+/* `:choice:<plugin id>:<setting>:` — one of the plugin's settings in the same pill:
+   its label and a native select (a boolean setting reuses the switch above). */
+.gv-changelog-choice {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  margin: 0 2px;
+  vertical-align: middle;
+}
+
+.gv-changelog-choice__field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-block: 1px;
+  padding-inline: 8px 2px;
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7)));
+  border-radius: 999px;
+  background: var(--gv-theme-surface, var(--gv-ui-surface, oklch(0.995 0.002 250)));
+  color: var(--gv-theme-text, var(--gv-ui-text, oklch(0.14 0.004 285)));
+  font: 500 13px/20px var(--gv-ui-font, ui-sans-serif, system-ui, sans-serif);
+}
+
+.gv-changelog-choice__select {
+  box-sizing: border-box;
+  height: 20px;
+  margin: 0;
+  padding-block: 0;
+  padding-inline: 6px;
+  border: 1px solid var(--gv-theme-border, var(--gv-ui-border, oklch(0.92 0.004 250 / 0.7)));
+  border-radius: 999px;
+  background-color: var(--gv-theme-surface, var(--gv-ui-surface, oklch(0.995 0.002 250)));
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+/* The native dropdown list follows the page's scheme, not the OS one. */
+html[data-gv-scheme='light'] .gv-changelog-choice__select {
+  color-scheme: light;
+}
+
+html[data-gv-scheme='dark'] .gv-changelog-choice__select {
+  color-scheme: dark;
+}
+
+.gv-changelog-choice__select:hover:not(:disabled) {
+  background-color: var(--gv-theme-hover, var(--gv-ui-surface-hover, oklch(0.97 0.003 250)));
+}
+
+.gv-changelog-choice__select:focus-visible {
+  outline: 2px solid var(--gv-ui-focus-ring, oklch(0.601 0.1 140));
+  outline-offset: 2px;
+}
+
+.gv-changelog-choice__select:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* While the plugin is off the control waits, and the hint says why. */
+.gv-changelog-choice--off .gv-changelog-choice__field {
+  color: var(--gv-ui-text-muted, oklch(0.5 0.01 285));
+}
+
+.gv-changelog-choice__hint {
+  color: var(--gv-ui-text-muted, oklch(0.5 0.01 285));
+  font: 400 12px/18px var(--gv-ui-font, ui-sans-serif, system-ui, sans-serif);
+}
+
+.gv-changelog-choice__hint[hidden] {
+  display: none;
+}

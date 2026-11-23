@@ -2329,6 +2329,10 @@
     "message": "Voyager의 이 설정을 바로 변경합니다",
     "description": "Tooltip and screen-reader description of a setting switch embedded in the changelog modal"
   },
+  "changelog_choice_off_hint": {
+    "message": "먼저 ‘{name}’ 기능을 켜세요",
+    "description": "Shown beside a plugin setting embedded in the changelog modal while that plugin is off; {name} is the plugin's name"
+  },
   "changelog_rate_chrome": {
     "message": "Voyager가 도움이 되었다면 Chrome 웹 스토어에 평점을 남겨 주세요. 다른 분들이 찾는 데 도움이 됩니다.",
     "description": "Chrome Web Store rating prompt in changelog modal"

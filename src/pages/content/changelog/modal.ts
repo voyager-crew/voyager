@@ -128,6 +128,7 @@ export async function createChangelogModal(
     mac: isMac(),
     lang,
     switchHint: t('changelog_switch_hint', lang),
+    choiceOffHint: t('changelog_choice_off_hint', lang),
   });
   const leadingElement = body.firstElementChild;
   if (leadingElement?.tagName === 'BLOCKQUOTE') {

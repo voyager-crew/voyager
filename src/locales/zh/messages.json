@@ -2329,6 +2329,10 @@
     "message": "立即更改 Voyager 中的这项设置",
     "description": "Tooltip and screen-reader description of a setting switch embedded in the changelog modal"
   },
+  "changelog_choice_off_hint": {
+    "message": "请先开启「{name}」",
+    "description": "Shown beside a plugin setting embedded in the changelog modal while that plugin is off; {name} is the plugin's name"
+  },
   "changelog_rate_chrome": {
     "message": "如果 Voyager 对你有帮助，在 Chrome 应用商店留个评分，可以让更多人找到它。",
     "description": "Chrome Web Store rating prompt in changelog modal"

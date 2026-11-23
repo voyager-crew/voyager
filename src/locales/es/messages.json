@@ -2329,6 +2329,10 @@
     "message": "Cambia este ajuste de Voyager al instante",
     "description": "Tooltip and screen-reader description of a setting switch embedded in the changelog modal"
   },
+  "changelog_choice_off_hint": {
+    "message": "Activa primero {name}",
+    "description": "Shown beside a plugin setting embedded in the changelog modal while that plugin is off; {name} is the plugin's name"
+  },
   "changelog_rate_chrome": {
     "message": "Si Voyager te resulta útil, una valoración en la Chrome Web Store ayuda a que otros lo encuentren.",
     "description": "Chrome Web Store rating prompt in changelog modal"

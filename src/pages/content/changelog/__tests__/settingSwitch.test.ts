@@ -52,7 +52,12 @@ function render(html: string, mac = false) {
   const body = document.createElement('div');
   body.innerHTML = html;
   document.body.appendChild(body);
-  const dispose = renderChangelogMarks(body, { mac, lang: 'zh', switchHint: 'hint' });
+  const dispose = renderChangelogMarks(body, {
+    mac,
+    lang: 'zh',
+    switchHint: 'hint',
+    choiceOffHint: 'off',
+  });
   return { body, dispose };
 }
 

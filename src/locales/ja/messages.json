@@ -2329,6 +2329,10 @@
     "message": "Voyager のこの設定をすぐに切り替えます",
     "description": "Tooltip and screen-reader description of a setting switch embedded in the changelog modal"
   },
+  "changelog_choice_off_hint": {
+    "message": "先に「{name}」をオンにしてください",
+    "description": "Shown beside a plugin setting embedded in the changelog modal while that plugin is off; {name} is the plugin's name"
+  },
   "changelog_rate_chrome": {
     "message": "Voyager がお役に立っているなら、Chrome ウェブストアでの評価がほかの方に見つけてもらうきっかけになります。",
     "description": "Chrome Web Store rating prompt in changelog modal"
