@@ -107,10 +107,10 @@ Reject a candidate that:
 - was chosen mainly because previous releases have not used it
 - feels more clever than useful
 
-Open every locale's file with one blockquoted, italic line, above the first section:
+Open every locale's file with one blockquoted, italic line, above the first section. Attribute it to the work and its year; leave out who says it:
 
 ```markdown
-> _"{the quote}" — {Character}, 《{Work Title}》_
+> _"{the quote}" — 《{Work Title}》 ({Year})_
 
 ### Highlights
 ```
@@ -129,7 +129,7 @@ Before saving it:
 `{VERSION}/en.md`:
 
 ```markdown
-> _"{the quote}" — {Character}, 《{Work Title}》_
+> _"{the quote}" — 《{Work Title}》 ({Year})_
 
 ### Highlights
 
@@ -148,7 +148,7 @@ Before saving it:
 `{VERSION}/zh.md`:
 
 ```markdown
-> _「{引语}」——{角色}，《{作品名}》_
+> _「{引语}」——《{作品名}》（{年份}）_
 
 ### 亮点
 
