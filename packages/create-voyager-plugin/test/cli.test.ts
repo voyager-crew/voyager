@@ -10,6 +10,8 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { renderWriteVoyagerPluginSkillFiles } from '@/features/plugins/local/authoring/authoringDocs';
+import { renderCreatePages } from '@/features/plugins/local/authoring/createPages';
 import { readLocalPluginFiles } from '@/features/plugins/local/localPluginFiles';
 import { validateLocalManifest } from '@/features/plugins/local/validateLocalManifest';
 import type { ManifestIssue } from '@/features/plugins/manifest/validate';
@@ -21,8 +23,10 @@ import { CORPUS, type CorpusCase } from './corpus';
 
 const PACKAGE_DIR = resolve(__dirname, '..');
 const ROOT = resolve(PACKAGE_DIR, '../..');
-const SKILL_DIR = join(ROOT, 'docs/public/skills/write-voyager-plugin');
-const CREATE_DIR = join(ROOT, 'docs/public/create');
+// What the CLI must print: the renderers it bundles, not the committed copies,
+// whose freshness `createPages.test.ts` and `authoringDocs.test.ts` check.
+const SKILL_FILES = renderWriteVoyagerPluginSkillFiles(DEFAULT_ADAPTERS);
+const CREATE_PAGES = renderCreatePages(DEFAULT_ADAPTERS);
 
 let work = '';
 let cli = '';
@@ -166,38 +170,30 @@ describe('create-voyager-plugin bundle', () => {
     for (const specifier of imports) expect(specifier).toMatch(/^node:/);
   });
 
-  it('writes the committed write-voyager-plugin skill folder with --out', () => {
+  it('writes the write-voyager-plugin skill folder with --out', () => {
     const out = join(work, 'skill');
     expect(run('skill', '--out', out).code).toBe(0);
-    const committed = listSkillMarkdown(SKILL_DIR);
-    expect(listSkillMarkdown(out)).toEqual(committed);
-    for (const path of committed) {
-      expect(readFileSync(join(out, path), 'utf8'), path).toBe(
-        readFileSync(join(SKILL_DIR, path), 'utf8'),
-      );
+    expect(listSkillMarkdown(out)).toEqual([...SKILL_FILES.keys()].sort());
+    for (const [path, text] of SKILL_FILES) {
+      expect(readFileSync(join(out, path), 'utf8'), path).toBe(text);
     }
   });
 
-  it('writes the committed chat pages with create-pages --out', () => {
+  it('writes the chat pages with create-pages --out', () => {
     const out = join(work, 'create');
     expect(run('create-pages', '--out', out).code).toBe(0);
-    const committed = listSkillMarkdown(CREATE_DIR);
     // One page per site plus the shared scripted page.
-    expect(committed.length).toBe(DEFAULT_ADAPTERS.length + 1);
-    expect(listSkillMarkdown(out)).toEqual(committed);
-    for (const path of committed) {
-      expect(readFileSync(join(out, path), 'utf8'), path).toBe(
-        readFileSync(join(CREATE_DIR, path), 'utf8'),
-      );
+    expect(CREATE_PAGES.size).toBe(DEFAULT_ADAPTERS.length + 1);
+    expect(listSkillMarkdown(out)).toEqual([...CREATE_PAGES.keys()].sort());
+    for (const [path, text] of CREATE_PAGES) {
+      expect(readFileSync(join(out, path), 'utf8'), path).toBe(text);
     }
   });
 
   it('prints every skill file, SKILL.md first, without --out', () => {
     const result = run('skill');
     expect(result.code).toBe(0);
-    expect(result.stdout.startsWith(readFileSync(join(SKILL_DIR, 'SKILL.md'), 'utf8'))).toBe(true);
-    for (const path of listSkillMarkdown(SKILL_DIR)) {
-      expect(result.stdout).toContain(readFileSync(join(SKILL_DIR, path), 'utf8'));
-    }
+    expect(result.stdout.startsWith(SKILL_FILES.get('SKILL.md')!)).toBe(true);
+    for (const text of SKILL_FILES.values()) expect(result.stdout).toContain(text);
   });
 });

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import type { TranslationKey } from '@/utils/translations';
 
 import { EFFECTIVE_PLUGIN_ENGINE_VERSION } from '../verbs/contracts';
+import { renderCreatePages } from './authoring/createPages';
 import { inlinesCreatePage } from './authoring/inlineCreatePage';
 import { WRITE_PLUGIN_SKILL_URL, createPageFile, createPageUrl } from './authoring/skillLink';
 import { MAX_PLUGIN_REQUEST_CHARS, authoringSites } from './authoringSites';
@@ -105,10 +106,8 @@ describe('creation message', () => {
 });
 
 describe('creation message on a site whose AI cannot open links', () => {
-  const page = readFileSync(
-    join(process.cwd(), 'docs/public/create', createPageFile(gemini.id)),
-    'utf8',
-  );
+  // The page as rendered now; `createPages.test.ts` checks the published copy matches it.
+  const page = renderCreatePages(sites).get(createPageFile(gemini.id))!;
   const request = `${TRICKY_REQUEST} and {page} and {request}`;
 
   it('is Gemini, and only Gemini', () => {

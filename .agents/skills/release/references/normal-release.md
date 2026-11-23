@@ -76,6 +76,8 @@ bun run bump {VERSION}
 - `packages/create-voyager-plugin/package.json` (the plugin CLI follows the extension version)
 - `Voyager/Voyager.xcodeproj/project.pbxproj`
 
+It also regenerates the creation pages and the write-voyager-plugin skill (`skills:build`), which name the Voyager version.
+
 The bump also stamps raw `sinceEngine: 'next'` declarations in primitive
 contracts, their imported data modules, and baselines (including later-added parameters), and `engine:
 ">=next"` in catalog plugin manifests with the version being released, because

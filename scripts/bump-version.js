@@ -96,6 +96,10 @@ async function main() {
       );
     }
 
+    // The chat pages and the write-voyager-plugin skill name the Voyager version.
+    console.log('Regenerating the creation pages and skill...');
+    execSync('bun run skills:build', { stdio: 'inherit' });
+
     console.log('Version bump complete! 🚀');
 
     if (shouldFormat) {
