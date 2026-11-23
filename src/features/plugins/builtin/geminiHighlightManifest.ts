@@ -1,6 +1,12 @@
 import type { PluginManifest } from '../types';
 
-/** Fixed-id saved highlights and annotation UI, controlled by the existing opt-in setting. */
+/**
+ * Fixed-id saved highlights and annotation UI, controlled by the existing
+ * opt-in setting. `timelineMarkers` (whether saved highlights also mark the
+ * timeline) is filled from `gvHighlightTimelineMarkersEnabled` and worded by
+ * the extension's own messages, so the popup row and the in-page panel both
+ * offer it from this one declaration.
+ */
 export const GEMINI_HIGHLIGHT_MANIFEST: PluginManifest = {
   id: 'voyager.gemini-highlight',
   name: 'Gemini · Highlights',
@@ -55,5 +61,17 @@ export const GEMINI_HIGHLIGHT_MANIFEST: PluginManifest = {
   engine: '>=1.2.0',
   tier: 'declarative',
   matches: ['https://gemini.google.com/*'],
-  contributes: {},
+  contributes: {
+    settings: {
+      timelineMarkers: {
+        type: 'boolean',
+        label: 'Show highlights on timeline',
+        default: true,
+        messageKeys: {
+          label: 'showHighlightTimelineMarkers',
+          hint: 'showHighlightTimelineMarkersHint',
+        },
+      },
+    },
+  },
 };

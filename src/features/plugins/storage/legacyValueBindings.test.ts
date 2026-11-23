@@ -175,6 +175,7 @@ describe('legacy value bindings', () => {
         StorageKeys.USAGE_STATUS_DISPLAY,
         StorageKeys.FORMULA_COPY_FORMAT,
         StorageKeys.FORMULA_COPY_SELECTION_LATEX,
+        StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED,
       ].sort(),
     );
   });

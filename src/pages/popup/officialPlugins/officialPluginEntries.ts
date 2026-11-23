@@ -262,7 +262,6 @@ export const OFFICIAL_PLUGIN_ENTRIES: readonly OfficialPluginEntry[] = [
       'showHighlightTimelineMarkersHint',
     ],
     searchAliases: ['highlight marker color 高亮 标记 颜色'],
-    panel: 'highlight',
   },
   {
     id: OFFICIAL_PLUGIN_IDS.geminiCodeCollapse,

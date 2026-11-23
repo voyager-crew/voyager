@@ -260,6 +260,31 @@ describe('Highlight through its registered official plugin', () => {
     expect(status).toBe('mounted');
   });
 
+  it('its timeline-markers setting hides and shows the ticks in place, keeping the marks', async () => {
+    harness.storage.sync.set(StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED, false);
+    await seed();
+    await start(true);
+    const shown = mark();
+    expect(shown?.textContent).toBe('target');
+    expect(ticks()).toHaveLength(0);
+    const setMarkers = (value: unknown) => {
+      harness.storage.sync.set(StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED, value);
+      harness.emitStorageChange(
+        { [StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED]: { newValue: value } },
+        'sync',
+      );
+    };
+    setMarkers(true);
+    await flush();
+    expect(ticks()).toHaveLength(1);
+    // Applied without a remount: the same mark element stays on the page.
+    expect(mark()).toBe(shown);
+    setMarkers(false);
+    await flush();
+    expect(ticks()).toHaveLength(0);
+    expect(mark()).toBe(shown);
+  });
+
   it('turning Highlight off mid-init attaches nothing when the account lookup arrives late', async () => {
     await seed();
     const release = holdScope();
@@ -282,7 +307,7 @@ describe('Highlight through its registered official plugin', () => {
     await start(false);
     const release = holdScope();
     const scope = new PluginScope();
-    activateGeminiHighlight(scope);
+    activateGeminiHighlight(scope, {});
     let finish!: () => void;
     scope.effect(() => () => new Promise<void>((resolve) => (finish = resolve)));
     selectAnswer();

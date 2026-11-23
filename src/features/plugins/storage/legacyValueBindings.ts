@@ -176,6 +176,15 @@ export const LEGACY_VALUE_BINDINGS: LegacyValueBindingTable = {
   ],
   [OFFICIAL_PLUGIN_IDS.geminiPalette]: [paletteBinding()],
   [OFFICIAL_PLUGIN_IDS.aistudioPalette]: [paletteBinding()],
+  // Saved highlights also mark the timeline unless stored off; removal reads on.
+  [OFFICIAL_PLUGIN_IDS.geminiHighlight]: [
+    {
+      settingKey: 'timelineMarkers',
+      legacyKey: StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED,
+      read: (stored) => stored !== false,
+      acceptsLiveChange: always,
+    },
+  ],
   [OFFICIAL_PLUGIN_IDS.geminiFormulaCopy]: formulaCopyBindings(),
   [OFFICIAL_PLUGIN_IDS.aistudioFormulaCopy]: formulaCopyBindings(),
   // Whether the usage bars count used or remaining; removal reads as the default, used.

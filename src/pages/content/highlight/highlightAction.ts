@@ -14,7 +14,11 @@ import {
 } from '../selectionToolbar/host';
 import { HighlightManager } from './manager';
 
-/** Sub-settings the caller already read; omitted, the action reads them itself. */
+/**
+ * Sub-settings the caller already read; omitted, the action reads the colors
+ * itself. Timeline markers are the plugin's `timelineMarkers` setting: on unless
+ * given off here, then changed through `setHighlightTimelineMarkersEnabled`.
+ */
 export interface HighlightActionOptions {
   readonly defaultColor?: HighlightColor;
   readonly colorPalette?: readonly HighlightColor[];
@@ -24,8 +28,19 @@ export interface HighlightActionOptions {
 const SUB_SETTING_KEYS = [
   StorageKeys.HIGHLIGHT_DEFAULT_COLOR,
   StorageKeys.HIGHLIGHT_COLOR_PALETTE,
-  StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED,
 ] as const;
+
+/** The running action's marker switch; null while none runs. */
+let applyTimelineMarkers: ((enabled: boolean) => void) | null = null;
+
+/**
+ * Show or hide saved highlights on the timeline for the running action, in
+ * place. The plugin host calls this when the highlight plugin's
+ * `timelineMarkers` setting changes; with no action running it does nothing.
+ */
+export function setHighlightTimelineMarkersEnabled(enabled: boolean): void {
+  applyTimelineMarkers?.(enabled);
+}
 
 /**
  * Run saved highlights and the toolbar's Highlight action. Stop is synchronous: it unregisters the
@@ -46,6 +61,8 @@ export function startHighlightAction(options?: HighlightActionOptions): StopNati
   );
   manager.setColorPalette(picker.colors);
   manager.setTimelineMarkersEnabled(options?.timelineMarkersEnabled !== false);
+  const setMarkers = (enabled: boolean): void => manager.setTimelineMarkersEnabled(enabled);
+  applyTimelineMarkers = setMarkers;
   let stopped = false;
   // Per key: a live change to one sub-setting must not discard the initial read of the others.
   const changedLive = new Set<string>();
@@ -57,8 +74,6 @@ export function startHighlightAction(options?: HighlightActionOptions): StopNati
     if (areaName !== 'sync') return;
     for (const key of SUB_SETTING_KEYS) if (key in changes) changedLive.add(key);
     picker.applyStorageChanges(changes);
-    const markersChange = changes[StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED];
-    if (markersChange) manager.setTimelineMarkersEnabled(markersChange.newValue !== false);
   };
 
   async function readSubSettings(): Promise<void> {
@@ -67,7 +82,6 @@ export function startHighlightAction(options?: HighlightActionOptions): StopNati
       stored = await browser.storage.sync.get({
         [StorageKeys.HIGHLIGHT_DEFAULT_COLOR]: 'yellow',
         [StorageKeys.HIGHLIGHT_COLOR_PALETTE]: null,
-        [StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED]: true,
       });
     } catch {
       return;
@@ -88,11 +102,6 @@ export function startHighlightAction(options?: HighlightActionOptions): StopNati
       };
     }
     picker.applyStorageChanges(initial);
-    if (fresh(StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED)) {
-      manager.setTimelineMarkersEnabled(
-        stored[StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED] !== false,
-      );
-    }
   }
 
   browser.storage.onChanged.addListener(onStorageChanged);
@@ -112,6 +121,7 @@ export function startHighlightAction(options?: HighlightActionOptions): StopNati
   return () => {
     if (stopped) return;
     stopped = true;
+    if (applyTimelineMarkers === setMarkers) applyTimelineMarkers = null;
     browser.storage.onChanged.removeListener(onStorageChanged);
     unregister();
     manager.destroy();

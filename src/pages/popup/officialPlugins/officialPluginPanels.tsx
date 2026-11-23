@@ -1,6 +1,5 @@
 import React from 'react';
 
-import { Switch } from '@/components/ui/switch';
 import { StorageKeys } from '@/core/types/common';
 import { resolveVisualEffect } from '@/core/utils/visualEffectValues';
 import type { LegacySettingSnapshot } from '@/features/plugins/storage/legacySettingBindings';
@@ -35,34 +34,6 @@ function FormulaCopyPanel({ t }: OfficialPanelProps) {
   );
 }
 
-/** Whether saved highlights also mark the timeline; the highlights themselves stay. */
-function HighlightPanel({ values, write, idPrefix, t }: OfficialPanelProps) {
-  // On unless stored off, as the highlight runtime reads it.
-  const markers = values[StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED] !== false;
-  const hintId = `${idPrefix}-markers-hint`;
-  return (
-    <div className="flex items-start justify-between gap-3">
-      <span className="min-w-0 flex-1">
-        <span className="text-foreground/80 block text-xs">
-          {t('showHighlightTimelineMarkers')}
-        </span>
-        <span id={hintId} className="text-muted-foreground mt-0.5 block text-[11px] leading-snug">
-          {t('showHighlightTimelineMarkersHint')}
-        </span>
-      </span>
-      <Switch
-        size="sm"
-        checked={markers}
-        aria-label={t('showHighlightTimelineMarkers')}
-        aria-describedby={hintId}
-        onChange={(event) =>
-          write({ [StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED]: event.target.checked })
-        }
-      />
-    </div>
-  );
-}
-
 /**
  * The effect to show while the row is on (Off is its switch). Picking writes the
  * pair the retired Visual Effects card wrote, clearing the legacy snow flag.
@@ -88,7 +59,6 @@ export const OFFICIAL_PANELS: Readonly<
   Record<OfficialPanelId, (props: OfficialPanelProps) => React.ReactElement>
 > = {
   formulaCopy: FormulaCopyPanel,
-  highlight: HighlightPanel,
   contextSync: ContextSyncPanel,
   visualEffect: VisualEffectPanel,
   timeline: TimelinePanel,

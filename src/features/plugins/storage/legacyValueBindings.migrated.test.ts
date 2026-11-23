@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import { NATIVE_HANDLER_BINDINGS } from '@/pages/content/pluginNativeRegistration';
 
 import { BUILTIN_PLUGINS } from '../builtin';
 import { OFFICIAL_PLUGIN_IDS } from '../sites/featureOwners';
@@ -111,5 +112,35 @@ describe('formula copy options as settings', () => {
 
   it('declares both options once in each manifest, localized everywhere', async () => {
     await expectDeclaredOnceAndLocalized(FORMULA_IDS);
+  });
+});
+
+describe('highlight timeline markers as a setting', () => {
+  const id = OFFICIAL_PLUGIN_IDS.geminiHighlight;
+
+  it('reads a stored switch as the highlight runtime did: on unless stored false', () => {
+    for (const [stored, on] of [
+      [undefined, true],
+      [true, true],
+      [false, false],
+      ['false', true],
+      [0, true],
+    ] as const) {
+      expect(
+        deriveLegacyValueSettings(id, { [StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED]: stored }),
+      ).toEqual({ timelineMarkers: on });
+    }
+    expect(legacyValueWrite(id, 'timelineMarkers', false)).toEqual({
+      [StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED]: false,
+    });
+    // The runtime read a removed key as on, so removal reaches it.
+    expect(acceptsLegacyLiveChange(StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED, undefined)).toBe(
+      true,
+    );
+  });
+
+  it('declares it once, worded in every locale, and takes a change in place', async () => {
+    await expectDeclaredOnceAndLocalized([id]);
+    expect(NATIVE_HANDLER_BINDINGS[id]?.updateSettings).toBeTypeOf('function');
   });
 });

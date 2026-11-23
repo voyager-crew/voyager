@@ -107,12 +107,7 @@ export interface OfficialPluginSlider {
   readonly toDisplay?: (value: number) => number;
 }
 
-export type OfficialPanelId =
-  | 'formulaCopy'
-  | 'highlight'
-  | 'contextSync'
-  | 'visualEffect'
-  | 'timeline';
+export type OfficialPanelId = 'formulaCopy' | 'contextSync' | 'visualEffect' | 'timeline';
 export type OfficialControlId = 'responseNotification';
 
 /**
@@ -122,7 +117,6 @@ export type OfficialControlId = 'responseNotification';
  */
 export const OFFICIAL_PANEL_KEYS: Readonly<Record<OfficialPanelId, readonly string[]>> = {
   formulaCopy: [],
-  highlight: [StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED],
   contextSync: [StorageKeys.CONTEXT_SYNC_PORT],
   visualEffect: [StorageKeys.GV_VISUAL_EFFECT, StorageKeys.GV_SNOW_EFFECT],
   timeline: GEMINI_TIMELINE_OPTION_KEYS,

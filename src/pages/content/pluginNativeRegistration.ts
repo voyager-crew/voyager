@@ -38,7 +38,7 @@ import {
   activateGeminiGemsSidebar,
   updateGeminiGemsSidebarSettings,
 } from './gemsSidebar/pluginHandler';
-import { activateGeminiHighlight } from './highlight/pluginHandler';
+import { activateGeminiHighlight, updateGeminiHighlightSettings } from './highlight/pluginHandler';
 import {
   activateGeminiInputCollapse,
   updateGeminiInputCollapseSettings,
@@ -154,6 +154,7 @@ export const NATIVE_HANDLER_BINDINGS: Readonly<Record<string, NativeHandler>> = 
   },
   'voyager.gemini-highlight': {
     activate: activateGeminiHighlight,
+    updateSettings: updateGeminiHighlightSettings,
   },
   'voyager.gemini-prevent-auto-scroll': {
     activate: activateGeminiPreventAutoScroll,

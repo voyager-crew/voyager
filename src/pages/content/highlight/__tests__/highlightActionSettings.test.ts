@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StorageKeys } from '@/core/types/common';
 
 import { startSelectionToolbarHost } from '../../selectionToolbar/host';
-import { startHighlightAction } from '../highlightAction';
+import { setHighlightTimelineMarkersEnabled, startHighlightAction } from '../highlightAction';
 import { HighlightManager } from '../manager';
 
 const RECT = { top: 200, bottom: 210, left: 100, right: 110, width: 10, height: 10 };
@@ -67,60 +67,69 @@ describe('highlight action sub-settings', () => {
     document.body.replaceChildren();
   });
 
-  it.each([false, true])(
-    'startup and a later slot edit preserve a palette without yellow and a non-first default (live markers: %s)',
-    async (liveMarkers) => {
-      let answer: () => void = () => {};
-      // The polyfill answers `browser.storage` from the callback chrome is given.
-      vi.mocked(chrome.storage.sync.get).mockImplementationOnce(((
-        _keys: unknown,
-        callback: (items: Record<string, unknown>) => void,
-      ) => {
-        answer = () =>
-          callback({
-            [StorageKeys.HIGHLIGHT_DEFAULT_COLOR]: 'pink',
-            [StorageKeys.HIGHLIGHT_COLOR_PALETTE]: SAVED_PALETTE,
-            [StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED]: true,
-          });
-      }) as never);
-      const setMarkers = vi.spyOn(HighlightManager.prototype, 'setTimelineMarkersEnabled');
-      const createFromRange = vi
-        .spyOn(HighlightManager.prototype, 'createFromRange')
-        .mockResolvedValue(true);
-      stops.push(startSelectionToolbarHost());
-      stops.unshift(startHighlightAction());
-
-      if (liveMarkers)
-        emitStorageChange({
-          [StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED]: { newValue: false },
+  it('startup and a later slot edit preserve a palette without yellow and a non-first default', async () => {
+    let answer: () => void = () => {};
+    // The polyfill answers `browser.storage` from the callback chrome is given.
+    vi.mocked(chrome.storage.sync.get).mockImplementationOnce(((
+      _keys: unknown,
+      callback: (items: Record<string, unknown>) => void,
+    ) => {
+      answer = () =>
+        callback({
+          [StorageKeys.HIGHLIGHT_DEFAULT_COLOR]: 'pink',
+          [StorageKeys.HIGHLIGHT_COLOR_PALETTE]: SAVED_PALETTE,
         });
-      answer();
-      await flushPromises();
+    }) as never);
+    const createFromRange = vi
+      .spyOn(HighlightManager.prototype, 'createFromRange')
+      .mockResolvedValue(true);
+    stops.push(startSelectionToolbarHost());
+    stops.unshift(startHighlightAction());
 
-      // The live switch is newer than the read; the colors it did not touch come from the read.
-      expect(setMarkers).toHaveBeenLastCalledWith(!liveMarkers);
-      selectAnswer();
-      const slots = [...document.querySelectorAll<HTMLElement>('[data-highlight-slot]')];
-      expect(slots.map((slot) => slot.dataset.highlightColor)).toEqual(SAVED_PALETTE);
-      expect(
-        document.querySelector<HTMLElement>('.gv-highlight-color-option[aria-pressed="true"]')
-          ?.dataset.highlightColor,
-      ).toBe('pink');
-      document.querySelector<HTMLButtonElement>('[data-highlight-slot="2"]')!.click();
-      const input = document.querySelector<HTMLInputElement>('.gv-highlight-custom-color')!;
-      input.value = '#987654';
-      input.dispatchEvent(new Event('change'));
-      await flushPromises();
-      expect(chrome.storage.sync.set).toHaveBeenCalledWith(
-        expect.objectContaining({
-          [StorageKeys.HIGHLIGHT_COLOR_PALETTE]: ['#abcdef', 'green', '#987654', 'pink', '#c084fc'],
-        }),
-        expect.any(Function),
-      );
-      document.querySelector<HTMLButtonElement>('[data-highlight-slot="3"]')!.click();
-      document.querySelector<HTMLButtonElement>('.gv-highlight-action')!.click();
-      await flushPromises();
-      expect(createFromRange).toHaveBeenCalledWith(expect.any(Range), 'pink');
-    },
-  );
+    answer();
+    await flushPromises();
+
+    selectAnswer();
+    const slots = [...document.querySelectorAll<HTMLElement>('[data-highlight-slot]')];
+    expect(slots.map((slot) => slot.dataset.highlightColor)).toEqual(SAVED_PALETTE);
+    expect(
+      document.querySelector<HTMLElement>('.gv-highlight-color-option[aria-pressed="true"]')
+        ?.dataset.highlightColor,
+    ).toBe('pink');
+    document.querySelector<HTMLButtonElement>('[data-highlight-slot="2"]')!.click();
+    const input = document.querySelector<HTMLInputElement>('.gv-highlight-custom-color')!;
+    input.value = '#987654';
+    input.dispatchEvent(new Event('change'));
+    await flushPromises();
+    expect(chrome.storage.sync.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        [StorageKeys.HIGHLIGHT_COLOR_PALETTE]: ['#abcdef', 'green', '#987654', 'pink', '#c084fc'],
+      }),
+      expect.any(Function),
+    );
+    document.querySelector<HTMLButtonElement>('[data-highlight-slot="3"]')!.click();
+    document.querySelector<HTMLButtonElement>('.gv-highlight-action')!.click();
+    await flushPromises();
+    expect(createFromRange).toHaveBeenCalledWith(expect.any(Range), 'pink');
+  });
+
+  it('shows timeline markers from the plugin setting alone, not from the stored key', async () => {
+    const setMarkers = vi.spyOn(HighlightManager.prototype, 'setTimelineMarkersEnabled');
+    stops.push(startSelectionToolbarHost());
+    const stop = startHighlightAction();
+    stops.unshift(stop);
+    await flushPromises();
+    expect(setMarkers).toHaveBeenLastCalledWith(true);
+
+    setHighlightTimelineMarkersEnabled(false);
+    expect(setMarkers).toHaveBeenLastCalledWith(false);
+    // The settings path is the one source: the key changing in storage does not toggle them.
+    setMarkers.mockClear();
+    emitStorageChange({ [StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED]: { newValue: true } });
+    expect(setMarkers).not.toHaveBeenCalled();
+
+    stop();
+    setHighlightTimelineMarkersEnabled(true);
+    expect(setMarkers).not.toHaveBeenCalled();
+  });
 });

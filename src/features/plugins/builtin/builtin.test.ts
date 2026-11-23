@@ -330,7 +330,6 @@ describe('BUILTIN_PLUGINS', () => {
     ['default model', 'voyager.gemini-default-model'],
     ['fork', 'voyager.gemini-fork'],
     ['quote reply', 'voyager.gemini-quote-reply'],
-    ['highlight', 'voyager.gemini-highlight'],
     ['prevent auto-scroll', 'voyager.gemini-prevent-auto-scroll'],
     ['response notification', 'voyager.gemini-response-notification'],
     ['timeline', 'voyager.gemini-timeline'],
