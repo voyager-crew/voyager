@@ -129,14 +129,20 @@ export function findMountedTurnItem(root: ParentNode, turnKey: string): HTMLElem
 /**
  * The box sized to the whole loaded list, or null when the item is not in one.
  * The item is mounted at its place in it, so the box shows where unmounted
- * items lie.
+ * items lie. It is the outermost ancestor below the list that draws a box:
+ * ChatGPT wraps that box in a `display: contents` element (measured live,
+ * November 2026), which measures 0×0 at the viewport origin (#1071).
  */
 export function findThreadExtent(item: Element): HTMLElement | null {
   const list = item.parentElement?.closest(chatgptThreadListSelector(item));
   if (!list) return null;
-  let node: Element | null = item.parentElement;
-  while (node && node.parentElement !== list) node = node.parentElement;
-  return node instanceof HTMLElement ? node : null;
+  let extent: HTMLElement | null = null;
+  for (let node = item.parentElement; node && node !== list; node = node.parentElement) {
+    if (node instanceof HTMLElement && getComputedStyle(node).display !== 'contents') {
+      extent = node;
+    }
+  }
+  return extent;
 }
 
 function hashText(text: string): string {

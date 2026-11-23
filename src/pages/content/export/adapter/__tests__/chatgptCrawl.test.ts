@@ -136,6 +136,25 @@ describe('crawlChatGptThread', () => {
     expect(messages.map((message) => message.id)).toEqual(ids(turns));
   });
 
+  it('measures the list box through the display: contents wrapper ChatGPT puts around it', async () => {
+    // A short thread, so nothing waits on older history: the wrapper alone failed it (#1071).
+    const turns = makeTurns(4, 300);
+    mountThreadFixture({ turns, contentsWrapper: true });
+
+    const messages = await crawlChatGptThread({ extractor, timing: FAST });
+
+    expect(messages.map((message) => message.id)).toEqual(ids(turns));
+  });
+
+  it('reads a thread ChatGPT keeps pulling back to its newest turn', async () => {
+    const turns = makeTurns(8, 600);
+    mountThreadFixture({ turns, pinnedToEnd: true });
+
+    const messages = await crawlChatGptThread({ extractor, timing: FAST });
+
+    expect(messages.map((message) => message.id)).toEqual(ids(turns));
+  });
+
   it('gives a prompt without a reply only a user message', async () => {
     const turns: FixtureTurn[] = [
       ...makeTurns(2),

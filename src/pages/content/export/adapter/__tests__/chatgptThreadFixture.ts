@@ -38,6 +38,16 @@ export interface ThreadFixtureOptions {
    * shows only during a request.
    */
   readonly idleSpinner?: boolean;
+  /**
+   * Wrap the list box in a `display: contents` element, as ChatGPT does since
+   * November 2026; it measures 0×0 at the viewport origin.
+   */
+  readonly contentsWrapper?: boolean;
+  /**
+   * Pin the thread to its newest turn, as ChatGPT does since November 2026: a
+   * scripted scroll away from the end is pulled back until a wheel moves up.
+   */
+  readonly pinnedToEnd?: boolean;
   /** Delay before the list re-renders after a scroll; Infinity freezes it. */
   readonly renderDelayMs?: number;
   /**
@@ -132,6 +142,7 @@ export function mountThreadFixture(options: ThreadFixtureOptions): ThreadFixture
   let loadedFrom = Math.max(0, all.length - (options.initiallyLoaded ?? all.length));
   let scrollTop = 0;
   let overshootsLeft = options.overshootWrites ?? Infinity;
+  let pinned = options.pinnedToEnd ?? false;
   let historyTimer: number | null = null;
   let requesting = false;
   let renderTimer: number | null = null;
@@ -157,7 +168,15 @@ export function mountThreadFixture(options: ThreadFixtureOptions): ThreadFixture
   const outer = document.createElement('div');
   const list = document.createElement('div');
   outer.appendChild(list);
-  target.append(spinner, outer);
+  if (options.contentsWrapper) {
+    const contents = document.createElement('div');
+    contents.style.display = 'contents';
+    contents.getBoundingClientRect = () => ({ top: 0, height: 0 }) as DOMRect;
+    contents.appendChild(outer);
+    target.append(spinner, contents);
+  } else {
+    target.append(spinner, outer);
+  }
   scroller.appendChild(target);
   // A live region elsewhere in main, as ChatGPT renders after the thread.
   const liveRegion = document.createElement('span');
@@ -183,7 +202,7 @@ export function mountThreadFixture(options: ThreadFixtureOptions): ThreadFixture
 
   function render(): void {
     if (loadedFrom === 0 || !(idleSpinner || requesting)) spinner.remove();
-    else if (!spinner.isConnected) target.insertBefore(spinner, outer);
+    else if (!spinner.isConnected) target.prepend(spinner);
     const view = offset();
     const visible = new Set<string>();
     let top = room();
@@ -249,8 +268,18 @@ export function mountThreadFixture(options: ThreadFixtureOptions): ThreadFixture
         shifted += options.scrollOvershoot;
       }
       scrollTop = Math.min(0, Math.max(-range(), shifted));
+      if (scrollTop === 0 && options.pinnedToEnd) pinned = true;
+      if (pinned && scrollTop < 0) {
+        window.setTimeout(() => {
+          scrollTop = 0;
+          render();
+        }, 0);
+      }
       scheduleRender();
     },
+  });
+  scroller.addEventListener('wheel', (event) => {
+    if (event.deltaY < 0) pinned = false;
   });
   Object.defineProperty(scroller, 'scrollHeight', {
     configurable: true,

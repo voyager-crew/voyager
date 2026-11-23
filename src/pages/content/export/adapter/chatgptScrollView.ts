@@ -54,6 +54,14 @@ function elementScrollView(container: HTMLElement): ScrollView {
     viewportHeight: () => container.clientHeight,
     scrollTo(next) {
       const target = clamp(next, range());
+      // ChatGPT pins the thread to its newest turn and pulls a scripted scroll
+      // back down until a wheel moves it up (measured live, November 2026;
+      // #1071). A scripted wheel releases the pin and scrolls nothing itself.
+      if (target < offset()) {
+        container.dispatchEvent(
+          new WheelEvent('wheel', { deltaY: -1, bubbles: true, cancelable: true }),
+        );
+      }
       container.scrollTop = reverse ? target - range() : target;
     },
     offsetOf(element) {
