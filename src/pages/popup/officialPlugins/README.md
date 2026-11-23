@@ -121,8 +121,11 @@ When an external restore and an unsettled local write collide, the latest snapsh
 | A switch that is not a plain write (a permission flow)                                                     | `control`; the popup supplies it                                                                                  | Response notification                                                                     |
 
 A manifest setting reaches every surface: the popup row, the options page and the in-page Voyager
-panel (`src/pages/panel/features/featureRows.ts`, a bound `select` as a chip). A `panel` renders in
-the popup and options page only, never in the in-page panel. Highlight markers and Timeline predate
+panel. The in-page row shows the first slider and the first bound `select` (as a chip) inline, and
+every other bound setting in an options area its sliders button opens under the row: a boolean as a
+switch, a `select` as a chip, a number with a `sliders` entry as a slider
+(`src/pages/panel/features/rowOptions.ts`). A `panel` renders in the popup and options page only,
+never in the in-page panel. Highlight markers and Timeline predate
 this rule: their runtimes read their keys live without `updateSettings`, so they stayed panels and
 the in-page panel does not offer them.
 

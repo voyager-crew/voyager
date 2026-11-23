@@ -289,6 +289,50 @@ label.rn {
   opacity: 0.45;
 }
 
+/* ---------- a row's other settings ---------- */
+/* The button that opens them sits before the switch, held down while they show. */
+.ib.more[aria-expanded='true'] {
+  background: var(--chip);
+  color: var(--ink);
+}
+
+.row.off .ib.more {
+  opacity: 0.45;
+}
+
+/* They open under the row, in the card, aligned with the names: one line each. */
+.opts {
+  display: flex;
+  flex-direction: column;
+  padding-block: 0 8px;
+  padding-inline: 44px 12px;
+}
+
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 38px;
+}
+
+.opt-l {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+.opts + .row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  inset-inline: 44px 0;
+  height: 1px;
+  background: var(--hair);
+}
+
 .sw {
   flex: none;
   position: relative;

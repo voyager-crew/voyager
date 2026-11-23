@@ -24,6 +24,14 @@ import type { OfficialPluginRow } from '@/pages/popup/officialPlugins/useOfficia
 import type { TranslationKey } from '@/utils/translations';
 
 import { fillPlaceholders } from '../panelText';
+import {
+  type DeclaredSettingsInput,
+  type PanelOption,
+  declaredChip,
+  declaredOptions,
+  presentedSlider,
+  selectChip,
+} from './rowOptions';
 import { CREATIONS_GROUP, rowGroup, rowIcon } from './rowPresentation';
 
 export { CREATIONS_GROUP };
@@ -70,6 +78,8 @@ export interface PanelRow {
   readonly toggle: (next: boolean) => void;
   readonly slider?: PanelSlider;
   readonly chip?: PanelChip;
+  /** The declared settings the slider and chip leave out, shown under the row on request. */
+  readonly options?: { readonly label: string; readonly items: readonly PanelOption[] };
   readonly keyCap?: { readonly label: string; readonly hint: string };
   /** The switch's element id when something outside the panel looks for it. */
   readonly switchId?: string;
@@ -114,7 +124,7 @@ const lower = (texts: readonly (string | undefined)[]) =>
 /** A popup slider spanning more than this needs a precise input, which full settings keeps. */
 const PRECISE_NUMBER_MIN_RANGE = 1000;
 
-/** An official Gemini / AI Studio row: the popup's list row, its first slider and bound choice. */
+/** An official Gemini / AI Studio row: the popup's list row, its first slider and bound choice, then its other settings. */
 export function officialPanelRow(
   row: OfficialPluginRow,
   texts: RowTexts,
@@ -140,43 +150,32 @@ export function officialPanelRow(
           card: t(requirement.card),
         })
     : null;
-  const fields = manifest.contributes.settings ?? {};
-  let slider: PanelSlider | undefined;
-  for (const [key, presentation] of Object.entries(entry.sliders ?? {})) {
-    const field = fields[key];
-    if (field?.type !== 'number') continue;
-    const stored = Number(settings[key] ?? field.default);
-    slider = {
-      key,
-      label: presentation.label
-        ? t(presentation.label)
-        : pickLocalizedSetting(manifest, key, field, language).label,
-      min: field.min ?? 0,
-      max: field.max ?? 100,
-      step: presentation.step,
-      value: presentation.toDisplay ? presentation.toDisplay(stored) : stored,
-      format: (value) =>
-        value === 0 && presentation.zeroLabel
-          ? t(presentation.zeroLabel)
-          : `${value}${presentation.unit}`,
-      commit: (value) => write.setSettings(manifest.id, { [key]: value }),
-      fontSizeResetLabel: isFontSizeSetting(manifest, key)
-        ? `${t('themeColorReset')} (100%)`
-        : undefined,
-    };
-    break;
-  }
-  // A choice reaches the page only through a value binding; others stay in full settings.
-  const choice = Object.entries(fields).find(
-    ([key, field]) =>
-      field.type === 'select' && legacyValueWrite(manifest.id, key, field.default) !== null,
+  const declared: DeclaredSettingsInput = {
+    plugin: manifest,
+    values: settings,
+    language,
+    t,
+    // A setting reaches the page only through a value binding; others stay in full settings.
+    offers: (key) => {
+      const field = manifest.contributes.settings?.[key];
+      return field !== undefined && legacyValueWrite(manifest.id, key, field.default) !== null;
+    },
+    sliders: entry.sliders,
+    save: (values) => write.setSettings(manifest.id, values),
+  };
+  const sliderKey = Object.keys(entry.sliders ?? {}).find((key) => declared.offers(key));
+  const slider =
+    sliderKey && entry.sliders
+      ? presentedSlider(declared, sliderKey, entry.sliders[sliderKey])
+      : undefined;
+  const chipKey = Object.entries(manifest.contributes.settings ?? {}).find(
+    ([key, field]) => field.type === 'select' && declared.offers(key),
+  )?.[0];
+  const chip = chipKey ? declaredChip(declared, chipKey) : undefined;
+  const options = declaredOptions(
+    declared,
+    new Set([slider?.key, chip?.key].filter((key): key is string => key !== undefined)),
   );
-  const chip = choice
-    ? selectChip(manifest, choice[0], String(settings[choice[0]] ?? choice[1].default), language, {
-        unavailable: new Set<string>(),
-        pick: (value) => write.setSettings(manifest.id, { [choice[0]]: value }),
-      })
-    : undefined;
   const name = displayName(pickLocalized(manifest, 'name', language));
   return {
     id: manifest.id,
@@ -195,25 +194,11 @@ export function officialPanelRow(
     toggle: (next) => write.setEnabled(manifest.id, next),
     slider,
     chip,
+    options:
+      options.length > 0
+        ? { label: fillPlaceholders(t('pluginRowOptionsFor'), { name }), items: options }
+        : undefined,
   };
-}
-
-function selectChip(
-  plugin: PluginManifest,
-  key: string,
-  value: string,
-  language: string,
-  { unavailable, pick }: { unavailable: ReadonlySet<string>; pick: (value: string) => void },
-): PanelChip | undefined {
-  const field = plugin.contributes.settings?.[key];
-  if (!field) return undefined;
-  const localized = pickLocalizedSetting(plugin, key, field, language);
-  const options = (localized.options ?? []).map((option) => ({
-    value: option.value,
-    label: option.label,
-    disabled: unavailable.has(option.value),
-  }));
-  return options.length > 1 ? { key, label: localized.label, value, options, pick } : undefined;
 }
 
 export interface CatalogRowInputs {
@@ -255,10 +240,17 @@ export function catalogPanelRow(plugin: PluginManifest, inputs: CatalogRowInputs
   };
   const select = fields.find(([, field]) => field.type === 'select');
   const chip = select
-    ? selectChip(plugin, select[0], String(resolved[select[0]]), language, {
-        unavailable: unavailableChoices(plugin, resolved, select[0]),
-        pick: (value) => save(select[0], value),
-      })
+    ? selectChip(
+        plugin,
+        select[0],
+        String(resolved[select[0]]),
+        pickLocalizedSetting(plugin, select[0], select[1], language).label,
+        language,
+        {
+          unavailable: unavailableChoices(plugin, resolved, select[0]),
+          pick: (value) => save(select[0], value),
+        },
+      )
     : undefined;
   const name = displayName(pickLocalized(plugin, 'name', language));
   const note = pluginIncompatibleNote(status, plugin, inputs.siteLabel, t);
