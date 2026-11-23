@@ -206,6 +206,38 @@ describe('Gemini timeline through its registered official plugin', () => {
     expect(bytes()).toBe(saved);
   });
 
+  it('applies a changed option to the running rail in place, from its sync key or the plugin settings', async () => {
+    await start();
+    await settle();
+    const bar = document.querySelector<HTMLElement>(SURFACE.bar)!;
+    const label = document.querySelector('.gv-timestamp');
+    ext.external('sync', {
+      [StorageKeys.TIMELINE_STYLE]: 'compact',
+      [StorageKeys.TIMELINE_HIDE_CONTAINER]: true,
+    });
+    await settle();
+    expect(document.querySelector(SURFACE.bar)).toBe(bar);
+    expect(bar.classList).toContain('timeline-style-compact');
+    expect(bar.classList).toContain('timeline-no-container');
+
+    // The settings feed is the rail's only reading of these knobs: a pushed value applies as is.
+    const { NATIVE_HANDLER_BINDINGS } = await import('../pluginNativeRegistration');
+    NATIVE_HANDLER_BINDINGS[ID]!.updateSettings!({
+      timelineStyle: 'ruler',
+      scrollMode: 'flow',
+      hideContainer: false,
+      draggable: false,
+      previewPinned: false,
+      markerLevel: true,
+    });
+    await settle();
+    expect(document.querySelector(SURFACE.bar)).toBe(bar);
+    expect(bar.classList).toContain('gv-timeline-style-ruler');
+    expect(bar.classList).not.toContain('timeline-no-container');
+    expect(document.querySelector('.gv-timestamp')).toBe(label);
+    expect(ext.read('sync', StorageKeys.TIMELINE_STYLE)).toBe('compact');
+  });
+
   it('off during the initial switch read prevents a late rail from appearing', async () => {
     const get = chrome.storage.sync.get as unknown as Mock;
     const normalGet =

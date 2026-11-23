@@ -114,19 +114,19 @@ When an external restore and an unsettled local write collide, the latest snapsh
 
 ## Declaring a row's controls
 
-| Control                                                                                                    | Declared as                                                                                                       | Examples                                                                                                                          |
-| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| A choice or scalar the user sets (give the handler `updateSettings` so a change applies without a restart) | Manifest `contributes.settings` plus a value binding; booleans write at once, numbers through `sliders` on commit | Chat / edit input width, font size, line height, Gems sidebar count, usage used/remaining, formula copy format, highlight markers |
-| An enum the schema cannot express, a note, an action button, a live probe                                  | `panel` (below the settings) or `inlinePanel` (in place of the manifest's settings)                               | Timeline, Context Sync, Visual effects, the formula copy note                                                                     |
-| A switch that is not a plain write (a permission flow)                                                     | `control`; the popup supplies it                                                                                  | Response notification                                                                                                             |
+| Control                                                                                                    | Declared as                                                                                                       | Examples                                                                                                                                            |
+| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A choice or scalar the user sets (give the handler `updateSettings` so a change applies without a restart) | Manifest `contributes.settings` plus a value binding; booleans write at once, numbers through `sliders` on commit | Chat / edit input width, font size, line height, Gems sidebar count, usage used/remaining, formula copy format, highlight markers, timeline options |
+| An enum the schema cannot express, a note, an action button, a live probe                                  | `panel` (below the settings) or `inlinePanel` (in place of the manifest's settings)                               | Timeline actions, Context Sync, Visual effects, the formula copy note                                                                               |
+| A switch that is not a plain write (a permission flow)                                                     | `control`; the popup supplies it                                                                                  | Response notification                                                                                                                               |
 
 A manifest setting reaches every surface: the popup row, the options page and the in-page Voyager
 panel. The in-page row shows the first slider and the first bound `select` (as a chip) inline, and
 every other bound setting in an options area its sliders button opens under the row: a boolean as a
 switch, a `select` as a chip, a number with a `sliders` entry as a slider
 (`src/pages/panel/features/rowOptions.ts`). A `panel` renders in the popup and options page only,
-never in the in-page panel. Timeline predates this rule: its runtime reads its keys live without
-`updateSettings`, so it stayed a panel and the in-page panel does not offer it.
+never in the in-page panel: Timeline keeps only its two actions (reset the position, open the Saved
+Library) in one.
 
 Special cases:
 
@@ -185,8 +185,8 @@ Special cases:
   leaves room for the fixed header, scrolls without smoothing under `prefers-reduced-motion`, and
   moves focus to the target card's title (`preventScroll`). Its trailing fade mask sits on the left
   in RTL.
-- Segmented choices (timeline style, scroll mode) use `SegmentedControl` as a `radiogroup`, so
-  selection is not told by colour alone; the formula format is a `radiogroup` too.
+- Segmented choices (a plugin site's timeline style and scroll mode) use `SegmentedControl` as a
+  `radiogroup`, so selection is not told by colour alone.
 - The popup sets no direction, so each topic card and `PluginSiteOfficialRows` set `dir="rtl"` for
   RTL languages. Rows and panels use logical properties only (`ps-*`, `ms-*`, `text-start`), never
   a computed physical `left`.

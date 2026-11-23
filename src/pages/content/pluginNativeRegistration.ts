@@ -58,7 +58,7 @@ import {
   activateGeminiSidebarWidth,
   updateGeminiSidebarWidthSettings,
 } from './sidebarWidth/pluginHandler';
-import { activateGeminiTimeline } from './timeline/pluginHandler';
+import { activateGeminiTimeline, updateGeminiTimelineSettings } from './timeline/pluginHandler';
 import { activateGeminiMessageTimestamps } from './timestamp/pluginHandler';
 import {
   activateGeminiUsageStatus,
@@ -95,7 +95,10 @@ export const NATIVE_HANDLER_BINDINGS: Readonly<Record<string, NativeHandler>> = 
   },
   'voyager.gemini-sidebar-auto-hide': { activate: activateGeminiSidebarAutoHide },
   'voyager.gemini-sidebar-full-hide': { activate: activateGeminiSidebarFullHide },
-  'voyager.gemini-timeline': { activate: activateGeminiTimeline },
+  'voyager.gemini-timeline': {
+    activate: activateGeminiTimeline,
+    updateSettings: updateGeminiTimelineSettings,
+  },
   'voyager.gemini-safari-enter-fix': { activate: activateGeminiSafariEnterFix },
   // formula-copy, input-vim, claude-timeline and conversation export invoke primitives
   // through a `native` op in their manifests (see verbs/); they need no binding here.

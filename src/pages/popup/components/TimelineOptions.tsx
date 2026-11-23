@@ -79,9 +79,9 @@ function SegmentedChoice<T extends string>({
 }
 
 /**
- * The timeline's options below its on/off switch: the Plugins row's panel on
- * Gemini, and the plugin-site rail card. While the rail is off they stay
- * visible but disabled, except message times and the Saved Library.
+ * A plugin site's timeline options below its rail's switch (Gemini's rail
+ * declares its options as plugin settings instead). While the rail is off they
+ * stay visible but disabled, except message times and the Saved Library.
  */
 export function TimelineOptions({
   values,

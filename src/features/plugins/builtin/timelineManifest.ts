@@ -1,7 +1,7 @@
 import type { PluginLocalization, PluginManifest } from '../types';
 
-/** Same experimental, default-off switch, wording and dots-only rule as Gemini's native timeline setting. */
-const MARKER_LEVEL_SETTING = {
+/** Gemini's node-level switch, shared by every builtin rail: experimental, default off, dots only. */
+export const MARKER_LEVEL_SETTING = {
   type: 'boolean',
   label: 'Enable node levels',
   default: false,

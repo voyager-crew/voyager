@@ -21,7 +21,7 @@
  * without a cycle. Not part of
  * the CLI bundle (it imports `StorageKeys`): `hostPolicy` must not import it.
  */
-import { StorageKeys } from '@/core/types/common';
+import { StorageKeys, isTimelineStyle } from '@/core/types/common';
 import { normalizeAIStudioSidebarWidth } from '@/core/utils/aistudioSidebarWidthValues';
 import {
   normalizeChatFontSizePercent,
@@ -110,6 +110,32 @@ function formulaCopyBindings(): readonly LegacyValueBinding[] {
 }
 
 /**
+ * Gemini's rail options, each on its pre-plugin `geminiTimeline*` key and read
+ * as the rail read it: the style and scroll mode fall back to dots and flow,
+ * pinning the preview takes only `true`, the other switches any truthy value.
+ * The rail took every live change, removal included, as the new reading.
+ */
+function geminiTimelineBindings(): readonly LegacyValueBinding[] {
+  const binding = (
+    settingKey: string,
+    legacyKey: string,
+    read: (stored: unknown) => PluginSettingValue,
+  ): LegacyValueBinding => ({ settingKey, legacyKey, read, acceptsLiveChange: always });
+  return [
+    binding('timelineStyle', StorageKeys.TIMELINE_STYLE, (stored) =>
+      isTimelineStyle(stored) ? stored : 'dots',
+    ),
+    binding('scrollMode', StorageKeys.TIMELINE_SCROLL_MODE, (stored) =>
+      stored === 'jump' ? 'jump' : 'flow',
+    ),
+    binding('hideContainer', StorageKeys.TIMELINE_HIDE_CONTAINER, (stored) => !!stored),
+    binding('draggable', StorageKeys.TIMELINE_DRAGGABLE, (stored) => !!stored),
+    binding('previewPinned', StorageKeys.TIMELINE_PREVIEW_PINNED, isTrue),
+    binding('markerLevel', StorageKeys.TIMELINE_MARKER_LEVEL, (stored) => !!stored),
+  ];
+}
+
+/**
  * Inert for an id until `LEGACY_ENABLE_BINDINGS` binds it: an unbound id
  * keeps reading its settings from `gvPluginsState`.
  */
@@ -176,6 +202,7 @@ export const LEGACY_VALUE_BINDINGS: LegacyValueBindingTable = {
   ],
   [OFFICIAL_PLUGIN_IDS.geminiPalette]: [paletteBinding()],
   [OFFICIAL_PLUGIN_IDS.aistudioPalette]: [paletteBinding()],
+  [OFFICIAL_PLUGIN_IDS.geminiTimeline]: geminiTimelineBindings(),
   // Saved highlights also mark the timeline unless stored off; removal reads on.
   [OFFICIAL_PLUGIN_IDS.geminiHighlight]: [
     {

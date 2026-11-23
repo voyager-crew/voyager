@@ -54,7 +54,7 @@ export function activateSharedGeminiTimeline(
                   new GeminiTimelineAdapter({ ...options, previousUrl }),
                   stay.signal,
                 );
-                // The official rail's null keeps every knob on its existing sync key.
+                // Null leaves every knob on its per-site sync key.
                 if (currentSettings) engine.updateSettings(currentSettings);
                 return engine;
               },

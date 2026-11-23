@@ -47,9 +47,10 @@ function pluginStyle(settings: Readonly<Record<string, unknown>>): TimelineStyle
 export interface ReadTimelineSettingsInput {
   readonly siteId: string;
   /**
-   * The timeline plugin's resolved settings on a catalog site, or null on Gemini, whose knobs are
-   * its own sync keys. A plugin owns the style, draggable and level switches; the knobs it does not
-   * declare keep their per-site sync value.
+   * The timeline plugin's resolved settings, or null where a rail runs without them. A plugin owns
+   * the style, draggable and level switches, plus the scroll mode, hidden container and pinned
+   * preview when it declares them, as Gemini's official rail does; the knobs it does not declare
+   * keep their per-site sync value.
    */
   readonly pluginSettings: Readonly<Record<string, unknown>> | null;
   /** Sync values under `timelineSettingKey(siteId, …)`; missing keys fall back to defaults. */
@@ -74,8 +75,16 @@ export function readTimelineSettings({
     previewPinned: read('PreviewPinned') === true,
   };
   if (!pluginSettings) return fromStorage;
+  const declared = (key: string) => Object.hasOwn(pluginSettings, key);
+  const mode = pluginSettings.scrollMode;
   return {
-    ...fromStorage,
+    scrollMode: declared('scrollMode') && isScrollMode(mode) ? mode : fromStorage.scrollMode,
+    hideContainer: declared('hideContainer')
+      ? pluginSettings.hideContainer === true
+      : fromStorage.hideContainer,
+    previewPinned: declared('previewPinned')
+      ? pluginSettings.previewPinned === true
+      : fromStorage.previewPinned,
     style: pluginStyle(pluginSettings),
     // Catalog rails have always been draggable unless a plugin turns it off.
     draggable: pluginSettings.draggable !== false,

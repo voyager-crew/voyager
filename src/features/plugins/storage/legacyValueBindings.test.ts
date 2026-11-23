@@ -176,6 +176,12 @@ describe('legacy value bindings', () => {
         StorageKeys.FORMULA_COPY_FORMAT,
         StorageKeys.FORMULA_COPY_SELECTION_LATEX,
         StorageKeys.HIGHLIGHT_TIMELINE_MARKERS_ENABLED,
+        StorageKeys.TIMELINE_STYLE,
+        StorageKeys.TIMELINE_SCROLL_MODE,
+        StorageKeys.TIMELINE_HIDE_CONTAINER,
+        StorageKeys.TIMELINE_DRAGGABLE,
+        StorageKeys.TIMELINE_PREVIEW_PINNED,
+        StorageKeys.TIMELINE_MARKER_LEVEL,
       ].sort(),
     );
   });

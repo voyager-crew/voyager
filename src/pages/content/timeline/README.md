@@ -3,9 +3,11 @@
 Start with the owner of the behavior being changed. The fixed builtin `voyager.gemini-timeline`
 starts the shared `turnNavigator` entry through `pluginHandler.ts` at the original heavy-feature
 start point, after the history and message timestamp page services. PluginHost owns the native
-master setting through its existing legacy binding. The Gemini backend in
+master setting through its existing legacy binding, and fills the rail's style, scroll mode, hidden
+container, dragging, pinned preview and node levels from their `geminiTimeline*` sync keys through
+value bindings; `updateGeminiTimelineSettings` hands a change to the running rail. The Gemini backend in
 `features/timeline/adapters/gemini/activateSharedGeminiTimeline.ts` waits for both page caches and
-retains native sync settings, storage and identity. `startGeminiTimelineRail.ts` owns Gemini's
+retains native storage and identity; the rail still reads its width and position from sync. `startGeminiTimelineRail.ts` owns Gemini's
 route/DOM lifetime and synchronous stop. Scope abort
 stops the rail before the plugin cleanup ledger drains. The migrated native registry entry is retired in stage 7. Rolling back to the native rail means
 reverting both stage 7 retirement commits (9c2161df, 0ae260c1) and the commit that removed the

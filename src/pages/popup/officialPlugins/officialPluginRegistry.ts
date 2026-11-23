@@ -17,7 +17,6 @@ import {
 import type { TranslationKey } from '@/utils/translations';
 
 import type { OfficialPluginTopicId } from '../utils/nativeSiteCapabilities';
-import { GEMINI_TIMELINE_OPTION_KEYS } from '../utils/timelineSettingsValues';
 import { OFFICIAL_PLUGIN_ENTRIES } from './officialPluginEntries';
 
 export type { OfficialPluginTopicId };
@@ -68,7 +67,7 @@ export interface OfficialPluginEntry {
    * under the description while the row is on. `{modifier}` reads Ctrl or ⌘.
    */
   readonly usageHint?: TranslationKey | ((context: OfficialPluginContext) => TranslationKey | null);
-  /** Options the manifest can't declare, shown under the row while it is on. */
+  /** What the manifest can't declare (a note, an action, a live probe), under the row while it is on. */
   readonly panel?: OfficialPanelId;
   /** A control shown in place of the manifest's own settings, under the row while it is on. */
   readonly inlinePanel?: OfficialPanelId;
@@ -119,7 +118,7 @@ export const OFFICIAL_PANEL_KEYS: Readonly<Record<OfficialPanelId, readonly stri
   formulaCopy: [],
   contextSync: [StorageKeys.CONTEXT_SYNC_PORT],
   visualEffect: [StorageKeys.GV_VISUAL_EFFECT, StorageKeys.GV_SNOW_EFFECT],
-  timeline: GEMINI_TIMELINE_OPTION_KEYS,
+  timeline: [],
 };
 
 export const OFFICIAL_PANEL_STORAGE_KEYS: readonly string[] = [

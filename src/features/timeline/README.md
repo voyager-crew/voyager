@@ -38,8 +38,8 @@ Library reads. All sites use the same `TimelineState` and hierarchy owner.
 
 The fixed Gemini plugin and local consumer-Gemini plugins start through the same `turnNavigator`
 entry, selecting this native policy with literal `dataBackend: "shared"`; they cannot override
-conversation, account or turn identity. The official rail keeps its existing sync settings;
-local replacements use their own plugin settings.
+conversation, account or turn identity. The official rail declares its knobs as plugin
+settings bound to their existing sync keys; local replacements use their own plugin settings.
 `adapters/gemini/activateSharedGeminiTimeline.ts` waits for the existing history and message
 page services before creating a data session. Its startup machine retires pending readiness on
 scope abort, and the shared route owner stops the rail immediately. PluginHost owns each switch.

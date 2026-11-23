@@ -146,7 +146,7 @@ export const turnNavigatorPrimitive: Primitive<TurnNavigatorParams> = {
   activate: activateTurnNavigator,
 };
 
-/** Official and declarative rails enter here; null settings preserve the native sync controls. */
+/** Official and declarative rails enter here; null settings leave every knob on its sync key. */
 export function activateTurnNavigator(
   scope: Parameters<Primitive<TurnNavigatorParams>['activate']>[0],
   params: TurnNavigatorParams,

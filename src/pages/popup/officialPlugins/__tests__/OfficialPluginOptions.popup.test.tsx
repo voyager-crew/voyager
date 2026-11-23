@@ -38,11 +38,10 @@ vi.mock('@/core/utils/browser', async (importOriginal) => {
 describe('official plugin rows with options', () => {
   let container: HTMLDivElement;
   let root: Root;
-  let local: Record<string, unknown>;
   let sync: Record<string, unknown>;
 
   beforeEach(() => {
-    ({ local, sync } = resetPopupBrowser());
+    ({ sync } = resetPopupBrowser());
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -207,99 +206,6 @@ describe('official plugin rows with options', () => {
       await mount();
       expect(row(id)).toBeNull();
     });
-  });
-
-  describe('the timeline row', () => {
-    const id = OFFICIAL_PLUGIN_IDS.geminiTimeline;
-    const radios = (group: string) =>
-      [
-        ...row(id)!.querySelectorAll<HTMLButtonElement>(
-          `[role="radiogroup"][aria-label="${group}"] [role="radio"]`,
-        ),
-      ].map((radio) => [radio.textContent, radio.getAttribute('aria-checked'), radio.disabled]);
-    const radio = (group: string, label: string) =>
-      row(id)!.querySelector<HTMLButtonElement>(
-        `[role="radiogroup"][aria-label="${group}"] [role="radio"]:nth-child(${
-          [en.timelineStyleDots, en.timelineStyleRuler, en.timelineStyleCompact].indexOf(label) + 1
-        })`,
-      )!;
-    const option = (inputId: string) => row(id)!.querySelector<HTMLInputElement>(`#${inputId}`)!;
-    const button = (label: string) =>
-      [...row(id)!.querySelectorAll('button')].find((candidate) => candidate.textContent === label);
-
-    it('replaces the Gemini timeline card, its options under the row', async () => {
-      await mount();
-      expect(container.querySelector('#timeline-enabled')).toBeNull();
-      expect(
-        [...container.querySelectorAll('h3')].map((heading) => heading.textContent),
-      ).not.toContain(en.timelineOptions);
-      expect(toggle(id).checked).toBe(true);
-      expect(option('draggable-timeline')).not.toBeNull();
-      // Message times are a row of their own, so the panel does not repeat them.
-      expect(row(id)!.querySelector('#show-message-timestamps')).toBeNull();
-    });
-
-    it('shows the stored style and scroll mode as checked radios', async () => {
-      sync[StorageKeys.TIMELINE_STYLE] = 'compact';
-      sync.geminiTimelineScrollMode = 'jump';
-      await mount();
-      expect(radios(en.timelineStyle)).toEqual([
-        [en.timelineStyleDots, 'false', false],
-        [en.timelineStyleRuler, 'false', false],
-        [en.timelineStyleCompact, 'true', false],
-      ]);
-      expect(radios(en.scrollMode)).toEqual([
-        [en.flow, 'false', false],
-        [en.jump, 'true', false],
-      ]);
-      // Off dots there is no container to hide.
-      expect(option('hide-container').disabled).toBe(true);
-    });
-
-    it('writes each option under its old key', async () => {
-      await mount();
-      await act(async () => radio(en.timelineStyle, en.timelineStyleRuler).click());
-      await act(async () => option('draggable-timeline').click());
-      expect(extensionApi.storage.sync.set.mock.calls.map(([payload]) => payload)).toEqual([
-        { [StorageKeys.TIMELINE_STYLE]: 'ruler' },
-        { geminiTimelineDraggable: true },
-      ]);
-      expect(pluginStateWritten()).toBe(false);
-    });
-
-    it('node levels allow only dots, and turning them on writes dots with them', async () => {
-      sync[StorageKeys.TIMELINE_STYLE] = 'ruler';
-      await mount();
-      await act(async () => option('marker-level-enabled').click());
-      expect(extensionApi.storage.sync.set).toHaveBeenCalledExactlyOnceWith({
-        geminiTimelineMarkerLevel: true,
-        [StorageKeys.TIMELINE_STYLE]: 'dots',
-      });
-      expect(radios(en.timelineStyle).map(([, checked, disabled]) => [checked, disabled])).toEqual([
-        ['true', false],
-        ['false', true],
-        ['false', true],
-      ]);
-    });
-
-    it('resets only the saved position and opens the Saved Library', async () => {
-      await mount();
-      await act(async () => button(en.resetTimelinePosition)!.click());
-      expect(extensionApi.storage.sync.set).toHaveBeenCalledExactlyOnceWith({
-        geminiTimelinePosition: null,
-      });
-      await act(async () => button(en.viewStarredHistory)!.click());
-      expect(row(id)).toBeNull();
-    });
-
-    it.each(['ruler', '收藏', zh.timelineOptions])(
-      'a search for "%s" lists the row with its options',
-      async (query) => {
-        local[StorageKeys.GV_POPUP_SETTINGS_SEARCH_QUERY] = query;
-        await mount();
-        expect(option('draggable-timeline')).not.toBeNull();
-      },
-    );
   });
 
   describe('in other languages', () => {

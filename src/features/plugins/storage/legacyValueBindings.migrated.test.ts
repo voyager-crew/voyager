@@ -144,3 +144,82 @@ describe('highlight timeline markers as a setting', () => {
     expect(NATIVE_HANDLER_BINDINGS[id]?.updateSettings).toBeTypeOf('function');
   });
 });
+
+describe('Gemini timeline options as settings', () => {
+  const id = OFFICIAL_PLUGIN_IDS.geminiTimeline;
+
+  it('reads every stored option as the rail did, and a missing key as its old default', () => {
+    expect(deriveLegacyValueSettings(id, {})).toEqual({
+      timelineStyle: 'dots',
+      scrollMode: 'flow',
+      hideContainer: false,
+      draggable: false,
+      previewPinned: false,
+      markerLevel: false,
+    });
+    expect(
+      deriveLegacyValueSettings(id, {
+        [StorageKeys.TIMELINE_STYLE]: 'ruler',
+        [StorageKeys.TIMELINE_SCROLL_MODE]: 'jump',
+        [StorageKeys.TIMELINE_HIDE_CONTAINER]: true,
+        [StorageKeys.TIMELINE_DRAGGABLE]: true,
+        [StorageKeys.TIMELINE_PREVIEW_PINNED]: true,
+        [StorageKeys.TIMELINE_MARKER_LEVEL]: true,
+      }),
+    ).toEqual({
+      timelineStyle: 'ruler',
+      scrollMode: 'jump',
+      hideContainer: true,
+      draggable: true,
+      previewPinned: true,
+      markerLevel: true,
+    });
+    // The rail took any truthy switch except the pinned preview, which needed `true` itself.
+    expect(
+      deriveLegacyValueSettings(id, {
+        [StorageKeys.TIMELINE_STYLE]: 'grid',
+        [StorageKeys.TIMELINE_SCROLL_MODE]: 'smooth',
+        [StorageKeys.TIMELINE_HIDE_CONTAINER]: 1,
+        [StorageKeys.TIMELINE_DRAGGABLE]: 'yes',
+        [StorageKeys.TIMELINE_PREVIEW_PINNED]: 'true',
+        [StorageKeys.TIMELINE_MARKER_LEVEL]: 0,
+      }),
+    ).toEqual({
+      timelineStyle: 'dots',
+      scrollMode: 'flow',
+      hideContainer: true,
+      draggable: true,
+      previewPinned: false,
+      markerLevel: false,
+    });
+  });
+
+  it('writes each option under its old key in the shape the popup stored', () => {
+    expect(legacyValueWrite(id, 'timelineStyle', 'compact')).toEqual({
+      [StorageKeys.TIMELINE_STYLE]: 'compact',
+    });
+    expect(legacyValueWrite(id, 'scrollMode', 'jump')).toEqual({
+      [StorageKeys.TIMELINE_SCROLL_MODE]: 'jump',
+    });
+    expect(legacyValueWrite(id, 'hideContainer', true)).toEqual({
+      [StorageKeys.TIMELINE_HIDE_CONTAINER]: true,
+    });
+    expect(legacyValueWrite(id, 'draggable', false)).toEqual({
+      [StorageKeys.TIMELINE_DRAGGABLE]: false,
+    });
+    expect(legacyValueWrite(id, 'previewPinned', true)).toEqual({
+      [StorageKeys.TIMELINE_PREVIEW_PINNED]: true,
+    });
+    expect(legacyValueWrite(id, 'markerLevel', true)).toEqual({
+      [StorageKeys.TIMELINE_MARKER_LEVEL]: true,
+    });
+    // The rail read every live change, removal included, as its new value.
+    expect(acceptsLegacyLiveChange(StorageKeys.TIMELINE_STYLE, undefined)).toBe(true);
+    expect(acceptsLegacyLiveChange(StorageKeys.TIMELINE_DRAGGABLE, undefined)).toBe(true);
+  });
+
+  it('declares all six once, worded in every locale, and takes a change in place', async () => {
+    await expectDeclaredOnceAndLocalized([id]);
+    expect(NATIVE_HANDLER_BINDINGS[id]?.updateSettings).toBeTypeOf('function');
+  });
+});
