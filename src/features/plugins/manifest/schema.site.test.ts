@@ -64,6 +64,21 @@ describe('site.schema.json', () => {
     }
   });
 
+  it('checks the ChatGPT export switches the way the section reader does', () => {
+    const base = listBundledSites()[0].raw;
+    for (const order of [['crawl', 'api'], ['api'], ['crawl']]) {
+      expect(check({ ...base, exportThread: { format: 1, order } }, siteSchema)).toEqual([]);
+    }
+    expect(
+      check({ ...base, exportThread: { format: 1, order: ['api', 'crawl'] } }, siteSchema).join(),
+    ).toMatch(/exportThread\.order/);
+    const crawl = { format: 1, upwardScroll: 'plain', historyStallMs: 20000 };
+    expect(check({ ...base, exportCrawl: crawl }, siteSchema)).toEqual([]);
+    expect(
+      check({ ...base, exportCrawl: { ...crawl, historyStallMs: 5 } }, siteSchema).join(),
+    ).toMatch(/historyStallMs/);
+  });
+
   it('rejects folder appearance outside the bounded token contract', () => {
     const adapter = requireBundledSiteAdapter('deepseek');
     const base = siteAdapterToData(adapter);

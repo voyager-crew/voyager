@@ -101,6 +101,18 @@ describe('ChatGPT export when the page walk fails', () => {
     expect(session.messages()).toEqual([]);
   });
 
+  it('does not ask the endpoint again when the walk already failed on it', async () => {
+    // The walk stalls on older history and reads it from the endpoint, which refuses.
+    const turns = makeTurns(12);
+    mountThreadFixture({ turns, initiallyLoaded: 4, historyDelayMs: Infinity });
+    const fetchMock = stubConversationEndpoint({}, 500);
+
+    const session = await prepare();
+
+    expect(session.failure).toBe('history');
+    expect(conversationReads(fetchMock)).toBe(1);
+  });
+
   it('keeps the failure without asking the endpoint when the site data says crawl only', async () => {
     brokenWalk(makeTurns(12));
     const fetchMock = stubConversationEndpoint(conversationTree(makeTurns(12)));

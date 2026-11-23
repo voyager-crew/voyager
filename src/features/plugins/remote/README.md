@@ -214,8 +214,11 @@ answered with data while the fix ships:
 `exportThread.order` is `["crawl", "api"]` (default: walk the page, read
 `/backend-api/conversation/<id>` when the walk fails), `["api"]` or `["crawl"]`.
 Endpoint replies export as plain Markdown, and the endpoint's saved branch must
-match every turn the page shows. `exportCrawl` sets `extent`, `upwardScroll`,
-`direction` and the crawl timings. Both are their own sections because a client
-drops a known section that gains an unknown key; an invalid section or field
+match every turn the page shows. Only mounted turns can be checked: with
+`["api"]`, a branch switched in a turn scrolled out of view exports as the
+saved branch. `exportCrawl` sets `extent`, `upwardScroll`,
+`direction` and the crawl timings. They are new top-level sections rather than keys
+in an existing one, because an older client drops a whole known section that
+gains a key it does not know; an invalid section or field
 reads as the default and is reported in `sectionIssues`, which fails
 `catalog:build` but never the adapter. The packaged `site.json` omits both.

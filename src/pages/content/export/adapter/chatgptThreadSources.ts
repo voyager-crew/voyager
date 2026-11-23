@@ -45,6 +45,12 @@ export interface ChatGptThreadReadOptions extends ChatGptCrawlOptions {
 const FINAL_FAILURES = [
   'chatgpt_export_response_still_generating',
   'chatgpt_export_conversation_changed',
+  // The reader switched a version mid-read; the export's version watch already saw it.
+  'chatgpt_export_thread_changed',
+  // The walk already asked the endpoint for older turns, and it refused or disagreed.
+  'chatgpt_export_history_fetch',
+  'chatgpt_export_history_session',
+  'chatgpt_export_history_mismatch',
 ];
 
 function canTryNextSource(error: unknown): boolean {
@@ -89,13 +95,17 @@ export function chatGptCrawlSettings(site: SiteAdapter): {
  */
 async function readFromEndpoint(options: ChatGptCrawlOptions): Promise<ChatGptThreadMessage[]> {
   assertActive(options);
-  const root = resolveVisibleConversationRoot(document);
-  if (isChatGptThreadGenerating(root)) throw new Error('chatgpt_export_response_still_generating');
+  if (isChatGptThreadGenerating(resolveVisibleConversationRoot(document))) {
+    throw new Error('chatgpt_export_response_still_generating');
+  }
   const turns = await (options.history ?? chatGptHistory).currentBranch(
     options.expectedUrl ?? location.href,
     options.signal,
   );
   assertActive(options);
+  // The page may have remounted or started a reply while the endpoint answered.
+  const root = resolveVisibleConversationRoot(document);
+  if (isChatGptThreadGenerating(root)) throw new Error('chatgpt_export_response_still_generating');
   const messages = apiTurnMessages(turns);
   const shown = new Map<string, string>();
   for (const item of mountedTurnItems(root)) {

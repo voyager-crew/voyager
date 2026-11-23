@@ -111,7 +111,7 @@ function checkSchema(
       return errors;
     }
   }
-  if (schema.const !== undefined && value !== schema.const) {
+  if (schema.const !== undefined && JSON.stringify(value) !== JSON.stringify(schema.const)) {
     errors.push(`${path}: expected const ${JSON.stringify(schema.const)}`);
   }
   if (Array.isArray(schema.enum) && !schema.enum.includes(value)) {
