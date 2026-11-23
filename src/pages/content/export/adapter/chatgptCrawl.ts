@@ -102,6 +102,12 @@ export interface ChatGptCrawlOptions extends ChatGptReadOptions {
 /** A tall last item is crossed in steps of this share of the viewport. */
 const TALL_ITEM_STEP = 0.9;
 const MAX_GAP_RETRIES = 6;
+/**
+ * Loading older history only ever reaches new states. Returning to states seen
+ * before this often means the page keeps pulling the scroller elsewhere (a pin
+ * to the newest turn the scroll cannot release), which would never settle.
+ */
+const MAX_HISTORY_REVISITS = 10;
 /** An item edge this close to the list box's edge touches it. */
 const EDGE_TOLERANCE_PX = 2;
 /**
@@ -241,12 +247,15 @@ async function settleWindow(context: CrawlContext): Promise<MountedWindow> {
  * Scroll to the top until ChatGPT has no older page left to load. Returns
  * false when no page arrives for the stall timeout while older turns remain
  * (the history spinner, or blank room above the first item): ChatGPT will not
- * load them for a script, or loads them too slowly to wait for.
+ * load them for a script, or loads them too slowly to wait for. Throws when
+ * the page keeps returning to earlier states instead of holding still.
  */
 async function loadFullHistory(context: CrawlContext): Promise<boolean> {
   const { root, view, timing, options } = context;
   let signature = '';
   let changedAt = Date.now();
+  const seen = new Set<string>();
+  let revisits = 0;
   for (;;) {
     assertActive(options);
     view.scrollTo(0);
@@ -254,6 +263,10 @@ async function loadFullHistory(context: CrawlContext): Promise<boolean> {
     const first = mountedTurnItems(root)[0] ?? null;
     const next = `${first ? readTurnKey(first) : ''}|${Math.round(view.range())}`;
     if (next !== signature) {
+      if (seen.has(next) && ++revisits > MAX_HISTORY_REVISITS) {
+        throw new Error('chatgpt_export_thread_unsettled');
+      }
+      seen.add(next);
       signature = next;
       changedAt = Date.now();
       continue;

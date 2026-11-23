@@ -48,6 +48,12 @@ export interface ThreadFixtureOptions {
    * scripted scroll away from the end is pulled back until a wheel moves up.
    */
   readonly pinnedToEnd?: boolean;
+  /**
+   * The pin pulls back only every this many scripted scrolls away from the
+   * end; 1 by default. Live its pull-back races the script's next scroll, so
+   * a script that keeps scrolling up sees the top and the pulled-back place in turn.
+   */
+  readonly pinWinsEvery?: number;
   /** Delay before the list re-renders after a scroll; Infinity freezes it. */
   readonly renderDelayMs?: number;
   /**
@@ -143,6 +149,7 @@ export function mountThreadFixture(options: ThreadFixtureOptions): ThreadFixture
   let scrollTop = 0;
   let overshootsLeft = options.overshootWrites ?? Infinity;
   let pinned = options.pinnedToEnd ?? false;
+  let pinnedWrites = 0;
   let historyTimer: number | null = null;
   let requesting = false;
   let renderTimer: number | null = null;
@@ -269,7 +276,7 @@ export function mountThreadFixture(options: ThreadFixtureOptions): ThreadFixture
       }
       scrollTop = Math.min(0, Math.max(-range(), shifted));
       if (scrollTop === 0 && options.pinnedToEnd) pinned = true;
-      if (pinned && scrollTop < 0) {
+      if (pinned && scrollTop < 0 && ++pinnedWrites % (options.pinWinsEvery ?? 1) === 0) {
         window.setTimeout(() => {
           scrollTop = 0;
           render();

@@ -113,6 +113,16 @@ describe('ChatGPT export when the page walk fails', () => {
     expect(conversationReads(fetchMock)).toBe(1);
   });
 
+  it('reads the endpoint when the pin keeps pulling the page walk back', async () => {
+    const turns = makeTurns(8, 600);
+    mountThreadFixture({ turns, pinnedToEnd: true, pinWinsEvery: 2 });
+    stubConversationEndpoint(conversationTree(turns));
+
+    const session = await prepare({ exportCrawl: { format: 1, upwardScroll: 'plain' } });
+
+    expect(session.messages().map((message) => message.messageId)).toEqual(ids(turns));
+  });
+
   it('keeps the failure without asking the endpoint when the site data says crawl only', async () => {
     brokenWalk(makeTurns(12));
     const fetchMock = stubConversationEndpoint(conversationTree(makeTurns(12)));
