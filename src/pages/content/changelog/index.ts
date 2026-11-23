@@ -7,6 +7,7 @@ import { loadTranslations } from '@/utils/translations';
 
 import { closeChangelogModal, createChangelogModal } from './modal';
 import {
+  compareVersions,
   noteBody,
   notePath,
   pickNoteLocale,
@@ -28,6 +29,12 @@ const changelogModules = import.meta.glob('./notes/*/*.md', {
 const NOTED_VERSIONS = [
   ...new Set(Object.keys(changelogModules).map((path) => path.split('/')[2] ?? '')),
 ].filter(Boolean);
+
+function newestNoteAtOrBefore(version: string): string | undefined {
+  return NOTED_VERSIONS.filter((noted) => compareVersions(noted, version) <= 0)
+    .sort(compareVersions)
+    .at(-1);
+}
 
 /**
  * Versions whose changelog must show as a popup even for users who chose the
@@ -148,11 +155,17 @@ async function readAnnouncement(): Promise<{
     StorageKeys.CHANGELOG_DISMISSED_VERSION,
   ]);
   const readVersion = stored[StorageKeys.CHANGELOG_DISMISSED_VERSION] as string | undefined;
+  // The releases the popup would gather. An empty read version (older badge-mode
+  // popups wrote it) has read nothing, so any note is unread.
+  const unread = readVersion
+    ? unseenNoteVersions(NOTED_VERSIONS, readVersion, EXTENSION_VERSION)
+    : NOTED_VERSIONS;
   const announcement = releaseAnnouncement({
     mode: stored[StorageKeys.CHANGELOG_NOTIFY_MODE],
     readVersion,
     currentVersion: EXTENSION_VERSION,
     forcePopup: FORCE_POPUP_VERSIONS.has(EXTENSION_VERSION),
+    hasUnreadNotes: unread.length > 0,
   });
   return { announcement, readVersion };
 }
@@ -206,7 +219,8 @@ async function showChangelogModal(
     version === EXTENSION_VERSION && dismissedVersion
       ? unseenNoteVersions(NOTED_VERSIONS, dismissedVersion, version)
       : [];
-  const versions = unseen.length ? unseen : [version];
+  // A silent patch has no note: opening it shows the newest note it carries.
+  const versions = unseen.length ? unseen : [newestNoteAtOrBefore(version) ?? version];
   const notes = (
     await Promise.all(
       versions.map(async (noteVersion) => ({

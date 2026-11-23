@@ -160,8 +160,13 @@ describe('resolveChangelogImageUrl', () => {
   // being shipped is pinned; images in older notes stay remote by choice, since
   // their assets are no longer carried in the package.
   it('resolves every image in the current release note to a runtime URL', () => {
-    const version = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf8'))
+    const packaged = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf8'))
       .version as string;
+    // A silent patch has no note of its own; the newest note it ships is checked.
+    const version = readdirSync(resolve(__dirname, '../notes'))
+      .filter((noted) => compareVersions(noted, packaged) <= 0)
+      .sort(compareVersions)
+      .at(-1)!;
     const versionDir = resolve(__dirname, `../notes/${version}`);
     const files = readdirSync(versionDir)
       .filter((name) => name.endsWith('.md'))
@@ -300,7 +305,8 @@ describe('notes of skipped releases', () => {
     const noted = readdirSync(notesDir)
       .filter((version) => compareVersions(version, EXTENSION_VERSION) <= 0)
       .sort(compareVersions);
-    const [lastRead, skipped] = noted.slice(-3);
+    // The newest note is the running release's, or an earlier one after a silent patch.
+    const [lastRead, skipped, newest] = noted.slice(-3);
     (chrome.storage.local.get as ReturnType<typeof vi.fn>).mockResolvedValue({
       [StorageKeys.CHANGELOG_DISMISSED_VERSION]: lastRead,
     });
@@ -310,10 +316,8 @@ describe('notes of skipped releases', () => {
     await vi.waitFor(() => expect(parseMarkdown).toHaveBeenCalled());
 
     const markdown = String(parseMarkdown.mock.lastCall?.[0]);
-    expect(markdown.indexOf(`## v${EXTENSION_VERSION}`)).toBeGreaterThanOrEqual(0);
-    expect(markdown.indexOf(`## v${skipped}`)).toBeGreaterThan(
-      markdown.indexOf(`## v${EXTENSION_VERSION}`),
-    );
+    expect(markdown.indexOf(`## v${newest}`)).toBeGreaterThanOrEqual(0);
+    expect(markdown.indexOf(`## v${skipped}`)).toBeGreaterThan(markdown.indexOf(`## v${newest}`));
     expect(markdown).not.toContain(`## v${lastRead}`);
   });
 });

@@ -20,7 +20,7 @@ git log "${PREV_TAG}..HEAD" --format='%h %s' --no-merges
 git rev-list --count "${PREV_TAG}..HEAD"
 ```
 
-Use this same range for both the in-product changelog and GitHub release body.
+Use this same range for both the in-product changelog and GitHub release body. After [silent patches](#silent-patch), the in-product changelog covers everything since the last release that has a note folder, so the silent patches' fixes reach readers there.
 
 ### Open issues
 
@@ -102,7 +102,11 @@ rg 'MARKETING_VERSION|CURRENT_PROJECT_VERSION' \
 
 ### In-product changelog
 
-Create the folder `src/pages/content/changelog/notes/{VERSION}/` with one file per locale (`en.md`, `zh.md`, …). Read [changelog.md](changelog.md) before authoring it. All 10 locales are required before publication, each opening with the release quote the maintainer picked ([Opening quote](changelog.md#opening-quote-every-release)); `src/pages/content/changelog/__tests__/changelog.test.ts` fails a note without it.
+#### Silent patch
+
+When the maintainer asks for a silent patch (typically a fix for a host redesign), skip this section: a release without a note folder opens no changelog popup and lights no NEW badge or version badge (`releaseAnnouncement`, `hasUnreadNotes`). The site check in the deploy step then has no `v{VERSION}` heading to find; skip it. The GitHub release body is still written.
+
+Otherwise, create the folder `src/pages/content/changelog/notes/{VERSION}/` with one file per locale (`en.md`, `zh.md`, …). Read [changelog.md](changelog.md) before authoring it. All 10 locales are required before publication, each opening with the release quote the maintainer picked ([Opening quote](changelog.md#opening-quote-every-release)); `src/pages/content/changelog/__tests__/changelog.test.ts` fails a note without it.
 
 Every commit in `PREV_TAG..HEAD` must be accounted for before writing. Scale the effort to the range — do not fan out by default:
 
@@ -195,7 +199,7 @@ Publish in this order; each step depends on the one before it:
 
    A failed `publish-cli` blocks the docs deploy, which is the intent. An `ENEEDAUTH` or `E403`/`E404` on publish can mean the package's Trusted Publisher on npmjs.com no longer matches `voyager-crew/voyager`, `deploy-docs.yml` and direct publishing; check the job's npm log for the CLI version, the OIDC exchange and registry or network errors before the user changes that setting and re-runs the workflow. Manual recovery is the user's action: `cd packages/create-voyager-plugin && npm publish --access public`, after which a re-run skips the publish.
 
-   After that run succeeds, check that npm and the site agree: `npm view create-voyager-plugin version` prints `{VERSION}`, and `curl -s https://voyager.nagi.fun/en/changelog | grep -c 'v{VERSION}'` prints a non-zero count (the page has a `## v{VERSION}` heading per release, built from the in-product notes once `package.json` reaches that version). Zero means the deploy did not pick up the bump or the note; fix that before the tag.
+   After that run succeeds, check that npm and the site agree: `npm view create-voyager-plugin version` prints `{VERSION}`, and `curl -s https://voyager.nagi.fun/en/changelog | grep -c 'v{VERSION}'` prints a non-zero count (the page has a `## v{VERSION}` heading per release, built from the in-product notes once `package.json` reaches that version). Zero means the deploy did not pick up the bump or the note; fix that before the tag. A silent patch has no note, so only the npm check applies.
 
 2. **Tag.** The tag starts the store release.
 

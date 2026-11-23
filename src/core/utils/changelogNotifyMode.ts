@@ -26,12 +26,18 @@ export interface ReleaseAnnouncementInput {
   readonly currentVersion: string;
   /** A release every person must see, whatever they chose. */
   readonly forcePopup: boolean;
+  /**
+   * Whether a release since `readVersion` has a note. A release without one is
+   * a silent patch: it announces nothing, and its notes wait for the next one.
+   */
+  readonly hasUnreadNotes: boolean;
 }
 
 /** The one rule for announcing a release; every caller asks it instead of reading the mode. */
 export function releaseAnnouncement(input: ReleaseAnnouncementInput): ReleaseAnnouncement {
   const { readVersion, currentVersion } = input;
   if (readVersion == null || readVersion === currentVersion) return 'none';
+  if (!input.hasUnreadNotes) return 'none';
   if (input.forcePopup) return 'popup';
   const mode = parseChangelogNotifyMode(input.mode);
   return mode === 'off' ? 'none' : mode;

@@ -26,9 +26,30 @@ describe('releaseAnnouncement', () => {
   ])(
     'mode %j with %j read (forced: %s) announces %s',
     (mode, readVersion, forcePopup, expected) => {
-      expect(releaseAnnouncement({ mode, readVersion, currentVersion: current, forcePopup })).toBe(
-        expected,
-      );
+      expect(
+        releaseAnnouncement({
+          mode,
+          readVersion,
+          currentVersion: current,
+          forcePopup,
+          hasUnreadNotes: true,
+        }),
+      ).toBe(expected);
+    },
+  );
+
+  it.each([['popup'], ['badge'], ['off']])(
+    'announces nothing in %s mode for a silent patch with no unread note',
+    (mode) => {
+      expect(
+        releaseAnnouncement({
+          mode,
+          readVersion: '2.3.0',
+          currentVersion: current,
+          forcePopup: false,
+          hasUnreadNotes: false,
+        }),
+      ).toBe('none');
     },
   );
 });
