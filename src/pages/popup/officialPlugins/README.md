@@ -116,13 +116,15 @@ When an external restore and an unsettled local write collide, the latest snapsh
 
 | Control                                                                                                    | Declared as                                                                                                       | Examples                                                                                  |
 | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| A scalar the runtime takes as a plugin setting (its handler has `updateSettings`, or a restart is fine)    | Manifest `contributes.settings` plus a value binding; booleans write at once, numbers through `sliders` on commit | Chat / edit input width, font size, line height, Gems sidebar count, usage used/remaining |
-| A value the runtime reads from storage itself, an enum the schema cannot express, a note, an action button | `panel` (below the settings) or `inlinePanel` (in place of the manifest's settings)                               | Timeline, formula copy format, highlight markers, Context Sync, Visual effects            |
+| A choice or scalar the user sets (give the handler `updateSettings` so a change applies without a restart) | Manifest `contributes.settings` plus a value binding; booleans write at once, numbers through `sliders` on commit | Chat / edit input width, font size, line height, Gems sidebar count, usage used/remaining |
+| An enum the schema cannot express, a note, an action button, a live probe                                  | `panel` (below the settings) or `inlinePanel` (in place of the manifest's settings)                               | Timeline, formula copy format, highlight markers, Context Sync, Visual effects            |
 | A switch that is not a plain write (a permission flow)                                                     | `control`; the popup supplies it                                                                                  | Response notification                                                                     |
 
-Highlight markers are a panel, not a value binding: the runtime reads that key live and its handler
-has no `updateSettings`, so a binding would push a settings change on every flip and the engine
-would tear the plugin down and activate it again. Timeline is the same.
+A manifest setting reaches every surface: the popup row, the options page and the in-page Voyager
+panel (`src/pages/panel/features/featureRows.ts`, a bound `select` as a chip). A `panel` renders in
+the popup and options page only, never in the in-page panel. Highlight markers and Timeline predate
+this rule: their runtimes read their keys live without `updateSettings`, so they stayed panels and
+the in-page panel does not offer them.
 
 Special cases:
 
