@@ -2085,6 +2085,18 @@
     "message": "重置於",
     "description": "Tooltip prefix shown before the reset time on a usage bar."
   },
+  "usageStatusRemaining": {
+    "message": "剩餘 {n}%",
+    "description": "Usage bar value in remaining view; {n} is the percent left. Keep the {n} placeholder literal."
+  },
+  "usageStatusShowRemaining": {
+    "message": "點擊改為顯示剩餘",
+    "description": "Tooltip on a usage bar's percent in used view; clicking switches every bar to remaining."
+  },
+  "usageStatusShowUsed": {
+    "message": "點擊改為顯示已用",
+    "description": "Tooltip on a usage bar's percent in remaining view; clicking switches every bar back to used."
+  },
   "usageStatusRefresh": {
     "message": "重新整理",
     "description": "Tooltip/aria-label for the refresh button on the usage status pill."

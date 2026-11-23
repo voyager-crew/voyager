@@ -117,6 +117,8 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
   let liveRecipe: unknown;
   let positionChangedLive = false;
   let livePosition: unknown;
+  let showRemainingChangedLive = false;
+  let liveShowRemaining: unknown;
   let snapshot: UsageSnapshot | null = null;
   let snapshotRevision = 0;
   // BCP-47 locale for reset-time formatting, derived from the Voyager language.
@@ -326,6 +328,11 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
         livePosition = changes[StorageKeys.GV_USAGE_POS].newValue;
         if (initialized) pill.adoptPosition(livePosition);
       }
+      if (areaName === 'local' && changes[StorageKeys.GV_USAGE_SHOW_REMAINING]) {
+        showRemainingChangedLive = true;
+        liveShowRemaining = changes[StorageKeys.GV_USAGE_SHOW_REMAINING].newValue;
+        if (initialized) pill.adoptShowRemaining(liveShowRemaining);
+      }
     };
     browser.storage.onChanged.addListener(storageListener);
   }
@@ -414,6 +421,7 @@ export function startUsageStatusRuntime({ signal }: { signal: AbortSignal }): Pr
 
     if (recipeChangedLive) refresh.adoptRecipe(liveRecipe);
     if (positionChangedLive) pill.adoptPosition(livePosition);
+    if (showRemainingChangedLive) pill.adoptShowRemaining(liveShowRemaining);
     initialized = true;
     pill.render(true, snapshot);
     stopRouteWatcher = watchRouteChanges(handleRouteChange);

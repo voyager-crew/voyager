@@ -2085,6 +2085,18 @@
     "message": "Redefine em",
     "description": "Tooltip prefix shown before the reset time on a usage bar."
   },
+  "usageStatusRemaining": {
+    "message": "Restam {n}%",
+    "description": "Usage bar value in remaining view; {n} is the percent left. Keep the {n} placeholder literal."
+  },
+  "usageStatusShowRemaining": {
+    "message": "Clique para mostrar o restante",
+    "description": "Tooltip on a usage bar's percent in used view; clicking switches every bar to remaining."
+  },
+  "usageStatusShowUsed": {
+    "message": "Clique para mostrar o usado",
+    "description": "Tooltip on a usage bar's percent in remaining view; clicking switches every bar back to used."
+  },
   "usageStatusRefresh": {
     "message": "Atualizar",
     "description": "Tooltip/aria-label for the refresh button on the usage status pill."

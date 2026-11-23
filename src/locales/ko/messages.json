@@ -2085,6 +2085,18 @@
     "message": "재설정",
     "description": "Tooltip prefix shown before the reset time on a usage bar."
   },
+  "usageStatusRemaining": {
+    "message": "{n}% 남음",
+    "description": "Usage bar value in remaining view; {n} is the percent left. Keep the {n} placeholder literal."
+  },
+  "usageStatusShowRemaining": {
+    "message": "클릭하면 남은 양으로 표시",
+    "description": "Tooltip on a usage bar's percent in used view; clicking switches every bar to remaining."
+  },
+  "usageStatusShowUsed": {
+    "message": "클릭하면 사용량으로 표시",
+    "description": "Tooltip on a usage bar's percent in remaining view; clicking switches every bar back to used."
+  },
   "usageStatusRefresh": {
     "message": "새로고침",
     "description": "Tooltip/aria-label for the refresh button on the usage status pill."

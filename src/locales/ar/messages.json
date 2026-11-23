@@ -2085,6 +2085,18 @@
     "message": "إعادة التعيين",
     "description": "Tooltip prefix shown before the reset time on a usage bar."
   },
+  "usageStatusRemaining": {
+    "message": "متبقٍ {n}%",
+    "description": "Usage bar value in remaining view; {n} is the percent left. Keep the {n} placeholder literal."
+  },
+  "usageStatusShowRemaining": {
+    "message": "انقر لعرض المتبقي",
+    "description": "Tooltip on a usage bar's percent in used view; clicking switches every bar to remaining."
+  },
+  "usageStatusShowUsed": {
+    "message": "انقر لعرض المستخدم",
+    "description": "Tooltip on a usage bar's percent in remaining view; clicking switches every bar back to used."
+  },
   "usageStatusRefresh": {
     "message": "تحديث",
     "description": "Tooltip/aria-label for the refresh button on the usage status pill."

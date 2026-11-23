@@ -57,6 +57,7 @@ export function createUsagePill(onRefresh: () => void) {
   let pill: HTMLElement | null = null;
   let stampTimer: number | null = null;
   let dragPos: { x: number; y: number } | null = null;
+  let showRemaining = false;
   let dragging = false;
   let dragMoved = false;
   let dragOffset = { x: 0, y: 0 };
@@ -81,8 +82,17 @@ export function createUsagePill(onRefresh: () => void) {
     track.appendChild(fill);
     seg.appendChild(track);
 
-    const pct = document.createElement('span');
+    // Clicking the number flips every bar between used and remaining.
+    const pct = document.createElement('button');
+    pct.type = 'button';
     pct.className = 'gv-usage-pct';
+    pct.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      showRemaining = !showRemaining;
+      void saveShowRemaining(showRemaining);
+      if (pill) updatePillContent(pill, snapshot);
+    });
     seg.appendChild(pct);
 
     return seg;
@@ -161,11 +171,21 @@ export function createUsagePill(onRefresh: () => void) {
     }
     if (metric) {
       seg.removeAttribute('hidden');
-      if (fill) fill.style.width = `${metric.percent}%`;
+      const shown = showRemaining ? Math.max(0, 100 - metric.percent) : metric.percent;
+      if (fill) fill.style.width = `${shown}%`;
       if (pct) {
         const reset = formatResetCountdown(metric.resetEpoch, Date.now());
-        pct.textContent = `${metric.percent}%${reset ? ` (${reset})` : ''}`;
+        const value = showRemaining
+          ? t('usageStatusRemaining', '{n}% left').replace('{n}', String(shown))
+          : `${shown}%`;
+        pct.textContent = `${value}${reset ? ` (${reset})` : ''}`;
+        const hint = showRemaining
+          ? t('usageStatusShowUsed', 'Click to show used')
+          : t('usageStatusShowRemaining', 'Click to show remaining');
+        pct.title = hint;
+        pct.setAttribute('aria-label', `${pct.textContent}. ${hint}`);
       }
+      // Colour follows how much is used in either view: low remaining turns red.
       seg.classList.toggle('gv-usage-high', metric.percent >= 90);
       seg.classList.toggle('gv-usage-mid', metric.percent >= 70 && metric.percent < 90);
       // Reset time lives in the segment tooltip to keep the bar short.
@@ -254,7 +274,9 @@ export function createUsagePill(onRefresh: () => void) {
     if (ev.button !== 0 || !pill) return;
     // Don't start a drag from the interactive controls.
     if (
-      (ev.target as Element | null)?.closest('.gv-usage-empty, .gv-usage-refresh, .gv-usage-open')
+      (ev.target as Element | null)?.closest(
+        '.gv-usage-empty, .gv-usage-refresh, .gv-usage-open, .gv-usage-pct',
+      )
     )
       return;
     dragging = true;
@@ -307,17 +329,36 @@ export function createUsagePill(onRefresh: () => void) {
     }
   }
 
+  /** Load the stored placement and the used/remaining choice. */
   async function loadPosition(): Promise<void> {
     try {
-      const r = await browser.storage.local.get(StorageKeys.GV_USAGE_POS);
-      const raw = (r as Record<string, unknown>)[StorageKeys.GV_USAGE_POS];
+      const r = (await browser.storage.local.get([
+        StorageKeys.GV_USAGE_POS,
+        StorageKeys.GV_USAGE_SHOW_REMAINING,
+      ])) as Record<string, unknown>;
+      const raw = r[StorageKeys.GV_USAGE_POS];
       if (raw && typeof raw === 'object') {
         const p = raw as { x?: unknown; y?: unknown };
         if (typeof p.x === 'number' && typeof p.y === 'number') dragPos = { x: p.x, y: p.y };
       }
+      showRemaining = r[StorageKeys.GV_USAGE_SHOW_REMAINING] === true;
     } catch {
       // ignore
     }
+  }
+
+  async function saveShowRemaining(value: boolean): Promise<void> {
+    try {
+      await browser.storage.local.set({ [StorageKeys.GV_USAGE_SHOW_REMAINING]: value });
+    } catch {
+      // ignore
+    }
+  }
+
+  /** Mirror a used/remaining switch made in another tab. */
+  function adoptShowRemaining(raw: unknown): void {
+    showRemaining = raw === true;
+    if (pill) updatePillContent(pill, snapshot);
   }
 
   async function saveDragPos(pos: { x: number; y: number }): Promise<void> {
@@ -379,5 +420,5 @@ export function createUsagePill(onRefresh: () => void) {
     if (pill) positionPill(pill);
   }
 
-  return { loadPosition, adoptPosition, render, setSpinning, remove };
+  return { loadPosition, adoptPosition, adoptShowRemaining, render, setSpinning, remove };
 }

@@ -63,6 +63,9 @@ export const APPEARANCE_STORAGE_KEYS = {
   // User-dragged position of the usage mini-bar ({ x, y } viewport px). Absent =
   // default bottom-right. Local since it's a per-device UI placement.
   GV_USAGE_POS: 'gvUsagePos',
+  // true = the usage mini-bar shows what is left instead of what is used.
+  // Absent/false = used (the default). Toggled by clicking a bar's percent.
+  GV_USAGE_SHOW_REMAINING: 'gvUsageShowRemaining',
   // Local cache scraped from Claude's official settings usage page. Stored as
   // { metrics: Array<{ label, percent, resetLabel }>, plan, lastUpdatedLabel, updatedAt }.
   GV_CLAUDE_USAGE_CACHE: 'gvClaudeUsageCache',
