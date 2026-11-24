@@ -246,6 +246,8 @@ bun run build:all      # Chrome + Firefox + Safari
 
 - **[DeepSeek Enhancer](https://github.com/dlshuangchenyue1210/DeepSeek-Enhancer)** - расширение для веб-приложения DeepSeek, вдохновлённое Voyager: многоуровневые папки, экспорт чатов, копирование формул, резервное копирование данных и многое другое.
 
+- **[Voyager Lite](https://github.com/Carleo10032/voyager-lite)** - Неофициальная облегчённая версия на основе Voyager: навигация по таймлайну и фоновые эффекты для ChatGPT, Claude, Gemini и Grok.
+
 ---
 
 ## 📄 Лицензия

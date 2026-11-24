@@ -246,6 +246,8 @@ Voyager에서 영감을 받은 프로젝트:
 
 - **[DeepSeek Enhancer](https://github.com/dlshuangchenyue1210/DeepSeek-Enhancer)** - Voyager에서 영감을 받은 DeepSeek 웹 앱 강화 확장 프로그램으로, 다단계 폴더, 채팅 내보내기, 수식 복사, 데이터 백업 등을 제공합니다.
 
+- **[Voyager Lite](https://github.com/Carleo10032/voyager-lite)** - Voyager에서 파생된 비공식 경량 버전으로, ChatGPT, Claude, Gemini, Grok에서의 타임라인 탐색과 배경 효과에 집중합니다.
+
 ---
 
 ## 📄 라이선스

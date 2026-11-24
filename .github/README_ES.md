@@ -246,6 +246,8 @@ Si tu proyecto está inspirado en Voyager, es un fork suyo o está construido so
 
 - **[DeepSeek Enhancer](https://github.com/dlshuangchenyue1210/DeepSeek-Enhancer)** - una extensión de mejora inspirada en Voyager para la aplicación web de DeepSeek, con carpetas multinivel, exportación de chats, copia de fórmulas, copia de seguridad de datos y más.
 
+- **[Voyager Lite](https://github.com/Carleo10032/voyager-lite)** - Un derivado ligero y no oficial de Voyager, centrado en la navegación por línea de tiempo y los efectos de fondo en ChatGPT, Claude, Gemini y Grok.
+
 ---
 
 ## 📄 Licencia

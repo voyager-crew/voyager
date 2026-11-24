@@ -246,6 +246,8 @@ bun run build:all      # Chrome + Firefox + Safari
 
 - **[DeepSeek Enhancer](https://github.com/dlshuangchenyue1210/DeepSeek-Enhancer)**：受 Voyager 啟發、為 DeepSeek 網頁應用程式提供的增強擴充功能，提供多層資料夾、對話匯出、公式複製、資料備份等功能。
 
+- **[Voyager Lite](https://github.com/Carleo10032/voyager-lite)**：從 Voyager 提取的非官方精簡版，專注於 ChatGPT、Claude、Gemini 和 Grok 上的對話時間軸與背景特效。
+
 ---
 
 ## 📄 授權
