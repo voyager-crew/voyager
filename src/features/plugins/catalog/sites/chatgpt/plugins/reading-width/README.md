@@ -24,10 +24,10 @@ column.
 
 - ChatGPT sizes turns and the input box from the CSS variable
   `--thread-content-max-width` (`48rem` / 768px), consumed through the Tailwind
-  utility `max-w-(--thread-content-max-width)`. The plugin raises **both** the
-  variable and the resolved `max-width` on those containers.
-- The containers are `mx-auto`, so they stay **centered** — only the column
-  width changes; nothing is re-aligned.
+  utility `max-w-(--thread-content-max-width)`. The plugin applies the chosen
+  width to those containers and centers the width-limited column containing
+  the composer. It recognizes ChatGPT's legacy, unified, and tagged composer
+  forms while leaving the full-width footer alone.
 
 ## Adjustable
 

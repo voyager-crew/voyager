@@ -37,6 +37,8 @@ const PLUGIN_EMBEDDED_CONTENT_SCRIPT_ID = 'gv-plugin-embedded-content-script';
 const CLAUDE_USAGE_MAIN_SCRIPT_ID = 'gv-plugin-claude-usage-main';
 const CUSTOM_WEBSITE_KEY = 'gvPromptCustomWebsites';
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]']);
+// Dev builds change the hashed content-script loader on every rebuild.
+const persistContentScriptsAcrossSessions = import.meta.env.MODE === 'production';
 
 /** Whether the list has an entry for `host` already: the host on any port, or a parent domain. */
 function hasEntryForHost(entries: readonly unknown[], host: string): boolean {
@@ -201,7 +203,7 @@ export function createSiteAccessRegistration() {
           matches: grantedMatches,
           allFrames: manifestContentScript.all_frames,
           runAt,
-          persistAcrossSessions: true,
+          persistAcrossSessions: persistContentScriptsAcrossSessions,
         },
       ]);
       logger.info('[Background] Custom content scripts registered', { matches: grantedMatches });
@@ -379,7 +381,7 @@ export function createSiteAccessRegistration() {
           matches: topFrameOrigins,
           allFrames: false,
           runAt,
-          persistAcrossSessions: true,
+          persistAcrossSessions: persistContentScriptsAcrossSessions,
         });
       }
       if (embeddedFrameOrigins.length) {
@@ -390,7 +392,7 @@ export function createSiteAccessRegistration() {
           matches: embeddedFrameOrigins,
           allFrames: true,
           runAt,
-          persistAcrossSessions: true,
+          persistAcrossSessions: persistContentScriptsAcrossSessions,
         });
       }
       if (registrations.length) {

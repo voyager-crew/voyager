@@ -1,15 +1,33 @@
-/* voyager.chatgpt-reading-width - one wider, centered reading column.
- * The width variable is declared on both real content columns and structural
- * wrappers. Only the content columns are centered; constraining
- * #thread-bottom-container itself pins the composer to the left (that id is
- * absent from the current DOM; the rule stays for the earlier one). Propagate the
- * variable everywhere, but keep that outer footer wrapper full-width. */
+/* voyager.chatgpt-reading-width - widen and center ChatGPT's content columns. */
 .gv-plugin-chatgpt-readable [class*='--thread-content-max-width'] {
   --thread-content-max-width: var(--gv-plugin-reading-width, 768px) !important;
+  max-width: var(--gv-plugin-reading-width, 768px) !important;
 }
 
-.gv-plugin-chatgpt-readable [class*='--thread-content-max-width'] {
+.gv-plugin-chatgpt-readable .mx-auto[class*='--thread-content-max-width'] {
+  margin-inline: auto !important;
+}
+
+.gv-plugin-chatgpt-readable
+  [class*='--thread-content-max-width']:has(
+    #prompt-textarea,
+    [data-composer-markdown],
+    form[data-chatgpt-composer],
+    form[data-type='unified-composer'],
+    form[data-testid*='composer' i]
+  ) {
+  width: 100% !important;
+  margin-inline: auto !important;
+}
+
+/* The composer is a flex item; max-width alone makes its form shrink-wrap. */
+.gv-plugin-chatgpt-readable form:has(#prompt-textarea, [data-composer-markdown]),
+.gv-plugin-chatgpt-readable form[data-chatgpt-composer],
+.gv-plugin-chatgpt-readable form[data-type='unified-composer'],
+.gv-plugin-chatgpt-readable form[data-testid*='composer' i] {
+  width: 100% !important;
   max-width: var(--gv-plugin-reading-width, 768px) !important;
+  margin-inline: auto !important;
 }
 
 .gv-plugin-chatgpt-readable #thread-bottom-container {
