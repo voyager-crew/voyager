@@ -2,8 +2,9 @@ import { hasVoyagerOwner } from './composer/voyagerOwner';
 import { GEMINI_TURN_HOSTS } from './turnOwners';
 
 const SIDEBAR = 'bard-sidenav, side-nav, side-navigation-content';
-const CHAT = 'chat-window';
-const COMPOSER = 'input-area, input-area-v2, input-container, .text-input-field, .input-area';
+const CHAT = 'chat-window, [data-chat-scrollport]';
+const COMPOSER =
+  'input-area, input-area-v2, input-container, .text-input-field, .input-area, [data-chat-composer-dock]';
 const CANVAS = 'immersive-panel, inline-preview';
 const LANDMARK =
   'main, [role="main"], form, nav, [role="navigation"], dialog, [role="dialog"], [role="alertdialog"], [role="menu"], .sidebar, .mat-drawer, .mat-mdc-dialog-container';

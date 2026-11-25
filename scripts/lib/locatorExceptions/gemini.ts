@@ -27,6 +27,7 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
       'immersive-panel': 1,
       'inline-preview': 1,
       '.mat-mdc-dialog-container': 1,
+      '[data-chat-scrollport]': 1,
       'chat-app': 2,
       '#app-root': 1,
     },
@@ -69,15 +70,6 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
     },
     reason:
       'readGeminiContentLeaves excludes thought/action text before complete-leaf identity comparison; this is the independent reference, not answer selection. belongsToHost rejects a candidate crossing a nested original turn/conversation owner; it cannot contribute another turn to the remote result. preservesGeminiContentFrames forbids starting inside native prose/code/math/image frames, preserving serialization and full content independently of remote spelling. Native context-image witness excludes action/icon descendants before requiring full-size source metadata and exact image identity/order. Additional button/attachment-preview exclusions preserve every authored native paragraph in the independent complete reference.',
-  },
-  {
-    file: 'src/core/gemini/math/userLatex.ts',
-    kind: 'proof',
-    values: {
-      'user-query': 1,
-    },
-    reason:
-      'The native paragraph/source proof excludes controls, code, hidden metadata and user attachment previews; remote LaTeX lines must equal this complete native list. Additional raw user-query enumeration is nativeLines(), only the independent complete-paragraph reference, never the returned remote winner.',
   },
   {
     file: 'src/core/gemini/selectors/bundle.ts',
@@ -164,7 +156,7 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
       'section[data-test-id="user-query"]': 1,
     },
     reason:
-      'Packaged exchange and turn owners of both Gemini frontends (Angular and the React rewrite, #1113). Turn, content, composer and boundary proofs read them to reject a candidate that crosses another turn or exchange; they never select a remote winner, so a remote repair for either UI meets the same ownership bar.',
+      'Packaged exchange and turn owners of both Gemini frontends (Angular and the React rewrite, #1113). Turn, content, composer and boundary proofs read them to reject a candidate that crosses another turn or exchange; they never select a remote winner, so a remote repair for either UI meets the same ownership bar. userLatex.ts enumerates the user hosts only in nativeLines(), the independent complete-paragraph reference that excludes controls, code, hidden metadata and user attachment previews; remote LaTeX lines must equal that complete native list and are never selected by it.',
   },
   {
     file: 'src/core/gemini/turnIntegrity.ts',

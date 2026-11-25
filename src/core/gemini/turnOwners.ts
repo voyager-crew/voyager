@@ -6,6 +6,8 @@
  */
 export const GEMINI_EXCHANGE_OWNER = '.conversation-container, [data-chat-scrollport] article';
 
+/** The host of each original user prompt. */
+export const GEMINI_USER_TURN_HOSTS = 'user-query, section[data-test-id="user-query"]';
+
 /** Turn hosts: a candidate crossing one of these belongs to another turn. */
-export const GEMINI_TURN_HOSTS =
-  'model-response, user-query, section[data-test-id="model-response"], section[data-test-id="user-query"]';
+export const GEMINI_TURN_HOSTS = `model-response, section[data-test-id="model-response"], ${GEMINI_USER_TURN_HOSTS}`;

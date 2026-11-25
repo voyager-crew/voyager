@@ -1,5 +1,6 @@
 {
   "responseActions.bars": [
-    "message-actions, .message-actions, .actions-container-v2, .buttons-container-v2"
+    "message-actions, .message-actions, .actions-container-v2, .buttons-container-v2",
+    "[data-testid=\"chat-response-action-bar\"]"
   ]
 }

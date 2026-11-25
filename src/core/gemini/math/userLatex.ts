@@ -7,6 +7,7 @@ import {
   type GeminiSelectorOperation,
   type GeminiSelectorView,
 } from '../selectors';
+import { GEMINI_USER_TURN_HOSTS } from '../turnOwners';
 
 const NON_MESSAGE_CONTENT =
   'button, textarea, input, code, pre, script, style, [contenteditable]:not([contenteditable="false"]), [aria-hidden="true"], .cdk-visually-hidden, user-query-file-preview';
@@ -33,7 +34,7 @@ function preservesLineContent(line: HTMLElement): boolean {
 /** Native paragraphs prove line boundaries independently of the online class name. */
 function nativeLines(doc: Document): HTMLElement[] | null {
   const lines: HTMLElement[] = [];
-  for (const host of doc.querySelectorAll('user-query')) {
+  for (const host of doc.querySelectorAll(GEMINI_USER_TURN_HOSTS)) {
     const paragraphs = Array.from(host.querySelectorAll<HTMLElement>('p')).filter(
       (line) => !line.closest(NON_MESSAGE_CONTENT),
     );

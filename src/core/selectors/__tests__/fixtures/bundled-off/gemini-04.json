@@ -158,7 +158,10 @@
     "menu-packaged.json/menu.conversationTriggers",
     "[data-test-id=\"actions-menu-button\"], [data-test-id=\"conversation-actions-menu-icon-button\"]"
   ],
-  ["menu-packaged.json/menu.responseTrigger", "[data-test-id=\"more-menu-button\"]"],
+  [
+    "menu-packaged.json/menu.responseTrigger",
+    "[data-test-id=\"more-menu-button\"], [data-testid=\"response-more-button\"]"
+  ],
   ["menu.json/menu.panels", [".mat-mdc-menu-panel[role=\"menu\"], gem-menu"]],
   ["menu.json/menu.content", [".mat-mdc-menu-content"]],
   [

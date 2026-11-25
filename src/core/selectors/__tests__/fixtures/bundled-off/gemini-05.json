@@ -5,7 +5,10 @@
   ],
   [
     "response-actions.json/responseActions.bars",
-    ["message-actions, .message-actions, .actions-container-v2, .buttons-container-v2"]
+    [
+      "message-actions, .message-actions, .actions-container-v2, .buttons-container-v2",
+      "[data-testid=\"chat-response-action-bar\"]"
+    ]
   ],
   ["sent-chips-packaged.json/sentChips.lines", [".query-text-line", ".query-text"]],
   ["sent-chips-packaged.json/sentChips.anchor", ".query-text"],

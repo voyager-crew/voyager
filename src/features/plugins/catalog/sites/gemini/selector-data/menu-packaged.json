@@ -5,5 +5,5 @@
   "menu.expandedTrigger": "[aria-haspopup=\"menu\"][aria-expanded=\"true\"]",
   "menu.backdrop": ".cdk-overlay-backdrop",
   "menu.conversationTriggers": "[data-test-id=\"actions-menu-button\"], [data-test-id=\"conversation-actions-menu-icon-button\"]",
-  "menu.responseTrigger": "[data-test-id=\"more-menu-button\"]"
+  "menu.responseTrigger": "[data-test-id=\"more-menu-button\"], [data-testid=\"response-more-button\"]"
 }

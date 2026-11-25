@@ -80,7 +80,7 @@
   ["content-packaged.json/export.codeOwner", "code-block"],
   [
     "content-packaged.json/export.responseOwner",
-    "model-response, .model-response, .presented-response-container, .response-container, response-container"
+    "model-response, .model-response, .presented-response-container, .response-container, response-container, section[data-test-id=\"model-response\"]"
   ],
   ["content-packaged.json/export.walkMarkdown", ".markdown, .markdown-main-panel"],
   ["content-packaged.json/export.markdown", [".markdown, .markdown-main-panel"]],
@@ -97,7 +97,7 @@
   ],
   [
     "content-packaged.json/export.menuResponseOwner",
-    ".response-container, response-container, .model-response, model-response"
+    ".response-container, response-container, .model-response, model-response, section[data-test-id=\"model-response\"]"
   ],
   [
     "content-packaged.json/export.userLinesFallback",
