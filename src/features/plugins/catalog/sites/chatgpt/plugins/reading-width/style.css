@@ -1,35 +1,23 @@
-/* voyager.chatgpt-reading-width - widen and center ChatGPT's content columns. */
+/* voyager.chatgpt-reading-width - one wider, centered reading column.
+ * The width variable is declared on both real content columns and structural
+ * wrappers, so every one of them takes the chosen width. */
 .gv-plugin-chatgpt-readable [class*='--thread-content-max-width'] {
   --thread-content-max-width: var(--gv-plugin-reading-width, 768px) !important;
   max-width: var(--gv-plugin-reading-width, 768px) !important;
 }
 
-.gv-plugin-chatgpt-readable .mx-auto[class*='--thread-content-max-width'] {
-  margin-inline: auto !important;
-}
-
+/* On the new-chat page the composer sits in a flex-1 wrapper that only declares
+ * the variable and is not mx-auto, so the cap above pins it to the left. Center
+ * the columns that hold the page composer (not the inline edit form); width:100%
+ * stops the flex item shrinking to its content once its margins are auto. */
 .gv-plugin-chatgpt-readable
-  [class*='--thread-content-max-width']:has(
-    #prompt-textarea,
-    [data-composer-markdown],
-    form[data-chatgpt-composer],
-    form[data-type='unified-composer'],
-    form[data-testid*='composer' i]
-  ) {
+  [class*='--thread-content-max-width']:has(form[data-chatgpt-composer], #prompt-textarea) {
   width: 100% !important;
   margin-inline: auto !important;
 }
 
-/* The composer is a flex item; max-width alone makes its form shrink-wrap. */
-.gv-plugin-chatgpt-readable form:has(#prompt-textarea, [data-composer-markdown]),
-.gv-plugin-chatgpt-readable form[data-chatgpt-composer],
-.gv-plugin-chatgpt-readable form[data-type='unified-composer'],
-.gv-plugin-chatgpt-readable form[data-testid*='composer' i] {
-  width: 100% !important;
-  max-width: var(--gv-plugin-reading-width, 768px) !important;
-  margin-inline: auto !important;
-}
-
+/* Constraining #thread-bottom-container itself pins the composer to the left
+ * (that id is absent from the current DOM; the rule stays for the earlier one). */
 .gv-plugin-chatgpt-readable #thread-bottom-container {
   width: 100% !important;
   max-width: none !important;

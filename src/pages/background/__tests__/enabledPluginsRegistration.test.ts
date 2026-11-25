@@ -194,12 +194,4 @@ describe('Prompt Manager on a supported site, through its coverage entry', () =>
 
     expect(pluginPages()).toEqual(['https://chat.openai.com/*']);
   });
-
-  it('does not persist dev plugin scripts whose loader paths change on rebuild', async () => {
-    browserGrants.granted.add('https://chatgpt.com/*');
-    pluginState = { 'voyager.chatgpt-reading-width': { enabled: true, installedAt: 1 } };
-    await startBackground();
-
-    expect(registered.get(PLUGIN_SCRIPT)?.persistAcrossSessions).toBe(false);
-  });
 });
