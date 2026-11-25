@@ -301,6 +301,18 @@ describe('ChatGPT timeline homing', () => {
       }
     });
 
+    // The capped run re-reads every turn's style about 4,000 times, and jsdom recomputes
+    // each one, which outlasts the test timeout on a loaded CI runner. No style changes
+    // here, so one computation per element gives the same answers.
+    const computed = new Map<Element, CSSStyleDeclaration>();
+    const compute = window.getComputedStyle.bind(window);
+    const styles = vi.spyOn(window, 'getComputedStyle').mockImplementation((element, pseudo) => {
+      if (pseudo) return compute(element, pseudo);
+      const style = computed.get(element) ?? compute(element);
+      computed.set(element, style);
+      return style;
+    });
+
     dots()[0].click();
     await settle(60_000);
     const calls = scrollTo.mock.calls.length;
@@ -308,8 +320,8 @@ describe('ChatGPT timeline homing', () => {
 
     expect(scrollTo).toHaveBeenCalledTimes(calls);
     expect(calls).toBeLessThanOrEqual(61);
-    // Seventy simulated seconds of a capped run outlast the default 5 s on a loaded CI runner.
-  }, 30_000);
+    styles.mockRestore();
+  });
 
   it('steps when a far jump keeps landing on the same side of the turn', async () => {
     serveConversation(PROMPTS);
