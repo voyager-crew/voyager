@@ -10,7 +10,13 @@
  *   step at a time and moves `aria-valuenow` and the `role=status` text about
  *   500 ms later. A bridge tab opened in the background rendered that row
  *   without the slider inside (`sliderRendered: false`);
- * - the model radios sit in a collapsed `aria-hidden` sub-panel;
+ * - the model radios sit in a collapsed `aria-hidden` sub-panel. From
+ *   2026-11-24 they are Latest (checked for a new chat), GPT-6.2, GPT-6 and
+ *   GPT-5.6 Sol (`NOV_2026_RADIOS`; re-read on an en-US page 2026-11-25:
+ *   Latest's slider has five steps, status `Medium, 2 of 5.`);
+ * - under Latest the closed trigger reads `Medium` on that step but `6 Pro`
+ *   on Pro: a `data-model-selection-label` span holds the model's short name
+ *   as its own text and the step in a child span (`modelSelection`);
  * - Escape on the menu closes it, and only then does ChatGPT save the step
  *   (measured 2026-10-21: one PATCH of `user_last_used_model_config` on close,
  *   none while the menu is open). The saved step is account-wide.
@@ -20,9 +26,22 @@
  */
 const DEFAULT_STEP_LABELS = ['即时', '中', '高', '极高', 'Pro'];
 const STEP_DELAY_MS = 500;
+/** The model radios from 2026-11-24 on, in page order. */
+export const NOV_2026_RADIOS = ['Latest', 'GPT-6.2', 'GPT-6', 'GPT-5.6 Sol'] as const;
+/** An en-US page as read on 2026-11-25. */
+export const EN_US = {
+  triggerLabel: 'Select ChatGPT model',
+  stepLabels: ['Instant', 'Medium', 'High', 'Extra High', 'Pro'],
+  status: (label: string, position: number, count: number) => `${label}, ${position} of ${count}.`,
+} as const;
 
 export interface PickerOptions {
-  readonly model?: 'GPT-6' | 'GPT-5.6 Sol';
+  /** The checked radio's label. */
+  readonly model?: string;
+  /** The radios in page order; the 2026-10-18 pair by default. */
+  readonly radios?: readonly string[];
+  /** The step at which the closed trigger puts the model's short name before the step. */
+  readonly modelSelection?: { readonly at: number; readonly short: string; readonly id: string };
   readonly effort?: number;
   /** Status names per step; its length decides `aria-valuemax`. */
   readonly stepLabels?: readonly string[];
@@ -80,6 +99,7 @@ export function mountLiveModelPicker(
   const statusText = (names: readonly string[], index: number): string =>
     (options.status ?? zhStatus)(names[index], index + 1, names.length);
   const model = options.model ?? 'GPT-6';
+  const radios = options.radios ?? ['GPT-6', 'GPT-5.6 Sol'];
   let effort = options.effort ?? labels.length - 1;
   let committed = effort;
   let escapesIgnored = options.escapesIgnored ?? 0;
@@ -107,7 +127,12 @@ export function mountLiveModelPicker(
   trigger.setAttribute('aria-expanded', 'false');
   trigger.setAttribute('data-state', 'closed');
   const paintTrigger = (): void => {
-    trigger.innerHTML = `<span><span aria-hidden="true"><span>思考强度</span></span><span><span><span>${labels[effort]}</span></span></span></span><svg aria-hidden="true"></svg>`;
+    const named = options.modelSelection;
+    const step =
+      named?.at === effort
+        ? `<span data-model-selection-label="${named.id}">${named.short} <span>${labels[effort]}</span></span>`
+        : `<span>${labels[effort]}</span>`;
+    trigger.innerHTML = `<span><span aria-hidden="true"><span>思考强度</span></span><span><span>${step}</span></span></span><svg aria-hidden="true"></svg>`;
   };
   paintTrigger();
   form.appendChild(trigger);
@@ -143,8 +168,12 @@ export function mountLiveModelPicker(
       </div>
       <div aria-hidden="true">
         <span>已锁定，打开访问权限选项</span>
-        <div role="menuitemradio" aria-checked="${model === 'GPT-6'}"><span>GPT-6</span></div>
-        <div role="menuitemradio" aria-checked="${model === 'GPT-5.6 Sol'}"><span>GPT-5.6 Sol</span></div>
+        ${radios
+          .map(
+            (name) =>
+              `<div role="menuitemradio" aria-checked="${model === name}"><span>${name}</span></div>`,
+          )
+          .join('')}
       </div>`;
     const current = menu;
     const item = current.querySelector<HTMLElement>('[aria-label="强度"]')!;

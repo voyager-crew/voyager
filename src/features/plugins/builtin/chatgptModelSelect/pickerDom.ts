@@ -145,6 +145,23 @@ export function triggerText(trigger: HTMLElement): string {
   return normalizeLabel(copy.textContent ?? '');
 }
 
+/**
+ * The step the closed trigger names. Under "Latest" a Pro step reads "6 Pro": a
+ * `[data-model-selection-label]` span holds the model's short name as its own text and
+ * the step in a child span (measured 2026-11-24). Only that child is the step, so no
+ * word is ever stripped from a name ("Extra High" stays "Extra High", never "High").
+ */
+export function triggerStep(trigger: HTMLElement): string {
+  const copy = trigger.cloneNode(true) as HTMLElement;
+  copy.querySelectorAll('[aria-hidden="true"]').forEach((node) => node.remove());
+  const labelled = copy.querySelectorAll('[data-model-selection-label]');
+  if (labelled.length !== 1) return normalizeLabel(copy.textContent ?? '');
+  const holder = labelled[0];
+  if (holder.children.length === 0) return normalizeLabel(holder.textContent ?? '');
+  const step = Array.from(holder.children, (child) => child.textContent ?? '').join(' ');
+  return normalizeLabel(step);
+}
+
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

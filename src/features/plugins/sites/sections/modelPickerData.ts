@@ -9,8 +9,11 @@
  * - `effortStatus`: the menu's `role=status` text, a template with `{label}`
  *   and optionally `{position}` / `{count}` (1-based), per locale;
  * - `models`: per model id, its radio labels and, where measured, its effort
- *   steps in slider order (index = `aria-valuenow`);
- * - `presets`: CLI names (`pro`, …) for a model and one of its efforts.
+ *   steps in slider order (index = `aria-valuenow`). The steps of all models
+ *   are also the step-name vocabulary: an id's names merge across models;
+ * - `presets`: CLI names (`pro`, …) for a model and one of its efforts. A
+ *   preset with an effort lands on that step of whatever model the page has
+ *   selected, listed here or not; its model gives only the steps' order.
  *
  * Label tables are keyed by UI locale, but the engine merges every locale:
  * a page is not always in the language its `lang` attribute claims.

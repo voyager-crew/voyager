@@ -418,9 +418,9 @@ describe('Local Bridge model.select: refusals', () => {
     expect(picker.state()).toMatchObject({ keydowns: 1, open: false });
   });
 
-  it('reports model-not-found with the radio labels when another model is selected', async () => {
+  it('reports model-not-found with the radio labels when a named model is not selected', async () => {
     mount({ model: 'GPT-5.6 Sol' });
-    await select({ target: { preset: 'pro' } });
+    await select({ target: { mode: 'chat', model: 'gpt-6', effort: 'pro' } });
 
     expect(errorCode(bridge.outcome())).toBe('model-not-found');
     expect(details()).toMatchObject({

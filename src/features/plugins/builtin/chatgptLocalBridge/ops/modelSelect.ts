@@ -5,7 +5,8 @@
  * in chat mode; ChatGPT Work has a different one the bridge never touches.
  */
 import type { ModelSelectParams, ModelSelectResult } from '@/features/bridge/protocol';
-import { resolveTarget, selectModel } from '@/features/plugins/builtin/chatgptModelSelect/engine';
+import { selectModel } from '@/features/plugins/builtin/chatgptModelSelect/engine';
+import { resolveTarget } from '@/features/plugins/builtin/chatgptModelSelect/stepTarget';
 import type { SiteAdapter } from '@/features/plugins/types';
 
 import type { OpContext } from '../opContext';

@@ -16,24 +16,24 @@
  *   language (measured: a zh-CN page showing "Extra High"), so an unknown name
  *   or an unreadable status is fine. A target the page does not offer is
  *   `effort-unavailable`; nothing settles for a nearby step.
- * - Switching the model itself was not measured (the radios sit in a
- *   collapsed sub-panel), so another model selected is `model-not-found`.
+ * - A preset names a step, not a model (`stepTarget.ts`): it lands on that
+ *   step of whatever model is selected, by name where the site data has not
+ *   measured that model's steps. Switching the model itself was not measured
+ *   (the radios sit in a collapsed sub-panel), so a target naming another
+ *   model than the selected one is `model-not-found`.
  * - Close: Escape on the menu, confirmed by the trigger, and once more if the
  *   menu stays open. ChatGPT saves the choice only as the menu closes
  *   (measured 2026-10-21: one PATCH of `user_last_used_model_config` on close,
  *   none while the menu is open, none when the composer goes away with it), so
  *   a menu that never closed, or whose trigger went away, applied nothing. The
- *   closed trigger must then not name another step.
+ *   closed trigger's step (`triggerStep`) must then name the target.
  */
-import type { ModelSelectResult, ModelSelection, ModelTarget } from '@/features/bridge/protocol';
+import type { ModelSelectResult, ModelSelection } from '@/features/bridge/protocol';
 import {
   GRANT_MARGIN_MS,
   type OpContext,
 } from '@/features/plugins/builtin/chatgptLocalBridge/opContext';
-import type {
-  ModelPickerEffort,
-  ModelPickerSection,
-} from '@/features/plugins/sites/sections/modelPickerData';
+import type { ModelPickerSection } from '@/features/plugins/sites/sections/modelPickerData';
 import { isRendered } from '@/pages/content/export/adapter/chatgptThread';
 
 import {
@@ -42,8 +42,10 @@ import {
   findTrigger,
   mergedLabels,
   readPicker,
+  triggerStep,
   triggerText,
 } from './pickerDom';
+import { type PageGoal, type ResolvedTarget, goalOnPage } from './stepTarget';
 
 const OPEN_TIMEOUT_MS = 3_000;
 /** Presses before the menu counts as not opening; the first can land before hydration. */
@@ -57,56 +59,6 @@ const CLOSE_TIMEOUT_MS = 1_500;
 const CLOSE_ATTEMPTS = 2;
 /** The least gap between two looks at the picker; a step lands about 500 ms after its key. */
 const MIN_GAP_MS = 100;
-
-export interface ResolvedTarget {
-  readonly modelId: string;
-  /** Null: select the model only, whatever its effort. */
-  readonly effortIndex: number | null;
-}
-
-/** Expand a target through the site data; fails before any page event. */
-export function resolveTarget(
-  ctx: OpContext,
-  data: ModelPickerSection,
-  target: ModelTarget,
-): ResolvedTarget {
-  let modelId: string;
-  let effort: string | undefined;
-  let effortIndex: number | undefined;
-  if ('preset' in target) {
-    const preset = Object.hasOwn(data.presets, target.preset) ? data.presets[target.preset] : null;
-    if (!preset) {
-      ctx.fail('bad-request', `The site data has no model preset "${target.preset}".`, {
-        presets: Object.keys(data.presets),
-      });
-    }
-    modelId = preset.model;
-    effort = preset.effort;
-  } else {
-    modelId = target.model;
-    if ('effortIndex' in target) effortIndex = target.effortIndex;
-    else effort = target.effort;
-  }
-  const model = Object.hasOwn(data.models, modelId) ? data.models[modelId] : null;
-  if (!model) {
-    ctx.fail('model-not-found', `The site data knows no model "${modelId}".`, {
-      models: Object.keys(data.models),
-    });
-  }
-  if (effort !== undefined) {
-    const index = model.efforts?.findIndex((step) => step.id === effort) ?? -1;
-    if (index < 0) {
-      ctx.fail('effort-unavailable', `The site data has no effort "${effort}" for ${modelId}.`, {
-        efforts: model.efforts?.map((step) => step.id) ?? [],
-      });
-    }
-    return { modelId, effortIndex: index };
-  }
-  if (effortIndex !== undefined && !model.efforts) {
-    ctx.fail('effort-unavailable', `The site data has no effort steps for ${modelId}.`);
-  }
-  return { modelId, effortIndex: effortIndex ?? null };
-}
 
 /** What is left of the grant for page work, never more than `cap`. */
 function budget(ctx: OpContext, cap: number): number {
@@ -129,18 +81,6 @@ function selectionOf(data: ModelPickerSection, reading: PickerReading): ModelSel
     effortIndex: reading.slider?.now ?? null,
     effortMax: reading.slider?.max ?? null,
   };
-}
-
-/** Whether a step name fits step `goal`: the position decides, a name only vetoes as another step's. */
-function stepNamer(
-  efforts: readonly ModelPickerEffort[],
-  goal: number,
-): (label: string | null) => boolean {
-  const labels = mergedLabels(efforts[goal].labels);
-  const otherLabels = new Set(
-    efforts.flatMap((step, index) => (index === goal ? [] : [...mergedLabels(step.labels)])),
-  );
-  return (label) => label === null || labels.has(label) || !otherLabels.has(label);
 }
 
 function pointer(type: 'pointerdown' | 'pointerup'): PointerEvent {
@@ -272,29 +212,35 @@ export async function selectModel(
       available: radioLabels,
     });
   }
-  if (!mergedLabels(data.models[target.modelId].labels).has(checked[0].label)) {
+  const selectedLabel = checked[0].label;
+  if (
+    target.kind === 'model' &&
+    !mergedLabels(data.models[target.modelId].labels).has(selectedLabel)
+  ) {
     await failClosed(
       'model-not-found',
-      `ChatGPT has ${checked[0].label} selected; switching models is not supported yet.`,
-      { available: radioLabels, selected: checked[0].label },
+      `ChatGPT has ${selectedLabel} selected; switching models is not supported yet.`,
+      { available: radioLabels, selected: selectedLabel },
     );
   }
 
   let steps = 0;
   /** The status at the target step, confirmed while the menu was open. */
   let targetStatus: PickerReading['status'] | null = null;
-  if (target.effortIndex !== null) {
-    const efforts = data.models[target.modelId].efforts ?? [];
-    const goal = target.effortIndex;
+  let place: PageGoal | null = null;
+  if (target.kind === 'step' || target.effortIndex !== null) {
     const slider = before.slider;
-    // The data's steps must be the page's steps, or the labels say nothing about the index.
-    if (!slider || slider.min !== 0 || slider.max !== efforts.length - 1 || goal > slider.max) {
+    place = slider
+      ? goalOnPage(data, target, modelIdOf(data, selectedLabel), slider, before.status.label)
+      : null;
+    if (!slider || !place) {
       await failClosed('effort-unavailable', 'ChatGPT does not offer the requested effort.', {
         available: seenLabels,
         valueMax: slider?.max ?? null,
-        expectedMax: efforts.length - 1,
+        selected: selectedLabel,
       });
     }
+    const { goal, named } = place!;
     let now = slider!.now;
     while (now !== goal) {
       if (steps > slider!.max) {
@@ -324,9 +270,6 @@ export async function selectModel(
       now = moved!.value;
     }
 
-    // A zh-CN page may name its steps in English ("Extra High" for 极高), and other languages
-    // are not in the data at all.
-    const named = stepNamer(efforts, goal);
     const confirmed = await ctx.waitFor(
       () => {
         const reading = read();
@@ -350,7 +293,8 @@ export async function selectModel(
 
   const after = read();
   const observed = selectionOf(data, after);
-  if (observed.modelId !== target.modelId) {
+  const nowSelected = after.radios.filter((radio) => radio.checked);
+  if (nowSelected.length !== 1 || nowSelected[0].label !== selectedLabel) {
     await failClosed('unverified', 'The model selection changed while it was being set.', {
       shown: observed,
     });
@@ -369,10 +313,9 @@ export async function selectModel(
     );
   }
   let shown = triggerText(menuTrigger);
-  if (target.effortIndex !== null && targetStatus) {
+  if (place && targetStatus) {
     const status = targetStatus;
-    const labels = mergedLabels(data.models[target.modelId].efforts![target.effortIndex].labels);
-    const named = stepNamer(data.models[target.modelId].efforts!, target.effortIndex);
+    const { labels, named } = place;
     // No slider backs the closed trigger, so a name is proof only as the step the status named
     // at the target: a revert to a name the data lacks ("Sofort") must not pass as unknown.
     const names = (text: string): boolean =>
@@ -382,8 +325,8 @@ export async function selectModel(
     // The closed trigger names the saved step; it may repaint a moment after `aria-expanded`.
     const settled = await ctx.waitFor(
       () => {
-        const text = triggerText(menuTrigger);
-        return names(text) ? { text } : null;
+        const text = triggerStep(menuTrigger);
+        return names(text) ? { text: triggerText(menuTrigger) } : null;
       },
       { timeoutMs: budget(ctx, STATUS_TIMEOUT_MS), minGapMs: MIN_GAP_MS },
     );

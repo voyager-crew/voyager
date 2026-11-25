@@ -6,7 +6,8 @@ import type { AccountTier } from '@/features/bridge/protocol';
  * Measured on chatgpt.com (zh-CN, 2026-10-18): the picker trigger is a
  * `button[aria-haspopup=menu]` in the composer form whose `aria-label` is in
  * the site data's `modelPicker.triggerLabels`, and its visible text (without
- * the `aria-hidden` caption) is the selected effort, "Pro" for GPT-6 Pro.
+ * the `aria-hidden` caption) is the selected effort, "Pro" for GPT-6 Pro; under
+ * "Latest" (2026-11-24) it reads "6 Pro", the step in a child span (`triggerStep`).
  * Work mode has its own picker without a Pro step, so a trigger reading
  * Pro means chat mode with Pro selected.
  *
@@ -20,7 +21,8 @@ import type { SiteAdapter } from '@/features/plugins/types';
 import { getCachedLocale, getTranslationSync } from '@/utils/i18n';
 
 import { chatgptComposerRootOf } from '../chatgptComposerTargets';
-import { findTrigger, mergedLabels, triggerText } from '../chatgptModelSelect/pickerDom';
+import { findTrigger, triggerStep } from '../chatgptModelSelect/pickerDom';
+import { stepLabels } from '../chatgptModelSelect/stepTarget';
 import { type Allowance, TIER_NAMES } from './allowance';
 import type { ProUsageSummary } from './usageStore';
 
@@ -49,26 +51,13 @@ function pickerData(adapter: SiteAdapter | null): ModelPickerSection | null {
   return adapter?.modelPicker ?? chatgptAdapter.modelPicker ?? null;
 }
 
-function proLabels(data: ModelPickerSection): Set<string> {
-  const table: Record<string, string[]> = {};
-  for (const model of Object.values(data.models)) {
-    for (const effort of model.efforts ?? []) {
-      if (effort.id !== PRO_EFFORT_ID) continue;
-      for (const [locale, labels] of Object.entries(effort.labels)) {
-        table[locale] = [...(table[locale] ?? []), ...labels];
-      }
-    }
-  }
-  return mergedLabels(table);
-}
-
 /** The composer's picker trigger while it shows Pro, else null. */
 export function findProTrigger(adapter: SiteAdapter | null): HTMLElement | null {
   const data = pickerData(adapter);
   if (!data) return null;
   const trigger = findTrigger(document, data);
   if (!trigger || !chatgptComposerRootOf(trigger, adapter)) return null;
-  return proLabels(data).has(triggerText(trigger)) ? trigger : null;
+  return stepLabels(data, PRO_EFFORT_ID).has(triggerStep(trigger)) ? trigger : null;
 }
 
 function fill(template: string, values: Record<string, string | number>): string {

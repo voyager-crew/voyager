@@ -129,7 +129,7 @@
         "type": "string",
         "pattern": "^[a-z0-9][a-z0-9.-]{0,63}$"
       },
-      "description": "CLI presets (`voyager ask --model <name>`): a model of `models` and, optionally, one of its efforts.",
+      "description": "CLI presets (`voyager ask --model <name>`): a model of `models` and, optionally, one of its efforts. A preset with an effort lands on that step of whatever model ChatGPT has selected, by the step's name across every model's `efforts` when that model is not listed here; the preset's model gives only the order of the steps.",
       "additionalProperties": {
         "type": "object",
         "required": ["mode", "model"],

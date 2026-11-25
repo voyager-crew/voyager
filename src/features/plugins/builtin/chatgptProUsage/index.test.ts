@@ -152,6 +152,15 @@ describe('ChatGPT Pro usage', () => {
     expect(badgeText()).toBe('Pro messages used this week: 0');
   });
 
+  it('shows the ring when Latest names Pro after the model, as "6 Pro"', async () => {
+    const trigger = mountComposer(
+      '<span data-model-selection-label="gpt-6-pro">6 <span>Pro</span></span>',
+    );
+    await start();
+
+    expect(ring()?.nextElementSibling).toBe(trigger);
+  });
+
   it('shows the ring beside a picker labelled in a UI language the site data does not name', async () => {
     const trigger = mountComposer('Pro');
     trigger.setAttribute('aria-label', 'ChatGPT-Modell auswählen');
