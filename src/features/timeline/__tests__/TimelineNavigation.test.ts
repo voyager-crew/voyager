@@ -91,6 +91,8 @@ describe('TimelineNavigation', () => {
     viewport.appendChild(target.element);
     vi.advanceTimersByTime(200);
     expect(viewport.scrollTo).toHaveBeenLastCalledWith({ top: 1670, behavior: 'smooth' });
+    // Only the active hold's expiry check is left, and it ends with the hold.
+    vi.advanceTimersByTime(1000);
     expect(vi.getTimerCount()).toBe(0);
   });
 

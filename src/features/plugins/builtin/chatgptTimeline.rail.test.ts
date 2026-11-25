@@ -194,11 +194,12 @@ describe('ChatGPT timeline', () => {
     await settle();
 
     dots()[0].click();
-    // One bounded step (0.8 of the 600px view) towards the older end: ChatGPT
-    // reserves no height for unmounted turns, so a remembered centre is no target.
-    expect(scroller.scrollTo).toHaveBeenLastCalledWith({ top: -480, behavior: 'instant' });
+    // One jump to the place the mounted turns put it (1520 - 300px a turn,
+    // 950 from the start, -450 on the reversed origin): ChatGPT reserves no
+    // height for unmounted turns, so a remembered centre is no target.
+    expect(scroller.scrollTo).toHaveBeenLastCalledWith({ top: -450, behavior: 'instant' });
 
-    // The step landed: the item is back, the newer ones are out of view.
+    // The jump landed: the item is back, the newer ones are out of view.
     Object.defineProperty(scroller, 'scrollTop', { configurable: true, value: -890 });
     bubble(middle).getBoundingClientRect = rect(990);
     const remounted = exchange('Older question');
@@ -207,7 +208,7 @@ describe('ChatGPT timeline', () => {
     await settle(1_000);
 
     // Aimed at the mounted bubble: centred 510 + 300 + 20 = 830px in.
-    expect(scroller.scrollTo).toHaveBeenLastCalledWith({ top: -840, behavior: 'smooth' });
+    expect(scroller.scrollTo).toHaveBeenLastCalledWith({ top: -840, behavior: 'instant' });
     expect(labels()).toEqual(['Older question', 'Middle question', 'Newest question']);
   });
 

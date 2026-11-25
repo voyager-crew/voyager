@@ -3,14 +3,17 @@ import type { TimelineStoragePolicy } from './TimelineStoragePolicy';
 import type { TimelineMarker } from './types';
 
 /**
- * `bisect` jumps by remembered offsets; `step` scrolls a bounded step toward
- * the turn until it mounts, for hosts that reserve no height for it.
- * `releaseWith: 'wheel'` dispatches a scripted wheel before each navigation
- * scroll, for a host that pins its thread to the newest turn until a wheel.
+ * `bisect` jumps by remembered offsets; `step` jumps to the turn's estimated
+ * place and waits for the host to mount it or load older turns (`homingRun`),
+ * for hosts that load history in pages. `releaseWith: 'wheel'` dispatches a
+ * scripted wheel before each navigation scroll, for a host that pins its
+ * thread to the newest turn until a wheel. The `step` tunables are in ms.
  */
 export interface TimelineHomingPolicy {
   readonly mode: 'bisect' | 'step';
   readonly releaseWith?: 'wheel';
+  readonly edgePatienceMs?: number;
+  readonly stallMs?: number;
 }
 
 export interface TimelineTurnSnapshot {

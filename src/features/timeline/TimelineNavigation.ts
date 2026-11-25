@@ -16,8 +16,10 @@ type TimelineSpringProfile = 'ios' | 'snappy' | 'gentle';
 
 interface TimelineNavigationOptions {
   virtualized?: boolean;
-  /** Virtualized homing: remembered-offset bisection (default) or bounded steps. */
+  /** Virtualized homing: remembered-offset bisection (default) or estimated jumps. */
   homing?: TimelineHomingPolicy;
+  /** A homing run started or stopped waiting for the host to load older turns. */
+  onHomingWait?(waiting: boolean): void;
   /** The marker's live element when the host mounted it after the last marker read. */
   locate?(markerId: string): HTMLElement | null;
   getMarkers(): readonly TimelineNavigationMarker[];
@@ -100,7 +102,11 @@ export class TimelineNavigation {
           () => this.scrollContainer,
           () => this.options.getMarkers(),
           (id) => this.setActive(id),
-          { homing: options.homing, locate: options.locate },
+          {
+            homing: options.homing,
+            locate: options.locate,
+            onHomingWait: (waiting) => options.onHomingWait?.(waiting),
+          },
         )
       : null;
   }

@@ -299,6 +299,24 @@ html[data-gv-scheme] .gemini-timeline-bar:not(.timeline-no-container)::before {
   }
 }
 
+/* Navigation waits for the host to load older turns (#1116): the target marker breathes. */
+.gemini-timeline-bar.gv-timeline-homing-wait .timeline-dot.active::after {
+  animation: gv-timeline-homing-wait 1.2s ease-in-out infinite;
+}
+
+@keyframes gv-timeline-homing-wait {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gemini-timeline-bar.gv-timeline-homing-wait .timeline-dot.active::after {
+    animation: none;
+    opacity: 0.55;
+  }
+}
+
 /* Compact timeline style: the full-height bar stays one hover target and
  * markers are rendered as quiet index ticks. Navigation happens from the
  * preview panel. Like ruler, it paints no rail (see above). */

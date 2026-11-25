@@ -5,11 +5,15 @@
  * Format 1:
  * - `homing`: how navigation reaches an unmounted turn. `mode` is `bisect`
  *   (default), jumping by remembered offsets, for hosts that keep unmounted
- *   turns' height; or `step`, scrolling a bounded distance toward the turn's
- *   place in the list until it mounts, for hosts that reserve no height for
- *   them (ChatGPT, #1112). `releaseWith: "wheel"` dispatches a scripted wheel
- *   in the scroll's direction before each programmatic scroll, for a host that
- *   pins its thread to the newest turn until a wheel moves it (ChatGPT).
+ *   turns' height; or `step`, jumping to the turn's place estimated from the
+ *   mounted turns and waiting for the host to mount or load more, for hosts
+ *   that load their history in pages (ChatGPT, #1112, #1116). `releaseWith:
+ *   "wheel"` dispatches a scripted wheel in the scroll's direction before each
+ *   programmatic scroll, for a host that pins its thread to the newest turn
+ *   until a wheel moves it (ChatGPT). Optional `step` tunables, in ms:
+ *   `edgePatienceMs`, how long to wait at the start for an older page, and
+ *   `stallMs`, how long a run may go without anything new mounting. Clients
+ *   through 2.3.5 report these keys as unknown and keep the rest of `homing`.
  * - `history`: where the whole list of user turns is read from. `source` names
  *   a reader this build carries (`chatgptConversation`); `sessionPath` and
  *   `conversationPath` are same-origin paths it requests, the latter with one
@@ -42,7 +46,16 @@ export interface TimelineHistorySection {
 export interface TimelineHomingSection {
   readonly mode: TimelineHoming;
   readonly releaseWith?: TimelineHomingRelease;
+  readonly edgePatienceMs?: number;
+  readonly stallMs?: number;
 }
+
+/** Inclusive bounds of each homing tunable, in ms. */
+export const TIMELINE_HOMING_TUNABLES = {
+  edgePatienceMs: [1000, 60000],
+  stallMs: [500, 30000],
+} as const satisfies Record<string, readonly [number, number]>;
+type HomingTunable = keyof typeof TIMELINE_HOMING_TUNABLES;
 
 export interface TimelineSection {
   readonly format: 1;
@@ -91,8 +104,9 @@ function readHoming(
     issues.push({ path, message: 'must be an object' });
     return undefined;
   }
+  const tunables = Object.keys(TIMELINE_HOMING_TUNABLES) as HomingTunable[];
   for (const key of Object.keys(raw))
-    if (key !== 'mode' && key !== 'releaseWith')
+    if (key !== 'mode' && key !== 'releaseWith' && !(tunables as string[]).includes(key))
       issues.push({ path: `${path}.${key}`, message: 'unknown key' });
   if (!oneOf(TIMELINE_HOMING_MODES, raw.mode)) {
     issues.push({
@@ -101,15 +115,24 @@ function readHoming(
     });
     return undefined;
   }
-  const mode = raw.mode;
-  if (raw.releaseWith === undefined) return { mode };
-  if (oneOf(TIMELINE_HOMING_RELEASES, raw.releaseWith))
-    return { mode, releaseWith: raw.releaseWith };
-  issues.push({
-    path: `${path}.releaseWith`,
-    message: `must be one of ${TIMELINE_HOMING_RELEASES.join(', ')}`,
-  });
-  return { mode };
+  const homing: { -readonly [K in keyof TimelineHomingSection]: TimelineHomingSection[K] } = {
+    mode: raw.mode,
+  };
+  if (oneOf(TIMELINE_HOMING_RELEASES, raw.releaseWith)) homing.releaseWith = raw.releaseWith;
+  else if (raw.releaseWith !== undefined)
+    issues.push({
+      path: `${path}.releaseWith`,
+      message: `must be one of ${TIMELINE_HOMING_RELEASES.join(', ')}`,
+    });
+  for (const key of tunables) {
+    const value = raw[key];
+    if (value === undefined) continue;
+    const [min, max] = TIMELINE_HOMING_TUNABLES[key];
+    if (typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max)
+      homing[key] = value;
+    else issues.push({ path: `${path}.${key}`, message: `must be an integer ${min}-${max}` });
+  }
+  return homing;
 }
 
 function readHistory(

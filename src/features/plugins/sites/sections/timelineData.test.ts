@@ -43,6 +43,18 @@ describe('site.json timeline section', () => {
     expect(read.issues).not.toEqual([]);
   });
 
+  it('reads the step tunables and drops one out of range without losing the homing', () => {
+    const read = readTimelineSection({
+      format: 1,
+      homing: { mode: 'step', releaseWith: 'wheel', edgePatienceMs: 12000, stallMs: 10 },
+    });
+    expect(read.timeline).toEqual({
+      format: 1,
+      homing: { mode: 'step', releaseWith: 'wheel', edgePatienceMs: 12000 },
+    });
+    expect(read.issues.map((issue) => issue.path)).toEqual(['timeline.homing.stallMs']);
+  });
+
   it('reads an unknown format as no section', () => {
     expect(
       readTimelineSection({ format: 2, homing: { mode: 'step', releaseWith: 'wheel' } }).timeline,

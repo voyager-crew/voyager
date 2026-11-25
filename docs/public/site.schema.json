@@ -307,11 +307,25 @@
             "mode": {
               "enum": ["bisect", "step"],
               "default": "bisect",
-              "description": "`bisect` jumps by remembered offsets, for hosts that keep unmounted turns' height; `step` scrolls a bounded distance toward the turn until it mounts, for hosts that reserve none."
+              "description": "`bisect` jumps by remembered offsets, for hosts that keep unmounted turns' height; `step` jumps to the turn's place estimated from the mounted turns and waits for the host to mount it or load older turns, for hosts that load history in pages."
             },
             "releaseWith": {
               "enum": ["wheel"],
               "description": "Dispatch a scripted wheel in the scroll's direction before each navigation scroll, for a host that pins its thread to the newest turn until a wheel moves it."
+            },
+            "edgePatienceMs": {
+              "type": "integer",
+              "minimum": 1000,
+              "maximum": 60000,
+              "default": 10000,
+              "description": "`step` only: how long to wait at the start of the loaded turns for the host to load an older page. Clients through 2.3.5 ignore it."
+            },
+            "stallMs": {
+              "type": "integer",
+              "minimum": 500,
+              "maximum": 30000,
+              "default": 4000,
+              "description": "`step` only: how long a run may go without the host mounting or loading anything new before it stops. Clients through 2.3.5 ignore it."
             }
           }
         },

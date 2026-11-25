@@ -2,6 +2,14 @@ import { isUserEvent } from '@/core/utils/userEvent';
 
 import type { TimelineHomingPolicy } from './TimelineAdapter';
 import type { TimelineNavigationMarker } from './TimelineNavigation';
+import { type MeasuredCenter, nearestTurnId, searchableCenters } from './activeTurn';
+import {
+  DEFAULT_EDGE_PATIENCE_MS,
+  DEFAULT_STALL_MS,
+  type HomingEnd,
+  type HomingRun,
+  startHomingRun,
+} from './homingRun';
 import {
   afterScrollSettles,
   navigationScrollBehavior,
@@ -10,12 +18,6 @@ import {
   scrollElementToAnchor,
   scrollToCenter,
 } from './scrollMotion';
-import {
-  type StepProgress,
-  alignmentSettled,
-  newStepProgress,
-  nextSteppedHop,
-} from './steppedHomingRun';
 
 type Dispose = () => void;
 
@@ -24,16 +26,14 @@ const NAVIGATION_ACTIVE_LOCK_MS = 900;
 const PENDING_NAVIGATION_TIMEOUT_MS = 8000;
 const PENDING_NAVIGATION_HOP_MS = 200;
 const LONG_JUMP_VIEWPORTS = 3;
-/** Stepping crosses a long conversation a bounded step at a time, so it gets longer. */
-const STEPPED_NAVIGATION_TIMEOUT_MS = 20000;
-/** After an align, wait for layout to settle, then re-align a target still off the anchor. */
-const STEPPED_ALIGN_SETTLE_MS = 300;
 
 type NavigationMarker = TimelineNavigationMarker;
 
 export interface VirtualizedHomingOptions {
   readonly homing?: TimelineHomingPolicy;
   readonly locate?: (markerId: string) => HTMLElement | null;
+  /** Whether a homing run is waiting for the host to load older turns. */
+  readonly onHomingWait?: (waiting: boolean) => void;
 }
 
 /** Owns scroll geometry, active selection and timed homing for the current marker list. */
@@ -73,10 +73,12 @@ export class VirtualizedTimelineNavigation {
     this.scrollTarget = null;
   }
 
-  private markerCenters: number[] = [];
+  private measured: MeasuredCenter[] = [];
   private measuringPass = 0;
   private activeTurnId: string | null = null;
   private navigationActiveLockUntil = 0;
+  private lockOffset = 0;
+  private stopLockTimer: Dispose | null = null;
   private pendingNavigationId: string | null = null;
   private pendingNavigationUntil = 0;
   private stopPendingNavigationTimer: Dispose | null = null;
@@ -87,7 +89,7 @@ export class VirtualizedTimelineNavigation {
   private lastHandledHash: string | null = null;
   private scrollTarget: HTMLElement | Window | null = null;
   private stopScrollListener: Dispose | null = null;
-  private step: StepProgress | null = null;
+  private run: HomingRun | null = null;
 
   constructor(
     private readonly getViewport: () => HTMLElement | null,
@@ -121,18 +123,35 @@ export class VirtualizedTimelineNavigation {
 
   /** Route resets retain the scroll target, measuring epoch and navigation lock. */
   reset(): void {
-    this.markerCenters = [];
+    this.measured = [];
     this.activeTurnId = null;
     this.clearPendingNavigation();
     this.lastHandledHash = null;
   }
 
+  /** Recompute the active turn outside the navigation lock; repaint an unchanged one. */
   refreshActive(): void {
-    if (this.activeTurnId && this.markers.some((marker) => marker.id === this.activeTurnId)) {
-      this.onActiveChange(this.activeTurnId, this.activeTurnId);
-      return;
-    }
+    const previous = this.activeTurnId;
     this.updateActiveFromScroll();
+    if (previous && previous === this.activeTurnId && this.markers.some((m) => m.id === previous))
+      this.onActiveChange(previous, previous);
+  }
+
+  /**
+   * Hold the clicked marker active while navigation moves the page. Scroll
+   * events in the hold are dropped, so its expiry recomputes once if the page
+   * moved since the hold began.
+   */
+  private holdActive(): void {
+    this.navigationActiveLockUntil = Date.now() + NAVIGATION_ACTIVE_LOCK_MS;
+    this.lockOffset = this.getScrollTop();
+    void this.stopLockTimer?.();
+    this.stopLockTimer = this.timer(() => {
+      this.stopLockTimer = null;
+      if (Math.abs(this.getScrollTop() - this.lockOffset) < 1) return;
+      this.measure();
+      this.updateActiveFromScroll();
+    }, NAVIGATION_ACTIVE_LOCK_MS + 1);
   }
 
   private setActiveTurn(turnId: string | null): void {
@@ -152,21 +171,8 @@ export class VirtualizedTimelineNavigation {
       this.setActiveTurn(this.markers[this.markers.length - 1]?.id ?? null);
       return;
     }
-    const ref = this.getScrollTop() + this.getViewportHeight() * ACTIVE_ANCHOR;
-    let low = 0;
-    let high = this.markerCenters.length;
-    while (low < high) {
-      const mid = (low + high) >> 1;
-      if (this.markerCenters[mid] <= ref) low = mid + 1;
-      else high = mid;
-    }
-    const previous = Math.max(0, low - 1);
-    const next = Math.min(this.markerCenters.length - 1, low);
-    const index =
-      Math.abs(this.markerCenters[next] - ref) < Math.abs(this.markerCenters[previous] - ref)
-        ? next
-        : previous;
-    this.setActiveTurn(this.markers[index]?.id ?? null);
+    const id = nearestTurnId(this.measured, this.anchorLine());
+    if (id) this.setActiveTurn(id);
   };
 
   private setScrollTarget(target: HTMLElement | Window | null): void {
@@ -191,16 +197,21 @@ export class VirtualizedTimelineNavigation {
   navigateTo(turnId: string): void {
     const marker = this.findMarker(turnId);
     if (!marker) return;
-    this.navigationActiveLockUntil = Date.now() + NAVIGATION_ACTIVE_LOCK_MS;
+    this.holdActive();
     this.setActiveTurn(marker.id);
     const live = this.liveElement(marker);
+    const near =
+      !!live &&
+      Math.abs(this.centerOf(live) - this.anchorLine()) <=
+        this.getViewportHeight() * LONG_JUMP_VIEWPORTS;
+    if (this.homing.homing?.mode === 'step') {
+      this.startRun(marker, near);
+      return;
+    }
     if (live) {
       const center = this.centerOf(live);
-      const anchorOffset = this.getViewportHeight() * ACTIVE_ANCHOR;
-      const distance = Math.abs(center - (this.getScrollTop() + anchorOffset));
-      if (distance <= this.getViewportHeight() * LONG_JUMP_VIEWPORTS) {
-        this.clearPendingNavigation();
-        this.alignTarget(marker, live);
+      if (near) {
+        this.alignTarget(live);
         return;
       }
       // Long jump to a mounted turn: Claude re-measures once the landing region
@@ -233,18 +244,17 @@ export class VirtualizedTimelineNavigation {
   private beginPendingNavigation(marker: NavigationMarker): void {
     this.clearPendingNavigation();
     this.pendingNavigationId = marker.id;
-    this.pendingNavigationUntil =
-      Date.now() +
-      (this.homing.homing?.mode === 'step'
-        ? STEPPED_NAVIGATION_TIMEOUT_MS
-        : PENDING_NAVIGATION_TIMEOUT_MS);
-    this.step = newStepProgress();
+    this.pendingNavigationUntil = Date.now() + PENDING_NAVIGATION_TIMEOUT_MS;
     this.pendingNavigationLo = 0;
     this.pendingNavigationHi = Math.max(
       this.getScrollHeight(),
       (marker.center ?? 0) + this.getViewportHeight(),
     );
     this.pendingNavigationProbed = false;
+    this.listenForUserScroll();
+  }
+
+  private listenForUserScroll(): void {
     if (this.disposed) return;
     this.stopUserScrollListeners = [
       this.on(window, 'wheel', this.cancelPendingNavigationOnUserScroll, { passive: true }),
@@ -256,7 +266,9 @@ export class VirtualizedTimelineNavigation {
 
   private clearPendingNavigation(): void {
     this.pendingNavigationId = null;
-    this.step = null;
+    const run = this.run;
+    this.run = null;
+    void run?.stop();
     void this.stopPendingNavigationTimer?.();
     this.stopPendingNavigationTimer = null;
     for (const stop of this.stopUserScrollListeners.splice(0)) void stop();
@@ -264,8 +276,81 @@ export class VirtualizedTimelineNavigation {
 
   private cancelPendingNavigationOnUserScroll = (event: Event): void => {
     // The pin release below dispatches wheels of its own; only a person's input cancels.
-    if (isUserEvent(event)) this.clearPendingNavigation();
+    if (!isUserEvent(event)) return;
+    if (this.run) this.endRun('cancelled');
+    else this.clearPendingNavigation();
   };
+
+  /**
+   * Estimated homing (`homing.mode: "step"`, `homingRun`): jump to the turn's
+   * estimated place, wait for the host's DOM to answer, align once mounted.
+   */
+  private startRun(marker: NavigationMarker, glide: boolean): void {
+    this.clearPendingNavigation();
+    const target = this.scrollTarget;
+    if (!target || this.disposed) return;
+    const id = marker.id;
+    const policy = this.homing.homing;
+    const markerIndex = (): number => this.markers.findIndex((item) => item.id === id);
+    const live = (): HTMLElement | null => {
+      const item = this.markers[markerIndex()];
+      return item ? this.liveElement(item) : null;
+    };
+    this.pendingNavigationId = id;
+    this.listenForUserScroll();
+    this.run = startHomingRun(
+      {
+        get targetIndex() {
+          return markerIndex();
+        },
+        anchor: ACTIVE_ANCHOR,
+        edgePatienceMs: policy?.edgePatienceMs ?? DEFAULT_EDGE_PATIENCE_MS,
+        stallMs: policy?.stallMs ?? DEFAULT_STALL_MS,
+        root: target instanceof HTMLElement ? target : document.body,
+        scrollTarget: target,
+        target: live,
+        exists: () => markerIndex() >= 0,
+        mounted: () => {
+          const targetIndex = markerIndex();
+          let inView = false;
+          const turns = this.markers.flatMap((item, index) => {
+            const element = index === targetIndex ? null : this.liveElement(item);
+            if (!element) return [];
+            inView ||= this.isElementInViewport(element);
+            return [{ index, center: this.centerOf(element) }];
+          });
+          return { turns, inView };
+        },
+        geometry: () => ({
+          offset: this.getScrollTop(),
+          viewportHeight: this.getViewportHeight(),
+          scrollHeight: this.getScrollHeight(),
+        }),
+        jumpTo: (center) => this.scrollCenterTo(center, 'instant'),
+        align: (element, behavior) =>
+          behavior === 'smooth'
+            ? this.alignElement(element)
+            : this.scrollCenterTo(this.centerOf(element), 'instant'),
+        offAnchor: (element) => this.centerOf(element) - this.anchorLine(),
+        holdActive: () => this.holdActive(),
+        onWaiting: (waiting) => this.homing.onHomingWait?.(waiting),
+        onEnd: (reason) => this.endRun(reason),
+      },
+      glide,
+    );
+  }
+
+  /** An arrival keeps the clicked marker; any other end shows where the page is. */
+  private endRun(reason: HomingEnd): void {
+    this.clearPendingNavigation();
+    if (reason === 'arrived') {
+      this.lockOffset = this.getScrollTop();
+      return;
+    }
+    this.navigationActiveLockUntil = 0;
+    this.measure();
+    this.updateActiveFromScroll();
+  }
 
   private anchorLine(): number {
     return this.getScrollTop() + this.getViewportHeight() * ACTIVE_ANCHOR;
@@ -285,60 +370,9 @@ export class VirtualizedTimelineNavigation {
     );
   }
 
-  /**
-   * Aim at a mounted target. Stepped homing then checks it once layout has
-   * settled: a host that measures turns as they mount moves it after the
-   * scroll, so a target still off the anchor is aimed again, a few times.
-   */
-  private alignTarget(marker: NavigationMarker, live: HTMLElement): void {
-    if (this.homing.homing?.mode !== 'step') {
-      this.clearPendingNavigation();
-      this.alignElement(live);
-      return;
-    }
-    if (this.pendingNavigationId !== marker.id) this.beginPendingNavigation(marker);
-    const progress = this.step;
-    if (!progress) return;
-    progress.aligns += 1;
-    const before = this.getScrollTop();
+  private alignTarget(live: HTMLElement): void {
+    this.clearPendingNavigation();
     this.alignElement(live);
-    const id = marker.id;
-    const stale = (): boolean => this.disposed || this.pendingNavigationId !== id;
-    afterScrollSettles(
-      () => this.getScrollTop(),
-      (run, ms) => void this.timer(run, ms),
-      stale,
-      () =>
-        void this.timer(() => {
-          if (!stale()) this.verifyAlignment(marker, before);
-        }, STEPPED_ALIGN_SETTLE_MS),
-    );
-  }
-
-  private verifyAlignment(marker: NavigationMarker, before: number): void {
-    const progress = this.step;
-    if (!progress) return;
-    const live = this.liveElement(marker);
-    if (!live) {
-      // Unmounted again while settling: home in once more.
-      this.schedulePendingNavigationHop();
-      return;
-    }
-    if (
-      alignmentSettled({
-        offFromAnchor: Math.abs(this.centerOf(live) - this.anchorLine()),
-        viewportHeight: this.getViewportHeight(),
-        // A scroll edge can stop the target short of the anchor; in view is then the best place.
-        scrollerMoved: Math.abs(this.getScrollTop() - before) >= 1,
-        inViewport: this.isElementInViewport(live),
-        aligns: progress.aligns,
-      })
-    ) {
-      this.clearPendingNavigation();
-      return;
-    }
-    this.navigationActiveLockUntil = Date.now() + NAVIGATION_ACTIVE_LOCK_MS;
-    this.alignTarget(marker, live);
   }
 
   private scrollCenterTo(center: number, behavior: ScrollBehavior): void {
@@ -364,14 +398,10 @@ export class VirtualizedTimelineNavigation {
       this.clearPendingNavigation();
       return;
     }
-    this.navigationActiveLockUntil = Date.now() + NAVIGATION_ACTIVE_LOCK_MS;
+    this.holdActive();
     const live = this.liveElement(marker);
     if (live) {
-      this.alignTarget(marker, live);
-      return;
-    }
-    if (this.homing.homing?.mode === 'step') {
-      this.stepPendingNavigation(marker);
+      this.alignTarget(live);
       return;
     }
     const mountedIndexes = this.markers.reduce<number[]>((acc, item, index) => {
@@ -441,33 +471,6 @@ export class VirtualizedTimelineNavigation {
     this.schedulePendingNavigationHop();
   };
 
-  /**
-   * One bounded step toward an unmounted turn on a host that reserves no
-   * height for it (`steppedHoming`). Never a far jump: the host snaps those
-   * back. Ends when the turn mounts (aligned above), on timeout, or when
-   * steps stop moving the scroller or mounting anything.
-   */
-  private stepPendingNavigation(marker: NavigationMarker): void {
-    const progress = this.step;
-    if (!progress) return;
-    const hop = nextSteppedHop(progress, this.markers, marker, {
-      offset: this.getScrollTop(),
-      viewportHeight: this.getViewportHeight(),
-      scrollHeight: this.getScrollHeight(),
-      anchor: ACTIVE_ANCHOR,
-      now: Date.now(),
-      liveElement: (item) => this.liveElement(item),
-      inViewport: (element) => this.isElementInViewport(element),
-      centerOf: (element) => this.centerOf(element),
-    });
-    if (hop.kind === 'stop') {
-      this.clearPendingNavigation();
-      return;
-    }
-    if (hop.kind === 'scroll') this.scrollCenterTo(hop.center, 'instant');
-    this.schedulePendingNavigationHop();
-  }
-
   private schedulePendingNavigationHop(): void {
     if (this.stopPendingNavigationTimer !== null || this.disposed) return;
     this.stopPendingNavigationTimer = this.timer(
@@ -507,20 +510,12 @@ export class VirtualizedTimelineNavigation {
     const scrollTop = this.getScrollTop();
     const viewportTop = this.getViewportTop();
     const pass = ++this.measuringPass;
-    const centers: number[] = [];
     for (const marker of this.markers) {
-      if (marker.element.isConnected) {
-        marker.center = this.centerOf(marker.element, scrollTop, viewportTop);
-        marker.measuredAt = pass;
-      }
-      // Keep the array monotonic for the active-turn binary search: stale
-      // centers of virtualized-out turns can lag behind re-measured neighbours.
-      const previous = centers[centers.length - 1];
-      centers.push(
-        previous !== undefined && (marker.center ?? 0) < previous ? previous : (marker.center ?? 0),
-      );
+      if (!marker.element.isConnected) continue;
+      marker.center = this.centerOf(marker.element, scrollTop, viewportTop);
+      marker.measuredAt = pass;
     }
-    this.markerCenters = centers;
+    this.measured = searchableCenters(this.markers, pass);
   }
 
   centerOf(

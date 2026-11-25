@@ -229,7 +229,8 @@ A site's `timeline` section (`sites/sections/timelineData.ts`, schema in
 [site.schema.json](../../../../docs/public/site.schema.json)) tells the timeline how to reach
 turns a virtualized host has not mounted. `homing.mode` picks a navigation path the build ships
 (`bisect` or `step`) and `homing.releaseWith: "wheel"` a scripted wheel before each navigation
-scroll, for a host that pins its thread to the newest turn; `history.source` names a reader the build ships (`chatgptConversation`),
+scroll, for a host that pins its thread to the newest turn; `homing.edgePatienceMs` and `homing.stallMs`
+tune a `step` run (clients through 2.3.5 report them as unknown keys and keep the rest of `homing`); `history.source` names a reader the build ships (`chatgptConversation`),
 and its `sessionPath`, `conversationPath` (with `{conversationId}`) and `keyAttributes` are
 the data a host rename would change. Paths must be same-origin path segments: no scheme, host,
 query or `..`. An invalid `history` reads as absent and the rail lists only mounted turns; the

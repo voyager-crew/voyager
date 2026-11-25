@@ -77,6 +77,7 @@ export class TimelineEngine {
           : this.maybeRefreshMarkersForInteraction(target),
       resolveStoredId: (id) => this.state.resolveMarkerIdForStorageId(id),
       onActiveChange: () => this.view.updateActiveDotUI(),
+      onHomingWait: (waiting) => this.view.setHomingWait(waiting),
       onScroll: () => {
         this.view.syncTimelineTrackToMain();
         this.view.updateVirtualRangeAndRender();
@@ -233,9 +234,7 @@ export class TimelineEngine {
     if (this.destroyed) return;
     // Ensure initial render even when Gemini DOM is already stable (no mutations after observer attaches)
     this.recalculateAndRenderMarkers();
-    // Handle URL hash for starred message navigation
     this.navigation.handleStarredMessageNavigation();
-    // Initialize keyboard shortcuts
     await this.navigation.initKeyboardShortcuts();
     if (this.destroyed) return;
     try {

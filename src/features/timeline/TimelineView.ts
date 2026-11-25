@@ -14,6 +14,7 @@ import previewStyles from './timelinePreview.css?inline';
 import sliderStyles from './timelineSlider.css?inline';
 /** Hides every rail surface until the conversation has a turn to mark. */
 const EMPTY_RAIL_CLASS = 'gv-timeline-empty';
+const HOMING_WAIT_CLASS = 'gv-timeline-homing-wait';
 /** Everything a timeline view and its engine put on the page. */
 const TIMELINE_PAGE_NODES = [
   'style[data-gv-timeline]',
@@ -117,6 +118,10 @@ export class TimelineView {
     const empty = this.markers.length === 0;
     this.ui.timelineBar?.classList.toggle(EMPTY_RAIL_CLASS, empty);
     this.ui.slider?.classList.toggle(EMPTY_RAIL_CLASS, empty);
+  }
+  /** Pulse the active marker while navigation waits for the host to load older turns. */
+  setHomingWait(waiting: boolean): void {
+    this.ui.timelineBar?.classList.toggle(HOMING_WAIT_CLASS, waiting);
   }
   startRunner(fromIdx: number, toIdx: number, duration: number): void {
     this.dotLayer.startRunner(fromIdx, toIdx, duration);
