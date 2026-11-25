@@ -180,7 +180,7 @@ describe('Quote through its registered official plugin', () => {
     flipQuote(false);
     await flush();
     expect(quoteButton()).toBeNull();
-    expect(document.querySelector('.gv-rendered-quote')).not.toBeNull();
+    expect(document.querySelector('.gv-rendered-quote-line')).not.toBeNull();
     const highlight = document.querySelector<HTMLButtonElement>('.gv-highlight-action')!;
     expect(highlight.classList.contains('gv-hidden')).toBe(false);
     highlight.click();

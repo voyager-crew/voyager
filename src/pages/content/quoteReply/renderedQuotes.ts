@@ -6,9 +6,16 @@ import { getBundledGeminiSelectorView, getGeminiSelectorView } from '@/core/gemi
 import { CHAT_INPUT_SELECTOR, findChatInput } from '../chatInput/index';
 
 const USER_LINE_SELECTOR = getBundledGeminiSelectorView().profiles['userLatex.lines'].join(',');
-const QUOTE_WRAPPER_CLASS = 'gv-rendered-quote';
 const QUOTE_LINE_CLASS = 'gv-rendered-quote-line';
+const QUOTE_START_CLASS = 'gv-rendered-quote-start';
+const QUOTE_END_CLASS = 'gv-rendered-quote-end';
 const QUOTE_EMPTY_LINE_CLASS = 'gv-rendered-quote-empty';
+const QUOTE_LINE_CLASSES = [
+  QUOTE_LINE_CLASS,
+  QUOTE_START_CLASS,
+  QUOTE_END_CLASS,
+  QUOTE_EMPTY_LINE_CLASS,
+] as const;
 const QUOTE_MARKER_CLASS = 'gv-rendered-quote-marker';
 const COMPOSER_QUOTE_LINE_CLASS = 'gv-composer-quote-line';
 const COMPOSER_QUOTE_START_CLASS = 'gv-composer-quote-start';
@@ -27,7 +34,6 @@ const OBSERVER_DEBOUNCE_MS = 80;
  * and another content script's decorations are not ours to undo.
  */
 const owned = {
-  wrappers: new Set<HTMLElement>(),
   markers: new Set<HTMLElement>(),
   lines: new Set<HTMLElement>(),
   composerLines: new Set<HTMLElement>(),
@@ -71,92 +77,47 @@ function addHiddenQuoteMarker(line: HTMLElement): void {
   }
 }
 
-function decorateQuoteLine(line: HTMLElement): void {
-  owned.lines.add(line);
-  line.classList.add(QUOTE_LINE_CLASS);
-  line.classList.toggle(QUOTE_EMPTY_LINE_CLASS, isEmptyQuoteLine(line));
-  addHiddenQuoteMarker(line);
+function clearQuoteLine(line: HTMLElement): void {
+  owned.lines.delete(line);
+  line.classList.remove(...QUOTE_LINE_CLASSES);
 }
 
-function unwrapQuote(wrapper: HTMLElement): void {
-  owned.wrappers.delete(wrapper);
-  const parent = wrapper.parentNode;
-  if (!parent) return;
+/**
+ * Quoted lines stay where Gemini rendered them and only gain classes: the quote is painted by
+ * CSS, so the message keeps its native structure and height. Gemini re-collapses a message that
+ * grows after Expand (#1117), and it inserts into the line list we would otherwise rearrange.
+ */
+function decorateContainer(container: HTMLElement, lines: ReadonlySet<HTMLElement>): void {
+  let run: HTMLElement[] = [];
+  const flush = (): void => {
+    const visible = run.filter((line) => !isEmptyQuoteLine(line));
+    run.forEach((line) => {
+      owned.lines.add(line);
+      line.classList.add(QUOTE_LINE_CLASS);
+      line.classList.toggle(QUOTE_EMPTY_LINE_CLASS, !visible.includes(line));
+      line.classList.toggle(QUOTE_START_CLASS, line === visible[0]);
+      line.classList.toggle(QUOTE_END_CLASS, line === visible[visible.length - 1]);
+      addHiddenQuoteMarker(line);
+    });
+    run = [];
+  };
 
-  const fragment = document.createDocumentFragment();
-  while (wrapper.firstChild) fragment.appendChild(wrapper.firstChild);
-  parent.insertBefore(fragment, wrapper);
-  wrapper.remove();
-}
-
-function rebuildContainer(container: HTMLElement, lines: ReadonlySet<HTMLElement>): void {
-  container.querySelectorAll<HTMLElement>(`:scope > .${QUOTE_WRAPPER_CLASS}`).forEach(unwrapQuote);
-
-  let current = container.firstElementChild;
-  while (current) {
-    if (!(current instanceof HTMLElement) || !lines.has(current)) {
-      current = current.nextElementSibling;
-      continue;
+  Array.from(container.children).forEach((child) => {
+    if (child instanceof HTMLElement && lines.has(child) && isQuoteLine(child)) {
+      run.push(child);
+      return;
     }
-
-    if (!isQuoteLine(current)) {
-      current.classList.remove(QUOTE_LINE_CLASS, QUOTE_EMPTY_LINE_CLASS);
-      current = current.nextElementSibling;
-      continue;
-    }
-
-    const wrapper = document.createElement('blockquote');
-    wrapper.className = QUOTE_WRAPPER_CLASS;
-    owned.wrappers.add(wrapper);
-    container.insertBefore(wrapper, current);
-
-    while (current instanceof HTMLElement && lines.has(current) && isQuoteLine(current)) {
-      const next: Element | null = current.nextElementSibling;
-      decorateQuoteLine(current);
-      wrapper.appendChild(current);
-      current = next;
-    }
-  }
-}
-
-function containerNeedsRebuild(container: HTMLElement, lines: ReadonlySet<HTMLElement>): boolean {
-  const directQuoteLine = Array.from(container.children).some(
-    (child) => child instanceof HTMLElement && lines.has(child) && isQuoteLine(child),
-  );
-  if (directQuoteLine) return true;
-
-  const wrappers = Array.from(
-    container.querySelectorAll<HTMLElement>(`:scope > .${QUOTE_WRAPPER_CLASS}`),
-  );
-  if (
-    wrappers.some((wrapper) =>
-      Array.from(wrapper.children).some(
-        (child) => !(child instanceof HTMLElement) || !lines.has(child) || !isQuoteLine(child),
-      ),
-    )
-  ) {
-    return true;
-  }
-
-  return wrappers.some((wrapper) => {
-    const previous = wrapper.previousElementSibling;
-    const next = wrapper.nextElementSibling;
-    return (
-      previous?.classList.contains(QUOTE_WRAPPER_CLASS) ||
-      next?.classList.contains(QUOTE_WRAPPER_CLASS)
-    );
+    flush();
+    if (child instanceof HTMLElement && owned.lines.has(child)) clearQuoteLine(child);
   });
+  flush();
 }
 
 function collectUserLineContainers(lines: ReadonlySet<HTMLElement>): Set<HTMLElement> {
   const containers = new Set<HTMLElement>();
-
   lines.forEach((line) => {
-    const wrapper = line.closest<HTMLElement>(`.${QUOTE_WRAPPER_CLASS}`);
-    const container = wrapper?.parentElement ?? line.parentElement;
-    if (container) containers.add(container);
+    if (line.parentElement) containers.add(line.parentElement);
   });
-
   return containers;
 }
 
@@ -184,15 +145,7 @@ function renderQuotedComposerLines(): void {
 export function renderQuotedUserMessages(): void {
   restoreOwnedNodes((node) => !node.isConnected);
   const lines = new Set(resolveGeminiUserLatexLines(document).value);
-  collectUserLineContainers(lines).forEach((container) => {
-    if (containerNeedsRebuild(container, lines)) rebuildContainer(container, lines);
-
-    container
-      .querySelectorAll<HTMLElement>(`:scope > .${QUOTE_WRAPPER_CLASS} > *`)
-      .forEach((line) => {
-        if (lines.has(line)) decorateQuoteLine(line);
-      });
-  });
+  collectUserLineContainers(lines).forEach((container) => decorateContainer(container, lines));
 
   renderQuotedComposerLines();
 }
@@ -200,7 +153,7 @@ export function renderQuotedUserMessages(): void {
 // The body observer sees every record Gemini produces, including each row the
 // sidebar appends while paginating. Match by selector only: resolving the live
 // input measures layout, and doing that per record slows long histories (#1040).
-const QUOTE_RELEVANT_SELECTOR = `${USER_LINE_SELECTOR}, .${QUOTE_WRAPPER_CLASS}, ${CHAT_INPUT_SELECTOR}`;
+const QUOTE_RELEVANT_SELECTOR = `${USER_LINE_SELECTOR}, .${QUOTE_LINE_CLASS}, ${CHAT_INPUT_SELECTOR}`;
 
 const NATIVE_EDITABLE_SELECTOR =
   'textarea, [contenteditable="true"], [contenteditable="plaintext-only"]';
@@ -225,13 +178,11 @@ function restoreOwnedNodes(select: (node: HTMLElement) => boolean): void {
     owned.markers.delete(marker);
     marker.replaceWith(document.createTextNode(marker.textContent ?? ''));
   };
-  Array.from(owned.wrappers).filter(select).forEach(unwrapQuote);
   Array.from(owned.markers).filter(select).forEach(restoreMarker);
   Array.from(owned.lines)
     .filter(select)
     .forEach((line) => {
-      owned.lines.delete(line);
-      line.classList.remove(QUOTE_LINE_CLASS, QUOTE_EMPTY_LINE_CLASS);
+      clearQuoteLine(line);
       // A marker another renderer saved while it was detached can come back into the line.
       line.querySelectorAll<HTMLElement>(`.${QUOTE_MARKER_CLASS}`).forEach(restoreMarker);
     });

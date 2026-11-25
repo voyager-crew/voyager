@@ -43,23 +43,32 @@ describe('rendered Quote Reply blocks', () => {
     document.body.innerHTML = '';
   });
 
-  it('groups consecutive quote lines while preserving their raw text', () => {
+  it('marks a quote run in place, leaving each line a direct child of its message', () => {
     const container = installUserMessage([
+      '>',
       '> quoted context',
       '>',
       '> more context',
       'My follow-up question',
     ]);
+    const lines = Array.from(container.children);
     const raw = container.textContent;
 
     renderQuotedUserMessages();
 
-    const wrapper = container.querySelector('blockquote.gv-rendered-quote');
-    expect(wrapper).not.toBeNull();
-    expect(wrapper?.querySelectorAll(':scope > .query-text-line')).toHaveLength(3);
-    expect(wrapper?.querySelectorAll('.gv-rendered-quote-marker')).toHaveLength(3);
-    expect(wrapper?.querySelector('.gv-rendered-quote-empty')).not.toBeNull();
-    expect(wrapper?.nextElementSibling?.textContent).toBe('My follow-up question');
+    // Gemini owns this list and re-collapses a message that grows after Expand (#1117).
+    expect(Array.from(container.children)).toEqual(lines);
+    expect(container.querySelector('blockquote')).toBeNull();
+    const [leadingEmpty, first, empty, last, reply] = lines;
+    expect(container.querySelectorAll('.gv-rendered-quote-line')).toHaveLength(4);
+    expect(container.querySelectorAll('.gv-rendered-quote-marker')).toHaveLength(4);
+    expect(leadingEmpty.classList).toContain('gv-rendered-quote-empty');
+    expect(empty.classList).toContain('gv-rendered-quote-empty');
+    expect(container.querySelectorAll('.gv-rendered-quote-start')).toHaveLength(1);
+    expect(first.classList).toContain('gv-rendered-quote-start');
+    expect(last.classList).toContain('gv-rendered-quote-end');
+    expect(container.querySelectorAll('.gv-rendered-quote-end')).toHaveLength(1);
+    expect(reply.className).toBe('query-text-line');
     expect(container.textContent).toBe(raw);
   });
 
@@ -69,7 +78,12 @@ describe('rendered Quote Reply blocks', () => {
     renderQuotedUserMessages();
     renderQuotedUserMessages();
 
-    expect(container.querySelectorAll(':scope > .gv-rendered-quote')).toHaveLength(2);
+    const [first, question, second] = Array.from(container.children);
+    for (const line of [first, second]) {
+      expect(line.classList).toContain('gv-rendered-quote-start');
+      expect(line.classList).toContain('gv-rendered-quote-end');
+    }
+    expect(question.classList).not.toContain('gv-rendered-quote-line');
     expect(container.querySelectorAll('.gv-rendered-quote-marker')).toHaveLength(2);
     expect(container.textContent).toBe('> first quotequestion> second quote');
   });
@@ -79,7 +93,7 @@ describe('rendered Quote Reply blocks', () => {
 
     renderQuotedUserMessages();
 
-    expect(container.querySelector('.gv-rendered-quote')).toBeNull();
+    expect(container.querySelector('.gv-rendered-quote-line')).toBeNull();
     expect(container.textContent).toBe('>not a quote');
   });
 
@@ -129,7 +143,7 @@ describe('rendered Quote Reply blocks', () => {
     await Promise.resolve();
     vi.advanceTimersByTime(80);
 
-    expect(container.querySelector('blockquote.gv-rendered-quote')).not.toBeNull();
+    expect(line.classList).toContain('gv-rendered-quote-line');
     cleanup();
   });
 
@@ -208,9 +222,8 @@ describe('rendered Quote Reply blocks', () => {
 
     cleanup();
 
-    expect(container.querySelector('.gv-rendered-quote')).toBeNull();
     expect(container.querySelector('.gv-rendered-quote-marker')).toBeNull();
-    expect(container.querySelector('.gv-rendered-quote-line')).toBeNull();
+    expect(container.querySelector('[class*="gv-rendered-quote"]')).toBeNull();
     expect(container.innerHTML).toBe(raw);
   });
 
@@ -230,10 +243,10 @@ describe('rendered Quote Reply blocks', () => {
     document.dispatchEvent(new MouseEvent('mouseup'));
     vi.advanceTimersByTime(250);
 
-    expect(container.querySelector('blockquote.gv-rendered-quote')).not.toBeNull();
+    expect(container.querySelector('.gv-rendered-quote-line')).not.toBeNull();
     expect(document.querySelector('.gv-selection-toolbar')).toBeNull();
     stop();
-    expect(container.querySelector('.gv-rendered-quote')).toBeNull();
+    expect(container.querySelector('[class*="gv-rendered-quote"]')).toBeNull();
   });
 
   it('restores a quote line that was detached and re-rendered before stop', async () => {
@@ -267,7 +280,7 @@ describe('rendered Quote Reply blocks', () => {
 
     expect(block, 'no Quote Reply rules found').not.toBe('');
 
-    expect(block).toContain('.gv-rendered-quote');
+    expect(block).toContain('.gv-rendered-quote-line');
     expect(block).toContain('var(--gv-pm-brand, var(--gv-pm-brand-default))');
     expect(block).toContain('border-inline-start');
     expect(block).toContain('border-start-end-radius');
@@ -276,5 +289,36 @@ describe('rendered Quote Reply blocks', () => {
     expect(block).toContain('.gv-composer-quote-start');
     expect(block).toContain('.gv-composer-quote-end');
     expect(block).not.toContain('border-left');
+  });
+
+  it('paints sent quotes without making the message taller', () => {
+    // Gemini re-collapses an expanded message once it measures taller than its
+    // threshold, so any block-axis size a sent quote adds undoes Expand (#1117).
+    const css = readContentStyle();
+    const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(
+      ([, selector]) =>
+        /\.gv-rendered-quote/.test(selector) && !/::?(?:before|after)\b/.test(selector),
+    );
+    expect(rules, 'no sent-quote rules found').not.toHaveLength(0);
+
+    const growsBlockAxis =
+      /^(?:padding|margin|border|border-width|gap|row-gap|height|min-height|line-height|font-size|(?:padding|margin)-(?:top|bottom|block(?:-start|-end)?)|border-(?:top|bottom|block(?:-start|-end)?)(?:-width)?)$/;
+    for (const [rule, , body] of rules) {
+      const properties = body
+        .split(';')
+        .map((declaration) => declaration.split(':')[0].trim())
+        .filter(Boolean);
+      expect(
+        properties.filter((name) => growsBlockAxis.test(name)),
+        rule,
+      ).toEqual([]);
+      expect(body, rule).not.toMatch(/display\s*:\s*(?:grid|flex|inline-grid|inline-flex)/);
+    }
+
+    // The paint itself stays out of layout.
+    const paint = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find(([, selector]) =>
+      /\.gv-rendered-quote-line::before/.test(selector),
+    );
+    expect(paint?.[2]).toMatch(/position\s*:\s*absolute/);
   });
 });

@@ -82,7 +82,7 @@ describe('online Gemini user LaTeX', () => {
     await vi.waitFor(() => expect(rendered()).toBe(2));
     expect(count()).toBe(2);
     expect(lines.map(textWithLatexSource)).toEqual(['> quoted $x$', 'answer $$y$$']);
-    expect(host.querySelector('blockquote')?.textContent).toBe('> quoted x');
+    expect(host.querySelector('.gv-rendered-quote-line')?.textContent).toBe('> quoted x');
     await scope.dispose();
     stopQuotes();
     expect(lines.map((line) => line.textContent)).toEqual(['> quoted $x$', 'answer $$y$$']);
@@ -100,7 +100,7 @@ describe('online Gemini user LaTeX', () => {
     line.textContent = '> later $y$';
     host.querySelector('.query-text')!.append(line);
     await vi.waitFor(() => expect(rendered()).toBe(2));
-    await vi.waitFor(() => expect(line.closest('blockquote')).not.toBeNull());
+    await vi.waitFor(() => expect(line.classList).toContain('gv-rendered-quote-line'));
     expect(count()).toBe(2);
     expect(textWithLatexSource(line)).toBe('> later $y$');
   });

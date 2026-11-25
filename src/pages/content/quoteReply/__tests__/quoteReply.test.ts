@@ -45,7 +45,7 @@ describe('quote reply', () => {
 
     const cleanup = startQuoteReply({ quoteEnabled: false });
 
-    expect(document.querySelector('blockquote.gv-rendered-quote')).not.toBeNull();
+    expect(document.querySelector('.gv-rendered-quote-line')).not.toBeNull();
     expect(document.querySelector('.gv-rendered-quote-marker')?.textContent).toBe('> ');
 
     cleanup();

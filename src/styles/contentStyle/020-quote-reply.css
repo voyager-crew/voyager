@@ -1,34 +1,47 @@
-/* Quote Reply: keep raw Markdown for Gemini while grouping quoted context visually. */
-.gv-rendered-quote {
-  box-sizing: border-box;
-  display: grid;
-  width: 100%;
-  margin: 0;
-  padding: 10px 12px;
-  gap: 8px;
-  border: 0;
+/* Quote Reply: keep raw Markdown for Gemini while grouping quoted context visually.
+   A sent quote must not add block-axis size to the message: Gemini measures the
+   message to decide whether it stays expanded, so extra height re-collapses it
+   right after Expand (#1117). The lines keep their own box and the quote is
+   painted by a pseudo-element; the message widens its clip box inline (net width
+   unchanged) so the bar and tint can sit outside the text without re-wrapping it. */
+@supports selector(:has(*)) {
+  div:has(> .gv-rendered-quote-line) {
+    margin-inline: -14px;
+    padding-inline: 14px;
+  }
+}
+
+.gv-rendered-quote-line {
+  position: relative;
+  isolation: isolate;
+  color: inherit;
+}
+
+.gv-rendered-quote-line::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset-block: 0;
+  inset-inline: -12px -8px;
   border-inline-start: 3px solid
     color-mix(in srgb, var(--gv-pm-brand, var(--gv-pm-brand-default)) 78%, transparent);
-  border-start-end-radius: 12px;
-  border-end-end-radius: 12px;
   background: color-mix(in srgb, var(--gv-pm-brand, var(--gv-pm-brand-default)) 9%, transparent);
-  color: inherit;
+  pointer-events: none;
 }
 
-.gv-rendered-quote > .gv-rendered-quote-line {
-  margin: 0 !important;
-  padding: 0;
-  color: inherit;
+.gv-rendered-quote-start::before {
+  inset-block-start: -4px;
+  border-start-end-radius: 12px;
 }
 
-.gv-rendered-quote > .gv-rendered-quote-empty,
+.gv-rendered-quote-end::before {
+  inset-block-end: -4px;
+  border-end-end-radius: 12px;
+}
+
+.gv-rendered-quote-empty,
 .gv-rendered-quote-marker {
   display: none;
-}
-
-.query-text-line + .gv-rendered-quote,
-.gv-rendered-quote + .query-text-line {
-  margin-block-start: 14px;
 }
 
 /* Keep the editable text untouched so caret, IME, and the submitted Markdown stay native. */

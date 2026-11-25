@@ -59,12 +59,12 @@ describe('the Gemini selection start point', () => {
     const { startup, admission, unload } = page();
     await startup.start();
     expect(document.getElementById('gemini-voyager-quote-reply-style')).not.toBeNull();
-    expect(document.querySelector('.gv-rendered-quote')?.textContent).toBe('> Sent quote');
+    expect(document.querySelector('.gv-rendered-quote-line')?.textContent).toBe('> Sent quote');
     expect(admission.stateOf(OFFICIAL_PLUGIN_IDS.geminiQuoteReply)).toBe('admitted');
     expect(admission.stateOf(OFFICIAL_PLUGIN_IDS.geminiHighlight)).toBe('admitted');
     unload();
     expect(document.getElementById('gemini-voyager-quote-reply-style')).toBeNull();
-    expect(document.querySelector('.gv-rendered-quote')).toBeNull();
+    expect(document.querySelector('.gv-rendered-quote-line')).toBeNull();
     expect(document.querySelector('.query-text-line')?.textContent).toBe('> Sent quote');
   });
 
@@ -154,7 +154,7 @@ describe('the Gemini selection start point', () => {
       expect(admission.stateOf(OFFICIAL_PLUGIN_IDS.geminiQuoteReply)).toBe('denied');
       expect(admission.stateOf(OFFICIAL_PLUGIN_IDS.geminiHighlight)).toBe('denied');
       expect(document.getElementById('gemini-voyager-quote-reply-style')).toBeNull();
-      expect(document.querySelector('.gv-rendered-quote')).toBeNull();
+      expect(document.querySelector('.gv-rendered-quote-line')).toBeNull();
     },
   );
 
@@ -186,7 +186,7 @@ describe('the Gemini selection start point', () => {
     await startup.start();
     admission.close();
     expect(document.getElementById('gemini-voyager-quote-reply-style')).toBeNull();
-    expect(document.querySelector('.gv-rendered-quote')).toBeNull();
+    expect(document.querySelector('.gv-rendered-quote-line')).toBeNull();
     expect(admission.stateOf(OFFICIAL_PLUGIN_IDS.geminiQuoteReply)).toBe('denied');
     expect(admission.stateOf(OFFICIAL_PLUGIN_IDS.geminiHighlight)).toBe('denied');
   });
