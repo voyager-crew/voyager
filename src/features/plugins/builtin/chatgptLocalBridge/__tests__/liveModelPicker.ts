@@ -16,7 +16,8 @@
  *   Latest's slider has five steps, status `Medium, 2 of 5.`);
  * - under Latest the closed trigger reads `Medium` on that step but `6 Pro`
  *   on Pro: a `data-model-selection-label` span holds the model's short name
- *   as its own text and the step in a child span (`modelSelection`);
+ *   and the step sits in the span after it (`modelSelection`; re-measured
+ *   2026-11-25);
  * - Escape on the menu closes it, and only then does ChatGPT save the step
  *   (measured 2026-10-21: one PATCH of `user_last_used_model_config` on close,
  *   none while the menu is open). The saved step is account-wide.
@@ -130,7 +131,7 @@ export function mountLiveModelPicker(
     const named = options.modelSelection;
     const step =
       named?.at === effort
-        ? `<span data-model-selection-label="${named.id}">${named.short} <span>${labels[effort]}</span></span>`
+        ? `<span data-model-selection-label="${named.id}">${named.short}</span> <span>${labels[effort]}</span>`
         : `<span>${labels[effort]}</span>`;
     trigger.innerHTML = `<span><span aria-hidden="true"><span>思考强度</span></span><span><span>${step}</span></span></span><svg aria-hidden="true"></svg>`;
   };

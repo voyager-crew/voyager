@@ -154,7 +154,7 @@ describe('ChatGPT Pro usage', () => {
 
   it('shows the ring when Latest names Pro after the model, as "6 Pro"', async () => {
     const trigger = mountComposer(
-      '<span data-model-selection-label="gpt-6-pro">6 <span>Pro</span></span>',
+      '<span data-model-selection-label="gpt-6-pro">6</span> <span>Pro</span>',
     );
     await start();
 

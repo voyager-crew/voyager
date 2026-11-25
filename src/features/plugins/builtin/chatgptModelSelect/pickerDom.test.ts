@@ -53,4 +53,11 @@ describe('triggerStep', () => {
 
     expect(triggerStep(trigger(html))).toBe(step);
   });
+
+  it('reads the step span after the model name, as chatgpt.com draws Pro under Latest', () => {
+    const html =
+      '<span class="min-w-0 truncate"><span data-model-selection-label="gpt-6-pro">6</span> <span>Pro</span></span>';
+
+    expect(triggerStep(trigger(html))).toBe('Pro');
+  });
 });

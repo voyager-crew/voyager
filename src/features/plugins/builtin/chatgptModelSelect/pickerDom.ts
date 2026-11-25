@@ -147,9 +147,11 @@ export function triggerText(trigger: HTMLElement): string {
 
 /**
  * The step the closed trigger names. Under "Latest" a Pro step reads "6 Pro": a
- * `[data-model-selection-label]` span holds the model's short name as its own text and
- * the step in a child span (measured 2026-11-24). Only that child is the step, so no
- * word is ever stripped from a name ("Extra High" stays "Extra High", never "High").
+ * `[data-model-selection-label]` span holds the model's short name ("6") and the step
+ * sits in a sibling span after it (measured on chatgpt.com 2026-11-25:
+ * `<span data-model-selection-label="gpt-6-pro">6</span> <span>Pro</span>`). A step in a
+ * child span of the label is read the same way. Only that span is the step, so no word is
+ * ever stripped from a name ("Extra High" stays "Extra High", never "High").
  */
 export function triggerStep(trigger: HTMLElement): string {
   const copy = trigger.cloneNode(true) as HTMLElement;
@@ -157,12 +159,17 @@ export function triggerStep(trigger: HTMLElement): string {
   const labelled = copy.querySelectorAll('[data-model-selection-label]');
   if (labelled.length !== 1) return normalizeLabel(copy.textContent ?? '');
   const holder = labelled[0];
-  const step = normalizeLabel(
-    Array.from(holder.children, (child) => child.textContent ?? '').join(' '),
-  );
-  // No child with text (none, or an icon beside the text): the whole text, never a part
+  const spanText = (elements: Iterable<Element>): string =>
+    normalizeLabel(Array.from(elements, (element) => element.textContent ?? '').join(' '));
+  const following: Element[] = [];
+  for (let next = holder.nextElementSibling; next; next = next.nextElementSibling) {
+    following.push(next);
+  }
+  // No span with text (none, or an icon beside the text): the whole text, never a part
   // of it, so a model name before "Extra High" fails rather than leaving "High".
-  return step || normalizeLabel(holder.textContent ?? '');
+  return (
+    spanText(holder.children) || spanText(following) || normalizeLabel(holder.textContent ?? '')
+  );
 }
 
 function escapeRegExp(text: string): string {
