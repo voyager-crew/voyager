@@ -157,9 +157,12 @@ export function triggerStep(trigger: HTMLElement): string {
   const labelled = copy.querySelectorAll('[data-model-selection-label]');
   if (labelled.length !== 1) return normalizeLabel(copy.textContent ?? '');
   const holder = labelled[0];
-  if (holder.children.length === 0) return normalizeLabel(holder.textContent ?? '');
-  const step = Array.from(holder.children, (child) => child.textContent ?? '').join(' ');
-  return normalizeLabel(step);
+  const step = normalizeLabel(
+    Array.from(holder.children, (child) => child.textContent ?? '').join(' '),
+  );
+  // No child with text (none, or an icon beside the text): the whole text, never a part
+  // of it, so a model name before "Extra High" fails rather than leaving "High".
+  return step || normalizeLabel(holder.textContent ?? '');
 }
 
 function escapeRegExp(text: string): string {

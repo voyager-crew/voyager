@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ModelPickerSection } from '@/features/plugins/sites/sections/modelPickerData';
 
-import { readStatus } from './pickerDom';
+import { readStatus, triggerStep } from './pickerDom';
 
 function menuWithStatus(text: string): HTMLElement {
   const menu = document.createElement('div');
@@ -34,5 +34,23 @@ describe('readStatus', () => {
     );
 
     expect(status).toMatchObject({ label: 'Pro', position: 5 });
+  });
+});
+
+describe('triggerStep', () => {
+  function trigger(holder: string): HTMLElement {
+    const button = document.createElement('button');
+    button.innerHTML = `<span aria-hidden="true">思考强度</span><span>${holder}</span>`;
+    return button;
+  }
+
+  it.each([
+    ['the step child after the model name', '6 <span>Extra High</span>', 'Extra High'],
+    ['the whole text beside an empty icon', 'Pro<svg></svg>', 'Pro'],
+    ['the whole text, never its last words', '6 Extra High<svg></svg>', '6 Extra High'],
+  ])('reads %s', (_, inner, step) => {
+    const html = `<span data-model-selection-label="gpt-6-pro">${inner}</span>`;
+
+    expect(triggerStep(trigger(html))).toBe(step);
   });
 });
