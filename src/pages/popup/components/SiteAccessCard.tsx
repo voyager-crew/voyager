@@ -10,6 +10,7 @@ import { Card, CardContent, CardTitle } from '../../../components/ui/card';
 import type { PromptManagerSettings } from '../hooks/usePromptManagerSettings';
 import type { CatalogSiteRow, SiteAccess, SiteAccessState } from '../hooks/useSiteAccess';
 import { OtherWebsitesSection } from './OtherWebsitesSection';
+import { PanelGrantOffer } from './PanelGrantOffer';
 import { PlatformMark } from './WebsiteLogos';
 
 const LOGOS: Readonly<Record<string, PlatformLogo>> = PLATFORM_LOGOS;
@@ -25,7 +26,13 @@ const PILLS: Readonly<Record<Pill, { label: TranslationKey; className: string }>
 export interface SiteAccessCardProps {
   readonly access: Pick<
     SiteAccess,
-    'rows' | 'otherWebsites' | 'pageWebsite' | 'revoking' | 'revoke' | 'removeWebsite'
+    | 'rows'
+    | 'otherWebsites'
+    | 'pageWebsite'
+    | 'revoking'
+    | 'revoke'
+    | 'removeWebsite'
+    | 'handedOver'
   >;
   readonly coverage: Pick<
     PromptManagerSettings,
@@ -133,6 +140,7 @@ export function SiteAccessCard({ access, coverage, language, t }: SiteAccessCard
       <CardTitle className="mb-4">{t('siteAccessTitle')}</CardTitle>
       <CardContent className="space-y-3 p-0">
         <p className="text-muted-foreground text-xs leading-snug">{t('siteAccessDescription')}</p>
+        {access.handedOver && <PanelGrantOffer offer={access.handedOver} t={t} />}
         <ul className="border-border/60 divide-border/60 divide-y rounded-lg border px-3">
           {BUILT_IN_SITES.map((site) => (
             <SiteRow

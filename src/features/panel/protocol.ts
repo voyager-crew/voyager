@@ -80,7 +80,33 @@ export type PanelRuntimeMessage =
       type: typeof PANEL_MESSAGE.tabRequest;
       payload: { sessionId: PanelSessionId; request: PanelTabRequest };
     }
-  | { type: typeof PANEL_MESSAGE.siteAccessFallback; payload: { sessionId: PanelSessionId } };
+  | {
+      type: typeof PANEL_MESSAGE.siteAccessFallback;
+      payload: { sessionId: PanelSessionId; grant?: PanelGrantTarget };
+    };
+
+/**
+ * The feature a panel switch could not get access for, so the popup offers
+ * that grant: the plugin and the page URL its rows were read for, which may
+ * be another site than the one the panel is open on.
+ */
+export interface PanelGrantTarget {
+  pluginId: string;
+  pageUrl: string;
+}
+
+export function parsePanelGrantTarget(value: unknown): PanelGrantTarget | null {
+  if (!isPanelRecord(value)) return null;
+  const { pluginId, pageUrl } = value;
+  if (typeof pluginId !== 'string' || !/^[\w.-]{1,200}$/.test(pluginId)) return null;
+  if (typeof pageUrl !== 'string' || pageUrl.length > 2048) return null;
+  try {
+    const { protocol } = new URL(pageUrl);
+    return protocol === 'https:' || protocol === 'http:' ? { pluginId, pageUrl } : null;
+  } catch {
+    return null;
+  }
+}
 
 export interface PanelRefusal {
   ok: false;
@@ -172,10 +198,13 @@ export function parsePanelRuntimeMessage(value: unknown): PanelRuntimeMessage | 
         ? { type: value.type, payload: { sessionId: payload.sessionId, request } }
         : null;
     }
-    case PANEL_MESSAGE.siteAccessFallback:
-      return isPanelSessionId(payload.sessionId)
-        ? { type: value.type, payload: { sessionId: payload.sessionId } }
-        : null;
+    case PANEL_MESSAGE.siteAccessFallback: {
+      if (!isPanelSessionId(payload.sessionId)) return null;
+      if (payload.grant === undefined)
+        return { type: value.type, payload: { sessionId: payload.sessionId } };
+      const grant = parsePanelGrantTarget(payload.grant);
+      return grant ? { type: value.type, payload: { sessionId: payload.sessionId, grant } } : null;
+    }
     default:
       return null;
   }
@@ -253,11 +282,24 @@ export function parsePanelPortContextMessage(value: unknown): PanelPortContextMe
     : null;
 }
 
-/** Popup/options removes this session value before opening the named card (one shot). */
+/**
+ * Popup/options removes this session value before opening the named card (one
+ * shot): the card's name, or `{ card, grant }` when a panel switch handed over
+ * the grant its feature needs.
+ */
 export const PANEL_POPUP_OPEN_CARD_KEY = 'gvPopupOpenCard';
 export const PANEL_SITE_ACCESS_CARD = 'site-access';
-export function parsePanelPopupCard(value: unknown): typeof PANEL_SITE_ACCESS_CARD | null {
-  return value === PANEL_SITE_ACCESS_CARD ? value : null;
+export interface PanelPopupCard {
+  card: typeof PANEL_SITE_ACCESS_CARD;
+  grant: PanelGrantTarget | null;
+}
+export function panelPopupCardValue(grant?: PanelGrantTarget): unknown {
+  return grant ? { card: PANEL_SITE_ACCESS_CARD, grant } : PANEL_SITE_ACCESS_CARD;
+}
+export function parsePanelPopupCard(value: unknown): PanelPopupCard | null {
+  if (value === PANEL_SITE_ACCESS_CARD) return { card: value, grant: null };
+  if (!isPanelRecord(value) || value.card !== PANEL_SITE_ACCESS_CARD) return null;
+  return { card: PANEL_SITE_ACCESS_CARD, grant: parsePanelGrantTarget(value.grant) };
 }
 
 export const PANEL_SHELL_MESSAGE = {

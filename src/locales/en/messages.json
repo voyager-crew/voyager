@@ -1086,6 +1086,10 @@
     "message": "Open {site} and turn on a feature there",
     "description": "Detail under a supported site without access. {site} is the site name"
   },
+  "siteAccessPanelGrant": {
+    "message": "{name} on {site} needs site access, which this browser asks for only here",
+    "description": "Site access card, when the in-page Voyager panel handed over a feature it could not get site access for: {name} is the feature, {site} the site"
+  },
   "siteAccessNothingOn": {
     "message": "No features on",
     "description": "Detail under a site Voyager can access while none of its features is on"

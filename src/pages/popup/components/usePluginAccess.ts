@@ -21,8 +21,8 @@ import type { EnabledMap } from './usePluginPreferences';
 export interface PluginAccessFrame {
   /** The frame sits inside the active page, so the page's own origin is granted. */
   readonly onActivePage?: boolean;
-  /** Hands a grant this frame cannot ask for to the popup, which reports for itself, as does a failed handoff. */
-  readonly askElsewhere?: () => void;
+  /** Hands the plugin's grant, which this frame cannot ask for, to the popup; reports a failed handoff itself. */
+  readonly askElsewhere?: (plugin: PluginManifest) => void;
 }
 
 export function usePluginAccess(
@@ -124,7 +124,7 @@ export function usePluginAccess(
       );
       if (outcome === 'denied') setDeniedId(plugin.id);
       else if (outcome === 'unsupported') setUnsupportedId(plugin.id);
-      else if (outcome === 'elsewhere') askElsewhere?.();
+      else if (outcome === 'elsewhere') askElsewhere?.(plugin);
       else if (outcome === 'changed')
         setEnableRefusal({ id: plugin.id, key: 'localPluginChangedBeforeEnable' });
       // The generic "Couldn't update the setting. Try again." message.
@@ -152,7 +152,7 @@ export function usePluginAccess(
         return;
       }
       if (!canGrantPluginSiteAccess()) {
-        askElsewhere?.();
+        askElsewhere?.(plugin);
         return;
       }
       try {

@@ -1086,6 +1086,10 @@
     "message": "{site} を開いて、そこで機能をオンにしてください",
     "description": "Detail under a supported site without access. {site} is the site name"
   },
+  "siteAccessPanelGrant": {
+    "message": "{site} の {name} にはサイトへのアクセス許可が必要です。このブラウザではここからのみ許可できます",
+    "description": "Site access card, when the in-page Voyager panel handed over a feature it could not get site access for: {name} is the feature, {site} the site"
+  },
   "siteAccessNothingOn": {
     "message": "オンの機能はありません",
     "description": "Detail under a site Voyager can access while none of its features is on"

@@ -180,7 +180,7 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
     t,
     writeSyncStorage: writePopupSyncStorage,
   });
-  usePopupOpenCard(tab.activeTabContextLoaded, sections.updateSettingsSearchQuery);
+  const handoff = usePopupOpenCard(tab.activeTabContextLoaded, sections.updateSettingsSearchQuery);
   usePopupSettingsHydration({
     folder: folder.hydrateFromStorage,
     general: general.hydrateFromStorage,
@@ -203,6 +203,7 @@ export default function Popup({ sourceTabId }: PopupProps = {}) {
     language,
     t,
     onUndoOffer: undoToast.show,
+    handoff,
   });
   const rtl = isRTLLanguage(language) ? 'rtl' : undefined;
   const wrapSection = (id: PopupSectionId, content: ReactNode, options?: PopupSectionOptions) => (

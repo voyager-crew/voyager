@@ -11,6 +11,7 @@ import { compatibleSettingWrite } from '@/features/plugins/runtime/resolvePlugin
 import { isScriptedManifest } from '@/features/plugins/scripted/types';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
 import { matchesAnyPattern } from '@/features/plugins/sites/matchPattern';
+import type { PluginManifest } from '@/features/plugins/types';
 import { isScriptedOn, runStateText } from '@/pages/popup/components/scripted/ScriptedRowControls';
 import { usePluginAccess } from '@/pages/popup/components/usePluginAccess';
 import { usePluginPreferences } from '@/pages/popup/components/usePluginPreferences';
@@ -168,11 +169,16 @@ export function usePanelModel({
   // Firefox gives this frame no `permissions` API (#1118): a switch on the page
   // the panel is open on needs no prompt for that page, and anything more is
   // granted in the popup.
-  const grantElsewhere = useCallback(() => {
-    void askElsewhere().then((opened) => {
-      if (!opened) toast({ message: t('permissionRequestFailed'), tone: 'error' });
-    });
-  }, [askElsewhere, t, toast]);
+  const grantElsewhere = useCallback(
+    (plugin: PluginManifest) => {
+      // The popup opens on the active tab's site, so it is told which feature and site to offer.
+      const grant = { pluginId: plugin.id, pageUrl: viewed.url };
+      void openSiteAccessFallback(sessionId, grant).then((opened) => {
+        if (!opened) toast({ message: t('permissionRequestFailed'), tone: 'error' });
+      });
+    },
+    [sessionId, t, toast, viewed.url],
+  );
   const access = usePluginAccess(
     accessManifests,
     viewed.url,

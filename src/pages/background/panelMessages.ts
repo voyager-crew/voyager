@@ -4,7 +4,7 @@ import {
   PANEL_PAGE_PATH,
   PANEL_POPUP_OPEN_CARD_KEY,
   PANEL_PORT_NAME,
-  PANEL_SITE_ACCESS_CARD,
+  panelPopupCardValue,
   PANEL_TOKEN_TTL_MS,
   type PanelActionReply,
   type PanelRefusal,
@@ -272,7 +272,9 @@ export function createPanelBackground() {
     );
     if (!frame) return refuse('sender_not_allowed');
     // Popup opening also stays outside the registry lock.
-    await area.set({ [PANEL_POPUP_OPEN_CARD_KEY]: PANEL_SITE_ACCESS_CARD });
+    await area.set({
+      [PANEL_POPUP_OPEN_CARD_KEY]: panelPopupCardValue(message.payload.grant),
+    });
     const opening = handlePageRuntimeMessage({ type: 'gv.openPopup' }, sender);
     return opening
       ? (parsePanelActionReply(await opening) ?? refuse('popup_unavailable'))

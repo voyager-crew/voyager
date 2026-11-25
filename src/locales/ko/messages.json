@@ -1086,6 +1086,10 @@
     "message": "{site}에 접속해 기능을 켜세요",
     "description": "Detail under a supported site without access. {site} is the site name"
   },
+  "siteAccessPanelGrant": {
+    "message": "{site}의 {name}에는 사이트 접근 권한이 필요하며, 이 브라우저에서는 여기서만 요청할 수 있습니다",
+    "description": "Site access card, when the in-page Voyager panel handed over a feature it could not get site access for: {name} is the feature, {site} the site"
+  },
   "siteAccessNothingOn": {
     "message": "켜진 기능 없음",
     "description": "Detail under a site Voyager can access while none of its features is on"

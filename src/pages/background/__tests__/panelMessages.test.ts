@@ -343,4 +343,24 @@ describe('panel capabilities through the registered background listener', () => 
       else expect(chrome.tabs.create).not.toHaveBeenCalled();
     },
   );
+
+  it('hands the popup the feature and site a panel switch needs access for', async () => {
+    const api = startPanelHarness();
+    const { sender, session } = await api.redeem();
+    const grant = { pluginId: 'voyager.chatgpt-timeline', pageUrl: 'https://chatgpt.com/' };
+    let stored: unknown;
+    api.openPopup.mockImplementation(async () => {
+      stored = api.session.get(PANEL_POPUP_OPEN_CARD_KEY);
+    });
+    const send = (payload: Record<string, unknown>) =>
+      api.send({ type: PANEL_MESSAGE.siteAccessFallback, payload }, sender);
+
+    expect(await send({ sessionId: session.sessionId, grant })).toEqual({ ok: true });
+    expect(stored).toEqual({ card: 'site-access', grant });
+    const notWeb = { ...grant, pageUrl: 'javascript:alert(1)' };
+    expect(await send({ sessionId: session.sessionId, grant: notWeb })).toMatchObject({
+      ok: false,
+    });
+    expect(api.openPopup).toHaveBeenCalledOnce();
+  });
 });

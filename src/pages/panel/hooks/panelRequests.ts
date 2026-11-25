@@ -2,6 +2,7 @@ import browser from 'webextension-polyfill';
 
 import {
   PANEL_MESSAGE,
+  type PanelGrantTarget,
   type PanelRuntimeMessage,
   type PanelSessionId,
   parsePanelActionReply,
@@ -25,11 +26,15 @@ export function openFullSettings(): Promise<boolean> {
 
 /**
  * Where the browser cannot ask from inside the panel, the background opens the
- * popup on its site access card instead. False when that failed too.
+ * popup on its site access card instead, offering `grant` there when a feature
+ * switch asked for it. False when that failed too.
  */
-export function openSiteAccessFallback(sessionId: PanelSessionId): Promise<boolean> {
+export function openSiteAccessFallback(
+  sessionId: PanelSessionId,
+  grant?: PanelGrantTarget,
+): Promise<boolean> {
   return confirmed({
     type: PANEL_MESSAGE.siteAccessFallback,
-    payload: { sessionId },
+    payload: grant ? { sessionId, grant } : { sessionId },
   } satisfies PanelRuntimeMessage);
 }

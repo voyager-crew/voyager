@@ -1086,6 +1086,10 @@
     "message": "打开 {site} 后在那里开启功能",
     "description": "Detail under a supported site without access. {site} is the site name"
   },
+  "siteAccessPanelGrant": {
+    "message": "{site} 上的「{name}」需要站点访问权限，此浏览器只能在这里授予",
+    "description": "Site access card, when the in-page Voyager panel handed over a feature it could not get site access for: {name} is the feature, {site} the site"
+  },
   "siteAccessNothingOn": {
     "message": "暂无开启的功能",
     "description": "Detail under a site Voyager can access while none of its features is on"

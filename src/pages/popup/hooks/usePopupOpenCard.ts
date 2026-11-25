@@ -1,8 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import browser from 'webextension-polyfill';
 
-import { PANEL_POPUP_OPEN_CARD_KEY, parsePanelPopupCard } from '@/features/panel/protocol';
+import {
+  PANEL_POPUP_OPEN_CARD_KEY,
+  type PanelGrantTarget,
+  type PanelPopupCard,
+  parsePanelPopupCard,
+} from '@/features/panel/protocol';
 
 import { scrollToPopupSection } from '../components/PopupToc';
 import { type PopupSectionId, popupSectionAnchorId } from './usePopupSections';
@@ -11,16 +16,16 @@ import { type PopupSectionId, popupSectionAnchorId } from './usePopupSections';
 const CARD_WAIT_MS = 3000;
 const SITE_ACCESS: PopupSectionId = 'siteAccess';
 
-async function takeOpenCardRequest(): Promise<boolean> {
+async function takeOpenCardRequest(): Promise<PanelPopupCard | null> {
   const session = browser.storage?.session;
-  if (!session) return false;
+  if (!session) return null;
   const stored: unknown = (await session.get(PANEL_POPUP_OPEN_CARD_KEY))?.[
     PANEL_POPUP_OPEN_CARD_KEY
   ];
-  if (stored === undefined) return false;
+  if (stored === undefined) return null;
   // One shot: the next popup opens where it normally would.
   await session.remove(PANEL_POPUP_OPEN_CARD_KEY);
-  return parsePanelPopupCard(stored) !== null;
+  return parsePanelPopupCard(stored);
 }
 
 /**
@@ -28,12 +33,14 @@ async function takeOpenCardRequest(): Promise<boolean> {
  * background leaves a one-shot request and opens the popup. Once the tab is
  * read (so restored scroll no longer moves), the popup takes the request,
  * clears it and any saved settings search that would hide the card, and
- * brings the site access card to the top with focus on it.
+ * brings the site access card to the top with focus on it. Returns the
+ * feature grant the panel handed over with it, which the card offers.
  */
 export function usePopupOpenCard(
   tabContextLoaded: boolean,
   setSettingsSearch: (query: string) => void,
-): void {
+): PanelGrantTarget | null {
+  const [handoff, setHandoff] = useState<PanelGrantTarget | null>(null);
   useEffect(() => {
     if (!tabContextLoaded) return undefined;
     let stopped = false;
@@ -55,6 +62,7 @@ export function usePopupOpenCard(
     void takeOpenCardRequest()
       .then((requested) => {
         if (!requested || stopped) return;
+        setHandoff(requested.grant);
         setSettingsSearch('');
         const anchor = popupSectionAnchorId(SITE_ACCESS);
         if (document.getElementById(anchor)) {
@@ -80,4 +88,5 @@ export function usePopupOpenCard(
       cancelAnimationFrame(frame);
     };
   }, [setSettingsSearch, tabContextLoaded]);
+  return handoff;
 }

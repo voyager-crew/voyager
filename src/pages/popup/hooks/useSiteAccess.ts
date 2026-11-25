@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import browser from 'webextension-polyfill';
 
+import type { PanelGrantTarget } from '@/features/panel/protocol';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
 import { matchesAnyPattern } from '@/features/plugins/sites/matchPattern';
 import {
@@ -64,6 +65,8 @@ export interface SiteAccessOptions {
    * the browser (Firefox gives the panel no `permissions` API).
    */
   readonly onActivePage?: boolean;
+  /** A feature's grant the panel handed over (`usePopupOpenCard`), offered on the card. */
+  readonly handoff?: PanelGrantTarget | null;
 }
 
 const OFFICIAL_IDS: ReadonlySet<string> = new Set(Object.values(OFFICIAL_PLUGIN_IDS));
@@ -83,6 +86,7 @@ export function useSiteAccess({
   t,
   onUndoOffer,
   onActivePage = false,
+  handoff = null,
 }: SiteAccessOptions) {
   const [granted, setGranted] = useState<ReadonlySet<string> | null>(null);
   const [pageGranted, setPageGranted] = useState<boolean | null>(null);
@@ -192,7 +196,12 @@ export function useSiteAccess({
     onSettled: recheck,
   });
 
-  return { rows, otherWebsites, pageWebsite, promptSwitch, ...actions };
+  const handedOver = useMemo(() => {
+    const plugin = handoff && pluginManifests.find(({ id }) => id === handoff.pluginId);
+    return plugin && handoff ? { plugin, name: name(plugin), pageUrl: handoff.pageUrl } : null;
+  }, [handoff, name, pluginManifests]);
+
+  return { rows, otherWebsites, pageWebsite, promptSwitch, handedOver, ...actions };
 }
 
 export type SiteAccess = ReturnType<typeof useSiteAccess>;

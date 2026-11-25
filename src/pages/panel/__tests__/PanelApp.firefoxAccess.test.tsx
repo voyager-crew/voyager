@@ -42,6 +42,11 @@ const enabledIn = (id: string) =>
 const toastText = () => container.querySelector('[role="status"] .toast.open')?.textContent ?? '';
 
 const FALLBACK = { type: PANEL_MESSAGE.siteAccessFallback, payload: { sessionId: SESSION_ID } };
+/** The fallback a feature switch sends: which feature, on which site's page, to offer in the popup. */
+const grantFallback = (pluginId: string, pageUrl: string) => ({
+  type: PANEL_MESSAGE.siteAccessFallback,
+  payload: { sessionId: SESSION_ID, grant: { pluginId, pageUrl } },
+});
 
 beforeEach(() => {
   vi.stubGlobal('chrome', firefoxFrame);
@@ -65,9 +70,23 @@ describe("a feature switch in Firefox's in-page panel", () => {
     await mount(CLAUDE);
     await click(rowSwitch(READING_WIDTH));
 
-    expect(extensionApi.runtime.sendMessage).toHaveBeenCalledWith(FALLBACK);
+    expect(extensionApi.runtime.sendMessage).toHaveBeenCalledWith(
+      grantFallback(READING_WIDTH, CLAUDE.pageUrl),
+    );
     expect(enabledIn(READING_WIDTH)).toBe(false);
     expect(toastText()).toBe('');
+  });
+
+  it("names the viewed site's feature to the popup when the panel shows another site", async () => {
+    await mount(CLAUDE);
+    await click(tab('sites'));
+    await click(container.querySelector('[data-site-row="chatgpt"] .rs'));
+    await click(rowSwitch('voyager.chatgpt-timeline'));
+
+    expect(extensionApi.runtime.sendMessage).toHaveBeenCalledWith(
+      grantFallback('voyager.chatgpt-timeline', 'https://chatgpt.com/'),
+    );
+    expect(enabledIn('voyager.chatgpt-timeline')).toBe(false);
   });
 });
 
