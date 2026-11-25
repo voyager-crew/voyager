@@ -13,6 +13,7 @@
 import { type Machine, type Stay, startMachine } from '@/features/plugins/runtime/stateMachine';
 
 import { type HomingBracket, type MountedTurn, estimateHoming } from './homingEstimate';
+import { afterScrollSettles } from './scrollMotion';
 
 /** Defaults for the site.json `timeline.homing` tunables. */
 export const DEFAULT_EDGE_PATIENCE_MS = 10_000;
@@ -21,8 +22,6 @@ export const DEFAULT_STALL_MS = 4_000;
 const QUIET_MS = 80;
 /** Longest wait for an answer to a jump or an aim before reading anyway. */
 const ANSWER_CAP_MS = 400;
-/** Jumps whose window has not caught up yet, skipped before estimating anyway. */
-const WINDOW_WAITS = 2;
 /** Jumps without new contents before a run stops; ChatGPT needs two or three. */
 const MAX_JUMPS = 12;
 /** Jumps in one walk between pages, however much each mounts. */
@@ -87,8 +86,8 @@ export interface HomingHost {
   target(): HTMLElement | null;
   /** Whether the target is still in the marker list. */
   exists(): boolean;
-  /** Mounted turns other than the target, ascending; `inView` for any of them in the view. */
-  mounted(): { readonly turns: MountedTurn[]; readonly inView: boolean };
+  /** Mounted turns other than the target, ascending. */
+  mounted(): MountedTurn[];
   geometry(): HomingGeometry;
   jumpTo(center: number): void;
   align(element: HTMLElement, behavior: ScrollBehavior): void;
@@ -102,7 +101,7 @@ export interface HomingHost {
 
 /** What the host has mounted and how tall it is: what counts as progress. */
 function contents(host: HomingHost): string {
-  const turns = host.mounted().turns.map((turn) => turn.index);
+  const turns = host.mounted().map((turn) => turn.index);
   return `${turns.join(',')}|${host.geometry().scrollHeight}|${host.target() ? 1 : 0}`;
 }
 
@@ -164,7 +163,6 @@ function awaitAnswer(
 function seek(stay: Stay<HomingState, HomingEvent>, host: HomingHost): void {
   let lastContents = '';
   let progressAt = Date.now();
-  let windowWaits = 0;
   let jumps = 0;
   let totalJumps = 0;
   const bracket: HomingBracket = {};
@@ -181,13 +179,9 @@ function seek(stay: Stay<HomingState, HomingEvent>, host: HomingHost): void {
       return stay.send({ type: 'end', reason: 'stalled' });
     }
     if (totalJumps >= MAX_TOTAL_JUMPS) return stay.send({ type: 'end', reason: 'stalled' });
-    const { turns, inView } = host.mounted();
-    // A window that has not caught up with the last jump still shows where it was.
-    if (turns.length && !inView && windowWaits < WINDOW_WAITS) {
-      windowWaits += 1;
-      return awaitAnswer(stay, host, ANSWER_CAP_MS, step);
-    }
-    windowWaits = 0;
+    // Read after the page answered the last jump, so the window is current. A
+    // long reply can fill the view with no prompt bubble in it (#1116).
+    const turns = host.mounted();
     const plan = estimateHoming({
       targetIndex: host.targetIndex,
       mounted: turns,
@@ -212,10 +206,12 @@ function waitForOlder(stay: Stay<HomingState, HomingEvent>, host: HomingHost): v
   host.onWaiting(true);
   stay.scope.effect(() => () => host.onWaiting(false), 'homingWaiting');
   host.holdActive();
-  const start = host.geometry().scrollHeight;
+  // A reply streaming at the bottom grows the page too; only new turns or a
+  // move off the start (a prepend that kept the view's place) count.
+  const atStart = host.geometry().offset <= 1;
   const startTurns = host
     .mounted()
-    .turns.map((turn) => turn.index)
+    .map((turn) => turn.index)
     .join(',');
   stay.scope.timer(() => stay.send({ type: 'end', reason: 'stalled' }), host.edgePatienceMs);
   const check = (): void => {
@@ -225,9 +221,9 @@ function waitForOlder(stay: Stay<HomingState, HomingEvent>, host: HomingHost): v
     host.holdActive();
     const turns = host
       .mounted()
-      .turns.map((turn) => turn.index)
+      .map((turn) => turn.index)
       .join(',');
-    if (host.geometry().scrollHeight !== start || turns !== startTurns)
+    if (turns !== startTurns || (atStart && host.geometry().offset > 1))
       return stay.send({ type: 'grew' });
     awaitAnswer(stay, host, ANSWER_CAP_MS, check);
   };
@@ -245,8 +241,17 @@ function align(stay: Stay<Aligning, HomingEvent>, host: HomingHost): void {
     if (!element) return stay.send({ type: 'unmounted' });
     aims += 1;
     host.holdActive();
-    host.align(element, aims === 1 && stay.state().glide ? 'smooth' : 'instant');
-    awaitAnswer(stay, host, ANSWER_CAP_MS, check);
+    const glide = aims === 1 && stay.state().glide;
+    host.align(element, glide ? 'smooth' : 'instant');
+    if (!glide) return awaitAnswer(stay, host, ANSWER_CAP_MS, check);
+    // Read a glide only once it stops: mid-flight the target is off the anchor
+    // and a re-aim would yank the scroll (scrollMotion.ts).
+    afterScrollSettles(
+      () => host.geometry().offset,
+      (run, ms) => void stay.scope.timer(run, ms),
+      () => stay.signal.aborted,
+      () => awaitAnswer(stay, host, ANSWER_CAP_MS, check),
+    );
   };
   // Arrived once a read finds the target on the anchor and nothing moved it since the aim.
   const check = (changed: boolean): void => {

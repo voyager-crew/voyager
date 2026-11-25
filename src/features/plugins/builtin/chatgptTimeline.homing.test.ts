@@ -145,7 +145,7 @@ describe('ChatGPT timeline homing', () => {
 
   it('gives up after the edge patience and shows the turn the view is on', async () => {
     serveConversation(PROMPTS);
-    const { scrollTo } = pinnedScroller();
+    const { scroller, scrollTo } = pinnedScroller();
     const items = openAtBottom();
     bubble(items[2]).getBoundingClientRect = rect(0);
     bubble(items[3]).getBoundingClientRect = rect(590);
@@ -154,7 +154,11 @@ describe('ChatGPT timeline homing', () => {
     dots()[0].click();
     await settle(1_500);
     expect(waiting()).toBe(true);
-    await settle(10_000);
+    await settle(7_500);
+    // A reply streaming at the bottom grows the page; no older turn arrives.
+    Object.defineProperty(scroller, 'scrollHeight', { configurable: true, value: 2600 });
+    items[3].querySelector('[data-chatgpt-selection-message-id]')!.append(' and more');
+    await settle(2_500);
 
     expect(waiting()).toBe(false);
     const calls = scrollTo.mock.calls.length;
@@ -179,5 +183,70 @@ describe('ChatGPT timeline homing', () => {
     bubble(items[2]).getBoundingClientRect = rect(250);
     await settle(2_000);
     expect(scrollTo).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets a glide to a nearby turn finish before reading where it landed', async () => {
+    serveConversation(PROMPTS);
+    const { scroller, scrollTo } = pinnedScroller();
+    const items = openAtBottom();
+    const at = (y: number) => () => rect(y - scroller.scrollTop)();
+    bubble(items[2]).getBoundingClientRect = at(700);
+    bubble(items[3]).getBoundingClientRect = at(1000);
+    await mount();
+    // A smooth scroll travels for 700 ms, emitting a scroll event a frame.
+    let position = 1400;
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, get: () => position });
+    scrollTo.mockImplementation((options: ScrollToOptions) => {
+      const from = position;
+      const to = options.top ?? from;
+      if (options.behavior !== 'smooth') {
+        position = to;
+        return;
+      }
+      for (let frame = 1; frame <= 44; frame++)
+        setTimeout(() => {
+          position = from + ((to - from) * frame) / 44;
+          scroller.dispatchEvent(new Event('scroll'));
+        }, frame * 16);
+    });
+
+    dots()[2].click();
+    // 700 + 20 - 270, 950px up: still travelling when a 400 ms read would come.
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 450, behavior: 'smooth' });
+    await settle(3_000);
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scroller.scrollTop).toBe(450);
+  });
+
+  it('keeps moving toward a turn behind a long reply when the estimate lands on the same window', async () => {
+    serveConversation(PROMPTS);
+    const { scroller, scrollTo, top } = pinnedScroller();
+    const items = openAtBottom();
+    // Bubbles placed in the thread's own coordinates, so they move with the scroll.
+    const at = (y: number) => () => rect(y - scroller.scrollTop)();
+    bubble(items[2]).getBoundingClientRect = at(1900);
+    bubble(items[3]).getBoundingClientRect = at(2200);
+    await mount();
+    // The second turn's long reply fills 1140-1900: ChatGPT mounts it only once the view reaches 800.
+    scrollTo.mockImplementation((options: ScrollToOptions) => {
+      Object.defineProperty(scroller, 'scrollTop', {
+        configurable: true,
+        get: () => options.top ?? 0,
+      });
+      if ((options.top ?? 0) > 800 || items[1].isConnected) return;
+      items[2].before(items[1]);
+      bubble(items[1]).getBoundingClientRect = at(1100);
+    });
+    expect(top()).toBe(1400);
+
+    dots()[1].click();
+    // The mounted pitch puts it at 1620, 50px above the view: a jump that alone
+    // lands on the same window, again and again, until the run stalls.
+    expect(scrollTo.mock.calls[0][0].top).toBeLessThanOrEqual(1400 - 0.75 * 600);
+    await settle(3_000);
+
+    // 1100 + 20 - 270: on the anchor.
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 850, behavior: 'instant' });
+    expect(dots()[1].getAttribute('aria-current')).toBe('true');
   });
 });

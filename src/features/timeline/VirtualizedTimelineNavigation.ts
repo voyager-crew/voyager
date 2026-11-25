@@ -2,6 +2,7 @@ import { isUserEvent } from '@/core/utils/userEvent';
 
 import type { TimelineHomingPolicy } from './TimelineAdapter';
 import type { TimelineNavigationMarker } from './TimelineNavigation';
+import { ActiveHold } from './activeHold';
 import { type MeasuredCenter, nearestTurnId, searchableCenters } from './activeTurn';
 import {
   DEFAULT_EDGE_PATIENCE_MS,
@@ -22,7 +23,6 @@ import {
 type Dispose = () => void;
 
 const ACTIVE_ANCHOR = 0.45;
-const NAVIGATION_ACTIVE_LOCK_MS = 900;
 const PENDING_NAVIGATION_TIMEOUT_MS = 8000;
 const PENDING_NAVIGATION_HOP_MS = 200;
 const LONG_JUMP_VIEWPORTS = 3;
@@ -67,6 +67,7 @@ export class VirtualizedTimelineNavigation {
   destroy(): void {
     this.destroyed = true;
     this.lifetime.abort();
+    this.hold.destroy();
     this.clearPendingNavigation();
     for (const id of this.timers) window.clearTimeout(id);
     this.timers.clear();
@@ -76,9 +77,10 @@ export class VirtualizedTimelineNavigation {
   private measured: MeasuredCenter[] = [];
   private measuringPass = 0;
   private activeTurnId: string | null = null;
-  private navigationActiveLockUntil = 0;
-  private lockOffset = 0;
-  private stopLockTimer: Dispose | null = null;
+  private readonly hold = new ActiveHold(this.lifetime.signal, () => {
+    this.measure();
+    this.updateActiveFromScroll();
+  });
   private pendingNavigationId: string | null = null;
   private pendingNavigationUntil = 0;
   private stopPendingNavigationTimer: Dispose | null = null;
@@ -137,23 +139,6 @@ export class VirtualizedTimelineNavigation {
       this.onActiveChange(previous, previous);
   }
 
-  /**
-   * Hold the clicked marker active while navigation moves the page. Scroll
-   * events in the hold are dropped, so its expiry recomputes once if the page
-   * moved since the hold began.
-   */
-  private holdActive(): void {
-    this.navigationActiveLockUntil = Date.now() + NAVIGATION_ACTIVE_LOCK_MS;
-    this.lockOffset = this.getScrollTop();
-    void this.stopLockTimer?.();
-    this.stopLockTimer = this.timer(() => {
-      this.stopLockTimer = null;
-      if (Math.abs(this.getScrollTop() - this.lockOffset) < 1) return;
-      this.measure();
-      this.updateActiveFromScroll();
-    }, NAVIGATION_ACTIVE_LOCK_MS + 1);
-  }
-
   private setActiveTurn(turnId: string | null): void {
     if (this.activeTurnId === turnId) return;
     const previousTurnId = this.activeTurnId;
@@ -166,7 +151,8 @@ export class VirtualizedTimelineNavigation {
       this.setActiveTurn(null);
       return;
     }
-    if (Date.now() < this.navigationActiveLockUntil) return;
+    // A homing run holds the clicked marker until it ends, however long ChatGPT takes.
+    if (this.run || this.hold.held) return;
     if (this.isAtScrollBottom()) {
       this.setActiveTurn(this.markers[this.markers.length - 1]?.id ?? null);
       return;
@@ -197,7 +183,7 @@ export class VirtualizedTimelineNavigation {
   navigateTo(turnId: string): void {
     const marker = this.findMarker(turnId);
     if (!marker) return;
-    this.holdActive();
+    this.hold.hold();
     this.setActiveTurn(marker.id);
     const live = this.liveElement(marker);
     const near =
@@ -298,7 +284,7 @@ export class VirtualizedTimelineNavigation {
     };
     this.pendingNavigationId = id;
     this.listenForUserScroll();
-    this.run = startHomingRun(
+    const run = startHomingRun(
       {
         get targetIndex() {
           return markerIndex();
@@ -312,14 +298,10 @@ export class VirtualizedTimelineNavigation {
         exists: () => markerIndex() >= 0,
         mounted: () => {
           const targetIndex = markerIndex();
-          let inView = false;
-          const turns = this.markers.flatMap((item, index) => {
+          return this.markers.flatMap((item, index) => {
             const element = index === targetIndex ? null : this.liveElement(item);
-            if (!element) return [];
-            inView ||= this.isElementInViewport(element);
-            return [{ index, center: this.centerOf(element) }];
+            return element ? [{ index, center: this.centerOf(element) }] : [];
           });
-          return { turns, inView };
         },
         geometry: () => ({
           offset: this.getScrollTop(),
@@ -332,22 +314,22 @@ export class VirtualizedTimelineNavigation {
             ? this.alignElement(element)
             : this.scrollCenterTo(this.centerOf(element), 'instant'),
         offAnchor: (element) => this.centerOf(element) - this.anchorLine(),
-        holdActive: () => this.holdActive(),
+        holdActive: () => this.hold.hold(),
         onWaiting: (waiting) => this.homing.onHomingWait?.(waiting),
         onEnd: (reason) => this.endRun(reason),
       },
       glide,
     );
+    // A run that ended while starting (its turn gone) has already cleaned up.
+    if (this.pendingNavigationId === id) this.run = run;
+    else void run.stop();
   }
 
   /** An arrival keeps the clicked marker; any other end shows where the page is. */
   private endRun(reason: HomingEnd): void {
     this.clearPendingNavigation();
-    if (reason === 'arrived') {
-      this.lockOffset = this.getScrollTop();
-      return;
-    }
-    this.navigationActiveLockUntil = 0;
+    if (reason === 'arrived') return;
+    this.hold.release();
     this.measure();
     this.updateActiveFromScroll();
   }
@@ -398,7 +380,7 @@ export class VirtualizedTimelineNavigation {
       this.clearPendingNavigation();
       return;
     }
-    this.holdActive();
+    this.hold.hold();
     const live = this.liveElement(marker);
     if (live) {
       this.alignTarget(live);

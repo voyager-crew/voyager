@@ -51,6 +51,8 @@ const MIN_PITCH = 40;
 /** Pitch, in viewports, when only one turn is mounted. */
 const LONE_TURN_PITCH = 0.75;
 const EDGE_SLOP = 1;
+/** Least a jump moves toward a target past every mounted turn, in viewports. */
+const MIN_PROBE_VIEWPORTS = 0.75;
 
 /**
  * Record the window's nearest turns on each side of the target. A side seen
@@ -91,7 +93,16 @@ export function estimateHoming(input: HomingEstimateInput): HomingEstimate {
   if (bracket.below && bracket.above) center = between(bracket.below, bracket.above, targetIndex);
   else if (targetIndex < first.index) center = first.center - (first.index - targetIndex) * pitch;
   else center = last.center + (targetIndex - last.index) * pitch;
-  const top = center - input.viewportHeight * input.anchor;
+  const anchorOffset = input.viewportHeight * input.anchor;
+  // Every turn the host mounts lies on one side of an unmounted target, so the
+  // target is beyond the view in that direction. An estimate short of a probe
+  // (a long reply spanning the view, #1116) would land on the same window
+  // again; move at least a probe, which cannot pass a turn beyond the view.
+  const probe = input.viewportHeight * MIN_PROBE_VIEWPORTS;
+  if (targetIndex > last.index) center = Math.max(center, input.offset + probe + anchorOffset);
+  else if (targetIndex < first.index)
+    center = Math.min(center, input.offset - probe + anchorOffset);
+  const top = center - anchorOffset;
   const maxTop = Math.max(0, input.scrollHeight - input.viewportHeight);
   if (targetIndex < first.index && top <= 0 && input.offset <= EDGE_SLOP) return { kind: 'edge' };
   if (targetIndex > last.index && top >= maxTop && input.offset >= maxTop - EDGE_SLOP)

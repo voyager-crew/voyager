@@ -71,6 +71,21 @@ describe('estimated homing', () => {
       }
   });
 
+  it('reads a tall first turn at the start as the edge, never a jump down', () => {
+    const plan = (offset: number) =>
+      estimateHoming({
+        targetIndex: 0,
+        mounted: [{ index: 1, center: offset + 1100 }],
+        offset,
+        viewportHeight: VIEW,
+        scrollHeight: 6000,
+        anchor: ANCHOR,
+      });
+    expect(plan(0)).toEqual({ kind: 'edge' });
+    const above = plan(140);
+    expect(above.kind === 'jump' && above.center - VIEW * ANCHOR).toBeLessThan(140);
+  });
+
   it('waits at the start of what is loaded instead of jumping again', () => {
     expect(
       estimateHoming({

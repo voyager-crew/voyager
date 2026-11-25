@@ -97,6 +97,9 @@ describe('virtualized active marker', () => {
     navigation.navigateToMarker('t-3');
     expect(navigation.activeTurnId).toBe('t-3');
     // A person scrolls back during the hold; its scroll events are dropped.
+    const wheel = new Event('wheel');
+    userEvents.add(wheel);
+    window.dispatchEvent(wheel);
     viewport.scrollTop = 700 - VIEW * 0.45;
     viewport.dispatchEvent(new Event('scroll'));
     vi.advanceTimersByTime(16);
@@ -104,6 +107,17 @@ describe('virtualized active marker', () => {
 
     vi.advanceTimersByTime(1000);
     expect(navigation.activeTurnId).toBe('t-1');
+  });
+
+  it('keeps a clicked edge turn that its own scroll left short of the anchor', () => {
+    // The first turn can only reach the view's top: the second sits nearer the anchor line.
+    const { navigation, viewport, scrollTo } = fixture([60, 260, 900, 1300], []);
+    scrollTo(900);
+    navigation.navigateToMarker('t-0');
+    viewport.scrollTop = 0;
+    viewport.dispatchEvent(new Event('scroll'));
+    vi.advanceTimersByTime(2000);
+    expect(navigation.activeTurnId).toBe('t-0');
   });
 
   it("cancels estimated homing on a person's wheel and shows where the view is", async () => {
