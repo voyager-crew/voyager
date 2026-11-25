@@ -10,8 +10,26 @@ import type { PluginManifest } from '@/features/plugins/types';
 import { setPluginEnabledWithSiteAccess } from '@/pages/popup/utils/pluginEnablement';
 import { enableScriptedWithSiteAccess } from '@/pages/popup/utils/scriptedEnablement';
 
-/** The panel installs from the page it is open on, which Voyager already reaches. */
-const ON_PAGE = { onActivePage: true } as const;
+/**
+ * The popup's grant offer for a creation the panel could not get access for,
+ * which Firefox's panel frame cannot ask the browser for.
+ */
+export type GrantElsewhere = (manifest: PluginManifest) => void;
+
+/**
+ * Switch on a non-scripted creation from the page the panel is open on, which
+ * Voyager already reaches; access it needs beyond that page goes to the popup.
+ */
+async function enableFromPanel(
+  manifest: PluginManifest,
+  pageUrl: string,
+  askElsewhere: GrantElsewhere | undefined,
+) {
+  const hint = { onActivePage: true, handsOff: !!askElsewhere };
+  const toggled = await setPluginEnabledWithSiteAccess(manifest, true, pageUrl, () => {}, hint);
+  if (toggled === 'elsewhere') askElsewhere?.(manifest);
+  return toggled;
+}
 
 export type AcceptedReply = Extract<CheckedPluginReply, { ok: true }>;
 
@@ -48,6 +66,7 @@ function keepsRunning(manifest: unknown): boolean {
 export async function installReviewed(
   checked: AcceptedReply,
   pageUrl: string,
+  askElsewhere?: GrantElsewhere,
 ): Promise<InstallOutcome> {
   const none: LocalPluginRecordMap = {};
   const replaced = (await loadLocalPluginRecords().catch(() => none))[checked.manifest.id];
@@ -61,7 +80,7 @@ export async function installReviewed(
   // A scripted plugin turns on bound to the hash of what was reviewed, never of what was stored.
   const toggled = isScriptedManifest(checked.manifest)
     ? await enableScriptedWithSiteAccess(checked.manifest, pageUrl)
-    : await setPluginEnabledWithSiteAccess(imported.manifest, true, pageUrl, () => {}, ON_PAGE);
+    : await enableFromPanel(imported.manifest, pageUrl, askElsewhere);
   if (toggled === 'changed') return { kind: 'changed' };
   return {
     kind: 'installed',
@@ -72,9 +91,13 @@ export async function installReviewed(
 }
 
 /** A second click on "Turn on" when the first enable could not get site access. */
-export async function turnOnInstalled(manifest: PluginManifest, pageUrl: string): Promise<boolean> {
+export async function turnOnInstalled(
+  manifest: PluginManifest,
+  pageUrl: string,
+  askElsewhere?: GrantElsewhere,
+): Promise<boolean> {
   const toggled = isScriptedManifest(manifest)
     ? await enableScriptedWithSiteAccess(manifest, pageUrl)
-    : await setPluginEnabledWithSiteAccess(manifest, true, pageUrl, () => {}, ON_PAGE);
+    : await enableFromPanel(manifest, pageUrl, askElsewhere);
   return toggled === 'enabled';
 }

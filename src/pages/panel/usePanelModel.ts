@@ -45,7 +45,7 @@ import {
   codeCreationRow,
   officialPanelRow,
 } from './features/featureRows';
-import { openSiteAccessFallback } from './hooks/panelRequests';
+import { handOffPluginGrant, openSiteAccessFallback } from './hooks/panelRequests';
 import { fillPlaceholders } from './panelText';
 import type { PanelSite } from './sites/panelSites';
 
@@ -170,13 +170,11 @@ export function usePanelModel({
   // the panel is open on needs no prompt for that page, and anything more is
   // granted in the popup.
   const grantElsewhere = useCallback(
-    (plugin: PluginManifest) => {
-      // The popup opens on the active tab's site, so it is told which feature and site to offer.
-      const grant = { pluginId: plugin.id, pageUrl: viewed.url };
-      void openSiteAccessFallback(sessionId, grant).then((opened) => {
-        if (!opened) toast({ message: t('permissionRequestFailed'), tone: 'error' });
-      });
-    },
+    // The popup opens on the active tab's site, so it is told which feature and site to offer.
+    (plugin: PluginManifest) =>
+      handOffPluginGrant(sessionId, plugin, viewed.url, () =>
+        toast({ message: t('permissionRequestFailed'), tone: 'error' }),
+      ),
     [sessionId, t, toast, viewed.url],
   );
   const access = usePluginAccess(

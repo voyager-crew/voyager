@@ -120,12 +120,14 @@ export function usePluginAccess(
         next,
         activeUrl,
         (enabled) => onEnabledChange(plugin.id, enabled),
-        { pageGranted: pageGrantedIds.has(plugin.id), onActivePage },
+        { pageGranted: pageGrantedIds.has(plugin.id), onActivePage, handsOff: !!askElsewhere },
       );
       if (outcome === 'denied') setDeniedId(plugin.id);
       else if (outcome === 'unsupported') setUnsupportedId(plugin.id);
-      else if (outcome === 'elsewhere') askElsewhere?.(plugin);
-      else if (outcome === 'changed')
+      else if (outcome === 'elsewhere') {
+        if (askElsewhere) askElsewhere(plugin);
+        else setUnsupportedId(plugin.id);
+      } else if (outcome === 'changed')
         setEnableRefusal({ id: plugin.id, key: 'localPluginChangedBeforeEnable' });
       // The generic "Couldn't update the setting. Try again." message.
       else if (outcome === 'write_failed')
@@ -152,7 +154,8 @@ export function usePluginAccess(
         return;
       }
       if (!canGrantPluginSiteAccess()) {
-        askElsewhere?.(plugin);
+        if (askElsewhere) askElsewhere(plugin);
+        else setUnsupportedId(plugin.id);
         return;
       }
       try {

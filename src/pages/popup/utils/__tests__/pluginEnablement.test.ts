@@ -370,7 +370,10 @@ describe("switching a site plugin from Firefox's in-page panel, which has no per
     expect(onChange).toHaveBeenLastCalledWith(true);
   });
 
-  it("hands a Claude artifact frame's access to the popup instead of calling it unsupported", async () => {
+  it.each([
+    ['hands it to the popup instead of calling it unsupported', true, 'elsewhere'],
+    ['is unsupported for a caller with no popup to hand it to', false, 'unsupported'],
+  ] as const)("a Claude artifact frame's access %s", async (_, handsOff, expected) => {
     const artifacts: PluginManifest = {
       ...chatgptTimeline(),
       id: 'voyager.test-claude-artifacts',
@@ -382,10 +385,10 @@ describe("switching a site plugin from Firefox's in-page panel, which has no per
       true,
       'https://claude.ai/chat/1',
       vi.fn(),
-      { onActivePage: true },
+      { onActivePage: true, handsOff },
     );
 
-    expect(outcome).toBe('elsewhere');
+    expect(outcome).toBe(expected);
     expect(isOn(artifacts.id)).toBe(false);
   });
 
@@ -395,7 +398,7 @@ describe("switching a site plugin from Firefox's in-page panel, which has no per
       true,
       CHATGPT,
       vi.fn(),
-      { onActivePage: true },
+      { onActivePage: true, handsOff: true },
     );
 
     expect(outcome).toBe('elsewhere');
@@ -408,6 +411,20 @@ describe("switching a site plugin from Firefox's in-page panel, which has no per
 
     const outcome = await setPluginEnabledWithSiteAccess(timeline, true, CHATGPT, vi.fn(), {
       onActivePage: true,
+    });
+
+    expect(outcome).toBe('unsupported');
+    expect(isOn(timeline.id)).toBe(false);
+  });
+
+  it('reports another browser whose frame lacks the permissions API as unsupported', async () => {
+    // Only Firefox strips its panel frame; elsewhere (a Safari with a reduced UA) it means no support.
+    browserKind.firefox = false;
+    const timeline = chatgptTimeline();
+
+    const outcome = await setPluginEnabledWithSiteAccess(timeline, true, CHATGPT, vi.fn(), {
+      onActivePage: true,
+      handsOff: true,
     });
 
     expect(outcome).toBe('unsupported');

@@ -20,7 +20,7 @@ import { useCreationReview } from './create/useCreationReview';
 import { usePanelScripted } from './create/usePanelScripted';
 import { filterPanelGroups, groupPanelRows } from './features/featureRows';
 import { EscapeLayers } from './hooks/escapeLayers';
-import { openFullSettings } from './hooks/panelRequests';
+import { handOffPluginGrant, openFullSettings } from './hooks/panelRequests';
 import { type PanelShell, createPanelShell } from './hooks/panelShell';
 import { useOpeningFocus } from './hooks/useOpeningFocus';
 import { usePanelAccent } from './hooks/usePanelAccent';
@@ -149,6 +149,8 @@ function PanelPage({ session, shell }: { session: PanelSession; shell: PanelShel
     context,
     requestTab: tab.requestTab,
     onReview: () => changeView('create'),
+    askElsewhere: (plugin) =>
+      handOffPluginGrant(session.sessionId, plugin, context.pageUrl, failed),
   });
   const viewSite = useCallback(
     (key: string) => {

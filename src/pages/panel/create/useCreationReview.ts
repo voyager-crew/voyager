@@ -12,7 +12,7 @@ import { startMachine } from '@/features/plugins/runtime/stateMachine';
 import type { TabRequester } from '@/pages/popup/hooks/currentTab';
 
 import { useMachine } from '../sync/useMachine';
-import { installReviewed, turnOnInstalled } from './installReviewed';
+import { type GrantElsewhere, installReviewed, turnOnInstalled } from './installReviewed';
 import {
   REVIEW_IDLE,
   type ReviewEvent,
@@ -31,15 +31,18 @@ export function useCreationReview({
   context,
   requestTab,
   onReview,
+  askElsewhere,
 }: {
   context: PanelContext;
   requestTab: TabRequester | null;
   onReview: () => void;
+  /** Hands a grant this frame cannot ask for to the popup. */
+  askElsewhere?: GrantElsewhere;
 }) {
-  const page = useRef({ context, requestTab });
+  const page = useRef({ context, requestTab, askElsewhere });
   const review = useRef(onReview);
   useEffect(() => {
-    page.current = { context, requestTab };
+    page.current = { context, requestTab, askElsewhere };
     review.current = onReview;
   });
   const [state, send] = useMachine<ReviewState, ReviewEvent>(
@@ -58,8 +61,10 @@ export function useCreationReview({
               return candidate;
             },
             check: (text) => checkPluginReply(text),
-            install: (checked) => installReviewed(checked, page.current.context.pageUrl),
-            turnOn: (manifest) => turnOnInstalled(manifest, page.current.context.pageUrl),
+            install: (checked) =>
+              installReviewed(checked, page.current.context.pageUrl, page.current.askElsewhere),
+            turnOn: (manifest) =>
+              turnOnInstalled(manifest, page.current.context.pageUrl, page.current.askElsewhere),
           }),
         },
         REVIEW_IDLE,

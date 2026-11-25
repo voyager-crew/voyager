@@ -66,13 +66,14 @@ function includeGrantedSite(activeUrl: string | undefined): void {
  * Whether this browser can grant and inject the optional host access plugins
  * need at all, wherever the asking frame is (not Firefox < 128 or Safari < 16.4).
  * Firefox's in-page panel frame has neither `permissions` nor `scripting` on a
- * browser that supports both, so a frame without `permissions` says nothing
- * about the browser; a frame that can ask but lacks `scripting` is a browser
- * without dynamic registration.
+ * browser that supports both, so there a frame without `permissions` says
+ * nothing about the browser. Elsewhere it means no support: a Safari exposing
+ * a reduced UA is then decided by this frame's `scripting`, as before.
  */
 export function browserGrantsPluginSiteAccess(): boolean {
   if (!browserSupportsDynamicContentScriptRegistration()) return false;
-  return !browser.permissions?.request || supportsDynamicContentScriptRegistration();
+  if (!browser.permissions?.request) return isFirefox();
+  return supportsDynamicContentScriptRegistration();
 }
 
 /** Whether this frame can ask for that access itself: the popup can, Firefox's in-page panel cannot. */
@@ -128,6 +129,8 @@ export interface SiteGrantHint {
    * page), so Voyager runs there and the page's own origin is granted.
    */
   readonly onActivePage?: boolean;
+  /** The caller hands an `elsewhere` outcome to the popup; without it that is `unsupported`. */
+  readonly handsOff?: boolean;
 }
 
 /**
@@ -184,8 +187,9 @@ function pluginApiPermissions(plugin: PluginManifest): Manifest.OptionalPermissi
  * refused (or the browser failed) the host-access prompt. `unsupported`: this
  * browser cannot grant or inject the access the plugin needs on this site.
  * `elsewhere`: the browser can, but not from this frame (Firefox's in-page
- * panel), and the plugin needs access the page does not prove it holds; the
- * caller hands the grant to the popup. Nothing was saved.
+ * panel), and the plugin needs access the page does not prove it holds; only
+ * a caller that `handsOff` gets it, and hands the grant to the popup. Nothing
+ * was saved.
  * `changed`: a local plugin's content changed (re-imported elsewhere) after the
  * user saw it, so it stays off until they review the new content.
  * `write_failed`: the new state could not be stored (a local plugin's enable, or
@@ -259,7 +263,8 @@ export async function setPluginEnabledWithSiteAccess(
       // switch there needs no prompt when the page's own origin is all it needs,
       // and otherwise goes to the popup, which can ask.
       if (!browser.permissions?.request) {
-        if (!heldByActivePage(origins, permissions, activeUrl, hint)) return 'elsewhere';
+        if (!heldByActivePage(origins, permissions, activeUrl, hint))
+          return hint?.handsOff ? 'elsewhere' : 'unsupported';
       } else {
         try {
           // Firefox requires permissions.request to be the first await in the

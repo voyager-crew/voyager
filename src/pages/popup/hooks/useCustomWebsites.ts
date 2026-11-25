@@ -26,7 +26,7 @@ import {
   withEntriesRestored,
   withoutEntries,
 } from '../utils/coverageEntries';
-import { listGrants } from '../utils/sitePermissions';
+import { heldPatterns, originPatternsForDomain } from '../utils/customWebsiteGrants';
 
 export interface CustomWebsitesOptions {
   t: (key: TranslationKey) => string;
@@ -77,30 +77,6 @@ export interface PromptCoverageResult {
   readonly refusal: CoverageRefusal | null;
   /** What switching off removed, at the positions it held. */
   readonly removed: readonly PlacedEntry[];
-}
-
-function originPatternsForDomain(domain: string): string[] | null {
-  try {
-    return customWebsiteOriginPatterns(domain);
-  } catch {
-    return null;
-  }
-}
-
-/** The patterns of `origins` the browser holds as such, so an undo asks for exactly those again. */
-async function heldPatterns(origins: readonly string[]): Promise<string[]> {
-  const listed = await listGrants();
-  if (listed) return origins.filter((origin) => listed.includes(origin));
-  const held = await Promise.all(
-    origins.map(async (origin) => {
-      try {
-        return await browser.permissions.contains({ origins: [origin] });
-      } catch {
-        return true;
-      }
-    }),
-  );
-  return origins.filter((_, index) => held[index]);
 }
 
 /**
@@ -462,7 +438,8 @@ export function useCustomWebsites({
           await restoreEntries(entries);
           return true;
         }
-        if (!browser.permissions?.request) return false;
+        // Firefox's panel frame has no permissions API: the popup asks, as when a request throws.
+        if (!browser.permissions?.request) return !!askElsewhere && (await askElsewhere());
         const ask = async (): Promise<AccessAnswer> => {
           try {
             const granted = await browser.permissions.request({ origins: [...origins] });
