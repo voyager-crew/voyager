@@ -109,13 +109,30 @@ describe('Local Bridge model.select: a preset on a model the site data does not 
     expect(details()).not.toHaveProperty('observed');
   });
 
-  it('refuses Pro, without moving, on a model whose slider ends below it', async () => {
-    mount({ ...LATEST, model: 'GPT-6.2', stepLabels: EN_US.stepLabels.slice(0, 4), effort: 1 });
+  it('stops on Pro of a model that skips High and adds a step after Pro', async () => {
+    // Counting from the vocabulary (Medium + 3 = index 3) would land on Max and save it.
+    mount({ ...LATEST, stepLabels: ['Medium', 'Extra High', 'Pro', 'Max'], effort: 0 });
+    await select({ target: { preset: 'pro' } });
+
+    expect(bridge.outcome()).toMatchObject({
+      ok: true,
+      data: { observed: { modelLabel: 'Latest', effortIndex: 2, effortMax: 3 } },
+    });
+    expect(picker.state()).toMatchObject({ committed: 2, keydowns: 2, open: false });
+  });
+
+  it.each([
+    ['ends below Pro', EN_US.stepLabels.slice(0, 4)],
+    ['has an unknown step where Pro would be', ['Instant', 'Medium', 'High', 'Max']],
+  ])('restores the step it found before closing when a model %s', async (_, stepLabels) => {
+    mount({ ...LATEST, model: 'GPT-6.2', stepLabels, effort: 1 });
     await select({ target: { preset: 'pro' } });
 
     expect(errorCode(bridge.outcome())).toBe('effort-unavailable');
-    expect(details()).toMatchObject({ selected: 'GPT-6.2', valueMax: 3 });
-    expect(picker.state()).toMatchObject({ keydowns: 0, open: false });
+    expect(details()).toMatchObject({ selected: 'GPT-6.2', restored: true, partial: false });
+    // ChatGPT saves the slider's step as the menu closes: the user's Medium, untouched.
+    expect(picker.state()).toMatchObject({ committed: 1, open: false });
+    expect(picker.state().keydowns).toBeGreaterThan(0);
   });
 
   it('refuses a preset on such a model when its status names no step the site data knows', async () => {

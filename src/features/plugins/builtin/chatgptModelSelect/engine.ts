@@ -26,7 +26,9 @@
  *   (measured 2026-10-21: one PATCH of `user_last_used_model_config` on close,
  *   none while the menu is open, none when the composer goes away with it), so
  *   a menu that never closed, or whose trigger went away, applied nothing. The
- *   closed trigger's step (`triggerStep`) must then name the target.
+ *   closed trigger's step (`triggerStep`) must then name the target. A failure
+ *   with the menu still open first steps the slider back to where it was, so it
+ *   never closes (and saves) on another step.
  */
 import type { ModelSelectResult, ModelSelection } from '@/features/bridge/protocol';
 import {
@@ -191,16 +193,53 @@ export async function selectModel(
 
   const before = read();
   const previous = selectionOf(data, before);
+  let steps = 0;
+  /** One arrow key on the slider, then its new step; null when it did not move. */
+  const stepOnce = async (direction: -1 | 1): Promise<number | null> => {
+    const current = readPicker(openMenu, data, effortControl).slider;
+    if (!current) return null;
+    ctx.guard();
+    current.element.focus();
+    ctx.dispatch(current.element, key(direction > 0 ? 'ArrowRight' : 'ArrowLeft'));
+    steps += 1;
+    changed = true;
+    const from = current.now;
+    const moved = await ctx.waitFor(
+      () => {
+        const value = read().slider?.now;
+        return value !== undefined && value !== from ? { value } : null;
+      },
+      { timeoutMs: budget(ctx, STEP_TIMEOUT_MS), minGapMs: MIN_GAP_MS },
+    );
+    return moved?.value ?? null;
+  };
+  /**
+   * Back to the step the menu opened on: ChatGPT saves the slider's step as the menu
+   * closes, so a failed select must not close it on another step.
+   */
+  const restore = async (): Promise<boolean> => {
+    const original = before.slider?.now;
+    if (original === undefined) return false;
+    for (let press = 0; press <= (before.slider?.max ?? 0) + 1; press += 1) {
+      const now = readPicker(openMenu, data, effortControl).slider?.now;
+      if (now === undefined) return false;
+      if (now === original) return true;
+      if ((await stepOnce(original > now ? 1 : -1)) === null) return false;
+    }
+    return readPicker(openMenu, data, effortControl).slider?.now === original;
+  };
   const failClosed = async (
     code: Parameters<OpContext['fail']>[0],
     message: string,
     details: Readonly<Record<string, unknown>> = {},
   ): Promise<never> => {
+    const restored = changed && menuState() === 'open' ? await restore() : null;
     await close();
     return ctx.fail(code, message, {
       ...details,
       previous,
-      partial: changed,
+      partial: changed && restored !== true,
+      ...(restored === null ? {} : { restored }),
       statusText: readPicker(openMenu, data, effortControl).status.text,
     });
   };
@@ -224,7 +263,6 @@ export async function selectModel(
     );
   }
 
-  let steps = 0;
   /** The status at the target step, confirmed while the menu was open. */
   let targetStatus: PickerReading['status'] | null = null;
   let place: PageGoal | null = null;
@@ -240,35 +278,59 @@ export async function selectModel(
         selected: selectedLabel,
       });
     }
-    const { goal, named } = place!;
+    const { named } = place!;
     let now = slider!.now;
-    while (now !== goal) {
-      if (steps > slider!.max) {
-        await failClosed('unverified', 'The effort slider did not reach the requested step.');
+    const stuck = (from: number): Promise<never> =>
+      failClosed('unverified', 'The effort slider did not move after a key press.', {
+        valueNow: from,
+        steps,
+      });
+    if (place!.kind === 'index') {
+      const { goal } = place!;
+      while (now !== goal) {
+        if (steps > slider!.max) {
+          await failClosed('unverified', 'The effort slider did not reach the requested step.');
+        }
+        now = (await stepOnce(goal > now ? 1 : -1)) ?? (await stuck(now));
       }
-      const current = readPicker(openMenu, data, effortControl).slider;
-      if (!current) await failClosed('unverified', 'The effort slider disappeared.');
-      ctx.guard();
-      current!.element.focus();
-      ctx.dispatch(current!.element, key(goal > now ? 'ArrowRight' : 'ArrowLeft'));
-      steps += 1;
-      changed = true;
-      const from = now;
-      const moved = await ctx.waitFor(
-        () => {
-          const value = read().slider?.now;
-          return value !== undefined && value !== from ? { value } : null;
-        },
-        { timeoutMs: budget(ctx, STEP_TIMEOUT_MS), minGapMs: MIN_GAP_MS },
-      );
-      if (!moved) {
-        await failClosed('unverified', 'The effort slider did not move after a key press.', {
-          valueNow: from,
-          steps,
-        });
+    } else {
+      // Walk by name: each step's status must name it before the next key press.
+      const { direction, rank, target: goalRank } = place!;
+      let label = before.status.label!;
+      while (!named(label)) {
+        const at = rank(label);
+        const next = now + direction;
+        if (at < 0 || (at - goalRank) * direction > 0 || next < 0 || next > slider!.max) {
+          await failClosed('effort-unavailable', 'ChatGPT does not offer the requested effort.', {
+            available: seenLabels,
+            valueMax: slider!.max,
+            selected: selectedLabel,
+          });
+        }
+        now = (await stepOnce(direction)) ?? (await stuck(now));
+        const from = label;
+        const reached = now;
+        const status = await ctx.waitFor(
+          () => {
+            const shown = read().status;
+            const fresh =
+              shown.label !== null &&
+              shown.label !== from &&
+              (shown.position === null || shown.position === reached + 1);
+            return fresh ? shown : null;
+          },
+          { timeoutMs: budget(ctx, STATUS_TIMEOUT_MS), minGapMs: MIN_GAP_MS },
+        );
+        if (!status) {
+          await failClosed('effort-unavailable', 'ChatGPT does not name the requested effort.', {
+            available: seenLabels,
+            valueNow: now,
+          });
+        }
+        label = status!.label!;
       }
-      now = moved!.value;
     }
+    const goal = now;
 
     const confirmed = await ctx.waitFor(
       () => {

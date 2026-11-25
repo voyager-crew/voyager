@@ -101,14 +101,28 @@ function stepNamer(
   return (label) => label === null || labels.has(label) || !otherLabels.has(label);
 }
 
-export interface PageGoal {
-  /** The target's `aria-valuenow`. */
-  readonly goal: number;
+interface StepNaming {
   /** Whether a step name (status or closed trigger) is no proof against the goal. */
   readonly named: (label: string | null) => boolean;
   /** The goal step's names in the site data. */
   readonly labels: ReadonlySet<string>;
 }
+
+export type PageGoal =
+  /** The target's `aria-valuenow`, known before any key press. */
+  | (StepNaming & { readonly kind: 'index'; readonly goal: number })
+  /**
+   * The target is found by walking one step at a time toward it and reading each step's
+   * name: a model's steps need not be the vocabulary's (one may lack Pro, or add a step).
+   */
+  | (StepNaming & {
+      readonly kind: 'name';
+      readonly direction: -1 | 1;
+      /** A step name's place in the vocabulary, -1 when it names none. */
+      readonly rank: (label: string) => number;
+      /** The target's place in the vocabulary. */
+      readonly target: number;
+    });
 
 export interface SliderSpan {
   readonly now: number;
@@ -133,8 +147,9 @@ function measuredSteps(
  *   position; a name there only vetoes as another step's (a zh-CN page may say
  *   "Extra High", and other UI languages are not in the data).
  * - Any other model goes by name: the status names the current step, its place in the
- *   vocabulary gives the distance to the target, and the target must then be named as
- *   itself. An unnamed status, or a target off the slider, lands nowhere.
+ *   vocabulary gives only the direction, and the engine walks one step at a time until
+ *   the status names the target (`kind: 'name'`). A count would skip a step this model
+ *   lacks, or land past it. An unnamed status lands nowhere.
  */
 export function goalOnPage(
   data: ModelPickerSection,
@@ -147,24 +162,30 @@ export function goalOnPage(
     const efforts = measuredSteps(data, target.modelId, slider);
     const goal = target.effortIndex;
     if (!efforts || goal === null || goal > slider.max) return null;
-    return { goal, named: stepNamer(efforts, goal), labels: mergedLabels(efforts[goal].labels) };
+    return {
+      kind: 'index',
+      goal,
+      named: stepNamer(efforts, goal),
+      labels: mergedLabels(efforts[goal].labels),
+    };
   }
   const efforts = measuredSteps(data, selectedId, slider);
   const index = efforts?.findIndex((step) => step.id === target.step) ?? -1;
   if (efforts && index >= 0) {
     return {
+      kind: 'index',
       goal: index,
       named: stepNamer(efforts, index),
       labels: mergedLabels(efforts[index].labels),
     };
   }
-  const here =
-    statusLabel === null
-      ? -1
-      : target.order.findIndex((id) => stepLabels(data, id).has(statusLabel));
+  const vocabulary = target.order.map((id) => stepLabels(data, id));
+  const rank = (label: string): number => vocabulary.findIndex((names) => names.has(label));
+  const here = statusLabel === null ? -1 : rank(statusLabel);
+  const goal = target.order.indexOf(target.step);
   if (here < 0 || slider.min !== 0) return null;
-  const goal = slider.now + target.order.indexOf(target.step) - here;
-  if (goal < 0 || goal > slider.max) return null;
-  const labels = stepLabels(data, target.step);
-  return { goal, named: (label) => label !== null && labels.has(label), labels };
+  const labels = vocabulary[goal];
+  const named = (label: string | null): boolean => label !== null && labels.has(label);
+  if (here === goal) return { kind: 'index', goal: slider.now, named, labels };
+  return { kind: 'name', direction: goal > here ? 1 : -1, rank, target: goal, named, labels };
 }

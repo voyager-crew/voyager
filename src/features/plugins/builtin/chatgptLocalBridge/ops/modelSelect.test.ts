@@ -401,13 +401,15 @@ describe('Local Bridge model.select: refusals', () => {
     expect(picker.state()).toMatchObject({ effort: 3, keydowns: 0, open: false });
   });
 
-  it('does not settle for Pro when the status names that step as another one', async () => {
+  it('does not settle for Pro when the status names that step as another one, and moves back', async () => {
     mount({ effort: 3, stepLabels: ['即时', '中', '高', '极高', '极高'] });
     await select({ target: { preset: 'pro' } });
 
     expect(errorCode(bridge.outcome())).toBe('effort-unavailable');
     expect(details()).toMatchObject({ available: ['极高'] });
-    expect(picker.state().open).toBe(false);
+    expect(details()).toMatchObject({ restored: true, partial: false });
+    // ChatGPT saves the slider's step on close: it must be the one the menu opened on.
+    expect(picker.state()).toMatchObject({ committed: 3, open: false });
   });
 
   it('stops after one key press when the slider does not move', async () => {
