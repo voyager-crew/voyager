@@ -3,9 +3,14 @@
    message to decide whether it stays expanded, so extra height re-collapses it
    right after Expand (#1117). The lines keep their own box and the quote is
    painted by a pseudo-element; the message widens its clip box inline (net width
-   unchanged) so the bar and tint can sit outside the text without re-wrapping it. */
+   unchanged) so the bar and tint can sit outside the text without re-wrapping it.
+   The width resets keep that true if the host ever sizes the message as a
+   border-box 100%, where the padding would narrow the text instead. */
 @supports selector(:has(*)) {
   div:has(> .gv-rendered-quote-line) {
+    box-sizing: content-box;
+    width: auto;
+    max-width: none;
     margin-inline: -14px;
     padding-inline: 14px;
   }

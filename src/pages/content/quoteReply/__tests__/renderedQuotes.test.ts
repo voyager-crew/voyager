@@ -321,4 +321,42 @@ describe('rendered Quote Reply blocks', () => {
     );
     expect(paint?.[2]).toMatch(/position\s*:\s*absolute/);
   });
+
+  it('paints sent quotes without narrowing the text, so no line re-wraps', () => {
+    const rules = [...readContentStyle().matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter(([, selector]) => /\.gv-rendered-quote/.test(selector))
+      .map(([, selector, body]) => ({
+        selector: selector.trim(),
+        declarations: new Map(
+          body
+            .split(';')
+            .map((declaration) => declaration.split(':').map((part) => part.trim()))
+            .filter(([name, value]) => name && value)
+            .map(([name, value]) => [name, value] as const),
+        ),
+      }));
+
+    // Lines keep the message's inline size untouched.
+    const narrows =
+      /^(?:width|max-width|min-width|box-sizing|text-indent|(?:padding|margin|border)(?:-(?:left|right|inline(?:-start|-end)?))?(?:-width)?)$/;
+    for (const { selector, declarations } of rules) {
+      if (/::?(?:before|after)\b/.test(selector) || /:has\(/.test(selector)) continue;
+      expect(
+        [...declarations.keys()].filter((name) => narrows.test(name)),
+        selector,
+      ).toEqual([]);
+    }
+
+    // The message widens its clip box with margin and padding that cancel, on a
+    // content box that is not pinned to a width the padding would eat into.
+    const host = rules.find(({ selector }) => /:has\(/.test(selector));
+    expect(host, 'no message rule found').toBeDefined();
+    const margin = host!.declarations.get('margin-inline');
+    const padding = host!.declarations.get('padding-inline');
+    expect(margin).toMatch(/^-\d+px$/);
+    expect(padding).toBe(margin!.slice(1));
+    expect(host!.declarations.get('box-sizing')).toBe('content-box');
+    expect(host!.declarations.get('width')).toBe('auto');
+    expect(host!.declarations.get('max-width')).toBe('none');
+  });
 });
