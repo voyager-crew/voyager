@@ -203,7 +203,8 @@ describe('creations that run code in My creations', () => {
     expect(row?.querySelector('[data-testid="scripted-source"]')?.textContent).toBe(SOURCE);
     await click(button(container, 'scriptedTurnOn'));
     expect(state()?.enabled[ID]?.reviewHash).toBe(await hash());
-    expect(text('[data-testid="scripted-state"]')).toBe('scriptedStateOn');
+    // The row repaints after the stored state lands, later than `settle` on a loaded runner.
+    await vi.waitFor(() => expect(text('[data-testid="scripted-state"]')).toBe('scriptedStateOn'));
   });
 
   it('stops every creation that runs code, then resumes them', async () => {

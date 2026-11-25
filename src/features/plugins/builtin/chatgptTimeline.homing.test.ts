@@ -308,7 +308,8 @@ describe('ChatGPT timeline homing', () => {
 
     expect(scrollTo).toHaveBeenCalledTimes(calls);
     expect(calls).toBeLessThanOrEqual(61);
-  });
+    // Seventy simulated seconds of a capped run outlast the default 5 s on a loaded CI runner.
+  }, 30_000);
 
   it('steps when a far jump keeps landing on the same side of the turn', async () => {
     serveConversation(PROMPTS);
