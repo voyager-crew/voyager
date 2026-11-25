@@ -148,6 +148,7 @@ export function usePanelModel({
   }, [hydrateFromStorage]);
   const siteAccess = useSiteAccess({
     activeUrl: viewed.url,
+    onActivePage: viewingPage,
     coverage: promptManager,
     plugins,
     language,
@@ -164,11 +165,20 @@ export function usePanelModel({
     () => catalog.filter((plugin) => plugin.id !== promptSwitch?.pluginId),
     [catalog, promptSwitch?.pluginId],
   );
+  // Firefox gives this frame no `permissions` API (#1118): a switch on the page
+  // the panel is open on needs no prompt for that page, and anything more is
+  // granted in the popup.
+  const grantElsewhere = useCallback(() => {
+    void askElsewhere().then((opened) => {
+      if (!opened) toast({ message: t('permissionRequestFailed'), tone: 'error' });
+    });
+  }, [askElsewhere, t, toast]);
   const access = usePluginAccess(
     accessManifests,
     viewed.url,
     preferences.enabledMap,
     preferences.mirrorEnabled,
+    { onActivePage: viewingPage, askElsewhere: grantElsewhere },
   );
   const sitePluginRuns = useSitePluginRuns({
     activeUrl: viewed.url,

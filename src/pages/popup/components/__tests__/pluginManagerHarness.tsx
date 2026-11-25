@@ -81,6 +81,7 @@ vi.mock('@/contexts/LanguageContext', () => ({
 
 vi.mock('@/core/utils/browser', () => ({
   isFirefox: () => false,
+  browserSupportsDynamicContentScriptRegistration: () => true,
   supportsDynamicContentScriptRegistration: () => supportsDynamicRegistration(),
   supportsOptionalHostPermissions: () => true,
 }));

@@ -10,18 +10,29 @@ import {
 import type { PluginManifest } from '@/features/plugins/types';
 
 import {
+  browserGrantsPluginSiteAccess,
   canGrantPluginSiteAccess,
   requestPluginContentScriptSync,
   setPluginEnabledWithSiteAccess,
 } from '../utils/pluginEnablement';
 import type { EnabledMap } from './usePluginPreferences';
 
+/** Where the switches live, for a frame that cannot ask for access itself (Firefox's in-page panel). */
+export interface PluginAccessFrame {
+  /** The frame sits inside the active page, so the page's own origin is granted. */
+  readonly onActivePage?: boolean;
+  /** Hands a grant this frame cannot ask for to the popup, which reports for itself, as does a failed handoff. */
+  readonly askElsewhere?: () => void;
+}
+
 export function usePluginAccess(
   manifests: readonly PluginManifest[],
   activeUrl: string | undefined,
   enabledMap: EnabledMap,
   onEnabledChange: (id: string, enabled: boolean) => void,
+  frame: PluginAccessFrame = {},
 ) {
+  const { onActivePage, askElsewhere } = frame;
   const [deniedId, setDeniedId] = useState<string | null>(null);
   const [unsupportedId, setUnsupportedId] = useState<string | null>(null);
   // Why a local plugin's enable was refused: re-imported meanwhile, or not stored.
@@ -109,17 +120,18 @@ export function usePluginAccess(
         next,
         activeUrl,
         (enabled) => onEnabledChange(plugin.id, enabled),
-        { pageGranted: pageGrantedIds.has(plugin.id) },
+        { pageGranted: pageGrantedIds.has(plugin.id), onActivePage },
       );
       if (outcome === 'denied') setDeniedId(plugin.id);
       else if (outcome === 'unsupported') setUnsupportedId(plugin.id);
+      else if (outcome === 'elsewhere') askElsewhere?.();
       else if (outcome === 'changed')
         setEnableRefusal({ id: plugin.id, key: 'localPluginChangedBeforeEnable' });
       // The generic "Couldn't update the setting. Try again." message.
       else if (outcome === 'write_failed')
         setEnableRefusal({ id: plugin.id, key: 'watermarkNotice_error' });
     },
-    [activeUrl, onEnabledChange, pageGrantedIds],
+    [activeUrl, askElsewhere, onActivePage, onEnabledChange, pageGrantedIds],
   );
 
   const handleGrantRequiredAccess = useCallback(
@@ -135,8 +147,12 @@ export function usePluginAccess(
         });
         return;
       }
-      if (!canGrantPluginSiteAccess()) {
+      if (!browserGrantsPluginSiteAccess()) {
         setUnsupportedId(plugin.id);
+        return;
+      }
+      if (!canGrantPluginSiteAccess()) {
+        askElsewhere?.();
         return;
       }
       try {
@@ -154,7 +170,7 @@ export function usePluginAccess(
         setDeniedId(plugin.id);
       }
     },
-    [activeUrl],
+    [activeUrl, askElsewhere],
   );
 
   return {

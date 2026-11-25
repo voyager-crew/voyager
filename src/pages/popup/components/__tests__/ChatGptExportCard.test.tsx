@@ -32,6 +32,7 @@ vi.mock('webextension-polyfill', () => ({
 
 vi.mock('@/core/utils/browser', () => ({
   isFirefox: () => false,
+  browserSupportsDynamicContentScriptRegistration: () => true,
   supportsDynamicContentScriptRegistration: () => true,
   supportsOptionalHostPermissions: () => true,
 }));

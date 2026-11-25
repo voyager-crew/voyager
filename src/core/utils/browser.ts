@@ -111,11 +111,35 @@ export function supportsOptionalHostPermissions(): boolean {
 }
 
 /**
+ * Whether this browser release can follow optional host access with persistent
+ * dynamic content script registration, decided by browser and version alone so
+ * it holds in any frame: Firefox from 128, Safari from 16.4. Extension contexts
+ * can expose a reduced Safari UA; that counts as supported, and the runtime
+ * probe in `supportsDynamicContentScriptRegistration` decides there.
+ */
+export function browserSupportsDynamicContentScriptRegistration(): boolean {
+  if (!supportsOptionalHostPermissions()) return false;
+
+  const safariBuild = getVoyagerBuildTarget() === 'safari' || isSafari();
+  if (!safariBuild) return true;
+
+  const match = (navigator.userAgent ?? '').match(/\bVersion\/(\d+)(?:\.(\d+))?/i);
+  if (!match) return true;
+
+  const major = Number.parseInt(match[1], 10);
+  const minor = Number.parseInt(match[2] ?? '0', 10);
+  return major > 16 || (major === 16 && minor >= 4);
+}
+
+/**
  * Whether optional host access can be followed by persistent dynamic content
- * script registration. Safari added these registration APIs in 16.4.
+ * script registration from this frame: the browser supports it and this frame
+ * exposes `chrome.scripting`. Firefox's in-page panel frame lacks `scripting`
+ * on a browser that supports it, so a caller deciding for the browser itself
+ * uses `browserSupportsDynamicContentScriptRegistration`.
  */
 export function supportsDynamicContentScriptRegistration(): boolean {
-  if (!supportsOptionalHostPermissions()) return false;
+  if (!browserSupportsDynamicContentScriptRegistration()) return false;
 
   const extensionGlobal = globalThis as {
     chrome?: {
@@ -126,24 +150,10 @@ export function supportsDynamicContentScriptRegistration(): boolean {
     };
   };
   const scripting = extensionGlobal.chrome?.scripting;
-  if (
-    typeof scripting?.registerContentScripts !== 'function' ||
-    typeof scripting.unregisterContentScripts !== 'function'
-  ) {
-    return false;
-  }
-
-  const safariBuild = getVoyagerBuildTarget() === 'safari' || isSafari();
-  if (!safariBuild) return true;
-
-  const match = (navigator.userAgent ?? '').match(/\bVersion\/(\d+)(?:\.(\d+))?/i);
-  // Extension contexts can expose a reduced UA. Trust runtime feature
-  // detection in that case instead of disabling a supported modern Safari.
-  if (!match) return true;
-
-  const major = Number.parseInt(match[1], 10);
-  const minor = Number.parseInt(match[2] ?? '0', 10);
-  return major > 16 || (major === 16 && minor >= 4);
+  return (
+    typeof scripting?.registerContentScripts === 'function' &&
+    typeof scripting.unregisterContentScripts === 'function'
+  );
 }
 
 /**

@@ -1,6 +1,7 @@
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { StorageKeys } from '@/core/types/common';
+import { BUILTIN_PLUGINS } from '@/features/plugins/builtin';
 import { CHATGPT_RESPONSE_NOTIFICATION_MANIFEST } from '@/features/plugins/builtin/chatgptResponseNotification/manifest';
 import { importLocalPlugin } from '@/features/plugins/local/localPluginImport';
 import { OFFICIAL_PLUGIN_IDS } from '@/features/plugins/sites/featureOwners';
@@ -10,24 +11,31 @@ import type { PluginManifest } from '@/features/plugins/types';
 
 import { setPluginEnabledWithSiteAccess } from '../pluginEnablement';
 
-const { containsMock, requestMock, browserKind } = vi.hoisted(() => ({
-  containsMock: vi.fn(),
-  requestMock: vi.fn(),
-  browserKind: { firefox: false },
-}));
+const { containsMock, requestMock, browserKind, polyfill } = vi.hoisted(() => {
+  const containsMock = vi.fn();
+  const requestMock = vi.fn();
+  return {
+    containsMock,
+    requestMock,
+    browserKind: { firefox: false, dynamicRegistration: true },
+    polyfill: {
+      permissions: { contains: containsMock, request: requestMock } as
+        | { contains: typeof containsMock; request: typeof requestMock }
+        | undefined,
+      runtime: { sendMessage: vi.fn().mockResolvedValue({ ok: true }) },
+    },
+  };
+});
 
-vi.mock('webextension-polyfill', () => ({
-  default: {
-    permissions: { contains: containsMock, request: requestMock },
-    runtime: { sendMessage: vi.fn().mockResolvedValue({ ok: true }) },
-  },
-}));
+vi.mock('webextension-polyfill', () => ({ default: polyfill }));
 
 vi.mock('@/core/utils/browser', () => ({
-  getVoyagerBuildTarget: () => 'chrome',
+  getVoyagerBuildTarget: () => (browserKind.firefox ? 'firefox' : 'chrome'),
   isFirefox: () => browserKind.firefox,
-  supportsOptionalHostPermissions: () => true,
-  supportsDynamicContentScriptRegistration: () => true,
+  browserSupportsDynamicContentScriptRegistration: () => browserKind.dynamicRegistration,
+  // A frame without the permissions API lacks scripting too, as Firefox's panel does.
+  supportsDynamicContentScriptRegistration: () =>
+    browserKind.dynamicRegistration && polyfill.permissions !== undefined,
 }));
 
 const STATE = StorageKeys.PLUGINS_STATE;
@@ -80,6 +88,8 @@ afterEach(() => {
   containsMock.mockReset();
   requestMock.mockReset();
   browserKind.firefox = false;
+  browserKind.dynamicRegistration = true;
+  polyfill.permissions = { contains: containsMock, request: requestMock };
 });
 
 /** The manifest the popup renders, listed the way `usePopupPlugins` lists it. */
@@ -328,5 +338,79 @@ describe('switching a Gemini official plugin whose switch is an old setting', ()
     expect(outcome).toBe('write_failed');
     expect(onChange).toHaveBeenLastCalledWith(true);
     expect(memory[STATE]).toBeUndefined();
+  });
+});
+
+describe("switching a site plugin from Firefox's in-page panel, which has no permissions API (#1118)", () => {
+  const CHATGPT = 'https://chatgpt.com/c/abc';
+  const isOn = (id: string): boolean =>
+    (memory[STATE] as Record<string, { enabled: boolean }> | undefined)?.[id]?.enabled === true;
+  function chatgptTimeline(): PluginManifest {
+    const timeline = BUILTIN_PLUGINS.find((plugin) => plugin.id === 'voyager.chatgpt-timeline');
+    if (!timeline) throw new Error('ChatGPT timeline missing');
+    return timeline;
+  }
+
+  beforeEach(() => {
+    browserKind.firefox = true;
+    // What Firefox exposes to a moz-extension:// frame inside the host page.
+    polyfill.permissions = undefined;
+  });
+
+  it('turns the ChatGPT timeline on for the page the panel is open on', async () => {
+    const timeline = chatgptTimeline();
+    const onChange = vi.fn();
+
+    const outcome = await setPluginEnabledWithSiteAccess(timeline, true, CHATGPT, onChange, {
+      onActivePage: true,
+    });
+
+    expect(outcome).toBe('enabled');
+    expect(isOn(timeline.id)).toBe(true);
+    expect(onChange).toHaveBeenLastCalledWith(true);
+  });
+
+  it("hands a Claude artifact frame's access to the popup instead of calling it unsupported", async () => {
+    const artifacts: PluginManifest = {
+      ...chatgptTimeline(),
+      id: 'voyager.test-claude-artifacts',
+      matches: ['https://claude.ai/*', 'https://*.frame.claudeusercontent.com/*'],
+    };
+
+    const outcome = await setPluginEnabledWithSiteAccess(
+      artifacts,
+      true,
+      'https://claude.ai/chat/1',
+      vi.fn(),
+      { onActivePage: true },
+    );
+
+    expect(outcome).toBe('elsewhere');
+    expect(isOn(artifacts.id)).toBe(false);
+  });
+
+  it('hands completion notifications to the popup, which can ask for the notifications permission', async () => {
+    const outcome = await setPluginEnabledWithSiteAccess(
+      CHATGPT_RESPONSE_NOTIFICATION_MANIFEST,
+      true,
+      CHATGPT,
+      vi.fn(),
+      { onActivePage: true },
+    );
+
+    expect(outcome).toBe('elsewhere');
+    expect(isOn(CHATGPT_RESPONSE_NOTIFICATION_MANIFEST.id)).toBe(false);
+  });
+
+  it('still reports a Firefox without optional host access as unsupported', async () => {
+    const timeline = chatgptTimeline();
+    browserKind.dynamicRegistration = false;
+
+    const outcome = await setPluginEnabledWithSiteAccess(timeline, true, CHATGPT, vi.fn(), {
+      onActivePage: true,
+    });
+
+    expect(outcome).toBe('unsupported');
+    expect(isOn(timeline.id)).toBe(false);
   });
 });

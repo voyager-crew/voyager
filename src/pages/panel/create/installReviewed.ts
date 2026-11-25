@@ -10,6 +10,9 @@ import type { PluginManifest } from '@/features/plugins/types';
 import { setPluginEnabledWithSiteAccess } from '@/pages/popup/utils/pluginEnablement';
 import { enableScriptedWithSiteAccess } from '@/pages/popup/utils/scriptedEnablement';
 
+/** The panel installs from the page it is open on, which Voyager already reaches. */
+const ON_PAGE = { onActivePage: true } as const;
+
 export type AcceptedReply = Extract<CheckedPluginReply, { ok: true }>;
 
 export type InstallOutcome =
@@ -58,7 +61,7 @@ export async function installReviewed(
   // A scripted plugin turns on bound to the hash of what was reviewed, never of what was stored.
   const toggled = isScriptedManifest(checked.manifest)
     ? await enableScriptedWithSiteAccess(checked.manifest, pageUrl)
-    : await setPluginEnabledWithSiteAccess(imported.manifest, true, pageUrl, () => {});
+    : await setPluginEnabledWithSiteAccess(imported.manifest, true, pageUrl, () => {}, ON_PAGE);
   if (toggled === 'changed') return { kind: 'changed' };
   return {
     kind: 'installed',
@@ -72,6 +75,6 @@ export async function installReviewed(
 export async function turnOnInstalled(manifest: PluginManifest, pageUrl: string): Promise<boolean> {
   const toggled = isScriptedManifest(manifest)
     ? await enableScriptedWithSiteAccess(manifest, pageUrl)
-    : await setPluginEnabledWithSiteAccess(manifest, true, pageUrl, () => {});
+    : await setPluginEnabledWithSiteAccess(manifest, true, pageUrl, () => {}, ON_PAGE);
   return toggled === 'enabled';
 }

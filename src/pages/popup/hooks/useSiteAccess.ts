@@ -58,6 +58,12 @@ export interface SiteAccessOptions {
   readonly language: string;
   readonly t: (key: TranslationKey) => string;
   readonly onUndoOffer: (offer: UndoOffer) => WithdrawUndoOffer;
+  /**
+   * The caller is a frame inside the active page (the in-page panel on its own
+   * page), so the page's origin is granted even where this frame cannot ask
+   * the browser (Firefox gives the panel no `permissions` API).
+   */
+  readonly onActivePage?: boolean;
 }
 
 const OFFICIAL_IDS: ReadonlySet<string> = new Set(Object.values(OFFICIAL_PLUGIN_IDS));
@@ -76,6 +82,7 @@ export function useSiteAccess({
   language,
   t,
   onUndoOffer,
+  onActivePage = false,
 }: SiteAccessOptions) {
   const [granted, setGranted] = useState<ReadonlySet<string> | null>(null);
   const [pageGranted, setPageGranted] = useState<boolean | null>(null);
@@ -170,7 +177,7 @@ export function useSiteAccess({
   const promptSwitch = usePromptSwitch({
     activeUrl,
     coverage,
-    pageGranted,
+    pageGranted: onActivePage || pageGranted,
     name: promptPlugin ? name(promptPlugin) : t('promptManagerOptions'),
     t,
     onUndoOffer,

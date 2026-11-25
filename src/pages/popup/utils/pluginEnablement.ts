@@ -3,10 +3,10 @@ import browser, { type Manifest } from 'webextension-polyfill';
 import { markSiteIncluded } from '@/core/services/CloudSyncScope';
 import { logger } from '@/core/services/LoggerService';
 import {
+  browserSupportsDynamicContentScriptRegistration,
   getVoyagerBuildTarget,
   isFirefox,
   supportsDynamicContentScriptRegistration,
-  supportsOptionalHostPermissions,
 } from '@/core/utils/browser';
 import { CHATGPT_RESPONSE_NOTIFICATION_PLUGIN_ID } from '@/features/plugins/builtin/chatgptResponseNotification/manifest';
 import { isLocalPluginId } from '@/features/plugins/local/localPluginId';
@@ -62,13 +62,22 @@ function includeGrantedSite(activeUrl: string | undefined): void {
   );
 }
 
-/** Whether this browser can grant and inject the optional host access plugins need. */
+/**
+ * Whether this browser can grant and inject the optional host access plugins
+ * need at all, wherever the asking frame is (not Firefox < 128 or Safari < 16.4).
+ * Firefox's in-page panel frame has neither `permissions` nor `scripting` on a
+ * browser that supports both, so a frame without `permissions` says nothing
+ * about the browser; a frame that can ask but lacks `scripting` is a browser
+ * without dynamic registration.
+ */
+export function browserGrantsPluginSiteAccess(): boolean {
+  if (!browserSupportsDynamicContentScriptRegistration()) return false;
+  return !browser.permissions?.request || supportsDynamicContentScriptRegistration();
+}
+
+/** Whether this frame can ask for that access itself: the popup can, Firefox's in-page panel cannot. */
 export function canGrantPluginSiteAccess(): boolean {
-  return (
-    !!browser.permissions?.request &&
-    supportsOptionalHostPermissions() &&
-    supportsDynamicContentScriptRegistration()
-  );
+  return !!browser.permissions?.request && browserGrantsPluginSiteAccess();
 }
 
 /**
@@ -114,6 +123,34 @@ async function reusesSiteGrant(
 export interface SiteGrantHint {
   /** The plugin's page origin was granted when last looked up. */
   readonly pageGranted?: boolean;
+  /**
+   * The caller is a frame inside the active page (the in-page panel on its own
+   * page), so Voyager runs there and the page's own origin is granted.
+   */
+  readonly onActivePage?: boolean;
+}
+
+/**
+ * Whether a frame that cannot ask (Firefox's in-page panel) already has all the
+ * access the plugin needs: only the page's own origin, which Voyager running on
+ * the page proves is granted. A companion frame's origin or an API permission
+ * still has to be asked for elsewhere.
+ */
+function heldByActivePage(
+  origins: readonly string[],
+  permissions: readonly Manifest.OptionalPermission[],
+  activeUrl: string | undefined,
+  hint: SiteGrantHint | undefined,
+): boolean {
+  if (hint?.onActivePage !== true || permissions.length > 0 || !activeUrl) return false;
+  let own: string;
+  try {
+    const { protocol, hostname } = new URL(activeUrl);
+    own = `${protocol}//${hostname}/*`;
+  } catch {
+    return false;
+  }
+  return origins.every((origin) => origin === own);
 }
 
 /**
@@ -146,6 +183,9 @@ function pluginApiPermissions(plugin: PluginManifest): Manifest.OptionalPermissi
  * `enabled` / `disabled`: the requested state was saved. `denied`: the user
  * refused (or the browser failed) the host-access prompt. `unsupported`: this
  * browser cannot grant or inject the access the plugin needs on this site.
+ * `elsewhere`: the browser can, but not from this frame (Firefox's in-page
+ * panel), and the plugin needs access the page does not prove it holds; the
+ * caller hands the grant to the popup. Nothing was saved.
  * `changed`: a local plugin's content changed (re-imported elsewhere) after the
  * user saw it, so it stays off until they review the new content.
  * `write_failed`: the new state could not be stored (a local plugin's enable, or
@@ -156,6 +196,7 @@ export type PluginToggleOutcome =
   | 'disabled'
   | 'denied'
   | 'unsupported'
+  | 'elsewhere'
   | 'changed'
   | 'write_failed';
 
@@ -213,45 +254,52 @@ export async function setPluginEnabledWithSiteAccess(
       // (an old Safari/build without the required APIs, or Firefox < 128 which
       // ignores optional_host_permissions), enabling would be a silent no-op —
       // so refuse and explain, instead of a misleading toggle.
-      if (origins.length > 0 && !canGrantPluginSiteAccess()) return 'unsupported';
-      try {
-        // Firefox requires permissions.request to be the first await in the
-        // user gesture, so skip the contains() pre-check there.
-        if (!isFirefox() && browser.permissions.contains) {
-          const alreadyGranted = await browser.permissions.contains(access);
-          if (!alreadyGranted && !(await reusesSiteGrant(origins, permissions))) {
-            // Chrome closes extension popups while showing an optional-host
-            // prompt. Persist the user's intent BEFORE opening it so a
-            // successful grant can be completed by the background even if
-            // the popup is closed before permissions.request resolves.
-            onEnabledChange(true);
-            const persisted = await persistEnabled(plugin, true);
-            if (persisted !== 'saved') {
-              onEnabledChange(false);
-              return persisted;
+      if (origins.length > 0 && !browserGrantsPluginSiteAccess()) return 'unsupported';
+      // Firefox gives its in-page panel frame no `permissions` API (#1118): a
+      // switch there needs no prompt when the page's own origin is all it needs,
+      // and otherwise goes to the popup, which can ask.
+      if (!browser.permissions?.request) {
+        if (!heldByActivePage(origins, permissions, activeUrl, hint)) return 'elsewhere';
+      } else {
+        try {
+          // Firefox requires permissions.request to be the first await in the
+          // user gesture, so skip the contains() pre-check there.
+          if (!isFirefox() && browser.permissions.contains) {
+            const alreadyGranted = await browser.permissions.contains(access);
+            if (!alreadyGranted && !(await reusesSiteGrant(origins, permissions))) {
+              // Chrome closes extension popups while showing an optional-host
+              // prompt. Persist the user's intent BEFORE opening it so a
+              // successful grant can be completed by the background even if
+              // the popup is closed before permissions.request resolves.
+              onEnabledChange(true);
+              const persisted = await persistEnabled(plugin, true);
+              if (persisted !== 'saved') {
+                onEnabledChange(false);
+                return persisted;
+              }
+              const granted = await browser.permissions.request(access);
+              if (!granted) {
+                onEnabledChange(false);
+                await writeEnabled(plugin, false);
+                return 'denied';
+              }
+              includeGrantedSite(activeUrl);
+              // Edge can resolve the request without reliably delivering the
+              // permissions.onAdded event that normally performs registration.
+              // Reconcile explicitly while retaining onAdded as Chrome's
+              // popup-close fallback.
+              await requestPluginContentScriptSync();
+              return 'enabled';
             }
-            const granted = await browser.permissions.request(access);
-            if (!granted) {
-              onEnabledChange(false);
-              await writeEnabled(plugin, false);
-              return 'denied';
-            }
+          } else if (!reusesKnownSiteGrant(origins, permissions, hint)) {
+            if (!(await browser.permissions.request(access))) return 'denied';
             includeGrantedSite(activeUrl);
-            // Edge can resolve the request without reliably delivering the
-            // permissions.onAdded event that normally performs registration.
-            // Reconcile explicitly while retaining onAdded as Chrome's
-            // popup-close fallback.
-            await requestPluginContentScriptSync();
-            return 'enabled';
           }
-        } else if (!reusesKnownSiteGrant(origins, permissions, hint)) {
-          if (!(await browser.permissions.request(access))) return 'denied';
-          includeGrantedSite(activeUrl);
+        } catch {
+          onEnabledChange(false);
+          await writeEnabled(plugin, false);
+          return 'denied';
         }
-      } catch {
-        onEnabledChange(false);
-        await writeEnabled(plugin, false);
-        return 'denied';
       }
     }
   }

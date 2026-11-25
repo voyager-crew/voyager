@@ -224,8 +224,11 @@ export function useCustomWebsites({
     async (domain: string): Promise<AccessAnswer> => {
       const origins = originPatternsForDomain(domain);
       if (!origins) return 'invalid';
-      if (!browser.permissions?.request || !browser.permissions?.contains) return 'failed';
       if (!supportsOptionalHostPermissions()) return 'unsupported';
+      // Firefox gives the in-page panel's frame no permissions API: the popup asks instead.
+      if (!browser.permissions?.request || !browser.permissions?.contains) {
+        return askElsewhere && (await askElsewhere()) ? 'elsewhere' : 'failed';
+      }
       try {
         // Firefox must request directly in the user gesture, before any awaited API.
         if (!isFirefox()) {
