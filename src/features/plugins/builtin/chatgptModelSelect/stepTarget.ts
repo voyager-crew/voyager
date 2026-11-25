@@ -171,7 +171,10 @@ export function goalOnPage(
   }
   const efforts = measuredSteps(data, selectedId, slider);
   const index = efforts?.findIndex((step) => step.id === target.step) ?? -1;
-  if (efforts && index >= 0) {
+  // A model whose steps the data measured, without this one, does not offer it: walking
+  // would only move the slider off the user's step.
+  if (efforts && index < 0) return null;
+  if (efforts) {
     return {
       kind: 'index',
       goal: index,

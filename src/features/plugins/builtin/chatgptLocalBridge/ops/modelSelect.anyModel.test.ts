@@ -2,6 +2,8 @@
 // @vitest-environment-options { "url": "https://chatgpt.com/" }
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { chatgptAdapter } from '@/features/plugins/sites/adapters/chatgpt';
+
 import { mountChatGptPage } from '../__tests__/chatgptPageFixture';
 import { type Harness, createHarness, errorCode } from '../__tests__/harness';
 import {
@@ -133,6 +135,33 @@ describe('Local Bridge model.select: a preset on a model the site data does not 
     // ChatGPT saves the slider's step as the menu closes: the user's Medium, untouched.
     expect(picker.state()).toMatchObject({ committed: 1, open: false });
     expect(picker.state().keydowns).toBeGreaterThan(0);
+  });
+
+  it('refuses, without moving, a step a measured model lacks', async () => {
+    mount({
+      ...LATEST,
+      model: 'GPT-6 mini',
+      radios: [...NOV_2026_RADIOS, 'GPT-6 mini'],
+      stepLabels: ['Instant', 'High', 'Pro'],
+      effort: 0,
+    });
+    const data = chatgptAdapter.modelPicker!;
+    const kept = ['instant', 'high', 'pro'];
+    const steps = data.models['gpt-6'].efforts!.filter((step) => kept.includes(step.id));
+    bridge.runtime.attach({
+      ...chatgptAdapter,
+      modelPicker: {
+        ...data,
+        models: {
+          ...data.models,
+          'gpt-6-mini': { labels: { en: ['GPT-6 mini'] }, efforts: steps },
+        },
+      },
+    });
+    await select({ target: { preset: 'medium' } });
+
+    expect(errorCode(bridge.outcome())).toBe('effort-unavailable');
+    expect(picker.state()).toMatchObject({ keydowns: 0, committed: 0, open: false });
   });
 
   it('refuses a preset on such a model when its status names no step the site data knows', async () => {
