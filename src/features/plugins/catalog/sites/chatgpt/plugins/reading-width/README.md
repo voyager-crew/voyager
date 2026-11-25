@@ -26,8 +26,9 @@ column.
   `--thread-content-max-width` (`48rem` / 768px), consumed through the Tailwind
   utility `max-w-(--thread-content-max-width)`. The plugin raises **both** the
   variable and the resolved `max-width` on those containers.
-- The containers are `mx-auto`, so they stay **centered** — only the column
-  width changes; nothing is re-aligned.
+- The content columns are `mx-auto`, so they stay **centered**. The new-chat
+  page holds its composer in a wrapper that only declares the variable, so the
+  plugin also centers the columns that contain the page composer.
 
 ## Adjustable
 
