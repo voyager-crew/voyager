@@ -8,6 +8,9 @@ import { createGeminiVimComposerResolver } from '../vimGeminiComposer';
 import { createVimInputTargets, getSendButtonTarget, isEditPromptInput } from '../vimInputTargets';
 import { startInputVimMode } from '../vimMode';
 
+// The Gemini adapter's packaged composer: Vim migrates only this default to page profiles.
+const PACKAGED_COMPOSER =
+  getBundledGeminiSelectorView().profiles['vim.configuredComposer'].join(',');
 let stop = () => {};
 let stopVim = () => {};
 function layout(id: string): HTMLElement {
@@ -35,7 +38,7 @@ afterEach(() => {
 
 describe('Gemini Vim owner profiles', () => {
   it('keeps wrapper traversal, visible-first and hidden fallback identical online', async () => {
-    const configured = 'input-area-v2, rich-textarea, .text-input-field';
+    const configured = PACKAGED_COMPOSER;
     document.body.innerHTML = `<input-area-v2 class="renamed"><textarea id="hidden"></textarea>
       <div><textarea id="visible"></textarea></div></input-area-v2>`;
     const visible = layout('visible');
@@ -79,7 +82,7 @@ describe('Gemini Vim owner profiles', () => {
   });
 
   it('rejects a configured wrapper that skips the original draft', async () => {
-    const configured = 'input-area-v2, rich-textarea, .text-input-field';
+    const configured = PACKAGED_COMPOSER;
     document.body.innerHTML = `<input-area-v2><textarea id="draft"></textarea></input-area-v2>
       <section class="wrong"><textarea id="other"></textarea></section>`;
     layout('draft');
@@ -90,7 +93,7 @@ describe('Gemini Vim owner profiles', () => {
   });
 
   it('keeps the original generic fallback when a new wrapper would take over another draft', async () => {
-    const configured = 'input-area-v2, rich-textarea, .text-input-field';
+    const configured = PACKAGED_COMPOSER;
     document.body.innerHTML = `<textarea id="original"></textarea>
       <input-area class="renamed"><textarea id="main"></textarea></input-area>`;
     layout('original');
@@ -100,7 +103,7 @@ describe('Gemini Vim owner profiles', () => {
   });
 
   it('a confirming patch does not move the HUD', async () => {
-    const composerSelector = 'input-area-v2, rich-textarea, .text-input-field';
+    const composerSelector = PACKAGED_COMPOSER;
     document.body.innerHTML = `<section id="composer-parent"><rich-textarea>
       <textarea id="draft">draft</textarea></rich-textarea></section>
       <toolbox-drawer><button id="tools">Tools</button></toolbox-drawer>`;
@@ -116,7 +119,7 @@ describe('Gemini Vim owner profiles', () => {
   });
 
   it('mounts the repaired HUD through its real fallback order and keeps explicit plugin params', async () => {
-    const composerSelector = 'input-area-v2, rich-textarea, .text-input-field';
+    const composerSelector = PACKAGED_COMPOSER;
     document.body.innerHTML = `<section class="input-area" id="mount"><section class="renamed">
       <section id="draft" contenteditable="true">draft</section></section></section>
       <section><section id="custom" contenteditable="true">custom</section></section>
@@ -152,7 +155,7 @@ describe('Gemini Vim owner profiles', () => {
   });
 
   it('keeps the repaired wrapper editable after the real HUD decorates its mount', async () => {
-    const configured = 'input-area-v2, rich-textarea, .text-input-field';
+    const configured = PACKAGED_COMPOSER;
     document.body.innerHTML = `<section class="input-area" id="mount"><section class="renamed">
       <section id="draft" contenteditable="true">draft</section></section></section>`;
     const draft = layout('draft');
@@ -167,7 +170,7 @@ describe('Gemini Vim owner profiles', () => {
     expect(read(configured, false).element).toBe(draft);
   });
 
-  it.each([undefined, 'input-area-v2, rich-textarea, .text-input-field'])(
+  it.each([undefined, PACKAGED_COMPOSER])(
     'keeps the repaired generic editor and HUD together with configured fallback %s',
     async (composerSelector) => {
       document.body.innerHTML = `<input-area id="mount"><section contenteditable="plaintext-only" id="draft">draft</section></input-area>`;

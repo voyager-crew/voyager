@@ -82,6 +82,7 @@ export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
       '[data-test-id="model-selector"]': 1,
       '[data-test-id="gems-side-nav-entry-button"]': 1,
       '[data-test-id="your-gems-list"]': 1,
+      '[data-test-id="prompt-input"][data-lexical-editor="true"]': 1,
     },
     reason:
       'Fixed native menu-trigger test IDs bind interaction observation to the real menu action protocol; the published menu panel/content winner is guarded separately.',
@@ -127,6 +128,7 @@ export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
       '[data-test-id="model-selector"]': 2,
       '[data-test-id="gems-side-nav-entry-button"]': 2,
       '[data-test-id="your-gems-list"]': 2,
+      '[data-test-id="prompt-input"][data-lexical-editor="true"]': 2,
     },
     reason:
       'button/gem-icon-button/ARIA-role checks operate on the already accepted clone source or Voyager’s sanitized clone to set click behavior and enable it. COPY_IMAGE_BUTTON_TEST_ID names Voyager’s own image-copy button for reuse/cleanup; it never discovers an exported answer.',
@@ -158,6 +160,7 @@ export const EXPORT_TARGETS_LITERAL_EXCEPTIONS: readonly LocatorLiteralException
       '[data-test-id="model-selector"]': 5,
       '[data-test-id="gems-side-nav-entry-button"]': 5,
       '[data-test-id="your-gems-list"]': 5,
+      '[data-test-id="prompt-input"][data-lexical-editor="true"]': 5,
       'message-content': 1,
       '.markdown': 1,
       '.markdown-main-panel': 1,

@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getAssistantTurnSelectors, getUserTurnSelectors } from '@/core/utils/selectors';
 import { geminiAdapter } from '@/features/plugins/sites/adapters/gemini';
+import { resetPageUrl, setPageUrl } from '@/tests/pageUrl';
 
 import { buildChatWidthCss, chatWidthPx } from '../chatWidth/chatWidthCss';
 import { buildGeminiAdapter } from '../export/adapter/platform/gemini';
@@ -33,6 +34,9 @@ const USER_SHAPES: Record<string, string> = {
   'u.articleTurn': '<article data-v="u.articleTurn" data-turn="user">u.articleTurn</article>',
   'u.role': '<div data-v="u.role" data-message-author-role="user">u.role</div>',
   'u.listitem': '<div data-v="u.listitem" role="listitem" data-user="true">u.listitem</div>',
+  // The React frontend some accounts get (#1113).
+  'u.reactSection':
+    '<section data-v="u.reactSection" data-test-id="user-query"><div data-v="u.reactSection.inner" data-testid="user-prompt-bubble">u.reactSection</div></section>',
 };
 
 /** One element per assistant-turn shape Voyager has ever recognized on Gemini. */
@@ -57,6 +61,8 @@ const ASSISTANT_SHAPES: Record<string, string> = {
     '<div data-v="a.responseContainerClass" class="response-container">a.responseContainerClass</div>',
   'a.presented': '<div data-v="a.presented" class="presented-response-container">a.presented</div>',
   'a.listitem': '<div data-v="a.listitem" role="listitem">a.listitem</div>',
+  'a.reactSection':
+    '<section data-v="a.reactSection" data-test-id="model-response">a.reactSection</section>',
 };
 
 const ALL_USER = Object.keys(USER_SHAPES);
@@ -100,6 +106,7 @@ const BUNDLED_USER_PROFILE = [
   ['u.articleTurn'],
   ['u.role'],
   ['u.listitem'],
+  ['u.reactSection'],
 ];
 
 /** Shapes the user-turn list shared by timeline, export, fork and highlight recognizes. */
@@ -128,6 +135,8 @@ describe('Gemini turn selector owners', () => {
         ['u.contentBubble.inner'],
         ['u.contentBubble', 'u.contentHost'],
         ['u.host'],
+        ['u.reactSection'],
+        ['u.reactSection.inner'],
         ['u.aria'],
         ['u.articleAuthor'],
         ['u.articleTurn'],
@@ -150,6 +159,7 @@ describe('Gemini turn selector owners', () => {
         ['a.responseContainerTag'],
         ['a.responseContainerClass'],
         ['a.presented'],
+        ['a.reactSection'],
         ['a.listitem'],
       ]);
     });
@@ -198,6 +208,12 @@ describe('Gemini turn selector owners', () => {
     beforeEach(() => {
       // DOMContentExtractor warns when a bare fixture has no response container.
       vi.spyOn(console, 'warn').mockImplementation(() => {});
+      // Fork resolves its export adapter from the URL; off Gemini it reads the generic profile.
+      setPageUrl('https://gemini.google.com/app/abc');
+    });
+
+    afterEach(() => {
+      resetPageUrl();
     });
 
     it('recognizes the shared user shapes', () => {
@@ -293,7 +309,7 @@ describe('Gemini turn selector owners', () => {
     it('widens user containers but leaves the bubble, data-turn and listitem shapes alone', () => {
       mountAllShapes();
       expect(matchedShapes(ALL_USER, ruleSelector('User query containers'))).toEqual(
-        without(ALL_USER, ['u.bubble', 'u.articleTurn', 'u.listitem']),
+        without(ALL_USER, ['u.bubble', 'u.articleTurn', 'u.listitem', 'u.reactSection']),
       );
       // The bubble inside `user-query-content` must not be widened either.
       const inner = document.querySelector('[data-v="u.contentBubble.inner"]') as HTMLElement;
@@ -303,7 +319,12 @@ describe('Gemini turn selector owners', () => {
     it('widens response containers but leaves data-turn articles and listitems alone', () => {
       mountAllShapes();
       expect(matchedShapes(ALL_ASSISTANT, ruleSelector('Model response containers'))).toEqual(
-        without(ALL_ASSISTANT, ['a.articleTurnAssistant', 'a.articleTurnModel', 'a.listitem']),
+        without(ALL_ASSISTANT, [
+          'a.articleTurnAssistant',
+          'a.articleTurnModel',
+          'a.listitem',
+          'a.reactSection',
+        ]),
       );
       expect(matchedShapes(ALL_USER, ruleSelector('Model response containers'))).toEqual([]);
     });

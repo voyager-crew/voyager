@@ -1,12 +1,9 @@
 import { isEditable } from '@/core/services/composer/find';
 
 import { hasGeminiBoundaryConflict } from '../domBoundary';
-import { hasVoyagerOwner } from './ownedInput';
+import { hasVoyagerOwner, MAIN_OWNER, OTHER_OWNER } from './ownedInput';
 
 // Independent native ownership and editing protocols, never downloaded locator data.
-const MAIN_OWNER = '.text-input-field, .input-area, input-area, input-area-v2, input-container';
-const OTHER_OWNER =
-  '.edit-container, .user-query-container.edit-mode, user-query, model-response, [data-message-author-role], [data-gv-plugin]';
 const EDITABLE = 'textarea, [contenteditable="true"], [contenteditable="plaintext-only"]';
 
 /** CSS-hidden controls can still have an offsetParent, so layout alone cannot prove visibility. */

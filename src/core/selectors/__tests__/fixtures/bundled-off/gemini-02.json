@@ -3,6 +3,7 @@
     "profiles/composer.sendContainers",
     [
       ".text-input-field",
+      "[data-chat-composer-dock] form",
       "ms-prompt-box",
       "ms-prompt-input-wrapper",
       "ms-prompt-input",
@@ -19,7 +20,12 @@
     ]
   ],
   ["profiles/inputCollapse.wrapper", ["rich-textarea"]],
-  ["profiles/vim.configuredComposer", ["input-area-v2, rich-textarea, .text-input-field"]],
+  [
+    "profiles/vim.configuredComposer",
+    [
+      "input-area-v2, rich-textarea, .text-input-field, [data-test-id=\"prompt-input\"][data-lexical-editor=\"true\"]"
+    ]
+  ],
   [
     "profiles/vim.candidates",
     [
@@ -121,7 +127,7 @@
   ["profiles/menu.panels", [".mat-mdc-menu-panel[role=\"menu\"], gem-menu"]],
   ["profiles/menu.content", [".mat-mdc-menu-content"]],
   ["profiles/content.answer", ["message-content", ".markdown, .markdown-main-panel"]],
-  ["profiles/content.userLines", [".query-text-line"]],
+  ["profiles/content.userLines", [".query-text-line", "[data-testid=\"user-prompt-content\"] > p"]],
   [
     "profiles/context.images",
     [
@@ -144,7 +150,7 @@
   ],
   ["profiles/usage.root", ["usage-metrics-window", ".usage-metrics-container"]],
   ["profiles/code.host", ["code-block"]],
-  ["profiles/userLatex.lines", ["p.query-text-line"]],
+  ["profiles/userLatex.lines", ["p.query-text-line", "[data-testid=\"user-prompt-content\"] > p"]],
   [
     "profiles/imageExport.searchHosts",
     [".attachment-container.search-images", ".image-container[data-full-size-image-uri]"]
@@ -259,6 +265,7 @@
       "[contenteditable=\"true\"], [role=\"textbox\"], textarea",
       [
         ".text-input-field",
+        "[data-chat-composer-dock] form",
         "ms-prompt-box",
         "ms-prompt-input-wrapper",
         "ms-prompt-input",
@@ -390,7 +397,9 @@
   ["composer-packaged.json/composer.uploadPreviewFallback", ".file-preview-wrapper"],
   [
     "composer-packaged.json/composer.semanticInput",
-    ["input-area-v2, rich-textarea, .text-input-field"]
+    [
+      "input-area-v2, rich-textarea, .text-input-field, [data-test-id=\"prompt-input\"][data-lexical-editor=\"true\"]"
+    ]
   ],
   [
     "composer-send-packaged.json/composer.keyEditables",

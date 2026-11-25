@@ -17,6 +17,8 @@ export function makeServerTurnId(responseId: string): string | null {
 
 /** The server-derived id for a turn element, or null when Gemini exposes none. */
 export function readServerTurnId(el: Element | null | undefined): string | null {
+  // The React frontend's `data-model-response-turn-id` has no known value format yet, so its
+  // turns keep positional ids rather than risk an id that cannot round-trip (#1113).
   if (!el || typeof el.closest !== 'function') return null;
   const container = el.closest('.conversation-container');
   return makeServerTurnId((container as HTMLElement | null)?.id ?? '');

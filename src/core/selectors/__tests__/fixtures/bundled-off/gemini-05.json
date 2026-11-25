@@ -181,7 +181,8 @@
       "article[data-author=\"user\"]",
       "article[data-turn=\"user\"]",
       "[data-message-author-role=\"user\"]",
-      "div[role=\"listitem\"][data-user=\"true\"]"
+      "div[role=\"listitem\"][data-user=\"true\"]",
+      "section[data-test-id=\"user-query\"]"
     ]
   ],
   [
@@ -193,6 +194,8 @@
       "user-query-content .user-query-bubble-with-background",
       "user-query-content",
       "user-query",
+      "section[data-test-id=\"user-query\"]",
+      "section[data-test-id=\"user-query\"] [data-testid=\"user-prompt-bubble\"]",
       "div[aria-label=\"User message\"]",
       "article[data-author=\"user\"]",
       "article[data-turn=\"user\"]",
@@ -211,7 +214,8 @@
       "article[data-turn=\"model\"]",
       ".model-response",
       "model-response",
-      ".response-container"
+      ".response-container",
+      "section[data-test-id=\"model-response\"]"
     ]
   ],
   ["turn.json/turn.assistantFallback", ["div[role=\"listitem\"]:not([data-user=\"true\"])"]],
@@ -229,6 +233,7 @@
       "response-container",
       ".response-container",
       ".presented-response-container",
+      "section[data-test-id=\"model-response\"]",
       "div[role=\"listitem\"]:not([data-user=\"true\"])"
     ]
   ],
@@ -237,7 +242,10 @@
   ["usage-packaged.json/reset", "[class*=\"reset-time\"]"],
   ["usage-packaged.json/header", ".usage-metrics-header"],
   ["usage.json/usage.root", ["usage-metrics-window", ".usage-metrics-container"]],
-  ["user-latex.json/userLatex.lines", ["p.query-text-line"]],
+  [
+    "user-latex.json/userLatex.lines",
+    ["p.query-text-line", "[data-testid=\"user-prompt-content\"] > p"]
+  ],
   [
     "vim-packaged.json/vim.editable",
     ["input, textarea, select, [contenteditable=\"true\"], [role=\"textbox\"]"]
@@ -287,7 +295,12 @@
       "button[aria-label*=\"도구\"]"
     ]
   ],
-  ["vim.json/vim.configuredComposer", ["input-area-v2, rich-textarea, .text-input-field"]],
+  [
+    "vim.json/vim.configuredComposer",
+    [
+      "input-area-v2, rich-textarea, .text-input-field, [data-test-id=\"prompt-input\"][data-lexical-editor=\"true\"]"
+    ]
+  ],
   [
     "vim.json/vim.candidates",
     [

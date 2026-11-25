@@ -1,4 +1,5 @@
 import { hasVoyagerOwner } from './composer/voyagerOwner';
+import { GEMINI_TURN_HOSTS } from './turnOwners';
 
 const SIDEBAR = 'bard-sidenav, side-nav, side-navigation-content';
 const CHAT = 'chat-window';
@@ -7,8 +8,7 @@ const CANVAS = 'immersive-panel, inline-preview';
 const LANDMARK =
   'main, [role="main"], form, nav, [role="navigation"], dialog, [role="dialog"], [role="alertdialog"], [role="menu"], .sidebar, .mat-drawer, .mat-mdc-dialog-container';
 
-const FOREIGN_PEER =
-  'dialog, [role="dialog"], [role="alertdialog"], [role="menu"], model-response, user-query, bot-editor, [contenteditable]:not([contenteditable="false"])';
+const FOREIGN_PEER = `dialog, [role="dialog"], [role="alertdialog"], [role="menu"], ${GEMINI_TURN_HOSTS}, bot-editor, [contenteditable]:not([contenteditable="false"])`;
 
 function nativePeer(peer: Element, main: Element): boolean {
   if (hasVoyagerOwner(peer, main)) return false;

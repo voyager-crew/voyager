@@ -10,6 +10,7 @@ import {
   getGeminiSelectorView,
   type GeminiSelectorView,
 } from '../selectors';
+import { GEMINI_EXCHANGE_OWNER, GEMINI_TURN_HOSTS } from '../turnOwners';
 
 const THOUGHTS_AND_ACTIONS =
   'model-thoughts, .thoughts-container, .thoughts-content, message-actions, .message-actions';
@@ -37,7 +38,7 @@ function belongsToHost(candidate: Element, host: Element): boolean {
   while (current && current !== host) {
     if (
       current.matches(
-        'model-response, user-query, .conversation-container, [data-turn="user"], [data-turn="assistant"], [data-turn="model"]',
+        `${GEMINI_TURN_HOSTS}, ${GEMINI_EXCHANGE_OWNER}, [data-turn="user"], [data-turn="assistant"], [data-turn="model"]`,
       )
     )
       return false;

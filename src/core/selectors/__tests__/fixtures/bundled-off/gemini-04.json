@@ -214,6 +214,7 @@
   [
     "model-picker.json/modelPicker.focusInput",
     [
+      "[data-test-id=\"prompt-input\"][data-lexical-editor=\"true\"]",
       "main rich-textarea [contenteditable=\"true\"]",
       "rich-textarea [contenteditable=\"true\"]",
       "main div[contenteditable=\"true\"][role=\"textbox\"]",

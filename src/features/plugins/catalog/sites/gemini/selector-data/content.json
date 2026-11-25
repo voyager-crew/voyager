@@ -1,4 +1,4 @@
 {
   "content.answer": ["message-content", ".markdown, .markdown-main-panel"],
-  "content.userLines": [".query-text-line"]
+  "content.userLines": [".query-text-line", "[data-testid=\"user-prompt-content\"] > p"]
 }

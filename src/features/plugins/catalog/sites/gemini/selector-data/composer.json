@@ -1,5 +1,6 @@
 {
   "composer.candidates": [
+    "[data-test-id=\"prompt-input\"][data-lexical-editor=\"true\"]",
     "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
     "#prompt-textarea[contenteditable=\"true\"]",
     "[data-composer-markdown][contenteditable=\"true\"]",
@@ -10,6 +11,7 @@
     "textarea"
   ],
   "composer.draftCandidates": [
+    "[data-test-id=\"prompt-input\"][data-lexical-editor=\"true\"]",
     "rich-textarea [contenteditable=\"true\"]",
     "div[contenteditable=\"true\"][role=\"textbox\"]",
     ".input-area textarea",
@@ -17,6 +19,7 @@
   ],
   "composer.sendContainers": [
     ".text-input-field",
+    "[data-chat-composer-dock] form",
     "ms-prompt-box",
     "ms-prompt-input-wrapper",
     "ms-prompt-input",

@@ -32,13 +32,13 @@ The user needs desktop Chrome or Edge 133 or later, with "Allow User Scripts" tu
 ## Selectors Voyager uses on each site
 
 - Gemini:
-  - userTurn: `.user-query-bubble-with-background, .user-query-bubble-container, .user-query-container, user-query-content .user-query-bubble-with-background, user-query-content, user-query, div[aria-label="User message"], article[data-author="user"], article[data-turn="user"], [data-message-author-role="user"], div[role="listitem"][data-user="true"]`
-  - reply (one per AI reply): `[aria-label="Gemini response"], [data-message-author-role="assistant"], [data-message-author-role="model"], article[data-author="assistant"], article[data-turn="assistant"], article[data-turn="model"], model-response, .model-response, response-container, .response-container, .presented-response-container, div[role="listitem"]:not([data-user="true"])`
+  - userTurn: `.user-query-bubble-with-background, .user-query-bubble-container, .user-query-container, user-query-content .user-query-bubble-with-background, user-query-content, user-query, section[data-test-id="user-query"], section[data-test-id="user-query"] [data-testid="user-prompt-bubble"], div[aria-label="User message"], article[data-author="user"], article[data-turn="user"], [data-message-author-role="user"], div[role="listitem"][data-user="true"]`
+  - reply (one per AI reply): `[aria-label="Gemini response"], [data-message-author-role="assistant"], [data-message-author-role="model"], article[data-author="assistant"], article[data-turn="assistant"], article[data-turn="model"], model-response, .model-response, response-container, .response-container, .presented-response-container, section[data-test-id="model-response"], div[role="listitem"]:not([data-user="true"])`
   - codeBlock: `code-block`
-  - composer: `input-area-v2, rich-textarea, .text-input-field`
+  - composer: `input-area-v2, rich-textarea, .text-input-field, [data-test-id="prompt-input"][data-lexical-editor="true"]`
   - sidebar: `bard-sidenav, .gv-folder-container`
-  - scrollContainer: `#chat-history, infinite-scroller.chat-history, .chat-history-scroll-container`
-  - composerRoot: `.text-input-field, .user-query-container.edit-mode, [role="dialog"]`
+  - scrollContainer: `#chat-history, infinite-scroller.chat-history, .chat-history-scroll-container, [data-chat-scrollport]`
+  - composerRoot: `.text-input-field, .user-query-container.edit-mode, [role="dialog"], [data-chat-composer-dock] form`
   - sendButton: `.send-button.submit button, .update-button button`
 - AI Studio:
   - userTurn: `.user-prompt-container, [data-turn-role="User"]`

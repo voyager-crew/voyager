@@ -27,31 +27,11 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
       'immersive-panel': 1,
       'inline-preview': 1,
       '.mat-mdc-dialog-container': 1,
-      'model-response': 1,
-      'user-query': 1,
       'chat-app': 2,
       '#app-root': 1,
     },
     reason:
       'Independent packaged app-root/main and disjoint native sidebar/chat/composer/Canvas witnesses distinguish a shared outer landmark from a nested preview. These literals never select a remote winner: native peers must exclude Voyager and foreign ownership, and an overlay cannot certify its own copied app or main.',
-  },
-  {
-    file: 'src/core/gemini/composer/native.ts',
-    kind: 'proof',
-    values: {
-      '.text-input-field': 1,
-      '.input-area': 1,
-      'input-area-v2': 1,
-      'input-container': 1,
-      '.edit-container': 1,
-      '.user-query-container.edit-mode': 1,
-      '.user-query-container': 1,
-      'user-query': 1,
-      'model-response': 1,
-      '[data-message-author-role]': 1,
-    },
-    reason:
-      'Independent main-composer owner/editability witness in native.ts; remote locators cannot redefine main ownership or the native editable protocol. Additional hidden/inert/ARIA-hidden checks are native visibility refusal conditions.',
   },
   {
     file: 'src/core/gemini/composer/ownedInput.ts',
@@ -64,12 +44,10 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
       '.edit-container': 1,
       '.user-query-container.edit-mode': 1,
       '.user-query-container': 1,
-      'user-query': 1,
-      'model-response': 1,
       '[data-message-author-role]': 1,
     },
     reason:
-      'findOwnedGeminiMainInputs independently enumerates native editables and rejects edit/dialog/transcript/Voyager owners; it corroborates a repaired input rather than consuming its locator.',
+      'findOwnedGeminiMainInputs independently enumerates native editables and rejects edit/dialog/transcript/Voyager owners; it corroborates a repaired input rather than consuming its locator. native.ts reuses these owners as its independent main-composer owner/editability witness, so remote locators cannot redefine main ownership or the native editable protocol.',
   },
   {
     file: 'src/core/gemini/content/conversation.ts',
@@ -86,8 +64,6 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
     values: {
       'message-actions': 2,
       '.message-actions': 1,
-      'model-response': 1,
-      'user-query': 1,
       'code-block': 1,
       'generated-image': 1,
     },
@@ -176,6 +152,19 @@ export const GEMINI_LITERAL_EXCEPTIONS: readonly LocatorLiteralException[] = [
     },
     reason:
       'nativeSidebarTitle independently matches same-origin/account conversation identity and native title sources; remote titles are accepted only when they agree with this title witness. a[href] enumerates the independent same-origin/account/parsed conversation-ID title witness.',
+  },
+  {
+    file: 'src/core/gemini/turnOwners.ts',
+    kind: 'proof',
+    values: {
+      '[data-chat-scrollport]': 1,
+      'model-response': 1,
+      'user-query': 1,
+      'section[data-test-id="model-response"]': 1,
+      'section[data-test-id="user-query"]': 1,
+    },
+    reason:
+      'Packaged exchange and turn owners of both Gemini frontends (Angular and the React rewrite, #1113). Turn, content, composer and boundary proofs read them to reject a candidate that crosses another turn or exchange; they never select a remote winner, so a remote repair for either UI meets the same ownership bar.',
   },
   {
     file: 'src/core/gemini/turnIntegrity.ts',

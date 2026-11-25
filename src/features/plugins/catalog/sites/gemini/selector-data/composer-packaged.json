@@ -1,5 +1,7 @@
 {
   "composer.uploadPreview": "uploader-file-preview",
   "composer.uploadPreviewFallback": ".file-preview-wrapper",
-  "composer.semanticInput": ["input-area-v2, rich-textarea, .text-input-field"]
+  "composer.semanticInput": [
+    "input-area-v2, rich-textarea, .text-input-field, [data-test-id=\"prompt-input\"][data-lexical-editor=\"true\"]"
+  ]
 }

@@ -4,6 +4,7 @@ import { shouldSkipElement } from '@/features/export/services/exportDomPolicy';
 import { preservesGeminiContentFrames } from './content/reads';
 import { getBundledGeminiSelectorView } from './selectors/bundle';
 import type { GeminiTurnProfileKey, GeminiTurnView } from './selectors/types';
+import { GEMINI_EXCHANGE_OWNER } from './turnOwners';
 
 export interface GeminiTurnCollection {
   readonly root: HTMLElement;
@@ -77,7 +78,7 @@ export function acceptsGeminiTurnCollection(
   if (bundled.assistants.length > 0 && !sameItems(candidate.assistants, bundled.assistants))
     return false;
   const containers = filterTopLevel(
-    Array.from(candidate.root.querySelectorAll<HTMLElement>('.conversation-container')).filter(
+    Array.from(candidate.root.querySelectorAll<HTMLElement>(GEMINI_EXCHANGE_OWNER)).filter(
       (container) => !container.closest(EXCLUDED),
     ),
   ).filter((container) => hasContent(container));
@@ -86,7 +87,7 @@ export function acceptsGeminiTurnCollection(
   const paired: HTMLElement[] = [];
   const owners: HTMLElement[] = [];
   for (const [index, user] of users.entries()) {
-    const owner = user.closest<HTMLElement>('.conversation-container');
+    const owner = user.closest<HTMLElement>(GEMINI_EXCHANGE_OWNER);
     if (!owner || owner === user || !candidate.root.contains(owner) || !hasContent(user))
       return false;
     if (!preservesGeminiContentFrames(user, owner)) return false;
@@ -98,7 +99,7 @@ export function acceptsGeminiTurnCollection(
     if (assistant) {
       // Gemini mounts an empty native response while pending or cancelled; the bundle already proves that host.
       if (
-        assistant.closest('.conversation-container') !== owner ||
+        assistant.closest(GEMINI_EXCHANGE_OWNER) !== owner ||
         (!hasContent(assistant) && !bundled.assistants.includes(assistant))
       )
         return false;

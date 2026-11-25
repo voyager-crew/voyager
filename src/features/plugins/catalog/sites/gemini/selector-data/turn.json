@@ -8,7 +8,8 @@
     "article[data-author=\"user\"]",
     "article[data-turn=\"user\"]",
     "[data-message-author-role=\"user\"]",
-    "div[role=\"listitem\"][data-user=\"true\"]"
+    "div[role=\"listitem\"][data-user=\"true\"]",
+    "section[data-test-id=\"user-query\"]"
   ],
   "turn.userWithHosts": [
     ".user-query-bubble-with-background",
@@ -17,6 +18,8 @@
     "user-query-content .user-query-bubble-with-background",
     "user-query-content",
     "user-query",
+    "section[data-test-id=\"user-query\"]",
+    "section[data-test-id=\"user-query\"] [data-testid=\"user-prompt-bubble\"]",
     "div[aria-label=\"User message\"]",
     "article[data-author=\"user\"]",
     "article[data-turn=\"user\"]",
@@ -32,7 +35,8 @@
     "article[data-turn=\"model\"]",
     ".model-response",
     "model-response",
-    ".response-container"
+    ".response-container",
+    "section[data-test-id=\"model-response\"]"
   ],
   "turn.assistantFallback": ["div[role=\"listitem\"]:not([data-user=\"true\"])"],
   "turn.assistantWithHosts": [
@@ -47,6 +51,7 @@
     "response-container",
     ".response-container",
     ".presented-response-container",
+    "section[data-test-id=\"model-response\"]",
     "div[role=\"listitem\"]:not([data-user=\"true\"])"
   ]
 }

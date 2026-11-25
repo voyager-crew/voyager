@@ -3,25 +3,34 @@
   [
     "profiles/userTurn",
     [
-      ".user-query-bubble-with-background, .user-query-bubble-container, .user-query-container, user-query-content .user-query-bubble-with-background, user-query-content, user-query, div[aria-label=\"User message\"], article[data-author=\"user\"], article[data-turn=\"user\"], [data-message-author-role=\"user\"], div[role=\"listitem\"][data-user=\"true\"]"
+      ".user-query-bubble-with-background, .user-query-bubble-container, .user-query-container, user-query-content .user-query-bubble-with-background, user-query-content, user-query, section[data-test-id=\"user-query\"], section[data-test-id=\"user-query\"] [data-testid=\"user-prompt-bubble\"], div[aria-label=\"User message\"], article[data-author=\"user\"], article[data-turn=\"user\"], [data-message-author-role=\"user\"], div[role=\"listitem\"][data-user=\"true\"]"
     ]
   ],
   [
     "profiles/assistantTurn",
     [
-      "[aria-label=\"Gemini response\"], [data-message-author-role=\"assistant\"], [data-message-author-role=\"model\"], article[data-author=\"assistant\"], article[data-turn=\"assistant\"], article[data-turn=\"model\"], model-response, .model-response, response-container, .response-container, .presented-response-container, div[role=\"listitem\"]:not([data-user=\"true\"])"
+      "[aria-label=\"Gemini response\"], [data-message-author-role=\"assistant\"], [data-message-author-role=\"model\"], article[data-author=\"assistant\"], article[data-turn=\"assistant\"], article[data-turn=\"model\"], model-response, .model-response, response-container, .response-container, .presented-response-container, section[data-test-id=\"model-response\"], div[role=\"listitem\"]:not([data-user=\"true\"])"
     ]
   ],
-  ["profiles/composer", ["input-area-v2, rich-textarea, .text-input-field"]],
+  [
+    "profiles/composer",
+    [
+      "input-area-v2, rich-textarea, .text-input-field, [data-test-id=\"prompt-input\"][data-lexical-editor=\"true\"]"
+    ]
+  ],
   ["profiles/sidebar", ["bard-sidenav, .gv-folder-container"]],
   [
     "profiles/scrollContainer",
-    ["#chat-history, infinite-scroller.chat-history, .chat-history-scroll-container"]
+    [
+      "#chat-history, infinite-scroller.chat-history, .chat-history-scroll-container, [data-chat-scrollport]"
+    ]
   ],
   ["profiles/codeBlock", ["code-block"]],
   [
     "profiles/composerRoot",
-    [".text-input-field, .user-query-container.edit-mode, [role=\"dialog\"]"]
+    [
+      ".text-input-field, .user-query-container.edit-mode, [role=\"dialog\"], [data-chat-composer-dock] form"
+    ]
   ],
   ["profiles/sendButton", [".send-button.submit button, .update-button button"]],
   [
@@ -54,7 +63,13 @@
   ],
   [
     "profiles/conversation.roots",
-    ["#chat-history", "infinite-scroller.chat-history", "chat-window-content", "main"]
+    [
+      "#chat-history",
+      "infinite-scroller.chat-history",
+      "chat-window-content",
+      "[data-chat-scrollport]",
+      "main"
+    ]
   ],
   [
     "profiles/sidebar.pageTitle",
@@ -187,7 +202,8 @@
       "article[data-author=\"user\"]",
       "article[data-turn=\"user\"]",
       "[data-message-author-role=\"user\"]",
-      "div[role=\"listitem\"][data-user=\"true\"]"
+      "div[role=\"listitem\"][data-user=\"true\"]",
+      "section[data-test-id=\"user-query\"]"
     ]
   ],
   [
@@ -199,6 +215,8 @@
       "user-query-content .user-query-bubble-with-background",
       "user-query-content",
       "user-query",
+      "section[data-test-id=\"user-query\"]",
+      "section[data-test-id=\"user-query\"] [data-testid=\"user-prompt-bubble\"]",
       "div[aria-label=\"User message\"]",
       "article[data-author=\"user\"]",
       "article[data-turn=\"user\"]",
@@ -217,7 +235,8 @@
       "article[data-turn=\"model\"]",
       ".model-response",
       "model-response",
-      ".response-container"
+      ".response-container",
+      "section[data-test-id=\"model-response\"]"
     ]
   ],
   ["profiles/turn.assistantFallback", ["div[role=\"listitem\"]:not([data-user=\"true\"])"]],
@@ -235,6 +254,7 @@
       "response-container",
       ".response-container",
       ".presented-response-container",
+      "section[data-test-id=\"model-response\"]",
       "div[role=\"listitem\"]:not([data-user=\"true\"])"
     ]
   ],
@@ -321,6 +341,7 @@
   [
     "profiles/modelPicker.focusInput",
     [
+      "[data-test-id=\"prompt-input\"][data-lexical-editor=\"true\"]",
       "main rich-textarea [contenteditable=\"true\"]",
       "rich-textarea [contenteditable=\"true\"]",
       "main div[contenteditable=\"true\"][role=\"textbox\"]",
@@ -334,6 +355,7 @@
   [
     "profiles/composer.candidates",
     [
+      "[data-test-id=\"prompt-input\"][data-lexical-editor=\"true\"]",
       "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
       "#prompt-textarea[contenteditable=\"true\"]",
       "[data-composer-markdown][contenteditable=\"true\"]",
@@ -347,6 +369,7 @@
   [
     "profiles/composer.draftCandidates",
     [
+      "[data-test-id=\"prompt-input\"][data-lexical-editor=\"true\"]",
       "rich-textarea [contenteditable=\"true\"]",
       "div[contenteditable=\"true\"][role=\"textbox\"]",
       ".input-area textarea",

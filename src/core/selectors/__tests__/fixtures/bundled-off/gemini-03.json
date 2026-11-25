@@ -2,6 +2,7 @@
   [
     "composer.json/composer.candidates",
     [
+      "[data-test-id=\"prompt-input\"][data-lexical-editor=\"true\"]",
       "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
       "#prompt-textarea[contenteditable=\"true\"]",
       "[data-composer-markdown][contenteditable=\"true\"]",
@@ -15,6 +16,7 @@
   [
     "composer.json/composer.draftCandidates",
     [
+      "[data-test-id=\"prompt-input\"][data-lexical-editor=\"true\"]",
       "rich-textarea [contenteditable=\"true\"]",
       "div[contenteditable=\"true\"][role=\"textbox\"]",
       ".input-area textarea",
@@ -25,6 +27,7 @@
     "composer.json/composer.sendContainers",
     [
       ".text-input-field",
+      "[data-chat-composer-dock] form",
       "ms-prompt-box",
       "ms-prompt-input-wrapper",
       "ms-prompt-input",
@@ -96,10 +99,16 @@
     "content-packaged.json/export.menuResponseOwner",
     ".response-container, response-container, .model-response, model-response"
   ],
-  ["content-packaged.json/export.userLinesFallback", ".query-text-line"],
+  [
+    "content-packaged.json/export.userLinesFallback",
+    ".query-text-line, [data-testid=\"user-prompt-content\"] > p"
+  ],
   ["content-packaged.json/export.attachmentPreviewOwner", "user-query-file-preview"],
   ["content.json/content.answer", ["message-content", ".markdown, .markdown-main-panel"]],
-  ["content.json/content.userLines", [".query-text-line"]],
+  [
+    "content.json/content.userLines",
+    [".query-text-line", "[data-testid=\"user-prompt-content\"] > p"]
+  ],
   [
     "context-images.json/context.images",
     [
@@ -114,7 +123,13 @@
   ["context-text.json/context.responses", [".response-content"]],
   [
     "conversation.json/conversation.roots",
-    ["#chat-history", "infinite-scroller.chat-history", "chat-window-content", "main"]
+    [
+      "#chat-history",
+      "infinite-scroller.chat-history",
+      "chat-window-content",
+      "[data-chat-scrollport]",
+      "main"
+    ]
   ],
   ["deep-research-packaged.json/deepResearch.items", [".item-container"]],
   [
@@ -269,7 +284,13 @@
   ],
   [
     "extended.json/conversation.roots",
-    ["#chat-history", "infinite-scroller.chat-history", "chat-window-content", "main"]
+    [
+      "#chat-history",
+      "infinite-scroller.chat-history",
+      "chat-window-content",
+      "[data-chat-scrollport]",
+      "main"
+    ]
   ],
   [
     "extended.json/sidebar.pageTitle",

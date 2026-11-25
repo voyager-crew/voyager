@@ -1,5 +1,7 @@
 {
-  "vim.configuredComposer": ["input-area-v2, rich-textarea, .text-input-field"],
+  "vim.configuredComposer": [
+    "input-area-v2, rich-textarea, .text-input-field, [data-test-id=\"prompt-input\"][data-lexical-editor=\"true\"]"
+  ],
   "vim.candidates": [
     "[data-testid=\"chat-input\"][contenteditable=\"true\"]",
     "#prompt-textarea[contenteditable=\"true\"]",

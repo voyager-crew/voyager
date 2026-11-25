@@ -11,6 +11,7 @@
     'chat-window',
     'chat-window-content',
     '.conversation-container',
+    '[data-chat-scrollport]',
   ].join(', ');
   const SIDEBAR_SELECTOR = [
     'bard-sidenav',

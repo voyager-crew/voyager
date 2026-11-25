@@ -28,6 +28,6 @@
   "export.sourcePromptMarkup": "attachment-container.search-images",
   "export.collectorAnswer": "message-content, .markdown, .markdown-main-panel",
   "export.menuResponseOwner": ".response-container, response-container, .model-response, model-response",
-  "export.userLinesFallback": ".query-text-line",
+  "export.userLinesFallback": ".query-text-line, [data-testid=\"user-prompt-content\"] > p",
   "export.attachmentPreviewOwner": "user-query-file-preview"
 }

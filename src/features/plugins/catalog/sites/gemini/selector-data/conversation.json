@@ -3,6 +3,7 @@
     "#chat-history",
     "infinite-scroller.chat-history",
     "chat-window-content",
+    "[data-chat-scrollport]",
     "main"
   ]
 }
