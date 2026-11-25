@@ -1,5 +1,6 @@
 import { keyboardShortcutService } from '@/core/services/KeyboardShortcutService';
 
+import type { TimelineHomingPolicy } from './TimelineAdapter';
 import { VirtualizedTimelineNavigation } from './VirtualizedTimelineNavigation';
 
 export interface TimelineNavigationMarker {
@@ -15,6 +16,10 @@ type TimelineSpringProfile = 'ios' | 'snappy' | 'gentle';
 
 interface TimelineNavigationOptions {
   virtualized?: boolean;
+  /** Virtualized homing: remembered-offset bisection (default) or bounded steps. */
+  homing?: TimelineHomingPolicy;
+  /** The marker's live element when the host mounted it after the last marker read. */
+  locate?(markerId: string): HTMLElement | null;
   getMarkers(): readonly TimelineNavigationMarker[];
   getMarkerTops(): readonly number[];
   getMarkerPositions(): readonly number[];
@@ -95,6 +100,7 @@ export class TimelineNavigation {
           () => this.scrollContainer,
           () => this.options.getMarkers(),
           (id) => this.setActive(id),
+          { homing: options.homing, locate: options.locate },
         )
       : null;
   }

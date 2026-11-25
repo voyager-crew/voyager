@@ -193,6 +193,52 @@ export function exchange(
   return item;
 }
 
+/**
+ * Answer ChatGPT's session and conversation endpoints with a saved branch of
+ * these prompts, keyed like `exchange` keys its items (`turn-1`, `turn-2`…).
+ * Without it every read fails, as on a page whose endpoint is unreachable.
+ */
+export function serveConversation(prompts: readonly string[]): ReturnType<typeof vi.fn> {
+  const mapping: Record<string, unknown> = { root: { id: 'root', parent: null, message: null } };
+  let parent = 'root';
+  prompts.forEach((prompt, index) => {
+    const key = `turn-${index + 1}`;
+    const reply = `reply-${index + 1}`;
+    mapping[key] = {
+      id: key,
+      parent,
+      message: {
+        id: key,
+        author: { role: 'user' },
+        recipient: 'all',
+        content: { content_type: 'text', parts: [prompt] },
+        metadata: {},
+      },
+    };
+    mapping[reply] = {
+      id: reply,
+      parent: key,
+      message: {
+        id: reply,
+        author: { role: 'assistant' },
+        recipient: 'all',
+        content: { content_type: 'text', parts: [`Answer ${index + 1}`] },
+        metadata: {},
+      },
+    };
+    parent = reply;
+  });
+  const fetch = vi.fn(async (input: unknown) => {
+    const url = String(input);
+    if (url === '/api/auth/session') return Response.json({ accessToken: 'token' });
+    if (url === `/backend-api/conversation/${urlConversation()}`)
+      return Response.json({ mapping, current_node: parent });
+    return new Response('', { status: 404 });
+  });
+  vi.stubGlobal('fetch', fetch);
+  return fetch;
+}
+
 export function bubble(item: HTMLElement): HTMLElement {
   return item.querySelector<HTMLElement>('[data-user-message-bubble]')!;
 }
@@ -291,6 +337,11 @@ beforeEach(() => {
   addStarredMessage.mockImplementation(addToStore);
   removeStarredMessage.mockClear();
   window.scrollTo = vi.fn();
+  // The timeline reads ChatGPT's conversation endpoint; suites opt in with serveConversation.
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response('', { status: 503 })),
+  );
 });
 
 afterEach(async () => {
@@ -298,5 +349,6 @@ afterEach(async () => {
   document.body.innerHTML = '';
   document.documentElement.removeAttribute('data-theme-user-id');
   document.documentElement.removeAttribute('data-theme-account-id');
+  vi.unstubAllGlobals();
   vi.useRealTimers();
 });

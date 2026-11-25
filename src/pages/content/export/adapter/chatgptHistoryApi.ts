@@ -237,9 +237,24 @@ export function chatGptConversationId(url: string): string | null {
   return match?.[1] ?? null;
 }
 
+/** Same-origin paths the reader requests; the timeline takes them from site data. */
+export interface ChatGptHistoryEndpoints {
+  readonly sessionPath: string;
+  /** Contains `{conversationId}` once. */
+  readonly conversationPath: string;
+}
+
+const DEFAULT_ENDPOINTS: ChatGptHistoryEndpoints = {
+  sessionPath: '/api/auth/session',
+  conversationPath: '/backend-api/conversation/{conversationId}',
+};
+
 /** The session's request headers. The token stays in this content script. */
-async function readSessionHeaders(signal?: AbortSignal): Promise<Record<string, string>> {
-  const response = await fetch('/api/auth/session', {
+async function readSessionHeaders(
+  sessionPath: string,
+  signal?: AbortSignal,
+): Promise<Record<string, string>> {
+  const response = await fetch(sessionPath, {
     credentials: 'include',
     cache: 'no-store',
     signal,
@@ -273,6 +288,8 @@ export class ChatGptHistoryReader {
   private headers: Promise<Record<string, string>> | null = null;
   private tree: { readonly conversationId: string; readonly data: unknown } | null = null;
 
+  constructor(private readonly endpoints: ChatGptHistoryEndpoints = DEFAULT_ENDPOINTS) {}
+
   /**
    * Read every turn of the conversation at `url` on its saved branch. Always
    * a fresh read: the conversation may have grown since the tree was kept.
@@ -280,6 +297,11 @@ export class ChatGptHistoryReader {
   async currentBranch(url: string, signal?: AbortSignal): Promise<ChatGptApiTurn[]> {
     const conversationId = chatGptConversationId(url);
     if (!conversationId) throw new Error('chatgpt_export_history_unavailable');
+    return this.branchOf(conversationId, signal);
+  }
+
+  /** Every turn on the saved branch of the conversation with this id; a fresh read. */
+  async branchOf(conversationId: string, signal?: AbortSignal): Promise<ChatGptApiTurn[]> {
     const data = await this.readConversation(conversationId, signal);
     const turns = parseCurrentBranch(data);
     this.tree = { conversationId, data };
@@ -305,7 +327,7 @@ export class ChatGptHistoryReader {
 
   private sessionHeaders(signal?: AbortSignal): Promise<Record<string, string>> {
     if (!this.headers) {
-      const pending = readSessionHeaders(signal);
+      const pending = readSessionHeaders(this.endpoints.sessionPath, signal);
       this.headers = pending;
       pending.catch(() => {
         if (this.headers === pending) this.headers = null;
@@ -315,7 +337,10 @@ export class ChatGptHistoryReader {
   }
 
   private async readConversation(conversationId: string, signal?: AbortSignal): Promise<unknown> {
-    const endpoint = `/backend-api/conversation/${encodeURIComponent(conversationId)}`;
+    const endpoint = this.endpoints.conversationPath.replace(
+      '{conversationId}',
+      encodeURIComponent(conversationId),
+    );
     const remembered = this.headers !== null;
     const request = async () =>
       fetch(endpoint, {

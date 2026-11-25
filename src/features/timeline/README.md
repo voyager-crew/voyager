@@ -11,23 +11,26 @@ the adapter's captured storage policy; it creates no second store or write queue
 retires its session, while already accepted hierarchy saves keep their captured destination and
 finish through the existing queue.
 
-| Behavior                                                            | Owner                                                 |
-| ------------------------------------------------------------------- | ----------------------------------------------------- |
-| Rail composition, styles, preview and viewport synchronization      | `TimelineView`                                        |
-| Dot geometry, dense/virtual dots, ruler wave and runner             | `TimelineDotLayer`                                    |
-| Slider scroll dragging and fade                                     | `TimelineSlider`                                      |
-| Width/position restore, migration and dragging                      | `TimelineRailPlacement`                               |
-| Preview search, pinning and hover bridge                            | `TimelinePreviewPanel`, `TimelinePreviewPress`        |
-| Tooltip delay, content and visibility                               | `TimelineTooltip`                                     |
-| Marker navigation, star long press and hierarchy menu               | `TimelineMarkerInteractions`                          |
-| Shortcuts, active turn and navigation cancellation                  | `TimelineNavigation`                                  |
-| Virtualized turn homing, reversed scrollers and remembered geometry | `VirtualizedTimelineNavigation`, `scrollMotion`       |
-| Marker snapshot, star display, aliases and Library hydration        | `TimelineDataSession`, implemented by `TimelineState` |
-| Persisted stars, migration, serialized writes and cloud merges      | [Saved Library store](../savedLibrary/starStore.ts)   |
-| Hierarchy edits and persistence                                     | `TimelineHierarchy`                                   |
-| Store readiness, read settlement and snapshot ordering              | `TimelineHydration`                                   |
-| Collapse layout                                                     | `TimelineHierarchyGeometry`                           |
-| Annotation ticks published by other features (highlights)           | `timelineAnnotations`, `TimelineAnnotationLayer`      |
+| Behavior                                                            | Owner                                                                                |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Rail composition, styles, preview and viewport synchronization      | `TimelineView`                                                                       |
+| Dot geometry, dense/virtual dots, ruler wave and runner             | `TimelineDotLayer`                                                                   |
+| Slider scroll dragging and fade                                     | `TimelineSlider`                                                                     |
+| Width/position restore, migration and dragging                      | `TimelineRailPlacement`                                                              |
+| Preview search, pinning and hover bridge                            | `TimelinePreviewPanel`, `TimelinePreviewPress`                                       |
+| Tooltip delay, content and visibility                               | `TimelineTooltip`                                                                    |
+| Marker navigation, star long press and hierarchy menu               | `TimelineMarkerInteractions`                                                         |
+| Shortcuts, active turn and navigation cancellation                  | `TimelineNavigation`                                                                 |
+| Virtualized turn homing, reversed scrollers and remembered geometry | `VirtualizedTimelineNavigation`, `scrollMotion`, `steppedHoming`, `steppedHomingRun` |
+| Preview search marks and ignoring the timeline's own DOM edits      | `timelineSearchHighlight`                                                            |
+| Sync settings read and live popup changes                           | `timelineSyncSettings`                                                               |
+| When navigation re-discovers the container and viewport             | `timelineRefreshPolicy`                                                              |
+| Marker snapshot, star display, aliases and Library hydration        | `TimelineDataSession`, implemented by `TimelineState`                                |
+| Persisted stars, migration, serialized writes and cloud merges      | [Saved Library store](../savedLibrary/starStore.ts)                                  |
+| Hierarchy edits and persistence                                     | `TimelineHierarchy`                                                                  |
+| Store readiness, read settlement and snapshot ordering              | `TimelineHydration`                                                                  |
+| Collapse layout                                                     | `TimelineHierarchyGeometry`                                                          |
+| Annotation ticks published by other features (highlights)           | `timelineAnnotations`, `TimelineAnnotationLayer`                                     |
 
 The [Gemini adapter](../../pages/content/timeline/GeminiTimelineAdapter.ts) retains Gemini selector
 priority, stable identities and timestamps. Its small
@@ -87,6 +90,26 @@ synced by the same catalog messages and by every Gemini star sync. A Gemini acco
 catalog stars older versions put there but gains no new ones; the shared Gemini file, used without
 account isolation, still carries them for older versions. Every edit requires evidence that the turn belongs to the current conversation.
 Old page star arrays are neither read, imported, written nor purged.
+
+A catalog site whose `site.json` has a `timeline.history` section (ChatGPT, #1112) also lists the
+turns its host never mounted. ChatGPT's virtual list mounts one to three exchange items and reserves no
+height for the rest, so the DOM cannot show they exist. Per route, the
+[history loader](adapters/catalog/historyLoader.ts) reads the conversation's saved branch through the
+reader the section names (ChatGPT's reuses the export's `ChatGptHistoryReader` with the section's
+same-origin paths) on `startMachine`, so a read the route outlives is dropped. The
+[history merge](adapters/catalog/historyMerge.ts) joins mounted turns to its entries by the section's
+key attributes and gives each entry the `c-<hash>` id the DOM-only merge gives the mounted turn, so
+stars and outline levels keep their ids; a never-mounted turn stands on a detached placeholder, which
+fails every edit's page-evidence check. A mounted prompt the list lacks stays after the turn before
+it and asks for a bounded re-read; a failed first read leaves the DOM-only merge in charge.
+`timeline.homing.mode: "step"` makes navigation to an unmounted turn scroll bounded steps toward its
+place in the list until it mounts, then align it: bisecting by remembered offsets fails on a host whose
+scroll height grows as older turns mount, and ChatGPT snaps far jumps back. `releaseWith: "wheel"`
+dispatches a scripted wheel in the scroll's direction before each navigation scroll, because ChatGPT
+pins its thread to the newest turn until a wheel arrives; the homing loop cancels only on a person's
+wheel or touch (`isUserEvent`), so its own wheels never stop it. At the scroll edge in the travel direction it waits up to 4 s for new
+height or mounts (ChatGPT loads older turns there in its own time), and after aligning it re-checks the
+target once layout settles and aims again, at most three times.
 
 Viewport replacement rebinds scroll and intersection observation while retaining conversation state.
 Path/query replacement destroys the engine and creates a fresh conversation adapter; `runRouteTimeline`

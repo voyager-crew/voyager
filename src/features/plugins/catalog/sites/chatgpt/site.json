@@ -24,6 +24,16 @@
   "conversationIdPattern": "^(?:/u/[^/]+)?(?:/g/[^/]+)?/c/([^/?#]+)",
   "routeWords": ["c", "g", "project", "gpts", "library", "codex", "images"],
   "turnKeyAttributes": ["data-turn-key", "data-message-id"],
+  "timeline": {
+    "format": 1,
+    "homing": { "mode": "step", "releaseWith": "wheel" },
+    "history": {
+      "source": "chatgptConversation",
+      "sessionPath": "/api/auth/session",
+      "conversationPath": "/backend-api/conversation/{conversationId}",
+      "keyAttributes": ["data-turn-key", "data-message-id"]
+    }
+  },
   "modelPicker": {
     "format": 1,
     "triggerLabels": {

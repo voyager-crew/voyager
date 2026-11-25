@@ -291,6 +291,63 @@
         "historyStallMs": { "type": "integer", "minimum": 1000, "maximum": 60000, "default": 10000 }
       }
     },
+    "timeline": {
+      "type": "object",
+      "description": "How the conversation timeline reaches turns a virtualized host has not mounted. A missing or invalid section lists only the turns the rail has seen mounted and homes by remembered offsets.",
+      "required": ["format"],
+      "additionalProperties": false,
+      "properties": {
+        "format": { "const": 1 },
+        "homing": {
+          "type": "object",
+          "description": "How navigation reaches an unmounted turn. An invalid homing reads as bisect without a release.",
+          "required": ["mode"],
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "enum": ["bisect", "step"],
+              "default": "bisect",
+              "description": "`bisect` jumps by remembered offsets, for hosts that keep unmounted turns' height; `step` scrolls a bounded distance toward the turn until it mounts, for hosts that reserve none."
+            },
+            "releaseWith": {
+              "enum": ["wheel"],
+              "description": "Dispatch a scripted wheel in the scroll's direction before each navigation scroll, for a host that pins its thread to the newest turn until a wheel moves it."
+            }
+          }
+        },
+        "history": {
+          "type": "object",
+          "description": "Where the whole list of user turns is read from. An invalid history reads as absent.",
+          "required": ["source", "sessionPath", "conversationPath"],
+          "additionalProperties": false,
+          "properties": {
+            "source": {
+              "enum": ["chatgptConversation"],
+              "description": "The reader this build carries for the site's conversation endpoint."
+            },
+            "sessionPath": {
+              "type": "string",
+              "maxLength": 200,
+              "pattern": "^(?:/[A-Za-z0-9._~-]+)+/?$",
+              "description": "Same-origin path that answers the session's access token."
+            },
+            "conversationPath": {
+              "type": "string",
+              "maxLength": 200,
+              "pattern": "^(?:/(?:[A-Za-z0-9._~-]|\\{conversationId\\})+)+/?$",
+              "description": "Same-origin path of one conversation, with `{conversationId}` once."
+            },
+            "keyAttributes": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+              "description": "Attributes on a mounted user turn, or its nearest ancestor, carrying the key the reader reports. Defaults to `turnKeyAttributes`."
+            }
+          }
+        }
+      }
+    },
     "locators": {
       "$ref": "site-sections/locators.schema.json"
     }

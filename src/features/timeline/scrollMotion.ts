@@ -166,3 +166,14 @@ export function scrollElementToAnchor(
     rect.height / 2;
   applyScroll(container, top, behavior);
 }
+
+/**
+ * A host that pins its thread to the newest turn pulls a scripted scroll back
+ * until a wheel moves it (ChatGPT, measured live for #1071 and #1112). A
+ * scripted wheel in the scroll's direction, `delta` pixels from where it is
+ * now, releases the pin and scrolls nothing itself.
+ */
+export function releaseScrollPin(target: ScrollTarget, delta: number): void {
+  if (!(target instanceof HTMLElement) || Math.abs(delta) < 1) return;
+  target.dispatchEvent(new WheelEvent('wheel', { deltaY: delta, bubbles: true, cancelable: true }));
+}

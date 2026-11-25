@@ -7,6 +7,9 @@ import {
 
 import { TimelineNavigation, type TimelineNavigationMarker } from '../TimelineNavigation';
 
+const userEvents = vi.hoisted(() => new WeakSet<Event>());
+vi.mock('@/core/utils/userEvent', () => ({ isUserEvent: (event: Event) => userEvents.has(event) }));
+
 const owners: TimelineNavigation[] = [];
 
 function fixture(count = 3, virtualized = false) {
@@ -98,7 +101,11 @@ describe('TimelineNavigation', () => {
     navigation.navigateToMarker(target.id, 9);
     vi.mocked(viewport.scrollTo).mockClear();
     if (cancel === 'destroy') navigation.destroy();
-    else window.dispatchEvent(new Event(cancel));
+    else {
+      const event = new Event(cancel);
+      userEvents.add(event);
+      window.dispatchEvent(event);
+    }
     viewport.appendChild(target.element);
     vi.advanceTimersByTime(1000);
     expect(viewport.scrollTo).not.toHaveBeenCalled();

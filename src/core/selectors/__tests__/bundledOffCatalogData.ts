@@ -25,6 +25,7 @@ const SITE_RUNTIME_FIELDS = {
   export: true,
   exportThread: true,
   exportCrawl: true,
+  timeline: true,
   modelPicker: true,
   projects: true,
   pageHooks: true,

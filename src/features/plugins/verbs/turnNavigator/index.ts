@@ -13,6 +13,7 @@ import {
   type CatalogTimelineConfig,
 } from '@/features/timeline/adapters/catalog/config';
 import { siteConversationConfig } from '@/features/timeline/adapters/catalog/conversationId';
+import { catalogTimelineHistory } from '@/features/timeline/adapters/catalog/historySources';
 import { activateSharedGeminiTimeline } from '@/features/timeline/adapters/gemini/activateSharedGeminiTimeline';
 import { startTimelineStyleCoachmarkDebug } from '@/features/timeline/timelineStyleCoachmarkDebug';
 
@@ -230,6 +231,9 @@ export function activateTurnNavigator(
     pluginId: context.pluginId,
     coachmarkId: TIMELINE_STYLE_COACHMARK_ID,
     sendSite: sendSiteOf(adapter),
+    // A manifest's own turn selector may index other elements than the site's history lists.
+    history: params.turn ? null : catalogTimelineHistory(adapter),
+    homing: adapter.timeline?.homing,
   };
   return activateCatalogTimeline(scope, config, settings ?? {});
 }

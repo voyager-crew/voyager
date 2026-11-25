@@ -1,4 +1,7 @@
 import type { SendSite } from '@/features/plugins/sends/trackUserSends';
+import type { TimelineHomingSection } from '@/features/plugins/sites/sections/timelineData';
+
+import type { CatalogTimelineHistory } from './historyLoader';
 
 export interface CatalogTimelineConfig {
   readonly siteId: string;
@@ -18,6 +21,10 @@ export interface CatalogTimelineConfig {
   readonly coachmarkId: string;
   /** The site's send inputs; without them the timeline shows no message times. */
   readonly sendSite?: SendSite | null;
+  /** The site's full list of user turns; without it the rail lists the turns it has seen. */
+  readonly history?: CatalogTimelineHistory | null;
+  /** How navigation reaches an unmounted turn (site.json `timeline.homing`). */
+  readonly homing?: TimelineHomingSection;
 }
 
 /** Keep the existing once-per-user guide identity across every catalog site. */

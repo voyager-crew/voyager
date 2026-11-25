@@ -1,5 +1,6 @@
 import type {
   TimelineAdapter,
+  TimelineHomingPolicy,
   TimelineTimestampOwner,
   TimelineTurnSource,
   TimelineTurnSnapshot,
@@ -8,6 +9,9 @@ import type { TimelineMarker } from '../../types';
 import { createCatalogTimelineStoragePolicy } from './CatalogTimelineStorage';
 import { CatalogTurnOwnership } from './CatalogTurnOwnership';
 import type { CatalogTimelineConfig } from './config';
+import { starConversationId } from './conversationId';
+import { type HistoryLoader, startHistoryLoader } from './historyLoader';
+import { HistoryMerge } from './historyMerge';
 import { mountedTurnsWithLaterReplies } from './laterReplies';
 import type { CatalogSendTimestamps } from './sendTimestamps';
 import { turnSummary } from './turnHash';
@@ -29,7 +33,7 @@ export class CatalogTimelineAdapter implements TimelineAdapter {
     this.route = { siteId: config.siteId, url: location.href.split('#')[0] };
     this.mount = { anchor: () => document.body, position: config.position };
     this.storage = createCatalogTimelineStoragePolicy(config, ownership, this.route.url);
-    this.turns = new CatalogTimelineTurnSource(config, ownership);
+    this.turns = new CatalogTimelineTurnSource(config, ownership, this.route.url);
   }
   viewport(element: HTMLElement): HTMLElement {
     return this.turns.viewport(element);
@@ -51,6 +55,9 @@ export class CatalogTimelineAdapter implements TimelineAdapter {
 
 class CatalogTimelineTurnSource implements TimelineTurnSource {
   readonly navigation = 'virtualized';
+  get homing(): TimelineHomingPolicy {
+    return this.config.homing ?? { mode: 'bisect' };
+  }
   get root(): HTMLElement | null {
     return document.body;
   }
@@ -68,12 +75,16 @@ class CatalogTimelineTurnSource implements TimelineTurnSource {
     return !!this.root;
   }
   async initialize(signal: AbortSignal): Promise<boolean> {
-    return !signal.aborted && this.refresh();
+    if (signal.aborted) return false;
+    this.startHistory();
+    return this.refresh();
   }
   observe(callback: MutationCallback): MutationObserver {
     const observer = new MutationObserver((records, owner) => {
       if (this.shouldRefresh(records)) callback(records, owner);
     });
+    // A history read that lands asks the engine for a fresh read like a DOM change does.
+    this.notify = () => callback([], observer);
     if (this.root)
       observer.observe(this.root, {
         childList: true,
@@ -89,11 +100,50 @@ class CatalogTimelineTurnSource implements TimelineTurnSource {
   /** Markers that stand for a later reply rather than a prompt. */
   replyIds: ReadonlySet<string> = new Set();
   private readonly originalStamps = new Map<HTMLElement, string | null>();
+  private history: HistoryLoader | null = null;
+  private readonly historyMerge: HistoryMerge | null;
+  private keyById: ReadonlyMap<string, string> = new Map();
+  private notify: (() => void) | null = null;
 
   constructor(
     private readonly config: CatalogTimelineConfig,
     private readonly ownership: CatalogTurnOwnership,
-  ) {}
+    private readonly url: string,
+  ) {
+    this.historyMerge = config.history?.keyAttributes.length
+      ? new HistoryMerge(config.history.keyAttributes)
+      : null;
+  }
+
+  /** Route lifetime: the read belongs to the conversation this source was made for. */
+  private startHistory(): void {
+    const history = this.config.history;
+    if (this.history || !history || !this.historyMerge) return;
+    const starId = starConversationId(this.config, this.url);
+    const prefix = `${this.config.siteId}:conv:`;
+    if (!starId?.startsWith(prefix)) return;
+    this.history = startHistoryLoader(history, starId.slice(prefix.length), () => this.notify?.());
+  }
+
+  locate(markerId: string): HTMLElement | null {
+    const known = this.known.find((marker) => marker.id === markerId);
+    if (known?.element.isConnected) return known.element;
+    const key = this.keyById.get(markerId);
+    const attributes = this.config.history?.keyAttributes ?? [];
+    if (!key) return null;
+    const rendered = renderedCheck();
+    for (const attribute of attributes) {
+      for (const holder of Array.from(document.querySelectorAll(`[${attribute}]`))) {
+        if (holder.getAttribute(attribute)?.trim() !== key) continue;
+        const turn = holder.matches(this.config.turnSelector)
+          ? holder
+          : (holder.querySelector(this.config.turnSelector) ??
+            holder.closest(this.config.turnSelector));
+        if (turn instanceof HTMLElement && rendered(turn)) return turn;
+      }
+    }
+    return null;
+  }
   viewport(element: HTMLElement): HTMLElement {
     if (this.config.scrollContainerSelector) {
       try {
@@ -159,7 +209,16 @@ class CatalogTimelineTurnSource implements TimelineTurnSource {
       const rect = element.getBoundingClientRect();
       return scrollTop + rect.top - viewportTop + rect.height / 2;
     };
-    this.known = mergeMountedTurns(rememberedMarkers(this.known, mounted), mounted, centerOf);
+    const history = this.history?.turns();
+    if (history && this.historyMerge) {
+      this.historyMerge.remember(previous);
+      const composed = this.historyMerge.compose(history, mounted, centerOf);
+      this.known = composed.markers;
+      this.keyById = composed.keyById;
+      if (composed.unknownKey) this.history?.reportUnknown();
+    } else {
+      this.known = mergeMountedTurns(rememberedMarkers(this.known, mounted), mounted, centerOf);
+    }
     const pass =
       this.known.reduce((latest, marker) => Math.max(latest, marker.measuredAt ?? 0), 0) + 1;
     for (const marker of this.known) {
@@ -174,12 +233,18 @@ class CatalogTimelineTurnSource implements TimelineTurnSource {
       mounted.filter((turn) => !turn.reply),
       container,
     );
+    const historyAssistant = new Map(
+      (history ?? []).map((turn) => [turn.key, turn.assistantSummary]),
+    );
     const markers = this.known.map((marker, index) => ({
       id: marker.id,
       element: marker.element,
       summary: marker.summary,
       assistantSummary:
-        assistantByElement.get(marker.element) ?? old.get(marker.id)?.assistantSummary ?? '',
+        assistantByElement.get(marker.element) ||
+        old.get(marker.id)?.assistantSummary ||
+        historyAssistant.get(this.keyById.get(marker.id) ?? '') ||
+        '',
       baseN: this.known.length === 1 ? 0.5 : index / Math.max(1, this.known.length - 1),
       starred: false,
       hash: marker.hash,
@@ -247,5 +312,9 @@ class CatalogTimelineTurnSource implements TimelineTurnSource {
     this.originalStamps.clear();
     this.known = [];
     this.replyIds = new Set();
+    this.keyById = new Map();
+    this.notify = null;
+    void this.history?.stop();
+    this.history = null;
   }
 }

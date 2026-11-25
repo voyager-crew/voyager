@@ -18,12 +18,18 @@ type TimelineOwners = {
   view: TimelineView;
   state: TimelineState;
   navigation: TimelineNavigation;
-  onSyncSettingsChanged: SyncSettingsListener | null;
   registerSyncSettingsListener(): void;
   mountUI(): void;
 };
 
 const managers: TimelineEngine[] = [];
+
+/** The listener the engine handed to storage, as the browser would call it. */
+function registeredListener(): SyncSettingsListener | undefined {
+  return vi.mocked(chrome.storage.onChanged.addListener).mock.calls[0]?.[0] as
+    | SyncSettingsListener
+    | undefined;
+}
 
 function fixture() {
   const manager = new TimelineEngine(new GeminiTimelineAdapter());
@@ -55,7 +61,7 @@ describe('TimelineManager lifecycle', () => {
   it('registers a sync settings listener once and removes it on destroy', () => {
     const { manager, owners } = fixture();
     owners.registerSyncSettingsListener();
-    const listener = owners.onSyncSettingsChanged;
+    const listener = registeredListener();
     expect(listener).toBeTypeOf('function');
     expect(chrome.storage.onChanged.addListener).toHaveBeenCalledWith(listener);
     owners.registerSyncSettingsListener();
@@ -63,14 +69,12 @@ describe('TimelineManager lifecycle', () => {
 
     manager.destroy();
     expect(chrome.storage.onChanged.removeListener).toHaveBeenCalledWith(listener);
-    expect(owners.onSyncSettingsChanged).toBeNull();
   });
 
   it('does not register sync settings after destroy', () => {
     const { manager, owners } = fixture();
     manager.destroy();
     owners.registerSyncSettingsListener();
-    expect(owners.onSyncSettingsChanged).toBeNull();
     expect(chrome.storage.onChanged.addListener).not.toHaveBeenCalled();
   });
 
@@ -79,7 +83,7 @@ describe('TimelineManager lifecycle', () => {
     owners.mountUI();
     owners.registerSyncSettingsListener();
     const bar = owners.view.ui.timelineBar!;
-    const listener = owners.onSyncSettingsChanged!;
+    const listener = registeredListener()!;
 
     listener({ geminiTimelineHideContainer: { newValue: true } }, 'sync');
     expect(bar.classList.contains('timeline-no-container')).toBe(true);
@@ -91,7 +95,7 @@ describe('TimelineManager lifecycle', () => {
   it('routes sync settings to navigation and the cached view position', () => {
     const { owners } = fixture();
     owners.registerSyncSettingsListener();
-    const listener = owners.onSyncSettingsChanged!;
+    const listener = registeredListener()!;
     const position = { version: 2, topPercent: 12, leftPercent: 34 };
     listener(
       {

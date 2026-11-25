@@ -28,6 +28,7 @@ import type { ModelPickerSection } from './sites/sections/modelPickerData';
 import type { PageHooksSection } from './sites/sections/pageHooksData';
 import type { ProjectsSection } from './sites/sections/projectsData';
 import type { PromptSection } from './sites/sections/promptData';
+import type { TimelineSection } from './sites/sections/timelineData';
 
 // ---------------------------------------------------------------------------
 // Sites
@@ -119,6 +120,12 @@ export interface SiteAdapter {
    */
   readonly exportThread?: ExportThreadSection;
   readonly exportCrawl?: ExportCrawlSection;
+  /**
+   * How the timeline reaches turns a virtualized host has not mounted: its
+   * homing mode and the conversation history it reads. Optional and isolated
+   * like `exportThread`; without it the rail lists the turns it has seen.
+   */
+  readonly timeline?: TimelineSection;
   /**
    * Data for the Local Bridge `model.select` op. Optional and isolated: a bad
    * section is dropped without invalidating the adapter (`sectionIssues`).

@@ -1,11 +1,21 @@
+import { isUserEvent } from '@/core/utils/userEvent';
+
+import type { TimelineHomingPolicy } from './TimelineAdapter';
 import type { TimelineNavigationMarker } from './TimelineNavigation';
 import {
   afterScrollSettles,
   navigationScrollBehavior,
   readScrollOffset,
+  releaseScrollPin,
   scrollElementToAnchor,
   scrollToCenter,
 } from './scrollMotion';
+import {
+  type StepProgress,
+  alignmentSettled,
+  newStepProgress,
+  nextSteppedHop,
+} from './steppedHomingRun';
 
 type Dispose = () => void;
 
@@ -14,8 +24,17 @@ const NAVIGATION_ACTIVE_LOCK_MS = 900;
 const PENDING_NAVIGATION_TIMEOUT_MS = 8000;
 const PENDING_NAVIGATION_HOP_MS = 200;
 const LONG_JUMP_VIEWPORTS = 3;
+/** Stepping crosses a long conversation a bounded step at a time, so it gets longer. */
+const STEPPED_NAVIGATION_TIMEOUT_MS = 20000;
+/** After an align, wait for layout to settle, then re-align a target still off the anchor. */
+const STEPPED_ALIGN_SETTLE_MS = 300;
 
 type NavigationMarker = TimelineNavigationMarker;
+
+export interface VirtualizedHomingOptions {
+  readonly homing?: TimelineHomingPolicy;
+  readonly locate?: (markerId: string) => HTMLElement | null;
+}
 
 /** Owns scroll geometry, active selection and timed homing for the current marker list. */
 export class VirtualizedTimelineNavigation {
@@ -26,7 +45,7 @@ export class VirtualizedTimelineNavigation {
   private on(
     target: EventTarget,
     name: string,
-    listener: () => void,
+    listener: (event: Event) => void,
     options: AddEventListenerOptions = {},
   ): Dispose {
     target.addEventListener(name, listener, { ...options, signal: this.lifetime.signal });
@@ -68,12 +87,20 @@ export class VirtualizedTimelineNavigation {
   private lastHandledHash: string | null = null;
   private scrollTarget: HTMLElement | Window | null = null;
   private stopScrollListener: Dispose | null = null;
+  private step: StepProgress | null = null;
 
   constructor(
     private readonly getViewport: () => HTMLElement | null,
     private readonly getMarkers: () => readonly NavigationMarker[],
     private readonly onActiveChange: (turnId: string | null, previousTurnId: string | null) => void,
+    private readonly homing: VirtualizedHomingOptions = {},
   ) {}
+
+  /** The marker's element, or the one the host mounted for it since the last marker read. */
+  private liveElement(marker: NavigationMarker): HTMLElement | null {
+    if (marker.element.isConnected) return marker.element;
+    return this.homing.locate?.(marker.id) ?? null;
+  }
 
   private get markers(): readonly NavigationMarker[] {
     return this.getMarkers();
@@ -166,18 +193,14 @@ export class VirtualizedTimelineNavigation {
     if (!marker) return;
     this.navigationActiveLockUntil = Date.now() + NAVIGATION_ACTIVE_LOCK_MS;
     this.setActiveTurn(marker.id);
-    if (marker.element.isConnected) {
-      const center = this.centerOf(marker.element);
+    const live = this.liveElement(marker);
+    if (live) {
+      const center = this.centerOf(live);
       const anchorOffset = this.getViewportHeight() * ACTIVE_ANCHOR;
       const distance = Math.abs(center - (this.getScrollTop() + anchorOffset));
       if (distance <= this.getViewportHeight() * LONG_JUMP_VIEWPORTS) {
         this.clearPendingNavigation();
-        scrollElementToAnchor(
-          this.getScrollTarget(marker.element),
-          marker.element,
-          this.getScrollTop(),
-          this.getViewportHeight(),
-        );
+        this.alignTarget(marker, live);
         return;
       }
       // Long jump to a mounted turn: Claude re-measures once the landing region
@@ -187,7 +210,7 @@ export class VirtualizedTimelineNavigation {
       this.pendingNavigationProbed = true;
       const hop = (): void => this.schedulePendingNavigationHop();
       const behavior = navigationScrollBehavior();
-      scrollToCenter(this.scrollTarget, center, this.getViewportHeight(), behavior);
+      this.scrollCenterTo(center, behavior);
       if (behavior !== 'smooth') hop();
       else {
         const timer = (run: () => void, ms: number): void => void this.timer(run, ms);
@@ -210,7 +233,12 @@ export class VirtualizedTimelineNavigation {
   private beginPendingNavigation(marker: NavigationMarker): void {
     this.clearPendingNavigation();
     this.pendingNavigationId = marker.id;
-    this.pendingNavigationUntil = Date.now() + PENDING_NAVIGATION_TIMEOUT_MS;
+    this.pendingNavigationUntil =
+      Date.now() +
+      (this.homing.homing?.mode === 'step'
+        ? STEPPED_NAVIGATION_TIMEOUT_MS
+        : PENDING_NAVIGATION_TIMEOUT_MS);
+    this.step = newStepProgress();
     this.pendingNavigationLo = 0;
     this.pendingNavigationHi = Math.max(
       this.getScrollHeight(),
@@ -228,14 +256,95 @@ export class VirtualizedTimelineNavigation {
 
   private clearPendingNavigation(): void {
     this.pendingNavigationId = null;
+    this.step = null;
     void this.stopPendingNavigationTimer?.();
     this.stopPendingNavigationTimer = null;
     for (const stop of this.stopUserScrollListeners.splice(0)) void stop();
   }
 
-  private cancelPendingNavigationOnUserScroll = (): void => {
-    this.clearPendingNavigation();
+  private cancelPendingNavigationOnUserScroll = (event: Event): void => {
+    // The pin release below dispatches wheels of its own; only a person's input cancels.
+    if (isUserEvent(event)) this.clearPendingNavigation();
   };
+
+  private anchorLine(): number {
+    return this.getScrollTop() + this.getViewportHeight() * ACTIVE_ANCHOR;
+  }
+
+  private releasePin(delta: number): void {
+    if (this.homing.homing?.releaseWith === 'wheel') releaseScrollPin(this.scrollTarget, delta);
+  }
+
+  private alignElement(element: HTMLElement): void {
+    this.releasePin(this.centerOf(element) - this.anchorLine());
+    scrollElementToAnchor(
+      this.getScrollTarget(element),
+      element,
+      this.getScrollTop(),
+      this.getViewportHeight(),
+    );
+  }
+
+  /**
+   * Aim at a mounted target. Stepped homing then checks it once layout has
+   * settled: a host that measures turns as they mount moves it after the
+   * scroll, so a target still off the anchor is aimed again, a few times.
+   */
+  private alignTarget(marker: NavigationMarker, live: HTMLElement): void {
+    if (this.homing.homing?.mode !== 'step') {
+      this.clearPendingNavigation();
+      this.alignElement(live);
+      return;
+    }
+    if (this.pendingNavigationId !== marker.id) this.beginPendingNavigation(marker);
+    const progress = this.step;
+    if (!progress) return;
+    progress.aligns += 1;
+    const before = this.getScrollTop();
+    this.alignElement(live);
+    const id = marker.id;
+    const stale = (): boolean => this.disposed || this.pendingNavigationId !== id;
+    afterScrollSettles(
+      () => this.getScrollTop(),
+      (run, ms) => void this.timer(run, ms),
+      stale,
+      () =>
+        void this.timer(() => {
+          if (!stale()) this.verifyAlignment(marker, before);
+        }, STEPPED_ALIGN_SETTLE_MS),
+    );
+  }
+
+  private verifyAlignment(marker: NavigationMarker, before: number): void {
+    const progress = this.step;
+    if (!progress) return;
+    const live = this.liveElement(marker);
+    if (!live) {
+      // Unmounted again while settling: home in once more.
+      this.schedulePendingNavigationHop();
+      return;
+    }
+    if (
+      alignmentSettled({
+        offFromAnchor: Math.abs(this.centerOf(live) - this.anchorLine()),
+        viewportHeight: this.getViewportHeight(),
+        // A scroll edge can stop the target short of the anchor; in view is then the best place.
+        scrollerMoved: Math.abs(this.getScrollTop() - before) >= 1,
+        inViewport: this.isElementInViewport(live),
+        aligns: progress.aligns,
+      })
+    ) {
+      this.clearPendingNavigation();
+      return;
+    }
+    this.navigationActiveLockUntil = Date.now() + NAVIGATION_ACTIVE_LOCK_MS;
+    this.alignTarget(marker, live);
+  }
+
+  private scrollCenterTo(center: number, behavior: ScrollBehavior): void {
+    this.releasePin(center - this.anchorLine());
+    scrollToCenter(this.scrollTarget, center, this.getViewportHeight(), behavior);
+  }
 
   /**
    * One homing step toward a virtualized-out turn: bisect on the target's
@@ -256,14 +365,13 @@ export class VirtualizedTimelineNavigation {
       return;
     }
     this.navigationActiveLockUntil = Date.now() + NAVIGATION_ACTIVE_LOCK_MS;
-    if (marker.element.isConnected) {
-      this.clearPendingNavigation();
-      scrollElementToAnchor(
-        this.getScrollTarget(marker.element),
-        marker.element,
-        this.getScrollTop(),
-        this.getViewportHeight(),
-      );
+    const live = this.liveElement(marker);
+    if (live) {
+      this.alignTarget(marker, live);
+      return;
+    }
+    if (this.homing.homing?.mode === 'step') {
+      this.stepPendingNavigation(marker);
       return;
     }
     const mountedIndexes = this.markers.reduce<number[]>((acc, item, index) => {
@@ -329,9 +437,36 @@ export class VirtualizedTimelineNavigation {
       ? (marker.center ?? 0)
       : (this.pendingNavigationLo + this.pendingNavigationHi) / 2;
     this.pendingNavigationProbed = true;
-    scrollToCenter(this.scrollTarget, probe, this.getViewportHeight(), 'instant');
+    this.scrollCenterTo(probe, 'instant');
     this.schedulePendingNavigationHop();
   };
+
+  /**
+   * One bounded step toward an unmounted turn on a host that reserves no
+   * height for it (`steppedHoming`). Never a far jump: the host snaps those
+   * back. Ends when the turn mounts (aligned above), on timeout, or when
+   * steps stop moving the scroller or mounting anything.
+   */
+  private stepPendingNavigation(marker: NavigationMarker): void {
+    const progress = this.step;
+    if (!progress) return;
+    const hop = nextSteppedHop(progress, this.markers, marker, {
+      offset: this.getScrollTop(),
+      viewportHeight: this.getViewportHeight(),
+      scrollHeight: this.getScrollHeight(),
+      anchor: ACTIVE_ANCHOR,
+      now: Date.now(),
+      liveElement: (item) => this.liveElement(item),
+      inViewport: (element) => this.isElementInViewport(element),
+      centerOf: (element) => this.centerOf(element),
+    });
+    if (hop.kind === 'stop') {
+      this.clearPendingNavigation();
+      return;
+    }
+    if (hop.kind === 'scroll') this.scrollCenterTo(hop.center, 'instant');
+    this.schedulePendingNavigationHop();
+  }
 
   private schedulePendingNavigationHop(): void {
     if (this.stopPendingNavigationTimer !== null || this.disposed) return;

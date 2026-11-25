@@ -102,6 +102,8 @@ export function isSameSiteAdapter(a: SiteAdapter | null, b: SiteAdapter | null):
     JSON.stringify(a.export ?? null) === JSON.stringify(b.export ?? null) &&
     JSON.stringify(a.exportThread ?? null) === JSON.stringify(b.exportThread ?? null) &&
     JSON.stringify(a.exportCrawl ?? null) === JSON.stringify(b.exportCrawl ?? null) &&
+    // The timeline captures its history reader and homing mode when it mounts.
+    JSON.stringify(a.timeline ?? null) === JSON.stringify(b.timeline ?? null) &&
     JSON.stringify(a.matches) === JSON.stringify(b.matches) &&
     JSON.stringify(a.selectors) === JSON.stringify(b.selectors) &&
     // The send tracker reads turn keys through this list; a change must rebuild it.

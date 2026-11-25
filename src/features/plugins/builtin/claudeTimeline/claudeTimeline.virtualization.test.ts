@@ -17,6 +17,9 @@ import {
   useClaudeTimelinePage,
 } from './__tests__/claudeTimelineHarness';
 
+const userEvents = vi.hoisted(() => new WeakSet<Event>());
+vi.mock('@/core/utils/userEvent', () => ({ isUserEvent: (event: Event) => userEvents.has(event) }));
+
 describe('Claude timeline', () => {
   useClaudeTimelinePage();
 
@@ -335,7 +338,9 @@ describe('Claude timeline', () => {
     queryDots()[1].dispatchEvent(new MouseEvent('click', { bubbles: true }));
     expect(window.scrollTo).toHaveBeenCalledTimes(1);
 
-    window.dispatchEvent(new Event('wheel'));
+    const wheel = new Event('wheel');
+    userEvents.add(wheel);
+    window.dispatchEvent(wheel);
     vi.advanceTimersByTime(1000);
     expect(window.scrollTo).toHaveBeenCalledTimes(1);
   });

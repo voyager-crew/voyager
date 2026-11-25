@@ -38,6 +38,11 @@ import { type ModelPickerSection, readModelPickerSection } from './sections/mode
 import { type PageHooksSection, readPageHooksSection } from './sections/pageHooksData';
 import { type ProjectsSection, readProjectsSection } from './sections/projectsData';
 import { type PromptSection, readPromptSection } from './sections/promptData';
+import {
+  type TimelineSection,
+  readTimelineSection,
+  timelineSectionToData,
+} from './sections/timelineData';
 import { isValidSelectorSyntax, readSelectors, readTheme } from './siteSelectorsData';
 
 export { isValidSelectorSyntax } from './siteSelectorsData';
@@ -61,6 +66,7 @@ export interface SiteAdapterData {
   readonly export?: SiteExportConfig;
   readonly exportThread?: ExportThreadSection;
   readonly exportCrawl?: ExportCrawlSection;
+  readonly timeline?: TimelineSection;
   readonly modelPicker?: ModelPickerSection;
   readonly projects?: ProjectsSection;
   readonly pageHooks?: PageHooksSection;
@@ -126,7 +132,7 @@ export interface SiteAdapterDataRead {
    * Non-fatal runtime problems: unknown selectors, malformed bundled-only
    * `accountSlots`, `conversationRoutes`, and broken optional
    * `modelPicker`, `projects`, `pageHooks`, `bridge`, `folders`, `folderSkin`, `prompt`,
-   * `exportThread`, `exportCrawl`.
+   * `exportThread`, `exportCrawl`, `timeline`.
    * Unreadable fields/sections are omitted; other repairs remain usable.
    * Publishing fails on any issue (a missing `bridge` denies the bridge).
    */
@@ -183,6 +189,7 @@ function parseSiteAdapterData(input: unknown, tolerateSemantic = false): SiteAda
   const locatorsRead = readSiteLocators(input.locators, input.id, isValidSelectorSyntax);
   const exportThreadRead = readExportThreadSection(input.exportThread);
   const exportCrawlRead = readExportCrawlSection(input.exportCrawl);
+  const timelineRead = readTimelineSection(input.timeline);
 
   if (!nonEmptyString(input.id) || !SITE_ID_PATTERN.test(input.id)) {
     issues.push({ path: 'id', message: 'must match ^[a-z][a-z0-9-]*$' });
@@ -232,6 +239,7 @@ function parseSiteAdapterData(input: unknown, tolerateSemantic = false): SiteAda
     ...locatorsRead.issues,
     ...exportThreadRead.issues,
     ...exportCrawlRead.issues,
+    ...timelineRead.issues,
   ];
 
   if (input.brandColor !== undefined && !isHexColor(input.brandColor)) {
@@ -354,6 +362,7 @@ function parseSiteAdapterData(input: unknown, tolerateSemantic = false): SiteAda
         ...(exportConfig ? { export: exportConfig } : {}),
         ...(exportThreadRead.exportThread ? { exportThread: exportThreadRead.exportThread } : {}),
         ...(exportCrawlRead.exportCrawl ? { exportCrawl: exportCrawlRead.exportCrawl } : {}),
+        ...(timelineRead.timeline ? { timeline: timelineRead.timeline } : {}),
         ...(locatorsRead.locators ? { locators: locatorsRead.locators } : {}),
       },
     },
@@ -384,6 +393,7 @@ export function siteAdapterToData(adapter: SiteAdapter): SiteAdapterData {
       ? { exportThread: { ...adapter.exportThread, order: [...adapter.exportThread.order] } }
       : {}),
     ...(adapter.exportCrawl ? { exportCrawl: { ...adapter.exportCrawl } } : {}),
+    ...(adapter.timeline ? { timeline: timelineSectionToData(adapter.timeline) } : {}),
     // Without these the refresher's cache write would silently drop the sections.
     ...(adapter.modelPicker ? { modelPicker: { ...adapter.modelPicker } } : {}),
     ...(adapter.projects ? { projects: { ...adapter.projects } } : {}),
