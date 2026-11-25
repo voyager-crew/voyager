@@ -11,26 +11,26 @@ the adapter's captured storage policy; it creates no second store or write queue
 retires its session, while already accepted hierarchy saves keep their captured destination and
 finish through the existing queue.
 
-| Behavior                                                            | Owner                                                                                        |
-| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Rail composition, styles, preview and viewport synchronization      | `TimelineView`                                                                               |
-| Dot geometry, dense/virtual dots, ruler wave and runner             | `TimelineDotLayer`                                                                           |
-| Slider scroll dragging and fade                                     | `TimelineSlider`                                                                             |
-| Width/position restore, migration and dragging                      | `TimelineRailPlacement`                                                                      |
-| Preview search, pinning and hover bridge                            | `TimelinePreviewPanel`, `TimelinePreviewPress`                                               |
-| Tooltip delay, content and visibility                               | `TimelineTooltip`                                                                            |
-| Marker navigation, star long press and hierarchy menu               | `TimelineMarkerInteractions`                                                                 |
-| Shortcuts, active turn and navigation cancellation                  | `TimelineNavigation`                                                                         |
-| Virtualized turn homing, reversed scrollers and remembered geometry | `VirtualizedTimelineNavigation`, `scrollMotion`, `homingEstimate`, `homingRun`, `activeTurn` |
-| Preview search marks and ignoring the timeline's own DOM edits      | `timelineSearchHighlight`                                                                    |
-| Sync settings read and live popup changes                           | `timelineSyncSettings`                                                                       |
-| When navigation re-discovers the container and viewport             | `timelineRefreshPolicy`                                                                      |
-| Marker snapshot, star display, aliases and Library hydration        | `TimelineDataSession`, implemented by `TimelineState`                                        |
-| Persisted stars, migration, serialized writes and cloud merges      | [Saved Library store](../savedLibrary/starStore.ts)                                          |
-| Hierarchy edits and persistence                                     | `TimelineHierarchy`                                                                          |
-| Store readiness, read settlement and snapshot ordering              | `TimelineHydration`                                                                          |
-| Collapse layout                                                     | `TimelineHierarchyGeometry`                                                                  |
-| Annotation ticks published by other features (highlights)           | `timelineAnnotations`, `TimelineAnnotationLayer`                                             |
+| Behavior                                                            | Owner                                                                                                      |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Rail composition, styles, preview and viewport synchronization      | `TimelineView`                                                                                             |
+| Dot geometry, dense/virtual dots, ruler wave and runner             | `TimelineDotLayer`                                                                                         |
+| Slider scroll dragging and fade                                     | `TimelineSlider`                                                                                           |
+| Width/position restore, migration and dragging                      | `TimelineRailPlacement`                                                                                    |
+| Preview search, pinning and hover bridge                            | `TimelinePreviewPanel`, `TimelinePreviewPress`                                                             |
+| Tooltip delay, content and visibility                               | `TimelineTooltip`                                                                                          |
+| Marker navigation, star long press and hierarchy menu               | `TimelineMarkerInteractions`                                                                               |
+| Shortcuts, active turn and navigation cancellation                  | `TimelineNavigation`                                                                                       |
+| Virtualized turn homing, reversed scrollers and remembered geometry | `VirtualizedTimelineNavigation`, `scrollMotion`, `homingEstimate`, `homingRun`, `activeTurn`, `activeHold` |
+| Preview search marks and ignoring the timeline's own DOM edits      | `timelineSearchHighlight`                                                                                  |
+| Sync settings read and live popup changes                           | `timelineSyncSettings`                                                                                     |
+| When navigation re-discovers the container and viewport             | `timelineRefreshPolicy`                                                                                    |
+| Marker snapshot, star display, aliases and Library hydration        | `TimelineDataSession`, implemented by `TimelineState`                                                      |
+| Persisted stars, migration, serialized writes and cloud merges      | [Saved Library store](../savedLibrary/starStore.ts)                                                        |
+| Hierarchy edits and persistence                                     | `TimelineHierarchy`                                                                                        |
+| Store readiness, read settlement and snapshot ordering              | `TimelineHydration`                                                                                        |
+| Collapse layout                                                     | `TimelineHierarchyGeometry`                                                                                |
+| Annotation ticks published by other features (highlights)           | `timelineAnnotations`, `TimelineAnnotationLayer`                                                           |
 
 The [Gemini adapter](../../pages/content/timeline/GeminiTimelineAdapter.ts) retains Gemini selector
 priority, stable identities and timestamps. Its small
@@ -110,14 +110,17 @@ to the turn's place estimated by its ordinal ([`homingEstimate`](homingEstimate.
 waits for the DOM to answer (mutations or scrolls, then quiet) instead of a fixed hop, and repeats; at
 the top of what is loaded it waits for the older page without scrolling again and pulses the target
 marker (`gv-timeline-homing-wait`). A mounted target is aimed instantly (a near one glides) and aimed
-again when the host re-measures it. A run ends on arrival, after `stallMs` (default 4 s) with nothing
-new mounted, after `edgePatienceMs` (default 10 s) waiting at the top, or on a person's wheel or touch
+again when the host re-measures it. ChatGPT places unmeasured turns by its own estimates and
+re-anchors as it measures them, so a target mounted more than 0.9 of a view away, one its re-layout
+lost, or one a jump brought no nearer is approached in steps under a view instead. A run ends on arrival, after `stallMs` (default 4 s) with nothing
+new mounted, after `edgePatienceMs` (default 10 s) waiting at the top, after 60 moves, or on a person's wheel or touch
 (`isUserEvent`); both tunables come from `site.json`. `releaseWith: "wheel"` dispatches a scripted wheel
 in the scroll's direction before each navigation scroll, because ChatGPT pins its thread to the newest
 turn until a wheel arrives. The active marker is searched among the turns measured in the latest pass
 only ([`activeTurn`](activeTurn.ts)): a remembered centre of an unmounted turn belongs to an older
-frame. A navigation holds the clicked marker for 900 ms, and the hold's expiry recomputes it once if
-the page moved meanwhile; a run that ends without arriving recomputes it at once.
+frame. A navigation holds the clicked marker for 900 ms (a run for its whole length), and the hold's
+expiry recomputes it once if a person scrolled meanwhile ([`activeHold`](activeHold.ts)); a run that
+ends without arriving recomputes it at once.
 
 Viewport replacement rebinds scroll and intersection observation while retaining conversation state.
 Path/query replacement destroys the engine and creates a fresh conversation adapter; `runRouteTimeline`

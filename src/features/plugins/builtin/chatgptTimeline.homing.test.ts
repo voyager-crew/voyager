@@ -104,11 +104,11 @@ describe('ChatGPT timeline homing', () => {
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 700, behavior: 'instant' });
 
     // ChatGPT measures what it mounted: the target ends up lower.
-    bubble(remounted).getBoundingClientRect = rect(900);
-    remounted.style.height = '900px';
+    bubble(remounted).getBoundingClientRect = rect(700);
+    remounted.style.height = '700px';
     await settle(200);
-    // 700 + 900 + 20 - 270.
-    expect(scrollTo).toHaveBeenLastCalledWith({ top: 1350, behavior: 'instant' });
+    // 700 + 700 + 20 - 270.
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 1150, behavior: 'instant' });
 
     const calls = scrollTo.mock.calls.length;
     await settle(3_000);
@@ -248,5 +248,94 @@ describe('ChatGPT timeline homing', () => {
     // 1100 + 20 - 270: on the anchor.
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 850, behavior: 'instant' });
     expect(dots()[1].getAttribute('aria-current')).toBe('true');
+  });
+
+  it('approaches a turn mounted far off the view in steps ChatGPT keeps it mounted through', async () => {
+    serveConversation(PROMPTS);
+    const { scroller, scrollTo } = pinnedScroller();
+    const items = openAtBottom();
+    const at = (y: number) => () => rect(y - scroller.scrollTop)();
+    bubble(items[2]).getBoundingClientRect = at(1500);
+    bubble(items[3]).getBoundingClientRect = at(1800);
+    // The opening turn is mounted 2500px above the anchor, at the top of a long reply.
+    items[2].before(items[0]);
+    bubble(items[0]).getBoundingClientRect = at(-500);
+    await mount();
+    // A scroll of more than a view re-lays ChatGPT's list out without that turn.
+    let position = 1400;
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, get: () => position });
+    scrollTo.mockImplementation((options: ScrollToOptions) => {
+      const next = Math.max(0, options.top ?? position);
+      if (Math.abs(next - position) > 600) items[0].remove();
+      position = next;
+    });
+
+    dots()[0].click();
+    await settle(3_000);
+
+    expect(items[0].isConnected).toBe(true);
+    // -500 + 20 - 270, reached in steps of 0.9 of the view.
+    expect(position).toBe(0);
+    const tops = scrollTo.mock.calls.map(([options]) => options.top ?? 0);
+    expect(tops.slice(0, 2)).toEqual([860, 320]);
+    expect(dots()[0].getAttribute('aria-current')).toBe('true');
+  });
+
+  it('stops a run the host keeps undoing and shows where the view is', async () => {
+    serveConversation(PROMPTS);
+    const { scroller, scrollTo } = pinnedScroller();
+    const items = openAtBottom();
+    const at = (y: number) => () => rect(y - scroller.scrollTop)();
+    bubble(items[2]).getBoundingClientRect = at(1500);
+    bubble(items[3]).getBoundingClientRect = at(1800);
+    await mount();
+    // Every jump mounts the opening turn and every aim at it loses it again.
+    let position = 1400;
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, get: () => position });
+    scrollTo.mockImplementation((options: ScrollToOptions) => {
+      position = Math.max(0, options.top ?? position);
+      if (items[0].isConnected) items[0].remove();
+      else {
+        items[2].before(items[0]);
+        bubble(items[0]).getBoundingClientRect = at(position + 300);
+      }
+    });
+
+    dots()[0].click();
+    await settle(60_000);
+    const calls = scrollTo.mock.calls.length;
+    await settle(10_000);
+
+    expect(scrollTo).toHaveBeenCalledTimes(calls);
+    expect(calls).toBeLessThanOrEqual(61);
+  });
+
+  it('steps when a far jump keeps landing on the same side of the turn', async () => {
+    serveConversation(PROMPTS);
+    const { scroller, scrollTo } = pinnedScroller();
+    const items = openAtBottom();
+    const at = (y: number) => () => rect(y - scroller.scrollTop)();
+    bubble(items[2]).getBoundingClientRect = at(1500);
+    bubble(items[3]).getBoundingClientRect = at(1800);
+    await mount();
+    // ChatGPT re-anchors on the turn it measured after any jump longer than a view,
+    // landing back where it was; the opening turn mounts once the view reaches 800.
+    let position = 1400;
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, get: () => position });
+    scrollTo.mockImplementation((options: ScrollToOptions) => {
+      const next = Math.max(0, options.top ?? position);
+      if (Math.abs(next - position) <= 600) position = next;
+      if (position > 800 || items[0].isConnected) return;
+      items[2].before(items[0]);
+      bubble(items[0]).getBoundingClientRect = at(900);
+    });
+
+    dots()[0].click();
+    await settle(4_000);
+
+    expect(items[0].isConnected).toBe(true);
+    // 900 + 20 - 270.
+    expect(position).toBe(650);
+    expect(dots()[0].getAttribute('aria-current')).toBe('true');
   });
 });

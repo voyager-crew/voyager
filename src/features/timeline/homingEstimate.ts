@@ -6,10 +6,12 @@
  * the next page only once the view reaches the top.
  *
  * The estimate places the target by its ordinal: interpolated between the
- * nearest turns seen on either side of it (the bracket), or extrapolated with
- * the mounted window's own pitch until both sides have been seen. The host's
- * estimated heights differ from measured ones, so extrapolation alone can
- * overshoot back and forth; the bracket only narrows, so the walk converges.
+ * nearest turns seen on either side of it, or extrapolated with the mounted
+ * window's own pitch. The host swaps estimated heights for measured ones as
+ * turns mount, which moves every offset by thousands of pixels, so a side
+ * seen under another scroll height is not used, and an extrapolation that
+ * reverses direction is halved each time: an overshoot converges instead of
+ * swinging between the same far windows.
  */
 
 export interface MountedTurn {
@@ -18,10 +20,17 @@ export interface MountedTurn {
   readonly center: number;
 }
 
-/** The nearest turns seen before and after the target during one walk. */
+interface SeenTurn extends MountedTurn {
+  /** The scroll height the centre was read under. */
+  readonly height: number;
+}
+
+/** What one walk remembers between estimates; start each walk with `{}`. */
 export interface HomingBracket {
-  below?: MountedTurn;
-  above?: MountedTurn;
+  below?: SeenTurn;
+  above?: SeenTurn;
+  direction?: -1 | 1;
+  scale?: number;
 }
 
 export interface HomingEstimateInput {
@@ -53,59 +62,70 @@ const LONE_TURN_PITCH = 0.75;
 const EDGE_SLOP = 1;
 /** Least a jump moves toward a target past every mounted turn, in viewports. */
 const MIN_PROBE_VIEWPORTS = 0.75;
+/** A remembered side stays usable while the scroll height moved less than this, in viewports. */
+const FRAME_TOLERANCE_VIEWPORTS = 0.5;
+const MIN_SCALE = 1 / 8;
 
-/**
- * Record the window's nearest turns on each side of the target. A side seen
- * now replaces the old one; the other side is dropped if the host's layout
- * moved so far that the two no longer bracket anything.
- */
-function updateBracket(bracket: HomingBracket, mounted: readonly MountedTurn[], target: number) {
+/** Record the window's nearest turn on each side of the target, closer ones first. */
+function updateBracket(
+  bracket: HomingBracket,
+  mounted: readonly MountedTurn[],
+  target: number,
+  height: number,
+): void {
   const below = [...mounted].reverse().find((turn) => turn.index < target);
   const above = mounted.find((turn) => turn.index > target);
-  if (below && (!bracket.below || below.index >= bracket.below.index || !above))
-    bracket.below = below;
-  if (above && (!bracket.above || above.index <= bracket.above.index || !below))
-    bracket.above = above;
+  if (below) bracket.below = { ...below, height };
+  if (above) bracket.above = { ...above, height };
+  // Sides that no longer bracket anything: the one not seen now is stale.
   if (bracket.below && bracket.above && bracket.below.center >= bracket.above.center) {
-    if (above) bracket.below = below;
+    if (above) bracket.below = below && { ...below, height };
     else bracket.above = undefined;
   }
 }
 
-function between(before: MountedTurn, after: MountedTurn, target: number): number {
-  const share = (target - before.index) / Math.max(1, after.index - before.index);
-  return before.center + (after.center - before.center) * share;
+function usable(side: SeenTurn | undefined, height: number, view: number): side is SeenTurn {
+  return !!side && Math.abs(side.height - height) <= view * FRAME_TOLERANCE_VIEWPORTS;
 }
 
 export function estimateHoming(input: HomingEstimateInput): HomingEstimate {
-  const { mounted, targetIndex } = input;
+  const { mounted, targetIndex, viewportHeight: view, scrollHeight: height } = input;
   if (!mounted.length) return { kind: 'wait' };
   const bracket = input.bracket ?? {};
-  updateBracket(bracket, mounted, targetIndex);
+  updateBracket(bracket, mounted, targetIndex, height);
   const first = mounted[0];
   const last = mounted[mounted.length - 1];
-  const span = last.index - first.index;
-  const pitch = Math.max(
-    MIN_PITCH,
-    span > 0 ? (last.center - first.center) / span : input.viewportHeight * LONE_TURN_PITCH,
-  );
+  const direction = targetIndex < first.index ? -1 : targetIndex > last.index ? 1 : 0;
+  const anchorOffset = view * input.anchor;
   let center: number;
-  if (bracket.below && bracket.above) center = between(bracket.below, bracket.above, targetIndex);
-  else if (targetIndex < first.index) center = first.center - (first.index - targetIndex) * pitch;
-  else center = last.center + (targetIndex - last.index) * pitch;
-  const anchorOffset = input.viewportHeight * input.anchor;
+  const { below, above } = bracket;
+  if (usable(below, height, view) && usable(above, height, view) && below.center < above.center) {
+    const share = (targetIndex - below.index) / Math.max(1, above.index - below.index);
+    center = below.center + (above.center - below.center) * share;
+  } else {
+    const span = last.index - first.index;
+    const pitch = Math.max(
+      MIN_PITCH,
+      span > 0 ? (last.center - first.center) / span : view * LONE_TURN_PITCH,
+    );
+    const edge = direction < 0 ? first : last;
+    let scale = bracket.scale ?? 1;
+    if (direction !== 0 && bracket.direction !== undefined && bracket.direction !== direction)
+      scale = Math.max(MIN_SCALE, scale / 2);
+    center = edge.center + (targetIndex - edge.index) * pitch * scale;
+    bracket.scale = scale;
+  }
+  if (direction !== 0) bracket.direction = direction;
   // Every turn the host mounts lies on one side of an unmounted target, so the
   // target is beyond the view in that direction. An estimate short of a probe
   // (a long reply spanning the view, #1116) would land on the same window
   // again; move at least a probe, which cannot pass a turn beyond the view.
-  const probe = input.viewportHeight * MIN_PROBE_VIEWPORTS;
-  if (targetIndex > last.index) center = Math.max(center, input.offset + probe + anchorOffset);
-  else if (targetIndex < first.index)
-    center = Math.min(center, input.offset - probe + anchorOffset);
+  const probe = view * MIN_PROBE_VIEWPORTS;
+  if (direction > 0) center = Math.max(center, input.offset + probe + anchorOffset);
+  else if (direction < 0) center = Math.min(center, input.offset - probe + anchorOffset);
   const top = center - anchorOffset;
-  const maxTop = Math.max(0, input.scrollHeight - input.viewportHeight);
-  if (targetIndex < first.index && top <= 0 && input.offset <= EDGE_SLOP) return { kind: 'edge' };
-  if (targetIndex > last.index && top >= maxTop && input.offset >= maxTop - EDGE_SLOP)
-    return { kind: 'edge' };
+  const maxTop = Math.max(0, height - view);
+  if (direction < 0 && top <= 0 && input.offset <= EDGE_SLOP) return { kind: 'edge' };
+  if (direction > 0 && top >= maxTop && input.offset >= maxTop - EDGE_SLOP) return { kind: 'edge' };
   return { kind: 'jump', center };
 }

@@ -26,15 +26,20 @@ const ANSWER_CAP_MS = 400;
 const MAX_JUMPS = 12;
 /** Jumps in one walk between pages, however much each mounts. */
 const MAX_TOTAL_JUMPS = 30;
+/** Scrolls of any kind in one run, every stay included: a bound on host loops. */
+const MAX_RUN_MOVES = 60;
 /** Aims at a mounted target, the first included. */
 const MAX_AIMS = 3;
+/** A mounted target farther than this from the anchor, in viewports, is approached in steps this long. */
+const APPROACH_VIEWPORTS = 0.9;
 /** Share of the view an arrived target may sit from the anchor line. */
 const ALIGN_TOLERANCE = 0.12;
 
 export type HomingEnd = 'arrived' | 'stalled' | 'gone' | 'cancelled';
 
 type HomingState =
-  | { readonly status: 'seeking' }
+  /** `walk`: the target was mounted and the host's re-layout lost it; move a step at a time. */
+  | { readonly status: 'seeking'; readonly walk: boolean }
   | { readonly status: 'waitingForOlder' }
   | { readonly status: 'aligning'; readonly glide: boolean }
   | { readonly status: 'ended'; readonly reason: HomingEnd };
@@ -56,10 +61,10 @@ export function homingTransition(state: HomingState, event: HomingEvent): Homing
       return state;
     case 'waitingForOlder':
       if (event.type === 'mounted') return { status: 'aligning', glide: false };
-      if (event.type === 'grew') return { status: 'seeking' };
+      if (event.type === 'grew') return { status: 'seeking', walk: false };
       return state;
     case 'aligning':
-      return event.type === 'unmounted' ? { status: 'seeking' } : state;
+      return event.type === 'unmounted' ? { status: 'seeking', walk: true } : state;
     default: {
       const _exhaustive: never = state;
       return _exhaustive;
@@ -160,12 +165,28 @@ function awaitAnswer(
   stopCap = stay.scope.timer(() => finish(signature(host) !== start), cap);
 }
 
-function seek(stay: Stay<HomingState, HomingEvent>, host: HomingHost): void {
+/** Moves one run has made, shared by its stays. */
+interface RunBudget {
+  moves: number;
+}
+
+function spend(stay: Stay<HomingState, HomingEvent>, budget: RunBudget): boolean {
+  if (++budget.moves <= MAX_RUN_MOVES) return true;
+  stay.send({ type: 'end', reason: 'stalled' });
+  return false;
+}
+
+type Seeking = Extract<HomingState, { readonly status: 'seeking' }>;
+
+function seek(stay: Stay<Seeking, HomingEvent>, host: HomingHost, budget: RunBudget): void {
   let lastContents = '';
   let progressAt = Date.now();
   let jumps = 0;
   let totalJumps = 0;
   const bracket: HomingBracket = {};
+  // Set when the host lost a target it had mounted, or a jump made no progress.
+  let walk = stay.state().walk;
+  let closest = Infinity;
   const step = (): void => {
     if (stay.signal.aborted) return;
     if (!host.exists()) return stay.send({ type: 'end', reason: 'gone' });
@@ -182,6 +203,12 @@ function seek(stay: Stay<HomingState, HomingEvent>, host: HomingHost): void {
     // Read after the page answered the last jump, so the window is current. A
     // long reply can fill the view with no prompt bubble in it (#1116).
     const turns = host.mounted();
+    // ChatGPT places unmeasured turns by its own estimates and re-anchors as it
+    // measures them, so a jump can land on the same far side every time (#1116):
+    // a jump that brought no turn nearer switches the rest of the walk to steps.
+    const nearest = Math.min(...turns.map((turn) => Math.abs(turn.index - host.targetIndex)));
+    if (totalJumps > 0 && nearest >= closest) walk = true;
+    closest = Math.min(closest, nearest);
     const plan = estimateHoming({
       targetIndex: host.targetIndex,
       mounted: turns,
@@ -191,10 +218,20 @@ function seek(stay: Stay<HomingState, HomingEvent>, host: HomingHost): void {
     });
     if (plan.kind === 'edge') return stay.send({ type: 'atEdge' });
     if (plan.kind === 'jump') {
+      if (!spend(stay, budget)) return;
       jumps += 1;
       totalJumps += 1;
       host.holdActive();
-      host.jumpTo(plan.center);
+      let center = plan.center;
+      if (walk) {
+        // Steps of under a view measure every turn on the way, so the host's
+        // layout holds still around the view.
+        const { offset, viewportHeight } = host.geometry();
+        const line = offset + viewportHeight * host.anchor;
+        const step = viewportHeight * APPROACH_VIEWPORTS;
+        center = Math.max(line - step, Math.min(line + step, center));
+      }
+      host.jumpTo(center);
     }
     awaitAnswer(stay, host, ANSWER_CAP_MS, step);
   };
@@ -232,13 +269,29 @@ function waitForOlder(stay: Stay<HomingState, HomingEvent>, host: HomingHost): v
 
 type Aligning = Extract<HomingState, { readonly status: 'aligning' }>;
 
-function align(stay: Stay<Aligning, HomingEvent>, host: HomingHost): void {
+function align(stay: Stay<Aligning, HomingEvent>, host: HomingHost, budget: RunBudget): void {
   let aims = 0;
+  let stepped = false;
+  let stepFrom = 0;
   // A page that keeps changing (a reply still streaming) never reads as settled.
   stay.scope.timer(() => stay.send({ type: 'end', reason: 'arrived' }), host.stallMs);
-  const aim = (): void => {
+  const aim = (final = false): void => {
     const element = host.target();
     if (!element) return stay.send({ type: 'unmounted' });
+    if (!spend(stay, budget)) return;
+    const off = host.offAnchor(element);
+    const { offset, viewportHeight } = host.geometry();
+    const step = viewportHeight * APPROACH_VIEWPORTS;
+    stepped = !final && !(aims === 0 && stay.state().glide) && Math.abs(off) > step;
+    if (stepped) {
+      // ChatGPT places turns by its own height estimates: one far jump onto a
+      // turn mounted well off the view re-lays the list out without it (#1116),
+      // while steps of under a view keep it mounted all the way.
+      host.holdActive();
+      stepFrom = offset;
+      host.jumpTo(offset + viewportHeight * host.anchor + Math.sign(off) * step);
+      return awaitAnswer(stay, host, ANSWER_CAP_MS, check);
+    }
     aims += 1;
     host.holdActive();
     const glide = aims === 1 && stay.state().glide;
@@ -262,6 +315,8 @@ function align(stay: Stay<Aligning, HomingEvent>, host: HomingHost): void {
     const near = off <= host.geometry().viewportHeight * ALIGN_TOLERANCE;
     if (!changed && near) return stay.send({ type: 'end', reason: 'arrived' });
     if (near) return awaitAnswer(stay, host, ANSWER_CAP_MS, check);
+    // A step that moved nothing met a scroll edge: aim once from there.
+    if (stepped) return aim(Math.abs(host.geometry().offset - stepFrom) < 1);
     // A scroll edge can hold the target short of the anchor: an aim that moved nothing is final.
     if (aims >= MAX_AIMS || (!changed && aims > 1))
       return stay.send({ type: 'end', reason: 'arrived' });
@@ -274,18 +329,19 @@ export type HomingRun = Machine<HomingState, HomingEvent>;
 
 /** Start a run; `glide` aims a mounted, near target with a smooth scroll first. */
 export function startHomingRun(host: HomingHost, glide: boolean): HomingRun {
+  const budget: RunBudget = { moves: 0 };
   const run = startMachine<HomingState, HomingEvent>(
     {
       id: 'timelineHoming',
       transition: homingTransition,
       effects: {
-        seeking: (stay) => seek(stay, host),
+        seeking: (stay) => seek(stay, host, budget),
         waitingForOlder: (stay) => waitForOlder(stay, host),
-        aligning: (stay) => align(stay, host),
+        aligning: (stay) => align(stay, host, budget),
         ended: (stay) => host.onEnd(stay.state().reason),
       },
     },
-    glide || host.target() ? { status: 'aligning', glide } : { status: 'seeking' },
+    glide || host.target() ? { status: 'aligning', glide } : { status: 'seeking', walk: false },
   );
   return run;
 }

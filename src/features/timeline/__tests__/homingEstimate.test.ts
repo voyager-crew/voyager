@@ -36,25 +36,38 @@ function layout(heights: readonly number[]) {
   return { centers, height: y, window };
 }
 
-/** Jumps until the target mounts; returns how many it took, or Infinity. */
-function walk(heights: readonly number[], from: number, target: number) {
-  const page = layout(heights);
-  let top = Math.max(0, page.centers[from] - VIEW * ANCHOR);
+/**
+ * Jumps until the target mounts; returns how many it took, or Infinity. With
+ * `estimate`, unmounted turns stand at that height until they first mount, as
+ * ChatGPT's virtual list does, so each landing re-lays out the page.
+ */
+function walk(heights: readonly number[], from: number, target: number, estimate?: number) {
+  const measured = new Set<number>();
+  const page = () =>
+    layout(heights.map((real, index) => (estimate && !measured.has(index) ? estimate : real)));
+  // The host clamps the offset to whatever height the page has now.
+  const clamp = (top: number) => Math.max(0, Math.min(top, page().height - VIEW));
+  const land = (top: number) => {
+    for (const turn of page().window(clamp(top), -1)) measured.add(turn.index);
+    return page();
+  };
+  let top = Math.max(0, page().centers[from] - VIEW * ANCHOR);
   const bracket: HomingBracket = {};
   for (let jumps = 0; jumps < 20; jumps++) {
-    const mounted = page.window(top, target);
-    if (page.window(top, -1).some((turn) => turn.index === target)) return jumps;
+    const current = land(top);
+    top = clamp(top);
+    if (current.window(top, -1).some((turn) => turn.index === target)) return jumps;
     const plan = estimateHoming({
       targetIndex: target,
-      mounted,
+      mounted: current.window(top, target),
       offset: top,
       viewportHeight: VIEW,
-      scrollHeight: page.height,
+      scrollHeight: current.height,
       anchor: ANCHOR,
       bracket,
     });
     if (plan.kind !== 'jump') return Infinity;
-    top = Math.min(page.height - VIEW, Math.max(0, plan.center - VIEW * ANCHOR));
+    top = Math.min(current.height - VIEW, Math.max(0, plan.center - VIEW * ANCHOR));
   }
   return Infinity;
 }
@@ -68,6 +81,14 @@ describe('estimated homing', () => {
       for (let target = 0; target < HEIGHTS.length; target++) {
         if (from === target) continue;
         expect(walk(HEIGHTS, from, target), `${from} -> ${target}`).toBeLessThanOrEqual(6);
+      }
+  });
+
+  it('converges while mounting swaps estimated heights for measured ones', () => {
+    for (let from = 0; from < HEIGHTS.length; from++)
+      for (let target = 0; target < HEIGHTS.length; target++) {
+        if (from === target) continue;
+        expect(walk(HEIGHTS, from, target, 900), `${from} -> ${target}`).toBeLessThanOrEqual(8);
       }
   });
 
