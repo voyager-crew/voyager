@@ -4,7 +4,6 @@ import {
   type CatalogTimelineHistory,
   HISTORY_REFETCH_DELAY_MS,
   type HistoryTurn,
-  INITIAL_HISTORY_WAIT_MS,
   MAX_HISTORY_READS,
   startHistoryLoader,
 } from './historyLoader';
@@ -27,23 +26,6 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 describe('timeline history loader', () => {
-  it('bounds the startup wait without cancelling the full read when the host is slow', async () => {
-    const { history, reads } = deferredHistory();
-    const ready = vi.fn();
-    const loader = startHistoryLoader(history, 'first', () => {});
-    void loader.initialReady.then(ready);
-    await vi.advanceTimersByTimeAsync(INITIAL_HISTORY_WAIT_MS - 1);
-    expect(ready).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(1);
-    expect(ready).toHaveBeenCalledOnce();
-    expect(loader.turns()).toBeNull();
-    expect(reads[0].signal.aborted).toBe(false);
-    reads[0].resolve(TURNS);
-    await vi.advanceTimersByTimeAsync(0);
-    expect(loader.turns()).toBe(TURNS);
-    await loader.stop();
-  });
-
   it('ignores a read that lands after its route ended', async () => {
     const { history, reads } = deferredHistory();
     const onChange = vi.fn();

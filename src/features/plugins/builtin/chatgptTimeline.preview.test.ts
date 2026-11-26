@@ -10,12 +10,12 @@ import {
   settle,
 } from './__tests__/chatgptTimelineHarness';
 
-it('renders the complete, readable history as the first timeline', async () => {
+it('lists mounted turns at once, then the complete history without host wrappers', async () => {
   const ambient =
     '<in-app-browser-context source="ambient-ui-state">Browser metadata</in-app-browser-context>';
   const fetch = serveConversation([
     `${ambient}\n\n## My request: Opening question`,
-    'Second question',
+    '# Selected text:\n\n## Selection 1\nExcerpt\n\n## My request:\nSecond question',
     'Third question',
     'Newest question',
   ]);
@@ -32,7 +32,11 @@ it('renders the complete, readable history as the first timeline', async () => {
   exchange('Newest question');
 
   await mount();
-  expect(dots()).toHaveLength(0);
+  // A slow history read must not leave the rail empty (#1120).
+  expect(dots().map((dot) => dot.getAttribute('aria-label'))).toEqual([
+    'Third question',
+    'Newest question',
+  ]);
 
   pending.resolve();
   await settle();

@@ -34,8 +34,6 @@ export interface CatalogTimelineHistory {
 export const MAX_HISTORY_READS = 10;
 /** Wait after a mounted turn the list lacks, so a send is saved before the read. */
 export const HISTORY_REFETCH_DELAY_MS = 3000;
-/** Give the complete list a head start, then let a slow host fall back to mounted turns. */
-export const INITIAL_HISTORY_WAIT_MS = 6500;
 
 type Turns = readonly HistoryTurn[] | null;
 
@@ -74,8 +72,6 @@ export function historyTransition(state: HistoryState, event: HistoryEvent): His
 }
 
 export interface HistoryLoader {
-  /** Releases the initial rail on the first result or the bounded startup wait. */
-  readonly initialReady: Promise<void>;
   /** The latest list read for this route, or null before one succeeds. */
   turns(): Turns;
   /** A mounted turn's key is missing from the list. */
@@ -88,17 +84,12 @@ export function startHistoryLoader(
   conversationId: string,
   onChange: () => void,
 ): HistoryLoader {
-  let releaseInitial = () => {};
-  const initialReady = new Promise<void>((resolve) => {
-    releaseInitial = resolve;
-  });
   const machine: Machine<HistoryState, HistoryEvent> = startMachine<HistoryState, HistoryEvent>(
     {
       id: 'timeline-history',
       transition: historyTransition,
       effects: {
         reading: (stay) => {
-          if (stay.state().reads === 1) stay.scope.timer(releaseInitial, INITIAL_HISTORY_WAIT_MS);
           history.load(conversationId, stay.signal).then(
             (turns) => stay.send({ type: 'loaded', turns }),
             (error: unknown) => {
@@ -118,16 +109,11 @@ export function startHistoryLoader(
     { status: 'reading', turns: null, reads: 1 },
   );
   machine.subscribe((state, previous) => {
-    if (state.status === 'settled') releaseInitial();
     if (state.turns !== previous.turns) onChange();
   });
   return {
-    initialReady,
     turns: () => machine.state.turns,
     reportUnknown: () => machine.send({ type: 'unknownTurn' }),
-    stop: () => {
-      releaseInitial();
-      return machine.stop();
-    },
+    stop: () => machine.stop(),
   };
 }
