@@ -221,14 +221,17 @@ describe('TimelineView', () => {
       view.applyRTLUpdate('ar');
       view.timelineStyle = 'compact';
       view.applyTimelineStyle();
-      const first = trackContent.querySelector<HTMLElement>('.timeline-dot')!;
-      expect(first.style.top).toBe('calc(50% - 80px)');
+      const dots = (): HTMLElement[] =>
+        Array.from(trackContent.querySelectorAll<HTMLElement>('.timeline-dot'));
+      const ends = (): string[] => [dots()[0].style.top, dots().at(-1)!.style.top];
+      // 60 ticks spread over the 400 px rail less its 12 px padding on each side.
+      expect(ends()).toEqual(['calc(50% - 188px)', 'calc(50% + 188px)']);
 
       Object.defineProperty(bar, 'clientHeight', { value: 240, configurable: true });
       Object.defineProperty(track, 'clientHeight', { value: 240, configurable: true });
       window.dispatchEvent(new Event('resize'));
       vi.advanceTimersByTime(140);
-      expect(first.style.top).toBe('calc(50% - 80px)');
+      expect(ends()).toEqual(['calc(50% - 108px)', 'calc(50% + 108px)']);
       view.applyRTLUpdate('en');
     },
   );

@@ -4,9 +4,13 @@ const DENSE_MAX_SPAN_PX = 160;
 /**
  * Vertical offsets (px from the rail's middle) for markers stacked by the dense
  * compact and ruler styles: an even gap that shrinks so long lists fit the span.
+ * A short list stays a 160 px cluster; a long one spreads over the rail's
+ * `availablePx` before its gap shrinks, so 100 turns do not merge into one bar
+ * (#1120).
  */
-export function denseMarkerOffsets(count: number): number[] {
-  const gap = count > 1 ? Math.min(DENSE_MAX_GAP_PX, DENSE_MAX_SPAN_PX / (count - 1)) : 0;
+export function denseMarkerOffsets(count: number, availablePx = 0): number[] {
+  const span = Math.max(DENSE_MAX_SPAN_PX, availablePx);
+  const gap = count > 1 ? Math.min(DENSE_MAX_GAP_PX, span / (count - 1)) : 0;
   const center = (count - 1) / 2;
   return Array.from({ length: count }, (_, rank) => (rank - center) * gap);
 }

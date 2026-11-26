@@ -392,7 +392,8 @@ export class TimelineDotLayer {
       if (!hiddenIndices.has(index)) visibleIndices.push(index);
     }
 
-    const rankOffsets = denseMarkerOffsets(visibleIndices.length);
+    const available = (this.track?.clientHeight ?? 0) - 2 * this.getTrackPadding();
+    const rankOffsets = denseMarkerOffsets(visibleIndices.length, available);
     return new Map(visibleIndices.map((markerIndex, rank) => [markerIndex, rankOffsets[rank]]));
   }
 
