@@ -1,6 +1,6 @@
-import { getBundledSiteSelectorView } from '@/core/selectors/bundle';
+import chatgptSite from '../catalog/sites/chatgpt/site.json';
 
-const scrollContainer = getBundledSiteSelectorView('chatgpt').profiles.scrollContainer.join(',');
+const scrollContainer = chatgptSite.selectors.scrollContainer;
 
 /** Keep ChatGPT's overflow measurement independent of its table bleed state. */
 export const CHATGPT_TIMELINE_TABLE_STYLE = `

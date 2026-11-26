@@ -8,7 +8,6 @@ import type {
 import type { TimelineMarker } from '../../types';
 import { createCatalogTimelineStoragePolicy } from './CatalogTimelineStorage';
 import { CatalogTurnOwnership } from './CatalogTurnOwnership';
-import { chatGptAttachmentAnchor } from './chatGptAttachmentAnchor';
 import type { CatalogTimelineConfig } from './config';
 import { starConversationId } from './conversationId';
 import { type HistoryLoader, startHistoryLoader } from './historyLoader';
@@ -142,8 +141,7 @@ class CatalogTimelineTurnSource implements TimelineTurnSource {
             holder.closest(this.config.turnSelector));
         if (turn instanceof HTMLElement && rendered(turn)) return turn;
         // This anchor supplies geometry for an attachment-only prompt.
-        const attachment =
-          this.config.siteId === 'chatgpt' ? chatGptAttachmentAnchor(holder) : null;
+        const attachment = this.config.history?.attachmentAnchor?.(holder);
         if (attachment && rendered(attachment)) return attachment;
       }
     }

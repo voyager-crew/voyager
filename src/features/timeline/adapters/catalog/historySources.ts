@@ -42,6 +42,10 @@ export function catalogTimelineHistory(
       });
       return {
         keyAttributes,
+        attachmentAnchor: (keyedTurn) =>
+          keyedTurn.querySelector<HTMLElement>(
+            'h4[data-conversation-role="user"] + [data-chatgpt-search-unit-key]:has(img)',
+          ),
         load: async (conversationId, signal) =>
           chatGptHistoryTurns(await reader.branchOf(conversationId, signal)),
       };

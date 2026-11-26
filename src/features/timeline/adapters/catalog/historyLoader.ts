@@ -26,6 +26,8 @@ export interface HistoryTurn {
 export interface CatalogTimelineHistory {
   readonly keyAttributes: readonly string[];
   load(conversationId: string, signal: AbortSignal): Promise<readonly HistoryTurn[]>;
+  /** The prompt's geometry when an attachment renders without a text bubble. */
+  attachmentAnchor?(keyedTurn: Element): HTMLElement | null;
 }
 
 /** Reads per route, the first included; a long session past it relies on mounted turns. */
