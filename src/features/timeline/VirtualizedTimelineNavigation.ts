@@ -13,6 +13,7 @@ import {
 } from './homingRun';
 import {
   afterScrollSettles,
+  interruptSmoothScroll,
   navigationScrollBehavior,
   readScrollOffset,
   releaseScrollPin,
@@ -49,7 +50,7 @@ export class VirtualizedTimelineNavigation {
     options: AddEventListenerOptions = {},
   ): Dispose {
     target.addEventListener(name, listener, { ...options, signal: this.lifetime.signal });
-    return () => target.removeEventListener(name, listener);
+    return () => target.removeEventListener(name, listener, options.capture);
   }
 
   private timer(run: () => void, ms: number): Dispose {
@@ -242,11 +243,11 @@ export class VirtualizedTimelineNavigation {
 
   private listenForUserScroll(): void {
     if (this.disposed) return;
+    // Widgets can stop wheel events from bubbling.
+    const options = { passive: true, capture: this.homing.homing?.mode === 'step' };
     this.stopUserScrollListeners = [
-      this.on(window, 'wheel', this.cancelPendingNavigationOnUserScroll, { passive: true }),
-      this.on(window, 'touchmove', this.cancelPendingNavigationOnUserScroll, {
-        passive: true,
-      }),
+      this.on(window, 'wheel', this.cancelPendingNavigationOnUserScroll, options),
+      this.on(window, 'touchmove', this.cancelPendingNavigationOnUserScroll, options),
     ];
   }
 
@@ -263,7 +264,16 @@ export class VirtualizedTimelineNavigation {
   private cancelPendingNavigationOnUserScroll = (event: Event): void => {
     // The pin release below dispatches wheels of its own; only a person's input cancels.
     if (!isUserEvent(event)) return;
-    if (this.run) this.endRun('cancelled');
+    const state = this.run?.state;
+    // Wheel input outside the conversation leaves homing active.
+    if (
+      state &&
+      this.scrollTarget instanceof HTMLElement &&
+      !event.composedPath().includes(this.scrollTarget)
+    )
+      return;
+    if (state?.status === 'aligning' && state.glide) interruptSmoothScroll(this.scrollTarget);
+    if (state) this.endRun('cancelled');
     else this.clearPendingNavigation();
   };
 
@@ -275,12 +285,21 @@ export class VirtualizedTimelineNavigation {
     this.clearPendingNavigation();
     const target = this.scrollTarget;
     if (!target || this.disposed) return;
-    const id = marker.id;
+    const { id, navigationKey } = marker;
     const policy = this.homing.homing;
-    const markerIndex = (): number => this.markers.findIndex((item) => item.id === id);
+    const markerIndex = (): number =>
+      this.markers.findIndex((item) =>
+        navigationKey === undefined ? item.id === id : item.navigationKey === navigationKey,
+      );
     const live = (): HTMLElement | null => {
       const item = this.markers[markerIndex()];
       return item ? this.liveElement(item) : null;
+    };
+    const holdActive = (): void => {
+      this.hold.hold();
+      // Keep the selected turn when mounting replaces its preview hash.
+      const current = this.markers[markerIndex()];
+      if (current) this.setActiveTurn(current.id);
     };
     this.pendingNavigationId = id;
     this.listenForUserScroll();
@@ -314,9 +333,12 @@ export class VirtualizedTimelineNavigation {
             ? this.alignElement(element)
             : this.scrollCenterTo(this.centerOf(element), 'instant'),
         offAnchor: (element) => this.centerOf(element) - this.anchorLine(),
-        holdActive: () => this.hold.hold(),
+        holdActive,
         onWaiting: (waiting) => this.homing.onHomingWait?.(waiting),
-        onEnd: (reason) => this.endRun(reason),
+        onEnd: (reason) => {
+          if (reason === 'arrived') holdActive();
+          this.endRun(reason);
+        },
       },
       glide,
     );

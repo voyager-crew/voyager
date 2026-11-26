@@ -120,8 +120,8 @@ describe('virtualized active marker', () => {
     expect(navigation.activeTurnId).toBe('t-0');
   });
 
-  it("cancels estimated homing on a person's wheel and shows where the view is", async () => {
-    const { navigation, viewport, scrollTo } = fixture([null, 2000, 2400, 2800], [0], {
+  it('cancels homing when a widget stops the wheel from bubbling', async () => {
+    const { navigation, viewport, markers, scrollTo } = fixture([null, 2000, 2400, 2800], [0], {
       mode: 'step',
       releaseWith: 'wheel',
     });
@@ -130,11 +130,39 @@ describe('virtualized active marker', () => {
     expect(viewport.scrollTo).toHaveBeenCalledTimes(1);
     expect(navigation.activeTurnId).toBe('t-0');
 
-    const wheel = new Event('wheel');
+    const widget = markers[3].element;
+    widget.addEventListener('wheel', (event) => event.stopPropagation());
+    const wheel = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 120 });
     userEvents.add(wheel);
-    window.dispatchEvent(wheel);
+    expect(widget.dispatchEvent(wheel)).toBe(true);
     await vi.advanceTimersByTimeAsync(5000);
     expect(viewport.scrollTo).toHaveBeenCalledTimes(1);
     expect(navigation.activeTurnId).not.toBe('t-0');
+  });
+
+  it('stops an in-flight native glide before a user wheel takes over', async () => {
+    const { navigation, viewport, markers, scrollTo } = fixture([900, 1100, 1480], [], {
+      mode: 'step',
+      releaseWith: 'wheel',
+    });
+    scrollTo(900);
+    navigation.navigateToMarker('t-2');
+    expect(viewport.scrollTo).toHaveBeenLastCalledWith({ top: 1300, behavior: 'smooth' });
+
+    const preview = document.createElement('div');
+    document.body.appendChild(preview);
+    const previewWheel = new WheelEvent('wheel', { bubbles: true, deltaY: 120 });
+    userEvents.add(previewWheel);
+    preview.dispatchEvent(previewWheel);
+    expect(viewport.scrollTo).toHaveBeenCalledTimes(1);
+
+    viewport.scrollTop = 840;
+    const wheel = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: -120 });
+    userEvents.add(wheel);
+    expect(markers[0].element.dispatchEvent(wheel)).toBe(true);
+    expect(viewport.scrollTo).toHaveBeenLastCalledWith({ top: 840, behavior: 'instant' });
+
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(viewport.scrollTo).toHaveBeenCalledTimes(2);
   });
 });

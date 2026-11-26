@@ -94,6 +94,7 @@ export interface TimelineManifestOptions {
   readonly params: Readonly<Record<string, unknown>>;
   /** At least the `sinceEngine` of every param set. */
   readonly engine?: string;
+  readonly styles?: PluginManifest['contributes']['styles'];
 }
 
 /** A builtin site timeline: the `turnNavigator` primitive with the shared style and level settings. */
@@ -104,6 +105,7 @@ export function timelineManifest({
   matches,
   params,
   engine = '>=1.6.0',
+  styles,
 }: TimelineManifestOptions): PluginManifest {
   const i18n: Record<string, PluginLocalization> = {};
   for (const [locale, copy] of Object.entries(LOCALIZED)) {
@@ -131,6 +133,7 @@ export function timelineManifest({
       formFactors: ['desktop', 'mobile'],
     },
     contributes: {
+      ...(styles ? { styles } : {}),
       settings: {
         timelineStyle: {
           type: 'select',
