@@ -77,7 +77,8 @@ class CatalogTimelineTurnSource implements TimelineTurnSource {
   async initialize(signal: AbortSignal): Promise<boolean> {
     if (signal.aborted) return false;
     this.startHistory();
-    return this.refresh();
+    await this.history?.initialReady;
+    return !signal.aborted && this.refresh();
   }
   observe(callback: MutationCallback): MutationObserver {
     const observer = new MutationObserver((records, owner) => {

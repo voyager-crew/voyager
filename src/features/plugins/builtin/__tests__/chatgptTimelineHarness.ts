@@ -198,7 +198,7 @@ export function exchange(
  * these prompts, keyed like `exchange` keys its items (`turn-1`, `turn-2`…).
  * Without it every read fails, as on a page whose endpoint is unreachable.
  */
-export function serveConversation(prompts: readonly string[]): ReturnType<typeof vi.fn> {
+export function serveConversation(prompts: readonly string[]) {
   const mapping: Record<string, unknown> = { root: { id: 'root', parent: null, message: null } };
   let parent = 'root';
   prompts.forEach((prompt, index) => {

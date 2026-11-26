@@ -5,7 +5,7 @@
  * A turn's id is the same `c-<hash>` the DOM-only merge (`turnMerge`) gives
  * it, so stars and outline levels saved under mounted ids keep matching. The
  * hash is of the bubble's text once the turn has been seen mounted, and of the
- * history's text until then (the two are equal for a plain prompt). Repeats of
+ * original history text until then (the two are equal for a plain prompt). Repeats of
  * one text are numbered `~2`, `~3` in conversation order.
  *
  * A mounted turn joins its history entry by the key attribute it carries, or,
@@ -125,7 +125,9 @@ export class HistoryMerge {
     });
     // A prompt the history has caught up with is listed by its entry now.
     const listed = new Set(
-      history.map((turn) => this.seen.get(turn.key)?.hash ?? hashString(turn.summary)),
+      history.map(
+        (turn) => this.seen.get(turn.key)?.hash ?? turn.sourceHash ?? hashString(turn.summary),
+      ),
     );
     this.extras = this.extras.filter(
       (extra) => extra.reply || extra.element.isConnected || !listed.has(extra.hash),
@@ -182,7 +184,12 @@ export class HistoryMerge {
       element = document.createElement('div');
       this.placeholders.set(turn.key, element);
     }
-    return { element, hash: hashString(turn.summary), summary: turn.summary, center: 0 };
+    return {
+      element,
+      hash: turn.sourceHash ?? hashString(turn.summary),
+      summary: turn.summary,
+      center: 0,
+    };
   }
 
   private anchorOf(joined: readonly (string | null)[], index: number): Anchor {

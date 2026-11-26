@@ -4,12 +4,14 @@
  * the paths and key attributes come from site data, so a host rename ships
  * through the online catalog.
  */
+import { hashString } from '@/core/utils/hash';
 import type { SiteAdapter } from '@/features/plugins/types';
 import {
   type ChatGptApiTurn,
   ChatGptHistoryReader,
 } from '@/pages/content/export/adapter/chatgptHistoryApi';
 
+import { chatGptPromptPreview } from './chatGptPromptPreview';
 import type { CatalogTimelineHistory, HistoryTurn } from './historyLoader';
 
 const collapse = (text: string): string => text.replace(/\s+/g, ' ').trim();
@@ -18,11 +20,17 @@ const collapse = (text: string): string => text.replace(/\s+/g, ' ').trim();
 export function chatGptHistoryTurns(turns: readonly ChatGptApiTurn[]): HistoryTurn[] {
   return turns
     .filter((turn) => turn.user || turn.attachments.length)
-    .map((turn) => ({
-      key: turn.key,
-      summary: collapse(turn.user),
-      assistantSummary: collapse(turn.assistant),
-    }));
+    .map((turn) => {
+      const raw = collapse(turn.user);
+      // ChatGPT hides this attached browser metadata before rendering its prompt bubble.
+      const summary = collapse(chatGptPromptPreview(turn.user));
+      return {
+        key: turn.key,
+        summary,
+        ...(summary === raw ? {} : { sourceHash: hashString(raw) }),
+        assistantSummary: collapse(turn.assistant),
+      };
+    });
 }
 
 /** The reader the adapter's data names, or null: the rail then lists the turns it has seen. */
