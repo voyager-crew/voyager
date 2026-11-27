@@ -147,6 +147,10 @@ class CatalogTimelineTurnSource implements TimelineTurnSource {
     }
     return null;
   }
+  turnItem(element: HTMLElement): Element | null {
+    const selector = this.config.turnItemSelector;
+    return selector ? element.closest(selector) : null;
+  }
   viewport(element: HTMLElement): HTMLElement {
     if (this.config.scrollContainerSelector) {
       try {

@@ -78,6 +78,11 @@ export interface HomingGeometry {
   readonly scrollHeight: number;
 }
 
+interface TurnBounds {
+  readonly start: number;
+  readonly end: number;
+}
+
 /** What a run reads and moves; `VirtualizedTimelineNavigation` supplies it. */
 export interface HomingHost {
   readonly targetIndex: number;
@@ -94,6 +99,8 @@ export interface HomingHost {
   /** Mounted turns other than the target, ascending. */
   mounted(): MountedTurn[];
   geometry(): HomingGeometry;
+  /** The full mounted exchange, measured in the scroller's coordinates. */
+  boundsAt?(index: number): TurnBounds | undefined;
   jumpTo(center: number): void;
   align(element: HTMLElement, behavior: ScrollBehavior): void;
   /** Signed distance from the anchor line to the element's centre. */
@@ -185,6 +192,21 @@ function spend(stay: Stay<HomingState, HomingEvent>, budget: RunBudget): boolean
 
 type Seeking = Extract<HomingState, { readonly status: 'seeking' }>;
 
+function mountedReplyEdge(
+  host: HomingHost,
+  turns: readonly MountedTurn[],
+  line: number,
+  step: number,
+): number | undefined {
+  if (!host.boundsAt) return;
+  for (const { index } of turns) {
+    const bounds = host.boundsAt(index);
+    if (!bounds || bounds.start > line || bounds.end < line) continue;
+    const edge = index < host.targetIndex ? bounds.end : bounds.start;
+    if (Math.abs(edge - line) > step) return edge;
+  }
+}
+
 function seek(stay: Stay<Seeking, HomingEvent>, host: HomingHost, budget: RunBudget): void {
   let lastContents = '';
   let progressAt = Date.now();
@@ -216,12 +238,13 @@ function seek(stay: Stay<Seeking, HomingEvent>, host: HomingHost, budget: RunBud
     const nearest = Math.min(...turns.map((turn) => Math.abs(turn.index - host.targetIndex)));
     const walk = lostMountedTarget || (totalJumps > 0 && nearest >= closest);
     closest = Math.min(closest, nearest);
+    const geometry = host.geometry();
     const plan = estimateHoming({
       targetIndex: host.targetIndex,
       mounted: turns,
       bracket,
       anchor: host.anchor,
-      ...host.geometry(),
+      ...geometry,
     });
     if (plan.kind === 'edge') return stay.send({ type: 'atEdge' });
     if (plan.kind === 'jump') {
@@ -229,15 +252,20 @@ function seek(stay: Stay<Seeking, HomingEvent>, host: HomingHost, budget: RunBud
       jumps += 1;
       totalJumps += 1;
       host.holdActive();
+      const { offset, viewportHeight } = geometry;
+      const line = offset + viewportHeight * host.anchor;
+      const stride = viewportHeight * APPROACH_VIEWPORTS;
       let center = plan.center;
       if (walk && (lostMountedTarget || !plan.bracketed)) {
         // Steps of under a view measure every turn on the way, so the host's
         // layout holds still around the view.
-        const { offset, viewportHeight } = host.geometry();
-        const line = offset + viewportHeight * host.anchor;
-        const step = viewportHeight * APPROACH_VIEWPORTS;
-        center = Math.max(line - step, Math.min(line + step, center));
+        center = Math.max(line - stride, Math.min(line + stride, center));
       }
+      // Cross a measured reply in one move. Repeated short steps through the
+      // same long exchange can use up the search budget before the next mounts.
+      const edge = mountedReplyEdge(host, turns, line, stride);
+      if (edge !== undefined)
+        center = edge > line ? Math.max(center, edge) : Math.min(center, edge);
       return awaitAnswer(stay, host, ANSWER_CAP_MS, step, () => host.jumpTo(center));
     }
     awaitAnswer(stay, host, ANSWER_CAP_MS, step);
@@ -280,8 +308,8 @@ function align(stay: Stay<Aligning, HomingEvent>, host: HomingHost, budget: RunB
   let aims = 0;
   let stepped = false;
   let stepFrom = 0;
-  // A page that keeps changing (a reply still streaming) never reads as settled.
-  stay.scope.timer(() => stay.send({ type: 'end', reason: 'arrived' }), host.stallMs);
+  let closest = Infinity;
+  let progressAt = Date.now();
   const aim = (final = false): void => {
     const element = host.target();
     if (!element) return stay.send({ type: 'unmounted' });
@@ -289,7 +317,10 @@ function align(stay: Stay<Aligning, HomingEvent>, host: HomingHost, budget: RunB
     const off = host.offAnchor(element);
     const { offset, viewportHeight } = host.geometry();
     const step = viewportHeight * APPROACH_VIEWPORTS;
-    stepped = !final && !(aims === 0 && stay.state().glide) && Math.abs(off) > step;
+    const bounds = host.boundsAt?.(host.targetIndex);
+    // A live prompt can be many viewports away inside the reply already on screen.
+    const sameItem = bounds && bounds.start < offset + viewportHeight && bounds.end > offset;
+    stepped = !final && !sameItem && !(aims === 0 && stay.state().glide) && Math.abs(off) > step;
     if (stepped) {
       // ChatGPT places turns by its own height estimates: one far jump onto a
       // turn mounted well off the view re-lays the list out without it (#1116),
@@ -319,15 +350,21 @@ function align(stay: Stay<Aligning, HomingEvent>, host: HomingHost, budget: RunB
     if (stay.signal.aborted) return;
     const element = host.target();
     if (!element) return stay.send({ type: 'unmounted' });
-    const off = Math.abs(host.offAnchor(element));
-    const near = off <= host.geometry().viewportHeight * ALIGN_TOLERANCE;
-    if (!changed && near) return stay.send({ type: 'end', reason: 'arrived' });
+    const { offset, viewportHeight, scrollHeight } = host.geometry();
+    const maxOffset = Math.max(0, scrollHeight - viewportHeight);
+    const landing = Math.max(0, Math.min(maxOffset, offset + host.offAnchor(element)));
+    const remaining = Math.abs(offset - landing);
+    if (remaining < closest - 1) {
+      closest = remaining;
+      progressAt = Date.now();
+    }
+    const stalled = Date.now() - progressAt >= host.stallMs;
+    const near = remaining <= viewportHeight * ALIGN_TOLERANCE;
+    if (near && (!changed || stalled)) return stay.send({ type: 'end', reason: 'arrived' });
     if (near) return awaitAnswer(stay, host, ANSWER_CAP_MS, check);
-    // A step that moved nothing met a scroll edge: aim once from there.
-    if (stepped) return aim(Math.abs(host.geometry().offset - stepFrom) < 1);
-    // A scroll edge can hold the target short of the anchor: an aim that moved nothing is final.
-    if (aims >= MAX_AIMS || (!changed && aims > 1))
-      return stay.send({ type: 'end', reason: 'arrived' });
+    if (stalled || (!stepped && (aims >= MAX_AIMS || (!changed && aims > 1))))
+      return stay.send({ type: 'end', reason: 'stalled' });
+    if (stepped) return aim(Math.abs(offset - stepFrom) < 1);
     aim();
   };
   aim();

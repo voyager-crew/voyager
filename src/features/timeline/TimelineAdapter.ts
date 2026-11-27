@@ -31,6 +31,8 @@ export interface TimelineTurnSource {
   readonly homing?: TimelineHomingPolicy;
   /** The marker's element if the host has mounted it since the last read. */
   locate?(markerId: string): HTMLElement | null;
+  /** The mounted item that contains the prompt and its replies. */
+  turnItem?(element: HTMLElement): Element | null;
   initialize(signal: AbortSignal): Promise<boolean>;
   read(previous: TimelineMarker[]): TimelineTurnSnapshot;
   count(): number;

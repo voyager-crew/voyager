@@ -23,6 +23,7 @@ interface TimelineNavigationOptions {
   onHomingWait?(waiting: boolean): void;
   /** The marker's live element when the host mounted it after the last marker read. */
   locate?(markerId: string): HTMLElement | null;
+  turnItem?(element: HTMLElement): Element | null;
   getMarkers(): readonly TimelineNavigationMarker[];
   getMarkerTops(): readonly number[];
   getMarkerPositions(): readonly number[];
@@ -106,6 +107,7 @@ export class TimelineNavigation {
           {
             homing: options.homing,
             locate: options.locate,
+            turnItem: options.turnItem,
             onHomingWait: (waiting) => options.onHomingWait?.(waiting),
           },
         )
