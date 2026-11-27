@@ -112,10 +112,12 @@ the top of what is loaded it waits for the older page without scrolling again an
 marker (`gv-timeline-homing-wait`). A mounted target is aimed instantly (a near one glides) and aimed
 again when the host re-measures it. ChatGPT places unmeasured turns by its own estimates and
 re-anchors as it measures them, so a target mounted more than 0.9 of a view away, one its re-layout
-lost, or one a jump brought no nearer is approached in steps under a view. If an overshoot leaves
-usable measurements on both sides, the search can jump between them. An instant move counts as
-progress even when the mounted turns stay the same. A run ends on arrival, after `stallMs` (default 4 s) with nothing
-new mounted, after `edgePatienceMs` (default 10 s) waiting at the top, after 60 moves, or on a person's wheel or touch
+lost, or one a jump brought no nearer is approached in steps under a view. A measured exchange in
+the viewport can be crossed directly: navigation aims at its own prompt or jumps to its edge to
+mount the next exchange. If an overshoot leaves usable measurements on both sides, the search can
+jump between them. An instant move counts as progress even when the mounted turns stay the same.
+A run ends on arrival, after `stallMs` (default 4 s) without search or alignment progress,
+after `edgePatienceMs` (default 10 s) waiting at the top, after 60 moves, or on a person's wheel or touch
 (`isUserEvent`); both tunables come from `site.json`. `releaseWith: "wheel"` dispatches a scripted wheel
 in the scroll's direction before each navigation scroll, because ChatGPT pins its thread to the newest
 turn until a wheel arrives. The active marker is searched among the turns measured in the latest pass

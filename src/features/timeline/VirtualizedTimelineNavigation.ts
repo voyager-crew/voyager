@@ -20,6 +20,13 @@ import {
   scrollElementToAnchor,
   scrollToCenter,
 } from './scrollMotion';
+import {
+  isViewportAtBottom,
+  measureTurnBounds,
+  readScrollHeight,
+  readViewportHeight,
+  readViewportTop,
+} from './virtualizedViewport';
 
 type Dispose = () => void;
 
@@ -33,6 +40,7 @@ type NavigationMarker = TimelineNavigationMarker;
 export interface VirtualizedHomingOptions {
   readonly homing?: TimelineHomingPolicy;
   readonly locate?: (markerId: string) => HTMLElement | null;
+  readonly turnItem?: (element: HTMLElement) => Element | null;
   /** Whether a homing run is waiting for the host to load older turns. */
   readonly onHomingWait?: (waiting: boolean) => void;
 }
@@ -295,6 +303,12 @@ export class VirtualizedTimelineNavigation {
       const item = this.markers[markerIndex()];
       return item ? this.liveElement(item) : null;
     };
+    const boundsAt = (index: number) => {
+      const marker = this.markers[index];
+      const element = marker && this.liveElement(marker);
+      const item = element && this.homing.turnItem?.(element);
+      return item ? measureTurnBounds(item, this.scrollTarget) : undefined;
+    };
     const holdActive = (): void => {
       this.hold.hold();
       // Keep the selected turn when mounting replaces its preview hash.
@@ -327,6 +341,8 @@ export class VirtualizedTimelineNavigation {
           viewportHeight: this.getViewportHeight(),
           scrollHeight: this.getScrollHeight(),
         }),
+        // A history key identifies an exchange, so another item's reply can be skipped.
+        boundsAt: navigationKey === undefined ? undefined : boundsAt,
         jumpTo: (center) => this.scrollCenterTo(center, 'instant'),
         align: (element, behavior) =>
           behavior === 'smooth'
@@ -532,9 +548,7 @@ export class VirtualizedTimelineNavigation {
   }
 
   private getViewportTop(): number {
-    return this.scrollTarget && this.scrollTarget !== window
-      ? (this.scrollTarget as HTMLElement).getBoundingClientRect().top
-      : 0;
+    return readViewportTop(this.scrollTarget);
   }
 
   /** Offset from the conversation's start, also on a `column-reverse` scroller. */
@@ -543,22 +557,14 @@ export class VirtualizedTimelineNavigation {
   }
 
   private getViewportHeight(): number {
-    return this.scrollTarget && this.scrollTarget !== window
-      ? (this.scrollTarget as HTMLElement).clientHeight
-      : window.innerHeight || document.documentElement.clientHeight || 0;
+    return readViewportHeight(this.scrollTarget);
   }
 
   private getScrollHeight(): number {
-    return this.scrollTarget && this.scrollTarget !== window
-      ? (this.scrollTarget as HTMLElement).scrollHeight
-      : (document.scrollingElement || document.documentElement).scrollHeight;
+    return readScrollHeight(this.scrollTarget);
   }
 
   private isAtScrollBottom(): boolean {
-    const viewportHeight = this.getViewportHeight();
-    const scrollHeight = this.getScrollHeight();
-    return (
-      scrollHeight > viewportHeight && this.getScrollTop() + viewportHeight >= scrollHeight - 2
-    );
+    return isViewportAtBottom(this.scrollTarget);
   }
 }
