@@ -79,7 +79,7 @@ export function createGeminiTimelineStoragePolicy(
       const aliases = historyTimestampStore.getTurnIdAliases(nativeConversationId, id);
       return aliases.length > 0 ? aliases : [id];
     },
-    canEdit: (_marker, id) => getLegacyTurnIndex(id) === null,
+    canEdit: (marker, id) => !marker?.historyOnly && getLegacyTurnIndex(id) === null,
     // A star press finishes on the conversation that owned its marker, even after navigation.
     isCurrent: () => true,
     getConversationTitle: (markers) => getConversationTitle(url, markers),

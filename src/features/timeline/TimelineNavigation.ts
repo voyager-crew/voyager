@@ -1,47 +1,18 @@
 import { keyboardShortcutService } from '@/core/services/KeyboardShortcutService';
 
-import type { TimelineHomingPolicy } from './TimelineAdapter';
 import { VirtualizedTimelineNavigation } from './VirtualizedTimelineNavigation';
+import { startTimelineTurnMount } from './mountTimelineTurn';
+import {
+  getTimelineSpringProfile,
+  timelineFlowDuration,
+  watchMountedLanding,
+  type TimelineSpringProfile,
+} from './mountedTimelineScroll';
+import type { Direction, TimelineNavigationOptions } from './timelineNavigationTypes';
 
-export interface TimelineNavigationMarker {
-  id: string;
-  element: HTMLElement;
-  navigationKey?: string;
-  hash?: string;
-  center?: number;
-  measuredAt?: number;
-}
+export type { TimelineNavigationMarker } from './timelineNavigationTypes';
 
-type Direction = 'previous' | 'next';
-type TimelineSpringProfile = 'ios' | 'snappy' | 'gentle';
-
-interface TimelineNavigationOptions {
-  virtualized?: boolean;
-  /** Virtualized homing: remembered-offset bisection (default) or estimated jumps. */
-  homing?: TimelineHomingPolicy;
-  /** A homing run started or stopped waiting for the host to load older turns. */
-  onHomingWait?(waiting: boolean): void;
-  /** The marker's live element when the host mounted it after the last marker read. */
-  locate?(markerId: string): HTMLElement | null;
-  getMarkers(): readonly TimelineNavigationMarker[];
-  getMarkerTops(): readonly number[];
-  getMarkerPositions(): readonly number[];
-  getTrackHeight(): number;
-  /** Refresh an interaction target, or check for new turns at a navigation boundary. */
-  refreshMarkers(target: HTMLElement | null, direction?: Direction): boolean;
-  resolveStoredId(storedId: string): string | null;
-  onActiveChange(id: string | null): void;
-  onScroll(): void;
-  animateRunner(fromIndex: number, toIndex: number, duration: number): void;
-}
-
-export function getTimelineSpringProfile(): TimelineSpringProfile {
-  try {
-    const value = localStorage.getItem('geminiTimelineSpring');
-    if (value === 'snappy' || value === 'gentle') return value;
-  } catch {}
-  return 'ios';
-}
+export { getTimelineSpringProfile } from './mountedTimelineScroll';
 
 function easeScroll(
   t: number,
@@ -78,9 +49,11 @@ export class TimelineNavigation {
   private scrollContainer: HTMLElement | null = null;
   private viewportScrollTarget: EventTarget | null = null;
   private destroyed = false;
-  private isScrolling = false;
   private scrollAnimationGeneration = 0;
+  private isScrolling = false;
   private animationRaf: number | null = null;
+  private landing: ReturnType<typeof watchMountedLanding> | null = null;
+  private historyMount: ReturnType<typeof startTimelineTurnMount> | null = null;
   private scrollRaf: number | null = null;
   private lastActiveChangeTime = 0;
   private pendingActiveId: string | null = null;
@@ -120,6 +93,7 @@ export class TimelineNavigation {
     if (this.destroyed || viewport === this.scrollContainer) return;
     this.viewportScrollTarget?.removeEventListener('scroll', this.onViewportScroll);
     this.cancelScrollAnimation();
+    this.cancelHistoryMount();
     this.scrollContainer = viewport;
     this.viewportScrollTarget =
       this.virtualized && (viewport === document.documentElement || viewport === document.body)
@@ -147,7 +121,7 @@ export class TimelineNavigation {
   computeActiveByScroll(): void {
     const viewport = this.scrollContainer;
     const markers = this.options.getMarkers();
-    if (this.destroyed || this.isScrolling || !viewport || markers.length === 0) return;
+    if (this.destroyed || this.isScrolling || !viewport || !markers.length) return;
     if (this.virtualized) {
       this.virtualized.measure();
       this.virtualized.refreshActive();
@@ -157,8 +131,12 @@ export class TimelineNavigation {
     const scrollTop = viewport.scrollTop;
     const reference = scrollTop + viewport.clientHeight * 0.45;
     const tops = this.options.getMarkerTops();
-    let activeId = markers[0].id;
-    if (tops.length === markers.length) {
+    const firstMounted = markers[0].historyOnly
+      ? markers.findIndex((marker) => !marker.historyOnly)
+      : 0;
+    if (firstMounted < 0) return;
+    let activeId = markers[firstMounted].id;
+    if (firstMounted === 0 && tops.length === markers.length) {
       let low = 0;
       let high = tops.length;
       while (low < high) {
@@ -169,7 +147,8 @@ export class TimelineNavigation {
       activeId = markers[Math.max(0, low - 1)].id;
     } else {
       const viewportRect = viewport.getBoundingClientRect();
-      for (const marker of markers) {
+      for (let index = firstMounted; index < markers.length; index++) {
+        const marker = markers[index];
         const top = marker.element.getBoundingClientRect().top - viewportRect.top + scrollTop;
         if (top > reference) break;
         activeId = marker.id;
@@ -197,16 +176,7 @@ export class TimelineNavigation {
   }
 
   computeFlowDuration(fromIndex: number, toIndex: number): number {
-    let base = 650;
-    try {
-      const stored = parseInt(localStorage.getItem('geminiTimelineFlowDurationMs') || '650', 10);
-      base = Math.max(300, Math.min(1800, Number.isFinite(stored) ? stored : 650));
-    } catch {}
-    if (fromIndex < 0 || toIndex < 0) return base;
-    const positions = this.options.getMarkerPositions();
-    const span = Math.abs(positions[toIndex] - positions[fromIndex]);
-    const height = Math.max(1, this.options.getTrackHeight() || 1);
-    return Math.round(base * Math.max(0.6, Math.min(1.6, span / height)));
+    return timelineFlowDuration(fromIndex, toIndex, this.options);
   }
 
   smoothScrollTo(target: HTMLElement, duration = 600): void {
@@ -214,13 +184,23 @@ export class TimelineNavigation {
     if (this.destroyed || !viewport) return;
     this.cancelScrollAnimation();
     const generation = this.scrollAnimationGeneration;
-    const viewportRect = viewport.getBoundingClientRect();
-    const targetRect = target.getBoundingClientRect();
-    const destination = targetRect.top - viewportRect.top + viewport.scrollTop;
     const start = viewport.scrollTop;
+    const destination =
+      target.getBoundingClientRect().top - viewport.getBoundingClientRect().top + start;
+    const id = this.options.getMarkers().find(({ element }) => element === target)?.id;
+    const readTarget = () =>
+      viewport.contains(target)
+        ? target
+        : this.options.getMarkers().find((marker) => marker.id === id)?.element;
+    this.landing = watchMountedLanding(viewport, readTarget, () => {
+      this.cancelScrollAnimation();
+      this.clearPendingNavigationCommit();
+      this.navigationActiveLockUntil = 0;
+      this.scheduleScrollSync();
+    });
     const distance = destination - start;
     if (this.mode === 'jump' || duration <= 0) {
-      viewport.scrollTop = destination;
+      this.landing.land(destination);
       return;
     }
     const spring = getTimelineSpringProfile();
@@ -235,30 +215,38 @@ export class TimelineNavigation {
       if (elapsed < duration) {
         this.animationRaf = requestAnimationFrame(animate);
       } else {
-        viewport.scrollTop = destination;
+        this.landing?.land(destination);
         this.isScrolling = false;
       }
     };
     this.animationRaf = requestAnimationFrame(animate);
   }
 
-  navigateToMarker(turnId: string, index = -1, source: 'dot' | 'preview' = 'dot'): void {
+  navigateToMarker(
+    turnId: string,
+    index = -1,
+    source: 'dot' | 'preview' = 'dot',
+  ): void | Promise<void> {
     if (this.destroyed) return;
     if (this.virtualized) {
       this.options.refreshMarkers(null);
       this.virtualized.navigateTo(turnId);
       return;
     }
+    this.cancelHistoryMount();
     const resolveTarget = () => {
       const markers = this.options.getMarkers();
       const idIndex = markers.findIndex((marker) => marker.id === turnId);
-      const targetIndex =
-        source === 'preview' ? (idIndex >= 0 ? idIndex : index) : markers[index] ? index : idIndex;
+      const useId =
+        !markers[index] || (idIndex >= 0 && (source === 'preview' || this.options.mountTurn));
+      const targetIndex = useId ? idIndex : index;
       return { marker: markers[targetIndex], targetIndex };
     };
     let target = resolveTarget();
     if (this.options.refreshMarkers(target.marker?.element ?? null)) target = resolveTarget();
-    if (!target.marker) return;
+    const { marker } = target;
+    if (!marker) return;
+    if (marker.historyOnly) return this.navigateToHistoryTurn(marker.id, marker.element);
     const fromIndex = this.getActiveIndex();
     const duration = this.computeFlowDuration(fromIndex, target.targetIndex);
     // Read scroll geometry before active/runner writes on a dot click.
@@ -276,7 +264,6 @@ export class TimelineNavigation {
     this.commitActiveMarkerAfterNavigation(target.marker.id, duration);
   }
 
-  /** Holds the shortcut lease for this conversation; destroy() hands the keys back. */
   initKeyboardShortcuts(): Promise<void> {
     if (this.destroyed || this.releaseShortcuts) return this.shortcutsReady;
     try {
@@ -378,7 +365,8 @@ export class TimelineNavigation {
       const marker = this.options.getMarkers().find((item) => item.id === id);
       if (!marker) return false;
       schedule(() => {
-        this.smoothScrollTo(marker.element, 800);
+        if (marker.historyOnly) void this.navigateToMarker(marker.id);
+        else this.smoothScrollTo(marker.element, 800);
         schedule(clearHash, 900);
       }, 100);
       return true;
@@ -426,6 +414,33 @@ export class TimelineNavigation {
     if (this.animationRaf !== null) cancelAnimationFrame(this.animationRaf);
     this.animationRaf = null;
     this.isScrolling = false;
+    void this.landing?.stop();
+    this.landing = null;
+  }
+
+  private cancelHistoryMount(): void {
+    void this.historyMount?.stop();
+    this.historyMount = null;
+  }
+
+  private navigateToHistoryTurn(id: string, placeholder: HTMLElement): Promise<void> | undefined {
+    const viewport = this.scrollContainer;
+    const { mountTurn } = this.options;
+    if (!viewport || !mountTurn) return;
+    this.cancelScrollAnimation();
+    this.clearPendingNavigationCommit();
+    this.navigationActiveLockUntil = 0;
+    this.historyMount = startTimelineTurnMount(
+      viewport,
+      (signal) => mountTurn(id, viewport, signal),
+      this.options.onHomingWait,
+      () => {
+        this.options.refreshMarkers(placeholder);
+        if (this.options.getMarkers().some((marker) => marker.id === id && !marker.historyOnly))
+          void this.navigateToMarker(id);
+      },
+    );
+    return this.historyMount.finished;
   }
 
   private clearActiveChange(): void {
@@ -486,8 +501,11 @@ export class TimelineNavigation {
   }
 
   private async performNodeNavigation(targetIndex: number, currentIndex: number): Promise<void> {
+    this.cancelHistoryMount();
     this.clearPendingNavigationCommit();
-    this.options.refreshMarkers(this.options.getMarkers()[targetIndex]?.element ?? null);
+    const target = this.options.getMarkers()[targetIndex];
+    if (target?.historyOnly) return this.navigateToMarker(target.id);
+    this.options.refreshMarkers(target?.element ?? null);
     const marker = this.options.getMarkers()[targetIndex];
     if (!marker) return;
     if (this.virtualized) {

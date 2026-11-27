@@ -22,6 +22,8 @@ export interface TimelineMarker {
   assistantSummary: string;
   baseN: number;
   starred: boolean;
+  /** A known native turn whose transcript has not been mounted yet. */
+  historyOnly?: true;
   /** The host's turn key stays stable when an unmounted preview gets its live text. */
   navigationKey?: string;
   /** Remembered plugin geometry for turns outside a virtualized DOM window. */

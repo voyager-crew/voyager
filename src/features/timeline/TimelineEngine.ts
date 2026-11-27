@@ -67,6 +67,7 @@ export class TimelineEngine {
       virtualized: adapter.turns.navigation === 'virtualized',
       homing: adapter.turns.homing,
       locate: (id) => adapter.turns.locate?.(id) ?? null,
+      mountTurn: adapter.turns.mountTurn?.bind(adapter.turns),
       getMarkers: () => this.state.markers,
       getMarkerTops: () => this.view.markerTops,
       getMarkerPositions: () => this.view.yPositions,

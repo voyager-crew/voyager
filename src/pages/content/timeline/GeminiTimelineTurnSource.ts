@@ -12,9 +12,12 @@ import {
 import type { TimelineTurnSource, TimelineTurnSnapshot } from '@/features/timeline/TimelineAdapter';
 import type { TimelineMarker } from '@/features/timeline/types';
 
+import { isServerTurnId } from '../fork/turnId';
 import { nativeHealthReporter } from '../nativeHealth';
 import { hasRenderedConversationContent } from '../nativeHealth/pageEvidence';
 import { TimelineTurns } from './TimelineTurns';
+import { startGeminiTimelineHistory } from './geminiTimelineHistory';
+import { mountGeminiHistoryTurn } from './mountGeminiHistoryTurn';
 
 interface TurnSelection {
   readonly view: GeminiTurnView;
@@ -26,6 +29,9 @@ export class GeminiTimelineTurnSource implements TimelineTurnSource {
   constructor(private readonly reportHealth = true) {}
   readonly navigation = 'mounted';
   readonly text = new TimelineTurns();
+  private readonly path = location.pathname;
+  private history: ReturnType<typeof startGeminiTimelineHistory> = null;
+  private notifyHistory: (() => void) | null = null;
   private selection: TurnSelection | null = null;
   private userOverride = '';
   private autoDetected = '';
@@ -69,7 +75,8 @@ export class GeminiTimelineTurnSource implements TimelineTurnSource {
         recheck: () => !!this.selection?.root.querySelector(this.selection.selector),
         expected: () => hasRenderedConversationContent(),
       });
-    return { mountedCount, markers: this.text.commit(accepted.plan) };
+    const mounted = this.text.commit(accepted.plan);
+    return { mountedCount, markers: this.history?.prepend(mounted) ?? mounted };
   }
   refresh(): boolean {
     if (!this.selection) return false;
@@ -83,11 +90,22 @@ export class GeminiTimelineTurnSource implements TimelineTurnSource {
   }
   observe(callback: MutationCallback): MutationObserver {
     this.observer?.disconnect();
-    this.observer = new MutationObserver(callback);
-    if (this.root) this.observer.observe(this.root, { childList: true, subtree: true });
-    return this.observer;
+    const observer = new MutationObserver(callback);
+    this.observer = observer;
+    if (this.root) observer.observe(this.root, { childList: true, subtree: true });
+    this.notifyHistory = () => callback([], observer);
+    this.history ??= startGeminiTimelineHistory(this.path, () => this.notifyHistory?.());
+    return observer;
+  }
+  mountTurn(id: string, viewport: HTMLElement, signal: AbortSignal): Promise<HTMLElement | null> {
+    return this.selection && isServerTurnId(id)
+      ? mountGeminiHistoryTurn(viewport, id, this.selection.selector, this.path, signal)
+      : Promise.resolve(null);
   }
   stop(): void {
+    this.history?.stop();
+    this.history = null;
+    this.notifyHistory = null;
     this.observer?.disconnect();
     this.observer = null;
     if (this.reportHealth) nativeHealthReporter.withdraw('timeline');

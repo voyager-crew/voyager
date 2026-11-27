@@ -1,3 +1,4 @@
+// @vitest-environment-options { "url": "https://gemini.google.com/u/2/app/abcdef0123456789" }
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -42,7 +43,10 @@ function installObserver(limits?: {
   (0, eval)(source);
 }
 
-function dispatchCommand(type: 'configure' | 'flush' | 'ack', payload?: unknown): void {
+function dispatchCommand(
+  type: 'configure' | 'flush' | 'ack' | 'timeline-start' | 'timeline-stop',
+  payload?: unknown,
+): void {
   const event = new MessageEvent('message', {
     data: { source: 'gv-history-observer-cmd', type, payload },
     origin: window.location.origin,
@@ -69,6 +73,7 @@ describe('conversation history observer', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    history.replaceState(null, '', '/u/2/app/abcdef0123456789');
     delete (window as HistoryObserverWindow).__gvHistoryObserverInstalled;
     fetchMock = vi.fn();
     Object.defineProperty(window, 'fetch', {
@@ -135,6 +140,57 @@ describe('conversation history observer', () => {
       url: HISTORY_URL,
       body: 'history-body',
     });
+  });
+
+  it('reads older pages with the observed Gemini cursor and shares only prompt summaries', async () => {
+    const path = location.pathname;
+    const cid = 'c_abcdef0123456789';
+    const endpoint = new URL('/u/2/_/BardChatUi/data/batchexecute', location.origin);
+    endpoint.searchParams.set('rpcids', 'hNvQHb');
+    endpoint.searchParams.set('source-path', path);
+    const args = [cid, 10, null, 1, [1], [4, 12], null, 1];
+    const form = new URLSearchParams({
+      'f.req': JSON.stringify([[['hNvQHb', JSON.stringify(args), null, 'generic']]]),
+      at: 'native-form-token',
+    });
+    const page = (turn: string, prompt: string, next: string | null) => {
+      const payload = [[[[cid, turn], null, [[prompt]], ['full reply']]], next];
+      return `)]}'\n123\n${JSON.stringify([['wrb.fr', 'hNvQHb', JSON.stringify(payload)]])}\n`;
+    };
+    const packets = () =>
+      postMessageSpy.mock.calls
+        .filter(([message]) => message.type === 'timeline-page')
+        .map(([message]) => message.payload);
+
+    fetchMock.mockResolvedValueOnce(
+      responseWithBody(page('r_aaaaaaaaaaaaaaaa', 'Newest', 'older-cursor')),
+    );
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      text: async () => page('r_bbbbbbbbbbbbbbbb', 'Older', 'older-cursor'),
+    });
+    installObserver();
+    dispatchCommand('configure', { enabled: true });
+    dispatchCommand('timeline-start', { path: path.replace('/u/2', '/u/3'), id: 'other' });
+    const firstRequest = new Request(endpoint.href, { method: 'POST', body: form.toString() });
+    await window.fetch(firstRequest);
+    expect(await firstRequest.text()).toBe(form.toString());
+    await flushPromises();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    dispatchCommand('timeline-start', { path, id: 'rail' });
+    await vi.waitFor(() => expect(packets()).toHaveLength(2));
+    const [url, init] = fetchMock.mock.calls[1];
+    const olderForm = new URLSearchParams(init.body);
+    const call = JSON.parse(olderForm.get('f.req') ?? '')[0][0];
+    expect(new URL(url).pathname).toBe('/u/2/_/BardChatUi/data/batchexecute');
+    expect(init.credentials).toBe('same-origin');
+    expect(JSON.parse(call[1])).toEqual([cid, 10, 'older-cursor', 1, [1], [4, 12], null, 1]);
+    expect(olderForm.get('at')).toBe('native-form-token');
+    expect(packets()).toEqual([
+      { path, id: 'rail', page: 0, turns: [['r_aaaaaaaaaaaaaaaa', 'Newest']], hasOlder: true },
+      { path, id: 'rail', page: 1, turns: [['r_bbbbbbbbbbbbbbbb', 'Older']], hasOlder: false },
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('announces a history request until its body has arrived', async () => {

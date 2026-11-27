@@ -31,6 +31,12 @@ export interface TimelineTurnSource {
   readonly homing?: TimelineHomingPolicy;
   /** The marker's element if the host has mounted it since the last read. */
   locate?(markerId: string): HTMLElement | null;
+  /** Ask a mounted host to load a known older turn after the user selects it. */
+  mountTurn?(
+    markerId: string,
+    viewport: HTMLElement,
+    signal: AbortSignal,
+  ): Promise<HTMLElement | null>;
   initialize(signal: AbortSignal): Promise<boolean>;
   read(previous: TimelineMarker[]): TimelineTurnSnapshot;
   count(): number;
