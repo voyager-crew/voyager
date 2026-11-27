@@ -30,6 +30,7 @@ Use `package.json`, build configs, manifests and CI to verify command names and 
 - Generate `dist_*` through build scripts; never edit them directly. Never commit `.env` or secrets.
 - Never grant a page or feature direct `<all_urls>` permission without explicit user approval.
 - Gemini conversation navigation uses native in-app links first, then History API/router events. Full reloads (`location.assign`, `location.href`, `location.reload`) require explicit user acceptance for normal session navigation.
+- Voyager reads a host's conversation data from the requests the host page sends itself, and any new request Voyager sends to a host's endpoints for the user needs explicit user approval first; the approved ones are ChatGPT's session, account and conversation reads, Claude's usage read, Grok's conversation read and the Gemini fork-link check.
 - Popup Material Symbols use bundled `public/fonts/` assets. Check new glyphs locally or update the bundle; do not introduce a remote Google Fonts URL.
 - Every local `xcodebuild` uses `-derivedDataPath .build/safari-native-test-derived -clonedSourcePackagesDirPath .build/sparkle-source-packages`. Only CI uses `.build/ci-xcode-derived`. `bun run clean:build` reclaims derived data while retaining the SPM cache.
 
