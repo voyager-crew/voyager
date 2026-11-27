@@ -8,6 +8,7 @@ import { CHATGPT_LOCAL_BRIDGE_MANIFEST } from './chatgptLocalBridge/manifest';
 import { chatgptPageData } from './chatgptPageData';
 import { CHATGPT_PRO_USAGE_MANIFEST, isChatGptProUsageSupported } from './chatgptProUsage/manifest';
 import { CHATGPT_RESPONSE_NOTIFICATION_MANIFEST } from './chatgptResponseNotification/manifest';
+import { CHATGPT_TIMELINE_TABLE_STYLE } from './chatgptTimelineTableStyle';
 import { GEMINI_BATCH_DELETE_MANIFEST } from './geminiBatchDeleteManifest';
 import { GEMINI_CANVAS_COPY_MANIFEST } from './geminiCanvasCopyManifest';
 import { GEMINI_CHAT_WIDTH_MANIFEST } from './geminiChatWidthManifest';
@@ -195,6 +196,7 @@ export const BUILTIN_PLUGINS: readonly PluginManifest[] = [
     version: '1.1.0',
     matches: ['https://chatgpt.com/*', 'https://chat.openai.com/*'],
     engine: '>=2.3.2',
+    styles: [{ css: CHATGPT_TIMELINE_TABLE_STYLE }],
     // Selectors and the URL's conversation id come from the ChatGPT
     // adapter, so fixes travel with site.json. ChatGPT unmounts whole
     // exchange items off-screen, so the rail accumulates them. A star is

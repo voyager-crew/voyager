@@ -115,6 +115,52 @@ describe('ChatGPT timeline homing', () => {
     expect(scrollTo).toHaveBeenCalledTimes(calls);
   });
 
+  it('lands on the same history turn when the mounted text changes its hash', async () => {
+    serveConversation(PROMPTS);
+    const { top } = pinnedScroller();
+    const items = openAtBottom();
+    bubble(items[2]).getBoundingClientRect = rect(100);
+    bubble(items[3]).getBoundingClientRect = rect(400);
+    await mount();
+
+    expect(dots()[0].getAttribute('aria-label')).toBe('Opening question');
+    dots()[0].click();
+    await settle(150);
+    const mounted = mountOpening(items, 300);
+    bubble(mounted).textContent = 'Opening question with rendered attachment';
+    bubble(mounted).getBoundingClientRect = () => rect(950 - top())();
+    await settle(1_000);
+
+    expect(dots()[0].getAttribute('aria-label')).toBe('Opening question with rendered attachment');
+    expect(dots()[0].getAttribute('aria-current')).toBe('true');
+    expect(Math.abs(top() - 700)).toBeLessThan(72);
+  });
+
+  it('lands on a keyed ChatGPT attachment without a user text bubble', async () => {
+    serveConversation(PROMPTS);
+    const { top } = pinnedScroller();
+    const items = openAtBottom();
+    bubble(items[2]).getBoundingClientRect = rect(100);
+    bubble(items[3]).getBoundingClientRect = rect(400);
+    await mount();
+
+    dots()[0].click();
+    await settle(150);
+    const attachment = document.createElement('div');
+    attachment.setAttribute('data-chatgpt-search-unit-key', '');
+    attachment.append(document.createElement('img'));
+    attachment.getBoundingClientRect = () => rect(950 - top())();
+    const heading = document.createElement('h4');
+    heading.setAttribute('data-conversation-role', 'user');
+    bubble(items[0]).replaceWith(heading, attachment);
+    items[2].before(items[0]);
+    await settle(1_000);
+
+    expect(dots()[0].getAttribute('aria-label')).toBe('Opening question');
+    expect(dots()[0].getAttribute('aria-current')).toBe('true');
+    expect(Math.abs(top() - 700)).toBeLessThan(72);
+  });
+
   it('waits at the start for the older page without scrolling again, then aligns', async () => {
     serveConversation(PROMPTS);
     const { scrollTo, top } = pinnedScroller();
@@ -243,11 +289,47 @@ describe('ChatGPT timeline homing', () => {
     // The mounted pitch puts it at 1620, 50px above the view: a jump that alone
     // lands on the same window, again and again, until the run stalls.
     expect(scrollTo.mock.calls[0][0].top).toBeLessThanOrEqual(1400 - 0.75 * 600);
-    await settle(3_000);
+    await settle(350);
 
     // 1100 + 20 - 270: on the anchor.
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 850, behavior: 'instant' });
     expect(dots()[1].getAttribute('aria-current')).toBe('true');
+  });
+
+  it('corrects a far overshoot without walking through unrelated replies', async () => {
+    const prompts = ['First', 'Second', 'Target', 'Fourth', 'Overshoot'];
+    serveConversation(prompts);
+    const { scroller, scrollTo } = pinnedScroller();
+    Object.defineProperty(scroller, 'scrollHeight', { configurable: true, value: 17_000 });
+    let position = 1400;
+    Object.defineProperty(scroller, 'scrollTop', { configurable: true, get: () => position });
+    const items = prompts.map((prompt, index) => {
+      const item = exchange(prompt);
+      const top = [1500, 5800, 6200, 8500, 10300][index];
+      bubble(item).getBoundingClientRect = () => rect(top - position)();
+      if (index >= 2) item.remove();
+      return item;
+    });
+    scrollTo.mockImplementation((options: ScrollToOptions) => {
+      position = options.top ?? position;
+      const mounted = position > 8000 ? [4] : position >= 5200 ? [2] : [0, 1];
+      // The host mounts the landing window on the frame after the scroll.
+      setTimeout(() => {
+        items.forEach((item, index) => {
+          if (!mounted.includes(index)) item.remove();
+          else if (!item.isConnected) scroller.firstElementChild!.append(item);
+        });
+      }, 16);
+    });
+    await mount();
+
+    dots()[2].click();
+    expect(position).toBeGreaterThan(8000);
+    await settle(950);
+
+    expect(items[2].isConnected).toBe(true);
+    expect(Math.abs(position - 5950)).toBeLessThan(72);
+    expect(dots()[2].getAttribute('aria-current')).toBe('true');
   });
 
   it('approaches a turn mounted far off the view in steps ChatGPT keeps it mounted through', async () => {

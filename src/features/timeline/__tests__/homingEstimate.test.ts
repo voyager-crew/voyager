@@ -122,4 +122,63 @@ describe('estimated homing', () => {
       }),
     ).toEqual({ kind: 'edge' });
   });
+
+  it('moves past a long reply when the pinned newest turn estimates the current position', () => {
+    const offset = 60_000;
+    const line = offset + VIEW * ANCHOR;
+    const plan = estimateHoming({
+      targetIndex: 20,
+      mounted: [
+        { index: 19, center: line - 2_000 },
+        { index: 54, center: line + 68_000 },
+      ],
+      offset,
+      viewportHeight: VIEW,
+      scrollHeight: 140_000,
+      anchor: ANCHOR,
+    });
+    expect(plan.kind === 'jump' && plan.center - line).toBeGreaterThan(VIEW / 2);
+  });
+
+  it('keeps a long jump bracket usable after mounting changes the scroll height', () => {
+    const bracket: HomingBracket = {};
+    const input = { targetIndex: 7, viewportHeight: VIEW, anchor: ANCHOR, bracket };
+    estimateHoming({
+      ...input,
+      mounted: [{ index: 26, center: 83_000 }],
+      offset: 82_000,
+      scrollHeight: 141_000,
+    });
+    const plan = estimateHoming({
+      ...input,
+      mounted: [{ index: 0, center: 1200 }],
+      offset: 2400,
+      scrollHeight: 143_400,
+    });
+    expect(plan.kind === 'jump' && plan.center).toBeGreaterThan(20_000);
+    expect(plan.kind === 'jump' && plan.center).toBeLessThan(30_000);
+  });
+
+  it('probes between two landing windows instead of jumping back and forth', () => {
+    const bracket: HomingBracket = {};
+    const input = {
+      targetIndex: 52,
+      viewportHeight: VIEW,
+      anchor: ANCHOR,
+      bracket,
+      scrollHeight: 10_000,
+    };
+    const from = 3150;
+    const first = estimateHoming({
+      ...input,
+      mounted: [{ index: 51, center: 2400 }],
+      offset: from,
+    });
+    expect(first.kind).toBe('jump');
+    if (first.kind !== 'jump') throw new Error('Expected a jump to the other side');
+    const to = first.center - VIEW * ANCHOR;
+    const next = estimateHoming({ ...input, mounted: [{ index: 53, center: 4300 }], offset: to });
+    expect(next.kind === 'jump' && next.center - VIEW * ANCHOR).toBeGreaterThan(from);
+    expect(next.kind === 'jump' && next.center - VIEW * ANCHOR).toBeLessThan(to);
+  });
 });

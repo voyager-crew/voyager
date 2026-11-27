@@ -126,6 +126,7 @@ function awaitAnswer(
   host: HomingHost,
   cap: number,
   read: (changed: boolean) => void,
+  move?: () => void,
 ): void {
   const start = signature(host);
   let quiet: (() => void) | null = null;
@@ -163,6 +164,12 @@ function awaitAnswer(
     'homingAnswer',
   );
   stopCap = stay.scope.timer(() => finish(signature(host) !== start), cap);
+  if (move) {
+    // An instant scroll can move before its event arrives. Count that progress
+    // from the position before the move, even if the same turns stay mounted.
+    move();
+    changed();
+  }
 }
 
 /** Moves one run has made, shared by its stays. */
@@ -184,8 +191,7 @@ function seek(stay: Stay<Seeking, HomingEvent>, host: HomingHost, budget: RunBud
   let jumps = 0;
   let totalJumps = 0;
   const bracket: HomingBracket = {};
-  // Set when the host lost a target it had mounted, or a jump made no progress.
-  let walk = stay.state().walk;
+  const lostMountedTarget = stay.state().walk;
   let closest = Infinity;
   const step = (): void => {
     if (stay.signal.aborted) return;
@@ -204,10 +210,11 @@ function seek(stay: Stay<Seeking, HomingEvent>, host: HomingHost, budget: RunBud
     // long reply can fill the view with no prompt bubble in it (#1116).
     const turns = host.mounted();
     // ChatGPT places unmeasured turns by its own estimates and re-anchors as it
-    // measures them, so a jump can land on the same far side every time (#1116):
-    // a jump that brought no turn nearer switches the rest of the walk to steps.
+    // measures them, so repeated estimates that make no progress need short
+    // steps until a closer window mounts. An overshoot can still give us a
+    // usable bracket around the target.
     const nearest = Math.min(...turns.map((turn) => Math.abs(turn.index - host.targetIndex)));
-    if (totalJumps > 0 && nearest >= closest) walk = true;
+    const walk = lostMountedTarget || (totalJumps > 0 && nearest >= closest);
     closest = Math.min(closest, nearest);
     const plan = estimateHoming({
       targetIndex: host.targetIndex,
@@ -223,7 +230,7 @@ function seek(stay: Stay<Seeking, HomingEvent>, host: HomingHost, budget: RunBud
       totalJumps += 1;
       host.holdActive();
       let center = plan.center;
-      if (walk) {
+      if (walk && (lostMountedTarget || !plan.bracketed)) {
         // Steps of under a view measure every turn on the way, so the host's
         // layout holds still around the view.
         const { offset, viewportHeight } = host.geometry();
@@ -231,7 +238,7 @@ function seek(stay: Stay<Seeking, HomingEvent>, host: HomingHost, budget: RunBud
         const step = viewportHeight * APPROACH_VIEWPORTS;
         center = Math.max(line - step, Math.min(line + step, center));
       }
-      host.jumpTo(center);
+      return awaitAnswer(stay, host, ANSWER_CAP_MS, step, () => host.jumpTo(center));
     }
     awaitAnswer(stay, host, ANSWER_CAP_MS, step);
   };
@@ -289,8 +296,9 @@ function align(stay: Stay<Aligning, HomingEvent>, host: HomingHost, budget: RunB
       // while steps of under a view keep it mounted all the way.
       host.holdActive();
       stepFrom = offset;
-      host.jumpTo(offset + viewportHeight * host.anchor + Math.sign(off) * step);
-      return awaitAnswer(stay, host, ANSWER_CAP_MS, check);
+      return awaitAnswer(stay, host, ANSWER_CAP_MS, check, () => {
+        host.jumpTo(offset + viewportHeight * host.anchor + Math.sign(off) * step);
+      });
     }
     aims += 1;
     host.holdActive();

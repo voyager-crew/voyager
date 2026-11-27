@@ -6,6 +6,7 @@ import { VirtualizedTimelineNavigation } from './VirtualizedTimelineNavigation';
 export interface TimelineNavigationMarker {
   id: string;
   element: HTMLElement;
+  navigationKey?: string;
   hash?: string;
   center?: number;
   measuredAt?: number;

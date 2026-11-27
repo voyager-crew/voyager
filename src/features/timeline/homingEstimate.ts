@@ -8,10 +8,10 @@
  * The estimate places the target by its ordinal: interpolated between the
  * nearest turns seen on either side of it, or extrapolated with the mounted
  * window's own pitch. The host swaps estimated heights for measured ones as
- * turns mount, which moves every offset by thousands of pixels, so a side
- * seen under another scroll height is not used, and an extrapolation that
- * reverses direction is halved each time: an overshoot converges instead of
- * swinging between the same far windows.
+ * turns mount, which moves offsets by thousands of pixels. A narrow bracket
+ * needs measurements from the same layout, while a wide bracket can still
+ * give a useful coarse jump after a small reflow. An extrapolation that
+ * reverses direction is halved to avoid swinging between distant windows.
  */
 
 export interface MountedTurn {
@@ -31,6 +31,7 @@ export interface HomingBracket {
   above?: SeenTurn;
   direction?: -1 | 1;
   scale?: number;
+  lastProbe?: { readonly offset: number; readonly height: number };
 }
 
 export interface HomingEstimateInput {
@@ -49,7 +50,7 @@ export interface HomingEstimateInput {
 
 export type HomingEstimate =
   /** Put this centre on the anchor line. */
-  | { readonly kind: 'jump'; readonly center: number }
+  | { readonly kind: 'jump'; readonly center: number; readonly bracketed: boolean }
   /** The target lies past what is loaded and the view already sits at that edge. */
   | { readonly kind: 'edge' }
   /** Nothing mounted to estimate from yet. */
@@ -64,7 +65,10 @@ const EDGE_SLOP = 1;
 const MIN_PROBE_VIEWPORTS = 0.75;
 /** A remembered side stays usable while the scroll height moved less than this, in viewports. */
 const FRAME_TOLERANCE_VIEWPORTS = 0.5;
+const MAX_WIDE_FRAME_TOLERANCE_VIEWPORTS = 4;
+const WIDE_FRAME_TOLERANCE_SHARE = 0.05;
 const MIN_SCALE = 1 / 8;
+const REPEATED_PROBE_SLOP = 2;
 
 /** Record the window's nearest turn on each side of the target, closer ones first. */
 function updateBracket(
@@ -84,8 +88,8 @@ function updateBracket(
   }
 }
 
-function usable(side: SeenTurn | undefined, height: number, view: number): side is SeenTurn {
-  return !!side && Math.abs(side.height - height) <= view * FRAME_TOLERANCE_VIEWPORTS;
+function usable(side: SeenTurn | undefined, height: number, tolerance: number): side is SeenTurn {
+  return !!side && Math.abs(side.height - height) <= tolerance;
 }
 
 export function estimateHoming(input: HomingEstimateInput): HomingEstimate {
@@ -99,7 +103,16 @@ export function estimateHoming(input: HomingEstimateInput): HomingEstimate {
   const anchorOffset = view * input.anchor;
   let center: number;
   const { below, above } = bracket;
-  if (usable(below, height, view) && usable(above, height, view) && below.center < above.center) {
+  const bracketWidth = below && above ? above.center - below.center : 0;
+  const frameTolerance = Math.max(
+    view * FRAME_TOLERANCE_VIEWPORTS,
+    Math.min(view * MAX_WIDE_FRAME_TOLERANCE_VIEWPORTS, bracketWidth * WIDE_FRAME_TOLERANCE_SHARE),
+  );
+  const bracketed =
+    usable(below, height, frameTolerance) &&
+    usable(above, height, frameTolerance) &&
+    bracketWidth > 0;
+  if (bracketed) {
     const share = (targetIndex - below.index) / Math.max(1, above.index - below.index);
     center = below.center + (above.center - below.center) * share;
   } else {
@@ -121,11 +134,32 @@ export function estimateHoming(input: HomingEstimateInput): HomingEstimate {
   // (a long reply spanning the view, #1116) would land on the same window
   // again; move at least a probe, which cannot pass a turn beyond the view.
   const probe = view * MIN_PROBE_VIEWPORTS;
-  if (direction > 0) center = Math.max(center, input.offset + probe + anchorOffset);
-  else if (direction < 0) center = Math.min(center, input.offset - probe + anchorOffset);
+  const line = input.offset + anchorOffset;
+  if (direction > 0) center = Math.max(center, line + probe);
+  else if (direction < 0) center = Math.min(center, line - probe);
+  else if (Math.abs(center - line) < probe) {
+    // ChatGPT can keep its newest turn mounted far outside the viewport. If
+    // interpolating with that turn lands on the same window, probe past the
+    // turn nearest the view in the direction of the missing target.
+    const nearest = mounted.reduce((best, turn) =>
+      Math.abs(turn.center - line) < Math.abs(best.center - line) ? turn : best,
+    );
+    center = line + Math.sign(targetIndex - nearest.index) * probe;
+  }
   const top = center - anchorOffset;
   const maxTop = Math.max(0, height - view);
   if (direction < 0 && top <= 0 && input.offset <= EDGE_SLOP) return { kind: 'edge' };
   if (direction > 0 && top >= maxTop && input.offset >= maxTop - EDGE_SLOP) return { kind: 'edge' };
-  return { kind: 'jump', center };
+  const previous = bracket.lastProbe;
+  bracket.lastProbe = { offset: input.offset, height };
+  if (previous?.height === height) {
+    const travel = input.offset - previous.offset;
+    const distance = Math.abs(travel);
+    const repeats = Math.abs(top - previous.offset) < REPEATED_PROBE_SLOP;
+    const crosses = bracketed && (top - previous.offset) * travel < 0;
+    // Both windows already missed the target. Probe inside the gap instead of repeating them.
+    if ((repeats || crosses) && distance > REPEATED_PROBE_SLOP && distance <= view * 2)
+      center = (input.offset + previous.offset) / 2 + anchorOffset;
+  }
+  return { kind: 'jump', center, bracketed };
 }

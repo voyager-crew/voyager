@@ -135,6 +135,11 @@ export function scrollToCenter(
   applyScroll(target, center - viewportHeight * ACTIVE_ANCHOR, behavior);
 }
 
+/** Cancel a native smooth scroll at its current position before the user's input runs. */
+export function interruptSmoothScroll(target: ScrollTarget): void {
+  if (target) applyScroll(target, readScrollOffset(target), 'instant');
+}
+
 /**
  * The ordinary jump: the turn is mounted and near, so it glides. The instant
  * landings elsewhere are the ones a homing loop has to re-aim, where an
